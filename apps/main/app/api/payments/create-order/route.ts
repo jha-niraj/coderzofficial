@@ -1,0 +1,123 @@
+import { NextRequest, NextResponse } from 'next/server';
+import Razorpay from 'razorpay';
+import { auth } from '@/auth';
+import prisma from '@/lib/prisma';
+import { 
+    creditPackages, convertToPaise, calculatePrice, paymentConfig 
+} from '@/lib/payment-config';
+import { Currency } from '@prisma/client';
+
+export async function POST(req: NextRequest) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { credits, currency = 'INR' } = await req.json();
+
+        if (!credits || credits < paymentConfig.minCredits || credits > paymentConfig.maxCredits) {
+            return NextResponse.json({
+                message: `Credits must be between ${paymentConfig.minCredits} and ${paymentConfig.maxCredits}`
+            }, { status: 400 });
+        }
+
+        // Validate currency
+        if (currency !== 'INR' && currency !== 'USD') {
+            return NextResponse.json({ message: 'Invalid currency. Only INR and USD are supported' }, { status: 400 });
+        }
+
+        // Initialize Razorpay
+        const razorpay = new Razorpay({
+            key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+            key_secret: process.env.RAZORPAY_KEY_SECRET!,
+        });
+
+        if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+            return NextResponse.json({ message: 'Razorpay credentials not configured' }, { status: 500 });
+        }
+
+        // Get user details
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true, name: true, email: true }
+        });
+
+        if (!user) {
+            return NextResponse.json({ message: 'User not found' }, { status: 404 });
+        }
+
+        // Calculate amount
+        const packageInfo = creditPackages.find(pkg => pkg.credits === credits);
+        let amount: number;
+        
+        if (packageInfo) {
+            amount = currency === 'INR' ? packageInfo.inr : packageInfo.usd;
+        } else {
+            amount = calculatePrice(credits, currency as 'INR' | 'USD');
+        }
+
+        // Convert to paise for Razorpay (smallest currency unit)
+        const amountInPaise = convertToPaise(amount, currency as 'INR' | 'USD');
+
+        // Generate receipt
+        const shortUserId = user.id.slice(0, 8);
+        const timestamp = Date.now().toString().slice(-8);
+        const receipt = `rcpt_${shortUserId}_${timestamp}`;
+
+        // Create Razorpay order
+        const razorpayOptions = {
+            amount: amountInPaise,
+            currency: currency === 'INR' ? 'INR' : 'USD',
+            receipt: receipt,
+            notes: {
+                userId: user.id,
+                userEmail: user.email || '',
+                credits: credits.toString(),
+                packageName: packageInfo?.badge || 'Custom',
+            }
+        };
+
+        console.log('Creating Razorpay order with options:', razorpayOptions);
+        const razorpayOrder = await razorpay.orders.create(razorpayOptions);
+        console.log('Razorpay order created:', razorpayOrder);
+
+        // Store payment record in database
+        const paymentRecord = await prisma.payment.create({
+            data: {
+                userId: user.id,
+                credits: credits,
+                amount: amount,
+                currency: currency === 'INR' ? Currency.INR : Currency.USD,
+                status: 'PENDING',
+                orderId: razorpayOrder.id,
+                razorpayOrderId: razorpayOrder.id,
+                receipt: receipt,
+                notes: {
+                    packageName: packageInfo?.badge || 'Custom',
+                    originalAmount: packageInfo ? (currency === 'INR' ? packageInfo.originalInr : packageInfo.originalUsd) : null,
+                }
+            }
+        });
+
+        console.log('Payment record created:', paymentRecord.id);
+
+        // Return order details to frontend
+        return NextResponse.json({
+            success: true,
+            orderId: razorpayOrder.id,
+            amount: amount,
+            currency: currency,
+            receipt: receipt,
+            paymentId: paymentRecord.id,
+            credits: credits,
+            packageInfo: packageInfo || null,
+        });
+    } catch (error: unknown) {
+        console.error('Error creating Razorpay order:', error);
+        return NextResponse.json({
+            message: 'Failed to create payment order',
+            error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+        }, { status: 500 });
+    }
+}

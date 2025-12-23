@@ -1,0 +1,394 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import {
+    Calendar, Clock, Loader2, CheckCircle2, AlertCircle, Trophy, X
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
+} from '@/components/ui/sheet'
+import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
+import { toast } from 'sonner'
+import { checkStandupConfig, createStandupConfig } from '@/actions/(main)/projects/standup.action'
+
+interface DailyStandupSheetProps {
+    isOpen: boolean
+    onClose: () => void
+    projectId: string
+    projectSlug: string
+    projectTitle: string
+    userCredits: number
+}
+
+const DAYS = [
+    { value: 0, label: 'Sun', full: 'Sunday' },
+    { value: 1, label: 'Mon', full: 'Monday' },
+    { value: 2, label: 'Tue', full: 'Tuesday' },
+    { value: 3, label: 'Wed', full: 'Wednesday' },
+    { value: 4, label: 'Thu', full: 'Thursday' },
+    { value: 5, label: 'Fri', full: 'Friday' },
+    { value: 6, label: 'Sat', full: 'Saturday' },
+]
+
+export default function DailyStandupSheet({
+    isOpen,
+    onClose,
+    projectId,
+    projectSlug,
+    projectTitle,
+    userCredits
+}: DailyStandupSheetProps) {
+    const [isChecking, setIsChecking] = useState(true)
+    const [hasConfig, setHasConfig] = useState(false)
+    const [config, setConfig] = useState<any>(null)
+    
+    // Configuration state
+    const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]) // Mon-Fri default
+    const [standupTime, setStandupTime] = useState('09:00')
+    const [durationMinutes, setDurationMinutes] = useState(10)
+    const [isCreating, setIsCreating] = useState(false)
+
+    const checkConfig = useCallback(async () => {
+        setIsChecking(true)
+        try {
+            const result = await checkStandupConfig(projectId)
+            if (result.success && result.data) {
+                setHasConfig(result.data.exists)
+                setConfig(result.data.config)
+            }
+        } catch (error) {
+            console.error('Error checking config:', error)
+        } finally {
+            setIsChecking(false)
+        }
+    }, [projectId]);
+
+    useEffect(() => {
+        if (isOpen) {
+            checkConfig()
+        }
+    }, [isOpen, checkConfig])
+
+    const toggleDay = (day: number) => {
+        if (selectedDays.includes(day)) {
+            if (selectedDays.length > 4) {
+                setSelectedDays(selectedDays.filter(d => d !== day))
+            } else {
+                toast.error('You must select at least 4 days per week')
+            }
+        } else {
+            if (selectedDays.length < 7) {
+                setSelectedDays([...selectedDays, day].sort())
+            }
+        }
+    }
+
+    const handleCreateConfig = async () => {
+        if (selectedDays.length < 4) {
+            toast.error('Please select at least 4 days per week')
+            return
+        }
+
+        const weeklyCredits = selectedDays.length * 5
+        if (userCredits < weeklyCredits) {
+            toast.error(`Insufficient credits. You need ${weeklyCredits} credits for this week.`)
+            return
+        }
+
+        setIsCreating(true)
+        try {
+            const result = await createStandupConfig({
+                projectId,
+                projectSlug,
+                daysPerWeek: selectedDays.length,
+                standupTime,
+                durationMinutes,
+                selectedDays
+            })
+
+            if (result.success) {
+                toast.success('Daily Standup configured successfully!', {
+                    description: `${weeklyCredits} credits deducted for this week`
+                })
+                setHasConfig(true)
+                setConfig(result.data)
+            } else {
+                toast.error(result.error || 'Failed to configure standup')
+            }
+        } catch (error) {
+            toast.error('Something went wrong')
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
+    const handleSkipStandup = () => {
+        toast.info('You can set up Daily Standup anytime from the project page')
+        onClose()
+    }
+
+    const weeklyCredits = selectedDays.length * 5
+
+    return (
+        <Sheet open={isOpen} onOpenChange={onClose}>
+            <SheetContent className="sm:max-w-2xl overflow-y-auto">
+                <SheetHeader className="mb-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            <SheetTitle className="text-2xl">Daily Standup</SheetTitle>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onClose}
+                            className="h-8 w-8"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <SheetDescription>
+                        Build professional habits with daily progress tracking for {projectTitle}
+                    </SheetDescription>
+                </SheetHeader>
+
+                {isChecking ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                    </div>
+                ) : hasConfig && config ? (
+                    // Show existing configuration
+                    <div className="space-y-6">
+                        <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <h3 className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                                        Daily Standup Active
+                                    </h3>
+                                    <p className="text-sm text-green-800 dark:text-green-200">
+                                        Your standup is configured and ready to go!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">Days per Week</p>
+                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                    {config.daysPerWeek}
+                                </p>
+                            </div>
+                            <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">Time</p>
+                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                    {config.standupTime}
+                                </p>
+                            </div>
+                            <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">Duration</p>
+                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                    {config.durationMinutes} min
+                                </p>
+                            </div>
+                            <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">Completed</p>
+                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                    {config.completedStandups}/{config.totalStandups}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-3">Selected Days</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {DAYS.map(day => (
+                                    <Badge
+                                        key={day.value}
+                                        variant={config.selectedDays.includes(day.value) ? 'default' : 'outline'}
+                                        className="px-3 py-1"
+                                    >
+                                        {day.label}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg p-4">
+                            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                                📝 Standup submissions will be available here soon!
+                            </h4>
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                The submission interface is being built. You'll be able to submit your daily standups directly from here.
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    // Show configuration form
+                    <div className="space-y-6">
+                        <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg p-4">
+                            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                                🚀 Build Professional Habits
+                            </h3>
+                            <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                                Daily standups help you stay accountable, track progress, and develop habits used in real software teams.
+                            </p>
+                            <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    <span>Share what you worked on yesterday</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    <span>Plan what you'll work on today</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    <span>Identify blockers early</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Day Selection */}
+                        <div>
+                            <label className="block font-semibold text-neutral-900 dark:text-white mb-3">
+                                <Calendar className="w-4 h-4 inline mr-2" />
+                                Select Days (minimum 4)
+                            </label>
+                            <div className="grid grid-cols-7 gap-2">
+                                {DAYS.map(day => (
+                                    <button
+                                        key={day.value}
+                                        onClick={() => toggleDay(day.value)}
+                                        className={`
+                                            p-3 rounded-lg border-2 transition-all
+                                            ${selectedDays.includes(day.value)
+                                                ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                                                : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+                                            }
+                                        `}
+                                    >
+                                        <div className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                                            {day.label}
+                                        </div>
+                                        {selectedDays.includes(day.value) && (
+                                            <CheckCircle2 className="w-4 h-4 text-blue-600 mx-auto mt-1" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                                {selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'} selected
+                            </p>
+                        </div>
+
+                        {/* Time Selection */}
+                        <div>
+                            <label className="block font-semibold text-neutral-900 dark:text-white mb-3">
+                                <Clock className="w-4 h-4 inline mr-2" />
+                                Preferred Time
+                            </label>
+                            <input
+                                type="time"
+                                value={standupTime}
+                                onChange={(e) => setStandupTime(e.target.value)}
+                                className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white"
+                            />
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                                Choose a time that works best for you
+                            </p>
+                        </div>
+
+                        {/* Duration Selection */}
+                        <div>
+                            <label className="block font-semibold text-neutral-900 dark:text-white mb-3">
+                                Duration: {durationMinutes} minutes
+                            </label>
+                            <input
+                                type="range"
+                                min="5"
+                                max="10"
+                                step="1"
+                                value={durationMinutes}
+                                onChange={(e) => setDurationMinutes(parseInt(e.target.value))}
+                                className="w-full"
+                            />
+                            <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                                <span>5 min</span>
+                                <span>10 min</span>
+                            </div>
+                        </div>
+
+                        {/* Pricing */}
+                        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold text-amber-900 dark:text-amber-100">
+                                    Weekly Cost
+                                </span>
+                                <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                                    {weeklyCredits} credits
+                                </span>
+                            </div>
+                            <p className="text-sm text-amber-800 dark:text-amber-200">
+                                {selectedDays.length} days × 5 credits/day = {weeklyCredits} credits/week
+                            </p>
+                            <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                                💡 You'll need to renew each week to continue
+                            </p>
+                        </div>
+
+                        {/* Credits Check */}
+                        {userCredits < weeklyCredits && (
+                            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg p-4">
+                                <div className="flex items-start gap-2">
+                                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-medium text-red-900 dark:text-red-100 mb-1">
+                                            Insufficient Credits
+                                        </p>
+                                        <p className="text-sm text-red-800 dark:text-red-200">
+                                            You have {userCredits} credits but need {weeklyCredits} credits for this configuration.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                            <Button
+                                onClick={handleCreateConfig}
+                                disabled={isCreating || userCredits < weeklyCredits}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                            >
+                                {isCreating ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Setting up...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Start Daily Standup ({weeklyCredits} credits)
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                onClick={handleSkipStandup}
+                                variant="outline"
+                                className="w-full"
+                            >
+                                Skip for Now
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </SheetContent>
+        </Sheet>
+    )
+}
+

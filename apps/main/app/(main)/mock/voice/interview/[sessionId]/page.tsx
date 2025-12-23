@@ -1,0 +1,446 @@
+'use client'
+
+import { use, useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { useConversation } from '@elevenlabs/react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { 
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle 
+} from '@/components/ui/dialog'
+import { Orb, AgentState } from '@/components/ui/orb'
+import {
+    Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff,
+    Loader2, CheckCircle2, AlertCircle
+} from 'lucide-react'
+import { toast } from 'sonner'
+import {
+    saveConversationData, updateSessionStatus, getSessionDetails
+} from '@/actions/(main)/mockvoice/session.action'
+import { processConversationCompletion } from '@/actions/(main)/mockvoice/conversation.action'
+
+interface SessionVariables {
+    username: string
+    position: string
+    level: string
+    description: string
+    knowledge_base: string
+    resume_content?: string | null
+}
+
+export default function MockInterviewPage({ params }: { params: Promise<{ sessionId: string }> }) {
+    const resolvedParams = use(params)
+    const router = useRouter()
+
+    const [sessionData, setSessionData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [isMicMuted, setIsMicMuted] = useState(false)
+    const [volume, setVolume] = useState(0.8)
+    const [agentState, setAgentState] = useState<AgentState>(null)
+    const [showProcessingDialog, setShowProcessingDialog] = useState(false)
+    const [processingStatus, setProcessingStatus] = useState<'processing' | 'success' | 'error'>('processing')
+    const [hasStarted, setHasStarted] = useState(false)
+
+    const conversationIdRef = useRef<string | null>(null)
+
+    const conversation = useConversation({
+        micMuted: isMicMuted,
+        volume,
+        onConnect: () => {
+            console.log('Connected to ElevenLabs')
+            setAgentState('listening')
+            toast.success('Interview started!')
+        },
+        onDisconnect: () => {
+            console.log('Disconnected from ElevenLabs')
+            setAgentState(null)
+            if (hasStarted && conversationIdRef.current) {
+                handleConversationEnd()
+            }
+        },
+        onModeChange: (mode) => {
+            console.log('Mode changed:', mode)
+            setAgentState(mode.mode === 'speaking' ? 'talking' : 'listening')
+        },
+        onError: (error) => {
+            console.error('Conversation error:', error)
+            toast.error('Connection error. Please try again.')
+            setAgentState(null)
+        },
+        onMessage: (message) => {
+            console.log('Message received:', message)
+        },
+    })
+
+    // Load session details
+    useEffect(() => {
+        async function loadSession() {
+            try {
+                const result = await getSessionDetails(resolvedParams.sessionId)
+
+                if (!result.success || !result.session) {
+                    toast.error('Session not found')
+                    router.push('/mockinterview/voice')
+                    return
+                }
+
+                setSessionData(result.session)
+            } catch (error) {
+                console.error('Error loading session:', error)
+                toast.error('Failed to load session')
+                router.push('/mockinterview/voice')
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadSession()
+    }, [resolvedParams.sessionId, router])
+
+    // Request microphone permission on mount
+    useEffect(() => {
+        async function requestMicPermission() {
+            try {
+                await navigator.mediaDevices.getUserMedia({ audio: true })
+            } catch (error) {
+                console.error('Microphone permission denied:', error)
+                toast.error('Microphone access is required for voice interviews')
+            }
+        }
+
+        requestMicPermission()
+    }, [])
+
+    const startInterview = async () => {
+        if (!sessionData) return
+
+        try {
+            setHasStarted(true)
+            setAgentState('thinking')
+
+            // Update session status
+            await updateSessionStatus(resolvedParams.sessionId, 'IN_PROGRESS')
+
+            // Start ElevenLabs conversation
+            const variables = sessionData.variables as SessionVariables
+
+            const conversationId = await conversation.startSession({
+                agentId: sessionData.agentId,
+                connectionType: 'webrtc',
+                userId: sessionData.userId,
+                overrides: {
+                    agent: {
+                        prompt: {
+                            prompt: sessionData.variables.knowledge_base
+                        },
+                        firstMessage: `Hello ${variables.username}! Thank you for joining this mock interview session. I'm excited to work with you today on preparing for your ${variables.position} interview.\n\nWe'll be spending the next few minutes going through questions that you might encounter in a real interview. Feel free to take your time with your responses, and don't hesitate to think aloud - that's actually what most interviewers want to see!\n\nAre you ready to begin?`
+                    }
+                }
+            })
+
+            conversationIdRef.current = conversationId
+
+            // Save conversation ID to database
+            await saveConversationData(resolvedParams.sessionId, conversationId, new Date())
+
+        } catch (error) {
+            console.error('Error starting interview:', error)
+            toast.error('Failed to start interview. Please try again.')
+            setAgentState(null)
+            setHasStarted(false)
+        }
+    }
+
+    const endInterview = async () => {
+        try {
+            await conversation.endSession()
+            await updateSessionStatus(resolvedParams.sessionId, 'COMPLETED')
+            setAgentState(null)
+        } catch (error) {
+            console.error('Error ending interview:', error)
+            toast.error('Failed to end interview properly')
+        }
+    }
+
+    const handleConversationEnd = async () => {
+        if (!conversationIdRef.current) return
+
+        setShowProcessingDialog(true)
+        setProcessingStatus('processing')
+
+        try {
+            // Process the conversation and get transcript
+            const result = await processConversationCompletion(
+                resolvedParams.sessionId,
+                conversationIdRef.current
+            )
+
+            if (!result.success) {
+                throw new Error(result.error)
+            }
+
+            setProcessingStatus('success')
+
+            // Wait a moment to show success state
+            setTimeout(() => {
+                router.push(`/mockinterview/voice/results/${resolvedParams.sessionId}`)
+            }, 1500)
+
+        } catch (error) {
+            console.error('Error processing conversation:', error)
+            setProcessingStatus('error')
+            toast.error('Failed to process interview. Please contact support.')
+        }
+    }
+
+    const toggleMic = () => {
+        setIsMicMuted(!isMicMuted)
+        toast.info(isMicMuted ? 'Microphone unmuted' : 'Microphone muted')
+    }
+
+    const toggleVolume = () => {
+        const newVolume = volume > 0 ? 0 : 0.8
+        setVolume(newVolume)
+        conversation.setVolume({ volume: newVolume })
+        toast.info(newVolume > 0 ? 'Audio unmuted' : 'Audio muted')
+    }
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900 flex flex-col">
+            <div className="container mx-auto px-4 py-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">{sessionData?.mock?.title}</h1>
+                        <p className="text-neutral-600 dark:text-neutral-400">{sessionData?.mock?.description}</p>
+                    </div>
+                    <Badge className="text-sm">
+                        {sessionData?.mock?.level}
+                    </Badge>
+                </div>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center px-4">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="w-full max-w-2xl"
+                >
+                    <div className="relative w-full aspect-square max-w-md mx-auto mb-8">
+                        <Orb
+                            agentState={agentState}
+                            volumeMode="auto"
+                            getInputVolume={conversation.getInputVolume}
+                            getOutputVolume={conversation.getOutputVolume}
+                            colors={['#6366f1', '#8b5cf6']}
+                        />
+                    </div>
+                    <div className="text-center mb-8">
+                        <AnimatePresence mode="wait">
+                            {
+                                !hasStarted && (
+                                    <motion.div
+                                        key="ready"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                    >
+                                        <h2 className="text-3xl font-bold mb-2">Ready to Begin?</h2>
+                                        <p className="text-neutral-600 dark:text-neutral-400">
+                                            Click the button below to start your mock interview
+                                        </p>
+                                    </motion.div>
+                                )
+                            }
+                            {
+                                hasStarted && agentState === 'thinking' && (
+                                    <motion.div
+                                        key="thinking"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                    >
+                                        <h2 className="text-2xl font-bold mb-2">Connecting...</h2>
+                                        <p className="text-neutral-600 dark:text-neutral-400">
+                                            Setting up your interview session
+                                        </p>
+                                    </motion.div>
+                                )
+                            }
+                            {
+                                agentState === 'listening' && (
+                                    <motion.div
+                                        key="listening"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                    >
+                                        <h2 className="text-2xl font-bold mb-2">Listening...</h2>
+                                        <p className="text-neutral-600 dark:text-neutral-400">
+                                            Your turn to speak
+                                        </p>
+                                    </motion.div>
+                                )
+                            }
+                            {
+                                agentState === 'talking' && (
+                                    <motion.div
+                                        key="talking"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                    >
+                                        <h2 className="text-2xl font-bold mb-2">Interviewer Speaking...</h2>
+                                        <p className="text-neutral-600 dark:text-neutral-400">
+                                            Listen carefully to the question
+                                        </p>
+                                    </motion.div>
+                                )
+                            }
+                        </AnimatePresence>
+                    </div>
+                    <div className="flex items-center justify-center gap-4">
+                        {
+                            !hasStarted ? (
+                                <Button
+                                    size="lg"
+                                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-6 text-lg"
+                                    onClick={startInterview}
+                                >
+                                    <Phone className="w-5 h-5 mr-2" />
+                                    Start Interview
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button
+                                        size="lg"
+                                        variant={isMicMuted ? 'destructive' : 'outline'}
+                                        onClick={toggleMic}
+                                        className="rounded-full w-14 h-14"
+                                    >
+                                        {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                                    </Button>
+                                    <Button
+                                        size="lg"
+                                        variant="destructive"
+                                        onClick={endInterview}
+                                        className="rounded-full w-16 h-16"
+                                    >
+                                        <PhoneOff className="w-6 h-6" />
+                                    </Button>
+                                    <Button
+                                        size="lg"
+                                        variant={volume === 0 ? 'destructive' : 'outline'}
+                                        onClick={toggleVolume}
+                                        className="rounded-full w-14 h-14"
+                                    >
+                                        {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                                    </Button>
+                                </>
+                            )
+                        }
+                    </div>
+                </motion.div>
+            </div>
+            <Dialog open={showProcessingDialog} onOpenChange={() => { }}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            {
+                                processingStatus === 'processing' && (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                                        Processing Your Interview
+                                    </>
+                                )
+                            }
+                            {
+                                processingStatus === 'success' && (
+                                    <>
+                                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                        Interview Completed!
+                                    </>
+                                )
+                            }
+                            {
+                                processingStatus === 'error' && (
+                                    <>
+                                        <AlertCircle className="w-5 h-5 text-red-600" />
+                                        Processing Error
+                                    </>
+                                )
+                            }
+                        </DialogTitle>
+                        <DialogDescription>
+                            {
+                                processingStatus === 'processing' && (
+                                    'Please wait while we analyze your interview performance...'
+                                )
+                            }
+                            {
+                                processingStatus === 'success' && (
+                                    'Redirecting to your results...'
+                                )
+                            }
+                            {
+                                processingStatus === 'error' && (
+                                    'Something went wrong. Please contact support.'
+                                )
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-6">
+                        <AnimatePresence mode="wait">
+                            {
+                                processingStatus === 'processing' && (
+                                    <motion.div
+                                        key="processing"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="space-y-3"
+                                    >
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                            <span>Retrieving conversation details...</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                                            <span>Generating transcript...</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Loader2 className="w-4 h-4 animate-spin text-green-600" />
+                                            <span>Preparing your feedback...</span>
+                                        </div>
+                                    </motion.div>
+                                )
+                            }
+                            {
+                                processingStatus === 'success' && (
+                                    <motion.div
+                                        key="success"
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        className="flex flex-col items-center justify-center py-8"
+                                    >
+                                        <CheckCircle2 className="w-20 h-20 text-green-600 mb-4" />
+                                        <p className="text-center text-neutral-600 dark:text-neutral-400">
+                                            Your interview has been successfully processed!
+                                        </p>
+                                    </motion.div>
+                                )
+                            }
+                        </AnimatePresence>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
+    )
+}

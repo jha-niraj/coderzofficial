@@ -1,0 +1,245 @@
+'use server'
+
+import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
+
+interface ConversationDetails {
+    agent_id: string
+    conversation_id: string
+    status: 'initiated' | 'in-progress' | 'processing' | 'done' | 'failed'
+    transcript: Array<{
+        role: string
+        time_in_call_secs: number
+        message: string
+    }>
+    metadata: {
+        start_time_unix_secs: number
+        call_duration_secs: number
+    }
+    has_audio: boolean
+    analysis?: {
+        call_successful: string
+        transcript_summary: string
+        evaluation_criteria_results?: Record<string, any>
+    }
+}
+
+export async function getConversationDetails(conversationId: string) {
+    try {
+        const response = await fetch(
+            `https://api.elevenlabs.io/v1/convai/conversations/${conversationId}`,
+            {
+                method: 'GET',
+                headers: {
+                    'xi-api-key': process.env.ELEVENLABS_API_KEY!,
+                },
+                cache: 'no-store'
+            }
+        )
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch conversation: ${response.statusText}`)
+        }
+
+        const data: ConversationDetails = await response.json()
+        
+        return {
+            success: true,
+            data
+        }
+    } catch (error) {
+        console.error('Error fetching conversation details:', error)
+        return {
+            success: false,
+            error: 'Failed to fetch conversation details'
+        }
+    }
+}
+
+export async function processConversationCompletion(sessionId: string, conversationId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        // Poll conversation details until it's done
+        let attempts = 0
+        const maxAttempts = 30 // 30 seconds max
+        let conversationData: ConversationDetails | null = null
+
+        while (attempts < maxAttempts) {
+            const result = await getConversationDetails(conversationId)
+            
+            if (result.success && result.data) {
+                conversationData = result.data
+
+                // Check if processing is complete
+                if (conversationData.status === 'done') {
+                    break
+                } else if (conversationData.status === 'failed') {
+                    throw new Error('Conversation processing failed')
+                }
+            }
+
+            // Wait 1 second before next attempt
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            attempts++
+        }
+
+        if (!conversationData || conversationData.status !== 'done') {
+            throw new Error('Conversation processing timeout')
+        }
+
+        // Build transcript text
+        const transcriptText = conversationData.transcript
+            .map(t => `[${t.role.toUpperCase()}] (${t.time_in_call_secs}s): ${t.message}`)
+            .join('\n\n')
+
+        // Calculate duration
+        const duration = conversationData.metadata.call_duration_secs
+
+        // Update session with conversation data
+        await prisma.mockVoiceSession.update({
+            where: {
+                id: sessionId,
+                userId: session.user.id
+            },
+            data: {
+                conversationId,
+                status: 'COMPLETED',
+                completedAt: new Date(),
+                duration,
+                transcript: transcriptText,
+                metadata: conversationData.metadata as any,
+                // We'll generate AI analysis separately
+            }
+        })
+
+        // Update mock popularity
+        await prisma.mockInterviewVoice.update({
+            where: {
+                id: (await prisma.mockVoiceSession.findUnique({
+                    where: { id: sessionId },
+                    select: { mockId: true }
+                }))!.mockId
+            },
+            data: {
+                totalSessions: { increment: 1 },
+                popularity: { increment: 1 }
+            }
+        })
+
+        return {
+            success: true,
+            sessionId,
+            transcript: transcriptText,
+            duration,
+            summary: conversationData.analysis?.transcript_summary
+        }
+
+    } catch (error) {
+        console.error('Error processing conversation completion:', error)
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to process conversation'
+        }
+    }
+}
+
+export async function generateAIFeedback(sessionId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        const mockSession = await prisma.mockVoiceSession.findUnique({
+            where: {
+                id: sessionId,
+                userId: session.user.id
+            },
+            include: {
+                mock: {
+                    select: {
+                        title: true,
+                        level: true,
+                        category: true
+                    }
+                }
+            }
+        })
+
+        if (!mockSession || !mockSession.transcript) {
+            return { success: false, error: 'Session or transcript not found' }
+        }
+
+        // Call OpenAI to analyze the transcript
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are an expert interview coach analyzing a mock interview for a ${mockSession.mock.title} position (${mockSession.mock.level} level). Provide constructive feedback.`
+                    },
+                    {
+                        role: 'user',
+                        content: `Analyze this mock interview transcript and provide detailed feedback:\n\n${mockSession.transcript}\n\nProvide feedback in the following JSON format:
+{
+  "overallScore": <number 1-100>,
+  "communication": {
+    "score": <number 1-100>,
+    "feedback": "<string>"
+  },
+  "technical": {
+    "score": <number 1-100>,
+    "feedback": "<string>"
+  },
+  "problemSolving": {
+    "score": <number 1-100>,
+    "feedback": "<string>"
+  },
+  "strengths": ["<string>", "<string>", ...],
+  "improvements": ["<string>", "<string>", ...],
+  "detailedFeedback": "<comprehensive feedback paragraph>"
+}`
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            })
+        })
+
+        if (!openaiResponse.ok) {
+            throw new Error('Failed to generate AI feedback')
+        }
+
+        const aiResponse = await openaiResponse.json()
+        const analysis = JSON.parse(aiResponse.choices[0].message.content)
+
+        // Save analysis to database
+        await prisma.mockVoiceSession.update({
+            where: { id: sessionId },
+            data: {
+                aiAnalysis: analysis
+            }
+        })
+
+        return {
+            success: true,
+            analysis
+        }
+
+    } catch (error) {
+        console.error('Error generating AI feedback:', error)
+        return {
+            success: false,
+            error: 'Failed to generate feedback'
+        }
+    }
+}

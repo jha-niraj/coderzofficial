@@ -1,0 +1,698 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+    AlertTriangle,
+    ThumbsUp,
+    AlertCircle,
+    Plus,
+    Search,
+    Filter,
+    ChevronDown,
+    Code2,
+    CheckCircle2,
+    Loader2,
+    Bug,
+    Shield,
+    Zap,
+    Database,
+    Globe,
+    Settings,
+    Layers,
+    Sparkles,
+    Eye
+} from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { cn } from '../../lib/utils'
+import { toast } from 'sonner'
+import {
+    getProjectErrors,
+    createProjectError,
+    voteOnError,
+    getProjectErrorStats,
+} from '@/actions/(main)/projects/project-errors.action'
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface ProjectError {
+    id: string
+    title: string
+    description: string
+    solution: string
+    severity: 'HIGH' | 'MEDIUM' | 'LOW'
+    category: string
+    errorCode?: string | null
+    fixedCode?: string | null
+    tags: string[]
+    helpfulCount: number
+    encounteredCount: number
+    hasVotedHelpful: boolean
+    hasVotedEncountered: boolean
+    submittedBy: {
+        id: string
+        name: string | null
+        username: string | null
+        image: string | null
+    }
+    task?: {
+        id: string
+        title: string
+    } | null
+    createdAt: Date
+}
+
+interface ErrorsTabProps {
+    projectId: string
+    isEnrolled: boolean
+    isCreator: boolean
+}
+
+// ============================================================================
+// Category Config
+// ============================================================================
+
+const categoryConfig: Record<string, { icon: typeof Bug; color: string; label: string }> = {
+    SETUP: { icon: Settings, color: 'bg-slate-500', label: 'Setup' },
+    CONFIGURATION: { icon: Settings, color: 'bg-gray-500', label: 'Configuration' },
+    DATABASE: { icon: Database, color: 'bg-orange-500', label: 'Database' },
+    API: { icon: Globe, color: 'bg-blue-500', label: 'API' },
+    UI: { icon: Layers, color: 'bg-pink-500', label: 'UI' },
+    STATE: { icon: Zap, color: 'bg-yellow-500', label: 'State' },
+    DEPLOYMENT: { icon: Globe, color: 'bg-green-500', label: 'Deployment' },
+    SECURITY: { icon: Shield, color: 'bg-red-500', label: 'Security' },
+    PERFORMANCE: { icon: Zap, color: 'bg-purple-500', label: 'Performance' },
+    OTHER: { icon: Bug, color: 'bg-neutral-500', label: 'Other' },
+}
+
+const severityConfig = {
+    HIGH: { color: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800', label: 'Common' },
+    MEDIUM: { color: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800', label: 'Occasional' },
+    LOW: { color: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800', label: 'Rare' },
+}
+
+// ============================================================================
+// Error Card Component
+// ============================================================================
+
+function ErrorCard({ 
+    error, 
+    onVote 
+}: { 
+    error: ProjectError
+    onVote: (errorId: string, voteType: 'helpful' | 'encountered') => void 
+}) {
+    const [isExpanded, setIsExpanded] = useState(false)
+    const CategoryIcon = categoryConfig[error.category]?.icon || Bug
+
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden hover:shadow-lg transition-shadow"
+        >
+            {/* Header */}
+            <div className="p-4">
+                <div className="flex items-start gap-3">
+                    {/* Category Icon */}
+                    <div className={cn(
+                        'p-2 rounded-lg text-white',
+                        categoryConfig[error.category]?.color || 'bg-neutral-500'
+                    )}>
+                        <CategoryIcon className="w-4 h-4" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="font-semibold text-neutral-900 dark:text-white line-clamp-1">
+                                {error.title}
+                            </h4>
+                            <Badge className={cn('text-[10px] px-1.5 shrink-0 border', severityConfig[error.severity].color)}>
+                                {severityConfig[error.severity].label}
+                            </Badge>
+                        </div>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">
+                            {error.description}
+                        </p>
+
+                        {/* Tags */}
+                        {error.tags && error.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-3">
+                                {error.tags.slice(0, 3).map((tag, idx) => (
+                                    <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => onVote(error.id, 'helpful')}
+                                    className={cn(
+                                        'flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors',
+                                        error.hasVotedHelpful
+                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                    )}
+                                >
+                                    <ThumbsUp className="w-3 h-3" />
+                                    {error.helpfulCount}
+                                </button>
+                                <button
+                                    onClick={() => onVote(error.id, 'encountered')}
+                                    className={cn(
+                                        'flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors',
+                                        error.hasVotedEncountered
+                                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                                    )}
+                                >
+                                    <AlertCircle className="w-3 h-3" />
+                                    {error.encounteredCount} faced this
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                                {isExpanded ? 'Hide' : 'View'} Solution
+                                <ChevronDown className={cn('w-3 h-3 transition-transform', isExpanded && 'rotate-180')} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Expanded Solution */}
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-4 pb-4 pt-2 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
+                            {/* Solution */}
+                            <div>
+                                <h5 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Solution
+                                </h5>
+                                <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                                    {error.solution}
+                                </p>
+                            </div>
+
+                            {/* Error Code */}
+                            {error.errorCode && (
+                                <div>
+                                    <h5 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
+                                        <Code2 className="w-4 h-4" />
+                                        Problematic Code
+                                    </h5>
+                                    <pre className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-xs overflow-x-auto">
+                                        <code className="text-red-800 dark:text-red-200">{error.errorCode}</code>
+                                    </pre>
+                                </div>
+                            )}
+
+                            {/* Fixed Code */}
+                            {error.fixedCode && (
+                                <div>
+                                    <h5 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Corrected Code
+                                    </h5>
+                                    <pre className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-xs overflow-x-auto">
+                                        <code className="text-green-800 dark:text-green-200">{error.fixedCode}</code>
+                                    </pre>
+                                </div>
+                            )}
+
+                            {/* Task Link */}
+                            {error.task && (
+                                <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-2 border border-neutral-200 dark:border-neutral-800">
+                                    <p className="text-xs text-neutral-500">
+                                        Related to task: <span className="font-medium text-neutral-700 dark:text-neutral-300">{error.task.title}</span>
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Submitted By */}
+                            <div className="flex items-center gap-2 text-xs text-neutral-500">
+                                <span>Submitted by</span>
+                                <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                                    {error.submittedBy.name || error.submittedBy.username || 'Anonymous'}
+                                </span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    )
+}
+
+// ============================================================================
+// Submit Error Sheet
+// ============================================================================
+
+function SubmitErrorSheet({ 
+    projectId, 
+    onSubmit 
+}: { 
+    projectId: string
+    onSubmit: () => void 
+}) {
+    const [open, setOpen] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [form, setForm] = useState({
+        title: '',
+        description: '',
+        solution: '',
+        severity: 'MEDIUM' as 'HIGH' | 'MEDIUM' | 'LOW',
+        category: 'OTHER',
+        errorCode: '',
+        fixedCode: '',
+        tags: '',
+    })
+
+    const handleSubmit = async () => {
+        if (!form.title || !form.description || !form.solution) {
+            toast.error('Please fill in all required fields')
+            return
+        }
+
+        setLoading(true)
+        try {
+            const result = await createProjectError({
+                projectId,
+                title: form.title,
+                description: form.description,
+                solution: form.solution,
+                severity: form.severity,
+                category: form.category as any,
+                errorCode: form.errorCode || undefined,
+                fixedCode: form.fixedCode || undefined,
+                tags: form.tags ? form.tags.split(',').map(t => t.trim()) : undefined,
+            })
+
+            if (result.success) {
+                toast.success('Error submitted successfully!')
+                setOpen(false)
+                setForm({
+                    title: '',
+                    description: '',
+                    solution: '',
+                    severity: 'MEDIUM',
+                    category: 'OTHER',
+                    errorCode: '',
+                    fixedCode: '',
+                    tags: '',
+                })
+                onSubmit()
+            } else {
+                toast.error(result.error || 'Failed to submit error')
+            }
+        } catch (error) {
+            toast.error('Something went wrong')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+                <Button className="gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90">
+                    <Plus className="w-4 h-4" />
+                    Share Error
+                </Button>
+            </SheetTrigger>
+            <SheetContent className="sm:max-w-lg overflow-y-auto">
+                <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-amber-500" />
+                        Share an Error or Mistake
+                    </SheetTitle>
+                    <SheetDescription>
+                        Help others avoid the same pitfalls you encountered
+                    </SheetDescription>
+                </SheetHeader>
+
+                <div className="space-y-4 py-6">
+                    {/* Title */}
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Error Title *</Label>
+                        <Input
+                            id="title"
+                            placeholder="e.g., 'CORS error when fetching data'"
+                            value={form.title}
+                            onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        />
+                    </div>
+
+                    {/* Category & Severity */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Object.entries(categoryConfig).map(([key, { label }]) => (
+                                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Frequency</Label>
+                            <Select value={form.severity} onValueChange={(v: any) => setForm({ ...form, severity: v })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="HIGH">Common</SelectItem>
+                                    <SelectItem value="MEDIUM">Occasional</SelectItem>
+                                    <SelectItem value="LOW">Rare</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                        <Label htmlFor="description">What happened? *</Label>
+                        <Textarea
+                            id="description"
+                            placeholder="Describe the error or mistake..."
+                            value={form.description}
+                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                            rows={3}
+                        />
+                    </div>
+
+                    {/* Solution */}
+                    <div className="space-y-2">
+                        <Label htmlFor="solution">How did you fix it? *</Label>
+                        <Textarea
+                            id="solution"
+                            placeholder="Explain the solution..."
+                            value={form.solution}
+                            onChange={(e) => setForm({ ...form, solution: e.target.value })}
+                            rows={3}
+                        />
+                    </div>
+
+                    {/* Error Code */}
+                    <div className="space-y-2">
+                        <Label htmlFor="errorCode">Problematic Code (optional)</Label>
+                        <Textarea
+                            id="errorCode"
+                            placeholder="Paste the code that caused the issue..."
+                            value={form.errorCode}
+                            onChange={(e) => setForm({ ...form, errorCode: e.target.value })}
+                            rows={3}
+                            className="font-mono text-sm"
+                        />
+                    </div>
+
+                    {/* Fixed Code */}
+                    <div className="space-y-2">
+                        <Label htmlFor="fixedCode">Corrected Code (optional)</Label>
+                        <Textarea
+                            id="fixedCode"
+                            placeholder="Paste the corrected code..."
+                            value={form.fixedCode}
+                            onChange={(e) => setForm({ ...form, fixedCode: e.target.value })}
+                            rows={3}
+                            className="font-mono text-sm"
+                        />
+                    </div>
+
+                    {/* Tags */}
+                    <div className="space-y-2">
+                        <Label htmlFor="tags">Tags (comma separated)</Label>
+                        <Input
+                            id="tags"
+                            placeholder="e.g., react, api, fetch"
+                            value={form.tags}
+                            onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                        />
+                    </div>
+                </div>
+
+                <SheetFooter>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={loading || !form.title || !form.description || !form.solution}
+                        className="w-full bg-gradient-to-r from-amber-500 to-orange-600"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                Submitting...
+                            </>
+                        ) : (
+                            <>
+                                <AlertTriangle className="w-4 h-4 mr-2" />
+                                Submit Error
+                            </>
+                        )}
+                    </Button>
+                </SheetFooter>
+            </SheetContent>
+        </Sheet>
+    )
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTabProps) {
+    const [errors, setErrors] = useState<ProjectError[]>([])
+    const [loading, setLoading] = useState(true)
+    const [stats, setStats] = useState<any>(null)
+    const [filter, setFilter] = useState({
+        category: 'ALL',
+        severity: 'ALL',
+        sortBy: 'helpful' as 'helpful' | 'recent' | 'encountered',
+    })
+
+    const fetchErrors = useCallback(async () => {
+        setLoading(true)
+        try {
+            const [errorsResult, statsResult] = await Promise.all([
+                getProjectErrors(projectId, {
+                    category: filter.category === 'ALL' ? undefined : filter.category,
+                    severity: filter.severity === 'ALL' ? undefined : filter.severity,
+                    sortBy: filter.sortBy,
+                }),
+                getProjectErrorStats(projectId),
+            ])
+
+            if (errorsResult.success) {
+                setErrors(errorsResult.data?.errors || [])
+            }
+            if (statsResult.success) {
+                setStats(statsResult.data)
+            }
+        } catch (error) {
+            console.error('Error fetching errors:', error)
+        } finally {
+            setLoading(false)
+        }
+    }, [projectId, filter])
+
+    useEffect(() => {
+        fetchErrors()
+    }, [fetchErrors])
+
+    const handleVote = async (errorId: string, voteType: 'helpful' | 'encountered') => {
+        const result = await voteOnError(errorId, voteType)
+        if (result.success) {
+            // Optimistic update
+            setErrors(prev => prev.map(err => {
+                if (err.id === errorId) {
+                    return {
+                        ...err,
+                        hasVotedHelpful: voteType === 'helpful' ? !err.hasVotedHelpful : err.hasVotedHelpful,
+                        hasVotedEncountered: voteType === 'encountered' ? !err.hasVotedEncountered : err.hasVotedEncountered,
+                        helpfulCount: voteType === 'helpful' 
+                            ? (err.hasVotedHelpful ? err.helpfulCount - 1 : err.helpfulCount + 1)
+                            : err.helpfulCount,
+                        encounteredCount: voteType === 'encountered'
+                            ? (err.hasVotedEncountered ? err.encounteredCount - 1 : err.encounteredCount + 1)
+                            : err.encounteredCount,
+                    }
+                }
+                return err
+            }))
+        }
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-amber-500" />
+                        Errors & Mistakes
+                    </h3>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Community-shared pitfalls and solutions
+                    </p>
+                </div>
+                {(isEnrolled || isCreator) && (
+                    <SubmitErrorSheet projectId={projectId} onSubmit={fetchErrors} />
+                )}
+            </div>
+
+            {/* Stats */}
+            {stats && stats.totalErrors > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
+                        <CardContent className="p-4">
+                            <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats.totalErrors}</div>
+                            <div className="text-xs text-amber-600 dark:text-amber-500">Total Errors</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-800">
+                        <CardContent className="p-4">
+                            <div className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.bySeverity?.HIGH || 0}</div>
+                            <div className="text-xs text-red-600 dark:text-red-500">Common</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+                        <CardContent className="p-4">
+                            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.bySeverity?.MEDIUM || 0}</div>
+                            <div className="text-xs text-blue-600 dark:text-blue-500">Occasional</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800">
+                        <CardContent className="p-4">
+                            <div className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.bySeverity?.LOW || 0}</div>
+                            <div className="text-xs text-green-600 dark:text-green-500">Rare</div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+                <Select value={filter.category} onValueChange={(v) => setFilter(prev => ({ ...prev, category: v }))}>
+                    <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="ALL">All Categories</SelectItem>
+                        {Object.entries(categoryConfig).map(([key, { label }]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select value={filter.severity} onValueChange={(v) => setFilter(prev => ({ ...prev, severity: v }))}>
+                    <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="ALL">All</SelectItem>
+                        <SelectItem value="HIGH">Common</SelectItem>
+                        <SelectItem value="MEDIUM">Occasional</SelectItem>
+                        <SelectItem value="LOW">Rare</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select value={filter.sortBy} onValueChange={(v: any) => setFilter(prev => ({ ...prev, sortBy: v }))}>
+                    <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="helpful">Most Helpful</SelectItem>
+                        <SelectItem value="encountered">Most Faced</SelectItem>
+                        <SelectItem value="recent">Recent</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Error List */}
+            {loading ? (
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                </div>
+            ) : errors.length === 0 ? (
+                <div className="text-center py-12">
+                    <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-700" />
+                    <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-1">No errors shared yet</h4>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+                        Be the first to help others by sharing common pitfalls
+                    </p>
+                    {(isEnrolled || isCreator) && (
+                        <SubmitErrorSheet projectId={projectId} onSubmit={fetchErrors} />
+                    )}
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {errors.map((error) => (
+                        <ErrorCard 
+                            key={error.id} 
+                            error={error} 
+                            onVote={handleVote}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
+
