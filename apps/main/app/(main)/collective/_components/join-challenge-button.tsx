@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Loader2 } from "lucide-react";
 import { joinChallenge } from "@/actions/(main)/collective/challenge.actions";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { useSession } from '@repo/auth';
 
 interface JoinChallengeButtonProps {
   challengeId: string;

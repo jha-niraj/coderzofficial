@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown, Users } from "lucide-react";
 import { voteOnProposal } from "@/actions/(main)/collective/proposal.actions";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { useSession } from '@repo/auth';
 
 interface VotingSectionProps {
   proposal: {

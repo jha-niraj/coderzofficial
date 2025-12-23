@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 import { revalidatePath } from "next/cache";
 import { GoalType } from "@prisma/client";
 

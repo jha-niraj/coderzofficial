@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@repo/auth';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     ChevronRight, Shield, Star, MountainSnow

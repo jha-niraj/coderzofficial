@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth'
+import { getServerSession } from '@repo/auth'
+import { authOptions } from '@repo/auth'
 import { redirect } from 'next/navigation'
 import { CommunityHubClient } from './_components/community-hub-client'
 import {

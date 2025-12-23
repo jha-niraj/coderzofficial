@@ -1,5 +1,5 @@
 import { getProjectTasks } from '@/actions/(main)/projects/project.action'
-import { auth } from '@/auth'
+import { auth } from '@repo/auth'
 import { redirect } from 'next/navigation'
 import TasksPageClient from './_components/tasks-page-client'
 import { ProjectDetailsError } from '../_components/project-details-error'

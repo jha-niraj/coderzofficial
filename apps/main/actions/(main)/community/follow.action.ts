@@ -1,7 +1,7 @@
 'use server'
 
 import prisma from "@/lib/prisma"
-import { auth, authOptions, getServerSession } from "@/auth"
+import { auth, authOptions, getServerSession } from '@repo/auth'
 import { revalidatePath } from "next/cache"
 
 // ==================== FOLLOW REQUESTS (NEW CHAT SYSTEM) ====================

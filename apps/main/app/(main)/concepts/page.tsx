@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 import {
     getConcepts, getTrendingConcepts, getCategories, getUserProgress
 } from "@/actions/(main)/concepts/concept.action";

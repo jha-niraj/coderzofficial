@@ -1,10 +1,10 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
+import { getServerSession } from '@repo/auth'
 import { revalidatePath } from "next/cache"
 import { CommunityVisibility, CommunityType, CommunityRole } from "@prisma/client"
-import { authOptions } from "@/auth"
+import { authOptions } from '@repo/auth'
 
 // ==================== TYPES ====================
 export interface CreateCommunityInput {

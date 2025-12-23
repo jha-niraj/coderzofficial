@@ -14,7 +14,7 @@ import {
 import {
     Send, Image as ImageIcon, Loader2, MoreVertical
 } from "lucide-react"
-import { useSession } from "next-auth/react"
+import { useSession } from '@repo/auth'
 import { formatDistanceToNow } from "date-fns"
 import { cn } from "../../lib/utils"
 import { toast } from "sonner"

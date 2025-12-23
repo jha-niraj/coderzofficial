@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { QuizCategory, QuizStatus } from "@prisma/client";

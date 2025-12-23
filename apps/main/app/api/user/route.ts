@@ -1,6 +1,6 @@
 // import { updateUser } from '@/app/data/user';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { auth } from '@repo/auth';
 
 export const PUT = async (req: NextRequest) => {
     const session = await auth();

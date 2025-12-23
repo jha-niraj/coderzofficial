@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@repo/auth";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from 'next/navigation';
 import {

@@ -1,7 +1,7 @@
 import { getProjectBySlug } from '@/actions/(main)/projects/project.action'
 import ProjectDetailsClient from './_components/project-details-client'
 import { ProjectDetailsError } from './_components/project-details-error'
-import { auth } from '@/auth'
+import { auth } from '@repo/auth'
 import prisma from '@/lib/prisma'
 
 export default async function ProjectDetailsPage({ params }: { params: Promise<{ slug: string }> }) {

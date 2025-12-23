@@ -1,8 +1,8 @@
 // app/api/worker-token/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from '@repo/auth'
 import crypto from 'crypto'
-import { authOptions } from '@/auth'
+import { authOptions } from '@repo/auth'
 
 // Secret only exists on server - NEVER expose as NEXT_PUBLIC_
 const WORKER_SECRET = process.env.WORKER_SECRET!

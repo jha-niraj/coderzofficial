@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ConceptCreateForm from "./_components/concept-create-form";

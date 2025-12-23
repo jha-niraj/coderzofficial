@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 
 export async function GET(req: NextRequest) {
     if (req.method !== 'GET') {

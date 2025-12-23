@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn } from '@repo/auth';
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Check, X, Gift, Code2 } from "lucide-react";

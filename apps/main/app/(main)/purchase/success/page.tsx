@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Spotlight } from '@/components/ui/spotlight'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@repo/auth'
 
 export default function PaymentSuccessPage() {
 	const searchParams = useSearchParams()

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 import { redirect } from "next/navigation";
 import {
   getHomeData,

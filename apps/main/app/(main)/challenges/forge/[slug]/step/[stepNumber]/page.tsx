@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth'
+import { getServerSession } from '@repo/auth'
+import { authOptions } from '@repo/auth'
 import { getForgeStep } from '@/actions/(main)/challenges/forge.action'
 import { notFound, redirect } from 'next/navigation'
 import { ForgeStepClient } from './_components/forge-step-client'

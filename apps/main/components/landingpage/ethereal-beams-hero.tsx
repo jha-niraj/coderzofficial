@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useSession } from "next-auth/react"
+import { useSession } from '@repo/auth'
 import { useRouter } from "next/navigation"
 
 // --- THREE.JS CONFIGURATION (UNCHANGED) ---

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { auth } from '@/auth';
+import { auth } from '@repo/auth';
 import prisma from '@/lib/prisma';
 import { CreditType } from '@prisma/client';
 

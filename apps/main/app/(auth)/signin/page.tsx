@@ -8,7 +8,7 @@ import { Loader2, Eye, EyeOff, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, useSession } from '@repo/auth';
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppContext } from "@/app/context/usercontext";

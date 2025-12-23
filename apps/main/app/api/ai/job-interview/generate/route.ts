@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { auth } from '@repo/auth';
 import { generateJobInterviewQuestions } from '@/actions/(main)/ai/jobinterview.action';
 
 // Configure maximum duration for this function (60 seconds)

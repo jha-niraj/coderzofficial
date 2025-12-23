@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { signIn, useSession } from "next-auth/react"
+import { signIn, useSession } from '@repo/auth'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

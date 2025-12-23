@@ -3,7 +3,7 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import prisma from '@/lib/prisma';
 import { Prisma, CreditType, Currency } from '@prisma/client';
-import { auth } from '@/auth';
+import { auth } from '@repo/auth';
 import Exa from "exa-js";
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';

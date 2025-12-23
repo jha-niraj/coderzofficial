@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { 
     ActivityType, CreditType, Currency, FeedbackCategory, FeedbackStatus, Role 
 } from "@prisma/client";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 import { revalidatePath } from "next/cache";
 import { addXpToUser } from "./level.action";
 

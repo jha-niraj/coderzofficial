@@ -1,4 +1,4 @@
-import { auth } from "@/auth"
+import { auth } from '@repo/auth'
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import AIMockInterviewClient from "./_components/aimock-client"

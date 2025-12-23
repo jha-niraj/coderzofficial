@@ -9,7 +9,7 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from "@repo/ui/components/ui/card"
 import Link from "next/link"
-import { useSession } from "next-auth/react"
+import { useSession } from "@repo/auth"
 
 export function AdminAuthPrompt() {
     const { data: session } = useSession()

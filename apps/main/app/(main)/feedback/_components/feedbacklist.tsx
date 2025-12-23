@@ -18,7 +18,7 @@ import { formatDistanceToNow } from "date-fns"
 import {
     ChevronUp, Award, Gift, LightbulbIcon
 } from "lucide-react"
-import { useSession } from "next-auth/react"
+import { useSession } from '@repo/auth'
 import { FeedbackStatus, FeedbackCategory, Role } from "@prisma/client"
 import Image from "next/image"
 import { useFeedbackStore } from "@/app/store/feedbackStore"

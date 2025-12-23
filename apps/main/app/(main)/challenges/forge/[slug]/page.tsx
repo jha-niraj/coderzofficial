@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth'
+import { getServerSession } from '@repo/auth'
+import { authOptions } from '@repo/auth'
 import { getForgeTrackBySlug } from '@/actions/(main)/challenges/forge.action'
 import { notFound } from 'next/navigation'
 import { ForgeTrackClient } from './_components/forge-track-client'

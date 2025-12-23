@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth'
+import { getServerSession } from '@repo/auth'
+import { authOptions } from '@repo/auth'
 import { getCrucibleProblem } from '@/actions/(main)/challenges/crucible.action'
 import { notFound, redirect } from 'next/navigation'
 import { CrucibleProblemClient } from './_components/crucible-problem-client'

@@ -5,7 +5,7 @@ import { Button } from "@repo/ui/components/ui/button"
 import { 
     LayoutDashboard, Users, FolderKanban, GitFork, LogOut, Paperclip, Monitor 
 } from 'lucide-react'
-import { signOut } from "next-auth/react"
+import { signOut } from "@repo/auth"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 

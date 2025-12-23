@@ -1,7 +1,7 @@
 "use client"
 
 import axios from 'axios';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@repo/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useState } from 'react';
 import { Mail, CheckCircle, RefreshCw, ArrowRight } from 'lucide-react';

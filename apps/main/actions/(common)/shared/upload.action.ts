@@ -1,7 +1,7 @@
 "use server"
 
 import cloudinary from "@/utils/cloudinary";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 
 interface CloudinaryUploadResult {
     secure_url: string;

@@ -10,7 +10,7 @@ import { ArrowLeft, Search } from "lucide-react"
 import Link from "next/link"
 import { getPublicInterviewPlans, purchaseInterviewPlan } from "@/actions/(main)/ai/jobinterview.action"
 import { InterviewPlanCard, type BaseInterviewPlan } from "../_components/interviewplancard"
-import { useSession } from "next-auth/react"
+import { useSession } from '@repo/auth'
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 

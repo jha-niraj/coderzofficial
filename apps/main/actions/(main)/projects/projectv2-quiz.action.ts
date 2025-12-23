@@ -1,6 +1,6 @@
 "use server"
 
-import { auth } from "@/auth"
+import { auth } from '@repo/auth'
 import prisma from "@/lib/prisma"
 import OpenAI from "openai"
 import { QuizV2Difficulty, CreditType, Currency } from "@prisma/client"

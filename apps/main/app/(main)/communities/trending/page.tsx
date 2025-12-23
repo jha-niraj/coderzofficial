@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth'
+import { getServerSession } from '@repo/auth'
+import { authOptions } from '@repo/auth'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'

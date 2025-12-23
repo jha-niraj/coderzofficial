@@ -1,6 +1,6 @@
 "use server"
 
-import { auth } from '@/auth';
+import { auth } from '@repo/auth';
 import prisma from '@/lib/prisma';
 import { CreditType, Currency, XpTransactionProps } from '@prisma/client';
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from '@repo/auth';
 import {
     BookOpen, Brain, Trophy, Clock, CheckCircle2, XCircle, AlertTriangle,
     ChevronRight, ChevronLeft, Loader2, Shield, GitPullRequest, Terminal,

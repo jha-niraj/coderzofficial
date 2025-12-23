@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import AdminSidebar, { AdminRoute } from './_components/admin-sidebar';
 import AdminNavbar from './_components/admin-navbar';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@repo/auth';
 import { redirect } from 'next/navigation';
 
 interface AdminLayoutProps {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { auth } from '@/auth';
+import { auth } from '@repo/auth';
 import prisma from '@/lib/prisma';
 import { 
     creditPackages, convertToPaise, calculatePrice, paymentConfig 

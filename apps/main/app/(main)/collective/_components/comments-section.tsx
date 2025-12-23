@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
 import { addComment } from "@/actions/(main)/collective/proposal.actions";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { useSession } from '@repo/auth';
 import { formatDistanceToNow } from "date-fns";
 
 interface CommentsSectionProps {

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { auth } from '@/auth'
+import { auth } from '@repo/auth'
 import prisma from '@/lib/prisma'
 import { UserProfileLeaderboardClient } from './_components/user-profile-leaderboard-client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

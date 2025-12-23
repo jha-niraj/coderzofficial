@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { 
     getConceptBySlug, recordConceptView 
 } from "@/actions/(main)/concepts/concept.action";
-import { auth } from "@/auth";
+import { auth } from '@repo/auth';
 import ConceptDetailClient from "./_components/concept-detail-client";
 import ConceptDetailSkeleton from "./_components/concept-detail-skeleton";
 

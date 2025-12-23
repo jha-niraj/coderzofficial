@@ -1,6 +1,5 @@
-import { withAuth } from "next-auth/middleware"
+import { withAuth, type NextRequestWithAuth } from "@repo/auth"
 import { NextResponse } from "next/server"
-import type { NextRequestWithAuth } from "next-auth/middleware"
 
 // Protected routes that require authentication (only core user-specific functionality)
 const protectedRoutes = [

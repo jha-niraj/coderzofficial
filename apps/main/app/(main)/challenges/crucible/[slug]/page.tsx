@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth'
+import { getServerSession } from '@repo/auth'
+import { authOptions } from '@repo/auth'
 import { getCrucibleEventBySlug } from '@/actions/(main)/challenges/crucible.action'
 import { notFound } from 'next/navigation'
 import { CrucibleEventClient } from './_components/crucible-event-client'
