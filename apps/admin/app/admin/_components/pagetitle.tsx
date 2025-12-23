@@ -1,14 +1,10 @@
-import { cn } from "../../lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 
 import { Bell, ChevronDown } from "lucide-react"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, 
+    DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@repo/ui/components/ui/dropdown-menu";
 
 interface PageTitleProps {
     title: string,

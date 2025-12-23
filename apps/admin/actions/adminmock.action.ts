@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import prisma from '@repo/prisma';
 
 // Types
 export interface AdminMockSession {
@@ -28,8 +28,7 @@ export async function getAdminMockSessions(page = 1, limit = 10, typeFilter?: st
 		];
 	}
 	// Voice and Peer mocks
-	const [voiceMocks, peer] = await Promise.all([
-		prisma.mockVoiceSession.findMany({
+	const voiceMocks = await prisma.mockVoiceSession.findMany({
 			where,
 			skip,
 			take: limit,
@@ -46,18 +45,9 @@ export async function getAdminMockSessions(page = 1, limit = 10, typeFilter?: st
 				}
 			},
 			orderBy: { createdAt: 'desc' }
-		}),
-		prisma.peerToPeerSession.findMany({
-			where,
-			skip,
-			take: limit,
-			include: { creator: { select: { name: true } } },
-			orderBy: { createdAt: 'desc' }
-		})
-	]);
+		});
 	// Flatten and format
-	const formatted: AdminMockSession[] = [
-		...voiceMocks.map((s: any) => ({
+	const formatted: AdminMockSession[] = voiceMocks.map((s: any) => ({
 			id: s.id,
 			userId: s.userId,
 			userName: s.user?.name || 'Unknown',
@@ -67,23 +57,12 @@ export async function getAdminMockSessions(page = 1, limit = 10, typeFilter?: st
 			endTime: s.completedAt ? s.completedAt.toISOString() : undefined,
 			status: s.status,
 			createdAt: s.createdAt.toISOString()
-		})),
-		...peer.map((s: any) => ({
-			id: s.id,
-			userId: s.creatorId,
-			userName: s.creator?.name || 'Unknown',
-			mockType: 'PEER',
-			startTime: s.scheduledTime.toISOString(),
-			status: s.status,
-			createdAt: s.createdAt.toISOString()
-		}))
-	];
-	return { success: true, data: { sessions: formatted, totalCount: formatted.length, totalPages: Math.ceil(formatted.length / limit) } };
+		}));
+	return { success: true, data: { sessions: formatted, totalCount: voiceMocks.length, totalPages: Math.ceil(voiceMocks.length / limit) } };
 }
 
 // Mock Stats
 export async function getAdminMockStats() {
 	const totalVoice = await prisma.mockVoiceSession.count();
-	const totalPeer = await prisma.peerToPeerSession.count();
-	return { success: true, data: { totalVoice, totalPeer, total: totalVoice + totalPeer } };
+	return { success: true, data: { totalVoice, total: totalVoice } };
 } 

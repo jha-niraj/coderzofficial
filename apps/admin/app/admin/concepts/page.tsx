@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { AdminConceptsHeader } from "./_components/admin-concepts-header";
 import { AdminConceptsTable } from "./_components/admin-concepts-table";
 import { AdminConceptsSkeleton } from "./_components/admin-concepts-skeleton";

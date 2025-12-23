@@ -7,5 +7,5 @@ export {
 } from "@prisma/client";
 
 export type { 
-    User, Post 
+    User 
 } from "@prisma/client";

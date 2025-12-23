@@ -1,14 +1,14 @@
 import { DefaultSession, DefaultUser } from "next-auth"
-import { JWT, DefaultJWT } from "next-auth/jwt"
-import { Role } from "@repo/prisma/client"
+import { DefaultJWT } from "next-auth/jwt"
+import type { Role } from "@repo/prisma/client"
 
-// Import AuthOptions using a workaround for Turborepo module resolution
-import type { AuthOptions } from "next-auth"
-export type { AuthOptions as NextAuthOptions }
+// Use import() workaround for Turborepo Bundler module resolution
+type _AuthOptions = import("next-auth").AuthOptions
+export type AuthOptions = _AuthOptions
 
 // Re-export Account and Profile types for callback typing
-import type { Account, Profile } from "next-auth"
-export type { Account, Profile }
+export type Account = import("next-auth/core/types").Account
+export type Profile = import("next-auth/core/types").Profile
 
 declare module "next-auth" {
     interface Session {
@@ -19,6 +19,7 @@ declare module "next-auth" {
             image?: string | null
             role: Role
             emailVerified?: Date | null
+            onboardingCompleted?: boolean
         } & DefaultSession["user"]
     }
 
@@ -29,6 +30,7 @@ declare module "next-auth" {
         image?: string | null
         role: Role
         emailVerified?: Date | null
+        onboardingCompleted?: boolean
     }
 }
 
@@ -40,5 +42,6 @@ declare module "next-auth/jwt" {
         image?: string | null
         role: Role
         emailVerified?: Date | null
+        onboardingCompleted?: boolean
     }
 }

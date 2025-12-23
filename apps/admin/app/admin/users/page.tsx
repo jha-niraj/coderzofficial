@@ -1,23 +1,37 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import {
     Users, UserPlus, Search, Filter, MoreHorizontal,
     Edit, Trash2, Shield, Crown, Eye, RefreshCw, Download
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { getAllUsers, updateUserRole, updateUserStatus, deleteUser, type AdminUser } from '@/actions/(admin)/admin/admin.action';
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card';
+import { Badge } from '@repo/ui/components/ui/badge';
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
+import { 
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from '@repo/ui/components/ui/table';
+import { 
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@repo/ui/components/ui/select';
+import { 
+    Avatar, AvatarFallback 
+} from '@repo/ui/components/ui/avatar';
+import { 
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, 
+    DropdownMenuSeparator, DropdownMenuTrigger 
+} from '@repo/ui/components/ui/dropdown-menu';
+import { 
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle 
+} from '@repo/ui/components/ui/dialog';
+import { 
+    getAllUsers, updateUserRole, updateUserStatus, deleteUser, type AdminUser 
+} from '@/actions/admin.action';
 import EmptyState from '../_components/empty-state';
-import { toast } from 'sonner';
+import toast from '@repo/ui/components/ui/sonner';
 
 export default function UsersPage() {
     const [users, setUsers] = useState<AdminUser[]>([]);

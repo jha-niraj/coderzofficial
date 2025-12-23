@@ -1,6 +1,6 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@repo/prisma"
 import { sendEmail } from "@/utils/mail"
 import bcrypt from "bcrypt"
 

@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import prisma from '@/lib/prisma';
-import { Role, CreditType } from '@prisma/client';
+import prisma from '@repo/prisma';
+import { 
+    Role, CreditType 
+} from '@repo/prisma/client';
 
 export interface AdminUser {
     id: string;

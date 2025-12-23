@@ -4,36 +4,36 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
 	ConceptCategory, ConceptDifficulty, ConceptStatus
-} from "@prisma/client";
+} from "@repo/prisma/client";
 import {
 	Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
+} from "@repo/ui/components/ui/table";
 import {
 	DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 	DropdownMenuSeparator, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/ui/dropdown-menu";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
 import {
 	Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@repo/ui/components/ui/select";
 import {
 	AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
 	AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
-} from "@/components/ui/alert-dialog";
+} from "@repo/ui/components/ui/alert-dialog";
 import {
 	MoreHorizontal, Search, Eye, Edit, Trash2, CheckCircle, XCircle, Archive,
 	Heart, Bookmark, Layers
 } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import {
 	publishConcept, unpublishConcept, archiveConcept, deleteConcept
-} from "@/actions/(main)/concepts/concept.action";
+} from "@/actions/concepts.action";
 
 interface ConceptItem {
 	id: string;

@@ -3,18 +3,18 @@
 import { useState } from "react";
 import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { Progress } from "@repo/ui/components/ui/progress";
 import {
 	Trophy, Users, Calendar, Settings, Play, Pause, BarChart3, Plus, CheckCircle
 } from "lucide-react";
-import { publishChallenge } from "@/actions/(main)/collective/admin.actions";
-import { formatDistanceToNow, format } from "date-fns";
+import { publishChallenge } from "@/actions/collective.action";
+import { format } from "date-fns";
 import Link from "next/link";
-import { toast } from "sonner";
+import { toast } from "@repo/ui/components/ui/sonner";
 
 interface ChallengeManagementCardProps {
 	challenge: {

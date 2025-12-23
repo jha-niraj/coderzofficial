@@ -1,28 +1,25 @@
 'use client';
 
 import { useSession } from "next-auth/react";
-import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from 'next/navigation';
 import {
-    Bell, Moon, Sun, User, Settings, LogOut, Shield,
-    Activity, Users, Database, TrendingUp, AlertTriangle,
-    Search, Filter, RefreshCw
+    Bell, User, Settings, LogOut, Shield, Users, Database, TrendingUp, RefreshCw
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-    DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+    Avatar, AvatarFallback, AvatarImage
+} from "@repo/ui/components/ui/avatar";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+    DropdownMenuSeparator, DropdownMenuTrigger
+} from "@repo/ui/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
-import { getPlatformStats, getSystemHealth } from '@/actions/(admin)/admin/admin.action';
+import { getPlatformStats, getSystemHealth } from "@/actions/admin.action";
+import { ThemeToggle } from "@repo/ui/components/themetoggle";
 
 const AdminNavbar = ({ isCollapsed }: { isCollapsed: boolean }) => {
-    const { theme, setTheme } = useTheme();
     const { data: session } = useSession();
     const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
@@ -142,115 +139,86 @@ const AdminNavbar = ({ isCollapsed }: { isCollapsed: boolean }) => {
                         <Button variant="ghost" size="sm" className="relative">
                             <Bell className="h-4 w-4" />
                             {
-                            adminStats.notifications > 0 && (
-                                <Badge 
-                                    variant="destructive" 
-                                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                                >
-                                    {adminStats.notifications}
-                                </Badge>
-                            )
+                                adminStats.notifications > 0 && (
+                                    <Badge
+                                        variant="destructive"
+                                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                                    >
+                                        {adminStats.notifications}
+                                    </Badge>
+                                )
                             }
                         </Button>
                         <Button variant="ghost" size="sm">
                             <RefreshCw className="h-4 w-4" />
                         </Button>
-                        <div className="hidden md:flex items-center bg-muted/50 rounded-xl p-1 border border-border/50">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={`h-7 w-7 p-0 rounded-lg transition-all ${theme === 'light' ? 'bg-background shadow-sm' : 'hover:bg-muted'}`}
-                                onClick={() => setTheme('light')}
-                            >
-                                <Sun className="h-3 w-3 text-amber-500" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={`h-7 w-7 p-0 rounded-lg transition-all ${theme === 'dark' ? 'bg-background shadow-sm' : 'hover:bg-muted'}`}
-                                onClick={() => setTheme('dark')}
-                            >
-                                <Moon className="h-3 w-3 text-blue-500" />
-                            </Button>
-                        </div>
+                        <ThemeToggle />
                         {
-                        session && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
-                                        <Avatar className="h-8 w-8 border-2 border-red-500/50">
-                                            <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "Admin"} />
-                                            <AvatarFallback className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold">
-                                                {session?.user?.name?.split(" ").map(n => n[0]).join("") || session?.user?.email?.[0] || "A"}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <motion.div
-                                            className="absolute -bottom-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-background"
-                                            animate={{ scale: [1, 1.2, 1] }}
-                                            transition={{ duration: 2, repeat: Infinity }}
-                                        />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end" forceMount>
-                                    <DropdownMenuLabel className="font-normal">
-                                        <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
-                                            <p className="text-xs leading-none text-muted-foreground">
-                                                {session?.user?.email}
-                                            </p>
-                                            <Badge variant="destructive" className="w-fit text-xs mt-1">
-                                                <Shield className="h-3 w-3 mr-1" />
-                                                Administrator
-                                            </Badge>
-                                        </div>
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
+                            session && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
+                                            <Avatar className="h-8 w-8 border-2 border-red-500/50">
+                                                <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "Admin"} />
+                                                <AvatarFallback className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold">
+                                                    {session?.user?.name?.split(" ").map(n => n[0]).join("") || session?.user?.email?.[0] || "A"}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <motion.div
+                                                className="absolute -bottom-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-background"
+                                                animate={{ scale: [1, 1.2, 1] }}
+                                                transition={{ duration: 2, repeat: Infinity }}
+                                            />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
+                                                <p className="text-xs leading-none text-muted-foreground">
+                                                    {session?.user?.email}
+                                                </p>
+                                                <Badge variant="destructive" className="w-fit text-xs mt-1">
+                                                    <Shield className="h-3 w-3 mr-1" />
+                                                    Administrator
+                                                </Badge>
+                                            </div>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/admin/analytics')}>
-                                        <TrendingUp className="mr-2 h-4 w-4" />
-                                        <span>Analytics</span>
-                                    </DropdownMenuItem>
+                                        <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/admin/analytics')}>
+                                            <TrendingUp className="mr-2 h-4 w-4" />
+                                            <span>Analytics</span>
+                                        </DropdownMenuItem>
 
-                                    <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/admin/settings')}>
-                                        <Settings className="mr-2 h-4 w-4" />
-                                        <span>Admin Settings</span>
-                                    </DropdownMenuItem>
+                                        <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/admin/settings')}>
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            <span>Admin Settings</span>
+                                        </DropdownMenuItem>
 
-                                    <DropdownMenuItem className="cursor-pointer md:hidden" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                                        {
-                                        theme === 'dark' ? (
-                                            <>
-                                                <Sun className="mr-2 h-4 w-4" />
-                                                <span>Light Mode</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Moon className="mr-2 h-4 w-4" />
-                                                <span>Dark Mode</span>
-                                            </>
-                                        )
-                                        }
-                                    </DropdownMenuItem>
+                                        <DropdownMenuItem className="cursor-pointer md:hidden">
+                                            <ThemeToggle />
+                                        </DropdownMenuItem>
 
-                                    <DropdownMenuSeparator />
+                                        <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/dashboard')}>
-                                        <User className="mr-2 h-4 w-4" />
-                                        <span>Switch to User View</span>
-                                    </DropdownMenuItem>
+                                        <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/dashboard')}>
+                                            <User className="mr-2 h-4 w-4" />
+                                            <span>Switch to User View</span>
+                                        </DropdownMenuItem>
 
-                                    <DropdownMenuSeparator />
+                                        <DropdownMenuSeparator />
 
-                                    <DropdownMenuItem
-                                        className="cursor-pointer text-red-600 dark:text-red-400"
-                                        onClick={handleLogout}
-                                    >
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        <span>Log out</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )
+                                        <DropdownMenuItem
+                                            className="cursor-pointer text-red-600 dark:text-red-400"
+                                            onClick={handleLogout}
+                                        >
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>Log out</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )
                         }
                     </div>
                 </div>

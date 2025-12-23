@@ -3,18 +3,18 @@
 import { useState } from "react";
 import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import {
 	ThumbsUp, ThumbsDown, MessageCircle, CheckCircle, X, ExternalLink,
 	Calendar, TrendingUp
 } from "lucide-react";
 import {
 	approveProposal, rejectProposal
-} from "@/actions/(main)/collective/admin.actions";
-import { toast } from "sonner";
+} from "@/actions/collective.action";
+import { toast } from "@repo/ui/components/ui/sonner";
 import { formatDistanceToNow } from "date-fns";
 import { CreateChallengeDialog } from "./create-challenge-dialog";
 import Link from "next/link";

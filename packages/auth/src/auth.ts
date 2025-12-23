@@ -1,19 +1,15 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import NextAuth from "next-auth/next";
-import type { NextAuthOptions } from "./next-auth";
+import type { AuthOptions, Account, Profile } from "./next-auth";
 import type { JWT } from "next-auth/jwt";
 import type { Session, User } from "next-auth";
-import type { Account, Profile } from "./next-auth";
 import { Role } from '@repo/prisma/client';
 import { prisma } from '@repo/prisma';
-import { 
-    createSignupActivity, generateReferralCode, processReferral 
-} from './utils/referral';
-import bcrypt from "bcryptjs";
+import { createSignupActivity, generateReferralCode, processReferral } from './utils/referral';
+import bcrypt from 'bcryptjs';
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: AuthOptions = {
     adapter: PrismaAdapter(prisma),
     providers: [
         CredentialsProvider({
@@ -32,7 +28,7 @@ export const authOptions: NextAuthOptions = {
                     type: "text"
                 }
             },
-            async authorize(credentials) {
+            async authorize(credentials: Record<string, unknown> | undefined) {
                 if (!credentials?.email || !credentials?.password) {
                     throw new Error("EMAIL_PASSWORD_REQUIRED");
                 }
@@ -56,7 +52,6 @@ export const authOptions: NextAuthOptions = {
 
                     // For special case where password is "verified" (after OTP verification)
                     if (credentials.password === "verified") {
-                        // Refetch user to get latest verification status
                         const freshUser = await prisma.user.findUnique({
                             where: {
                                 email: credentials.email as string
@@ -77,12 +72,10 @@ export const authOptions: NextAuthOptions = {
                         }
                     }
 
-                    // Check if email is verified for regular password login
                     if (!user.emailVerified) {
                         throw new Error("EMAIL_NOT_VERIFIED");
                     }
 
-                    // Regular password check using bcryptjs
                     const isPasswordValid = await bcrypt.compare(credentials.password as string, user.hashedPassword);
                     console.log("Password Valid: " + isPasswordValid);
 
@@ -100,7 +93,6 @@ export const authOptions: NextAuthOptions = {
                     };
                 } catch (error) {
                     console.error("Authorization error:", error);
-                    // Re-throw the error to be handled by NextAuth
                     throw error;
                 }
             }
@@ -117,13 +109,11 @@ export const authOptions: NextAuthOptions = {
     ],
     callbacks: {
         async jwt({ token, user, trigger }: { token: JWT; user?: User; trigger?: "signIn" | "signUp" | "update" }) {
-            // Only add user data on initial sign in
             if (user) {
                 token.id = user.id!;
                 token.role = user.role;
                 token.emailVerified = user.emailVerified;
                 
-                // Fetch onboarding status on sign in
                 try {
                     const dbUser = await prisma.user.findUnique({
                         where: { id: user.id! },
@@ -135,7 +125,6 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
-            // Only fetch fresh data if explicitly triggered or if essential data is missing
             if (trigger === 'update' || token.onboardingCompleted === undefined) {
                 try {
                     const dbUser = await prisma.user.findUnique({
@@ -150,7 +139,7 @@ export const authOptions: NextAuthOptions = {
                     if (dbUser) {
                         token.emailVerified = dbUser.emailVerified ? new Date() : null;
                         token.role = dbUser.role;
-                        token.onboardingCompleted = dbUser.onboardingCompleted;
+                        token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
                     }
                 } catch (error) {
                     console.error('JWT callback error:', error);
@@ -164,11 +153,15 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as Role;
                 session.user.emailVerified = token.emailVerified ? new Date() : null;
-                (session.user as any).onboardingCompleted = token.onboardingCompleted || false;
+                (session.user as unknown as { onboardingCompleted: boolean }).onboardingCompleted = token.onboardingCompleted || false;
             }
             return session;
         },
-        async signIn({ user, account, profile, email, credentials }: { user: User; account: Account | null; profile?: Profile; email?: { verificationRequest?: boolean }; credentials?: Record<string, unknown> }) {
+        async signIn({ user, account, profile }: { 
+            user: User; 
+            account: Account | null; 
+            profile?: Profile; 
+        }) {
             if (account?.provider === 'google') {
                 const existingUser = await prisma.user.findUnique({
                     where: { email: profile?.email as string }
@@ -203,8 +196,8 @@ export const authOptions: NextAuthOptions = {
                                 },
                                 data: {
                                     referralCode: await generateReferralCode(newUser?.name as string),
-                                    emailVerified: true, // Google users are automatically verified
-                                    onboardingCompleted: false // New Google users need to complete onboarding
+                                    emailVerified: true,
+                                    onboardingCompleted: false
                                 }
                             });
 
@@ -223,11 +216,9 @@ export const authOptions: NextAuthOptions = {
             return true;
         },
         async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-            // Handle callback URLs from middleware
             if (url.startsWith("/")) return `${baseUrl}${url}`
             if (new URL(url).origin === baseUrl) return url
             
-            // Handle Learn.Coderz SSO redirects
             const learnPlatformUrl = process.env.LEARN_PLATFORM_URL || 'https://learn.coderzai.xyz'
             if (url.startsWith(learnPlatformUrl)) {
                 return url
@@ -258,13 +249,11 @@ export const authOptions: NextAuthOptions = {
     },
 }
 
-export default NextAuth(authOptions)
-
-// Helper function for server-side auth check (compatible with v5 syntax used in the app)
+// Helper function for server-side auth check
 export async function auth() {
     const { getServerSession } = await import('next-auth/next');
     return await getServerSession(authOptions);
 }
 
-// Export getServerSession for direct use if needed
+// Export getServerSession for direct use
 export { getServerSession } from 'next-auth/next';

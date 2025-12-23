@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useTheme } from 'next-themes';
 import { useSession } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -11,11 +10,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
+} from '@repo/ui/components/ui/tooltip';
+import { Badge } from '@repo/ui/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../../lib/utils';
-import mainWebLogo from "@/utils/titlelogo.png";
+import { cn } from '@repo/ui/lib/utils';
+// import mainWebLogo from "@repo/ui/utils/titlelogo.png";
 
 export interface AdminRoute {
     path: string;
@@ -33,7 +32,6 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar = ({ routes = [], isCollapsed, toggleSidebar }: AdminSidebarProps) => {
-    const { theme } = useTheme();
     const { data: session } = useSession();
     const pathname = usePathname();
     const router = useRouter();
@@ -77,13 +75,13 @@ const AdminSidebar = ({ routes = [], isCollapsed, toggleSidebar }: AdminSidebarP
                     <div className="flex items-center justify-center p-4 h-[80px] border-b border-border/50">
                         <Link href="/admin" className="flex gap-2 items-center justify-center group cursor-pointer">
                             <div className="relative">
-                                <Image
+                                {/* <Image
                                     src={mainWebLogo}
                                     alt="Admin Panel"
                                     width={40}
                                     height={40}
                                     className="rounded-xl"
-                                />
+                                /> */}
                                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background flex items-center justify-center">
                                     <Shield className="h-2 w-2 text-white" />
                                 </div>

@@ -1,16 +1,16 @@
 import { 
     Avatar, AvatarImage, AvatarFallback 
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import { 
     Card, CardContent, CardDescription, CardHeader, CardTitle 
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+} from "@repo/ui/components/ui/card"
+import { Badge } from "@repo/ui/components/ui/badge"
 import { 
     Calendar, Mail, Phone, MapPin, Github, Linkedin, Twitter, Globe, User, Key, 
     Clock, GraduationCap, Heart, Code 
 } from 'lucide-react'
-import { Separator } from "@/components/ui/separator";
-import { getUserDetailsById } from "@/actions/(admin)/admin/admin.action";
+import { Separator } from "@repo/ui/components/ui/separator";
+import { getUserDetailsById } from "@/actions/admin.action";
 
 export default async function MenteeDetails(props: { params: Promise<{ userid: string }> }) {
     const params = await props.params;

@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@/auth"
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 
 /**
  * Get or create a conversation between two users

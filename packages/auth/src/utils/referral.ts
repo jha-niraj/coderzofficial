@@ -1,5 +1,5 @@
 import { prisma } from "@repo/prisma";
-import { ActivityType } from "@prisma/client";
+import { ActivityType } from "@repo/prisma/client";
 
 export async function processReferral(referralCode: string | null, newUserId: string, userName: string) {
     if (!referralCode) return;

@@ -14,10 +14,14 @@
 		"@prisma/client": "6.14.0",
 		"@repo/prisma": "workspace:*",
 		"@repo/ui": "workspace:*",
+		"date-fns": "^4.1.0",
+		"framer-motion": "^12.23.26",
 		"lucide-react": "^0.562.0",
 		"next": "15.4.10",
+		"next-auth": "4.24.13",
 		"react": "^19.2.0",
-		"react-dom": "^19.2.0"
+		"react-dom": "^19.2.0",
+		"resend": "^6.6.0"
 	},
 	"devDependencies": {
 		"@repo/eslint-config": "workspace:*",

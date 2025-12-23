@@ -1,25 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
-    Settings, Shield, Bell, Database, Mail, Key,
-    Users, Globe, Save, RefreshCw, AlertTriangle,
-    Lock, Eye, EyeOff, Server, Zap
+    Settings, Shield, Bell, Globe, Save, RefreshCw,
+    Lock, Zap
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card';
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
+import { Label } from '@repo/ui/components/ui/label';
+import { Textarea } from '@repo/ui/components/ui/textarea';
+import { Switch } from '@repo/ui/components/ui/switch';
+import { 
+    Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@repo/ui/components/ui/tabs';
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@repo/ui/components/ui/select';
+import { Separator } from '@repo/ui/components/ui/separator';
+import toast from '@repo/ui/components/ui/sonner';
 import EmptyState from '../_components/empty-state';
-import { getAdminSettings, updateAdminSettings, getSystemHealth, type AdminSettings } from '@/actions/(admin)/admin/settingsadmin.action';
+import { 
+    getAdminSettings, updateAdminSettings, getSystemHealth, type AdminSettings 
+} from '@/actions/settingsadmin.action';
 
 export default function AdminSettingsPage() {
     const [settings, setSettings] = useState<AdminSettings>({
@@ -267,7 +272,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.general.maintenanceMode}
-                                        onCheckedChange={(value) => handleGeneralChange('maintenanceMode', value)}
+                                        onCheckedChange={(value: boolean) => handleGeneralChange('maintenanceMode', value)}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -279,7 +284,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.general.registrationEnabled}
-                                        onCheckedChange={(value) => handleGeneralChange('registrationEnabled', value)}
+                                        onCheckedChange={(value: boolean) => handleGeneralChange('registrationEnabled', value)}
                                     />
                                 </div>
                             </div>
@@ -351,7 +356,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.security.twoFactorEnabled}
-                                        onCheckedChange={(value) => handleSecurityChange('twoFactorEnabled', value)}
+                                        onCheckedChange={(value: boolean) => handleSecurityChange('twoFactorEnabled', value)}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -363,7 +368,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.security.requireSpecialChars}
-                                        onCheckedChange={(value) => handleSecurityChange('requireSpecialChars', value)}
+                                        onCheckedChange={(value: boolean) => handleSecurityChange('requireSpecialChars', value)}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -375,7 +380,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.security.sslEnabled}
-                                        onCheckedChange={(value) => handleSecurityChange('sslEnabled', value)}
+                                        onCheckedChange={(value: boolean) => handleSecurityChange('sslEnabled', value)}
                                     />
                                 </div>
                             </div>
@@ -416,7 +421,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.notifications.emailNotifications}
-                                        onCheckedChange={(value) => handleNotificationChange('emailNotifications', value)}
+                                        onCheckedChange={(value: boolean) => handleNotificationChange('emailNotifications', value)}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -428,7 +433,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.notifications.newUserSignup}
-                                        onCheckedChange={(value) => handleNotificationChange('newUserSignup', value)}
+                                        onCheckedChange={(value: boolean) => handleNotificationChange('newUserSignup', value)}
                                         disabled={!settings.notifications.emailNotifications}
                                     />
                                 </div>
@@ -441,7 +446,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.notifications.challengeCreated}
-                                        onCheckedChange={(value) => handleNotificationChange('challengeCreated', value)}
+                                        onCheckedChange={(value: boolean) => handleNotificationChange('challengeCreated', value)}
                                         disabled={!settings.notifications.emailNotifications}
                                     />
                                 </div>
@@ -454,7 +459,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.notifications.paymentReceived}
-                                        onCheckedChange={(value) => handleNotificationChange('paymentReceived', value)}
+                                        onCheckedChange={(value: boolean) => handleNotificationChange('paymentReceived', value)}
                                         disabled={!settings.notifications.emailNotifications}
                                     />
                                 </div>
@@ -467,7 +472,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.notifications.systemErrors}
-                                        onCheckedChange={(value) => handleNotificationChange('systemErrors', value)}
+                                        onCheckedChange={(value: boolean) => handleNotificationChange('systemErrors', value)}
                                         disabled={!settings.notifications.emailNotifications}
                                     />
                                 </div>
@@ -574,7 +579,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.platform.allowPublicChallenges}
-                                        onCheckedChange={(value) => handlePlatformChange('allowPublicChallenges', value)}
+                                        onCheckedChange={(value: boolean) => handlePlatformChange('allowPublicChallenges', value)}
                                     />
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -586,7 +591,7 @@ export default function AdminSettingsPage() {
                                     </div>
                                     <Switch
                                         checked={settings.platform.autoApprovePublicChallenges}
-                                        onCheckedChange={(value) => handlePlatformChange('autoApprovePublicChallenges', value)}
+                                        onCheckedChange={(value: boolean) => handlePlatformChange('autoApprovePublicChallenges', value)}
                                         disabled={!settings.platform.allowPublicChallenges}
                                     />
                                 </div>

@@ -3,29 +3,29 @@
 import { useState, useEffect, Suspense } from "react";
 import { 
     Card, CardContent, CardHeader, CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Input } from "@repo/ui/components/ui/input";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { Label } from "@repo/ui/components/ui/label";
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from "@/components/ui/sheet";
+} from "@repo/ui/components/ui/sheet";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
+} from "@repo/ui/components/ui/table";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@repo/ui/components/ui/select";
 import {
     Gift, ExternalLink, Clock, Calendar, Eye, User, Search, Filter, ChevronLeft, 
     ChevronRight, Loader2, Mail, CreditCard, MessageSquare, Award, AlertCircle, 
     TrendingUp, Users, CheckCircle, XCircle, Timer, Sparkles
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@repo/ui/components/ui/sonner";
 import { motion } from "framer-motion";
-import { getAllCreditRequests, processCreditRequest } from "@/actions/(main)/user/dashboard.action";
+import { getAllCreditRequests, processCreditRequest } from "@/actions/creditadmin.action";
 
 interface CreditRequest {
     id: string;

@@ -1,21 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
-    Briefcase, Users, Clock, TrendingUp, Calendar,
-    Eye, Download, RefreshCw, BarChart3, Star,
-    MessageSquare, Award, Filter, Search, ChevronLeft, ChevronRight
+    Briefcase, TrendingUp, Download, RefreshCw, BarChart3, Star, Filter, Search, 
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getAdminJobInterviewSessions, getAdminJobInterviewStats } from '@/actions/(admin)/admin/adminai.action';
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card';
+import { Badge } from '@repo/ui/components/ui/badge';
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
+import { 
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from '@repo/ui/components/ui/table';
+import { 
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@repo/ui/components/ui/select';
+import { 
+    Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@repo/ui/components/ui/tabs';
 import EmptyState from '../../_components/empty-state';
+import { getAdminJobInterviewSessions, getAdminJobInterviewStats } from '@/actions/adminai.action';
 
 interface Position {
     position: string;

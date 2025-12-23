@@ -1,29 +1,27 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
-    Users, BarChart3, DollarSign, TrendingUp, Activity, BugPlay, Briefcase, Target, 
-    Award, Clock, Eye, UserPlus, CreditCard, AlertCircle, CheckCircle2
+    Users, BarChart3, DollarSign, TrendingUp, BugPlay, Briefcase, UserPlus, CreditCard
 } from 'lucide-react';
 import { 
     Card, CardContent, CardDescription, CardHeader, CardTitle 
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from '@repo/ui/components/ui/card';
+import { Badge } from '@repo/ui/components/ui/badge';
+import { Button } from '@repo/ui/components/ui/button';
 import { 
     Tabs, TabsContent, TabsList, TabsTrigger 
-} from '@/components/ui/tabs';
+} from '@repo/ui/components/ui/tabs';
 import { 
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
-} from '@/components/ui/table';
+} from '@repo/ui/components/ui/table';
 import { 
-    Avatar, AvatarFallback, AvatarImage 
-} from '@/components/ui/avatar';
+    Avatar, AvatarFallback 
+} from '@repo/ui/components/ui/avatar';
 import { 
     getPlatformStats, getAllUsers, getCreditTransactions, getJobInterviewSessions, 
     type PlatformStats 
-} from '@/actions/(admin)/admin/admin.action';
+} from '@/actions/admin.action';
 import EmptyState from './_components/empty-state';
 
 export default function AdminDashboard() {

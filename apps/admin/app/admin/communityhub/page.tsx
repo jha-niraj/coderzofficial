@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 import {
 	Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
 	Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs";
+} from "@repo/ui/components/ui/tabs";
 import {
 	TrendingUp, Users, Trophy, Settings, Vote, CheckCircle
 } from "lucide-react";
-import { getTopProposals, getChallenges } from "@/actions/(main)/collective/admin.actions";
+import { getTopProposals, getChallenges } from "@/actions/collective.action";
 import { ProposalManagementCard } from "./_components/proposal-management-card";
 import { ChallengeManagementCard } from "./_components/challenge-management-card";
 import { CreateChallengeDialog } from "./_components/create-challenge-dialog";

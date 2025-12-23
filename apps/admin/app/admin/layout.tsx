@@ -3,19 +3,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from "next/navigation";
 import { 
-    LayoutDashboard, Users, Bot, BugPlay, Briefcase, 
-    FolderKanban, Code2, CheckSquareIcon, Settings,
-    Shield, BarChart3, Database, Mail, CreditCard,
-    ChevronDown, ChevronRight, UserCheck, Globe,
-    Crown, Trophy, Target, Brain, MicVocal, PersonStanding,
-    Building, DollarSign, FileText,
-    Gift, Users2
+    LayoutDashboard, Users, Bot, BugPlay, Briefcase, FolderKanban, Code2, 
+    CheckSquareIcon, Settings, BarChart3, CreditCard, Globe, Crown, Trophy, 
+    Target, Brain, MicVocal, PersonStanding, Building, Gift, Users2
 } from 'lucide-react';
 import AdminSidebar, { AdminRoute } from './_components/admin-sidebar';
 import AdminNavbar from './_components/admin-navbar';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { AdminAuthPrompt } from './_components/adminauthpopup';
 
 interface AdminLayoutProps {
     children: React.ReactNode

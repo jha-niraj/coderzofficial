@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 
 export default function AdminPageButton() {
     const [activeTab, setActiveTab] = useState("pending");

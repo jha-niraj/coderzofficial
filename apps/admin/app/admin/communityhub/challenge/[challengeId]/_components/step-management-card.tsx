@@ -2,9 +2,9 @@
 
 import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
 import {
 	FileText, MessageSquare, Code, Globe, Edit, Trash2, Users, CheckCircle, Clock
 } from "lucide-react";

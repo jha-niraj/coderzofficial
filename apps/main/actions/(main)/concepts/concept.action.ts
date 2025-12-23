@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
     ConceptCategory,
@@ -9,7 +9,7 @@ import {
     ConceptStatus,
     ConceptStepType,
     ConceptRequestStatus,
-} from "@prisma/client";
+} from "@repo/prisma/client";
 
 // ==========================================
 // TYPES

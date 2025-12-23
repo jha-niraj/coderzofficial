@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 import {
 	Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/components/ui/dialog";
+import { Input } from "@repo/ui/components/ui/input";
+import { Label } from "@repo/ui/components/ui/label";
+import { Textarea } from "@repo/ui/components/ui/textarea";
 import { Plus, Trophy, Calendar, Gift } from "lucide-react";
 import {
 	createChallengeFromProposal
-} from "@/actions/(main)/collective/admin.actions";
-import { toast } from "sonner";
+} from "@/actions/collective.action";
+import { toast } from "@repo/ui/components/ui/sonner";
 
 interface CreateChallengeDialogProps {
 	children?: React.ReactNode;

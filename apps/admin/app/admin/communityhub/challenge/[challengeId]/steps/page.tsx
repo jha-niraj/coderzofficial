@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import {
 	Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
 import { Plus, ArrowLeft, Settings } from "lucide-react";
-import { getChallengeById } from "@/actions/(main)/collective/admin.actions";
+import { getChallengeById } from "@/actions/collective.action";
 import { AddStepDialog } from "../_components/add-step-dialog";
 import { StepManagementCard } from "../_components/step-management-card";
 import Link from "next/link";

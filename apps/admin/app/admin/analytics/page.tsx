@@ -1,25 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
     BarChart3, TrendingUp, Users, Activity, DollarSign, Eye, Download, RefreshCw,
-    Calendar, Clock, Target, Award, Zap, Globe, Smartphone, Monitor
+    Target, Globe
 } from 'lucide-react';
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from '@repo/ui/components/ui/card';
+import { Badge } from '@repo/ui/components/ui/badge';
+import { Button } from '@repo/ui/components/ui/button';
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from '@/components/ui/tabs';
+} from '@repo/ui/components/ui/tabs';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select';
+} from '@repo/ui/components/ui/select';
 import {
     getPlatformStats, getUserEngagementStats
-} from '@/actions/(admin)/admin/admin.action';
+} from '@/actions/admin.action';
 
 const allowedRanges = ['7d', '30d', '90d', '1y'] as const;
 type TimeRange = typeof allowedRanges[number];

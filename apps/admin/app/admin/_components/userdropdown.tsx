@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { 
     DropdownMenu, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuContent 
-} from "@/components/ui/dropdown-menu";
+} from "@repo/ui/components/ui/dropdown-menu";
 import { 
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/components/ui/dialog";
+import { Button } from "@repo/ui/components/ui/button";
 import { Trash, Eye, Menu } from "lucide-react";
-import { deleteUserById } from "@/actions/(admin)/admin/admin.action";
+import { deleteUserById } from "@/actions/admin.action";
 
 interface MenteeDropdownProps {
     id: string

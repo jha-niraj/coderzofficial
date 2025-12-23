@@ -1,26 +1,25 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { motion } from 'framer-motion';
 import {
-    CreditCard, Users, DollarSign, TrendingUp, Mail,
-    Send, Eye, Download, RefreshCw, Plus, Filter,
-    Search, Coins, Gift, Award, Target, ChevronLeft, ChevronRight
+    CreditCard, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { getCreditTransactions, sendLowCreditEmail, distributeCredits, type CreditTransaction } from '@/actions/(admin)/admin/creditadmin.action';
+import { 
+    Card, CardContent, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card';
+import { Button } from '@repo/ui/components/ui/button';
+import { 
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from '@repo/ui/components/ui/table';
+import { 
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@repo/ui/components/ui/select';
+import { 
+    getCreditTransactions, sendLowCreditEmail, type CreditTransaction 
+} from '@/actions/creditadmin.action';
+import toast from '@repo/ui/components/ui/sonner';
 import EmptyState from '../_components/empty-state';
-import { toast } from 'sonner';
+import { Input } from '@repo/ui/components/ui/input';
 
 function CreditsAdminPage() {
     const [transactions, setTransactions] = useState<CreditTransaction[]>([]);

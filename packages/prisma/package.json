@@ -10,7 +10,8 @@
 		"db:generate": "dotenv -e ../../.env -- prisma generate --schema=./schema",
 		"db:push": "dotenv -e ../../.env -- prisma db push --schema=./schema",
 		"db:migrate": "dotenv -e ../../.env -- prisma migrate dev --schema=./schema",
-		"db:studio": "dotenv -e ../../.env -- prisma studio --schema=./schema"
+		"db:studio": "dotenv -e ../../.env -- prisma studio --schema=./schema",
+		"db:reset": "dotenv -e ../../.env -- prisma db push --force-reset --schema=./schema"
 	},
 	"exports": {
 		".": "./index.ts",

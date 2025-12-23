@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/ui/button';
 
 interface EmptyStateProps {
     icon: LucideIcon;

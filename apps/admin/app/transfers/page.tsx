@@ -1,18 +1,11 @@
 import { redirect } from 'next/navigation';
-import prisma from '@/lib/prisma';
+import prisma from '@repo/prisma';
 import { auth } from '@/auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/ui/card';
+import { Badge } from '@repo/ui/components/ui/badge';
+import { Button } from '@repo/ui/components/ui/button';
 import {
-	Send,
-	TrendingUp,
-	Users,
-	CheckCircle,
-	Calendar,
-	Clock,
-	ExternalLink,
-	Banknote
+	Send, TrendingUp, Users, Calendar, Clock, ExternalLink, Banknote
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';

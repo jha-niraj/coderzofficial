@@ -1,9 +1,10 @@
 "use client"
 
-import { cn } from "../../lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { LayoutDashboard, Users, FolderKanban, GitFork, Settings, LogOut, Paperclip, Monitor } from 'lucide-react'
+import { cn } from "@repo/ui/lib/utils"
+import { Button } from "@repo/ui/components/ui/button"
+import { 
+    LayoutDashboard, Users, FolderKanban, GitFork, LogOut, Paperclip, Monitor 
+} from 'lucide-react'
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
