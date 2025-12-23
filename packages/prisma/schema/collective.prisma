@@ -1,0 +1,227 @@
+enum ProposalStatus {
+    VOTING
+    EXPIRED
+    APPROVED
+    REJECTED
+    PUBLISHED
+}
+
+enum CollectiveChallengeStatus {
+    DRAFT
+    ACTIVE
+    COMPLETED
+    ARCHIVED
+}
+
+enum ChallengeStepType {
+    QUIZ
+    MOCK
+    CODING
+    PROJECT
+    REFLECTION
+}
+
+enum SubmissionStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    NEEDS_REVISION
+}
+
+// Collective Challenge Proposals (User-submitted)
+model CollectiveProposal {
+    id            String   @id @default(cuid())
+    title         String
+    description   String   @db.Text
+    playlistUrl   String? // YouTube playlist or course URL
+    estimatedDays Int      @default(30)
+    tags          String[] // e.g., ["React", "Frontend", "Beginner"]
+
+    // Proposal metadata
+    status        ProposalStatus @default(VOTING)
+    votingStartAt DateTime       @default(now())
+    votingEndAt   DateTime // 7 days from creation
+
+    // Vote counts
+    upvotes   Int @default(0)
+    downvotes Int @default(0)
+    netVotes  Int @default(0) // upvotes - downvotes
+
+    // Relations
+    proposerId String
+    proposer   User   @relation("ProposalCreator", fields: [proposerId], references: [id], onDelete: Cascade)
+
+    votes     ProposalVote[]
+    comments  ProposalComment[]
+    challenge CollectiveChallenge? // If approved and published
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([status])
+    @@index([netVotes])
+    @@index([votingEndAt])
+    @@index([proposerId])
+}
+
+// Voting on proposals
+model ProposalVote {
+    id    String @id @default(cuid())
+    value Int // 1 for upvote, -1 for downvote
+
+    // Relations
+    userId     String
+    proposalId String
+    user       User              @relation("ProposalVotes", fields: [userId], references: [id], onDelete: Cascade)
+    proposal   CollectiveProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([userId, proposalId])
+    @@index([proposalId])
+}
+
+// Comments on proposals
+model ProposalComment {
+    id      String @id @default(cuid())
+    content String @db.Text
+
+    // Relations
+    userId     String
+    proposalId String
+    user       User              @relation("ProposalComments", fields: [userId], references: [id], onDelete: Cascade)
+    proposal   CollectiveProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@index([proposalId])
+    @@index([userId])
+}
+
+// Admin-created challenges from approved proposals
+model CollectiveChallenge {
+    id          String  @id @default(cuid())
+    title       String
+    description String  @db.Text
+    playlistUrl String?
+
+    // Challenge settings
+    status     CollectiveChallengeStatus @default(DRAFT)
+    startDate  DateTime?
+    endDate    DateTime?
+    totalSteps Int                      @default(0)
+
+    // Rewards
+    xpReward     Int     @default(0)
+    creditReward Int     @default(0)
+    badgeId      String?
+
+    // Relations
+    proposalId String?            @unique
+    proposal   CollectiveProposal? @relation(fields: [proposalId], references: [id])
+
+    steps          ChallengeStep[]
+    participations ChallengeParticipation[]
+    leaderboard    ChallengeLeaderboard[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([status])
+    @@index([startDate])
+    @@index([endDate])
+}
+
+// Individual steps within a challenge
+model ChallengeStep {
+    id          String            @id @default(cuid())
+    stepNumber  Int
+    title       String
+    description String            @db.Text
+    type        ChallengeStepType
+
+    quizData    Json?
+    mockData    Json?
+    codingData  Json?
+    projectData Json?
+
+    challengeId String
+    challenge   CollectiveChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+    submissions StepSubmission[]
+
+    createdAt DateTime @default(now())
+
+    @@unique([challengeId, stepNumber])
+    @@index([challengeId])
+}
+
+// User participation in challenges
+model ChallengeParticipation {
+    id String @id @default(cuid())
+
+    currentStep    Int @default(1)
+    completedSteps Int @default(0)
+    totalXpEarned  Int @default(0)
+
+    userId      String
+    challengeId String
+    user        User               @relation("ChallengeParticipations", fields: [userId], references: [id], onDelete: Cascade)
+    challenge   CollectiveChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+    submissions StepSubmission[]
+
+    joinedAt    DateTime  @default(now())
+    completedAt DateTime?
+
+    @@unique([userId, challengeId])
+    @@index([challengeId])
+    @@index([userId])
+}
+
+model StepSubmission {
+    id String @id @default(cuid())
+
+    content     String? @db.Text
+    fileUrl     String?
+    projectUrl  String?
+    quizAnswers Json?
+
+    status    SubmissionStatus @default(PENDING)
+    score     Int?
+    feedback  String?          @db.Text
+    xpAwarded Int              @default(0)
+
+    participationId String
+    stepId          String
+    participation   ChallengeParticipation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+    step            ChallengeStep          @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+    evaluatedBy String?
+    evaluator   User?     @relation("StepEvaluations", fields: [evaluatedBy], references: [id])
+    evaluatedAt DateTime?
+
+    submittedAt DateTime @default(now())
+
+    @@unique([participationId, stepId])
+    @@index([stepId])
+    @@index([status])
+}
+
+model ChallengeLeaderboard {
+    id             String @id @default(cuid())
+    rank           Int
+    totalXp        Int
+    completionRate Float
+
+    userId      String
+    challengeId String
+    user        User               @relation("ChallengeLeaderboards", fields: [userId], references: [id], onDelete: Cascade)
+    challenge   CollectiveChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, challengeId])
+    @@index([challengeId, rank])
+    @@index([challengeId, totalXp])
+}

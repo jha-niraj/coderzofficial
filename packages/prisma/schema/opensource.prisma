@@ -1,0 +1,582 @@
+// ===============================================
+// OPEN SOURCE HUB - COMPLETE SYSTEM
+// ===============================================
+
+enum OSProjectType {
+    FREE // Community/learning projects
+    PAID // Bounty projects from companies
+    EXCLUSIVE // Premium/invite-only projects
+}
+
+enum OSProjectStatus {
+    DRAFT // Being set up
+    ACTIVE // Open for contributions
+    PAUSED // Temporarily closed
+    COMPLETED // All issues resolved
+    ARCHIVED // No longer active
+}
+
+enum OSIssueStatus {
+    OPEN // Available to claim
+    ASSIGNED // Someone is working on it
+    IN_REVIEW // PR submitted, under review
+    COMPLETED // Merged successfully
+    CLOSED // Closed without merge
+}
+
+enum OSIssueDifficulty {
+    GOOD_FIRST_ISSUE // For beginners
+    EASY // Simple tasks
+    MEDIUM // Moderate complexity
+    HARD // Complex tasks
+    EXPERT // Advanced/architecture level
+}
+
+enum OSContributionType {
+    ISSUE_CREATED // Created an issue
+    ISSUE_SOLVED // Solved an issue
+    PR_SUBMITTED // Submitted a PR
+    PR_MERGED // PR was merged
+    CODE_REVIEW // Reviewed someone's code
+    DOCUMENTATION // Added docs
+    BUG_FIX // Fixed a bug
+    FEATURE // Added new feature
+}
+
+enum OSContributionStatus {
+    PENDING // Awaiting review
+    IN_REVIEW // Being reviewed
+    APPROVED // Approved
+    REJECTED // Rejected
+    MERGED // Merged to main
+    CHANGES_REQUESTED // Needs modifications
+}
+
+enum OSLearnModuleType {
+    VIDEO // Video content
+    READING // Text content
+    INTERACTIVE // Hands-on lab
+    QUIZ // Knowledge check
+    PROJECT // Mini project
+}
+
+enum OSCertificationStatus {
+    NOT_STARTED // Haven't begun
+    IN_PROGRESS // Currently taking
+    PASSED // Successfully completed
+    FAILED // Failed (can retry)
+}
+
+// Main Open Source Project Model
+model OpenSourceProject {
+    id          String          @id @default(cuid())
+    slug        String          @unique
+    title       String
+    description String          @db.Text
+    longDescription String?     @db.Text
+    
+    // GitHub Integration
+    githubRepoUrl   String
+    githubOwner     String // e.g., "Shunya-Tech-Official"
+    githubRepo      String // e.g., "awesome-project"
+    
+    // Project Details
+    type            OSProjectType   @default(FREE)
+    status          OSProjectStatus @default(DRAFT)
+    technologies    String[]
+    tags            String[]
+    difficulty      OSIssueDifficulty @default(MEDIUM)
+    
+    // Bounty Info (for PAID projects)
+    totalBudget     Float       @default(0)
+    remainingBudget Float       @default(0)
+    currency        String      @default("USD")
+    
+    // Company Info (for PAID/EXCLUSIVE)
+    companyName     String?
+    companyLogo     String?
+    companyUrl      String?
+    
+    // Stats
+    totalIssues         Int @default(0)
+    openIssues          Int @default(0)
+    totalContributors   Int @default(0)
+    totalPRsMerged      Int @default(0)
+    totalCommits        Int @default(0)
+    stars               Int @default(0)
+    forks               Int @default(0)
+    
+    // Settings
+    requiresCertification Boolean @default(true) // Must pass OS certification
+    maxActiveIssues       Int     @default(2) // Max issues per contributor
+    prDeadlineHours       Int     @default(48) // Hours to submit PR
+    
+    // Cover/Banner
+    coverImage      String?
+    bannerImage     String?
+    
+    // Maintainer (admin/moderator)
+    maintainerId    String?
+    maintainer      User?   @relation("OSProjectMaintainer", fields: [maintainerId], references: [id])
+    
+    // Created by (admin or company)
+    createdById     String
+    createdBy       User    @relation("OSProjectCreator", fields: [createdById], references: [id])
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    issues          OSIssue[]
+    contributions   OSContribution[]
+    contributors    OSProjectContributor[]
+    leaderboard     OSProjectLeaderboard[]
+    
+    @@index([type])
+    @@index([status])
+    @@index([maintainerId])
+    @@index([createdById])
+    @@index([slug])
+}
+
+// Issues within a project
+model OSIssue {
+    id          String          @id @default(cuid())
+    projectId   String
+    project     OpenSourceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    // GitHub Integration
+    githubIssueNumber   Int?
+    githubIssueUrl      String?
+    
+    // Issue Details
+    title           String
+    description     String  @db.Text
+    requirements    String[] // What needs to be done
+    acceptanceCriteria String[] // How to know it's done
+    hints           String[] // Helpful tips
+    
+    // Classification
+    status          OSIssueStatus       @default(OPEN)
+    difficulty      OSIssueDifficulty   @default(EASY)
+    labels          String[]
+    
+    // Bounty (for PAID issues)
+    bountyAmount    Float   @default(0)
+    bountyPaid      Boolean @default(false)
+    
+    // Assignment
+    assignedToId    String?
+    assignedTo      User?   @relation("OSIssueAssignee", fields: [assignedToId], references: [id])
+    assignedAt      DateTime?
+    deadlineAt      DateTime?
+    
+    // Stats
+    totalAttempts   Int @default(0)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    contributions   OSContribution[]
+    
+    @@index([projectId])
+    @@index([status])
+    @@index([difficulty])
+    @@index([assignedToId])
+}
+
+// User contributions (PRs, reviews, etc.)
+model OSContribution {
+    id          String          @id @default(cuid())
+    
+    projectId   String
+    project     OpenSourceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    issueId     String?
+    issue       OSIssue?        @relation(fields: [issueId], references: [id])
+    
+    userId      String
+    user        User            @relation("OSContributions", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Contribution Details
+    type            OSContributionType
+    status          OSContributionStatus @default(PENDING)
+    
+    // GitHub Integration
+    githubPrNumber  Int?
+    githubPrUrl     String?
+    githubCommitSha String?
+    
+    // Content
+    title           String?
+    description     String? @db.Text
+    
+    // Review
+    reviewScore     Int?    // AI score 0-100
+    reviewFeedback  String? @db.Text
+    
+    // Reviewer (maintainer)
+    reviewedById    String?
+    reviewedBy      User?   @relation("OSContributionReviewer", fields: [reviewedById], references: [id])
+    reviewedAt      DateTime?
+    
+    // Rewards
+    xpEarned        Int     @default(0)
+    bountyEarned    Float   @default(0)
+    
+    // Quality metrics
+    linesAdded      Int     @default(0)
+    linesRemoved    Int     @default(0)
+    filesChanged    Int     @default(0)
+    testsPassing    Boolean @default(true)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([projectId])
+    @@index([issueId])
+    @@index([userId])
+    @@index([type])
+    @@index([status])
+}
+
+// Project contributors tracking
+model OSProjectContributor {
+    id          String          @id @default(cuid())
+    
+    projectId   String
+    project     OpenSourceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    userId      String
+    user        User            @relation("OSProjectContributors", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Stats
+    totalContributions  Int @default(0)
+    prsSubmitted        Int @default(0)
+    prsMerged           Int @default(0)
+    issuesSolved        Int @default(0)
+    reviewsGiven        Int @default(0)
+    totalXpEarned       Int @default(0)
+    totalBountyEarned   Float @default(0)
+    
+    // Ranking
+    rank            Int?
+    contributionScore Float @default(0)
+    
+    // Status
+    isActive        Boolean @default(true)
+    
+    joinedAt    DateTime @default(now())
+    lastActiveAt DateTime @default(now())
+    
+    @@unique([projectId, userId])
+    @@index([projectId])
+    @@index([userId])
+    @@index([rank])
+}
+
+// Project Leaderboard
+model OSProjectLeaderboard {
+    id          String          @id @default(cuid())
+    
+    projectId   String
+    project     OpenSourceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    userId      String
+    user        User            @relation("OSProjectLeaderboard", fields: [userId], references: [id], onDelete: Cascade)
+    
+    rank            Int
+    score           Float
+    prsMerged       Int
+    issuesSolved    Int
+    bountyEarned    Float @default(0)
+    
+    updatedAt   DateTime @updatedAt
+    
+    @@unique([projectId, userId])
+    @@index([projectId, rank])
+}
+
+// ===============================================
+// OPEN SOURCE LEARNING SYSTEM
+// ===============================================
+
+// Learning Module (e.g., "Git Basics", "GitHub Workflow")
+model OSLearnModule {
+    id          String          @id @default(cuid())
+    slug        String          @unique
+    title       String
+    description String          @db.Text
+    icon        String?
+    coverImage  String?
+    
+    // Module settings
+    orderIndex      Int         @default(0)
+    isRequired      Boolean     @default(true) // Required for certification
+    estimatedMinutes Int        @default(30)
+    
+    // Stats
+    totalEnrolled   Int @default(0)
+    totalCompleted  Int @default(0)
+    averageScore    Float @default(0)
+    
+    isActive    Boolean @default(true)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    lessons     OSLearnLesson[]
+    progress    OSLearnProgress[]
+    
+    @@index([orderIndex])
+    @@index([isRequired])
+}
+
+// Lessons within a module
+model OSLearnLesson {
+    id          String          @id @default(cuid())
+    moduleId    String
+    module      OSLearnModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+    
+    title       String
+    description String?
+    type        OSLearnModuleType @default(READING)
+    
+    // Content
+    content     String? @db.Text // Markdown content for READING
+    videoUrl    String? // For VIDEO type
+    
+    // Interactive content (for INTERACTIVE type)
+    interactiveData Json? // Commands to run, expected outputs, etc.
+    
+    // Quiz content (for QUIZ type)
+    quizQuestions   Json? // Array of quiz questions
+    passingScore    Int     @default(70) // Percentage to pass
+    
+    // Settings
+    orderIndex      Int     @default(0)
+    estimatedMinutes Int    @default(10)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    completions OSLessonCompletion[]
+    
+    @@index([moduleId])
+    @@index([orderIndex])
+}
+
+// User progress on modules
+model OSLearnProgress {
+    id          String          @id @default(cuid())
+    
+    userId      String
+    user        User            @relation("OSLearnProgress", fields: [userId], references: [id], onDelete: Cascade)
+    
+    moduleId    String
+    module      OSLearnModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+    
+    // Progress
+    lessonsCompleted    Int     @default(0)
+    totalLessons        Int     @default(0)
+    progressPercent     Float   @default(0)
+    
+    // Quiz performance
+    quizScore           Int?
+    quizAttempts        Int     @default(0)
+    
+    isCompleted Boolean @default(false)
+    completedAt DateTime?
+    
+    startedAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@unique([userId, moduleId])
+    @@index([userId])
+    @@index([moduleId])
+}
+
+// Individual lesson completions
+model OSLessonCompletion {
+    id          String          @id @default(cuid())
+    
+    userId      String
+    user        User            @relation("OSLessonCompletions", fields: [userId], references: [id], onDelete: Cascade)
+    
+    lessonId    String
+    lesson      OSLearnLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+    
+    // Completion details
+    score       Int?    // For quiz lessons
+    timeSpent   Int     @default(0) // Seconds
+    
+    // Interactive lesson results
+    commandsRun Json?   // Commands user ran and outputs
+    
+    isCompleted Boolean @default(false)
+    completedAt DateTime?
+    
+    createdAt   DateTime @default(now())
+    
+    @@unique([userId, lessonId])
+    @@index([userId])
+    @@index([lessonId])
+}
+
+// ===============================================
+// OPEN SOURCE CERTIFICATION
+// ===============================================
+
+// Certification Exam
+model OSCertificationExam {
+    id          String          @id @default(cuid())
+    
+    userId      String
+    user        User            @relation("OSCertificationExams", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Exam Details
+    status      OSCertificationStatus @default(NOT_STARTED)
+    
+    // Section scores
+    quizScore           Int?    // Quiz section score (0-100)
+    codeScore           Int?    // Code exercises score (0-100)
+    scenarioScore       Int?    // Scenario questions score (0-100)
+    
+    totalScore          Int?    // Overall score (0-100)
+    passingScore        Int     @default(75) // Required to pass
+    
+    // Exam content (randomized per user)
+    quizQuestions       Json?   // Randomized quiz questions
+    codeExercises       Json?   // Code exercises
+    scenarioQuestions   Json?   // Scenario-based questions
+    
+    // User answers
+    quizAnswers         Json?
+    codeAnswers         Json?
+    scenarioAnswers     Json?
+    
+    // Timing
+    startedAt       DateTime?
+    completedAt     DateTime?
+    timeLimit       Int     @default(60) // Minutes
+    
+    // Attempts
+    attemptNumber   Int     @default(1)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([userId])
+    @@index([status])
+}
+
+// Certification awarded to user
+model OSCertification {
+    id              String  @id @default(cuid())
+    certificateId   String  @unique // Unique certificate ID for verification
+    
+    userId      String
+    user        User    @relation("OSCertifications", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Certificate Details
+    title       String  @default("Open Source Contributor Certification")
+    score       Int     // Final exam score
+    
+    // Validity
+    issuedAt    DateTime @default(now())
+    expiresAt   DateTime // 2 years from issue
+    isActive    Boolean  @default(true)
+    
+    // Verification
+    verificationUrl String?
+    qrCode          String?
+    
+    @@index([userId])
+    @@index([certificateId])
+}
+
+// ===============================================
+// USER OPEN SOURCE STATS (for dashboard)
+// ===============================================
+
+model UserOSStats {
+    id          String  @id @default(cuid())
+    
+    userId      String  @unique
+    user        User    @relation("UserOSStats", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Learning stats
+    modulesCompleted    Int @default(0)
+    lessonsCompleted    Int @default(0)
+    totalLearningTime   Int @default(0) // Minutes
+    
+    // Certification
+    isCertified         Boolean @default(false)
+    certificationScore  Int?
+    certifiedAt         DateTime?
+    
+    // Contribution stats
+    totalProjects       Int @default(0)
+    totalContributions  Int @default(0)
+    prsSubmitted        Int @default(0)
+    prsMerged           Int @default(0)
+    issuesSolved        Int @default(0)
+    reviewsGiven        Int @default(0)
+    
+    // Quality metrics
+    avgPrScore          Float @default(0)
+    acceptanceRate      Float @default(0) // % of PRs merged
+    
+    // Earnings
+    totalBountyEarned   Float @default(0)
+    pendingBounty       Float @default(0)
+    
+    // XP & Ranking
+    osXp                Int @default(0)
+    globalRank          Int?
+    
+    // Streak
+    currentStreak       Int @default(0)
+    longestStreak       Int @default(0)
+    lastContributionAt  DateTime?
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([userId])
+    @@index([globalRank])
+}
+
+// Bounty/Earnings transactions
+model OSEarningsTransaction {
+    id          String  @id @default(cuid())
+    
+    userId      String
+    user        User    @relation("OSEarningsTransactions", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Transaction details
+    type        String  // BOUNTY_EARNED, WITHDRAWAL, CONVERTED_TO_CREDITS
+    amount      Float
+    currency    String  @default("USD")
+    
+    // Reference
+    projectId   String?
+    issueId     String?
+    contributionId String?
+    
+    // Status
+    status      String  @default("COMPLETED") // PENDING, COMPLETED, FAILED
+    
+    // Payout details
+    payoutMethod    String? // BANK, PAYPAL, CREDITS
+    payoutDetails   Json?
+    
+    createdAt   DateTime @default(now())
+    
+    @@index([userId])
+    @@index([type])
+    @@index([status])
+}

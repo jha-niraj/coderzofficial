@@ -1,0 +1,86 @@
+// Badge System Models
+model Badge {
+    id           String        @id @default(cuid())
+    name         String        @unique
+    description  String
+    icon         String // Icon identifier or URL
+    color        String // Hex color code
+    type         BadgeType
+    category     BadgeCategory
+    requirements Json? // Criteria to earn this badge
+    rarity       String        @default("common") // common, rare, epic, legendary
+    isActive     Boolean       @default(true)
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+
+    // Relations
+    userBadges UserBadge[]
+
+    @@index([category])
+    @@index([type])
+}
+
+model UserBadge {
+    id       String   @id @default(cuid())
+    earnedAt DateTime @default(now())
+    progress Json? // Progress toward badge if applicable
+
+    // Relations
+    userId  String
+    user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    badgeId String
+    badge   Badge  @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, badgeId])
+    @@index([userId])
+    @@index([badgeId])
+}
+
+// XP Level System Models
+model Level {
+    id            Int      @id @default(autoincrement())
+    level         Int      @unique
+    title         String // e.g., "Coding Apprentice", "Bug Hunter", "Code Master"
+    xpRequired    Int // XP required to reach this level
+    xpReward      Int // XP bonus when reaching this level
+    creditsReward Int      @default(0) // Credits bonus when reaching this level
+    description   String?
+    icon          String? // Icon identifier for the level
+    color         String? // Color theme for the level
+    isActive      Boolean  @default(true)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    // Relations
+    userProgress UserLevelProgress[]
+
+    @@index([level])
+}
+
+model UserLevelProgress {
+    id            String   @id @default(cuid())
+    userId        String
+    level         Int
+    achievedAt    DateTime @default(now())
+    xpEarned      Int // XP earned at this level
+    creditsEarned Int      @default(0) // Credits earned at this level
+
+    // Relations
+    user      User  @relation("UserLevelProgress", fields: [userId], references: [id], onDelete: Cascade)
+    levelInfo Level @relation(fields: [level], references: [level], onDelete: Cascade)
+
+    @@unique([userId, level])
+    @@index([userId])
+    @@index([level])
+}
+
+model XpTransaction {
+    id          String             @id @default(uuid())
+    userId      String
+    amount      Int
+    description String
+    type        XpTransactionProps @default(REWARD)
+    createdAt   DateTime           @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+}

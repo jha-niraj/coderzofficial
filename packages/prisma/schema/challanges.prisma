@@ -1,0 +1,519 @@
+// ===============================================
+// THE CODERZ CHALLENGES SYSTEM
+// ===============================================
+
+enum ChallengeTrackLevel {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+}
+
+enum ChallengeTrackStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+}
+
+enum CrucibleEventStatus {
+    UPCOMING
+    ACTIVE
+    ENDED
+    ARCHIVED
+}
+
+enum StepSubmissionStatus {
+    PENDING
+    CORRECT
+    INCORRECT
+}
+
+// ===============================================
+// THE FORGE - TECHNOLOGY MASTERY TRACKS
+// ===============================================
+
+// A track like "JavaScript Quest", "React Forge", etc.
+model ForgeTrack {
+    id String @id @default(cuid())
+
+    name             String // "Script Sentinel Quest"
+    slug             String  @unique
+    description      String  @db.Text
+    shortDescription String? // For cards
+
+    // Visual
+    icon       String? // Emoji or icon name
+    coverImage String?
+    themeColor String  @default("#3B82F6")
+
+    // Track Info
+    technology     String // "JavaScript", "React", etc.
+    level          ChallengeTrackLevel @default(BEGINNER)
+    estimatedHours Int                 @default(10)
+
+    // Pricing
+    creditsRequired Int     @default(10)
+    isFree          Boolean @default(false)
+
+    // Status
+    status ChallengeTrackStatus @default(DRAFT)
+
+    // Narrative
+    narrativeTitle   String? // "The Interface Architect"
+    narrativePremise String? @db.Text
+
+    // Stats
+    totalXp         Int   @default(0)
+    enrollmentCount Int   @default(0)
+    completionCount Int   @default(0)
+    averageRating   Float @default(0)
+
+    // Ordering
+    sortOrder Int @default(0)
+
+    // Timestamps
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    publishedAt DateTime?
+
+    // Relations
+    steps       ForgeStep[]       @relation("TrackSteps")
+    enrollments ForgeEnrollment[] @relation("TrackEnrollments")
+    completions ForgeCompletion[] @relation("TrackCompletions")
+
+    @@index([slug])
+    @@index([status])
+    @@index([technology])
+}
+
+// Individual step in a Forge track
+model ForgeStep {
+    id String @id @default(cuid())
+
+    // Parent track
+    trackId String
+    track   ForgeTrack @relation("TrackSteps", fields: [trackId], references: [id], onDelete: Cascade)
+
+    // Basic info
+    stepNumber Int
+    title      String
+    slug       String
+
+    // Content
+    storyContent   String @db.Text // Narrative story
+    missionContent String @db.Text // Technical requirements
+
+    // Deliverable info
+    deliverableType String  @default("URL") // URL, TEXT, CODE
+    expectedAnswer  String? // For text/code answers
+    validationRules Json? // Rules for URL validation
+
+    // Rewards
+    xpReward Int @default(50)
+
+    // Hints
+    hints Json? // Array of { text, xpCost }
+
+    // Time bonuses
+    timeBonusHours Int? // Complete within X hours for bonus
+    timeBonusXp    Int? // Bonus XP amount
+
+    // Ordering
+    isPublished Boolean @default(false)
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    learningModules ForgeLearningModule[] @relation("StepLearningModules")
+    submissions     ForgeStepSubmission[] @relation("StepSubmissions")
+
+    @@unique([trackId, stepNumber])
+    @@unique([trackId, slug])
+    @@index([trackId])
+}
+
+// Learning modules attached to steps
+model ForgeLearningModule {
+    id String @id @default(cuid())
+
+    // Parent step
+    stepId String
+    step   ForgeStep @relation("StepLearningModules", fields: [stepId], references: [id], onDelete: Cascade)
+
+    // Module info
+    conceptName String // "Callbacks", "Flexbox", etc.
+    sortOrder   Int    @default(0)
+
+    // Content
+    quickExplanation String @db.Text // Quick concept card
+    codeExamples     Json? // { language: code }
+
+    // Video
+    videoUrl      String?
+    videoDuration Int? // seconds
+
+    // Interactive
+    interactiveCode     String? @db.Text // Starter code for playground
+    interactiveSolution String? @db.Text // Solution code
+    interactiveHint     String? @db.Text
+
+    // Quiz
+    quizQuestion String?
+    quizOptions  Json? // Array of options
+    quizAnswer   Int? // Index of correct answer
+
+    // Deep dive links
+    externalLinks Json? // Array of { title, url, type }
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([stepId])
+}
+
+// User enrollment in a Forge track
+model ForgeEnrollment {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation("ForgeEnrollments", fields: [userId], references: [id], onDelete: Cascade)
+
+    trackId String
+    track   ForgeTrack @relation("TrackEnrollments", fields: [trackId], references: [id], onDelete: Cascade)
+
+    // Progress
+    currentStepNumber Int @default(1)
+    completedSteps    Int @default(0)
+    totalXpEarned     Int @default(0)
+
+    // Status
+    isCompleted Boolean   @default(false)
+    completedAt DateTime?
+
+    // Timestamps
+    enrolledAt     DateTime @default(now())
+    lastActivityAt DateTime @default(now())
+
+    @@unique([userId, trackId])
+    @@index([userId])
+    @@index([trackId])
+}
+
+// User's step submissions
+model ForgeStepSubmission {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation("ForgeStepSubmissions", fields: [userId], references: [id], onDelete: Cascade)
+
+    stepId String
+    step   ForgeStep @relation("StepSubmissions", fields: [stepId], references: [id], onDelete: Cascade)
+
+    // Submission data
+    submission String               @db.Text // URL or text answer
+    status     StepSubmissionStatus @default(PENDING)
+
+    // Feedback
+    feedback          String? @db.Text // Validation feedback
+    validationDetails Json? // Detailed validation results
+
+    // Hints used
+    hintsUsed       Int @default(0)
+    hintsXpDeducted Int @default(0)
+
+    // XP earned
+    xpEarned        Int @default(0)
+    timeBonusEarned Int @default(0)
+
+    // Attempt tracking
+    attemptNumber Int @default(1)
+
+    // Timestamps
+    submittedAt DateTime  @default(now())
+    validatedAt DateTime?
+
+    @@index([userId])
+    @@index([stepId])
+    @@index([status])
+}
+
+// Track completion record
+model ForgeCompletion {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation("ForgeCompletions", fields: [userId], references: [id], onDelete: Cascade)
+
+    trackId String
+    track   ForgeTrack @relation("TrackCompletions", fields: [trackId], references: [id], onDelete: Cascade)
+
+    // Stats
+    totalXpEarned    Int
+    totalTimeMinutes Int?
+    hintsUsed        Int  @default(0)
+    perfectSteps     Int  @default(0) // Steps with no hints
+
+    // Certificate
+    certificateId String?
+
+    // Rating
+    rating Int?
+    review String? @db.Text
+
+    // Timestamps
+    completedAt DateTime @default(now())
+
+    @@unique([userId, trackId])
+    @@index([userId])
+    @@index([trackId])
+}
+
+// ===============================================
+// THE CRUCIBLE - LOGIC & PROBLEM SOLVING
+// ===============================================
+
+// Events like "Winter Code Fest", "Daily Spark"
+model CrucibleEvent {
+    id String @id @default(cuid())
+
+    name             String // "Winter Code Fest 2024"
+    slug             String  @unique
+    description      String  @db.Text
+    shortDescription String?
+
+    // Visual
+    icon       String?
+    coverImage String?
+    themeColor String  @default("#EF4444")
+
+    // Event type
+    eventType String // "seasonal", "daily", "evergreen"
+
+    // Timing
+    startsAt DateTime?
+    endsAt   DateTime?
+    status   CrucibleEventStatus @default(UPCOMING)
+
+    // Settings
+    isFree          Boolean @default(true)
+    creditsRequired Int     @default(0)
+
+    // Stats
+    totalParticipants Int @default(0)
+    totalProblems     Int @default(0)
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    problems       CrucibleProblem[]       @relation("EventProblems")
+    participations CrucibleParticipation[] @relation("EventParticipations")
+    leaderboard    CrucibleLeaderboard[]   @relation("EventLeaderboard")
+
+    @@index([slug])
+    @@index([status])
+    @@index([eventType])
+}
+
+// Individual problem/day in Crucible
+model CrucibleProblem {
+    id String @id @default(cuid())
+
+    // Parent event
+    eventId String
+    event   CrucibleEvent @relation("EventProblems", fields: [eventId], references: [id], onDelete: Cascade)
+
+    // Basic info
+    dayNumber Int // Day 1, Day 2, etc.
+    title     String
+    slug      String
+
+    // Content
+    storyContent   String @db.Text // The narrative
+    problemContent String @db.Text // The actual problem
+
+    // Input generation
+    inputTemplate String? @db.Text // Template for generating unique inputs
+    sampleInput   String? @db.Text
+    sampleOutput  String?
+
+    // Answer format
+    answerType String @default("TEXT") // TEXT, NUMBER
+
+    // Difficulty
+    difficulty Int @default(1) // 1-5
+
+    // Rewards
+    xpReward Int @default(50)
+
+    // Hints
+    hints Json? // Array of hints
+
+    // Concepts (for learning modules)
+    concepts String[] // ["modulo", "arrays", etc.]
+
+    // Timing
+    unlocksAt DateTime?
+    isLocked  Boolean   @default(true)
+
+    // Stats
+    solveCount       Int  @default(0)
+    attemptCount     Int  @default(0)
+    averageSolveTime Int? // seconds
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    learningModules CrucibleLearningModule[] @relation("ProblemLearningModules")
+    userInputs      CrucibleUserInput[]      @relation("ProblemUserInputs")
+    submissions     CrucibleSubmission[]     @relation("ProblemSubmissions")
+
+    @@unique([eventId, dayNumber])
+    @@unique([eventId, slug])
+    @@index([eventId])
+}
+
+// Learning modules for Crucible problems
+model CrucibleLearningModule {
+    id String @id @default(cuid())
+
+    problemId String
+    problem   CrucibleProblem @relation("ProblemLearningModules", fields: [problemId], references: [id], onDelete: Cascade)
+
+    conceptName String
+    sortOrder   Int    @default(0)
+
+    // Content
+    explanation  String @db.Text
+    codeExamples Json? // { python: code, javascript: code }
+
+    // Video
+    videoUrl      String?
+    videoDuration Int?
+
+    // Interactive
+    interactiveCode     String? @db.Text
+    interactiveSolution String? @db.Text
+
+    // Quiz
+    quizQuestion String?
+    quizOptions  Json?
+    quizAnswer   Int?
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([problemId])
+}
+
+// Unique input generated for each user
+model CrucibleUserInput {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation("CrucibleUserInputs", fields: [userId], references: [id], onDelete: Cascade)
+
+    problemId String
+    problem   CrucibleProblem @relation("ProblemUserInputs", fields: [problemId], references: [id], onDelete: Cascade)
+
+    // The generated input
+    inputData      String @db.Text
+    expectedAnswer String // The correct answer for this input
+
+    // Timestamps
+    generatedAt DateTime @default(now())
+
+    @@unique([userId, problemId])
+    @@index([userId])
+    @@index([problemId])
+}
+
+// User participation in an event
+model CrucibleParticipation {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation("CrucibleParticipations", fields: [userId], references: [id], onDelete: Cascade)
+
+    eventId String
+    event   CrucibleEvent @relation("EventParticipations", fields: [eventId], references: [id], onDelete: Cascade)
+
+    // Progress
+    problemsSolved Int @default(0)
+    totalXpEarned  Int @default(0)
+    currentStreak  Int @default(0)
+    longestStreak  Int @default(0)
+
+    // Timestamps
+    joinedAt       DateTime @default(now())
+    lastActivityAt DateTime @default(now())
+
+    @@unique([userId, eventId])
+    @@index([userId])
+    @@index([eventId])
+}
+
+// User submissions for Crucible problems
+model CrucibleSubmission {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation("CrucibleSubmissions", fields: [userId], references: [id], onDelete: Cascade)
+
+    problemId String
+    problem   CrucibleProblem @relation("ProblemSubmissions", fields: [problemId], references: [id], onDelete: Cascade)
+
+    // Submission
+    answer    String
+    isCorrect Boolean @default(false)
+
+    // Attempt tracking
+    attemptNumber Int @default(1)
+
+    // Hints
+    hintsUsed Int @default(0)
+
+    // XP
+    xpEarned Int @default(0)
+
+    // Timing
+    solveTimeSeconds Int? // Time from first viewing to correct answer
+
+    // Timestamps
+    submittedAt DateTime @default(now())
+
+    @@index([userId])
+    @@index([problemId])
+    @@index([isCorrect])
+}
+
+// Event leaderboard
+model CrucibleLeaderboard {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation("CrucibleLeaderboard", fields: [userId], references: [id], onDelete: Cascade)
+
+    eventId String
+    event   CrucibleEvent @relation("EventLeaderboard", fields: [eventId], references: [id], onDelete: Cascade)
+
+    // Stats
+    rank           Int?
+    problemsSolved Int  @default(0)
+    totalXp        Int  @default(0)
+    totalSolveTime Int  @default(0) // Total seconds
+    hintsUsed      Int  @default(0)
+
+    // Timestamps
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, eventId])
+    @@index([eventId, rank])
+    @@index([eventId, problemsSolved])
+}

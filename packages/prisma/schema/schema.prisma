@@ -8,3 +8,1035 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+enum Role {
+    Student
+    Admin
+}
+
+enum ContributionStatus {
+    InProgress
+    Completed
+    Abandoned
+}
+
+enum ContributionType {
+    PR
+    ISSUE
+    COMMIT
+    REVIEW
+    COMMENT
+}
+
+enum OpenSourceDifficulty {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+}
+
+enum IssueDifficulty {
+    EASY
+    MEDIUM
+    HARD
+}
+
+enum SyncStatus {
+    PENDING
+    SYNCING
+    SUCCESS
+    FAILED
+}
+
+// Mock Interview Categories
+enum MockCategory {
+    TECHNICAL
+    BEHAVIORAL
+    HR
+    SYSTEM_DESIGN
+    LEADERSHIP
+    NEGOTIATION
+    CASE_STUDY
+    CODING
+    GENERAL
+}
+
+// Mock Interview Levels
+enum MockLevel {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+    EXPERT
+}
+
+enum ProjectTier {
+    Free
+    Paid
+}
+
+enum ProjectStatus {
+    NotStarted
+    InProgress
+    Completed
+}
+
+enum SkillCategory {
+    FRONTEND
+    LANGUAGES
+    BACKEND
+    API
+    DATABASE
+    DEVOPS
+    CLOUD
+}
+
+enum FeedbackCategory {
+    BUG
+    FEATURE
+    UI
+    OTHER
+}
+
+enum FeedbackStatus {
+    UNDER_REVIEW
+    PLANNED
+    COMPLETED
+}
+
+enum CreditType {
+    PURCHASE
+    SPEND
+    BONUS
+    REWARD
+}
+
+enum CreditRequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum ResourceType {
+    YOUTUBE_VIDEO
+    VIDEO
+    DOCUMENTATION
+    BLOG_ARTICLE
+    COURSE
+    DISCORD_COMMUNITY
+    TOOL_RECOMMENDATION
+    DESIGN_MOCKUP
+    DESIGN_INSPIRATION
+    GITHUB_REPO
+    OTHER
+}
+
+enum PaymentStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    REFUNDED
+    CANCELLED
+}
+
+enum ActivityType {
+    REFERRAL_BONUS
+    SIGNUP
+    FEEDBACK_SUBMITTED
+    REWARD_RECEIVED
+    STARTED_INTERVIEW
+    CREDIT_SHARED
+    CREDIT_RECEIVED
+    CREATED_PEER_TO_PEER_MOCK_INTERVIEW
+    DAILY_QUIZ_COMPLETED
+    BEHIND_MAGIC_PROJECT_STARTED
+    BEHIND_MAGIC_PROJECT_SUBMITTED
+    BEHIND_MAGIC_QUIZ_COMPLETED
+    BEHIND_MAGIC_AI_INTERVIEW
+    LESSON_COMPLETED
+    ASSESSMENT_COMPLETED
+    STUDY_PLAN_PROGRESS
+    AI_TOOL_USED
+    CERTIFICATION_EARNED
+    PROFILE_UPDATED
+}
+
+enum PitchSessionStatus {
+    NOT_STARTED
+    INITIATED
+    IN_PROGRESS
+    COMPLETED
+    FAILED
+}
+
+enum Currency {
+    INR
+    USD
+    NA
+}
+
+enum PlanLevel {
+    Beginner
+    Intermediate
+    Advanced
+}
+
+enum PlanPreference {
+    Generate
+    Follow
+}
+
+enum TaskType {
+    Reading
+    Video
+    Coding
+    Quiz
+}
+
+enum ContestStatus {
+    ACTIVE
+    SUBMITTED
+    VOTING
+    CLOSED
+}
+
+enum PeerToPeerSessionStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+    COMPLETED
+}
+
+enum QuizCategory {
+    DATA_STRUCTURES
+    SYSTEM_DESIGN
+    FULL_STACK
+    DATABASE
+    OPERATING_SYSTEMS
+    NETWORKING
+    ALGORITHMS
+    MACHINE_LEARNING
+    WEB_DEVELOPMENT
+    MOBILE_DEVELOPMENT
+    CLOUD_COMPUTING
+    DEVOPS
+    SECURITY
+    BLOCKCHAIN
+    GAME_DEVELOPMENT
+    SOFTWARE_ENGINEERING
+    FRONTEND_DEVELOPMENT
+    BACKEND_DEVELOPMENT
+    UI_UX_DESIGN
+    DATA_ANALYSIS
+}
+
+enum QuestionType {
+    SINGLE
+    MULTIPLE
+}
+
+enum QuizStatus {
+    PENDING
+    COMPLETED
+}
+
+enum QuestionStatus {
+    PENDING
+    ANSWERED
+    TRENDING
+}
+
+enum MockType {
+    PEER_TO_PEER
+    TEAM_LED
+    EXPERT_LED
+}
+
+enum ProgressStatus {
+    LOCKED
+    UNLOCKED
+    COMPLETED
+}
+
+enum XpTransactionProps {
+    REWARD
+    BONUS
+    SPEND
+    REFERRAL
+}
+
+enum GoalType {
+    PRESET
+    CUSTOM
+}
+
+// BugHunt Academy Enums
+enum BugHuntTrack {
+    DSA
+    DEVELOPMENT
+}
+
+enum BugHuntDifficulty {
+    ROOKIE
+    INVESTIGATOR
+    HUNTER
+    MASTER
+}
+
+enum ChallengeVisibility {
+    PUBLIC
+    PRIVATE
+}
+
+enum ChallengeStatus {
+    ACTIVE
+    COMPLETED
+    ABANDONED
+}
+
+enum BadgeType {
+    ACHIEVEMENT
+    MILESTONE
+    SPECIAL
+    SEASONAL
+}
+
+enum BadgeCategory {
+    BUG_HUNTER
+    CODE_DETECTIVE
+    SYNTAX_SAGE
+    LOGIC_LORD
+    PERFORMANCE_PRO
+    TEACHING_TITAN
+    TOURNAMENT_WINNER
+    STREAK_MASTER
+    COMMUNITY_CHAMPION
+    PLATFORM_PIONEER
+}
+
+// ===============================================
+// CONCEPTS HUB ENUMS
+// ===============================================
+enum ConceptCategory {
+    WEB_DEVELOPMENT
+    MOBILE_DEVELOPMENT
+    DATA_STRUCTURES
+    ALGORITHMS
+    SYSTEM_DESIGN
+    DATABASE
+    DEVOPS
+    CLOUD_COMPUTING
+    MACHINE_LEARNING
+    ARTIFICIAL_INTELLIGENCE
+    CYBERSECURITY
+    BLOCKCHAIN
+    PROGRAMMING_FUNDAMENTALS
+    SOFTWARE_ARCHITECTURE
+    API_DESIGN
+    TESTING
+    VERSION_CONTROL
+    UI_UX_DESIGN
+    GAME_DEVELOPMENT
+    NETWORKING
+    OPERATING_SYSTEMS
+    CUSTOM
+}
+
+enum ConceptDifficulty {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+    EXPERT
+}
+
+enum ConceptStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+}
+
+enum ConceptStepType {
+    EXPLANATION
+    CODE
+    VISUALIZATION
+    COMPARISON
+    QUIZ
+    CHALLENGE
+    INTERACTIVE
+    SUMMARY
+}
+
+enum ConceptRequestStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    REJECTED
+}
+
+model User {
+    id                  String           @id @default(uuid())
+    username            String?          @unique
+    name                String?
+    email               String           @unique
+    emailVerified       Boolean?         @default(false)
+    hashedPassword      String?
+    image               String?          @default("https://tse4.mm.bing.net/th?id=OIP.-BS8Y2nH1k93GJiitUVBCAHaHa&pid=Api&P=0")
+    role                Role             @default(Student)
+    hasResume           Boolean          @default(false)
+    resume              String?
+    resumeText          String?
+    creditsShared       Int?             @default(0)
+    totalCreditsShared  Int?             @default(0)
+    maxCreditsShared    Int?             @default(500)
+    gender              String?
+    phone               String?
+    yearofbirth         String?
+    bio                 String?
+    university          String?
+    semester            String?
+    onboardingCompleted Boolean?         @default(false)
+    company             String?
+    occupation          String?
+    location            String?
+    website             String?
+    socials             Json?
+    githubUsername      String?
+    interests           String[]
+    learningPreferences String[]
+    careerGoals         String[]
+    targetCompanies     String[]
+    expectedSalary      String?
+    noticePeriod        String?
+    workExperience      String?
+    skills              Skills[]
+    certifications      Certifications[]
+
+    verifyToken       String?
+    verifyTokenExpiry DateTime?
+    verifyOTP         String?
+    verifyOTPExpiry   DateTime?
+    resetToken        String?
+    restTokenExpiry   DateTime?
+    resetOTP          String?
+    resetOTPExpiry    DateTime?
+    createdAt         DateTime  @default(now())
+
+    currentXp     Int     @default(250)
+    totalXp       Int     @default(250)
+    currentLevel  Int     @default(1)
+    credits       Int     @default(100)
+    referralCode  String? @unique @default(cuid())
+    referralCount Int     @default(0)
+
+    // Recent Activity, Achievements:
+    recentActivity RecentActivity[]
+    achievements   Achievements[]
+
+    // Relations
+    projects      Projects[]
+    proofofwork   ProofOfWork[]
+    accounts      Account[]
+    referredUsers Referral[]    @relation("Referrer")
+    referrer      Referral?     @relation("ReferredUser")
+
+    // Credit Transactions
+    creditTransactions CreditTransaction[]
+    creditRequests     CreditRequest[]
+    creditTransfersOut CreditTransferOut[]
+    payments           Payment[]
+    sentTransfers      CreditTransfer[]    @relation("Sender")
+    receivedTransfers  CreditTransfer[]    @relation("Receiver")
+
+    userProjectProgress UserProjectProgress[]
+    Feedback            Feedback[]
+
+    xpTransactions XpTransaction[]
+
+    JobInterviewAssistant JobInterviewAssistant[]
+
+    dailyActivities  DailyActivity[]
+    activityEntries  ActivityEntry[]   @relation("UserActivityEntries")
+    userStats        UserStats?
+    weeklyGoals      WeeklyGoal[]
+    streakRewards    StreakReward[]
+    userAchievements UserAchievement[]
+    userBadges       UserBadge[]
+
+    // Level System Relations
+    levelProgressHistory UserLevelProgress[] @relation("UserLevelProgress")
+
+    // Collective Module Relations
+    proposalsCreated        CollectiveProposal[]     @relation("ProposalCreator")
+    proposalVotes           ProposalVote[]           @relation("ProposalVotes")
+    proposalComments        ProposalComment[]        @relation("ProposalComments")
+    challengeParticipations ChallengeParticipation[] @relation("ChallengeParticipations")
+    challengeLeaderboards   ChallengeLeaderboard[]   @relation("ChallengeLeaderboards")
+    stepEvaluations         StepSubmission[]         @relation("StepEvaluations")
+
+    // Profile Enhancement Relations
+    experiences       WorkExperience[]   @relation("UserExperiences")
+    portfolioProjects PortfolioProject[] @relation("UserPortfolioProjects")
+    socialLinks       SocialLink[]       @relation("UserSocialLinks")
+
+    // User model - ProjectV2 section
+    ProjectV2                  ProjectV2[] // Created projects
+    UserProjectV2Progress      UserProjectV2Progress[] // Enrolled projects (THE HUB)
+    ProjectV2GlobalLeaderboard ProjectV2GlobalLeaderboard? @relation("ProjectV2GlobalLeaderboard")
+    submittedProjectErrors ProjectV2Error[] @relation("SubmittedProjectErrors")
+
+    // Mock Interview Voice Relations
+    createdVoiceMocks MockInterviewVoice[] @relation("MockVoiceCreator")
+    voiceSessions     MockVoiceSession[]   @relation("MockVoiceSessions")
+    voiceRatings      MockVoiceRating[]    @relation("MockVoiceRatings")
+
+    // Product Ideas Relations
+    productIdeas   ProductIdea[]   @relation("ProductIdeas")
+    backgroundJobs BackgroundJob[] @relation("BackgroundJobs")
+
+    // Project Ideas Relations
+    submittedProjectIdeas ProjectIdea[] @relation("SubmittedProjectIdeas")
+
+    // ===============================================
+    // COMMUNITY PLATFORM RELATIONS
+    // ===============================================
+    createdCommunities            Community[]                    @relation("CommunityCreator")
+    communityMemberships          CommunityMember[]              @relation("CommunityMemberships")
+    communityPosts                CommunityPost[]                @relation("CommunityPostAuthor")
+    communityPostLikes            CommunityPostLike[]            @relation("CommunityPostLikes")
+    communityComments             CommunityComment[]             @relation("CommunityCommentAuthor")
+    communityCommentLikes         CommunityCommentLike[]         @relation("CommunityCommentLikes")
+    communityResources            CommunityResource[]            @relation("CommunityResourceUploader")
+    communityEventsCreated        CommunityEvent[]               @relation("CommunityEventCreator")
+    communityEventAttendances     CommunityEventAttendee[]       @relation("CommunityEventAttendees")
+    communityChallengesCreated    CommunityChallengeNew[]        @relation("CommunityChallengeCreator")
+    communityChallengeSubmissions CommunityChallengeSubmission[] @relation("CommunityChallengeSubmissions")
+    communityInvitesSent          CommunityInvite[]              @relation("CommunityInviter")
+
+    // Follow System
+    following UserFollow[] @relation("UserFollowing")
+    followers UserFollow[] @relation("UserFollowers")
+
+    // ===============================================
+    // THE CODERZ CHALLENGES RELATIONS
+    // ===============================================
+    // Forge (Technology Mastery)
+    forgeEnrollments     ForgeEnrollment[]     @relation("ForgeEnrollments")
+    forgeStepSubmissions ForgeStepSubmission[] @relation("ForgeStepSubmissions")
+    forgeCompletions     ForgeCompletion[]     @relation("ForgeCompletions")
+
+    // Crucible (Logic & Problem Solving)
+    crucibleParticipations CrucibleParticipation[] @relation("CrucibleParticipations")
+    crucibleUserInputs     CrucibleUserInput[]     @relation("CrucibleUserInputs")
+    crucibleSubmissions    CrucibleSubmission[]    @relation("CrucibleSubmissions")
+    crucibleLeaderboard    CrucibleLeaderboard[]   @relation("CrucibleLeaderboard")
+
+    // ===============================================
+    // STUDIO RELATIONS
+    // ===============================================
+    studios                 Studio[]                 @relation("UserStudios")
+    studioQuizAttempts      StudioQuizAttempt[]      @relation("UserStudioQuizAttempts")
+    studioFlashcardSessions StudioFlashcardSession[] @relation("UserFlashcardSessions")
+
+    // ===============================================
+    // CHAT SYSTEM RELATIONS
+    // ===============================================
+    // Follow System
+    followersRelation Follow[] @relation("Follower")
+    followingRelation Follow[] @relation("Following")
+
+    // Follow Requests
+    sentFollowRequests     FollowRequest[] @relation("FollowRequestSender")
+    receivedFollowRequests FollowRequest[] @relation("FollowRequestReceiver")
+
+    // Conversations
+    conversationsAsParticipant1 Conversation[] @relation("ConversationParticipant1")
+    conversationsAsParticipant2 Conversation[] @relation("ConversationParticipant2")
+
+    // Messages
+    sentMessages ChatMessage[] @relation("ChatMessageSender")
+
+    // Chat Settings
+    chatSettings ChatSettings? @relation("UserChatSettings")
+
+    // Profile System
+    userProfile UserProfile? @relation("UserProfile")
+
+    // ===============================================
+    // CONCEPTS HUB RELATIONS
+    // ===============================================
+    createdConcepts  Concept[]         @relation("ConceptCreator")
+    conceptLikes     ConceptLike[]     @relation("ConceptLikes")
+    conceptBookmarks ConceptBookmark[] @relation("ConceptBookmarks")
+    conceptComments  ConceptComment[]  @relation("ConceptCommentAuthor")
+    conceptViews     ConceptView[]     @relation("ConceptViews")
+    conceptProgress  ConceptProgress[] @relation("ConceptProgress")
+    conceptRequests  ConceptRequest[]  @relation("ConceptRequests")
+
+    // ===============================================
+    // UNIFIED BOOKMARKS SYSTEM RELATIONS
+    // ===============================================
+    projectBookmarks       ProjectBookmark[]       @relation("ProjectBookmarks")
+    projectV2Bookmarks     ProjectV2Bookmark[]     @relation("ProjectV2Bookmarks")
+    communityPostBookmarks CommunityPostBookmark[] @relation("CommunityPostBookmarks")
+    mockInterviewBookmarks MockInterviewBookmark[] @relation("MockInterviewBookmarks")
+
+    // ===============================================
+    // OPEN SOURCE HUB RELATIONS
+    // ===============================================
+    // Projects
+    osProjectsMaintained OpenSourceProject[] @relation("OSProjectMaintainer")
+    osProjectsCreated    OpenSourceProject[] @relation("OSProjectCreator")
+    osIssuesAssigned     OSIssue[]           @relation("OSIssueAssignee")
+
+    // Contributions
+    osContributions        OSContribution[]       @relation("OSContributions")
+    osContributionReviews  OSContribution[]       @relation("OSContributionReviewer")
+    osProjectContributions OSProjectContributor[] @relation("OSProjectContributors")
+    osProjectLeaderboards  OSProjectLeaderboard[] @relation("OSProjectLeaderboard")
+
+    // Learning
+    osLearnProgress     OSLearnProgress[]    @relation("OSLearnProgress")
+    osLessonCompletions OSLessonCompletion[] @relation("OSLessonCompletions")
+
+    // Certification
+    osCertificationExams OSCertificationExam[] @relation("OSCertificationExams")
+    osCertifications     OSCertification[]     @relation("OSCertifications")
+
+    // Stats & Earnings
+    osStats                UserOSStats?            @relation("UserOSStats")
+    osEarningsTransactions OSEarningsTransaction[] @relation("OSEarningsTransactions")
+
+    // ===============================================
+    // ASSESSMENTS MODULE RELATIONS
+    // ===============================================
+    practiceAttempts       PracticeAttempt[]       @relation("PracticeAttempts")
+    examAttempts           ExamAttempt[]           @relation("ExamAttempts")
+    assessmentStats        UserAssessmentStats?    @relation("AssessmentStats")
+    assessmentCertificates AssessmentCertificate[] @relation("AssessmentCertificates")
+
+    // User-generated practice sets
+    createdPracticeSets   UserPracticeSet[]         @relation("CreatedPracticeSets")
+    purchasedPracticeSets UserPracticeSetPurchase[] @relation("PurchasedPracticeSets")
+    practiceSetAttempts   UserPracticeSetAttempt[]  @relation("PracticeSetAttempts")
+    practiceSetLikes      UserPracticeSetLike[]     @relation("PracticeSetLikes")
+
+    // User-generated exam sets
+    createdExamSets   UserExamSet[]         @relation("CreatedExamSets")
+    purchasedExamSets UserExamSetPurchase[] @relation("PurchasedExamSets")
+    examSetAttempts   UserExamSetAttempt[]  @relation("ExamSetAttempts")
+    examSetLikes      UserExamSetLike[]     @relation("ExamSetLikes")
+
+    // Random practice sessions
+    randomPracticeSessions RandomPracticeSession[] @relation("RandomPracticeSessions")
+
+    @@index([username])
+    @@index([email])
+}
+
+model Feedback {
+    id          String           @id @default(cuid())
+    title       String
+    description String
+    category    FeedbackCategory
+    status      FeedbackStatus   @default(UNDER_REVIEW)
+    createdAt   DateTime         @default(now())
+    updatedAt   DateTime         @updatedAt
+    isVerified  Boolean          @default(false)
+    upvotes     Int              @default(0)
+    imageUrl    String?
+    userId      String
+    user        User             @relation(fields: [userId], references: [id])
+    rewards     Reward?
+
+    @@index([userId])
+    @@index([status])
+}
+
+model Reward {
+    id          String   @id @default(cuid())
+    type        String
+    xp          Int?
+    credits     Int
+    amount      Int?
+    description String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    feedbackId  String   @unique
+    feedback    Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+}
+
+model RecentActivity {
+    id           String        @id @default(uuid())
+    userId       String
+    user         User          @relation(fields: [userId], references: [id])
+    activityType ActivityType?
+    description  String?
+    createdAt    DateTime      @default(now())
+}
+
+model Achievements {
+    id          String   @id @default(uuid())
+    title       String
+    description String
+    userId      String
+    user        User     @relation(fields: [userId], references: [id])
+    createdAt   DateTime @default(now())
+}
+
+model Skills {
+    id        String        @id @default(uuid())
+    name      String
+    level     String
+    category  SkillCategory
+    userId    String
+    user      User          @relation(fields: [userId], references: [id])
+    createdAt DateTime      @default(now())
+
+    // Profile System
+    endorsements SkillEndorsement[]
+}
+
+model Certifications {
+    id         String   @id @default(uuid())
+    name       String
+    issuer     String
+    issuedDate DateTime
+    link       String
+    userId     String
+    user       User     @relation(fields: [userId], references: [id])
+    createdAt  DateTime @default(now())
+}
+
+model WorkExperience {
+    id                 String    @id @default(uuid())
+    userId             String
+    user               User      @relation("UserExperiences", fields: [userId], references: [id], onDelete: Cascade)
+    companyName        String
+    companyLogo        String?
+    roleTitle          String
+    companyWebsite     String?
+    description        String?
+    startDate          DateTime
+    endDate            DateTime?
+    isCurrentlyWorking Boolean   @default(false)
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
+
+    @@index([userId])
+}
+
+// Portfolio Project Model
+model PortfolioProject {
+    id           String         @id @default(uuid())
+    userId       String
+    user         User           @relation("UserPortfolioProjects", fields: [userId], references: [id], onDelete: Cascade)
+    projectName  String
+    projectType  String
+    description  String?
+    status       String // In Progress, Completed, Archived
+    visibility   String // Public, Private
+    technologies String[]
+    startDate    DateTime
+    endDate      DateTime?
+    thumbnailUrl String?
+    createdAt    DateTime       @default(now())
+    updatedAt    DateTime       @updatedAt
+    projectLinks ProjectLink[]  @relation("ProjectLinks")
+    projectMedia ProjectMedia[] @relation("ProjectMedia")
+
+    @@index([userId])
+}
+
+// Project Links (GitHub, Live Demo, etc.)
+model ProjectLink {
+    id          String           @id @default(uuid())
+    projectId   String
+    project     PortfolioProject @relation("ProjectLinks", fields: [projectId], references: [id], onDelete: Cascade)
+    linkType    String // GitHub, Live Demo, Documentation, etc.
+    url         String
+    description String?
+    createdAt   DateTime         @default(now())
+
+    @@index([projectId])
+}
+
+// Project Media (Screenshots, Videos)
+model ProjectMedia {
+    id        String           @id @default(uuid())
+    projectId String
+    project   PortfolioProject @relation("ProjectMedia", fields: [projectId], references: [id], onDelete: Cascade)
+    mediaUrl  String
+    mediaType String // Image, Video
+    caption   String?
+    createdAt DateTime         @default(now())
+
+    @@index([projectId])
+}
+
+// Social Links Model
+model SocialLink {
+    id        String   @id @default(uuid())
+    userId    String
+    user      User     @relation("UserSocialLinks", fields: [userId], references: [id], onDelete: Cascade)
+    platform  String // github, linkedin, twitter, portfolio, etc.
+    url       String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, platform])
+    @@index([userId])
+}
+
+model ProofOfWork {
+    id          String   @id @default(uuid())
+    description String
+    skills      String[]
+    link        String
+    userId      String
+    user        User     @relation(fields: [userId], references: [id])
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}
+
+// Sessions and Extra Models
+model Account {
+    id                String  @id @default(uuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+    @@map("accounts")
+}
+
+// ============================================
+// PROFILE REDESIGN SYSTEM
+// ============================================
+
+enum ProfileTheme {
+    OCEAN_BLUE
+    SUNSET_ORANGE
+    FOREST_GREEN
+    PURPLE_DREAM
+    DARK_MODE
+}
+
+enum ProfileLayout {
+    DEFAULT
+    MINIMAL
+    SHOWCASE
+    PORTFOLIO
+}
+
+enum ProfileVisibility {
+    PUBLIC
+    FOLLOWERS
+    PRIVATE
+}
+
+model UserProfile {
+    id String @id @default(cuid())
+
+    userId String @unique
+    user   User   @relation("UserProfile", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Visual Customization
+    coverImage    String? // Custom cover image URL
+    coverGradient String?       @default("#F59E0B,#FBBF24") // Default yellow-amber gradient
+    theme         ProfileTheme  @default(OCEAN_BLUE)
+    layout        ProfileLayout @default(DEFAULT)
+
+    // Profile Content
+    tagline String? // One-liner description (max 100 chars)
+
+    // Privacy Settings
+    visibility   ProfileVisibility @default(PUBLIC)
+    showEmail    Boolean           @default(false)
+    showResume   Boolean           @default(true)
+    showActivity Boolean           @default(true)
+    showStats    Boolean           @default(true)
+
+    // Engagement Settings
+    allowEndorsements Boolean @default(true)
+    allowMessages     Boolean @default(true)
+
+    // Analytics
+    profileViews Int @default(0)
+
+    // Profile Completion Score (0-100)
+    completionScore Int @default(0)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    views          ProfileView[]
+    pinnedProjects PinnedProject[]
+}
+
+model ProfileView {
+    id String @id @default(cuid())
+
+    profileId String
+    profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+    // Viewer Information (null if anonymous)
+    viewerId String?
+
+    // Analytics Data
+    source    String? // "search", "direct", "profile_link", "social"
+    referrer  String? // Referrer URL
+    userAgent String? // Browser/device info
+    ipAddress String? // For geographic tracking
+    country   String? // Derived from IP
+    city      String? // Derived from IP
+
+    viewedAt DateTime @default(now())
+
+    @@index([profileId])
+    @@index([viewerId])
+    @@index([viewedAt])
+}
+
+// Projects and Tasks related models
+model Projects {
+    id            String      @id @default(uuid())
+    name          String      @unique
+    description   String
+    category      String
+    tier          ProjectTier @default(Free)
+    difficulty    String
+    estimatedTime String
+    prerequisites String[]
+    tools         String[]
+    tags          String[]
+    version       String
+    tasks         Task[]
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+
+    // Relations
+    userProgress UserProjectProgress[]
+    User         User?                 @relation(fields: [userId], references: [id])
+    userId       String?
+
+    // Profile System
+    pinnedByProfiles PinnedProject[]
+
+    // Bookmarks
+    bookmarks ProjectBookmark[] @relation("ProjectBookmarks")
+}
+
+model Task {
+    id             String   @id @default(uuid())
+    projectId      String
+    title          String
+    description    String
+    objectives     String[]
+    steps          Json
+    tips           String[]
+    expectedOutput Json
+    commonIssues   Json
+    resources      Json
+    estimatedTime  String
+    quiz           Json?
+
+    // Relations
+    project      Projects       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    TaskProgress TaskProgress[]
+}
+
+model UserProjectProgress {
+    id                String         @id @default(uuid())
+    userId            String
+    projectId         String
+    status            ProjectStatus  @default(NotStarted)
+    taskProgress      TaskProgress[]
+    startedAt         DateTime?
+    completedAt       DateTime?
+    xpEarned          Int            @default(0)
+    githubUrl         String?
+    liveUrl           String?
+    sharedInCommunity Boolean        @default(false)
+
+    // Relations
+    user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    project Projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, projectId])
+}
+
+model TaskProgress {
+    id                    String    @id @default(uuid())
+    userProjectProgressId String
+    taskId                String // References Task model
+    completed             Boolean   @default(false)
+    completedAt           DateTime?
+    quizScore             Int?
+    notes                 String?
+
+    // Relations
+    userProjectProgress UserProjectProgress @relation(fields: [userProjectProgressId], references: [id], onDelete: Cascade)
+    task                Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+    @@unique([userProjectProgressId, taskId])
+}
+
+model SkillEndorsement {
+    id String @id @default(cuid())
+
+    // Skill being endorsed
+    skillId String
+    skill   Skills @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+    // Endorser
+    endorserId String
+
+    // Optional message
+    message String? @db.Text
+
+    createdAt DateTime @default(now())
+
+    @@unique([skillId, endorserId])
+    @@index([skillId])
+    @@index([endorserId])
+}
+
+model PinnedProject {
+    id String @id @default(cuid())
+
+    profileId String
+    profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+    projectId String
+    project   Projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    // Display order (1-6, max 6 pinned projects)
+    order Int @default(1)
+
+    createdAt DateTime @default(now())
+
+    @@unique([profileId, projectId])
+    @@index([profileId])
+    @@index([projectId])
+}
+
+model Newsletter {
+    id           String   @id @default(cuid())
+    email        String   @unique
+    subscribedAt DateTime @default(now())
+    isActive     Boolean  @default(true)
+
+    @@index([email])
+    @@index([subscribedAt])
+}

@@ -1,0 +1,814 @@
+// ===============================================
+// PROJECTS V2 - MAIN PROJECT MODEL AND RELATED ENTITIES
+// ===============================================
+
+enum ProjectV2Visibility {
+    PRIVATE
+    PUBLIC
+}
+
+enum ProjectV2Difficulty {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+}
+
+enum UserProjectV2Status {
+    NOT_STARTED
+    IN_PROGRESS
+    SUBMITTED
+    COMPLETED
+}
+
+enum TaskKanbanStatus {
+    TO_DO
+    IN_PROGRESS
+    COMPLETED
+}
+
+enum QuizV2Difficulty {
+    EASY
+    MEDIUM
+    HARD
+}
+
+enum FeatureSuggestionType {
+    FEATURE
+    IMPROVEMENT
+    BUG_FIX
+    UI_UX
+    PERFORMANCE
+    DOCUMENTATION
+    OTHER
+}
+
+enum FeatureSuggestionStatus {
+    PENDING
+    UNDER_REVIEW
+    APPROVED
+    REJECTED
+    IMPLEMENTED
+}
+
+enum SuggestionSource {
+    CREATOR
+    ENROLLED_USER
+    VISITOR
+}
+
+model ProjectV2 {
+    id                         String              @id @default(cuid())
+    slug                       String              @unique
+    title                      String
+    shortDescription           String?             @db.VarChar(200)
+    description                String              @db.Text
+    technologies               String[]
+    generationType             String // FULL_STACK | FRONTEND | PROGRAMS | AI/ML | AI_AGENT | OTHER
+    primaryLanguageOrFramework String?
+    difficulty                 ProjectV2Difficulty
+    visibility                 ProjectV2Visibility @default(PRIVATE)
+    estimatedHours             Int                 @default(20)
+    includeAssessment          Boolean             @default(false)
+
+    // Blueprint fields
+    blueprintOverview  String   @db.Text
+    learningObjectives String[]
+    prerequisites      String[]
+    coreFeatures       String[]
+    advancedFeatures   String[]
+
+    // Stacks and assistant payloads
+    stacks        Json // normalized from echo.stacks
+    assistantEcho Json // echo block sent to assistant
+    assistantRaw  Json // full assistant JSON response
+
+    // Stats
+    totalStarted     Int @default(0)
+    totalCompleted   Int @default(0)
+    totalSubmissions Int @default(0)
+    totalViews       Int @default(0)
+
+    // Creator
+    createdBy String
+    creator   User   @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now()) @updatedAt
+
+    // Relations
+    pages       ProjectV2Page[]
+    tasks       ProjectV2Task[]
+    quiz        ProjectV2Quiz?
+    knowledge   ProjectV2KnowledgeBase?
+    progress    UserProjectV2Progress[]
+    leaderboard ProjectV2Leaderboard[]  @relation("ProjectV2Leaderboard")
+    sourceIdea  ProjectIdea?            @relation("IdeaBlueprint")
+
+    // Standup Configuration
+    standupConfigs ProjectV2StandupConfig[]
+
+    // Bookmarks
+    bookmarks ProjectV2Bookmark[] @relation("ProjectV2Bookmarks")
+
+    @@index([createdBy])
+    @@index([visibility])
+    @@index([difficulty])
+    @@index([technologies])
+    @@index([createdAt])
+    @@index([slug])
+}
+
+// ============================================
+// USER PROGRESS - THE HUB FOR ALL USER ACTIONS
+// ============================================
+// ✅ SINGLE MERGED MODEL
+model UserProjectV2Progress {
+    id        String    @id @default(cuid())
+    userId    String
+    projectId String
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    project   ProjectV2 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    // Status & Progress (from first definition)
+    status             UserProjectV2Status @default(NOT_STARTED)
+    currentPage        String?
+    lastAccessedAt     DateTime            @default(now())
+    tasksCompleted     Int                 @default(0)
+    totalTasks         Int                 @default(0)
+    progressPercentage Float               @default(0)
+
+    // Scoring fields (from second definition)
+    totalScore Float @default(0) // Total score out of 100
+    tasksScore Float @default(0) // Tasks score (max 50)
+    quizScore  Float @default(0) // Quiz score (max 25)
+    mockScore  Float @default(0) // Mock interview score (max 25)
+
+    // Timestamps (from first definition)
+    startedAt      DateTime?
+    submittedAt    DateTime?
+    completedAt    DateTime?
+    totalTimeSpent Int       @default(0)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // ✅ ALL user-project interactions hang here
+    taskStatuses       UserTaskV2Status[]
+    submissions        ProjectV2Submission[]
+    quizAttempts       ProjectV2QuizAttempt[]
+    mockSessions       ProjectV2MockSession[]
+    featureSuggestions ProjectV2FeatureSuggestion[]
+    resources          ProjectV2Resource[]
+    taskDetailAccess   UserTaskV2DetailAccess[]
+    submittedErrors    ProjectV2Error[]
+    errorVotes         ProjectV2ErrorVote[]
+    leaderboardEntry   ProjectV2Leaderboard?
+
+    @@unique([userId, projectId])
+    @@index([userId])
+    @@index([projectId])
+    @@index([status])
+    @@index([totalScore])
+}
+
+model ProjectV2Page {
+    id                    String              @id @default(cuid())
+    projectId             String
+    project               ProjectV2           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    name                  String
+    difficulty            ProjectV2Difficulty
+    coreFeatures          String[]
+    recommendedComponents String[]
+    orderIndex            Int                 @default(0)
+
+    @@index([projectId])
+    @@index([orderIndex])
+}
+
+model ProjectV2Task {
+    id              String              @id @default(cuid())
+    projectId       String
+    project         ProjectV2           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    title           String
+    description     String[] // array of step strings (3-7 steps, no code)
+    criteria        String[] // completion criteria (3-5 items)
+    hints           String[] // helpful tips (2-4 items)
+    badges          String[] // page/component context badges
+    tags            String[] // concept tags
+    difficulty      ProjectV2Difficulty
+    orderIndex      Int                 @default(0)
+    terminalCommand String?
+
+    createdAt        DateTime           @default(now())
+    updatedAt        DateTime           @updatedAt
+    UserTaskV2Status UserTaskV2Status[]
+
+    // Task Detail Relation
+    taskDetail ProjectV2TaskDetail?
+
+    // Related errors
+    errors ProjectV2Error[] @relation("TaskErrors")
+
+    @@index([projectId])
+    @@index([orderIndex])
+    @@index([difficulty])
+}
+
+model UserTaskV2Status {
+    id String @id @default(cuid())
+
+    taskId String
+    task   ProjectV2Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    status      TaskKanbanStatus @default(TO_DO)
+    completedAt DateTime?
+    notes       String?          @db.Text
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([progressId, taskId])
+    @@index([taskId])
+    @@index([progressId])
+    @@index([status])
+}
+
+model ProjectV2Quiz {
+    id             String                  @id @default(cuid())
+    projectId      String                  @unique
+    project        ProjectV2               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    totalQuestions Int
+    createdAt      DateTime                @default(now())
+    updatedAt      DateTime                @updatedAt
+    questions      ProjectV2QuizQuestion[]
+    attempts       ProjectV2QuizAttempt[]
+}
+
+model ProjectV2QuizQuestion {
+    id            String           @id @default(cuid())
+    quizId        String
+    quiz          ProjectV2Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+    orderIndex    Int              @default(0)
+    difficulty    QuizV2Difficulty
+    prompt        String           @db.Text
+    options       String[] // exactly 4 items
+    correctAnswer Int // 0-3 index
+    explanation   String           @db.Text
+
+    userAnswers ProjectV2QuizAnswer[]
+
+    @@index([quizId])
+    @@index([orderIndex])
+    @@index([difficulty])
+}
+
+model ProjectV2KnowledgeBase {
+    id        String    @id @default(cuid())
+    projectId String    @unique
+    project   ProjectV2 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    points    String[] // concise, high-signal points
+
+    // Mock Interview Knowledge Base
+    mockKnowledgeBase String?   @db.Text // Formatted text for ElevenLabs agent
+    mockQuestionsData Json? // Structured interview questions data
+    mockGeneratedAt   DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model ProjectV2Submission {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    githubUrl String
+    liveUrl   String?
+    notes     String? @db.Text
+    status    String  @default("PENDING") // PENDING | APPROVED | REJECTED
+    scores    Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([progressId])
+    @@index([status])
+}
+
+// Quiz Attempt and Answer Tracking
+model ProjectV2QuizAttempt {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    quizId String
+    quiz   ProjectV2Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+    score          Int     @default(0) // Score out of 100
+    totalQuestions Int     @default(0)
+    correctAnswers Int     @default(0)
+    timeSpent      Int? // Time in seconds
+    isCompleted    Boolean @default(false)
+
+    startedAt   DateTime  @default(now())
+    completedAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    answers ProjectV2QuizAnswer[]
+
+    @@unique([progressId, quizId])
+    @@index([progressId])
+    @@index([quizId])
+    @@index([isCompleted])
+}
+
+model ProjectV2QuizAnswer {
+    id         String                @id @default(cuid())
+    attemptId  String
+    attempt    ProjectV2QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+    questionId String
+    question   ProjectV2QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+    selectedAnswer Int // User's selected option index (0-3)
+    isCorrect      Boolean @default(false)
+    timeSpent      Int? // Time in seconds for this question
+
+    createdAt DateTime @default(now())
+
+    @@unique([attemptId, questionId])
+    @@index([attemptId])
+    @@index([questionId])
+    @@index([isCorrect])
+}
+
+// AI Mock Interview Sessions
+model ProjectV2MockSession {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    // Session details
+    agentId        String? // ElevenLabs agent ID
+    conversationId String? // ElevenLabs conversation ID
+    duration       Int? // Duration in seconds
+
+    // Scoring
+    score              Int? // Overall score out of 100
+    technicalScore     Int? // Technical depth score
+    communicationScore Int? // Communication score
+    conceptualScore    Int? // Conceptual understanding score
+
+    // Feedback
+    transcript   String?  @db.Text
+    feedback     String?  @db.Text
+    strengths    String[] // Array of strengths
+    improvements String[] // Areas for improvement
+
+    // Status
+    status String @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | FAILED
+
+    scheduledAt DateTime?
+    startedAt   DateTime?
+    completedAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    @@index([progressId])
+    @@index([status])
+    @@index([completedAt])
+}
+
+// Feature Suggestions for Projects
+model ProjectV2FeatureSuggestion {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    title       String
+    description String                @db.Text
+    type        FeatureSuggestionType @default(FEATURE)
+    tags        String[] // e.g., ["frontend", "backend", "ui"]
+    imageUrl    String? // Optional screenshot/mockup
+
+    status FeatureSuggestionStatus @default(PENDING)
+
+    // Track who suggested it
+    suggestedBy SuggestionSource @default(VISITOR)
+
+    // Track who adopted this suggestion
+    addedByUsers String[] @default([])
+
+    // If approved and added to tasks
+    addedToTasks Boolean @default(false)
+    taskId       String? // Reference to created task if added
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([progressId])
+    @@index([status])
+    @@index([type])
+    @@index([suggestedBy])
+    @@index([createdAt])
+}
+
+// Project V2 Resource Library
+model ProjectV2Resource {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    title       String       @db.VarChar(200)
+    link        String       @db.Text
+    type        ResourceType
+    description String?      @db.Text
+
+    // Engagement metrics
+    helpfulCount    Int      @default(0)
+    markedHelpfulBy String[] @default([]) // Array of user IDs who marked as helpful
+    views           Int      @default(0)
+
+    // Metadata
+    isOfficial Boolean @default(false) // Set by creator
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([progressId])
+    @@index([type])
+    @@index([createdAt])
+    @@index([helpfulCount])
+}
+
+// Project V2 Leaderboard (cached rankings)
+model ProjectV2Leaderboard {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+    projectId  String
+    project    ProjectV2             @relation("ProjectV2Leaderboard", fields: [projectId], references: [id], onDelete: Cascade)
+
+    rank            Int
+    score           Float // Total score out of 100
+    tasksCompleted  Int   @default(0)
+    totalTasks      Int   @default(0)
+    progressPercent Float @default(0)
+
+    // Quick access to component scores
+    tasksScore Float @default(0)
+    quizScore  Float @default(0)
+    mockScore  Float @default(0)
+
+    // Timestamps
+    lastUpdated DateTime @default(now())
+    createdAt   DateTime @default(now())
+
+    @@unique([progressId])
+    @@index([projectId, rank])
+    @@index([projectId, score])
+}
+
+// Global Projects Leaderboard (aggregated across all projects)
+model ProjectV2GlobalLeaderboard {
+    id String @id @default(cuid())
+
+    userId String @unique
+    user   User   @relation("ProjectV2GlobalLeaderboard", fields: [userId], references: [id], onDelete: Cascade)
+
+    rank                  Int
+    totalScore            Float @default(0) // Sum of all project scores
+    projectsStarted       Int   @default(0)
+    projectsCompleted     Int   @default(0)
+    averageScore          Float @default(0)
+    totalTasksCompleted   Int   @default(0)
+    totalQuizzesCompleted Int   @default(0)
+    totalMocksCompleted   Int   @default(0)
+
+    lastUpdated DateTime @default(now())
+    createdAt   DateTime @default(now())
+
+    @@index([rank])
+    @@index([totalScore])
+    @@index([averageScore])
+}
+
+// ===============================================
+// PROJECT V2 - TASK DETAILS & STANDUP FEATURES
+// ===============================================
+
+// Stores generated detailed sub-tasks for a specific task
+// This is shared across all users who request details for the same task
+model ProjectV2TaskDetail {
+    id     String        @id @default(cuid())
+    taskId String        @unique
+    task   ProjectV2Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+    // Generated sub-task roadmap
+    subTasks Json // Array of {title, description, command?, approach, tips[]}
+
+    // Common errors and pitfalls specific to this task
+    commonErrors     String[]
+    errorsToWatchout String[]
+
+    // Extra related practice tasks (main tasks, not sub-tasks)
+    relatedTasks Json // Array of {title, description, difficulty, why_related}
+
+    // Generation metadata
+    generatedBy    String // First user who generated this
+    generatedAt    DateTime @default(now())
+    generationCost Int      @default(1) // Cost in credits
+
+    // Track how many users have accessed this
+    accessCount Int @default(1) // Starts at 1 (the generator)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    userAccess UserTaskV2DetailAccess[]
+
+    @@index([taskId])
+}
+
+// Tracks which users have purchased/viewed details for which tasks
+model UserTaskV2DetailAccess {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    taskDetailId String
+    taskDetail   ProjectV2TaskDetail @relation(fields: [taskDetailId], references: [id], onDelete: Cascade)
+
+    // Each user pays 1 credit to access (even if already generated by someone else)
+    creditsPaid Int      @default(1)
+    accessedAt  DateTime @default(now())
+
+    @@unique([progressId, taskDetailId])
+    @@index([progressId])
+    @@index([taskDetailId])
+}
+
+// Daily Standup Configuration for a user's project
+model ProjectV2StandupConfig {
+    id        String    @id @default(cuid())
+    userId    String
+    projectId String
+    project   ProjectV2 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    // Configuration
+    daysPerWeek     Int // Minimum 4, maximum 7
+    standupTime     String // HH:MM format (e.g., "09:00")
+    durationMinutes Int    @default(10) // 5-10 minutes
+
+    // Selected days (0 = Sunday, 6 = Saturday)
+    selectedDays Int[] // e.g., [1, 2, 3, 4, 5] for Mon-Fri
+
+    // Pricing and payment
+    creditsPerDay Int @default(5) // 5 credits per standup day
+    weeklyCredits Int // daysPerWeek * creditsPerDay
+
+    // Status
+    isActive         Boolean  @default(true)
+    currentWeekStart DateTime @default(now())
+    currentWeekEnd   DateTime
+
+    // Stats
+    totalStandups     Int @default(0)
+    completedStandups Int @default(0)
+    missedStandups    Int @default(0)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    standupEntries ProjectV2StandupEntry[]
+
+    @@unique([userId, projectId])
+    @@index([userId])
+    @@index([projectId])
+    @@index([isActive])
+}
+
+// Individual Standup Entries
+model ProjectV2StandupEntry {
+    id       String                 @id @default(cuid())
+    configId String
+    config   ProjectV2StandupConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+    // Standup content
+    scheduledFor DateTime // When this standup was scheduled
+    submittedAt  DateTime? // When user actually submitted
+
+    // Standup questions & answers
+    whatDidYesterday String? @db.Text // What did you work on yesterday?
+    whatDoingToday   String? @db.Text // What will you work on today?
+    anyBlockers      String? @db.Text // Any blockers or challenges?
+
+    // Audio/Video recording (optional)
+    recordingUrl    String?
+    durationSeconds Int?
+
+    // Status
+    status String @default("SCHEDULED") // SCHEDULED | SUBMITTED | MISSED
+
+    // AI Analysis (optional feature)
+    aiSummary     String?  @db.Text
+    aiSuggestions String[] @default([])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([configId])
+    @@index([scheduledFor])
+    @@index([status])
+}
+
+// ===============================================
+// PROJECT IDEAS SYSTEM
+// ===============================================
+
+enum ProjectIdeaStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+// Project Ideas submitted by users or seeded
+model ProjectIdea {
+    id                         String   @id @default(cuid())
+    projectTitle               String
+    projectDescription         String   @db.Text
+    generationType             String // FRONTEND, FULL_STACK, etc.
+    difficulty                 String // BEGINNER, INTERMEDIATE, ADVANCED
+    primaryLanguageOrFramework String
+    technologies               String[] // Array of tech names
+    categories                 String[] // Array of category names
+    technology                 String // Main technology (React, Next.js, etc.)
+
+    // Optional fields for user submissions
+    images        String[] // URLs to UI images
+    figmaLinks    String[] // Figma design links
+    resourceLinks String[] // Additional resource links
+
+    // Stacks JSON
+    stacks Json?
+
+    // Blueprint linking (for pre-generated project templates)
+    blueprintProjectId    String?    @unique
+    blueprintProject      ProjectV2? @relation("IdeaBlueprint", fields: [blueprintProjectId], references: [id])
+    hasBlueprintGenerated Boolean    @default(false)
+    blueprintGeneratedAt  DateTime?
+
+    // Submission tracking
+    status          ProjectIdeaStatus @default(PENDING)
+    submittedById   String?
+    submittedBy     User?             @relation("SubmittedProjectIdeas", fields: [submittedById], references: [id])
+    isUserSubmitted Boolean           @default(false)
+
+    // Engagement
+    upvotes Int @default(0)
+    views   Int @default(0)
+
+    // Timestamps
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    approvedAt DateTime?
+
+    upvotedBy ProjectIdeaUpvote[] @relation("ProjectIdeaUpvotes")
+
+    @@index([technology])
+    @@index([status])
+    @@index([difficulty])
+    @@index([submittedById])
+    @@index([createdAt])
+    @@index([upvotes])
+    @@index([hasBlueprintGenerated])
+}
+
+// Track who upvoted which project idea
+model ProjectIdeaUpvote {
+    id            String      @id @default(cuid())
+    projectIdeaId String
+    projectIdea   ProjectIdea @relation("ProjectIdeaUpvotes", fields: [projectIdeaId], references: [id], onDelete: Cascade)
+    userId        String
+    createdAt     DateTime    @default(now())
+
+    @@unique([projectIdeaId, userId])
+    @@index([projectIdeaId])
+    @@index([userId])
+}
+
+// ========================================
+// PROJECT ERRORS & MISTAKES
+// ========================================
+
+enum ProjectErrorSeverity {
+    HIGH // Common mistake that many encounter
+    MEDIUM // Occasional mistake
+    LOW // Rare but worth knowing
+}
+
+enum ProjectErrorCategory {
+    SETUP // Project initialization errors
+    CONFIGURATION // Config file issues
+    DATABASE // Database/ORM errors
+    API // API/Backend errors
+    UI // Frontend/UI errors
+    STATE // State management issues
+    DEPLOYMENT // Deployment problems
+    SECURITY // Security vulnerabilities
+    PERFORMANCE // Performance issues
+    OTHER // Miscellaneous
+}
+
+enum ProjectErrorStatus {
+    PENDING // Awaiting approval
+    APPROVED // Visible to all
+    REJECTED // Not approved
+}
+
+// Common errors and mistakes for projects
+model ProjectV2Error {
+    id String @id @default(cuid())
+
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    // Error details
+    title       String               @db.VarChar(200)
+    description String               @db.Text
+    solution    String               @db.Text
+    severity    ProjectErrorSeverity @default(MEDIUM)
+    category    ProjectErrorCategory @default(OTHER)
+
+    // Optional: Link to specific task
+    taskId String?
+    task   ProjectV2Task? @relation("TaskErrors", fields: [taskId], references: [id], onDelete: SetNull)
+
+    // Code examples
+    errorCode String? @db.Text // The problematic code
+    fixedCode String? @db.Text // The corrected code
+
+    // Tags for filtering
+    tags String[]
+
+    // Status for moderation
+    status ProjectErrorStatus @default(PENDING)
+
+    // Submission tracking
+    submittedById String
+    submittedBy   User   @relation("SubmittedProjectErrors", fields: [submittedById], references: [id], onDelete: Cascade)
+
+    isAIGenerated Boolean @default(false) // If generated during project creation
+
+    // Engagement metrics
+    helpfulCount     Int @default(0) // Number of "this helped me" votes
+    encounteredCount Int @default(0) // Number of "I encountered this" votes
+
+    // Timestamps
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    approvedAt DateTime?
+
+    // Relations
+    votes ProjectV2ErrorVote[] @relation("ProjectErrorVotes")
+
+    @@index([progressId])
+    @@index([taskId])
+    @@index([severity])
+    @@index([category])
+    @@index([status])
+    @@index([submittedById])
+    @@index([helpfulCount])
+    @@index([createdAt])
+}
+
+// Track votes on project errors
+model ProjectV2ErrorVote {
+    id String @id @default(cuid())
+
+    errorId    String
+    error      ProjectV2Error        @relation("ProjectErrorVotes", fields: [errorId], references: [id], onDelete: Cascade)
+    progressId String
+    progress   UserProjectV2Progress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+
+    // Vote type
+    voteType String // "helpful" or "encountered"
+
+    createdAt DateTime @default(now())
+
+    @@unique([errorId, progressId, voteType])
+    @@index([errorId])
+    @@index([progressId])
+}

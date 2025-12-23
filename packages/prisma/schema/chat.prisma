@@ -1,0 +1,123 @@
+// ============================================
+// CHAT SYSTEM MODELS
+// ============================================
+
+enum FollowRequestStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+}
+
+enum ChatMessageType {
+    TEXT
+    IMAGE
+}
+
+enum ChatMessageStatus {
+    SENT
+    DELIVERED
+    READ
+}
+
+model Follow {
+    id String @id @default(cuid())
+
+    followerId  String // User who is following
+    followingId String // User being followed
+
+    follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+    following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([followerId, followingId])
+    @@index([followerId])
+    @@index([followingId])
+}
+
+model FollowRequest {
+    id String @id @default(cuid())
+
+    senderId   String // User who sent the request
+    receiverId String // User who received the request
+
+    sender   User @relation("FollowRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+    receiver User @relation("FollowRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+    status FollowRequestStatus @default(PENDING)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([senderId, receiverId])
+    @@index([senderId])
+    @@index([receiverId])
+}
+
+model Conversation {
+    id String @id @default(cuid())
+
+    // Participants (always 2 users for direct chat)
+    participant1Id String
+    participant2Id String
+
+    participant1 User @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
+    participant2 User @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
+
+    // Last message info for sorting
+    lastMessageAt   DateTime?
+    lastMessageText String?   @db.Text
+
+    messages ChatMessage[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([participant1Id, participant2Id])
+    @@index([participant1Id])
+    @@index([participant2Id])
+    @@index([lastMessageAt])
+}
+
+model ChatMessage {
+    id String @id @default(cuid())
+
+    conversationId String
+    conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+    senderId String
+    sender   User   @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+    type     ChatMessageType @default(TEXT)
+    content  String          @db.Text
+    imageUrl String? // For image messages
+
+    status ChatMessageStatus @default(SENT)
+    readAt DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([conversationId])
+    @@index([senderId])
+    @@index([createdAt])
+}
+
+model ChatSettings {
+    id String @id @default(cuid())
+
+    userId String @unique
+    user   User   @relation("UserChatSettings", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Notification settings
+    messageNotifications Boolean @default(true)
+    soundEnabled         Boolean @default(true)
+
+    // Privacy settings
+    allowMessagesFrom String  @default("followers") // "everyone", "followers", "none"
+    showOnlineStatus  Boolean @default(true)
+    showReadReceipts  Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,18 @@
+// Background Job Queue for long-running tasks
+model BackgroundJob {
+    id        String   @id @default(cuid())
+    jobId     String   @unique // Worker's job ID
+    status    String // 'waiting', 'active', 'completed', 'failed'
+    progress  Int      @default(0) // 0-100
+    input     Json // Original input data
+    result    Json? // Final result (when completed)
+    error     String? // Error message (when failed)
+    userId    String? // Optional: link to user
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    user      User?    @relation("BackgroundJobs", fields: [userId], references: [id])
+
+    @@index([jobId])
+    @@index([status])
+    @@index([userId])
+}

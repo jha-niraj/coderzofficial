@@ -1,0 +1,125 @@
+model JobInterviewAssistant {
+    id               String  @id @default(cuid())
+    userId           String
+    position         String
+    jobDescription   String  @db.Text
+    companyUrl       String
+    companyInfo      Json?
+    generatedContent Json
+    includeAnswers   Boolean @default(false)
+    includePractice  Boolean @default(false)
+    searchHash       String?
+    slug             String  @unique @default("niraj jha")
+
+    // Question counts
+    technicalCount  Int @default(8)
+    behavioralCount Int @default(8)
+    codingCount     Int @default(3)
+
+    // Public/Private functionality
+    isPublic    Boolean @default(false)
+    publicCost  Int? // Cost in credits for public access
+    description String? // Plan description
+    creditsCost Int? // Original cost of generation
+
+    // Analytics
+    purchaseCount Int      @default(0) // Number of times this plan has been purchased
+    viewCount     Int      @default(0) // Number of times this plan has been viewed
+    rating        Float? // Average rating from users
+    tags          String[] @default([]) // Tags for categorization
+
+    createdAt             DateTime               @default(now())
+    updatedAt             DateTime               @updatedAt
+    user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    codeEvaluations       CodeEvaluation[]
+    questionAnswers       QuestionAnswer[]
+    userQuestionResponses UserQuestionResponse[]
+
+    // Track purchases of this public plan
+    purchases   InterviewPlanPurchase[] @relation("PublicInterviewPurchases")
+    // Track new plans created when purchased
+    purchasedAs InterviewPlanPurchase[] @relation("PurchasedInterviewPlan")
+
+    @@index([userId])
+    @@index([searchHash])
+    @@index([isPublic])
+    @@index([position])
+}
+
+model CodeEvaluation {
+    id           String   @id @default(cuid())
+    questionText String   @db.Text
+    userCode     String   @db.Text
+    language     String
+    evaluation   Json? // AI evaluation result
+    score        Int? // Score out of 100
+    feedback     String?  @db.Text
+    strengths    String[] // Array of strengths
+    improvements String[] // Array of areas for improvement
+    isSubmitted  Boolean  @default(false) // Distinguishes between "Run" and "Submit"
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    // Relations
+    interviewId String
+    interview   JobInterviewAssistant @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+    @@index([interviewId])
+    @@index([language])
+    @@index([isSubmitted])
+}
+
+model QuestionAnswer {
+    id           String   @id @default(cuid())
+    questionText String   @db.Text
+    questionType String // 'technical', 'behavioral', 'coding'
+    language     String? // Programming language for coding questions
+    answer       Json // Stores the AI-generated answer
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    // Relations
+    interviewId String
+    interview   JobInterviewAssistant @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+    @@unique([interviewId, questionText, language])
+    @@index([interviewId])
+    @@index([questionType])
+    @@index([language])
+}
+
+// New model for storing user responses to technical and behavioral questions
+model UserQuestionResponse {
+    id                String   @id @default(cuid())
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+    interviewId       String
+    questionText      String   @db.Text
+    questionType      String
+    questionIndex     Int
+    userAnswer        String   @db.Text
+    answerMethod      String   @default("text")
+    score             Int
+    feedback          String   @db.Text
+    strengths         String[]
+    improvements      String[]
+    comparedToExpert  Json
+    evaluationDetails Json? // Store detailed evaluation breakdown
+
+    interview JobInterviewAssistant @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+    @@unique([interviewId, questionType, questionIndex])
+}
+
+// Interview Plan Purchase Models
+model InterviewPlanPurchase {
+    id                 String                 @id @default(cuid())
+    buyerId            String // Just store the user ID
+    interviewPlanId    String
+    interviewPlan      JobInterviewAssistant  @relation("PublicInterviewPurchases", fields: [interviewPlanId], references: [id])
+    cost               Int
+    purchasedAt        DateTime               @default(now())
+    // Reference to the new interview plan created for the buyer
+    newInterviewPlanId String?
+    newInterviewPlan   JobInterviewAssistant? @relation("PurchasedInterviewPlan", fields: [newInterviewPlanId], references: [id])
+}

@@ -1,0 +1,116 @@
+// Daily activities and Dashboard related models
+model DailyActivity {
+    id                 String   @id @default(cuid())
+    userId             String
+    date               DateTime @unique @db.Date
+    hasActivity        Boolean  @default(false)
+    totalXpEarned      Int      @default(0)
+    totalCreditsEarned Int      @default(0)
+    totalTimeSpent     Int      @default(0) // in minutes
+    activitiesCount    Int      @default(0) // Total number of activities done
+    isStreakDay        Boolean  @default(false) // Whether this day contributed to streak
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+
+    // Relations
+    user       User            @relation(fields: [userId], references: [id])
+    activities ActivityEntry[]
+
+    @@unique([userId, date])
+    @@index([userId])
+    @@index([date])
+    @@index([userId, date])
+    @@index([isStreakDay])
+}
+
+model ActivityEntry {
+    id              String       @id @default(cuid())
+    userId          String
+    dailyActivityId String
+    activityType    ActivityType
+    title           String // e.g., "Daily Quiz", "URL Shortener Project"
+    description     String? // Additional details
+    xpEarned        Int          @default(0)
+    creditsEarned   Int          @default(0)
+    timeSpent       Int          @default(0) // in minutes
+    metadata        Json? // Additional data like score, difficulty, etc.
+    createdAt       DateTime     @default(now())
+
+    // Relations
+    user          User          @relation("UserActivityEntries", fields: [userId], references: [id], onDelete: Cascade)
+    dailyActivity DailyActivity @relation(fields: [dailyActivityId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([dailyActivityId])
+    @@index([activityType])
+    @@index([userId, createdAt])
+}
+
+model UserStats {
+    id                  String    @id @default(cuid())
+    userId              String    @unique
+    currentStreak       Int       @default(0)
+    longestStreak       Int       @default(0)
+    totalSpeakingTime   Int       @default(0) // in minutes
+    weeklyTalkingTime   Int       @default(0) // in minutes
+    totalConversations  Int       @default(0)
+    weeklyConversations Int       @default(0)
+    lastActivityDate    DateTime?
+    weekStartDate       DateTime  @default(now())
+    createdAt           DateTime  @default(now())
+    updatedAt           DateTime  @updatedAt
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([userId])
+}
+
+model WeeklyGoal {
+    id          String    @id @default(cuid())
+    userId      String
+    title       String
+    description String?
+    category    String
+    type        GoalType  @default(CUSTOM)
+    completed   Boolean   @default(false)
+    completedAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([userId])
+    @@index([category])
+}
+
+model StreakReward {
+    id             String   @id @default(cuid())
+    userId         String
+    streakDays     Int
+    creditsAwarded Int
+    awardedAt      DateTime @default(now())
+    createdAt      DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@unique([userId, streakDays])
+    @@index([userId])
+}
+
+model UserAchievement {
+    id              String   @id @default(cuid())
+    userId          String
+    achievementType String
+    title           String
+    description     String
+    badgeIcon       String
+    badgeColor      String
+    creditsAwarded  Int      @default(0)
+    unlockedAt      DateTime @default(now())
+    createdAt       DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([userId])
+    @@index([achievementType])
+}

@@ -1,0 +1,913 @@
+// ==========================================
+// ASSESSMENTS MODULE
+// ==========================================
+
+// Assessment Mode Types
+enum AssessmentMode {
+    QUIZ        // Multiple choice questions
+    CODE        // Write code solutions
+    MOCK        // Mock interview style
+    MIXED       // Combination of all
+}
+
+// Assessment Type (Practice vs Real Exam)
+enum AssessmentType {
+    PRACTICE    // Uses seeded questions, unlimited attempts
+    EXAM        // AI-generated questions, limited attempts, certified
+}
+
+// Question Difficulty
+enum QuestionDifficulty {
+    EASY
+    INTERMEDIATE
+    HARD
+}
+
+// Programming Languages for Assessments
+enum AssessmentLanguage {
+    JAVASCRIPT
+    PYTHON
+    C
+    CPP
+    REACTJS
+    TYPESCRIPT
+    JAVA
+    GO
+    RUST
+}
+
+// Question Types for Assessments
+enum AssessmentQuestionType {
+    MCQ                 // Multiple Choice Question
+    MULTIPLE_SELECT     // Multiple correct answers
+    CODE_OUTPUT         // What's the output?
+    CODE_WRITE          // Write code to solve
+    CODE_DEBUG          // Fix the bug
+    CODE_COMPLETE       // Complete the code
+    SCENARIO            // Situation-based
+    TRUE_FALSE          // True or False
+}
+
+// Programming Language/Topic for assessments
+model AssessmentTopic {
+    id              String              @id @default(cuid())
+    slug            String              @unique
+    name            String              // e.g., "JavaScript", "Python"
+    description     String?             @db.Text
+    icon            String?
+    color           String?             // For UI theming
+    
+    language        AssessmentLanguage
+    
+    // Stats
+    totalQuestions  Int     @default(0)
+    totalAttempts   Int     @default(0)
+    avgScore        Float   @default(0)
+    
+    isActive        Boolean @default(true)
+    orderIndex      Int     @default(0)
+    
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    
+    // Relations
+    subModules      AssessmentSubModule[]
+    questions       AssessmentQuestion[]
+    practiceAttempts PracticeAttempt[]
+    examAttempts    ExamAttempt[]
+    
+    // User-generated content relations
+    userPracticeSets UserPracticeSet[]   @relation("PracticeSetTopic")
+    userExamSets     UserExamSet[]       @relation("ExamSetTopic")
+    
+    @@index([language])
+    @@index([isActive])
+}
+
+// Sub-modules for Practice (e.g., Arrays, Functions for JavaScript)
+model AssessmentSubModule {
+    id              String              @id @default(cuid())
+    slug            String              
+    name            String              // e.g., "Arrays", "Functions", "Loops"
+    description     String?             @db.Text
+    icon            String?
+    
+    topicId         String
+    topic           AssessmentTopic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+    
+    // Stats
+    totalQuestions  Int     @default(0)
+    totalAttempts   Int     @default(0)
+    avgScore        Float   @default(0)
+    
+    isActive        Boolean @default(true)
+    orderIndex      Int     @default(0)
+    
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    
+    // Relations
+    questions       AssessmentQuestion[]
+    practiceAttempts PracticeAttempt[]
+    
+    // User-generated content relations
+    userPracticeSets UserPracticeSet[]   @relation("PracticeSetSubModule")
+    
+    @@unique([topicId, slug])
+    @@index([topicId])
+    @@index([isActive])
+}
+
+// Questions Bank (Seeded for Practice, AI-generated stored for Exams)
+model AssessmentQuestion {
+    id              String              @id @default(cuid())
+    
+    // Question categorization
+    topicId         String
+    topic           AssessmentTopic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+    
+    subModuleId     String?
+    subModule       AssessmentSubModule? @relation(fields: [subModuleId], references: [id], onDelete: SetNull)
+    
+    // Question details
+    type            AssessmentQuestionType
+    mode            AssessmentMode      // Which mode this question is for
+    difficulty      QuestionDifficulty
+    
+    // Question content
+    question        String              @db.Text
+    questionHtml    String?             @db.Text   // Rich formatted version
+    codeSnippet     String?             @db.Text   // Code to display
+    codeLanguage    String?             // Language for syntax highlighting
+    
+    // Answer options (for MCQ/Multiple Select)
+    options         Json?               // Array of { id, text, isCorrect }
+    
+    // Correct answer
+    correctAnswer   String?             @db.Text   // For code questions, expected output/solution
+    answerExplanation String?           @db.Text   // Why this is correct
+    
+    // For code questions
+    testCases       Json?               // Array of { input, expectedOutput, isHidden }
+    starterCode     String?             @db.Text   // Initial code template
+    solutionCode    String?             @db.Text   // Reference solution
+    
+    // Hints (progressive)
+    hints           Json?               // Array of hint strings
+    
+    // Metadata
+    points          Int     @default(10)    // Points for this question
+    timeLimit       Int?                    // Seconds allowed (optional)
+    
+    // Source tracking
+    isSeeded        Boolean @default(true)  // false = AI generated
+    aiGenerated     Boolean @default(false)
+    generatedFor    String?                 // examAttemptId if AI generated
+    
+    // Stats
+    totalAttempts   Int     @default(0)
+    correctAttempts Int     @default(0)
+    avgTimeSpent    Int     @default(0)     // Seconds
+    
+    isActive        Boolean @default(true)
+    
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    
+    // Relations
+    practiceAnswers PracticeAnswer[]
+    examAnswers     ExamAnswer[]
+    
+    @@index([topicId])
+    @@index([subModuleId])
+    @@index([type])
+    @@index([mode])
+    @@index([difficulty])
+    @@index([isSeeded])
+    @@index([isActive])
+}
+
+// Practice Session (User practicing a topic/sub-module)
+model PracticeAttempt {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("PracticeAttempts", fields: [userId], references: [id], onDelete: Cascade)
+    
+    topicId         String
+    topic           AssessmentTopic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+    
+    subModuleId     String?
+    subModule       AssessmentSubModule? @relation(fields: [subModuleId], references: [id], onDelete: SetNull)
+    
+    mode            AssessmentMode
+    difficulty      QuestionDifficulty?
+    
+    // Session details
+    totalQuestions  Int
+    answeredCount   Int     @default(0)
+    correctCount    Int     @default(0)
+    score           Float   @default(0)     // Percentage
+    
+    // Timing
+    startedAt       DateTime @default(now())
+    completedAt     DateTime?
+    timeSpent       Int     @default(0)     // Seconds
+    
+    // Status
+    status          String  @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, ABANDONED
+    
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    
+    // Relations
+    answers         PracticeAnswer[]
+    
+    @@index([userId])
+    @@index([topicId])
+    @@index([subModuleId])
+    @@index([status])
+}
+
+// Individual practice answers
+model PracticeAnswer {
+    id              String              @id @default(cuid())
+    
+    attemptId       String
+    attempt         PracticeAttempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+    
+    questionId      String
+    question        AssessmentQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    
+    // User's answer
+    selectedOption  String?             // For MCQ
+    selectedOptions Json?               // For multiple select
+    codeAnswer      String?             @db.Text   // For code questions
+    textAnswer      String?             @db.Text   // For text answers
+    
+    // Result
+    isCorrect       Boolean
+    partialScore    Float?              // For partial credit
+    pointsEarned    Int     @default(0)
+    
+    // Timing
+    timeSpent       Int     @default(0) // Seconds
+    
+    // AI Feedback (optional for code)
+    aiFeedback      String?             @db.Text
+    
+    createdAt       DateTime @default(now())
+    
+    @@unique([attemptId, questionId])
+    @@index([attemptId])
+    @@index([questionId])
+}
+
+// Real Exam Attempt (Certified assessment)
+model ExamAttempt {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("ExamAttempts", fields: [userId], references: [id], onDelete: Cascade)
+    
+    topicId         String
+    topic           AssessmentTopic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+    
+    mode            AssessmentMode
+    difficulty      QuestionDifficulty  // Easy, Intermediate, Advanced (no sub-modules)
+    
+    // Exam configuration
+    totalQuestions  Int
+    timeLimit       Int                 // Total seconds
+    passingScore    Float   @default(70) // Percentage to pass
+    
+    // Results
+    answeredCount   Int     @default(0)
+    correctCount    Int     @default(0)
+    score           Float?              // Final percentage
+    passed          Boolean?
+    
+    // Timing
+    startedAt       DateTime @default(now())
+    completedAt     DateTime?
+    timeSpent       Int     @default(0)
+    
+    // Status
+    status          String  @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, ABANDONED, FLAGGED
+    
+    // Proctoring (basic for now, advanced later)
+    tabSwitchCount  Int     @default(0)
+    warnings        Json?               // Array of warning events
+    
+    // Certificate
+    certificateId   String?             @unique
+    certificateUrl  String?
+    
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    
+    // Relations
+    answers         ExamAnswer[]
+    
+    @@index([userId])
+    @@index([topicId])
+    @@index([status])
+    @@index([passed])
+}
+
+// Individual exam answers
+model ExamAnswer {
+    id              String              @id @default(cuid())
+    
+    attemptId       String
+    attempt         ExamAttempt         @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+    
+    questionId      String
+    question        AssessmentQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    
+    // User's answer
+    selectedOption  String?
+    selectedOptions Json?
+    codeAnswer      String?             @db.Text
+    textAnswer      String?             @db.Text
+    
+    // Result
+    isCorrect       Boolean?            // null until graded
+    partialScore    Float?
+    pointsEarned    Int     @default(0)
+    
+    // Timing
+    timeSpent       Int     @default(0)
+    
+    // AI Evaluation (for code)
+    aiEvaluation    Json?               // { score, feedback, testResults }
+    
+    createdAt       DateTime @default(now())
+    
+    @@unique([attemptId, questionId])
+    @@index([attemptId])
+    @@index([questionId])
+}
+
+// User Assessment Stats
+model UserAssessmentStats {
+    id              String              @id @default(cuid())
+    
+    userId          String              @unique
+    user            User                @relation("AssessmentStats", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Practice stats
+    totalPracticeAttempts   Int     @default(0)
+    practiceQuestionsAnswered Int   @default(0)
+    practiceCorrectAnswers  Int     @default(0)
+    avgPracticeScore        Float   @default(0)
+    totalPracticeTime       Int     @default(0) // Seconds
+    
+    // Exam stats
+    totalExamAttempts       Int     @default(0)
+    examsPassed             Int     @default(0)
+    examsFailed             Int     @default(0)
+    avgExamScore            Float   @default(0)
+    
+    // Achievements
+    certificates            Int     @default(0)
+    streakDays              Int     @default(0)
+    longestStreak           Int     @default(0)
+    lastActivityAt          DateTime?
+    
+    // Per-topic progress stored as JSON
+    topicProgress           Json?   // { topicId: { practiced, examsPassed, avgScore } }
+    
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    
+    @@index([userId])
+}
+
+// Assessment Certificates
+model AssessmentCertificate {
+    id              String              @id @default(cuid())
+    certificateId   String              @unique
+    
+    userId          String
+    user            User                @relation("AssessmentCertificates", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // What was certified
+    topicName       String
+    language        AssessmentLanguage
+    difficulty      QuestionDifficulty
+    mode            AssessmentMode
+    
+    // Results
+    score           Float
+    passingScore    Float
+    
+    // Validity
+    issuedAt        DateTime @default(now())
+    expiresAt       DateTime?
+    isActive        Boolean @default(true)
+    
+    // Verification
+    verificationUrl String?
+    
+    @@index([userId])
+    @@index([certificateId])
+}
+
+// ==========================================
+// USER-GENERATED PRACTICE SETS
+// ==========================================
+
+// Status of user-generated content
+enum UserContentStatus {
+    GENERATING      // AI is generating questions
+    DRAFT           // Generated but not finalized
+    ACTIVE          // Ready to be taken
+    ARCHIVED        // Hidden by user
+}
+
+// User-generated practice set
+model UserPracticeSet {
+    id              String              @id @default(cuid())
+    
+    // Creator info
+    creatorId       String
+    creator         User                @relation("CreatedPracticeSets", fields: [creatorId], references: [id], onDelete: Cascade)
+    
+    // Content metadata
+    title           String
+    description     String?             @db.Text
+    slug            String              @unique
+    
+    // Topic/Language
+    language        AssessmentLanguage
+    topicId         String?
+    topic           AssessmentTopic?    @relation("PracticeSetTopic", fields: [topicId], references: [id], onDelete: SetNull)
+    subModuleId     String?
+    subModule       AssessmentSubModule? @relation("PracticeSetSubModule", fields: [subModuleId], references: [id], onDelete: SetNull)
+    
+    // Configuration
+    mode            AssessmentMode      // QUIZ, CODE, MOCK, MIXED
+    difficulty      QuestionDifficulty
+    questionCount   Int                 @default(10)
+    timeLimit       Int?                // Optional time limit in seconds
+    
+    // Visibility
+    isPublic        Boolean             @default(false)
+    madePublicAt    DateTime?
+    
+    // Credits
+    creditsCost     Int                 @default(5)     // Cost to generate
+    creditsRefunded Int                 @default(0)     // If made public, 50% refund
+    
+    // Stats
+    views           Int                 @default(0)
+    likes           Int                 @default(0)
+    totalAttempts   Int                 @default(0)
+    avgScore        Float               @default(0)
+    completions     Int                 @default(0)
+    
+    // Status
+    status          UserContentStatus   @default(GENERATING)
+    
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+    
+    // Relations
+    questions       UserPracticeSetQuestion[]
+    purchases       UserPracticeSetPurchase[]
+    attempts        UserPracticeSetAttempt[]
+    likedBy         UserPracticeSetLike[]
+    
+    @@index([creatorId])
+    @@index([language])
+    @@index([isPublic])
+    @@index([status])
+    @@index([createdAt])
+}
+
+// Questions for user-generated practice set (AI generated)
+model UserPracticeSetQuestion {
+    id              String              @id @default(cuid())
+    
+    practiceSetId   String
+    practiceSet     UserPracticeSet     @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+    
+    // Question details
+    type            AssessmentQuestionType
+    difficulty      QuestionDifficulty
+    orderIndex      Int                 @default(0)
+    
+    // Question content
+    question        String              @db.Text
+    codeSnippet     String?             @db.Text
+    codeLanguage    String?
+    
+    // Answer options (for MCQ/Multiple Select)
+    options         Json?               // Array of { id, text, isCorrect }
+    
+    // Correct answer
+    correctAnswer   String?             @db.Text
+    answerExplanation String?           @db.Text
+    
+    // For code questions
+    testCases       Json?               // Array of { input, expectedOutput, isHidden }
+    starterCode     String?             @db.Text
+    solutionCode    String?             @db.Text
+    
+    // For mock questions
+    mockPrompt      String?             @db.Text
+    expectedTopics  Json?               // Topics to cover in answer
+    
+    // Hints
+    hints           Json?               // Array of hint strings
+    
+    // Points
+    points          Int                 @default(10)
+    
+    createdAt       DateTime            @default(now())
+    
+    // Relations
+    answers         UserPracticeSetAnswer[]
+    
+    @@index([practiceSetId])
+}
+
+// Purchase record for practice sets
+model UserPracticeSetPurchase {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("PurchasedPracticeSets", fields: [userId], references: [id], onDelete: Cascade)
+    
+    practiceSetId   String
+    practiceSet     UserPracticeSet     @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+    
+    // No credits needed - attached when made public or if creator shares
+    attachedAt      DateTime            @default(now())
+    
+    @@unique([userId, practiceSetId])
+    @@index([userId])
+    @@index([practiceSetId])
+}
+
+// Likes for practice sets
+model UserPracticeSetLike {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("PracticeSetLikes", fields: [userId], references: [id], onDelete: Cascade)
+    
+    practiceSetId   String
+    practiceSet     UserPracticeSet     @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+    
+    createdAt       DateTime            @default(now())
+    
+    @@unique([userId, practiceSetId])
+    @@index([userId])
+    @@index([practiceSetId])
+}
+
+// User attempt on a practice set
+model UserPracticeSetAttempt {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("PracticeSetAttempts", fields: [userId], references: [id], onDelete: Cascade)
+    
+    practiceSetId   String
+    practiceSet     UserPracticeSet     @relation(fields: [practiceSetId], references: [id], onDelete: Cascade)
+    
+    // Session details
+    mode            AssessmentMode
+    totalQuestions  Int
+    answeredCount   Int                 @default(0)
+    correctCount    Int                 @default(0)
+    score           Float               @default(0)     // Percentage
+    
+    // Credits
+    creditsSpent    Int                 @default(0)     // Cost if any
+    creditsEarned   Int                 @default(0)     // Refund based on score
+    
+    // Timing
+    startedAt       DateTime            @default(now())
+    completedAt     DateTime?
+    timeSpent       Int                 @default(0)     // Seconds
+    
+    // Status
+    status          String              @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, ABANDONED
+    
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+    
+    // Relations
+    answers         UserPracticeSetAnswer[]
+    
+    @@index([userId])
+    @@index([practiceSetId])
+    @@index([status])
+}
+
+// Individual answers for practice set attempts
+model UserPracticeSetAnswer {
+    id              String              @id @default(cuid())
+    
+    attemptId       String
+    attempt         UserPracticeSetAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+    
+    questionId      String
+    question        UserPracticeSetQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    
+    // User's answer
+    selectedOption  String?
+    selectedOptions Json?
+    codeAnswer      String?             @db.Text
+    textAnswer      String?             @db.Text
+    
+    // For mock - voice transcript
+    voiceTranscript String?             @db.Text
+    
+    // Result
+    isCorrect       Boolean?
+    partialScore    Float?
+    pointsEarned    Int                 @default(0)
+    timeSpent       Int                 @default(0)
+    
+    // AI Feedback
+    aiFeedback      String?             @db.Text
+    
+    createdAt       DateTime            @default(now())
+    
+    @@unique([attemptId, questionId])
+    @@index([attemptId])
+    @@index([questionId])
+}
+
+// ==========================================
+// USER-GENERATED EXAM SETS
+// ==========================================
+
+// User-generated exam set (Intermediate/Advanced only)
+model UserExamSet {
+    id              String              @id @default(cuid())
+    
+    // Creator info
+    creatorId       String
+    creator         User                @relation("CreatedExamSets", fields: [creatorId], references: [id], onDelete: Cascade)
+    
+    // Content metadata
+    title           String
+    description     String?             @db.Text
+    slug            String              @unique
+    
+    // Topic/Language
+    language        AssessmentLanguage
+    topicId         String?
+    topic           AssessmentTopic?    @relation("ExamSetTopic", fields: [topicId], references: [id], onDelete: SetNull)
+    
+    // Configuration (No EASY difficulty for exams)
+    mode            AssessmentMode
+    difficulty      QuestionDifficulty  // Only INTERMEDIATE or HARD
+    questionCount   Int                 @default(20)
+    timeLimit       Int                 @default(1800) // 30 minutes default
+    passingScore    Float               @default(70)
+    
+    // Visibility
+    isPublic        Boolean             @default(false)
+    madePublicAt    DateTime?
+    
+    // Credits (Double the practice cost)
+    creditsCost     Int                 @default(10)
+    creditsRefunded Int                 @default(0)
+    
+    // Stats
+    views           Int                 @default(0)
+    likes           Int                 @default(0)
+    totalAttempts   Int                 @default(0)
+    avgScore        Float               @default(0)
+    passCount       Int                 @default(0)
+    failCount       Int                 @default(0)
+    
+    // Status
+    status          UserContentStatus   @default(GENERATING)
+    
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+    
+    // Relations
+    questions       UserExamSetQuestion[]
+    purchases       UserExamSetPurchase[]
+    attempts        UserExamSetAttempt[]
+    likedBy         UserExamSetLike[]
+    
+    @@index([creatorId])
+    @@index([language])
+    @@index([isPublic])
+    @@index([status])
+    @@index([createdAt])
+}
+
+// Questions for user-generated exam set
+model UserExamSetQuestion {
+    id              String              @id @default(cuid())
+    
+    examSetId       String
+    examSet         UserExamSet         @relation(fields: [examSetId], references: [id], onDelete: Cascade)
+    
+    // Question details
+    type            AssessmentQuestionType
+    difficulty      QuestionDifficulty  // INTERMEDIATE or HARD only
+    orderIndex      Int                 @default(0)
+    
+    // Question content
+    question        String              @db.Text
+    codeSnippet     String?             @db.Text
+    codeLanguage    String?
+    
+    // Answer options
+    options         Json?
+    correctAnswer   String?             @db.Text
+    answerExplanation String?           @db.Text
+    
+    // For code questions
+    testCases       Json?
+    starterCode     String?             @db.Text
+    solutionCode    String?             @db.Text
+    
+    // For mock questions
+    mockPrompt      String?             @db.Text
+    expectedTopics  Json?
+    
+    hints           Json?
+    points          Int                 @default(10)
+    
+    createdAt       DateTime            @default(now())
+    
+    // Relations
+    answers         UserExamSetAnswer[]
+    
+    @@index([examSetId])
+}
+
+// Purchase for exam sets
+model UserExamSetPurchase {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("PurchasedExamSets", fields: [userId], references: [id], onDelete: Cascade)
+    
+    examSetId       String
+    examSet         UserExamSet         @relation(fields: [examSetId], references: [id], onDelete: Cascade)
+    
+    attachedAt      DateTime            @default(now())
+    
+    @@unique([userId, examSetId])
+    @@index([userId])
+    @@index([examSetId])
+}
+
+// Likes for exam sets
+model UserExamSetLike {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("ExamSetLikes", fields: [userId], references: [id], onDelete: Cascade)
+    
+    examSetId       String
+    examSet         UserExamSet         @relation(fields: [examSetId], references: [id], onDelete: Cascade)
+    
+    createdAt       DateTime            @default(now())
+    
+    @@unique([userId, examSetId])
+    @@index([userId])
+    @@index([examSetId])
+}
+
+// User attempt on an exam set
+model UserExamSetAttempt {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("ExamSetAttempts", fields: [userId], references: [id], onDelete: Cascade)
+    
+    examSetId       String
+    examSet         UserExamSet         @relation(fields: [examSetId], references: [id], onDelete: Cascade)
+    
+    // Session details
+    mode            AssessmentMode
+    totalQuestions  Int
+    answeredCount   Int                 @default(0)
+    correctCount    Int                 @default(0)
+    score           Float?
+    passed          Boolean?
+    
+    // Credits
+    creditsSpent    Int                 @default(0)
+    creditsEarned   Int                 @default(0)
+    
+    // Timing
+    timeLimit       Int
+    startedAt       DateTime            @default(now())
+    completedAt     DateTime?
+    timeSpent       Int                 @default(0)
+    
+    // Anti-cheat (basic)
+    tabSwitchCount  Int                 @default(0)
+    warnings        Json?
+    
+    // Status
+    status          String              @default("IN_PROGRESS")
+    
+    // Certificate
+    certificateId   String?             @unique
+    
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+    
+    // Relations
+    answers         UserExamSetAnswer[]
+    
+    @@index([userId])
+    @@index([examSetId])
+    @@index([status])
+    @@index([passed])
+}
+
+// Answers for exam set attempts
+model UserExamSetAnswer {
+    id              String              @id @default(cuid())
+    
+    attemptId       String
+    attempt         UserExamSetAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+    
+    questionId      String
+    question        UserExamSetQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    
+    selectedOption  String?
+    selectedOptions Json?
+    codeAnswer      String?             @db.Text
+    textAnswer      String?             @db.Text
+    voiceTranscript String?             @db.Text
+    
+    isCorrect       Boolean?
+    partialScore    Float?
+    pointsEarned    Int                 @default(0)
+    timeSpent       Int                 @default(0)
+    
+    aiFeedback      String?             @db.Text
+    aiEvaluation    Json?
+    
+    createdAt       DateTime            @default(now())
+    
+    @@unique([attemptId, questionId])
+    @@index([attemptId])
+    @@index([questionId])
+}
+
+// ==========================================
+// RANDOM PRACTICE SESSIONS
+// ==========================================
+
+// Random practice session (questions from all public sets)
+model RandomPracticeSession {
+    id              String              @id @default(cuid())
+    
+    userId          String
+    user            User                @relation("RandomPracticeSessions", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Configuration
+    language        AssessmentLanguage?  // null = all languages
+    mode            AssessmentMode?      // null = all modes
+    difficulty      QuestionDifficulty?  // null = all difficulties
+    questionCount   Int                 @default(10)
+    
+    // Credits
+    creditsCost     Int                 @default(3)
+    creditsEarned   Int                 @default(0)
+    
+    // Session details
+    totalQuestions  Int
+    answeredCount   Int                 @default(0)
+    correctCount    Int                 @default(0)
+    score           Float               @default(0)
+    
+    // Timing
+    startedAt       DateTime            @default(now())
+    completedAt     DateTime?
+    timeSpent       Int                 @default(0)
+    
+    // Questions (stored as JSON array of question references)
+    questionRefs    Json                // Array of { type: 'practice'|'exam', setId, questionId }
+    
+    // Answers (stored as JSON)
+    answers         Json?               // Array of { questionRef, answer, isCorrect, points }
+    
+    status          String              @default("IN_PROGRESS")
+    
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+    
+    @@index([userId])
+    @@index([status])
+    @@index([createdAt])
+}
