@@ -1,9 +1,9 @@
 "use server"
 
-import { auth } from '@repo/auth'
-import prisma from "@repo/prisma"
+import { auth } from "@repo/auth";
+import prisma from "@repo/prisma";
 import OpenAI from "openai"
-import { CreditType, Currency } from "@repo/prisma/client"
+import { CreditType, Currency } from "@prisma/client"
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -63,8 +63,8 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
         // Check if knowledge base already exists (cast to any for dynamic field check)
         const knowledgeData = project.knowledge as any
         if (knowledgeData?.mockKnowledgeBase) {
-            return { 
-                success: true, 
+            return {
+                success: true,
                 mockData: {
                     knowledgeBase: knowledgeData.mockKnowledgeBase as string,
                     hasKnowledgeBase: true
@@ -88,17 +88,17 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
             const subtasksData = (t.taskDetail?.subTasks as any[]) || []
             return {
                 title: t.title,
-                subtasks: subtasksData.slice(0, 3).map((st: any) => st.title || st) 
+                subtasks: subtasksData.slice(0, 3).map((st: any) => st.title || st)
             }
         })
 
         const projectContext = `
-Project: ${project.title}
-Description: ${project.description?.substring(0, 300) || 'N/A'}
-Technologies: ${project.technologies.slice(0, 8).join(', ')}
-Stack: Frontend: ${stacks?.frontend || 'N/A'}, Backend: ${stacks?.backend || 'N/A'}, Database: ${stacks?.database || 'N/A'}
-Key Tasks: ${taskSummary.slice(0, 5).map(t => `${t.title} (${t.subtasks.join(', ')})`).join('; ')}
-`
+            Project: ${project.title}
+            Description: ${project.description?.substring(0, 300) || 'N/A'}
+            Technologies: ${project.technologies.slice(0, 8).join(', ')}
+            Stack: Frontend: ${stacks?.frontend || 'N/A'}, Backend: ${stacks?.backend || 'N/A'}, Database: ${stacks?.database || 'N/A'}
+            Key Tasks: ${taskSummary.slice(0, 5).map(t => `${t.title} (${t.subtasks.join(', ')})`).join('; ')}
+        `
 
         // Generate knowledge base with OpenAI
         const completion = await openai.chat.completions.create({
@@ -167,7 +167,7 @@ ${knowledgeBase.practicalScenarios.map((s, i) => `${i + 1}. ${s}`).join('\n')}
         // Deduct credits and save knowledge base
         await prisma.$transaction(async (tx: any) => {
             // Update user credits
-            await tx.user.updateMany({
+            await tx.user.update({
                 where: { id: session.user.id },
                 data: { credits: { decrement: MOCK_CREDIT_COST } }
             })
@@ -240,22 +240,14 @@ export async function createProjectMockSession(projectSlug: string) {
 
         // Get user info
         const user = await prisma.user.findUnique({
-            where: { 
-                id: session.user.id 
-            },
-            select: { 
-                name: true, username: true 
-            }
+            where: { id: session.user.id },
+            select: { name: true, username: true }
         })
 
         // Create session using existing model
         const mockSession = await prisma.projectV2MockSession.create({
             data: {
-                progress: {
-                    select: {
-                        userId: user?.id
-                    }
-                },
+                userId: session.user.id,
                 projectId: project.id,
                 agentId: process.env.NEXT_PUBLIC_ELEVENLABS_MOCKVOICE!,
                 status: 'SCHEDULED',
@@ -288,7 +280,7 @@ export async function createProjectMockSession(projectSlug: string) {
  * Update mock session status
  */
 export async function updateProjectMockSessionStatus(
-    sessionId: string, 
+    sessionId: string,
     status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
     conversationId?: string
 ) {
@@ -538,8 +530,8 @@ export async function hasProjectMockKnowledgeBase(projectSlug: string) {
 
         const knowledgeData = project.knowledge as any
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             hasKnowledgeBase: !!knowledgeData?.mockKnowledgeBase,
             knowledgeBase: (knowledgeData?.mockKnowledgeBase as string) || null
         }

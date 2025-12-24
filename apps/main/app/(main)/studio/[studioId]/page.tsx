@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import StudioEditor from "@/components/studio/studio-editor";
 import StudioEditorSkeleton from "@/components/studio/studio-editor-skeleton";
 import { getStudio } from "@/actions/(main)/studios/studio.action";
-import type { Studio, StudioQuiz, StudioFlashcardDeck, StudioCodeBlock, StudioMediaBlock, StudioChatMessage, QuizQuestion, FlashCard, BlockContent } from "@/types/studio";
+import type { 
+	Studio, StudioQuiz, StudioFlashcardDeck, StudioCodeBlock, StudioMediaBlock, 
+	StudioChatMessage, QuizQuestion, FlashCard, BlockContent 
+} from "@/types/studio";
 
 interface StudioEditorPageProps {
 	params: Promise<{

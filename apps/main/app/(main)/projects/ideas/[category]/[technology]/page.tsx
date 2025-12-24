@@ -5,7 +5,8 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import {
-    ArrowLeft, Sparkles, Play, Filter, Search, Heart, Eye, TrendingUp, CheckCircle2, Code2, Layers, Terminal
+    ArrowLeft, Sparkles, Play, Filter, Search, Heart, Eye, TrendingUp, 
+    CheckCircle2, Code2, Layers, Terminal
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'

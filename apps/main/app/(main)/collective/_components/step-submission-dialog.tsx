@@ -3,18 +3,16 @@
 import { useState } from "react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from "@repo/ui/components/ui/dialog";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Send, FileText, Code, Globe, MessageSquare } from "lucide-react";
+import { 
+  Send, FileText, Code, Globe, MessageSquare 
+} from "lucide-react";
 import { submitStep } from "@/actions/(main)/collective/challenge.actions";
 import { toast } from "sonner";
 

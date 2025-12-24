@@ -18,7 +18,7 @@ import { Label } from "@repo/ui/components/ui/label";
 import {
     Coins, Send, ArrowDownLeft, Sparkles
 } from "lucide-react";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface Transfer {
     id: string;

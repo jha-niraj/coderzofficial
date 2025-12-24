@@ -11,7 +11,7 @@ import { FcGoogle } from "react-icons/fc";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
 import { Label } from "@repo/ui/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import { useAppContext } from "@/app/context/usercontext";
 
 function SignUpForm() {

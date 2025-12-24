@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { 
+    Avatar, AvatarFallback, AvatarImage 
+} from "@repo/ui/components/ui/avatar";
 import { getCommunityLearnings } from "@/actions/(main)/learnings/learnings.action";
 import { cn } from "@repo/ui/lib/utils";
 

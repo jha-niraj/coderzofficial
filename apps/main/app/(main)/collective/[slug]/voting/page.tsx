@@ -1,9 +1,15 @@
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { 
+    Card, CardContent, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { 
+	Avatar, AvatarFallback, AvatarImage 
+} from "@repo/ui/components/ui/avatar";
 import { Separator } from "@repo/ui/components/ui/separator";
-import { Clock, ExternalLink, Calendar, Users, TrendingUp, ArrowLeft, Sparkles } from "lucide-react";
+import { 
+	Clock, ExternalLink, Calendar, Users, TrendingUp, ArrowLeft 
+} from "lucide-react";
 import { getProposalByTitle } from "@/actions/(main)/collective/proposal.actions";
 import { VotingSection } from "../../_components/voting-section";
 import { CommentsSection } from "../../_components/comments-section";

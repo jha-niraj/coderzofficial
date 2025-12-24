@@ -8,11 +8,15 @@ import {
 import { Button } from "@repo/ui/components/ui/button"
 import { ArrowLeft, Search } from "lucide-react"
 import Link from "next/link"
-import { getPublicInterviewPlans, purchaseInterviewPlan } from "@/actions/(main)/ai/jobinterview.action"
-import { InterviewPlanCard, type BaseInterviewPlan } from "../_components/interviewplancard"
+import { 
+    getPublicInterviewPlans, purchaseInterviewPlan 
+} from "@/actions/(main)/ai/jobinterview.action"
+import { 
+    InterviewPlanCard, type BaseInterviewPlan 
+} from "../_components/interviewplancard"
 import { useSession } from '@repo/auth'
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import toast from '@repo/ui/components/ui/sonner'
 
 export default function PublicGenerationsPage() {
     const [plans, setPlans] = useState<BaseInterviewPlan[]>([])

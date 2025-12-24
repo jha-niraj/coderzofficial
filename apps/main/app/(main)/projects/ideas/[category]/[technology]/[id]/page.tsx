@@ -10,10 +10,16 @@ import {
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Separator } from '@repo/ui/components/ui/separator'
-import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui/components/ui/avatar'
-import { getProjectIdeaById, toggleProjectUpvote, checkUserUpvote } from '@/actions/(main)/projects/project-ideas.action'
+import { 
+    Avatar, AvatarFallback, AvatarImage 
+} from '@repo/ui/components/ui/avatar'
+import { 
+    getProjectIdeaById, toggleProjectUpvote, checkUserUpvote 
+} from '@/actions/(main)/projects/project-ideas.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { getCategoryById, getTechnologyById } from '../../../data/categories'
 

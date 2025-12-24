@@ -9,7 +9,7 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import { 
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle 
 } from '@repo/ui/components/ui/dialog'
-import { Orb, AgentState } from '@/components/ui/orb'
+import { Orb, AgentState } from '@/components/main/orb'
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff,
     Loader2, CheckCircle2, AlertCircle

@@ -1,9 +1,16 @@
-import { getUserProfile, updateContactInfo, updateUserCertifications, updateUserProfile, updateUserSkills } from "@/actions/(main)/user/user.action"
+import { 
+	getUserProfile, updateContactInfo, updateUserCertifications, 
+	updateUserProfile, updateUserSkills 
+} from "@/actions/(main)/user/user.action"
 import { create } from "zustand"
-import { ContactInfo, UserCertification, UserProfile, UserSkill } from "../../types/user";
-import { deleteResume, uploadResume } from "@/actions/(main)/user/resume.action";
+import { 
+	ContactInfo, UserCertification, UserProfile, UserSkill 
+} from "@/types/user";
+import { 
+	deleteResume, uploadResume 
+} from "@/actions/(main)/user/resume.action";
 import { fetchXpAndCredit, transferCredits } from "@/actions/(main)/subscription/credits.action";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface UserState {
 	user: UserProfile | null

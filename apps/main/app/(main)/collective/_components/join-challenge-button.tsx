@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@repo/ui/components/ui/button";
-import { Users, Loader2 } from "lucide-react";
+import { 
+  Users, Loader2 
+} from "lucide-react";
 import { joinChallenge } from "@/actions/(main)/collective/challenge.actions";
-import { toast } from "sonner";
+import toast from '@repo/ui/components/ui/sonner'
 import { useSession } from '@repo/auth';
 
 interface JoinChallengeButtonProps {

@@ -3,20 +3,18 @@
 import { useState } from "react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, 
+  DialogTrigger
 } from "@repo/ui/components/ui/dialog";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { X, Plus, Lightbulb, Users, Calendar } from "lucide-react";
+import { 
+  X, Plus, Lightbulb, Users, Calendar 
+} from "lucide-react";
 import { createProposal } from "@/actions/(main)/collective/proposal.actions";
-import { toast } from "sonner";
+import toast from '@repo/ui/components/ui/sonner'
 
 interface CreateProposalDialogProps {
   children: React.ReactNode;

@@ -3,19 +3,25 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-    Brain, ArrowLeft, Clock, CheckCircle, XCircle, 
-    Trophy, Sparkles, AlertCircle, Coins, Loader2
+    Brain, ArrowLeft, Clock, CheckCircle, XCircle, Trophy, Sparkles, AlertCircle, 
+    Coins, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { RadioGroup, RadioGroupItem } from '@repo/ui/components/ui/radio-group'
 import { Label } from '@repo/ui/components/ui/label'
 import toast from '@repo/ui/components/ui/sonner'
-import { generateProjectQuiz, submitQuizAttempt, getQuizAttempts } from '@/actions/(main)/projects/projectv2-quiz.action'
-import { QuizClientProps, Quiz, QuizResult, QuizAttempt, QuizQuestion, QuizAnswer } from '@/types/project'
+import { 
+    generateProjectQuiz, submitQuizAttempt, getQuizAttempts 
+} from '@/actions/(main)/projects/projectv2-quiz.action'
+import { 
+    QuizClientProps, Quiz, QuizResult, QuizAttempt, QuizQuestion, QuizAnswer 
+} from '@/types/project'
 
 export default function QuizClient({ project, existingQuiz, userCredits, previousAttempts: initialAttempts }: QuizClientProps) {
     const [stage, setStage] = useState<'payment' | 'quiz' | 'results'>('payment')

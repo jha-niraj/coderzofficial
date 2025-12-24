@@ -14,7 +14,7 @@ import {
 import {
 	Pagination, PaginationContent, PaginationItem, PaginationLink,
 	PaginationNext, PaginationPrevious
-} from "@/components/ui/pagination"
+} from "@repo/ui/components/ui/pagination"
 import {
 	Search, Filter, Code2, Sparkles
 } from "lucide-react"

@@ -272,18 +272,22 @@ export default function OpenSourceLearnPage() {
                                                                 <span className="text-sm text-neutral-500 dark:text-neutral-500">
                                                                     Module {index + 1}
                                                                 </span>
-                                                                {isComplete && (
+                                                                {
+                                                                isComplete && (
                                                                     <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                                                                         <CheckCircle className="w-3 h-3 mr-1" />
                                                                         Completed
                                                                     </Badge>
-                                                                )}
-                                                                {!unlocked && (
+                                                                )
+                                                                }
+                                                                {
+                                                                !unlocked && (
                                                                     <Badge variant="outline" className="text-neutral-500">
                                                                         <Lock className="w-3 h-3 mr-1" />
                                                                         Locked
                                                                     </Badge>
-                                                                )}
+                                                                )
+                                                                }
                                                             </div>
                                                             <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">
                                                                 {module.title}

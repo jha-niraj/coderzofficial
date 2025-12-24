@@ -1,6 +1,8 @@
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
-import { getAllForgeTracks, getUserForgeProgress } from '@/actions/(main)/challenges/forge.action'
+import { 
+    getAllForgeTracks, getUserForgeProgress 
+} from '@/actions/(main)/challenges/forge.action'
 import { getAllCrucibleEvents } from '@/actions/(main)/challenges/crucible.action'
 import { ChallengesHubClient } from './_components/challenges-hub-client'
 

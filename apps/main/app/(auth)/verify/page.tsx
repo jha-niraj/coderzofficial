@@ -8,7 +8,7 @@ import {
 	CheckCircle2, RefreshCw, ShieldCheck, Loader2
 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { toast } from "sonner"
+import toast from '@repo/ui/components/ui/sonner'
 import { verifyOTP, resendVerificationOTP } from "@/actions/(auth)/auth/auth.actions"
 import { signIn } from '@repo/auth'
 import { motion } from "framer-motion"
@@ -56,11 +56,11 @@ function VerifyContent() {
 		const newCode = [...code]
 		newCode[index] = value
 		setCode(newCode)
-		if (value && index < 5) inputRefs[index + 1].current?.focus()
+		if (value && index < 5) inputRefs[index + 1]?.current?.focus()
 	}
 
 	const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === "Backspace" && !code[index] && index > 0) inputRefs[index - 1].current?.focus()
+		if (e.key === "Backspace" && !code[index] && index > 0) inputRefs[index - 1]?.current?.focus()
 	}
 
 	const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -69,7 +69,7 @@ function VerifyContent() {
 		if (/^\d{6}$/.test(pastedData)) {
 			const digits = pastedData.split("")
 			setCode(digits)
-			inputRefs[5].current?.focus()
+			inputRefs[5]?.current?.focus()
 		}
 	}
 
@@ -131,7 +131,7 @@ function VerifyContent() {
 			} else {
 				toast.error(result.error || "Invalid code")
 				setCode(["", "", "", "", "", ""])
-				inputRefs[0].current?.focus()
+				inputRefs[0]?.current?.focus() || null;
 			}
 		} catch (error) {
 			toast.error("Verification failed")

@@ -18,7 +18,8 @@ import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from '@repo/ui/components/ui/tabs'
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, 
+    DropdownMenuTrigger
 } from '@repo/ui/components/ui/dropdown-menu'
 import { PostCard } from '@/components/community/post-card'
 import { PostComposer } from '@/components/community/post-composer'

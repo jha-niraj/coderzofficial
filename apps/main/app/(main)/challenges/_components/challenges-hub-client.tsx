@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { 
-    Hammer, Flame, ChevronRight, Zap, Users, Trophy, 
-    Clock, Star, Lock, CheckCircle2, Play, Sparkles,
-    Code2, Brain, Target, TrendingUp, ArrowRight
+    Hammer, Flame, ChevronRight, Zap, Users, Trophy, Clock, Star, Lock, 
+    CheckCircle2, Play, Sparkles, Code2, Brain, Target, TrendingUp, ArrowRight
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { seedSampleChallenges } from '@/actions/(main)/challenges/seed-challenges.action'
 import toast from '@repo/ui/components/ui/sonner'

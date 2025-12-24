@@ -6,11 +6,11 @@ import Link from "next/link";
 import {
     MessageSquare, ChevronRight, Loader2, Clock, Heart, MessageCircle
 } from "lucide-react";
-import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { 
+    Avatar, AvatarFallback, AvatarImage 
+} from "@repo/ui/components/ui/avatar";
 import { getCommunityBookmarks } from "@/actions/(main)/bookmarks/bookmarks.action";
-import { cn } from "@repo/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 export default function CommunityBookmarksPage() {

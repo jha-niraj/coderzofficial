@@ -2,23 +2,32 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { 
+    Card, CardContent, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
+import { 
+    Accordion, AccordionContent, AccordionItem, AccordionTrigger 
+} from "@repo/ui/components/ui/accordion"
+import { 
+    Tabs, TabsContent, TabsList, TabsTrigger 
+} from "@repo/ui/components/ui/tabs"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
-    Code, MessageSquare, ArrowLeft, Calendar, Globe, Briefcase,
-    Copy, Check, ChevronRight, Target, Clock, Lightbulb, FileText,
-    Users, Brain, Sparkles, Award, TrendingUp, BarChart3, Send,
-    Loader2, CheckCircle, Mic, Type, Square, Lock, ArrowRight, X,
-    Workflow
+    Code, MessageSquare, ArrowLeft, Calendar, Globe, Briefcase, Copy, Check, 
+    ChevronRight, Target, Clock, Lightbulb, FileText, Users, Brain, Sparkles, 
+    Award, TrendingUp, BarChart3, Send, Loader2, CheckCircle, Mic, Type, Square, 
+    Lock, ArrowRight, X, Workflow
 } from "lucide-react"
 import Link from "next/link"
-import { getGenerationBySlug, evaluateCode, generateQuestionAnswer, getQuestionAnswer, transcribeVoiceToText, evaluateUserQuestionResponse, getUserQuestionResponse, getAllUserQuestionResponses } from "@/actions/(main)/ai/jobinterview.action"
+import { 
+    getGenerationBySlug, evaluateCode, generateQuestionAnswer, getQuestionAnswer, 
+    transcribeVoiceToText, evaluateUserQuestionResponse, getUserQuestionResponse, 
+    getAllUserQuestionResponses 
+} from "@/actions/(main)/ai/jobinterview.action"
 import { format } from "date-fns"
-import { toast } from "sonner"
+import toast from '@repo/ui/components/ui/sonner'
 import SmoothScroll from "@/components/smoothscroll"
 
 interface Generation {

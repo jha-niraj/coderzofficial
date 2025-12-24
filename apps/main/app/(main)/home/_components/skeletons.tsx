@@ -3,7 +3,7 @@
 import {
     Card, CardContent, CardHeader
 } from "@repo/ui/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@repo/ui/components/ui/skeleton";
 
 // Greeting Header Skeleton
 export function GreetingHeaderSkeleton() {

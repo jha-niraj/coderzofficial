@@ -4,7 +4,7 @@ import { auth } from '@repo/auth';
 import { redirect } from "next/navigation";
 import { prisma } from "@repo/prisma";
 import ConceptCreateForm from "./_components/concept-create-form";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@repo/ui/components/ui/skeleton";
 
 export const metadata: Metadata = {
     title: "Create Concept | Admin | TheCoderz",

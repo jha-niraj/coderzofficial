@@ -9,7 +9,9 @@ import {
 	ChevronRight, CheckCircle2, Clock, BookOpen
 } from "lucide-react";
 import Link from "next/link";
-import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
+import { 
+	ConceptCategory, ConceptDifficulty 
+} from "@repo/prisma/client";
 
 interface ProgressItem {
 	id: string;

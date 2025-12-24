@@ -15,7 +15,7 @@ import {
 import {
     Pagination, PaginationContent, PaginationEllipsis, PaginationItem, 
     PaginationLink, PaginationNext, PaginationPrevious,
-} from '@/components/ui/pagination'
+} from '@repo/ui/components/ui/pagination'
 import { getGlobalLeaderboard } from '@/actions/(main)/projects/leaderboard.action'
 import { 
     formatScore, getScoreColor, getRankBadgeColor, getRankSuffix 

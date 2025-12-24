@@ -6,17 +6,23 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import {
     Building2, Sparkles, Target, TrendingUp, CheckCircle,
     ArrowLeft, Plus, Star, Users, Trophy, ArrowRight, Search
 } from 'lucide-react'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@repo/ui/components/ui/sheet'
+import { 
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle 
+} from '@repo/ui/components/ui/sheet'
 import { Input } from '@repo/ui/components/ui/input'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Label } from '@repo/ui/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@repo/ui/components/ui/radio-group'
+import { 
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@repo/ui/components/ui/select'
 import toast from '@repo/ui/components/ui/sonner'
 
 // Mock company data

@@ -5,20 +5,17 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { 
-    ArrowLeft, Play, Lock, CheckCircle2, Zap, Clock, Users,
-    Trophy, ChevronRight, BookOpen, Star, AlertCircle, Code2
+    ArrowLeft, Play, Lock, CheckCircle2, Zap, Clock, Users, Trophy, ChevronRight, 
+    BookOpen, Star, AlertCircle, Code2
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
 } from '@repo/ui/components/ui/sheet'
 import { enrollInForgeTrack } from '@/actions/(main)/challenges/forge.action'
 import toast from '@repo/ui/components/ui/sonner'

@@ -2,7 +2,9 @@ import { Suspense } from 'react'
 import { auth } from '@repo/auth'
 import prisma from '@repo/prisma'
 import { UserProfileLeaderboardClient } from './_components/user-profile-leaderboard-client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
 import { UserX, ArrowLeft, Users } from 'lucide-react'
 import Link from 'next/link'

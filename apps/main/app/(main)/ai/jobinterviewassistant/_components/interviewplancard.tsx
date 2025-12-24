@@ -1,9 +1,13 @@
 "use client"
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { 
+    Card, CardContent, CardFooter, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
-import { Star, Users, CalendarDays, Briefcase, Code, MessageSquare } from "lucide-react"
+import { 
+    Star, Briefcase, Code, MessageSquare 
+} from "lucide-react"
 import Link from "next/link"
 import { cn } from "@repo/ui/lib/utils"
 import { useState } from "react"

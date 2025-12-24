@@ -1,18 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { 
+  Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { 
-  CheckCircle, 
-  Lock, 
-  Play, 
-  FileText, 
-  Code, 
-  MessageSquare,
-  Globe,
-  Clock
+  CheckCircle, Lock, Play, FileText, Code, MessageSquare, Globe, Clock
 } from "lucide-react";
 import { StepSubmissionDialog } from "./step-submission-dialog";
 

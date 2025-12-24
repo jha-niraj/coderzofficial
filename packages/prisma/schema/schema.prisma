@@ -475,13 +475,22 @@ model User {
     portfolioProjects PortfolioProject[] @relation("UserPortfolioProjects")
     socialLinks       SocialLink[]       @relation("UserSocialLinks")
 
-    // User model - ProjectV2 section
-    ProjectV2                  ProjectV2[] // Created projects
-    UserProjectV2Progress      UserProjectV2Progress[] // Enrolled projects (THE HUB)
-    ProjectV2GlobalLeaderboard ProjectV2GlobalLeaderboard? @relation("ProjectV2GlobalLeaderboard")
-    submittedProjectErrors ProjectV2Error[] @relation("SubmittedProjectErrors")
+    ProjectV2                  ProjectV2[]
+    UserProjectV2Progress      UserProjectV2Progress[]
+    UserTaskV2Status           UserTaskV2Status[]
+    ProjectV2Submission        ProjectV2Submission[]
+    ProjectV2QuizAttempt       ProjectV2QuizAttempt[]
+    ProjectV2MockSession       ProjectV2MockSession[]
+    ProjectV2FeatureSuggestion ProjectV2FeatureSuggestion[]
+    ProjectV2Leaderboard       ProjectV2Leaderboard[]       @relation("ProjectV2Leaderboard")
+    ProjectV2GlobalLeaderboard ProjectV2GlobalLeaderboard?  @relation("ProjectV2GlobalLeaderboard")
+    ProjectV2Resource          ProjectV2Resource[]          @relation("ProjectV2Resources")
+    submittedProjectIdeas ProjectIdea[] @relation("SubmittedProjectIdeas")
+    submittedProjectErrors ProjectV2Error[]     @relation("SubmittedProjectErrors")
+    projectErrorVotes      ProjectV2ErrorVote[] @relation("ProjectErrorVotes")
 
-    // Mock Interview Voice Relations
+    UserTaskV2DetailAccess UserTaskV2DetailAccess[] @relation("UserTaskDetailAccess")
+
     createdVoiceMocks MockInterviewVoice[] @relation("MockVoiceCreator")
     voiceSessions     MockVoiceSession[]   @relation("MockVoiceSessions")
     voiceRatings      MockVoiceRating[]    @relation("MockVoiceRatings")
@@ -489,9 +498,6 @@ model User {
     // Product Ideas Relations
     productIdeas   ProductIdea[]   @relation("ProductIdeas")
     backgroundJobs BackgroundJob[] @relation("BackgroundJobs")
-
-    // Project Ideas Relations
-    submittedProjectIdeas ProjectIdea[] @relation("SubmittedProjectIdeas")
 
     // ===============================================
     // COMMUNITY PLATFORM RELATIONS

@@ -1,11 +1,17 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { 
+  Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { 
+  Avatar, AvatarFallback, AvatarImage 
+} from "@repo/ui/components/ui/avatar";
 import { Progress } from "@repo/ui/components/ui/progress";
-import { Trophy, Users, Calendar, Clock, ExternalLink, Star } from "lucide-react";
+import { 
+  Trophy, Users, Calendar, Clock, ExternalLink, Star 
+} from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from "date-fns";
 

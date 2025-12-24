@@ -1,5 +1,7 @@
-import { Card, CardContent, CardFooter, CardHeader } from '@repo/ui/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { 
+    Card, CardContent, CardFooter, CardHeader 
+} from '@repo/ui/components/ui/card'
+import { Skeleton } from '@repo/ui/components/ui/skeleton'
 
 export function MockCardSkeleton() {
     return (

@@ -5,7 +5,7 @@ import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import axios from "axios";
 import { useState } from "react";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { 
     ArrowLeft, KeyRound, Loader2, Mail 

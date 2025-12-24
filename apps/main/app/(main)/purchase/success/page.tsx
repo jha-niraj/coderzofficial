@@ -12,7 +12,7 @@ import {
 	CheckCircle2, Download, Home, Receipt, Sparkles, CreditCard, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
-import { Spotlight } from '@/components/ui/spotlight'
+import { Spotlight } from '@repo/ui/components/ui/spotlight'
 import { useSession } from '@repo/auth'
 
 export default function PaymentSuccessPage() {

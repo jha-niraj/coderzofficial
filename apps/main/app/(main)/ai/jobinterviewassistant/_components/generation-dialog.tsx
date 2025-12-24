@@ -2,16 +2,19 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@repo/ui/components/ui/dialog"
+import { 
+    Dialog, DialogContent, DialogHeader, DialogTitle 
+} from "@repo/ui/components/ui/dialog"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { 
+    Card, CardContent, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card"
 import { Slider } from "@repo/ui/components/ui/slider"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Label } from "@repo/ui/components/ui/label"
 import { 
-    Sparkles, Target, MessageSquare, Code, BookOpen, 
-    CreditCard, Zap, Calculator, TrendingUp, AlertCircle,
+    Sparkles, Code, CreditCard, Zap, Calculator, AlertCircle,
     Lightbulb, Brain, Users
 } from "lucide-react"
 

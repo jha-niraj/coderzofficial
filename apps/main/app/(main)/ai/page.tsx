@@ -1,15 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     ArrowRight, Sparkles, Users, Zap, Trophy, Briefcase, GitPullRequest, 
     LayoutTemplate, BrainCircuit, ChevronRight, Lock, Clock, CheckCircle2,
-    ScanSearch,
-    FileText,
-    ShieldCheck,
-    TestTube2
+    ScanSearch, FileText, ShieldCheck, TestTube2
 } from "lucide-react"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"

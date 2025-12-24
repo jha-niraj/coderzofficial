@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-    GraduationCap, FolderKanban, Lightbulb, Film, Mic2, Users,
-    ChevronRight, Flame, Clock, Trophy, TrendingUp, Loader2,
-    CheckCircle2, Play
+    GraduationCap, FolderKanban, Lightbulb, Film, Mic2, Users, ChevronRight, Flame, 
+    Clock, Trophy, TrendingUp, Loader2, CheckCircle2, Play
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";

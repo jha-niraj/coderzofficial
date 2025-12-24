@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from '@repo/auth';
+import { auth } from "@repo/auth";
 import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -173,6 +173,8 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
 
         // Create task statuses (all TO_DO initially)
         const taskStatuses = project.tasks.map((task: any) => ({
+            userId: user.id,
+            projectId,
             taskId: task.id,
             progressId: progress.id,
             status: "TO_DO" as const,
@@ -228,7 +230,7 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
             orderBy: { orderIndex: 'asc' },
             include: {
                 UserTaskV2Status: {
-                    where: { progressId: progress.id },
+                    where: { userId: user.id },
                 },
             },
         });
@@ -299,12 +301,14 @@ export async function updateTaskStatus(
 
         // Update or create task status
         await prisma.userTaskV2Status.upsert({
-            where: { progressId_taskId: { progressId: progress.id, taskId } },
+            where: { userId_taskId: { userId: user.id, taskId } },
             update: {
                 status: newStatus,
                 completedAt: newStatus === "COMPLETED" ? new Date() : null,
             },
             create: {
+                userId: user.id,
+                projectId: task.projectId,
                 taskId,
                 progressId: progress.id,
                 status: newStatus,
@@ -315,7 +319,8 @@ export async function updateTaskStatus(
         // Recalculate progress
         const completedCount = await prisma.userTaskV2Status.count({
             where: {
-                progressId: progress.id,
+                userId: user.id,
+                projectId: task.projectId,
                 status: "COMPLETED",
             },
         });
@@ -363,27 +368,8 @@ export async function updateTaskNotes(taskId: string, notes: string): Promise<Ac
     try {
         const user = await getCurrentUser();
 
-        // Get task to find projectId
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            select: { projectId: true },
-        });
-
-        if (!task) {
-            return { success: false, error: "Task not found" };
-        }
-
-        // Get progress
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId: task.projectId } },
-        });
-
-        if (!progress) {
-            return { success: false, error: "Progress not found" };
-        }
-
         const taskStatus = await prisma.userTaskV2Status.findUnique({
-            where: { progressId_taskId: { progressId: progress.id, taskId } },
+            where: { userId_taskId: { userId: user.id, taskId } },
         });
 
         if (!taskStatus) {
@@ -429,18 +415,9 @@ export async function startQuiz(projectId: string): Promise<ActionResponse> {
             return { success: false, error: "Quiz not found for this project" };
         }
 
-        // Get progress first
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } },
-        });
-
-        if (!progress) {
-            return { success: false, error: "Project not started" };
-        }
-
         // Check if already attempted
         const existingAttempt = await prisma.projectV2QuizAttempt.findUnique({
-            where: { progressId_quizId: { progressId: progress.id, quizId: quiz.id } },
+            where: { userId_quizId: { userId: user.id, quizId: quiz.id } },
         });
 
         if (existingAttempt && existingAttempt.isCompleted) {
@@ -454,7 +431,8 @@ export async function startQuiz(projectId: string): Promise<ActionResponse> {
         // Create new attempt
         const attempt = await prisma.projectV2QuizAttempt.create({
             data: {
-                progressId: progress.id,
+                userId: user.id,
+                projectId,
                 quizId: quiz.id,
                 totalQuestions: quiz.questions.length,
             },
@@ -476,14 +454,9 @@ export async function submitQuizAnswer(
 
         const attempt = await prisma.projectV2QuizAttempt.findUnique({
             where: { id: attemptId },
-            include: {
-                progress: {
-                    select: { userId: true },
-                },
-            },
         });
 
-        if (!attempt || attempt.progress.userId !== user.id) {
+        if (!attempt || attempt.userId !== user.id) {
             return { success: false, error: "Invalid attempt" };
         }
 
@@ -530,13 +503,10 @@ export async function completeQuiz(attemptId: string): Promise<ActionResponse> {
             where: { id: attemptId },
             include: {
                 answers: true,
-                progress: {
-                    select: { userId: true },
-                },
             },
         });
 
-        if (!attempt || attempt.progress.userId !== user.id) {
+        if (!attempt || attempt.userId !== user.id) {
             return { success: false, error: "Invalid attempt" };
         }
 
@@ -587,7 +557,8 @@ export async function submitProject(
         // Create submission
         const submission = await prisma.projectV2Submission.create({
             data: {
-                progressId: progress.id,
+                userId: user.id,
+                projectId,
                 githubUrl: data.githubUrl,
                 liveUrl: data.liveUrl,
                 notes: data.notes,
@@ -635,6 +606,11 @@ export async function getUserProjects(page: number = 1, limit: number = 20): Pro
                             tasksCompleted: true,
                             totalTasks: true,
                         },
+                    },
+                    submissions: {
+                        where: { userId: user.id },
+                        take: 1,
+                        orderBy: { createdAt: 'desc' },
                     },
                 },
                 orderBy: { createdAt: 'desc' },
@@ -1109,6 +1085,8 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
 
             // 4. Create task progress for all tasks (snapshot)
             const taskStatuses = project.tasks.map((task: any) => ({
+                userId: user.id,
+                projectId,
                 taskId: task.id,
                 progressId: progress.id,
                 status: "TO_DO" as const,

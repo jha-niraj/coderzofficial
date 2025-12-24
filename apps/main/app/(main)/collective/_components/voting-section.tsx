@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, useOptimistic } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { 
+  Card, CardContent, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card";
 import { Button } from "@repo/ui/components/ui/button";
-import { ThumbsUp, ThumbsDown, Users } from "lucide-react";
+import { 
+  ThumbsUp, ThumbsDown, Users 
+} from "lucide-react";
 import { voteOnProposal } from "@/actions/(main)/collective/proposal.actions";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import { useSession } from '@repo/auth';
 
 interface VotingSectionProps {

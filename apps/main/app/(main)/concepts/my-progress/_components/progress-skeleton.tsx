@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import { 
 	Card, CardContent 
 } from "@repo/ui/components/ui/card";

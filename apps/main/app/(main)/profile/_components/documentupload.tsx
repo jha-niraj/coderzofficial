@@ -5,8 +5,10 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
 } from "@repo/ui/components/ui/dialog"
 import { Button } from "@repo/ui/components/ui/button"
-import { Upload, X, FileText, Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { 
+    Upload, X, FileText, Loader2 
+} from "lucide-react"
+import toast from "repo/ui/components/ui/sonner";
 
 interface DocumentUploadDialogProps {
     isOpen: boolean

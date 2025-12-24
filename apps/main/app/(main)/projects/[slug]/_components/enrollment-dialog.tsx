@@ -3,27 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
+  DialogTitle
 } from "@repo/ui/components/ui/dialog";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
-  CheckCircle2,
-  Coins,
-  FileCode,
-  ListChecks,
-  Sparkles,
-  AlertCircle,
-  Loader2,
-  PartyPopper,
+  CheckCircle2, Coins, FileCode, ListChecks, Sparkles, AlertCircle, Loader2, 
+  PartyPopper
 } from "lucide-react";
 import { enrollInProject } from "@/actions/(main)/projects/project.action";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface EnrollmentDialogProps {
   open: boolean;

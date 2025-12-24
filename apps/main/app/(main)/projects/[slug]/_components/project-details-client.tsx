@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
     ArrowLeft, Sparkles, Clock, Code2, Brain, Trophy, CheckCircle2, Lock, Unlock,
-    Play, Eye, Users, Target, Lightbulb, Layers, ListChecks, Share2, Coins,
-    BookOpen, Copy, Check, Plus, ArrowRight, Zap, AlertTriangle
+    Play, Users, Target, Lightbulb, Layers, ListChecks, Share2, Coins,
+    BookOpen, Copy, Check, Zap, AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -19,8 +19,7 @@ import {
 } from '@repo/ui/components/ui/tabs'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
-    SheetTrigger, SheetFooter
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetFooter
 } from '@repo/ui/components/ui/sheet'
 import { Input } from '@repo/ui/components/ui/input'
 import { Label } from '@repo/ui/components/ui/label'

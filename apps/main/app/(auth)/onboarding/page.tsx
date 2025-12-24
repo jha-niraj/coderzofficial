@@ -16,10 +16,10 @@ import {
 } from '@repo/ui/components/ui/dialog'
 import {
     Command, CommandEmpty, CommandGroup, CommandInput, CommandItem
-} from '@/components/ui/command'
+} from '@repo/ui/components/ui/command'
 import {
     Popover, PopoverContent, PopoverTrigger
-} from '@/components/ui/popover'
+} from '@repo/ui/components/ui/popover'
 import {
     Loader2, CheckCircle2, XCircle, Upload, ArrowRight, ArrowLeft, Sparkles, 
     Code, Briefcase, Target, TrendingUp, LogOut, ChevronsUpDown, Check, 

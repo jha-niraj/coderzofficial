@@ -3,14 +3,16 @@
 import { useEffect, useState } from 'react'
 import { getRecentSubmissions } from '@/actions/(main)/projects/project.action'
 import { Card, CardContent, CardHeader } from '@repo/ui/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@repo/ui/components/ui/skeleton'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Button } from '@repo/ui/components/ui/button'
-import { Github, ExternalLink, Trophy, Star, Eye, Calendar } from 'lucide-react'
+import { 
+    Github, ExternalLink, Trophy, Star, Calendar 
+} from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import Image from 'next/image'
-import { ProjectSubmission, DifficultyColor } from '@/types/project'
+import { ProjectSubmission } from '@/types/project'
 
 export function RecentSubmissionsGrid() {
     const [submissions, setSubmissions] = useState<ProjectSubmission[]>([])

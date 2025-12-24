@@ -16,7 +16,7 @@ import { Label } from "@repo/ui/components/ui/label"
 import Link from "next/link"
 import SmoothScroll from "@/components/smoothscroll"
 import { useState } from "react"
-import { toast } from "sonner"
+import toast from '@repo/ui/components/ui/sonner'
 import { submitProductIdea } from "@/actions/(main)/products/products.action"
 
 // --- Data Constants ---

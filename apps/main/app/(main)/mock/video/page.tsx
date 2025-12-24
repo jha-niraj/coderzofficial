@@ -5,10 +5,11 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import {
-    Video, Sparkles, Eye, Smile, TrendingUp, CheckCircle,
-    ArrowLeft, Bell, Calendar, Star, Users, Trophy, Target
+    Video, Eye, Smile, TrendingUp, CheckCircle, ArrowLeft, Bell, Calendar, Target
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 

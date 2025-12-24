@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import {
-    Lightbulb, ChevronRight, Loader2, Clock, Target, BookmarkMinus,
-    BookOpen, Heart
+    Lightbulb, ChevronRight, Loader2, Clock, BookOpen, Heart
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";

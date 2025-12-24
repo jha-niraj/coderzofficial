@@ -5,7 +5,9 @@ import {
 } from "@repo/ui/components/ui/dialog"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Code2, BookOpen, Clock, Zap } from "lucide-react"
+import { 
+	Code2, BookOpen, Clock, Zap 
+} from "lucide-react"
 
 interface AnswerDialogProps {
 	open: boolean

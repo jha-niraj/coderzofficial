@@ -3,14 +3,17 @@ import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Button } from "@repo/ui/components/ui/button";
 import { Progress } from "@repo/ui/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import {
+	Avatar, AvatarFallback, AvatarImage
+} from "@repo/ui/components/ui/avatar";
 import { Separator } from "@repo/ui/components/ui/separator";
 import {
 	Trophy, Users, Calendar, Clock, ExternalLink, Star, Play, CheckCircle, ArrowLeft,
 } from "lucide-react";
-import { getChallengeDetails, getUserProgress } from "@/actions/(main)/collective/challenge.actions";
+import {
+	getChallengeDetails, getUserProgress
+} from "@/actions/(main)/collective/challenge.actions";
 import { JoinChallengeButton } from "../../_components/join-challenge-button";
 import { ChallengeStepCard } from "../../_components/challenge-step-card";
 import { ChallengeLeaderboard } from "../../_components/challenge-leaderboard";
@@ -299,9 +302,11 @@ export default async function ChallengePage({ params }: ChallengePageProps) {
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">Completion Rate</span>
 									<span className="font-medium">
-										{challenge.participations?.length > 0
-											? Math.round((challenge.participations.filter(p => p.completedAt).length / challenge.participations.length) * 100)
-											: 0}%
+										{
+											challenge.participations?.length > 0
+												? Math.round((challenge.participations.filter(p => p.completedAt).length / challenge.participations.length) * 100)
+												: 0
+										}%
 									</span>
 								</div>
 								<div className="flex justify-between text-sm">

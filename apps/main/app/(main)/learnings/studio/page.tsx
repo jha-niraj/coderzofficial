@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { GraduationCap, ChevronRight, Rocket, PlayCircle } from "lucide-react";
+import { 
+    GraduationCap, ChevronRight, Rocket, PlayCircle 
+} from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 
 export default function StudioLearningsPage() {

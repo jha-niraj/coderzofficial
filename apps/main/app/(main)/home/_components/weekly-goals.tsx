@@ -20,7 +20,7 @@ import {
     Target, Plus, CheckCircle2, Circle, Trophy
 } from "lucide-react";
 import { addWeeklyGoal, toggleWeeklyGoal } from "@/actions/(main)/home/home.action";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface WeeklyGoal {
     id: string;

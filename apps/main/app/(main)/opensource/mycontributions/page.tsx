@@ -12,7 +12,6 @@ import {
     Card, CardContent, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Tabs, TabsList, TabsTrigger
 } from '@repo/ui/components/ui/tabs'

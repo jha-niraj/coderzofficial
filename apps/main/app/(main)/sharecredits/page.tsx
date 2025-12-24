@@ -8,7 +8,9 @@ import {
 } from "lucide-react"
 import { Input } from "@repo/ui/components/ui/input"
 import { Button } from "@repo/ui/components/ui/button"
-import { Card, CardContent } from "@repo/ui/components/ui/card"
+import { 
+    Card, CardContent 
+} from "@repo/ui/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useUserStore } from "@/app/store/useUserStore"
 import BenefitsSection from "./_components/benefits-section"

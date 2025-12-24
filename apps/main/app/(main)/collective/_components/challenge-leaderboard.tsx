@@ -1,7 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { 
+  Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
-import { Trophy, Medal, Award, TrendingUp } from "lucide-react";
+import { 
+  Avatar, AvatarFallback, AvatarImage 
+} from "@repo/ui/components/ui/avatar";
+import { 
+  Trophy, Medal, Award, TrendingUp 
+} from "lucide-react";
 import { getChallengeLeaderboard } from "@/actions/(main)/collective/challenge.actions";
 
 interface ChallengeLeaderboardProps {

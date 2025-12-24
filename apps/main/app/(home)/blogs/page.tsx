@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Spotlight } from '@/components/ui/spotlight'
+import { Spotlight } from '@repo/ui/components/ui/spotlight'
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import Footer from '@/components/landingpage/footer'

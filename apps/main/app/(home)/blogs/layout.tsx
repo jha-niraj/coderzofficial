@@ -1,7 +1,6 @@
 "use client"
 
 import Navbar from "@/components/landingpage/homepagenavbar"
-import Footer from "@/components/landingpage/footer"
 import { ReactNode } from "react"
 
 export default function BlogsLayout({ children }: { children: ReactNode }) {

@@ -6,29 +6,27 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import { 
-    ArrowLeft, Flame, CheckCircle2, Download, Send, 
-    Lightbulb, BookOpen, Brain, ChevronRight, ChevronLeft,
-    HelpCircle, XCircle, Zap, Code2, PlayCircle, ExternalLink
+    ArrowLeft, CheckCircle2, Download, Send, Lightbulb, BookOpen, Brain, 
+    ChevronRight, ChevronLeft, HelpCircle, XCircle, Zap, PlayCircle, ExternalLink
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Input } from '@repo/ui/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
+import { 
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from '@repo/ui/components/ui/tabs'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from '@repo/ui/components/ui/sheet'
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion'
-import { submitCrucibleAnswer, revealCrucibleHint, getUserCrucibleInput } from '@/actions/(main)/challenges/crucible.action'
+    Accordion, AccordionContent, AccordionItem, AccordionTrigger
+} from '@repo/ui/components/ui/accordion'
+import { 
+    submitCrucibleAnswer, revealCrucibleHint, getUserCrucibleInput 
+} from '@/actions/(main)/challenges/crucible.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 

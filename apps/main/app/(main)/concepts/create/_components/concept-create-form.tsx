@@ -23,7 +23,7 @@ import {
 } from "@repo/ui/components/ui/select";
 import { Separator } from "@repo/ui/components/ui/separator";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import ConceptCodeEditor from "./concept-code-editor";
 import { cn } from "@repo/ui/lib/utils";
 import Image from "next/image";

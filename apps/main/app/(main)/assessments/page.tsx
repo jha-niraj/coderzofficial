@@ -13,7 +13,6 @@ import {
 	GraduationCap, BarChart3, Eye, Heart, Clock, Loader2, Users
 } from 'lucide-react'
 import { cn } from '@repo/ui/lib/utils'
-import toast from '@repo/ui/components/ui/sonner'
 import { getPublicPracticeSets, getPublicExamSets } from '@/actions/(main)/assessments/user-sets.action'
 import type { PracticeSetPreview, ExamSetPreview } from '@/types/assessment'
 

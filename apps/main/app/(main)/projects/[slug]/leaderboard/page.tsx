@@ -3,7 +3,9 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@repo/auth'
 import prisma from '@repo/prisma'
 import { ProjectLeaderboardClient } from './_components/project-leaderboard-client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
 import { AlertCircle, Lock, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'

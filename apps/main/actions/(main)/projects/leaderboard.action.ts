@@ -1,21 +1,13 @@
 "use server"
 
-import { auth } from '@repo/auth'
+import { auth } from "@repo/auth"
 import {
-    calculateTaskScoring,
-    calculateQuizScore,
-    calculateMockScore,
-    calculateTotalScore
+    calculateTaskScoring, calculateQuizScore, calculateMockScore, calculateTotalScore
 } from "@/lib/project-scoring"
 import prisma from "@repo/prisma"
-import type {
-    CompletedTask,
-    ScoreCalculation,
-    LeaderboardEntry,
-    GlobalLeaderboardEntry,
-    ActionResponse,
-    LeaderboardResponse,
-    GlobalLeaderboardResponse,
+import type { 
+    CompletedTask, ScoreCalculation, LeaderboardEntry, GlobalLeaderboardEntry, 
+    ActionResponse, LeaderboardResponse, GlobalLeaderboardResponse, 
     UserProjectProgressDetail
 } from "@/types/projectv2"
 
@@ -84,8 +76,8 @@ export async function updateProjectScore(projectId: string, userId?: string) {
         // Get quiz score
         const quizAttempt = await prisma.projectV2QuizAttempt.findUnique({
             where: {
-                progressId_quizId: {
-                    progressId: progress.id,
+                userId_quizId: {
+                    userId: targetUserId,
                     quizId: progress.project.quiz?.id || ""
                 }
             }
@@ -97,7 +89,8 @@ export async function updateProjectScore(projectId: string, userId?: string) {
         // Get mock score
         const mockSession = await prisma.projectV2MockSession.findFirst({
             where: {
-                progressId: progress.id,
+                userId: targetUserId,
+                projectId: projectId,
                 status: "COMPLETED"
             },
             orderBy: {
@@ -177,10 +170,13 @@ async function updateLeaderboardEntry(projectId: string, userId: string) {
         // Upsert leaderboard entry
         await prisma.projectV2Leaderboard.upsert({
             where: {
-                progressId: progress.id
+                userId_projectId: {
+                    userId,
+                    projectId
+                }
             },
             create: {
-                progressId: progress.id,
+                userId,
                 projectId,
                 rank,
                 score: progress.totalScore,
@@ -228,26 +224,20 @@ async function updateGlobalLeaderboard(userId: string) {
         const projectsCompleted = allProgress.filter((p: any) => p.status === "COMPLETED").length
         const averageScore = projectsStarted > 0 ? totalScore / projectsStarted : 0
 
-        // Get component counts from progress
-        const progressWithAttempts = await prisma.userProjectV2Progress.findMany({
+        // Get component counts
+        const quizAttempts = await prisma.projectV2QuizAttempt.count({
             where: {
                 userId,
-                status: { not: "NOT_STARTED" }
-            },
-            include: {
-                quizAttempts: {
-                    where: { isCompleted: true },
-                    select: { id: true }
-                },
-                mockSessions: {
-                    where: { status: "COMPLETED" },
-                    select: { id: true }
-                }
+                isCompleted: true
             }
-        });
+        })
 
-        const quizAttempts = progressWithAttempts.reduce((sum, p) => sum + p.quizAttempts.length, 0);
-        const mockSessions = progressWithAttempts.reduce((sum, p) => sum + p.mockSessions.length, 0);
+        const mockSessions = await prisma.projectV2MockSession.count({
+            where: {
+                userId,
+                status: "COMPLETED"
+            }
+        })
 
         const totalTasksCompleted = allProgress.reduce((sum: number, p: any) => sum + p.tasksCompleted, 0)
 
@@ -315,20 +305,14 @@ export async function getProjectLeaderboard(
 
         const [leaderboard, total] = await Promise.all([
             prisma.projectV2Leaderboard.findMany({
-                where: {
-                    projectId: project.id
-                },
+                where: { projectId: project.id },
                 include: {
-                    progress: {
+                    user: {
                         select: {
-                            user: {
-                                select: {
-                                    id: true,
-                                    username: true,
-                                    name: true,
-                                    image: true
-                                }
-                            }
+                            id: true,
+                            username: true,
+                            name: true,
+                            image: true
                         }
                     }
                 },

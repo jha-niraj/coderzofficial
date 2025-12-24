@@ -6,31 +6,30 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import { 
-    ArrowLeft, ArrowRight, BookOpen, Send, CheckCircle2, 
-    XCircle, Lightbulb, Play, Code2, HelpCircle, Zap,
-    ChevronRight, ChevronLeft, X, ExternalLink, PlayCircle
+    ArrowLeft, ArrowRight, BookOpen, Send, CheckCircle2, XCircle, Lightbulb, 
+    Play, Code2, HelpCircle, Zap, ChevronRight, ChevronLeft, X, ExternalLink, 
+    PlayCircle
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Input } from '@repo/ui/components/ui/input'
 import { Textarea } from '@repo/ui/components/ui/textarea'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
+import { 
+    Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@repo/ui/components/ui/tabs'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, 
+    SheetTrigger
 } from '@repo/ui/components/ui/sheet'
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion'
-import { submitForgeStep, revealForgeHint } from '@/actions/(main)/challenges/forge.action'
+    Accordion, AccordionContent, AccordionItem, AccordionTrigger
+} from '@repo/ui/components/ui/accordion'
+import { 
+    submitForgeStep, revealForgeHint 
+} from '@/actions/(main)/challenges/forge.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 

@@ -14,7 +14,7 @@ import { Input } from "@repo/ui/components/ui/input";
 import {
     UserPlus, Gift, Copy, Check, Users, Coins
 } from "lucide-react";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface ReferralStats {
     totalReferrals: number;

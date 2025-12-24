@@ -12,7 +12,9 @@ import {
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import toast from '@repo/ui/components/ui/sonner'
-import { checkStandupConfig, createStandupConfig } from '@/actions/(main)/projects/standup.action'
+import { 
+    checkStandupConfig, createStandupConfig 
+} from '@/actions/(main)/projects/standup.action'
 
 interface DailyStandupSheetProps {
     isOpen: boolean

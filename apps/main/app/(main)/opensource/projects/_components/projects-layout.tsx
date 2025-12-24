@@ -13,7 +13,7 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Input } from '@repo/ui/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Checkbox } from '@repo/ui/components/ui/checkbox'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"

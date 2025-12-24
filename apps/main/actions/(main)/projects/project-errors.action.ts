@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from '@repo/auth';
+import { auth } from "@repo/auth";
 import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -91,7 +91,7 @@ export async function getProjectErrors(
         }
 
         const isOwnerOrAdmin = project.createdBy === user.id || user.role === "Admin";
-
+        
         // Build where clause
         const where: any = {
             projectId,
@@ -141,34 +141,23 @@ export async function getProjectErrors(
                             title: true,
                         }
                     },
+                    votes: {
+                        where: { userId: user.id },
+                        select: {
+                            voteType: true,
+                        }
+                    }
                 }
             }),
             prisma.projectV2Error.count({ where })
         ]);
 
-        // Get user's progress to check votes
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } },
-        });
-
-        // Get user's votes for all errors if progress exists
-        let userVotes: { errorId: string; voteType: string }[] = [];
-        if (progress) {
-            const votes = await prisma.projectV2ErrorVote.findMany({
-                where: {
-                    progressId: progress.id,
-                    errorId: { in: errors.map(e => e.id) }
-                },
-                select: { errorId: true, voteType: true }
-            });
-            userVotes = votes;
-        }
-
         // Transform to include user's vote status
         const errorsWithVoteStatus = errors.map(error => ({
             ...error,
-            hasVotedHelpful: userVotes.some(v => v.errorId === error.id && v.voteType === "helpful"),
-            hasVotedEncountered: userVotes.some(v => v.errorId === error.id && v.voteType === "encountered"),
+            hasVotedHelpful: error.votes.some(v => v.voteType === "helpful"),
+            hasVotedEncountered: error.votes.some(v => v.voteType === "encountered"),
+            votes: undefined, // Remove raw votes from response
         }));
 
         const totalPages = Math.ceil(total / limit);
@@ -217,9 +206,18 @@ export async function getErrorById(errorId: string): Promise<ActionResponse> {
                         title: true,
                     }
                 },
-                progress: {
+                project: {
                     select: {
-                        projectId: true,
+                        id: true,
+                        slug: true,
+                        title: true,
+                        createdBy: true,
+                    }
+                },
+                votes: {
+                    where: { userId: user.id },
+                    select: {
+                        voteType: true,
                     }
                 }
             }
@@ -230,45 +228,21 @@ export async function getErrorById(errorId: string): Promise<ActionResponse> {
         }
 
         // Check visibility - only approved or owner/admin can see
-        const isOwnerOrAdmin = error.progress.projectId === user.id ||
-            error.submittedById === user.id ||
-            user.role === "Admin";
+        const isOwnerOrAdmin = error.project.createdBy === user.id || 
+                               error.submittedById === user.id ||
+                               user.role === "Admin";
 
         if (error.status !== "APPROVED" && !isOwnerOrAdmin) {
             return { success: false, error: "Error not found" };
-        }
-
-        // Get user's progress to check votes
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: user.id,
-                    projectId: error.progress.projectId
-                }
-            },
-        });
-
-        // Check user's votes if progress exists
-        let hasVotedHelpful = false;
-        let hasVotedEncountered = false;
-        if (progress) {
-            const votes = await prisma.projectV2ErrorVote.findMany({
-                where: {
-                    progressId: progress.id,
-                    errorId: error.id
-                },
-                select: { voteType: true }
-            });
-            hasVotedHelpful = votes.some(v => v.voteType === "helpful");
-            hasVotedEncountered = votes.some(v => v.voteType === "encountered");
         }
 
         return {
             success: true,
             data: {
                 ...error,
-                hasVotedHelpful,
-                hasVotedEncountered,
+                hasVotedHelpful: error.votes.some(v => v.voteType === "helpful"),
+                hasVotedEncountered: error.votes.some(v => v.voteType === "encountered"),
+                votes: undefined,
             }
         };
     } catch (error: any) {
@@ -302,7 +276,7 @@ export async function createProjectError(
         }
 
         // Check user progress - must be enrolled to submit errors
-        let progress = await prisma.userProjectV2Progress.findUnique({
+        const progress = await prisma.userProjectV2Progress.findUnique({
             where: {
                 userId_projectId: {
                     userId: user.id,
@@ -314,25 +288,10 @@ export async function createProjectError(
         // Owner or enrolled user can submit
         const isOwner = project.createdBy === user.id;
         if (!isOwner && !progress) {
-            return {
-                success: false,
-                error: "You must be enrolled in this project to submit errors"
+            return { 
+                success: false, 
+                error: "You must be enrolled in this project to submit errors" 
             };
-        }
-
-        // Create progress for owner if doesn't exist
-        if (isOwner && !progress) {
-            const taskCount = await prisma.projectV2Task.count({
-                where: { projectId: validated.projectId }
-            });
-            progress = await prisma.userProjectV2Progress.create({
-                data: {
-                    userId: user.id,
-                    projectId: validated.projectId,
-                    status: "NOT_STARTED",
-                    totalTasks: taskCount,
-                }
-            });
         }
 
         // Verify task belongs to project if taskId provided
@@ -354,7 +313,7 @@ export async function createProjectError(
 
         const error = await prisma.projectV2Error.create({
             data: {
-                progressId: progress!.id,
+                projectId: validated.projectId,
                 title: validated.title,
                 description: validated.description,
                 solution: validated.solution,
@@ -391,7 +350,7 @@ export async function createProjectError(
         if (error instanceof z.ZodError) {
             return { success: false, error: error.message };
         }
-        return { success: false, error: error?.message };
+        return { success: false, error: error.message };
     }
 }
 
@@ -410,20 +369,9 @@ export async function updateProjectError(
         const validated = UpdateErrorSchema.parse(input);
 
         const existingError = await prisma.projectV2Error.findUnique({
-            where: {
-                id: validated.id
-            },
+            where: { id: validated.id },
             include: {
-                progress: {
-                    select: {
-                        project: {
-                            select: {
-                                slug: true,
-                                createdBy: true
-                            }
-                        }
-                    }
-                }
+                project: { select: { slug: true, createdBy: true } }
             }
         });
 
@@ -433,8 +381,8 @@ export async function updateProjectError(
 
         // Only submitter, project owner, or admin can update
         const canUpdate = existingError.submittedById === user.id ||
-            existingError.progress?.project?.createdBy === user.id ||
-            user.role === "Admin";
+                          existingError.project.createdBy === user.id ||
+                          user.role === "Admin";
 
         if (!canUpdate) {
             return { success: false, error: "Unauthorized" };
@@ -457,7 +405,7 @@ export async function updateProjectError(
             data: updateData,
         });
 
-        revalidatePath(`/projects/${existingError.progress?.project?.slug}`);
+        revalidatePath(`/projects/${existingError.project.slug}`);
 
         return { success: true, data: error };
     } catch (error: any) {
@@ -481,20 +429,9 @@ export async function deleteProjectError(errorId: string): Promise<ActionRespons
         const user = await getCurrentUser();
 
         const error = await prisma.projectV2Error.findUnique({
-            where: { 
-                id: errorId 
-            },
+            where: { id: errorId },
             include: {
-                progress: {
-                    select: {
-                        project: {
-                            select: {
-                                slug: true,
-                                createdBy: true
-                            }
-                        }
-                    }
-                }
+                project: { select: { slug: true, createdBy: true } }
             }
         });
 
@@ -504,8 +441,8 @@ export async function deleteProjectError(errorId: string): Promise<ActionRespons
 
         // Only submitter, project owner, or admin can delete
         const canDelete = error.submittedById === user.id ||
-            error.progress?.project?.createdBy === user.id ||
-            user.role === "Admin";
+                          error.project.createdBy === user.id ||
+                          user.role === "Admin";
 
         if (!canDelete) {
             return { success: false, error: "Unauthorized" };
@@ -515,7 +452,7 @@ export async function deleteProjectError(errorId: string): Promise<ActionRespons
             where: { id: errorId }
         });
 
-        revalidatePath(`/projects/${error.progress?.project?.slug}`);
+        revalidatePath(`/projects/${error.project.slug}`);
 
         return { success: true };
     } catch (error: any) {
@@ -545,15 +482,7 @@ export async function voteOnError(
                 status: true,
                 helpfulCount: true,
                 encounteredCount: true,
-                progress: {
-                    select: {
-                        project: {
-                            select: {
-                                slug: true
-                            }
-                        }
-                    }
-                }
+                project: { select: { slug: true } }
             }
         });
 
@@ -565,36 +494,12 @@ export async function voteOnError(
             return { success: false, error: "Cannot vote on unapproved errors" };
         }
 
-        // Get task to find projectId
-        const errorWithProject = await prisma.projectV2Error.findUnique({
-            where: { id: errorId },
-            include: { progress: { select: { projectId: true } } }
-        });
-
-        if (!errorWithProject) {
-            return { success: false, error: "Error not found" };
-        }
-
-        // Get user's progress
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: user.id,
-                    projectId: errorWithProject.progress.projectId
-                }
-            }
-        });
-
-        if (!progress) {
-            return { success: false, error: "You must be enrolled to vote" };
-        }
-
         // Check if already voted with this type
         const existingVote = await prisma.projectV2ErrorVote.findUnique({
             where: {
-                errorId_progressId_voteType: {
+                errorId_userId_voteType: {
                     errorId,
-                    progressId: progress.id,
+                    userId: user.id,
                     voteType
                 }
             }
@@ -616,7 +521,7 @@ export async function voteOnError(
                 })
             ]);
 
-            revalidatePath(`/projects/${error.progress?.project.slug}`);
+            revalidatePath(`/projects/${error.project.slug}`);
 
             return {
                 success: true,
@@ -633,7 +538,7 @@ export async function voteOnError(
             prisma.projectV2ErrorVote.create({
                 data: {
                     errorId,
-                    progressId: progress.id,
+                    userId: user.id,
                     voteType,
                 }
             }),

@@ -6,20 +6,21 @@ import Link from 'next/link'
 import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-    Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff,
-    Loader2, CheckCircle2, AlertCircle, ArrowLeft, Brain,
-    Sparkles, Coins, Clock, Trophy, Star, TrendingUp, Target,
-    MessageSquare
+    Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Loader2, CheckCircle2, 
+    AlertCircle, ArrowLeft, Brain, Sparkles, Coins, Clock, Trophy, Star, 
+    TrendingUp, Target, MessageSquare
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { Separator } from '@repo/ui/components/ui/separator'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from '@repo/ui/components/ui/dialog'
-import { Orb, AgentState } from '@/components/ui/orb'
+import { Orb, AgentState } from '@/components/main/orb'
 import toast from '@repo/ui/components/ui/sonner'
 import {
     generateProjectMockKnowledgeBase,

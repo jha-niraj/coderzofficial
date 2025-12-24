@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState, useRef, useEffect } from 'react';
+import { FormEvent, useState, useRef, useEffect, JSX } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
@@ -14,7 +14,7 @@ import {
 import toast from '@repo/ui/components/ui/sonner';
 import { motion } from 'framer-motion';
 
-const ResetPassword = (): JSX.Element => {
+const ResetPassword = (): JSX.Element | null => {
     const [password, setPassword] = useState<string>("");
     const [confirmPassword, setConfirmPassword] = useState<string>("");
     const [email, setEmail] = useState<string | null>(null);
@@ -61,11 +61,11 @@ const ResetPassword = (): JSX.Element => {
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
-        if (value && index < 5) inputRefs[index + 1].current?.focus();
+        if (value && index < 5) inputRefs[index + 1]?.current?.focus();
     };
 
     const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Backspace" && !otp[index] && index > 0) inputRefs[index - 1].current?.focus();
+        if (e.key === "Backspace" && !otp[index] && index > 0) inputRefs[index - 1]?.current?.focus();
     };
 
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -74,8 +74,8 @@ const ResetPassword = (): JSX.Element => {
         if (/^\d{6}$/.test(pastedData)) {
             const digits = pastedData.split("");
             setOtp(digits);
-            inputRefs[5].current?.focus();
-        }
+            inputRefs[5]?.current?.focus();
+        }   
     };
 
     const handleResend = async () => {
@@ -112,8 +112,8 @@ const ResetPassword = (): JSX.Element => {
             } else {
                 toast.error(result.error || "Reset failed");
                 setOtp(["", "", "", "", "", ""]);
-                inputRefs[0].current?.focus();
-            }
+                inputRefs[0]?.current?.focus() || null;
+            } 
         } catch (error) {
             toast.error("An unexpected error occurred");
         } finally {

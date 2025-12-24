@@ -5,18 +5,23 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import {
-    Users, Sparkles, UserPlus, Link2, MessageSquare, TrendingUp,
-    CheckCircle, ArrowLeft, Plus, Star, Globe, Lock, Target,
-    ArrowRight, Trophy, Calendar, Brain
+    Users, Sparkles, UserPlus, Link2, MessageSquare, TrendingUp, CheckCircle, 
+    ArrowLeft, Plus, Star, Globe, Lock, Target, ArrowRight, Trophy, Calendar, Brain
 } from 'lucide-react'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@repo/ui/components/ui/sheet'
+import { 
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle    
+} from '@repo/ui/components/ui/sheet'
 import { Input } from '@repo/ui/components/ui/input'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Label } from '@repo/ui/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@repo/ui/components/ui/radio-group'
+import { 
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@repo/ui/components/ui/select'
 import toast from '@repo/ui/components/ui/sonner'
 
 const features = [

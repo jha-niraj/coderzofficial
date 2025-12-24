@@ -21,9 +21,11 @@ import Link from 'next/link'
 import toast from '@repo/ui/components/ui/sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { paymentConfig, calculatePrice } from '@/lib/payment-config'
-import { computeUsageForCredits, creditUsageConfig, formatCountRange } from '@/lib/credit-usage'
+import { 
+	computeUsageForCredits, creditUsageConfig, formatCountRange 
+} from '@/lib/credit-usage'
 import { submitCreditRequest } from '../../../actions/(main)/user/dashboard.action'
-import { BentoPricing } from '@/components/ui/bento-pricing'
+import { BentoPricing } from '@/components/main/bentopricing'
 
 // Load Razorpay types
 declare global {

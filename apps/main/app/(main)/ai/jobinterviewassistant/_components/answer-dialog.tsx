@@ -1,6 +1,9 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@repo/ui/components/ui/dialog"
+import { 
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, 
+    DialogFooter 
+} from "@repo/ui/components/ui/dialog"
 import { Button } from "@repo/ui/components/ui/button"
 import { Coins } from "lucide-react"
 

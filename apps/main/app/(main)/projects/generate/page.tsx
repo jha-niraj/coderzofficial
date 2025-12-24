@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Code2, Brain, Rocket, AlertCircle, 
-    Eye, Zap, Globe, Lock
+    ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Code2, Brain, Rocket, 
+    AlertCircle, Eye, Zap, Globe, Lock
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -12,7 +12,7 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/ui/alert'
 import toast from '@repo/ui/components/ui/sonner'
 import { searchSimilarProjects } from '@/actions/(main)/projects/project.action'
 import { ProjectEchoSchema } from '@/actions/(main)/schemas/projects.schema'
@@ -145,7 +145,7 @@ export default function GenerateProjectPage() {
 
     const canProceed = () => {
         const step = STEPS[currentStep]
-        switch (step.id) {
+        switch (step?.id) {
             case 'title':
                 return !!formData.projectTitle && formData.projectTitle.length >= 3
             case 'description':
@@ -244,7 +244,7 @@ export default function GenerateProjectPage() {
         } catch (error) {
             console.error('Generation error:', error)
             if (error instanceof z.ZodError) {
-                toast.error(`Validation error: ${error.errors[0].message}`)
+                toast.error(`Validation error: ${error.message}`)
             } else {
                 toast.error('Failed to generate project. Please try again.')
             }
@@ -393,7 +393,7 @@ export default function GenerateProjectPage() {
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.1 }}
                             >
-                                {currentStepConfig.title}
+                                {currentStepConfig?.title}
                             </motion.h1>
                             <motion.p
                                 className="text-neutral-600 dark:text-neutral-400"
@@ -401,7 +401,7 @@ export default function GenerateProjectPage() {
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.2 }}
                             >
-                                {currentStepConfig.subtitle}
+                                {currentStepConfig?.subtitle}
                             </motion.p>
                         </div>
 
@@ -411,7 +411,7 @@ export default function GenerateProjectPage() {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3 }}
                         >
-                            {currentStepConfig.id === 'title' && (
+                            {currentStepConfig?.id === 'title' && (
                                 <div className="space-y-4">
                                     <Input
                                         ref={(el) => { inputRefs.current['title'] = el }}
@@ -424,7 +424,7 @@ export default function GenerateProjectPage() {
                                 </div>
                             )}
 
-                            {currentStepConfig.id === 'description' && (
+                            {currentStepConfig?.id === 'description' && (
                                 <div className="space-y-4">
                                     <Textarea
                                         ref={(el) => { inputRefs.current['description'] = el }}
@@ -440,7 +440,7 @@ export default function GenerateProjectPage() {
                                 </div>
                             )}
 
-                            {currentStepConfig.id === 'type' && (
+                            {currentStepConfig?.id === 'type' && (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {GENERATION_TYPES.map((type) => {
                                         const Icon = type.icon
@@ -493,7 +493,7 @@ export default function GenerateProjectPage() {
                                 </div>
                             )}
 
-                            {currentStepConfig.id === 'stack' && (
+                            {currentStepConfig?.id === 'stack' && (
                                 <div className="space-y-6">
                                     {/* Show relevant stack options based on type */}
                                     {(formData.generationType === 'FULL_STACK' || 
@@ -593,7 +593,7 @@ export default function GenerateProjectPage() {
                                 </div>
                             )}
 
-                            {currentStepConfig.id === 'difficulty' && (
+                            {currentStepConfig?.id === 'difficulty' && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {DIFFICULTY_LEVELS.map((level) => {
                                         const isSelected = formData.difficulty === level.value
@@ -631,7 +631,7 @@ export default function GenerateProjectPage() {
                                 </div>
                             )}
 
-                            {currentStepConfig.id === 'extras' && (
+                            {currentStepConfig?.id === 'extras' && (
                                 <div className="space-y-6">
                                     {/* Visibility */}
                                     <div className="space-y-3">
@@ -714,7 +714,7 @@ export default function GenerateProjectPage() {
                                 </div>
                             )}
 
-                            {currentStepConfig.id === 'review' && (
+                            {currentStepConfig?.id === 'review' && (
                                 <div className="space-y-6">
                                     {/* Summary Card */}
                                     <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6 shadow-xl space-y-4">

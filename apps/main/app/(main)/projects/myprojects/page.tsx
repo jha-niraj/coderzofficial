@@ -16,10 +16,9 @@ import {
 import {
 	Pagination, PaginationContent, PaginationItem, PaginationLink,
 	PaginationNext, PaginationPrevious
-} from "@/components/ui/pagination"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@repo/ui/components/ui/pagination"
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
-import { toast } from "sonner"
+import toast from "repo/ui/components/ui/sonner";
 import Link from "next/link"
 import { getUserProjects, deleteProject } from "@/actions/(main)/projects/project.action"
 import { ProjectCard, ProjectCardSkeleton } from "@/components/projects/project-card"

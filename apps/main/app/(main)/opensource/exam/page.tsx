@@ -18,10 +18,10 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Progress } from "@repo/ui/components/ui/progress";
 import { 
     RadioGroup, RadioGroupItem 
-} from "@/components/ui/radio-group";
+} from "@repo/ui/components/ui/radio-group";
 import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
-import { toast } from "sonner";
+import toast from "repo/ui/components/ui/sonner";
 import { cn } from "@repo/ui/lib/utils";
 import {
     getLearningProgress, recordExamResult
@@ -1012,7 +1012,7 @@ export default function CertificationExamPage() {
                                                             key={q.id}
                                                             className={cn(
                                                                 "p-4 rounded-lg border",
-                                                                examResult.feedback[q.id].correct
+                                                                examResult?.feedback[q.id].correct
                                                                     ? "bg-green-500/5 border-green-500/30"
                                                                     : "bg-red-500/5 border-red-500/30"
                                                             )}

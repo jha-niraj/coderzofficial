@@ -2,16 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import { Users, CheckCircle, Clock, Gift, Copy, Check } from "lucide-react"
+import { 
+    Users, CheckCircle, Clock, Gift, Copy, Check 
+} from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
-import { Card, CardContent } from "@repo/ui/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { 
+    Card, CardContent 
+} from "@repo/ui/components/ui/card"
+import { Skeleton } from "@repo/ui/components/ui/skeleton"
 import {
     Pagination, PaginationContent, PaginationEllipsis, PaginationItem,
     PaginationLink, PaginationNext, PaginationPrevious
-} from "@/components/ui/pagination"
+} from "@repo/ui/components/ui/pagination"
 import { getReferralStats, getReferrals } from "@/actions/(main)/user/referral.action"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner"
 import { formatDistanceToNow } from "date-fns"
 import Image from "next/image"
 
