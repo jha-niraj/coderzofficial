@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { validateGithubProfile, fetchGithubData } from "@/lib/utils/github";
 import { validateLeetCodeProfile, fetchLeetCodeData } from "@/lib/utils/leetcode";
 import { validateLinkedInProfile, fetchLinkedInData } from "@/lib/utils/linkedin";

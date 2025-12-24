@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import prisma from "@/lib/prisma";
+import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -28,7 +28,7 @@ export async function createProposal(formData: FormData) {
 		.replace(/(^-|-$)/g, "");
 
 	// Check if slug already exists
-	const existingProposal = await prisma.communityProposal.findFirst({
+	const existingProposal = await prisma.collectiveProposal.findFirst({
 		where: {
 			title: {
 				equals: title,
@@ -44,7 +44,7 @@ export async function createProposal(formData: FormData) {
 	const votingEndAt = new Date();
 	votingEndAt.setDate(votingEndAt.getDate() + 7); // 7 days from now
 
-	const proposal = await prisma.communityProposal.create({
+	const proposal = await prisma.collectiveProposal.create({
 		data: {
 			title,
 			description,
@@ -56,8 +56,8 @@ export async function createProposal(formData: FormData) {
 		},
 	});
 
-	revalidatePath("/communityhub");
-	redirect(`/communityhub/${slug}/voting`);
+	revalidatePath("/collective");
+	redirect(`/collective/${slug}/voting`);
 }
 
 export async function voteOnProposal(proposalId: string, value: number) {
@@ -112,7 +112,7 @@ export async function voteOnProposal(proposalId: string, value: number) {
 		const upvotes = votes.find((v: any) => v.value === 1)?._count.value || 0;
 		const downvotes = votes.find((v: any) => v.value === -1)?._count.value || 0;
 
-		await prisma.communityProposal.update({
+		await prisma.collectiveProposal.update({
 			where: { id: proposalId },
 			data: {
 				upvotes,
@@ -121,7 +121,7 @@ export async function voteOnProposal(proposalId: string, value: number) {
 			},
 		});
 
-		revalidatePath("/communityhub");
+		revalidatePath("/collective");
 		return { success: true };
 	} catch (error) {
 		console.error("Error voting on proposal:", error);
@@ -148,7 +148,7 @@ export async function addComment(proposalId: string, content: string) {
 			},
 		});
 
-		revalidatePath("/communityhub");
+		revalidatePath("/collective");
 		return { success: true };
 	} catch (error) {
 		console.error("Error adding comment:", error);
@@ -167,7 +167,7 @@ export async function getProposals(status?: string): Promise<any[]> {
 			where.status = { in: ["VOTING", "EXPIRED"] };
 		}
 
-		const proposals = await prisma.communityProposal.findMany({
+		const proposals = await prisma.collectiveProposal.findMany({
 			where,
 			include: {
 				proposer: {
@@ -205,7 +205,7 @@ export async function getProposalByTitle(title: string) {
 			.replace(/[^a-z0-9]+/g, "-")
 			.replace(/(^-|-$)/g, "");
 
-		const proposal = await prisma.communityProposal.findFirst({
+		const proposal = await prisma.collectiveProposal.findFirst({
 			where: {
 				title: {
 					contains: title.replace(/-/g, " "),
@@ -255,5 +255,3 @@ export async function getProposalByTitle(title: string) {
 		return null;
 	}
 }
-
-

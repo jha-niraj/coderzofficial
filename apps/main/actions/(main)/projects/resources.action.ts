@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from '@repo/auth'
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 import { ResourceType } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 
@@ -43,11 +43,35 @@ export async function addProjectResource(data: {
         // Check if user is creator (for marking as official)
         const isCreator = project.createdBy === session.user.id
 
+        // Get or create user progress
+        let progress = await prisma.userProjectV2Progress.findUnique({
+            where: {
+                userId_projectId: {
+                    userId: session.user.id,
+                    projectId: data.projectId
+                }
+            }
+        });
+
+        if (!progress) {
+            // Create progress if doesn't exist (for creator or visitors)
+            const taskCount = await prisma.projectV2Task.count({
+                where: { projectId: data.projectId }
+            });
+            progress = await prisma.userProjectV2Progress.create({
+                data: {
+                    userId: session.user.id,
+                    projectId: data.projectId,
+                    status: "NOT_STARTED",
+                    totalTasks: taskCount,
+                }
+            });
+        }
+
         // Create resource
         const resource = await prisma.projectV2Resource.create({
             data: {
-                userId: session.user.id,
-                projectId: data.projectId,
+                progressId: progress.id,
                 title: data.title,
                 link: data.link,
                 type: data.type,
@@ -55,12 +79,16 @@ export async function addProjectResource(data: {
                 isOfficial: isCreator, // Auto-mark as official if creator adds it
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
+                progress: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                username: true,
+                                image: true,
+                            }
+                        }
                     }
                 }
             }
@@ -100,18 +128,29 @@ export async function getProjectResources(params: {
                 { createdAt: 'desc' } // Then by recency
             ],
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
+                progress: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                username: true,
+                                image: true,
+                            }
+                        }
                     }
                 }
             }
         })
 
-        return { success: true, resources }
+        // Transform to flatten user data
+        const transformedResources = resources.map((r: any) => ({
+            ...r,
+            user: r.progress?.user,
+            progress: undefined
+        }));
+
+        return { success: true, resources: transformedResources }
 
     } catch (error) {
         console.error("Error fetching resources:", error)
@@ -200,8 +239,16 @@ export async function deleteProjectResource(resourceId: string) {
         const resource = await prisma.projectV2Resource.findUnique({
             where: { id: resourceId },
             include: {
-                project: {
-                    select: { createdBy: true }
+                progress: {
+                    select: { 
+                        userId: true, 
+                        project: {
+                            select: {
+                                id: true,
+                                createdBy: true
+                            }
+                        }
+                    }
                 }
             }
         })
@@ -211,7 +258,7 @@ export async function deleteProjectResource(resourceId: string) {
         }
 
         // Check if user is resource author or project creator
-        const canDelete = resource.userId === session.user.id || resource.project.createdBy === session.user.id
+        const canDelete = resource.progress.userId === session.user.id || resource.progress?.project.createdBy === session.user.id
 
         if (!canDelete) {
             return { success: false, error: "Not authorized to delete this resource" }

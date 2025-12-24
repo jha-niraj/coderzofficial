@@ -2,8 +2,10 @@
 
 import { auth } from '@repo/auth'
 import { revalidatePath } from "next/cache"
-import prisma from "@/lib/prisma"
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import prisma from "@repo/prisma"
+import { 
+    S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand 
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // Initialize S3 client for Supabase Storage

@@ -2,7 +2,7 @@
 
 import { auth } from '@repo/auth'
 import { revalidatePath } from "next/cache"
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 
 export async function checkUsernameAvailability(username: string) {
     try {

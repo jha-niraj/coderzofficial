@@ -2,7 +2,6 @@
 
 import { auth } from '@repo/auth'
 import prisma from "@repo/prisma"
-import { revalidatePath } from "next/cache"
 
 // ==================== CREDIT REQUEST ACTIONS ====================
 

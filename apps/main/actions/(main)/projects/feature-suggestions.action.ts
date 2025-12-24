@@ -1,12 +1,11 @@
 "use server"
 
 import { auth } from '@repo/auth'
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 import { uploadImageToCloudinary } from "@/actions/(common)/shared/upload.action"
 import { revalidatePath } from "next/cache"
 import type { 
-    FeatureSuggestionWithUser,
-    ActionResponse 
+    FeatureSuggestionWithUser
 } from "@/types/projectv2"
 import type { FeatureSuggestionType } from "@prisma/client"
 
@@ -147,8 +146,6 @@ export async function createFeatureSuggestion(formData: FormData) {
             // Create task status for the user who added it
             await prisma.userTaskV2Status.create({
                 data: {
-                    userId: session.user.id,
-                    projectId,
                     taskId: task.id,
                     status: "TO_DO",
                     progressId: userProgress.id
@@ -166,8 +163,7 @@ export async function createFeatureSuggestion(formData: FormData) {
             // Create the suggestion with task reference
             const suggestion = await prisma.projectV2FeatureSuggestion.create({
                 data: {
-                    userId: session.user.id,
-                    projectId,
+                    progressId: userProgress.id,
                     title,
                     description,
                     type: type as FeatureSuggestionType,
@@ -192,11 +188,24 @@ export async function createFeatureSuggestion(formData: FormData) {
                 data: suggestion
             }
         } else {
-            // Visitor - only create suggestion
-            const suggestion = await prisma.projectV2FeatureSuggestion.create({
+            // Visitor - only create suggestion (need to create progress for visitor)
+            // Create a temporary progress record for the visitor
+            const taskCount = await prisma.projectV2Task.count({
+                where: { projectId }
+            });
+
+            const visitorProgress = await prisma.userProjectV2Progress.create({
                 data: {
                     userId: session.user.id,
                     projectId,
+                    status: "NOT_STARTED",
+                    totalTasks: taskCount,
+                }
+            });
+
+            const suggestion = await prisma.projectV2FeatureSuggestion.create({
+                data: {
+                    progressId: visitorProgress.id,
                     title,
                     description,
                     type: type as FeatureSuggestionType,
@@ -231,12 +240,16 @@ export async function getFeatureSuggestions(projectId: string) {
         const suggestions = await prisma.projectV2FeatureSuggestion.findMany({
             where: { projectId },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
+                progress: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                username: true,
+                                image: true
+                            }
+                        }
                     }
                 }
             },
@@ -248,14 +261,22 @@ export async function getFeatureSuggestions(projectId: string) {
         // If user is logged in, check which tasks they've already added
         let userTaskIds: string[] = []
         if (session?.user?.id) {
-            const userTasks = await prisma.userTaskV2Status.findMany({
+            const userProgress = await prisma.userProjectV2Progress.findUnique({
                 where: {
-                    userId: session.user.id,
-                    projectId
+                    userId_projectId: {
+                        userId: session.user.id,
+                        projectId
+                    }
                 },
-                select: { taskId: true }
-            })
-            userTaskIds = userTasks.map((t: { taskId: string }) => t.taskId)
+                include: {
+                    taskStatuses: {
+                        select: { taskId: true }
+                    }
+                }
+            });
+            if (userProgress) {
+                userTaskIds = userProgress.taskStatuses.map(ts => ts.taskId);
+            }
         }
 
         // Fetch tasks for suggestions that have them
@@ -270,6 +291,8 @@ export async function getFeatureSuggestions(projectId: string) {
                 }
                 return {
                     ...s,
+                    user: s.progress?.user, // Flatten user from progress
+                    progress: undefined, // Remove progress from response
                     task,
                     adoptedByCurrentUser: s.taskId ? userTaskIds.includes(s.taskId) : false
                 }
@@ -340,9 +363,8 @@ export async function adoptSuggestionToMyTasks(suggestionId: string, projectSlug
         // Check if user already has this task
         const existingTask = await prisma.userTaskV2Status.findFirst({
             where: {
-                userId: session.user.id,
-                taskId: suggestion.taskId,
-                projectId: project.id
+                progressId: enrollment.id,
+                taskId: suggestion.taskId
             }
         })
 
@@ -353,8 +375,6 @@ export async function adoptSuggestionToMyTasks(suggestionId: string, projectSlug
         // Add task to user's list
         await prisma.userTaskV2Status.create({
             data: {
-                userId: session.user.id,
-                projectId: project.id,
                 taskId: suggestion.taskId,
                 status: "TO_DO",
                 progressId: enrollment.id
@@ -454,9 +474,8 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
             // Task already exists, check if user already has it
             const existingTask = await prisma.userTaskV2Status.findFirst({
                 where: {
-                    userId: session.user.id,
-                    taskId: suggestion.taskId,
-                    projectId: project.id
+                    progressId: enrollment.id,
+                    taskId: suggestion.taskId
                 }
             })
 
@@ -514,8 +533,6 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
         // Add task to user's list
         await prisma.userTaskV2Status.create({
             data: {
-                userId: session.user.id,
-                projectId: project.id,
                 taskId: task.id,
                 status: "TO_DO",
                 progressId: enrollment.id
@@ -651,8 +668,6 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
         // Add task to creator's list
         await prisma.userTaskV2Status.create({
             data: {
-                userId: session.user.id,
-                projectId: suggestion.project.id,
                 taskId: task.id,
                 status: "TO_DO",
                 progressId: creatorProgress.id

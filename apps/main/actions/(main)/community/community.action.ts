@@ -1,9 +1,11 @@
 'use server'
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@repo/prisma"
 import { getServerSession } from '@repo/auth'
 import { revalidatePath } from "next/cache"
-import { CommunityVisibility, CommunityType, CommunityRole } from "@prisma/client"
+import { 
+    CommunityVisibility, CommunityRole 
+} from "@prisma/client"
 import { authOptions } from '@repo/auth'
 
 // ==================== TYPES ====================

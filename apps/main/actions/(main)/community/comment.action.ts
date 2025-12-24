@@ -1,9 +1,8 @@
 'use server'
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@repo/prisma"
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
-import { revalidatePath } from "next/cache"
 
 // ==================== TYPES ====================
 export interface CreateCommentInput {
@@ -189,7 +188,7 @@ export async function getComments(postId: string, options?: {
         return {
             success: true,
             data: commentsWithUserData,
-            nextCursor: hasMore ? items[items.length - 1].id : undefined
+            nextCursor: hasMore ? items[items.length - 1]?.id : undefined
         }
     } catch (error) {
         console.error('Error fetching comments:', error)
@@ -233,7 +232,7 @@ export async function getReplies(commentId: string, options?: {
         return {
             success: true,
             data: items,
-            nextCursor: hasMore ? items[items.length - 1].id : undefined
+            nextCursor: hasMore ? items[items.length - 1]?.id : undefined
         }
     } catch (error) {
         console.error('Error fetching replies:', error)

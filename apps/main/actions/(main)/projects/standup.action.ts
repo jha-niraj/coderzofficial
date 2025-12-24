@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import prisma from "@/lib/prisma";
+import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 
 interface ActionResponse {
@@ -165,7 +165,7 @@ export async function createStandupConfig(input: StandupConfigInput): Promise<Ac
                 
                 // Set the time
                 const [hours, minutes] = input.standupTime.split(':');
-                scheduledDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                scheduledDate.setHours(parseInt(hours!), parseInt(minutes!), 0, 0);
 
                 // Only create entries for future dates
                 if (scheduledDate > now) {
@@ -261,7 +261,7 @@ export async function renewStandupConfig(projectId: string, projectSlug: string)
                 scheduledDate.setDate(nextWeekStart.getDate() + i);
                 
                 const [hours, minutes] = config.standupTime.split(':');
-                scheduledDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                scheduledDate.setHours(parseInt(hours!), parseInt(minutes!), 0, 0);
 
                 entries.push({
                     configId: config.id,

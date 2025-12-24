@@ -1,10 +1,12 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@repo/prisma"
 import { auth } from '@repo/auth'
 import { revalidatePath } from "next/cache"
-import { SkillCategory } from "@prisma/client"
-import { ContactInfo, UserCertification, UserProfile, UserSkill } from "@/types/user"
+import { SkillCategory } from "@repo/prisma/client"
+import { 
+    ContactInfo, UserCertification, UserProfile, UserSkill 
+} from "@/types/user"
 
 export async function getUserProfile() {
     const session = await auth()

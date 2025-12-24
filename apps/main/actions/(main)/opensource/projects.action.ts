@@ -1,12 +1,9 @@
 'use server'
 
 import { auth } from '@repo/auth'
-import { prisma } from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
+import { prisma } from '@repo/prisma'
 import { 
-    OSProjectType, 
-    OSProjectStatus, 
-    OSIssueDifficulty,
+    OSProjectType, OSProjectStatus,  OSIssueDifficulty
 } from '@prisma/client'
 
 // ==========================================

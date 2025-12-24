@@ -7,8 +7,8 @@ import {
     calculateMockScore,
     calculateTotalScore
 } from "@/lib/project-scoring"
-import prisma from "@/lib/prisma"
-import type { 
+import prisma from "@repo/prisma"
+import type {
     CompletedTask,
     ScoreCalculation,
     LeaderboardEntry,
@@ -84,8 +84,8 @@ export async function updateProjectScore(projectId: string, userId?: string) {
         // Get quiz score
         const quizAttempt = await prisma.projectV2QuizAttempt.findUnique({
             where: {
-                userId_quizId: {
-                    userId: targetUserId,
+                progressId_quizId: {
+                    progressId: progress.id,
                     quizId: progress.project.quiz?.id || ""
                 }
             }
@@ -97,8 +97,7 @@ export async function updateProjectScore(projectId: string, userId?: string) {
         // Get mock score
         const mockSession = await prisma.projectV2MockSession.findFirst({
             where: {
-                userId: targetUserId,
-                projectId: projectId,
+                progressId: progress.id,
                 status: "COMPLETED"
             },
             orderBy: {
@@ -178,13 +177,10 @@ async function updateLeaderboardEntry(projectId: string, userId: string) {
         // Upsert leaderboard entry
         await prisma.projectV2Leaderboard.upsert({
             where: {
-                userId_projectId: {
-                    userId,
-                    projectId
-                }
+                progressId: progress.id
             },
             create: {
-                userId,
+                progressId: progress.id,
                 projectId,
                 rank,
                 score: progress.totalScore,
@@ -232,20 +228,26 @@ async function updateGlobalLeaderboard(userId: string) {
         const projectsCompleted = allProgress.filter((p: any) => p.status === "COMPLETED").length
         const averageScore = projectsStarted > 0 ? totalScore / projectsStarted : 0
 
-        // Get component counts
-        const quizAttempts = await prisma.projectV2QuizAttempt.count({
+        // Get component counts from progress
+        const progressWithAttempts = await prisma.userProjectV2Progress.findMany({
             where: {
                 userId,
-                isCompleted: true
+                status: { not: "NOT_STARTED" }
+            },
+            include: {
+                quizAttempts: {
+                    where: { isCompleted: true },
+                    select: { id: true }
+                },
+                mockSessions: {
+                    where: { status: "COMPLETED" },
+                    select: { id: true }
+                }
             }
-        })
+        });
 
-        const mockSessions = await prisma.projectV2MockSession.count({
-            where: {
-                userId,
-                status: "COMPLETED"
-            }
-        })
+        const quizAttempts = progressWithAttempts.reduce((sum, p) => sum + p.quizAttempts.length, 0);
+        const mockSessions = progressWithAttempts.reduce((sum, p) => sum + p.mockSessions.length, 0);
 
         const totalTasksCompleted = allProgress.reduce((sum: number, p: any) => sum + p.tasksCompleted, 0)
 
@@ -313,14 +315,20 @@ export async function getProjectLeaderboard(
 
         const [leaderboard, total] = await Promise.all([
             prisma.projectV2Leaderboard.findMany({
-                where: { projectId: project.id },
+                where: {
+                    projectId: project.id
+                },
                 include: {
-                    user: {
+                    progress: {
                         select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            image: true
+                            user: {
+                                select: {
+                                    id: true,
+                                    username: true,
+                                    name: true,
+                                    image: true
+                                }
+                            }
                         }
                     }
                 },

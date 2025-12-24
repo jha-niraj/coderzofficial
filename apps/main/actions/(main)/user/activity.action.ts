@@ -1,8 +1,8 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import prisma from '@/lib/prisma';
-import { ActivityType } from '@prisma/client';
+import prisma from '@repo/prisma';
+import { ActivityType } from '@repo/prisma/client';
 
 export interface ActivityData {
     type: ActivityType;
@@ -294,7 +294,7 @@ export async function getUserStreak(): Promise<{ success: boolean; data?: Streak
             
             // Count consecutive days backwards
             for (let i = 1; i < dates.length; i++) {
-                if (dates[i].getTime() === checkDate.getTime()) {
+                if (dates[i]?.getTime() === checkDate.getTime()) {
                     currentStreak++;
                     checkDate.setDate(checkDate.getDate() - 1);
                 } else {
@@ -309,7 +309,7 @@ export async function getUserStreak(): Promise<{ success: boolean; data?: Streak
             
             // Count consecutive days backwards
             for (let i = dates.findIndex((d: Date) => d.getTime() === yesterday.getTime()) + 1; i < dates.length; i++) {
-                if (dates[i].getTime() === checkDate.getTime()) {
+                if (dates[i]?.getTime() === checkDate.getTime()) {
                     currentStreak++;
                     checkDate.setDate(checkDate.getDate() - 1);
                 } else {
@@ -361,8 +361,8 @@ function calculateLongestStreak(dates: Date[]): number {
     let currentStreak = 1;
     
     for (let i = 1; i < dates.length; i++) {
-        const currentDate = new Date(dates[i-1]);
-        const nextDate = new Date(dates[i]);
+        const currentDate = new Date(dates[i-1] || new Date());
+        const nextDate = new Date(dates[i] || new Date());
         
         // Check if dates are consecutive (previous day)
         currentDate.setDate(currentDate.getDate() - 1);

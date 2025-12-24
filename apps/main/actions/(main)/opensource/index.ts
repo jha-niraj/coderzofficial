@@ -3,8 +3,7 @@
 
 // Constants (not server actions - accessible on client)
 export {
-    PROJECT_TYPES,
-    DIFFICULTY_LEVELS,
+    PROJECT_TYPES, DIFFICULTY_LEVELS
 } from './constants'
 
 export type { ProjectType, DifficultyLevel } from './constants'

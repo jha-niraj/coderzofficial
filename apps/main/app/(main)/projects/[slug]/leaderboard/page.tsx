@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@repo/auth'
-import prisma from '@/lib/prisma'
+import prisma from '@repo/prisma'
 import { ProjectLeaderboardClient } from './_components/project-leaderboard-client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'

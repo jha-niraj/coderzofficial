@@ -2,12 +2,11 @@
 
 import OpenAI from 'openai'
 import {
-    AssessmentLanguage,
-    AssessmentMode,
-    QuestionDifficulty,
-    AssessmentQuestionType,
+    AssessmentMode, QuestionDifficulty, AssessmentQuestionType,
 } from '@prisma/client'
-import type { GeneratedQuestion, AIGenerationConfig, MockInterviewConfig } from '@/types/assessment'
+import type { 
+    GeneratedQuestion, AIGenerationConfig, MockInterviewConfig 
+} from '@/types/assessment'
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -310,7 +309,7 @@ function validateQuestionType(
     if (allowedTypes.includes(type as AssessmentQuestionType)) {
         return type as AssessmentQuestionType
     }
-    return allowedTypes[0]
+    return allowedTypes[0] as AssessmentQuestionType
 }
 
 function formatMockQuestion(q: any): string {
@@ -358,7 +357,7 @@ function generatePlaceholderQuestions(config: AIGenerationConfig): GeneratedQues
 
     for (let i = 0; i < questionCount; i++) {
         const type = questionTypes[i % questionTypes.length]
-        const points = getPointsForDifficulty(difficulty, type)
+        const points = getPointsForDifficulty(difficulty, type as AssessmentQuestionType)
 
         if (type === 'MCQ' || type === 'MULTIPLE_SELECT' || type === 'TRUE_FALSE') {
             questions.push({

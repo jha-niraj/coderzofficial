@@ -1,6 +1,6 @@
 'use server'
 
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 import { auth, authOptions, getServerSession } from '@repo/auth'
 import { revalidatePath } from "next/cache"
 

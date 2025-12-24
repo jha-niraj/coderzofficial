@@ -1,13 +1,10 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
-    AssessmentLanguage,
-    AssessmentMode,
-    QuestionDifficulty,
-    AssessmentQuestionType
+    AssessmentLanguage, AssessmentMode, QuestionDifficulty, AssessmentQuestionType
 } from "@prisma/client";
 
 // ==================== TYPES ====================

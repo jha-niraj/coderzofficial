@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/utils/mail";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 
 export async function POST(request: NextRequest) {
     const { email, emailType } = await request.json();

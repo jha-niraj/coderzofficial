@@ -124,6 +124,7 @@ model ProjectV2 {
 // ✅ SINGLE MERGED MODEL
 model UserProjectV2Progress {
     id        String    @id @default(cuid())
+    
     userId    String
     projectId String
     user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)

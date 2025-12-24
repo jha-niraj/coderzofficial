@@ -9,22 +9,17 @@ import { nanoid } from 'nanoid';
 import { trackActivity } from '@/actions/(main)/user/activity.action';
 import { ActivityType } from '@prisma/client';
 // Import ElevenLabs speech utility
-import { 
-	transcribeWithElevenLabs, quickTranscribeWithElevenLabs, 
-	detailedTranscribeWithElevenLabs, isElevenLabsConfigured 
+import {
+	transcribeWithElevenLabs, quickTranscribeWithElevenLabs,
+	detailedTranscribeWithElevenLabs, isElevenLabsConfigured
 } from '@/lib/elevenlabs-speech';
 // Import organized prompts
-import { 
-	getInterviewGenerationPrompt, 
-	getCodeEvaluationPrompt,
-	getCodingAnswerPrompt, 
-	getGeneralAnswerPrompt,
-	getTechnicalResponseEvaluationPrompt,
+import {
+	getInterviewGenerationPrompt, getCodeEvaluationPrompt, getCodingAnswerPrompt,
+	getGeneralAnswerPrompt, getTechnicalResponseEvaluationPrompt,
 	getBehavioralResponseEvaluationPrompt,
-	type InterviewGenerationParams,
-	type CodeEvaluationParams,
-	type AnswerGenerationParams,
-	type UserResponseEvaluationParams
+	type InterviewGenerationParams, type CodeEvaluationParams,
+	type AnswerGenerationParams, type UserResponseEvaluationParams
 } from '@/lib/prompts/jobinterviewprompts';
 
 // Initialize Exa client
@@ -105,7 +100,7 @@ interface EvaluateUserQuestionResponseResult {
 async function fetchCompanyInfo(url: string): Promise<CompanyInfo | null> {
 	try {
 		const companyDomain = url.replace(/^https?:\/\//, '').split('/')[0]?.replace('www.', '') || '';
-		
+
 		const result = (await exa.getContents(
 			[companyDomain],
 			{
@@ -138,7 +133,7 @@ function cleanAndParseJSON(jsonString: string): any {
 		return JSON.parse(jsonString);
 	} catch (error) {
 		console.log('Direct parsing failed, attempting to clean JSON...');
-		
+
 		// Remove any markdown code block markers and clean whitespace
 		let cleaned = jsonString
 			.replace(/```json\s*/g, '')
@@ -150,24 +145,24 @@ function cleanAndParseJSON(jsonString: string): any {
 			.replace(/\r/g, ' ')   // Replace actual carriage returns with spaces
 			.replace(/\t/g, ' ')   // Replace tabs with spaces
 			.replace(/\s+/g, ' '); // Collapse multiple spaces
-		
+
 		try {
 			// Try parsing the cleaned version
 			return JSON.parse(cleaned);
 		} catch (cleanError) {
 			console.log('Markdown cleaning failed, attempting to fix JSON structure...');
-			
+
 			try {
 				// Find the actual JSON content
 				const jsonStart = cleaned.indexOf('{');
 				const jsonEnd = cleaned.lastIndexOf('}');
-				
+
 				if (jsonStart === -1 || jsonEnd === -1) {
 					throw new Error('No valid JSON object found');
 				}
-				
+
 				let content = cleaned.slice(jsonStart, jsonEnd + 1);
-				
+
 				// Fix common JSON issues
 				content = content
 					.replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
@@ -180,18 +175,18 @@ function cleanAndParseJSON(jsonString: string): any {
 					.replace(/\\/g, '\\\\') // Escape backslashes
 					.replace(/"\s+"/g, '" "') // Fix spaces between strings
 					.replace(/(?<!\\)"/g, '\\"'); // Escape unescaped quotes
-				
+
 				// Try parsing the fixed content
 				return JSON.parse(content);
 			} catch (structureError) {
 				console.log('JSON structure fix failed, attempting to extract evaluation...');
-				
+
 				// Try to extract evaluation components
 				const scoreMatch = cleaned.match(/["']score["']\s*:\s*(\d+)/);
 				const feedbackMatch = cleaned.match(/["']feedback["']\s*:\s*["']([^"']*)["']/);
 				const strengthsMatch = cleaned.match(/["']strengths["']\s*:\s*\[(.*?)\]/);
 				const improvementsMatch = cleaned.match(/["']improvements["']\s*:\s*\[(.*?)\]/);
-				
+
 				if (scoreMatch && feedbackMatch) {
 					const evaluation = {
 						score: parseInt(scoreMatch[1] || '0'),
@@ -203,25 +198,23 @@ function cleanAndParseJSON(jsonString: string): any {
 							missingPoints: [] as string[]
 						}
 					};
-					
+
 					// Parse arrays if available
 					if (strengthsMatch) {
 						evaluation.strengths = strengthsMatch[1]?.split(',') || []
-							.split(',')
 							.map((s: string) => s.trim().replace(/^["']|["']$/g, ''))
 							.filter((s: string) => s);
 					}
-					
+
 					if (improvementsMatch) {
 						evaluation.improvements = improvementsMatch[1]?.split(',') || []
-							.split(',')
 							.map((s: string) => s.trim().replace(/^["']|["']$/g, ''))
 							.filter((s: string) => s);
 					}
-					
+
 					return evaluation;
 				}
-				
+
 				throw new Error('Failed to parse or reconstruct evaluation content');
 			}
 		}
@@ -235,7 +228,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 		return JSON.parse(jsonString);
 	} catch (error) {
 		console.log('Direct parsing failed, attempting to clean JSON...');
-		
+
 		try {
 			// Remove markdown code block markers, extra text, and whitespace
 			let cleaned = jsonString
@@ -245,23 +238,23 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 				.replace(/[^}]*$/, '') // Remove any text after last }
 				.replace(/^\s+/, '') // Remove leading whitespace
 				.replace(/\s+$/, ''); // Remove trailing whitespace
-			
+
 			// Try parsing the cleaned version
 			return JSON.parse(cleaned);
 		} catch (cleanError) {
 			console.log('Markdown cleaning failed, attempting to extract JSON object...');
-			
+
 			// Find the first { and last } to extract just the JSON object
 			const firstBrace = jsonString.indexOf('{');
 			const lastBrace = jsonString.lastIndexOf('}');
-			
+
 			if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
 				const extractedJson = jsonString.substring(firstBrace, lastBrace + 1);
 				try {
 					return JSON.parse(extractedJson);
 				} catch (extractError) {
 					console.log('JSON extraction failed, attempting to fix common issues...');
-					
+
 					// Fix common JSON issues - more aggressive cleaning
 					let fixedJson = extractedJson
 						.replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
@@ -277,7 +270,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 						.replace(/([^\\])"/g, '$1\\"') // Escape unescaped quotes
 						.replace(/^"/, '\\"') // Escape leading quote
 						.replace(/"$/, '\\"'); // Escape trailing quote
-					
+
 					try {
 						return JSON.parse(fixedJson);
 					} catch (finalError) {
@@ -286,14 +279,14 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 						if (jsonMatch) {
 							return JSON.parse(jsonMatch[0]);
 						}
-						
+
 						// If all parsing attempts fail, create a fallback response
 						console.log('All parsing attempts failed, creating fallback response...');
 						return createFallbackResponse(jsonString);
 					}
 				}
 			}
-			
+
 			// If we can't find JSON structure, create fallback
 			console.log('Could not extract JSON structure, creating fallback response...');
 			return createFallbackResponse(jsonString);
@@ -306,34 +299,34 @@ function createFallbackResponse(rawText: string): any {
 	// Try to extract code blocks from the response
 	const codeBlockMatch = rawText.match(/```(\w+)?\s*\n([\s\S]*?)\n```/);
 	let solution = '';
-	
+
 	if (codeBlockMatch) {
-		solution = codeBlockMatch[2];
+		solution = codeBlockMatch[2] || '';
 	} else {
 		// Try to extract from nested JSON structure first
 		const nestedJsonMatch = rawText.match(/"solution":\s*"([^"]*?)"/);
 		if (nestedJsonMatch) {
 			let extractedSolution = nestedJsonMatch[1];
-			
+
 			// Clean up the extracted solution - handle nested JSON
-			extractedSolution = extractedSolution
-				.replace(/\\n/g, '\n')
-				.replace(/\\"/g, '"')
-				.replace(/\\\\/g, '\\')
-				.replace(/\\t/g, '\t')
-				.replace(/\\r/g, '\r');
-			
+			extractedSolution = extractedSolution || '';
+			extractedSolution = extractedSolution.replace(/\\n/g, '\n')
+			extractedSolution = extractedSolution.replace(/\\"/g, '"')
+			extractedSolution = extractedSolution.replace(/\\\\/g, '\\')
+			extractedSolution = extractedSolution.replace(/\\t/g, '\t')
+			extractedSolution = extractedSolution.replace(/\\r/g, '\r');
+
 			// If the extracted solution contains more JSON, try to parse it
 			if (extractedSolution.includes('"solution":')) {
 				try {
 					const innerJsonMatch = extractedSolution.match(/"solution":\s*"([^"]*?)"/);
 					if (innerJsonMatch) {
-						solution = innerJsonMatch[1]
-							.replace(/\\n/g, '\n')
+						solution = innerJsonMatch[1] || '';
+						solution = solution.replace(/\\n/g, '\n')
 							.replace(/\\"/g, '"')
-							.replace(/\\\\/g, '\\')
-							.replace(/\\t/g, '\t')
-							.replace(/\\r/g, '\r');
+						solution = solution.replace(/\\\\/g, '\\')
+						solution = solution.replace(/\\t/g, '\t')
+						solution = solution.replace(/\\r/g, '\r');
 					} else {
 						solution = extractedSolution;
 					}
@@ -348,7 +341,7 @@ function createFallbackResponse(rawText: string): any {
 			const reactPattern = /import React[\s\S]*?return \([\s\S]*?<\/div>/;
 			const functionPattern = /function\s+\w+\s*\([\s\S]*?return[\s\S]*?}/;
 			const constPattern = /const\s+\w+\s*=\s*\([\s\S]*?return[\s\S]*?}/;
-			
+
 			if (reactPattern.test(rawText)) {
 				const match = rawText.match(reactPattern);
 				solution = match ? match[0] : rawText.substring(0, 1000);
@@ -370,10 +363,10 @@ function createFallbackResponse(rawText: string): any {
 			}
 		}
 	}
-	
+
 	// Clean up the solution
 	solution = solution.trim();
-	
+
 	return {
 		solution: solution,
 		explanation: "AI response parsing failed. Here's the extracted solution from the raw response.",
@@ -403,7 +396,7 @@ async function generateInterviewQuestions(
 			includeAnswers,
 			counts
 		};
-		
+
 		const prompt = getInterviewGenerationPrompt(promptParams);
 
 		console.log('Sending request to Sarvam AI...');
@@ -430,7 +423,7 @@ async function generateInterviewQuestions(
 		});
 
 		console.log('Sarvam AI response status:', response.status);
-		
+
 		if (!response.ok) {
 			throw new Error(`Sarvam AI API error: ${response.status}`);
 		}
@@ -453,7 +446,7 @@ async function generateInterviewQuestions(
 				behavioralQuestions: parsedContent.behavioralQuestions?.length || 0,
 				codingQuestions: parsedContent.codingQuestions?.length || 0
 			});
-			
+
 			// Validate the structure and content
 			if (!parsedContent.technicalQuestions || !Array.isArray(parsedContent.technicalQuestions)) {
 				throw new Error('Missing or invalid technical questions array');
@@ -464,7 +457,7 @@ async function generateInterviewQuestions(
 			if (!parsedContent.codingQuestions || !Array.isArray(parsedContent.codingQuestions)) {
 				throw new Error('Missing or invalid coding questions array');
 			}
-			
+
 			// Validate question counts
 			if (parsedContent.technicalQuestions.length < counts.technical) {
 				console.warn(`Expected ${counts.technical} technical questions, got ${parsedContent.technicalQuestions.length}`);
@@ -475,18 +468,18 @@ async function generateInterviewQuestions(
 			if (parsedContent.codingQuestions.length < counts.coding) {
 				console.warn(`Expected ${counts.coding} coding questions, got ${parsedContent.codingQuestions.length}`);
 			}
-			
+
 			return parsedContent;
 		} catch (error: unknown) {
 			const parseError = error as Error;
 			console.error('Error parsing Sarvam response:', parseError);
 			console.error('Raw content:', content);
-			
+
 			// Try to salvage partial content
 			try {
 				const partialContent = cleanAndParseJSON(content);
-				if (partialContent.technicalQuestions?.length || 
-					partialContent.behavioralQuestions?.length || 
+				if (partialContent.technicalQuestions?.length ||
+					partialContent.behavioralQuestions?.length ||
 					partialContent.codingQuestions?.length) {
 					console.log('Returning partial content');
 					return partialContent;
@@ -494,7 +487,7 @@ async function generateInterviewQuestions(
 			} catch (e) {
 				console.error('Failed to salvage partial content');
 			}
-			
+
 			throw new Error(`Failed to parse Sarvam AI response: ${parseError.message}`);
 		}
 	} catch (error) {
@@ -523,14 +516,14 @@ export async function generateJobInterviewQuestions(
 		console.log('Starting interview question generation:', { position, jobDescription, companyUrl, includeAnswers, includePractice, makePublic, counts });
 		const session = await auth();
 
-		if(!session) {
+		if (!session) {
 			throw new Error('User not found');
 		}
 
 		// Get user's resume text and check credits
 		const user = await prisma.user.findUnique({
-			where: { 
-				id: session?.user?.id 
+			where: {
+				id: session?.user?.id
 			},
 			select: { resumeText: true, credits: true },
 		});
@@ -578,16 +571,16 @@ export async function generateJobInterviewQuestions(
 		const slug = generateSlug(position);
 
 		// Save to database and handle credits in a transaction
-		const result = await prisma.$transaction(async (tx : Prisma.TransactionClient) => {
+		const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 			// Deduct credits
 			await tx.user.update({
-				where: { 
-					id: session?.user?.id 
+				where: {
+					id: session?.user?.id
 				},
-				data: { 
-					credits: { 
-						decrement: requiredCredits 
-					} 
+				data: {
+					credits: {
+						decrement: requiredCredits
+					}
 				},
 			});
 
@@ -625,8 +618,8 @@ export async function generateJobInterviewQuestions(
 					behavioralCount: counts.behavioral,
 					codingCount: counts.coding,
 					searchHash: generateSearchHash(position, jobDescription, companyUrl),
-					companyInfo: !companyInfo ? 
-						Prisma.JsonNull : 
+					companyInfo: !companyInfo ?
+						Prisma.JsonNull :
 						companyInfo,
 					generatedContent: questions,
 					slug,
@@ -802,7 +795,7 @@ export async function evaluateCode(
 			userCode,
 			language
 		};
-		
+
 		const evaluationPrompt = getCodeEvaluationPrompt(promptParams);
 
 		console.log('🤖 Calling Sarvam AI for evaluation...');
@@ -874,18 +867,18 @@ export async function evaluateCode(
 
 		// Save evaluation to database without credit deduction
 		const result = await prisma.codeEvaluation.create({
-				data: {
-					interviewId,
-					questionText,
-					userCode,
-					language,
-					evaluation,
-					score: evaluation.score,
-					feedback: evaluation.feedback,
-					strengths: evaluation.strengths || [],
-					improvements: evaluation.improvements || []
-				}
-			});
+			data: {
+				interviewId,
+				questionText,
+				userCode,
+				language,
+				evaluation,
+				score: evaluation.score,
+				feedback: evaluation.feedback,
+				strengths: evaluation.strengths || [],
+				improvements: evaluation.improvements || []
+			}
+		});
 		console.log('✅ Code evaluation saved with ID:', result.id);
 
 		console.log('=== Code Evaluation Completed Successfully ===');
@@ -937,7 +930,7 @@ export async function generateQuestionAnswer(
 			questionType
 		};
 
-		const prompt = questionType === 'coding' 
+		const prompt = questionType === 'coding'
 			? getCodingAnswerPrompt(promptParams)
 			: getGeneralAnswerPrompt(promptParams);
 
@@ -972,13 +965,13 @@ export async function generateQuestionAnswer(
 		try {
 			parsedAnswer = cleanAndParseSimpleJSON(answerText);
 			console.log('Successfully parsed coding answer:', Object.keys(parsedAnswer));
-			
+
 			// Validate the structure for coding answers
 			if (!parsedAnswer.solution || !parsedAnswer.explanation) {
 				console.warn('Missing required fields, using fallback response');
 				parsedAnswer = createFallbackResponse(answerText);
 			}
-			
+
 		} catch (error) {
 			console.error('Failed to parse AI response:', error);
 			console.error('Full response was:', answerText);
@@ -988,12 +981,12 @@ export async function generateQuestionAnswer(
 
 		// Save to database without credit deduction
 		const result = await prisma.questionAnswer.create({
-				data: {
-					interviewId,
-					questionText,
-					questionType,
-					answer: parsedAnswer,
-				}
+			data: {
+				interviewId,
+				questionText,
+				questionType,
+				answer: parsedAnswer,
+			}
 		});
 
 		return {
@@ -1078,7 +1071,7 @@ export async function transcribeVoiceToText(
 		// For 30 seconds threshold, we use different size thresholds based on format
 		const fileSizeKB = audioFile.size / 1024;
 		let durationThresholdKB = 500; // Default threshold for 30 seconds
-		
+
 		// Adjust threshold based on file type
 		if (audioFile.type.includes('wav') || audioFile.type.includes('audio/wav')) {
 			durationThresholdKB = 700; // WAV files are larger (higher quality)
@@ -1103,7 +1096,7 @@ export async function transcribeVoiceToText(
 		// Route based on estimated duration
 		if (shouldUseSarvam) {
 			console.log('🎤 Using Sarvam AI for short audio (cost-effective)...');
-			
+
 			// Use Sarvam API for shorter audio files
 			const formData = new FormData();
 			formData.append('file', audioFile);
@@ -1147,12 +1140,12 @@ export async function transcribeVoiceToText(
 		// Use ElevenLabs for longer audio or if Sarvam fails
 		if (isElevenLabsConfigured()) {
 			console.log('🎤 Using ElevenLabs for longer/complex audio (advanced features)...');
-			
+
 			try {
 				// Use different ElevenLabs settings based on estimated duration
 				let elevenLabsResult;
-				
-				if (estimatedDuration > 60) { 
+
+				if (estimatedDuration > 60) {
 					// For very long audio, use detailed transcription with full features
 					console.log('📝 Using detailed transcription for long audio...');
 					elevenLabsResult = await detailedTranscribeWithElevenLabs(audioFile);
@@ -1161,12 +1154,12 @@ export async function transcribeVoiceToText(
 					console.log('📝 Using quick transcription for medium audio...');
 					elevenLabsResult = await quickTranscribeWithElevenLabs(audioFile);
 				}
-				
+
 				if (elevenLabsResult.success && elevenLabsResult.data) {
 					console.log('✅ ElevenLabs transcription successful');
 					console.log('📝 Transcript length:', elevenLabsResult.data.transcript.length);
 					console.log('🌐 Language detected:', elevenLabsResult.data.language_code);
-					
+
 					return {
 						success: true,
 						data: {
@@ -1185,7 +1178,7 @@ export async function transcribeVoiceToText(
 		}
 
 		// If both fail, return appropriate error
-		const errorMessage = shouldUseSarvam 
+		const errorMessage = shouldUseSarvam
 			? 'Audio transcription failed. Please try recording a clear, shorter response (under 30 seconds).'
 			: 'Audio transcription failed. Please try recording a clear response or check your internet connection.';
 
@@ -1209,28 +1202,28 @@ export async function transcribeVoiceToText(
 async function transcribeWithBatchAPI(audioFile: File): Promise<{ success: boolean; data?: { transcript: string; language?: string }; error?: string }> {
 	try {
 		console.log('🔄 Using Python SDK for longer audio file...');
-		
+
 		// Create temporary directory for processing
 		const fs = require('fs').promises;
 		const path = require('path');
 		const { exec } = require('child_process');
 		const { promisify } = require('util');
 		const execAsync = promisify(exec);
-		
+
 		const tempDir = path.join(process.cwd(), 'temp_audio');
 		const tempAudioPath = path.join(tempDir, `audio_${Date.now()}.wav`);
 		const outputDir = path.join(tempDir, 'output');
-		
+
 		// Ensure temp directory exists
 		await fs.mkdir(tempDir, { recursive: true });
 		await fs.mkdir(outputDir, { recursive: true });
-		
+
 		// Save audio file to temp location
 		const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
 		await fs.writeFile(tempAudioPath, audioBuffer);
-		
+
 		console.log('📁 Audio file saved to:', tempAudioPath);
-		
+
 		// Create Python script for batch transcription using SarvamAI SDK
 		const pythonScript = `
 import os
@@ -1372,21 +1365,21 @@ def main():
 if __name__ == "__main__":
     main()
 `;
-		
+
 		const pythonScriptPath = path.join(tempDir, 'transcribe_batch.py');
 		await fs.writeFile(pythonScriptPath, pythonScript);
-		
+
 		console.log('🐍 Python script created, executing...');
-		
+
 		// Try executing with virtual environment first, then fallback to system python
 		const pythonCommands = [
 			`source .venv_sarvam/bin/activate && python ${pythonScriptPath}`,
 			`python3 ${pythonScriptPath}`,
 			`python ${pythonScriptPath}`
 		];
-		
+
 		let lastError: Error | null = null;
-		
+
 		for (const command of pythonCommands) {
 			try {
 				console.log(`🔄 Trying command: ${command}`);
@@ -1395,12 +1388,12 @@ if __name__ == "__main__":
 					cwd: process.cwd(),
 					shell: '/bin/bash' // Use bash to support source command
 				});
-				
+
 				console.log('📄 Python script output:', stdout);
 				if (stderr && stderr.trim()) {
 					console.log('🐍 Python script stderr:', stderr);
 				}
-				
+
 				// Parse the JSON response from Python script
 				let result;
 				try {
@@ -1412,44 +1405,44 @@ if __name__ == "__main__":
 					console.error('Raw output:', stdout);
 					throw new Error('Invalid JSON response from Python script');
 				}
-				
+
 				// Cleanup temp files
 				try {
 					await fs.rm(tempDir, { recursive: true, force: true });
 				} catch (cleanupError) {
 					console.warn('⚠️ Failed to cleanup temp files:', cleanupError);
 				}
-				
+
 				return result;
-				
+
 			} catch (execError) {
 				console.error(`❌ Command failed: ${command}`, execError);
 				lastError = execError as Error;
 				continue; // Try next command
 			}
 		}
-		
+
 		// If all commands failed, cleanup and throw error
 		try {
 			await fs.rm(tempDir, { recursive: true, force: true });
 		} catch (cleanupError) {
 			console.warn('⚠️ Failed to cleanup temp files:', cleanupError);
 		}
-		
+
 		const errorMessage = lastError?.message || 'Unknown error';
-		
+
 		if (errorMessage.includes('sarvamai') || errorMessage.includes('ModuleNotFoundError')) {
 			throw new Error('SarvamAI Python SDK not installed. Please run the setup script: npm run setup-python');
 		}
-		
+
 		throw new Error(`Python transcription failed after trying all methods. Last error: ${errorMessage}. Please ensure Python and sarvamai package are installed correctly.`);
-		
+
 	} catch (error) {
 		console.error('=== Batch Transcription Error ===');
 		console.error('Error details:', error);
-		
+
 		const errorMessage = error instanceof Error ? error.message : 'Batch transcription failed';
-		
+
 		// Provide helpful error messages to users
 		if (errorMessage.includes('SarvamAI Python SDK not installed') || errorMessage.includes('sarvamai')) {
 			return {
@@ -1457,14 +1450,14 @@ if __name__ == "__main__":
 				error: 'Audio processing setup incomplete. Please run "npm run setup-python" to install required dependencies, or keep your answer under 1 minute.'
 			};
 		}
-		
+
 		if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
 			return {
 				success: false,
 				error: 'Audio processing timed out. Please try again with a shorter answer (under 1 minute recommended).'
 			};
 		}
-		
+
 		return {
 			success: false,
 			error: `Audio processing failed. Please try keeping your answer under 1 minute. If the issue persists, contact support. (${errorMessage})`
@@ -1501,7 +1494,7 @@ export async function evaluateUserQuestionResponse(
 
 		const generatedContent = generation.generatedContent as any
 		let expertAnswer = ''
-		
+
 		if (questionType === 'technical') {
 			expertAnswer = generatedContent.technicalQuestions?.[questionIndex]?.answer || ''
 		} else {
@@ -1516,7 +1509,7 @@ export async function evaluateUserQuestionResponse(
 			expertAnswer
 		};
 
-		const evaluationPrompt = questionType === 'technical' 
+		const evaluationPrompt = questionType === 'technical'
 			? getTechnicalResponseEvaluationPrompt(evaluationPromptParams)
 			: getBehavioralResponseEvaluationPrompt(evaluationPromptParams);
 
@@ -1559,9 +1552,9 @@ export async function evaluateUserQuestionResponse(
 		let evaluation
 		try {
 			evaluation = cleanAndParseJSON(evaluationText)
-			
+
 			// Validate evaluation structure
-			if (!evaluation.score || typeof evaluation.score !== 'number' || 
+			if (!evaluation.score || typeof evaluation.score !== 'number' ||
 				evaluation.score < 0 || evaluation.score > 100 ||
 				!evaluation.feedback || typeof evaluation.feedback !== 'string' ||
 				!Array.isArray(evaluation.strengths) || !Array.isArray(evaluation.improvements) ||
@@ -1572,22 +1565,22 @@ export async function evaluateUserQuestionResponse(
 			// Ensure score components add up correctly
 			if (questionType === 'technical') {
 				const totalScore = (evaluation.technicalAccuracy?.score || 0) +
-								 (evaluation.implementationUnderstanding?.score || 0) +
-								 (evaluation.bestPractices?.score || 0) +
-								 (evaluation.communication?.score || 0)
-				
+					(evaluation.implementationUnderstanding?.score || 0) +
+					(evaluation.bestPractices?.score || 0) +
+					(evaluation.communication?.score || 0)
+
 				if (Math.abs(totalScore - evaluation.score) > 1) { // Allow 1 point difference for rounding
 					evaluation.score = totalScore // Correct the total score
 				}
 			} else {
 				const totalScore = (evaluation.starAnalysis?.situation?.score || 0) +
-								 (evaluation.starAnalysis?.task?.score || 0) +
-								 (evaluation.starAnalysis?.action?.score || 0) +
-								 (evaluation.starAnalysis?.result?.score || 0) +
-								 (evaluation.specificity?.score || 0) +
-								 (evaluation.relevance?.score || 0) +
-								 (evaluation.professionalism?.score || 0)
-				
+					(evaluation.starAnalysis?.task?.score || 0) +
+					(evaluation.starAnalysis?.action?.score || 0) +
+					(evaluation.starAnalysis?.result?.score || 0) +
+					(evaluation.specificity?.score || 0) +
+					(evaluation.relevance?.score || 0) +
+					(evaluation.professionalism?.score || 0)
+
 				if (Math.abs(totalScore - evaluation.score) > 1) { // Allow 1 point difference for rounding
 					evaluation.score = totalScore // Correct the total score
 				}
@@ -1798,13 +1791,13 @@ IMPORTANT: Your response must be VALID JSON only. Start with { and end with }. N
 		try {
 			parsedAnswer = cleanAndParseSimpleJSON(answerText);
 			console.log('Successfully parsed coding answer:', Object.keys(parsedAnswer));
-			
+
 			// Validate the structure for coding answers
 			if (!parsedAnswer.solution || !parsedAnswer.explanation) {
 				console.warn('Missing required fields, using fallback response');
 				parsedAnswer = createFallbackResponse(answerText);
 			}
-			
+
 		} catch (error) {
 			console.error('Failed to parse AI response:', error);
 			console.error('Full response was:', answerText);
@@ -1913,7 +1906,7 @@ export async function runCodeEvaluation(
 			userCode,
 			language
 		};
-		
+
 		const evaluationPrompt = getCodeEvaluationPrompt(promptParams);
 
 		console.log('🤖 Calling Sarvam AI for evaluation...');
@@ -2033,7 +2026,7 @@ export async function submitCodeEvaluation(
 			userCode,
 			language
 		};
-		
+
 		const evaluationPrompt = getCodeEvaluationPrompt(promptParams);
 
 		console.log('🤖 Calling Sarvam AI for evaluation...');
@@ -2198,7 +2191,7 @@ export async function getPreviousSubmissions(
 	} catch (error) {
 		console.error('=== Get Previous Submissions Error ===');
 		console.error('Error details:', error);
-	return {
+		return {
 			success: false,
 			error: error instanceof Error ? error.message : 'Unknown error occurred'
 		};

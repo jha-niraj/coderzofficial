@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 
 const newsletterSchema = z.object({
     email: z.string().email("Please enter a valid email address"),

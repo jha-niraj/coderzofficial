@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 
 interface CreateCardData {

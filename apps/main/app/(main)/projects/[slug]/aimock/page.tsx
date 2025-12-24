@@ -1,6 +1,6 @@
 import { auth } from '@repo/auth'
 import { redirect } from "next/navigation"
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 import AIMockInterviewClient from "./_components/aimock-client"
 import { ProgressGate } from "../_components/progress-gate"
 

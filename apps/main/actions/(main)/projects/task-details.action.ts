@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import prisma from "@/lib/prisma";
+import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
 
@@ -54,6 +54,32 @@ export async function checkTaskDetailExists(taskId: string): Promise<ActionRespo
     try {
         const user = await getCurrentUser();
 
+        // Get task to find projectId
+        const task = await prisma.projectV2Task.findUnique({
+            where: { id: taskId },
+            select: { projectId: true },
+        });
+
+        if (!task) {
+            return {
+                success: true,
+                data: {
+                    exists: false,
+                    hasAccess: false,
+                    needsGeneration: true,
+                },
+            };
+        }
+
+        // Get user's progress for this project
+        const progress = await prisma.userProjectV2Progress.findUnique({
+            where: { userId_projectId: { userId: user.id, projectId: task.projectId } },
+        });
+
+        if (!progress) {
+            return { success: false, error: "Project not started" };
+        }
+
         // Check if detail already exists
         const existingDetail = await prisma.projectV2TaskDetail.findUnique({
             where: { taskId },
@@ -61,7 +87,7 @@ export async function checkTaskDetailExists(taskId: string): Promise<ActionRespo
                 id: true,
                 accessCount: true,
                 userAccess: {
-                    where: { userId: user.id },
+                    where: { progressId: progress.id },
                     select: { id: true },
                 },
             },
@@ -135,12 +161,21 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
             return { success: false, error: "Task not found" };
         }
 
+        // Get user's progress for this project
+        const progress = await prisma.userProjectV2Progress.findUnique({
+            where: { userId_projectId: { userId: user.id, projectId: task.project.id } },
+        });
+
+        if (!progress) {
+            return { success: false, error: "Project not started" };
+        }
+
         // Check if detail already exists (created by another user)
         const existingDetail = await prisma.projectV2TaskDetail.findUnique({
             where: { taskId },
             include: {
                 userAccess: {
-                    where: { userId: user.id },
+                    where: { progressId: progress.id },
                 },
             },
         });
@@ -164,7 +199,7 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
             // Grant access
             await prisma.userTaskV2DetailAccess.create({
                 data: {
-                    userId: user.id,
+                    progressId: progress.id,
                     taskDetailId: existingDetail.id,
                     creditsPaid: 1,
                 },
@@ -277,7 +312,7 @@ Remember: Guide their learning journey, don't give them the solution!`;
             response_format: { type: "json_object" },
         });
 
-        const generatedContent = completion.choices[0].message.content;
+        const generatedContent = completion?.choices[0]?.message.content;
         if (!generatedContent) {
             throw new Error("Failed to generate task detail");
         }
@@ -301,7 +336,7 @@ Remember: Guide their learning journey, don't give them the solution!`;
                 accessCount: 1,
                 userAccess: {
                     create: {
-                        userId: user.id,
+                        progressId: progress.id,
                         creditsPaid: 1,
                     },
                 },
@@ -336,11 +371,30 @@ export async function getTaskDetail(taskId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
+        // Get task to find projectId
+        const task = await prisma.projectV2Task.findUnique({
+            where: { id: taskId },
+            select: { projectId: true },
+        });
+
+        if (!task) {
+            return { success: false, error: "Task not found" };
+        }
+
+        // Get user's progress for this project
+        const progress = await prisma.userProjectV2Progress.findUnique({
+            where: { userId_projectId: { userId: user.id, projectId: task.projectId } },
+        });
+
+        if (!progress) {
+            return { success: false, error: "Project not started" };
+        }
+
         const taskDetail = await prisma.projectV2TaskDetail.findUnique({
             where: { taskId },
             include: {
                 userAccess: {
-                    where: { userId: user.id },
+                    where: { progressId: progress.id },
                     select: {
                         id: true,
                         accessedAt: true,

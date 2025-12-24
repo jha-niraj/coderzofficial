@@ -3,7 +3,7 @@ import { authOptions } from '@repo/auth'
 import { getForgeTrackBySlug } from '@/actions/(main)/challenges/forge.action'
 import { notFound } from 'next/navigation'
 import { ForgeTrackClient } from './_components/forge-track-client'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@repo/prisma'
 
 interface Props {
     params: Promise<{ slug: string }>

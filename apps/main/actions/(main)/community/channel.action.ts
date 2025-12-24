@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@repo/prisma"
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
 import { revalidatePath } from "next/cache"
@@ -79,7 +79,7 @@ export async function getChannelPosts(channelSlug: string, options?: {
         return { 
             success: true, 
             data: postsWithUserData,
-            nextCursor: hasMore ? items[items.length - 1].id : undefined
+            nextCursor: hasMore ? items[items.length - 1]?.id || undefined : undefined
         }
     } catch (error) {
         console.error('Error fetching channel posts:', error)

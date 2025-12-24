@@ -1,13 +1,10 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
-    AssessmentLanguage,
-    AssessmentMode,
-    QuestionDifficulty,
-    AssessmentQuestionType
+    AssessmentLanguage, AssessmentMode, QuestionDifficulty, AssessmentQuestionType
 } from "@prisma/client";
 
 // ==================== TYPES ====================
@@ -367,8 +364,8 @@ export async function submitExamAnswers(params: {
             if (!breakdown.byType[question.type]) {
                 breakdown.byType[question.type] = { correct: 0, total: 0 };
             }
-            breakdown.byType[question.type].total++;
-            if (isCorrect) breakdown.byType[question.type].correct++;
+            breakdown && breakdown.byType[question.type].total++;
+            if (isCorrect) breakdown.byType[question.type]?.correct++;
 
             return {
                 attemptId,

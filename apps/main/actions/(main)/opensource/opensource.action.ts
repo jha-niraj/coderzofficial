@@ -1,17 +1,12 @@
 'use server'
 
 import { auth } from '@repo/auth'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
 import { 
-    OSProjectType, 
-    OSProjectStatus, 
-    OSIssueStatus, 
-    OSIssueDifficulty,
-    OSContributionType,
-    OSContributionStatus,
-    OSCertificationStatus 
-} from '@prisma/client'
+    OSProjectType,  OSProjectStatus,  OSIssueStatus, 
+    OSIssueDifficulty, OSContributionType, OSContributionStatus, OSCertificationStatus 
+} from '@repo/prisma/client'
 import * as github from '@/lib/github'
 
 // Constants are imported from constants.ts (client-accessible)

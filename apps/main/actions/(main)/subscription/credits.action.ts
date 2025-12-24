@@ -1,8 +1,10 @@
 "use server"
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { auth } from '@repo/auth';
-import { ActivityType, CreditType, Currency } from "@prisma/client";
+import { 
+    ActivityType, CreditType, Currency 
+} from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import cuid from "cuid"
 

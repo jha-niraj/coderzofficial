@@ -1,13 +1,11 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { prisma } from "@repo/prisma";
 
 // ==========================================
 // HELPER FUNCTIONS
 // ==========================================
-
 async function getCurrentUser() {
     const session = await auth();
     if (!session?.user?.id) {
@@ -19,7 +17,6 @@ async function getCurrentUser() {
 // ==========================================
 // SUMMARY & STATS
 // ==========================================
-
 export async function getBookmarksSummary() {
     try {
         const user = await getCurrentUser();

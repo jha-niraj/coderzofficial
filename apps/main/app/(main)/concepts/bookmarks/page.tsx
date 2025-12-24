@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { auth } from '@repo/auth';
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { BookmarksHeader } from "./_components/bookmarks-header";
 import { Metadata } from "next";
 import { BookmarksGrid } from "./_components/bookmarks-grid";

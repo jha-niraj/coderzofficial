@@ -1,11 +1,10 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import prisma from "@/lib/prisma";
+import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import { 
-    UserContentStatus, AssessmentMode, AssessmentLanguage, QuestionDifficulty, 
-    AssessmentQuestionType 
+    UserContentStatus, AssessmentLanguage
 } from "@prisma/client";
 
 // Import AI generation

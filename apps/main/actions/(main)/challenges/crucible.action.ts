@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@repo/prisma'
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
 import { revalidatePath } from 'next/cache'
@@ -567,7 +567,7 @@ export async function revealCrucibleHint(problemId: string, hintIndex: number) {
         const hint = hints[hintIndex]
 
         // Deduct XP if hint has cost
-        if (hint.xpCost && hint.xpCost > 0) {
+        if (hint?.xpCost && hint.xpCost > 0) {
             await prisma.user.update({
                 where: { id: session.user.id },
                 data: {
@@ -578,7 +578,7 @@ export async function revealCrucibleHint(problemId: string, hintIndex: number) {
 
         return { 
             success: true, 
-            data: { text: hint.text, xpCost: hint.xpCost || 0 }
+            data: { text: hint?.text, xpCost: hint?.xpCost || 0 }
         }
     } catch (error) {
         console.error('Error using crucible hint:', error)

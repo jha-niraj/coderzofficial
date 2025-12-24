@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { auth } from '@repo/auth';
-import prisma from '@/lib/prisma';
+import prisma from '@repo/prisma';
 import { CreditType } from '@prisma/client';
 
 export async function POST(req: NextRequest) {

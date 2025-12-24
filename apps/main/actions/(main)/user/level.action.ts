@@ -1,8 +1,10 @@
 "use server"
 
 import { auth } from '@repo/auth';
-import prisma from '@/lib/prisma';
-import { CreditType, Currency, XpTransactionProps } from '@prisma/client';
+import prisma from '@repo/prisma';
+import { 
+    CreditType, Currency, XpTransactionProps 
+} from '@repo/prisma/client';
 
 // Level configuration - this could be moved to database later
 const LEVEL_CONFIG = [

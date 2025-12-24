@@ -3,7 +3,7 @@
 import { auth } from '@repo/auth';
 import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
-import { CommunityChallengeStatus, ChallengeStepType } from "@prisma/client";
+import { ChallengeStepType } from "@prisma/client";
 
 export async function getTopProposals() {
 	const session = await auth();
@@ -12,7 +12,7 @@ export async function getTopProposals() {
 	}
 
 	try {
-		const proposals = await prisma.communityProposal.findMany({
+		const proposals = await prisma.collectiveProposal.findMany({
 			where: {
 				status: "VOTING",
 				votingEndAt: { lt: new Date() }, // Voting period ended
@@ -53,7 +53,7 @@ export async function approveProposal(proposalId: string) {
 	}
 
 	try {
-		await prisma.communityProposal.update({
+		await prisma.collectiveProposal.update({
 			where: { id: proposalId },
 			data: { status: "APPROVED" },
 		});
@@ -73,7 +73,7 @@ export async function rejectProposal(proposalId: string) {
 	}
 
 	try {
-		await prisma.communityProposal.update({
+		await prisma.collectiveProposal.update({
 			where: { id: proposalId },
 			data: { status: "REJECTED" },
 		});
@@ -102,7 +102,7 @@ export async function createChallengeFromProposal(formData: FormData) {
 	const creditReward = parseInt(formData.get("creditReward") as string) || 0;
 
 	try {
-		const challenge = await prisma.communityChallenge.create({
+		const challenge = await prisma.collectiveChallenge.create({
 			data: {
 				title,
 				description,
@@ -117,7 +117,7 @@ export async function createChallengeFromProposal(formData: FormData) {
 		});
 
 		// Update proposal status
-		await prisma.communityProposal.update({
+		await prisma.collectiveProposal.update({
 			where: { id: proposalId },
 			data: { status: "PUBLISHED" },
 		});
@@ -164,7 +164,7 @@ export async function addChallengeStep(formData: FormData) {
 		});
 
 		// Update total steps count
-		await prisma.communityChallenge.update({
+		await prisma.collectiveChallenge.update({
 			where: { id: challengeId },
 			data: {
 				totalSteps: {
@@ -188,7 +188,7 @@ export async function publishChallenge(challengeId: string) {
 	}
 
 	try {
-		await prisma.communityChallenge.update({
+		await prisma.collectiveChallenge.update({
 			where: { id: challengeId },
 			data: { status: "ACTIVE" },
 		});
@@ -209,7 +209,7 @@ export async function getChallenges() {
 	}
 
 	try {
-		const challenges = await prisma.communityChallenge.findMany({
+		const challenges = await prisma.collectiveChallenge.findMany({
 			include: {
 				proposal: {
 					include: {
@@ -253,7 +253,7 @@ export async function getChallengeById(challengeId: string) {
 	}
 
 	try {
-		const challenge = await prisma.communityChallenge.findUnique({
+		const challenge = await prisma.collectiveChallenge.findUnique({
 			where: { id: challengeId },
 			include: {
 				proposal: {

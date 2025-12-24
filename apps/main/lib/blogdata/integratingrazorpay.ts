@@ -19,7 +19,7 @@ export const integratingRazorpayData = {
         createOrder: `import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { auth } from '@repo/auth';
-import prisma from '@/lib/prisma';
+import prisma from '@repo/prisma';
 import { creditPackages, convertToPaise, calculatePrice, paymentConfig } from '@/lib/payment-config';
 import { Currency } from '@prisma/client';
 
@@ -248,7 +248,7 @@ const initiatePayment = async (credits: number, price: number) => {
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { auth } from '@repo/auth';
-import prisma from '@/lib/prisma';
+import prisma from '@repo/prisma';
 import { CreditType } from '@prisma/client';
 
 export async function POST(req: NextRequest) {

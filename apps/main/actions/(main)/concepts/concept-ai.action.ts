@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import OpenAI from "openai";
 import * as fal from "@fal-ai/serverless-client";
 
@@ -18,7 +18,6 @@ fal.config({
 // ==========================================
 // TYPES
 // ==========================================
-
 export interface GeneratedQuiz {
     question: string;
     options: { id: number; text: string; isCorrect: boolean }[];
@@ -385,7 +384,7 @@ export async function generateVisualizationImage(
         }) as { images: { url: string }[] };
 
         if (result.images && result.images.length > 0) {
-            return { imageUrl: result.images[0].url };
+            return { imageUrl: result.images[0]?.url };
         }
 
         return { error: "Failed to generate image" };

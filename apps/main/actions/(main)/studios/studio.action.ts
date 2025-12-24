@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from '@repo/auth';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
 import * as fal from "@fal-ai/serverless-client";
@@ -387,15 +387,17 @@ export async function generateImage(
             data: {
                 blockId,
                 type: "IMAGE",
-                url: imageData.url,
+                url: imageData?.url || "",
                 prompt,
-                width: imageData.width,
-                height: imageData.height,
+                width: imageData?.width,
+                height: imageData?.height,
                 studioId,
             },
         });
 
-        return { mediaBlock, imageUrl: imageData.url };
+        return { 
+            mediaBlock, imageUrl: imageData?.url 
+        };
     } catch (error) {
         console.error("Error generating image:", error);
         return { error: "Failed to generate image" };

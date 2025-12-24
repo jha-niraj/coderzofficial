@@ -2,8 +2,8 @@
 
 import { auth } from '@repo/auth';
 import { z } from "zod";
-import prisma from "@/lib/prisma";
-import { QuizCategory, QuizStatus } from "@prisma/client";
+import prisma from "@repo/prisma";
+import { QuizStatus } from "@repo/prisma/client";
 
 const QuizInputSchema = z.object({
     topic: z.string().min(1),

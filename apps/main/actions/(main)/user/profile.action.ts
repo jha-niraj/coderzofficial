@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from '@repo/auth';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 
 // ================= WORK EXPERIENCE ACTIONS =================
@@ -886,7 +886,7 @@ export async function unpinProject(projectId: string) {
 
         for (let i = 0; i < remainingProjects.length; i++) {
             await prisma.pinnedProject.update({
-                where: { id: remainingProjects[i].id },
+                where: { id: remainingProjects[i]?.id },
                 data: { order: i + 1 },
             });
         }
@@ -923,7 +923,7 @@ export async function reorderPinnedProjects(projectIds: string[]) {
                 where: {
                     profileId_projectId: {
                         profileId: profile.id,
-                        projectId: projectIds[i],
+                        projectId: projectIds[i]!,
                     },
                 },
                 data: { order: i + 1 },

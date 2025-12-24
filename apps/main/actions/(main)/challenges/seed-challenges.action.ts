@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@repo/prisma'
 
 // This action seeds sample challenges for testing
 export async function seedSampleChallenges() {

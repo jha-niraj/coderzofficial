@@ -1,6 +1,6 @@
 "use server"
 
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 
 export async function getColleges() {
     try {
@@ -45,5 +45,3 @@ export async function getCompanies() {
         return { success: false, companies: [] }
     }
 }
-
-

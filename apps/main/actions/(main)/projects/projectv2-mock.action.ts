@@ -1,9 +1,9 @@
 "use server"
 
 import { auth } from '@repo/auth'
-import prisma from "@/lib/prisma"
+import prisma from "@repo/prisma"
 import OpenAI from "openai"
-import { CreditType, Currency } from "@prisma/client"
+import { CreditType, Currency } from "@repo/prisma/client"
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -167,7 +167,7 @@ ${knowledgeBase.practicalScenarios.map((s, i) => `${i + 1}. ${s}`).join('\n')}
         // Deduct credits and save knowledge base
         await prisma.$transaction(async (tx: any) => {
             // Update user credits
-            await tx.user.update({
+            await tx.user.updateMany({
                 where: { id: session.user.id },
                 data: { credits: { decrement: MOCK_CREDIT_COST } }
             })
@@ -240,14 +240,22 @@ export async function createProjectMockSession(projectSlug: string) {
 
         // Get user info
         const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { name: true, username: true }
+            where: { 
+                id: session.user.id 
+            },
+            select: { 
+                name: true, username: true 
+            }
         })
 
         // Create session using existing model
         const mockSession = await prisma.projectV2MockSession.create({
             data: {
-                userId: session.user.id,
+                progress: {
+                    select: {
+                        userId: user?.id
+                    }
+                },
                 projectId: project.id,
                 agentId: process.env.NEXT_PUBLIC_ELEVENLABS_MOCKVOICE!,
                 status: 'SCHEDULED',
