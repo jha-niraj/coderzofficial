@@ -9,7 +9,9 @@ import {
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { getDashboardStats, getAuditLogs } from "@/actions/admin.action"
+import { 
+    getDashboardStats, getAuditLogs 
+} from "@/actions/admin.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 
 interface StatCardProps {

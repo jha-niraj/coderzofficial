@@ -1,8 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Database, Activity, RefreshCw, Loader2, CheckCircle, AlertCircle } from "lucide-react"
-import { getDatabaseStats, getSystemHealth } from "@/actions/system.action"
+import { 
+    Database, Activity, RefreshCw, Loader2, CheckCircle, AlertCircle 
+} from "lucide-react"
+import { 
+    getDatabaseStats, getSystemHealth 
+} from "@/actions/system.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 
@@ -14,9 +18,6 @@ export default function DatabaseHealthPage() {
 
     useEffect(() => {
         fetchData()
-        // Auto-refresh every 30 seconds
-        const interval = setInterval(fetchData, 30000)
-        return () => clearInterval(interval)
     }, [])
 
     async function fetchData() {

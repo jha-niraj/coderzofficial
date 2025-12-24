@@ -2,18 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { 
-    Shield, Search, UserPlus, Mail, Clock, CheckCircle, 
-    XCircle, MoreHorizontal, Copy, Trash2, Settings, Loader2
+    Shield, UserPlus, Mail, Copy, Trash2, Settings, Loader2
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { 
-    getAdminUsers, 
-    getPendingInvitations, 
-    createAdminInvitation, 
-    revokeInvitation,
-    updateAdminStatus 
+    getAdminUsers, getPendingInvitations, createAdminInvitation, revokeInvitation
 } from "@/actions/admin.action"
 
 type AdminRole = "SUPER_ADMIN" | "CONTENT_ADMIN" | "FINANCE_ADMIN" | "COMMUNITY_ADMIN" | "MODULE_MANAGER" | "VIEWER"
@@ -304,9 +299,9 @@ export default function AdminManagementPage() {
                                         <td className="p-4">
                                             <span className={cn(
                                                 "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium",
-                                                roleColors[invite.role]
+                                                roleColors[invite.adminRole as AdminRole]
                                             )}>
-                                                {invite.role.replace(/_/g, " ")}
+                                                {invite.adminRole.replace(/_/g, " ")}
                                             </span>
                                         </td>
                                         <td className="p-4">

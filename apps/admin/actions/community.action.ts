@@ -4,7 +4,7 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from "@repo/auth"
 import { authOptions } from "@repo/auth"
 import { revalidatePath } from "next/cache"
-import { hasPermission } from "@/lib/navigation"
+import { hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel } from "@/lib/navigation"
 
 interface Response<T = unknown> {
     success: boolean
@@ -13,7 +13,7 @@ interface Response<T = unknown> {
 }
 
 // Helper to check admin access
-async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 'write' | 'delete' | 'full') {
+async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
@@ -24,7 +24,7 @@ async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 
         include: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions, requiredModule, requiredLevel)) {
+    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
@@ -283,11 +283,12 @@ export async function getCommunityStats(): Promise<Response> {
             return { success: false, error: check.error }
         }
 
-        const [total, active, private_, public_] = await Promise.all([
+        const [total, verified, private_, public_, featured] = await Promise.all([
             prisma.community.count(),
-            prisma.community.count({ where: { status: 'ACTIVE' } }),
-            prisma.community.count({ where: { isPrivate: true } }),
-            prisma.community.count({ where: { isPrivate: false } }),
+            prisma.community.count({ where: { isVerified: true } }),
+            prisma.community.count({ where: { visibility: 'PRIVATE' } }),
+            prisma.community.count({ where: { visibility: 'PUBLIC' } }),
+            prisma.community.count({ where: { isFeatured: true } }),
         ])
 
         // Total members across all communities
@@ -297,9 +298,10 @@ export async function getCommunityStats(): Promise<Response> {
             success: true,
             data: {
                 total,
-                active,
+                verified,
                 private: private_,
                 public: public_,
+                featured,
                 totalMembers
             }
         }

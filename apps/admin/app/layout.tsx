@@ -22,8 +22,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "The Coder'z",
-		template: "%s | The Coder'z"
+		default: "The Coder'z Admin",
+		template: "%s | The Coder'z Admin"
 	},
 	description: "The Engineering Intelligence Platform for Computer Science Students",
 	keywords: ["Learn", "Build Projects", "Computer Science", "Programming", "Coding", "Developer", "Tech Community", "Coding Resources", "Tech Articles", "Coding Tutorials"],
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 		type: "website",
 		locale: "en_US",
 		url: "https://www.coderzai.xyz",
-		siteName: "The Coder'z",
+		siteName: "The Coder'z Admin",
 		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
 		description: "The Engineering Intelligence Platform for Computer Science Students",
 		images: [
@@ -46,16 +46,16 @@ export const metadata: Metadata = {
 				url: "/mainlogo.jpeg",
 				width: 1024,
 				height: 1024,
-				alt: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
+				alt: "The Coder'z Admin - The Engineering Intelligence Platform for Computer Science Students",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
+		title: "The Coder'z Admin - The Engineering Intelligence Platform for Computer Science Students",
 		description: "The Engineering Intelligence Platform for Computer Science Students",
 		images: ["/mainlogo.jpeg"],
-		creator: "@thecoderz",
+		creator: "@thecoderzadmin",
 	},
 	icons: {
 		icon: [

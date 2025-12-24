@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { getAdminUsers, updateAdminPermissions, updateAdminStatus } from "@/actions/admin.action"
+import { useEffect, useState } from "react"
+import { 
+  getAdminUsers, updateAdminPermissions, updateAdminStatus 
+} from "@/actions/admin.action"
 import { Shield, Settings, Loader2, Check, X } from "lucide-react"
 import { toast } from "@repo/ui/components/ui/sonner"
 
@@ -57,6 +59,7 @@ export default function AdminAccessPage(){
 
   async function save(idx: number){
     const row = admins[idx]
+    if(!row) return
     setSavingId(row.id)
     const res = await updateAdminPermissions(row.id, row.permissions as any)
     setSavingId(null)

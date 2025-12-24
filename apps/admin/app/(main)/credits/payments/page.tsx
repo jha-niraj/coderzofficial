@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, CreditCard, Loader2, IndianRupee } from "lucide-react"
+import { 
+    Search, CreditCard, Loader2, IndianRupee 
+} from "lucide-react"
 import { getPayments } from "@/actions/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"

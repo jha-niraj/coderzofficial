@@ -4,7 +4,7 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from "@repo/auth"
 import { authOptions } from "@repo/auth"
 import { revalidatePath } from "next/cache"
-import { hasPermission } from "@/lib/navigation"
+import { hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel } from "@/lib/navigation"
 
 interface Response<T = unknown> {
     success: boolean
@@ -13,7 +13,7 @@ interface Response<T = unknown> {
 }
 
 // Helper to check admin access
-async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 'write' | 'delete' | 'full') {
+async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
@@ -24,7 +24,7 @@ async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 
         include: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions, requiredModule, requiredLevel)) {
+    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
@@ -66,12 +66,12 @@ export async function getAllMockInterviews(params?: {
                 where,
                 skip,
                 take: limit,
-                include: {
-                    user: {
+                select: {
+                    createdBy: {
                         select: {
                             id: true,
                             name: true,
-                            email: true,
+                            username: true,
                             image: true,
                         }
                     }
@@ -110,11 +110,11 @@ export async function getMockInterviewById(id: string): Promise<Response> {
         const mock = await prisma.mockInterviewVoice.findUnique({
             where: { id },
             include: {
-                user: {
+                createdBy: {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        username: true,
                         image: true,
                     }
                 }
@@ -129,43 +129,6 @@ export async function getMockInterviewById(id: string): Promise<Response> {
     } catch (error) {
         console.error("Get mock interview error:", error)
         return { success: false, error: "Failed to fetch mock interview" }
-    }
-}
-
-// Update mock interview
-export async function updateMockInterview(id: string, data: {
-    status?: string
-    score?: number
-}): Promise<Response> {
-    try {
-        const check = await checkAdminAccess('mocks', 'write')
-        if (!check.authorized) {
-            return { success: false, error: check.error }
-        }
-
-        const mock = await prisma.mockInterviewVoice.update({
-            where: { id },
-            data
-        })
-
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "UPDATE",
-                module: "mocks",
-                resourceType: "MockInterview",
-                resourceId: id,
-                description: `Updated mock interview: ${mock.role} at ${mock.company}`
-            }
-        })
-
-        revalidatePath('/mock')
-        revalidatePath(`/mock/${id}`)
-
-        return { success: true, data: mock }
-    } catch (error) {
-        console.error("Update mock interview error:", error)
-        return { success: false, error: "Failed to update mock interview" }
     }
 }
 
@@ -191,7 +154,7 @@ export async function deleteMockInterview(id: string): Promise<Response> {
                 module: "mocks",
                 resourceType: "MockInterview",
                 resourceId: id,
-                description: `Deleted mock interview: ${mock.role} at ${mock.company}`
+                description: `Deleted mock interview: ${mock.title}`
             }
         })
 
@@ -246,15 +209,14 @@ export async function getMockInterviewStats(): Promise<Response> {
 
         const [total, completed, inProgress, cancelled] = await Promise.all([
             prisma.mockInterviewVoice.count(),
-            prisma.mockInterviewVoice.count({ where: { status: 'COMPLETED' } }),
-            prisma.mockInterviewVoice.count({ where: { status: 'IN_PROGRESS' } }),
-            prisma.mockInterviewVoice.count({ where: { status: 'CANCELLED' } }),
+            prisma.mockInterviewVoice.count({ where: { sessions: { some: { status: 'COMPLETED' } } } }),
+            prisma.mockInterviewVoice.count({ where: { sessions: { some: { status: 'IN_PROGRESS' } } } }),
+            prisma.mockInterviewVoice.count({ where: { sessions: { some: { status: 'CANCELLED' } } } }),
         ])
 
-        // Average score
-        const avgScore = await prisma.mockInterviewVoice.aggregate({
-            where: { score: { not: null } },
-            _avg: { score: true }
+        // Average rating from all ratings
+        const avgRating = await prisma.mockVoiceRating.aggregate({
+            _avg: { rating: true }
         })
 
         return {
@@ -264,7 +226,7 @@ export async function getMockInterviewStats(): Promise<Response> {
                 completed,
                 inProgress,
                 cancelled,
-                averageScore: avgScore._avg.score || 0
+                averageRating: avgRating._avg.rating || 0
             }
         }
     } catch (error) {

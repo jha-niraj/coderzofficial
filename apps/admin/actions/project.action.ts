@@ -4,7 +4,9 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from "@repo/auth"
 import { authOptions } from "@repo/auth"
 import { revalidatePath } from "next/cache"
-import { hasPermission } from "@/lib/navigation"
+import { 
+    hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel 
+} from "@/lib/navigation"
 
 interface Response<T = unknown> {
     success: boolean
@@ -13,7 +15,7 @@ interface Response<T = unknown> {
 }
 
 // Helper to check admin access
-async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 'write' | 'delete' | 'full') {
+async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
@@ -24,7 +26,7 @@ async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 
         include: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions, requiredModule, requiredLevel)) {
+    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
@@ -67,12 +69,12 @@ export async function getAllProjects(params?: {
         }
 
         const [projects, total] = await Promise.all([
-            prisma.project.findMany({
+            prisma.projectV2.findMany({
                 where,
                 skip,
                 take: limit,
                 include: {
-                    user: {
+                    creator: {
                         select: {
                             id: true,
                             name: true,
@@ -82,14 +84,15 @@ export async function getAllProjects(params?: {
                     },
                     _count: {
                         select: {
-                            likes: true,
-                            views: true,
+                            progress: true,
+                            submissions: true,
+                            tasks: true,
                         }
                     }
                 },
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.project.count({ where })
+            prisma.projectV2.count({ where })
         ])
 
         return {
@@ -118,10 +121,10 @@ export async function getProjectById(id: string): Promise<Response> {
             return { success: false, error: check.error }
         }
 
-        const project = await prisma.project.findUnique({
+        const project = await prisma.projectV2.findUnique({
             where: { id },
             include: {
-                user: {
+                creator: {
                     select: {
                         id: true,
                         name: true,
@@ -129,18 +132,16 @@ export async function getProjectById(id: string): Promise<Response> {
                         image: true,
                     }
                 },
-                likes: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true,
-                            }
-                        }
+                tasks: true,
+                progress: true,
+                submissions: true,
+                _count: {
+                    select: {
+                        progress: true,
+                        submissions: true,
+                        tasks: true,
                     }
-                },
-                views: true,
+                }
             }
         })
 
@@ -159,8 +160,8 @@ export async function getProjectById(id: string): Promise<Response> {
 export async function updateProject(id: string, data: {
     title?: string
     description?: string
-    status?: string
-    featured?: boolean
+    visibility?: 'PRIVATE' | 'PUBLIC'
+    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
 }): Promise<Response> {
     try {
         const check = await checkAdminAccess('projects', 'write')
@@ -168,7 +169,7 @@ export async function updateProject(id: string, data: {
             return { success: false, error: check.error }
         }
 
-        const project = await prisma.project.update({
+        const project = await prisma.projectV2.update({
             where: { id },
             data
         })
@@ -202,12 +203,12 @@ export async function deleteProject(id: string): Promise<Response> {
             return { success: false, error: check.error }
         }
 
-        const project = await prisma.project.findUnique({ where: { id } })
+        const project = await prisma.projectV2.findUnique({ where: { id } })
         if (!project) {
             return { success: false, error: "Project not found" }
         }
 
-        await prisma.project.delete({ where: { id } })
+        await prisma.projectV2.delete({ where: { id } })
 
         await prisma.adminAuditLog.create({
             data: {
@@ -231,8 +232,8 @@ export async function deleteProject(id: string): Promise<Response> {
 
 // Bulk update projects
 export async function bulkUpdateProjects(ids: string[], data: {
-    status?: string
-    featured?: boolean
+    visibility?: 'PRIVATE' | 'PUBLIC'
+    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
 }): Promise<Response> {
     try {
         const check = await checkAdminAccess('projects', 'write')
@@ -240,7 +241,7 @@ export async function bulkUpdateProjects(ids: string[], data: {
             return { success: false, error: check.error }
         }
 
-        await prisma.project.updateMany({
+        await prisma.projectV2.updateMany({
             where: { id: { in: ids } },
             data
         })
@@ -273,7 +274,7 @@ export async function bulkDeleteProjects(ids: string[]): Promise<Response> {
             return { success: false, error: check.error }
         }
 
-        await prisma.project.deleteMany({
+        await prisma.projectV2.deleteMany({
             where: { id: { in: ids } }
         })
 
@@ -305,20 +306,22 @@ export async function getProjectStats(): Promise<Response> {
             return { success: false, error: check.error }
         }
 
-        const [total, active, completed, draft] = await Promise.all([
-            prisma.project.count(),
-            prisma.project.count({ where: { status: 'ACTIVE' } }),
-            prisma.project.count({ where: { status: 'COMPLETED' } }),
-            prisma.project.count({ where: { status: 'DRAFT' } }),
+        const [total, public_, private_, totalStarted, totalCompleted] = await Promise.all([
+            prisma.projectV2.count(),
+            prisma.projectV2.count({ where: { visibility: 'PUBLIC' } }),
+            prisma.projectV2.count({ where: { visibility: 'PRIVATE' } }),
+            prisma.userProjectV2Progress.count({ where: { status: 'IN_PROGRESS' } }),
+            prisma.userProjectV2Progress.count({ where: { status: 'COMPLETED' } }),
         ])
 
         return {
             success: true,
             data: {
                 total,
-                active,
-                completed,
-                draft
+                public: public_,
+                private: private_,
+                totalStarted,
+                totalCompleted
             }
         }
     } catch (error) {

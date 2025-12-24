@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import { 
-    CreditCard, Search, Filter, ArrowUpRight, ArrowDownRight, 
-    TrendingUp, Clock, CheckCircle, XCircle, Loader2, ArrowRight
+    CreditCard, Search, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle, 
+    ArrowRight
 } from "lucide-react"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 import Link from "next/link"
 
 interface Transaction {

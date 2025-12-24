@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useSession, signOut } from "@repo/auth"
-import { cn } from "@/lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 import {
     User, LogOut, ChevronLeft, ChevronRight, Mail, Phone, ChevronDown, Shield
 } from "lucide-react"
@@ -14,7 +14,9 @@ import {
 import { useSidebar } from "./sidebarprovider"
 import { toast } from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
-import { adminNavigation, type NavigationItem, type AdminPermissions, getNavigationForPermissions } from "@/lib/navigation"
+import { 
+    adminNavigation, type NavigationItem 
+} from "@/lib/navigation"
 import { Sheet, SheetContent } from "@repo/ui/components/ui/sheet"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell } from "lucide-react"

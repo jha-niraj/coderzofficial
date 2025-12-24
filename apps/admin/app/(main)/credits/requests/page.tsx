@@ -1,8 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, CheckCircle, XCircle, Clock, Loader2, AlertCircle } from "lucide-react"
-import { getCreditRequests, approveCreditRequest, rejectCreditRequest } from "@/actions/credit.action"
+import { 
+    Search, CheckCircle, XCircle, Clock, Loader2, AlertCircle 
+} from "lucide-react"
+import { 
+    getCreditRequests, approveCreditRequest, rejectCreditRequest 
+} from "@/actions/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 

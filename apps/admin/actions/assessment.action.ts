@@ -4,7 +4,7 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from "@repo/auth"
 import { authOptions } from "@repo/auth"
 import { revalidatePath } from "next/cache"
-import { hasPermission } from "@/lib/navigation"
+import { hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel } from "@/lib/navigation"
 
 interface Response<T = unknown> {
     success: boolean
@@ -13,7 +13,7 @@ interface Response<T = unknown> {
 }
 
 // Helper to check admin access
-async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 'write' | 'delete' | 'full') {
+async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
@@ -24,7 +24,7 @@ async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 
         include: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions, requiredModule, requiredLevel)) {
+    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
@@ -51,7 +51,7 @@ export async function getAllAssessmentTopics(params?: {
 
         if (params?.search) {
             where.OR = [
-                { title: { contains: params.search, mode: 'insensitive' } },
+                { name: { contains: params.search, mode: 'insensitive' } },
                 { description: { contains: params.search, mode: 'insensitive' } },
             ]
         }
@@ -134,7 +134,7 @@ export async function getAllAssessmentQuestions(params?: {
                     topic: {
                         select: {
                             id: true,
-                            title: true,
+                            name: true,
                         }
                     }
                 },
@@ -163,8 +163,12 @@ export async function getAllAssessmentQuestions(params?: {
 
 // Create assessment topic
 export async function createAssessmentTopic(data: {
-    title: string
+    name: string
+    slug: string
+    language: 'JAVASCRIPT' | 'PYTHON' | 'C' | 'CPP' | 'REACTJS' | 'TYPESCRIPT' | 'JAVA' | 'GO' | 'RUST'
     description?: string
+    icon?: string
+    color?: string
 }): Promise<Response> {
     try {
         const check = await checkAdminAccess('assessments', 'write')
@@ -183,7 +187,7 @@ export async function createAssessmentTopic(data: {
                 module: "assessments",
                 resourceType: "AssessmentTopic",
                 resourceId: topic.id,
-                description: `Created assessment topic: ${topic.title}`
+                description: `Created assessment topic: ${topic.name}`
             }
         })
 
@@ -200,10 +204,12 @@ export async function createAssessmentTopic(data: {
 export async function createAssessmentQuestion(data: {
     topicId: string
     question: string
-    options: string[]
-    correctAnswer: number
-    difficulty: string
-    explanation?: string
+    type: 'MCQ' | 'MULTIPLE_SELECT' | 'CODE_OUTPUT' | 'CODE_WRITE' | 'CODE_DEBUG' | 'CODE_COMPLETE' | 'SCENARIO' | 'TRUE_FALSE'
+    mode: 'QUIZ' | 'CODE' | 'MOCK' | 'MIXED'
+    difficulty: 'EASY' | 'INTERMEDIATE' | 'HARD'
+    options?: any
+    correctAnswer?: string
+    answerExplanation?: string
 }): Promise<Response> {
     try {
         const check = await checkAdminAccess('assessments', 'write')
@@ -238,10 +244,12 @@ export async function createAssessmentQuestion(data: {
 // Update assessment question
 export async function updateAssessmentQuestion(id: string, data: {
     question?: string
-    options?: string[]
-    correctAnswer?: number
-    difficulty?: string
-    explanation?: string
+    options?: any
+    correctAnswer?: string
+    difficulty?: 'EASY' | 'INTERMEDIATE' | 'HARD'
+    answerExplanation?: string
+    type?: 'MCQ' | 'MULTIPLE_SELECT' | 'CODE_OUTPUT' | 'CODE_WRITE' | 'CODE_DEBUG' | 'CODE_COMPLETE' | 'SCENARIO' | 'TRUE_FALSE'
+    mode?: 'QUIZ' | 'CODE' | 'MOCK' | 'MIXED'
 }): Promise<Response> {
     try {
         const check = await checkAdminAccess('assessments', 'write')
@@ -316,7 +324,7 @@ export async function getAssessmentStats(): Promise<Response> {
             prisma.assessmentTopic.count(),
             prisma.assessmentQuestion.count(),
             prisma.assessmentQuestion.count({ where: { difficulty: 'EASY' } }),
-            prisma.assessmentQuestion.count({ where: { difficulty: 'MEDIUM' } }),
+            prisma.assessmentQuestion.count({ where: { difficulty: 'INTERMEDIATE' } }),
             prisma.assessmentQuestion.count({ where: { difficulty: 'HARD' } }),
         ])
 

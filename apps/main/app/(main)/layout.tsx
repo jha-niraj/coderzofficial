@@ -11,6 +11,7 @@ import { WifiOff, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { cn } from '@repo/ui/lib/utils';
+import { AIChat } from '@/components/main/aichat';
 
 interface LayoutProps {
     children: React.ReactNode
@@ -18,7 +19,7 @@ interface LayoutProps {
 
 // Inner layout component that uses the sidebar context
 const MainContent = ({ children, routes }: { children: React.ReactNode; routes: Route[] }) => {
-    const { isCollapsed } = useSidebar();
+    const { isCollapsed, isAISidebarOpen } = useSidebar();
     
     return (
         <>
@@ -27,9 +28,9 @@ const MainContent = ({ children, routes }: { children: React.ReactNode; routes: 
                 <main className={cn(
                     "transition-all duration-300 h-screen",
                     "ml-0",
-                    isCollapsed ? "md:ml-[70px]" : "md:ml-[200px]"
+                    isCollapsed ? "md:ml-[70px]" : "md:ml-[200px]",
+                    isAISidebarOpen ? "lg:mr-[400px]" : "lg:mr-0"
                 )}>
-                    {/* Content Container with Border Effect - matching admin layout */}
                     <div className="h-screen bg-white dark:bg-neutral-950 md:rounded-l-3xl md:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
                         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent p-4 md:p-6">
                             {children}
@@ -37,6 +38,7 @@ const MainContent = ({ children, routes }: { children: React.ReactNode; routes: 
                     </div>
                 </main>
             </div>
+            <AIChat />
             <Script
                 src="https://checkout.razorpay.com/v1/checkout.js"
                 strategy="afterInteractive"

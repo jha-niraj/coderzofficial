@@ -160,7 +160,7 @@ export async function assignReward(
                 type: "FEEDBACK",
                 credits,
                 xp: xp || 0,
-                description: description || `Reward for feedback: ${feedback.title}`,
+                description: description || `Reward for feedback: ${feedback.user.name}`,
             },
         })
 
@@ -186,7 +186,7 @@ export async function assignReward(
                 module: "feedback",
                 resourceType: "Reward",
                 resourceId: reward.id,
-                description: `Assigned reward: ${credits} credits${xp ? `, ${xp} XP` : ""} for feedback "${feedback.title}"`,
+                description: `Assigned reward: ${credits} credits${xp ? `, ${xp} XP` : ""} for feedback "${feedback.user.name}"`,
             },
         })
 
@@ -209,7 +209,7 @@ export async function deleteFeedback(feedbackId: string): Promise<AdminResponse>
 
         const feedback = await prisma.feedback.findUnique({
             where: { id: feedbackId },
-            select: { title: true },
+            select: { user: { select: { name: true } } },
         })
 
         await prisma.feedback.delete({
@@ -223,7 +223,7 @@ export async function deleteFeedback(feedbackId: string): Promise<AdminResponse>
                 module: "feedback",
                 resourceType: "Feedback",
                 resourceId: feedbackId,
-                description: `Deleted feedback: ${feedback?.title}`,
+                description: `Deleted feedback: ${feedback?.user?.name}`,
             },
         })
 

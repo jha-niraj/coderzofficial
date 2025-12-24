@@ -1,8 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, ArrowRightLeft, Loader2, Plus } from "lucide-react"
-import { getCreditTransfers, transferCredits } from "@/actions/credit.action"
+import { 
+    Search, ArrowRightLeft, Loader2, Plus 
+} from "lucide-react"
+import { 
+    getCreditTransfers, transferCredits 
+} from "@/actions/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 

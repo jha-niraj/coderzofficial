@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react"
 import {
-    MessageCircle, Search, Filter, ChevronLeft, ChevronRight,
-    Loader2, Award, Trash2, Eye, CheckCircle, Clock, AlertCircle
+    MessageCircle, Search, ChevronLeft, ChevronRight,Loader2, Award, Trash2, 
+    CheckCircle, Clock, AlertCircle
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { cn } from "@/lib/utils"
-import { getAllFeedback, updateFeedbackStatus, assignReward, deleteFeedback } from "@/actions/feedback.action"
+import { cn } from "@repo/ui/lib/utils"
+import { 
+    getAllFeedback, updateFeedbackStatus, assignReward, deleteFeedback 
+} from "@/actions/feedback.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 
 interface Feedback {
@@ -255,7 +257,7 @@ export default function FeedbackPage() {
                                 ) : (
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 flex items-center justify-center flex-shrink-0">
                                         <span className="text-sm font-bold text-neutral-600 dark:text-neutral-300">
-                                            {(item.user.name || item.user.email)[0].toUpperCase()}
+                                            {item.user.name?.[0]?.toUpperCase() || item.user.email?.[0]?.toUpperCase() || ''}
                                         </span>
                                     </div>
                                 )}

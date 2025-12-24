@@ -1,7 +1,7 @@
 'use client';
 
-import React, { 
-    useState, useEffect, useRef, createContext, useContext 
+import React, {
+    useState, useEffect, useRef, createContext, useContext
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from '@repo/auth';
@@ -9,9 +9,9 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    LogOut, User, Bell, BellOff, Sparkles, Brain, Briefcase, Users, Video, MessageSquare, 
-    Cable, Share2, MessageCircleCodeIcon, Trophy, FolderKanban, User2, Building2, ChevronLeft, 
-    ChevronRight, ChevronDown, Award, Coins, Crown, Menu, Loader, TrendingUp, Zap, Notebook, 
+    LogOut, User, Bell, BellOff, Sparkles, Brain, Briefcase, Users, Video, MessageSquare,
+    Cable, Share2, MessageCircleCodeIcon, Trophy, FolderKanban, User2, Building2, ChevronLeft,
+    ChevronRight, ChevronDown, Award, Coins, Crown, Menu, Loader, TrendingUp, Zap, Notebook,
     Users2
 } from "lucide-react";
 import {
@@ -33,7 +33,7 @@ import { ThemeToggle } from "@repo/ui/components/themetoggle";
 import { useUserStore } from "@/app/store/useUserStore";
 import { motion } from "framer-motion";
 import { Slider } from "@repo/ui/components/ui/slider";
-import { Label } from "@repo/ui/components/ui/label";    
+import { Label } from "@repo/ui/components/ui/label";
 import { convertXpToCredits } from "@/actions/(main)/subscription/credits.action";
 import { Progress } from "@repo/ui/components/ui/progress";
 import { getUserReferralCode } from "@/actions/(main)/user/user.action";
@@ -43,6 +43,8 @@ interface SidebarContextType {
     isCollapsed: boolean;
     setIsCollapsed: (value: boolean) => void;
     isMobileOpen: boolean;
+    isAISidebarOpen: boolean;
+    setIsAISidebarOpen: (value: boolean) => void;
     setIsMobileOpen: (value: boolean) => void;
 }
 
@@ -54,9 +56,11 @@ export const useSidebar = () => {
         // Return default values if not within provider - this allows usage in layouts
         return {
             isCollapsed: false,
-            setIsCollapsed: () => {},
+            setIsCollapsed: () => { },
             isMobileOpen: false,
-            setIsMobileOpen: () => {},
+            setIsMobileOpen: () => { },
+            isAISidebarOpen: false,
+            setIsAISidebarOpen: () => { },
         };
     }
     return context;
@@ -125,8 +129,8 @@ interface Notification {
 // AnimatePresence imported from framer-motion
 import { AnimatePresence } from "framer-motion";
 
-const NavDropdown = ({ 
-    isActive, onNavigate, icon, label, isCollapsed, isExpanded, onToggle, dropdownItems 
+const NavDropdown = ({
+    isActive, onNavigate, icon, label, isCollapsed, isExpanded, onToggle, dropdownItems
 }: NavDropdownProps) => {
     const buttonContent = (
         <button
@@ -288,7 +292,7 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
     const [referralLink, setReferralLink] = useState("");
     const profileTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const notificationsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    
+
     // Expanded dropdown state for accordion behavior
     const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
 
@@ -326,7 +330,7 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
         router.push(`/${href}`);
         onClose?.();
     };
-    
+
     // Toggle dropdown with accordion behavior (only one open at a time)
     const toggleDropdown = (dropdownName: string) => {
         setExpandedDropdown(prev => prev === dropdownName ? null : dropdownName);
@@ -1274,7 +1278,7 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
 const Sidebar = ({ routes = [], className = "" }: SidebarProps) => {
     // Check if we're inside an external SidebarProvider
     const externalContext = useContext(SidebarContext);
-    
+
     // Local state for when not inside a provider
     const [localIsCollapsed, setLocalIsCollapsed] = useState(false);
     const [localIsMobileOpen, setLocalIsMobileOpen] = useState(false);
@@ -1362,7 +1366,10 @@ const Sidebar = ({ routes = [], className = "" }: SidebarProps) => {
 
     // Otherwise, provide our own context
     return (
-        <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }}>
+        <SidebarContext.Provider value={{ 
+            isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, 
+            isAISidebarOpen: false, setIsAISidebarOpen: () => { }
+        }}>
             {sidebarContent}
         </SidebarContext.Provider>
     );
@@ -1372,9 +1379,13 @@ const Sidebar = ({ routes = [], className = "" }: SidebarProps) => {
 export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [isAISidebarOpen, setIsAISidebarOpen] = useState(false)
 
     return (
-        <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }}>
+        <SidebarContext.Provider value={{
+            isCollapsed, setIsCollapsed, isMobileOpen, 
+            setIsMobileOpen, isAISidebarOpen, setIsAISidebarOpen
+        }}>
             {children}
         </SidebarContext.Provider>
     );

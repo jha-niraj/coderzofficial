@@ -4,7 +4,7 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from "@repo/auth"
 import { authOptions } from "@repo/auth"
 import { revalidatePath } from "next/cache"
-import { hasPermission } from "@/lib/navigation"
+import { hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel } from "@/lib/navigation"
 
 interface Response<T = unknown> {
     success: boolean
@@ -13,7 +13,7 @@ interface Response<T = unknown> {
 }
 
 // Helper to check admin access
-async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 'write' | 'delete' | 'full') {
+async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
@@ -24,7 +24,7 @@ async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 
         include: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions, requiredModule, requiredLevel)) {
+    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
@@ -52,7 +52,7 @@ export async function getAllForgeTracks(params?: {
 
         if (params?.search) {
             where.OR = [
-                { title: { contains: params.search, mode: 'insensitive' } },
+                { name: { contains: params.search, mode: 'insensitive' } },
                 { description: { contains: params.search, mode: 'insensitive' } },
             ]
         }
@@ -69,7 +69,7 @@ export async function getAllForgeTracks(params?: {
                 include: {
                     _count: {
                         select: {
-                            challenges: true,
+                            steps: true,
                             enrollments: true,
                         }
                     }
@@ -118,7 +118,7 @@ export async function getAllCrucibleEvents(params?: {
 
         if (params?.search) {
             where.OR = [
-                { title: { contains: params.search, mode: 'insensitive' } },
+                { name: { contains: params.search, mode: 'insensitive' } },
                 { description: { contains: params.search, mode: 'insensitive' } },
             ]
         }
@@ -135,7 +135,7 @@ export async function getAllCrucibleEvents(params?: {
                 include: {
                     _count: {
                         select: {
-                            participants: true,
+                            participations: true,
                         }
                     }
                 },
@@ -164,9 +164,11 @@ export async function getAllCrucibleEvents(params?: {
 
 // Create Forge track
 export async function createForgeTrack(data: {
-    title: string
-    description?: string
-    difficulty: string
+    name: string
+    slug: string
+    description: string
+    technology: string
+    level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
 }): Promise<Response> {
     try {
         const check = await checkAdminAccess('challenges', 'write')
@@ -185,7 +187,7 @@ export async function createForgeTrack(data: {
                 module: "challenges",
                 resourceType: "ForgeTrack",
                 resourceId: track.id,
-                description: `Created forge track: ${track.title}`
+                description: `Created forge track: ${track.name}`
             }
         })
 
@@ -200,8 +202,10 @@ export async function createForgeTrack(data: {
 
 // Create Crucible event
 export async function createCrucibleEvent(data: {
-    title: string
-    description?: string
+    name: string
+    slug: string
+    description: string
+    eventType: string
     startTime: Date
     endTime: Date
     maxParticipants?: number
@@ -223,7 +227,7 @@ export async function createCrucibleEvent(data: {
                 module: "challenges",
                 resourceType: "CrucibleEvent",
                 resourceId: event.id,
-                description: `Created crucible event: ${event.title}`
+                description: `Created crucible event: ${event.name}`
             }
         })
 
@@ -238,10 +242,10 @@ export async function createCrucibleEvent(data: {
 
 // Update Forge track
 export async function updateForgeTrack(id: string, data: {
-    title?: string
+    name?: string
     description?: string
     status?: string
-    difficulty?: string
+    level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
 }): Promise<Response> {
     try {
         const check = await checkAdminAccess('challenges', 'write')
@@ -249,9 +253,18 @@ export async function updateForgeTrack(id: string, data: {
             return { success: false, error: check.error }
         }
 
+        const updateData: any = {}
+        if (data.name) {
+            updateData.name = data.name
+            updateData.slug = data.name.toLowerCase().replace(/ /g, '-')
+        }
+        if (data.description) updateData.description = data.description
+        if (data.status) updateData.status = data.status
+        if (data.level) updateData.level = data.level
+
         const track = await prisma.forgeTrack.update({
             where: { id },
-            data
+            data: updateData
         })
 
         await prisma.adminAuditLog.create({
@@ -261,7 +274,7 @@ export async function updateForgeTrack(id: string, data: {
                 module: "challenges",
                 resourceType: "ForgeTrack",
                 resourceId: id,
-                description: `Updated forge track: ${track.title}`
+                description: `Updated forge track: ${track.name}`
             }
         })
 
@@ -276,9 +289,9 @@ export async function updateForgeTrack(id: string, data: {
 
 // Update Crucible event
 export async function updateCrucibleEvent(id: string, data: {
-    title?: string
+    name?: string
     description?: string
-    status?: string
+    status?: 'UPCOMING' | 'ACTIVE' | 'ENDED' | 'ARCHIVED'
     startTime?: Date
     endTime?: Date
 }): Promise<Response> {
@@ -300,7 +313,7 @@ export async function updateCrucibleEvent(id: string, data: {
                 module: "challenges",
                 resourceType: "CrucibleEvent",
                 resourceId: id,
-                description: `Updated crucible event: ${event.title}`
+                description: `Updated crucible event: ${event.name}`
             }
         })
 
@@ -335,7 +348,7 @@ export async function deleteForgeTrack(id: string): Promise<Response> {
                 module: "challenges",
                 resourceType: "ForgeTrack",
                 resourceId: id,
-                description: `Deleted forge track: ${track.title}`
+                description: `Deleted forge track: ${track.name}`
             }
         })
 
@@ -370,7 +383,7 @@ export async function deleteCrucibleEvent(id: string): Promise<Response> {
                 module: "challenges",
                 resourceType: "CrucibleEvent",
                 resourceId: id,
-                description: `Deleted crucible event: ${event.title}`
+                description: `Deleted crucible event: ${event.name}`
             }
         })
 
@@ -395,7 +408,7 @@ export async function getChallengeStats(): Promise<Response> {
             prisma.forgeTrack.count(),
             prisma.crucibleEvent.count(),
             prisma.forgeEnrollment.count(),
-            prisma.crucibleParticipant.count(),
+            prisma.crucibleParticipation.count(),
         ])
 
         return {

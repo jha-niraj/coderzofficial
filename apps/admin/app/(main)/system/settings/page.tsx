@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Settings, Save, Loader2, RefreshCw } from "lucide-react"
-import { getSystemSettings, updateSystemSetting, clearCache } from "@/actions/system.action"
+import { 
+    getSystemSettings, updateSystemSetting, clearCache 
+} from "@/actions/system.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 
 export default function SystemSettingsPage() {
@@ -20,7 +22,7 @@ export default function SystemSettingsPage() {
         try {
             const result = await getSystemSettings()
             if (result.success && result.data) {
-                setSettings(result.data)
+                setSettings(result.data as unknown as any[])
             } else {
                 toast.error(result.error || "Failed to fetch settings")
             }

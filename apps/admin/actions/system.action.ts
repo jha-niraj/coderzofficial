@@ -4,7 +4,7 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from "@repo/auth"
 import { authOptions } from "@repo/auth"
 import { revalidatePath } from "next/cache"
-import { hasPermission } from "@/lib/navigation"
+import { hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel } from "@/lib/navigation"
 
 interface Response<T = unknown> {
     success: boolean
@@ -13,7 +13,7 @@ interface Response<T = unknown> {
 }
 
 // Helper to check admin access
-async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 'write' | 'delete' | 'full') {
+async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
@@ -24,7 +24,7 @@ async function checkAdminAccess(requiredModule: string, requiredLevel: 'read' | 
         include: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions, requiredModule, requiredLevel)) {
+    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
@@ -133,7 +133,7 @@ export async function getDatabaseStats(): Promise<Response> {
             totalCrucibleEvents,
         ] = await Promise.all([
             prisma.user.count(),
-            prisma.project.count(),
+            prisma.projectV2.count(),
             prisma.community.count(),
             prisma.mockInterviewVoice.count(),
             prisma.feedback.count(),
@@ -184,10 +184,10 @@ export async function getSystemHealth(): Promise<Response> {
             }
         })
 
-        // Get active users in last 24 hours
-        const activeUsers = await prisma.user.count({
+        // Get active users using activity entries in last 24 hours
+        const recentActivities = await prisma.activityEntry.count({
             where: {
-                lastActiveAt: {
+                createdAt: {
                     gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
                 }
             }
@@ -198,7 +198,7 @@ export async function getSystemHealth(): Promise<Response> {
             data: {
                 databaseStatus: 'healthy',
                 recentErrors,
-                activeUsersLast24h: activeUsers,
+                recentActivitiesLast24h: recentActivities,
                 timestamp: new Date()
             }
         }
@@ -275,7 +275,7 @@ export async function getAdminNotifications(params?: {
         }
 
         if (params?.unreadOnly) {
-            where.read = false
+            where.isRead = false
         }
 
         const [notifications, total] = await Promise.all([
@@ -316,7 +316,7 @@ export async function markNotificationAsRead(id: string): Promise<Response> {
 
         await prisma.adminNotification.update({
             where: { id },
-            data: { read: true }
+            data: { isRead: true }
         })
 
         return { success: true, data: null }
@@ -337,9 +337,11 @@ export async function markAllNotificationsAsRead(): Promise<Response> {
         await prisma.adminNotification.updateMany({
             where: {
                 adminId: check.adminAccess!.id,
-                read: false
+                isRead: false
             },
-            data: { read: true }
+            data: { 
+                isRead: true 
+            }
         })
 
         return { success: true, data: null }

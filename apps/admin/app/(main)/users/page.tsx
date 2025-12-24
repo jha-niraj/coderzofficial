@@ -8,7 +8,9 @@ import {
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import { getAllUsers, bulkUpdateUsers } from "@/actions/user.action"
+import { 
+    getAllUsers, bulkUpdateUsers 
+} from "@/actions/user.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 
 interface User {
@@ -267,7 +269,7 @@ export default function UsersPage() {
                                             ) : (
                                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 flex items-center justify-center flex-shrink-0">
                                                     <span className="text-sm font-bold text-neutral-600 dark:text-neutral-300">
-                                                        {(user.name || user.email)[0].toUpperCase()}
+                                                        {(user.name || user.email)?.[0]?.toUpperCase() || ""}
                                                     </span>
                                                 </div>
                                             )}

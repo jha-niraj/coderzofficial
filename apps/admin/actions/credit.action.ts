@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@repo/prisma"
+import { CreditType, Currency } from "@repo/prisma/client"
 import { revalidatePath } from "next/cache"
 import { checkAdminAccess } from "./admin.action"
 
@@ -124,9 +125,9 @@ export async function approveCreditRequest(requestId: string, amount: number): P
             data: {
                 userId: request.userId,
                 amount,
+                currency: Currency.INR,
                 type: "BONUS",
                 description: "Admin approved credit request",
-                status: "COMPLETED",
             },
         })
 
@@ -203,7 +204,7 @@ export async function getCreditTransfers(filters?: any, pagination?: any): Promi
                         select: { id: true, name: true, email: true },
                     },
                 },
-                orderBy: { transferredAt: "desc" },
+                orderBy: { createdAt: "desc" },
                 skip,
                 take: limit,
             }),
@@ -250,8 +251,7 @@ export async function transferCredits(fromUserId: string, toUserId: string, amou
                 data: {
                     senderId: fromUserId,
                     receiverId: toUserId,
-                    amount,
-                    description: description || "Admin transfer",
+                    amount
                 }
             })
 
@@ -260,18 +260,18 @@ export async function transferCredits(fromUserId: string, toUserId: string, amou
                 data: {
                     userId: fromUserId,
                     amount: -amount,
-                    type: "TRANSFER_OUT",
+                    type: CreditType.REWARD,
                     description: description || `Transfer to ${toUser.email}`,
-                    status: "COMPLETED",
+                    currency: Currency.INR,
                 }
             })
             await tx.creditTransaction.create({
                 data: {
                     userId: toUserId,
                     amount: amount,
-                    type: "TRANSFER_IN",
+                    type: CreditType.REWARD,
                     description: description || `Transfer from ${fromUser.email}`,
-                    status: "COMPLETED",
+                    currency: Currency.INR,
                 }
             })
         })

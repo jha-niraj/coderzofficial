@@ -82,7 +82,9 @@ export async function getUserGrowthStats(dateRange?: DateRange): Promise<AdminRe
         const dailyData: Record<string, number> = {}
         users.forEach(user => {
             const date = user.createdAt.toISOString().split("T")[0]
-            dailyData[date] = (dailyData[date] || 0) + 1
+            if (date) {
+                dailyData[date] = (dailyData[date] || 0) + 1
+            }
         })
 
         const chartData = Object.entries(dailyData).map(([date, count]) => ({
@@ -184,8 +186,10 @@ export async function getRevenueStats(dateRange?: DateRange): Promise<AdminRespo
 
         payments.forEach(payment => {
             const date = payment.createdAt.toISOString().split("T")[0]
-            const amount = payment.amount || 0
-            dailyRevenue[date] = (dailyRevenue[date] || 0) + amount
+            const amount = payment.amount ? Number(payment.amount) : 0
+            if (date) {
+                dailyRevenue[date] = (dailyRevenue[date] || 0) + amount
+            }
             totalRevenue += amount
         })
 
