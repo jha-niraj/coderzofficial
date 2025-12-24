@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+} from '@repo/ui/components/ui/select'
 import {
     Pagination, PaginationContent, PaginationItem, PaginationLink,
     PaginationNext, PaginationPrevious
@@ -24,7 +24,7 @@ import { PurchaseMockSheet } from '../../_components/purchase-mock-sheet'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getAllPublicMocks } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../_constants/mock-categories'
-import { cn } from '../../lib/utils'
+import { cn } from '@repo/ui/lib/utils'
 
 export default function PublicMocksPage() {
     const { credits } = useUserStore()

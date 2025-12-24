@@ -7,13 +7,13 @@ import { motion } from 'framer-motion'
 import {
     Home, Users, TrendingUp, Plus, ChevronDown, Eye
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Collapsible, CollapsibleContent, CollapsibleTrigger
-} from '@/components/ui/collapsible'
-import { cn } from '../../lib/utils'
+} from '@repo/ui/components/ui/collapsible'
+import { cn } from '@repo/ui/lib/utils'
 import { CommunityCardMini } from './community-card'
 import Image from 'next/image'
 

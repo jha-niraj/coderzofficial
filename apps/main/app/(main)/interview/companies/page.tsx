@@ -4,9 +4,9 @@ import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent } from "@repo/ui/components/ui/card"
+import { Input } from "@repo/ui/components/ui/input"
 import { companies } from "@/app/(main)/interview/_components/mockdata"
 
 export default function CompaniesPage() {

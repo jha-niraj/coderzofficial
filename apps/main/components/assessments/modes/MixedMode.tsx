@@ -2,22 +2,17 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "../../lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { cn } from "@repo/ui/lib/utils";
 import {
-    ChevronRight,
-    ChevronLeft,
-    Clock,
-    HelpCircle,
-    Code2,
-    MessageSquare,
-    Shuffle,
+    Clock, HelpCircle, Code2, MessageSquare, Shuffle
 } from "lucide-react";
 import { DIFFICULTY_CONFIG } from "@/types/assessment";
-import type { QuestionDifficulty, AssessmentQuestionType } from "@prisma/client";
+import type {
+    QuestionDifficulty, AssessmentQuestionType
+} from "@prisma/client";
 
 // Import individual mode components
 import { QuizMode, type QuizQuestion, type QuizAnswer } from "./QuizMode";
@@ -247,19 +242,19 @@ export function MixedMode({
         }
     };
 
-    const difficultyConfig = DIFFICULTY_CONFIG[currentQuestion.difficulty];
+    const difficultyConfig = DIFFICULTY_CONFIG[currentQuestion?.difficulty || "EASY"];
 
     // Convert current question to the appropriate mode format
     const renderQuestionMode = () => {
-        switch (currentQuestion.mode) {
+        switch (currentQuestion?.mode) {
             case "QUIZ": {
                 const quizQuestion: QuizQuestion = {
-                    id: currentQuestion.id,
+                    id: currentQuestion?.id || "",
                     question: currentQuestion.question,
                     type: currentQuestion.type,
-                    difficulty: currentQuestion.difficulty,
-                    options: currentQuestion.options || [],
-                    codeSnippet: currentQuestion.codeSnippet,
+                    difficulty: currentQuestion?.difficulty || "EASY",
+                    options: currentQuestion?.options || [],
+                    codeSnippet: currentQuestion?.codeSnippet,
                     hints: currentQuestion.hints,
                     points: currentQuestion.points,
                 };
@@ -330,7 +325,6 @@ export function MixedMode({
 
     return (
         <div className="w-full max-w-6xl mx-auto space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Badge variant="outline" className="gap-1">
@@ -341,70 +335,68 @@ export function MixedMode({
                         {difficultyConfig.label}
                     </Badge>
                     <Badge variant="secondary" className="gap-1">
-                        {getModeIcon(currentQuestion.mode)}
-                        {getModeLabel(currentQuestion.mode)}
+                        {getModeIcon(currentQuestion?.mode || "QUIZ")}
+                        {getModeLabel(currentQuestion?.mode || "QUIZ")}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
                         Question {currentIndex + 1} of {questions.length}
                     </span>
                 </div>
-
                 <div className="flex items-center gap-4">
-                    {showTimer && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <Clock className="w-4 h-4" />
-                            <span className={cn(
-                                timeLimit && totalTime > timeLimit * 0.8 && "text-red-500 font-medium"
-                            )}>
-                                {formatTime(timeLimit ? timeLimit - totalTime : totalTime)}
-                            </span>
-                        </div>
-                    )}
-
-                    {onExit && (
-                        <Button variant="ghost" size="sm" onClick={onExit}>
-                            Exit
-                        </Button>
-                    )}
+                    {
+                        showTimer && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <Clock className="w-4 h-4" />
+                                <span className={cn(
+                                    timeLimit && totalTime > timeLimit * 0.8 && "text-red-500 font-medium"
+                                )}>
+                                    {formatTime(timeLimit ? timeLimit - totalTime : totalTime)}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        onExit && (
+                            <Button variant="ghost" size="sm" onClick={onExit}>
+                                Exit
+                            </Button>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Progress */}
-            {showProgress && (
-                <div className="space-y-3">
-                    <Progress value={progress} className="h-2" />
-                    
-                    {/* Stats by mode */}
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
-                            <HelpCircle className="w-4 h-4 text-blue-500" />
-                            <span className="text-muted-foreground">Quiz:</span>
-                            <span className="font-medium">
-                                {questionStats.quiz.correct}/{questionStats.quiz.total}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
-                            <Code2 className="w-4 h-4 text-green-500" />
-                            <span className="text-muted-foreground">Code:</span>
-                            <span className="font-medium">
-                                {questionStats.code.correct}/{questionStats.code.total}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
-                            <MessageSquare className="w-4 h-4 text-purple-500" />
-                            <span className="text-muted-foreground">Mock:</span>
-                            <span className="font-medium">
-                                {questionStats.mock.avgScore}% avg
-                            </span>
+            {
+                showProgress && (
+                    <div className="space-y-3">
+                        <Progress value={progress} className="h-2" />
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
+                                <HelpCircle className="w-4 h-4 text-blue-500" />
+                                <span className="text-muted-foreground">Quiz:</span>
+                                <span className="font-medium">
+                                    {questionStats.quiz.correct}/{questionStats.quiz.total}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
+                                <Code2 className="w-4 h-4 text-green-500" />
+                                <span className="text-muted-foreground">Code:</span>
+                                <span className="font-medium">
+                                    {questionStats.code.correct}/{questionStats.code.total}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
+                                <MessageSquare className="w-4 h-4 text-purple-500" />
+                                <span className="text-muted-foreground">Mock:</span>
+                                <span className="font-medium">
+                                    {questionStats.mock.avgScore}% avg
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* Question Content */}
+                )
+            }
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={currentQuestion.id}
+                    key={currentQuestion?.id || ""}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
@@ -413,45 +405,45 @@ export function MixedMode({
                     {renderQuestionMode()}
                 </motion.div>
             </AnimatePresence>
-
-            {/* Question Navigation Pills */}
             <div className="flex flex-wrap gap-2 justify-center pt-4 border-t">
-                {questions.map((q, idx) => {
-                    const answer = answers.find((a) => a.questionId === q.id);
-                    const isCurrent = idx === currentIndex;
-                    
-                    let isCorrect = false;
-                    if (answer) {
-                        if (answer.mode === "QUIZ") {
-                            isCorrect = (answer as QuizAnswer).isCorrect;
-                        } else if (answer.mode === "CODE") {
-                            isCorrect = (answer as CodeAnswer).isCorrect;
-                        } else if (answer.mode === "MOCK") {
-                            isCorrect = ((answer as MockAnswer).score || 0) >= 70;
-                        }
-                    }
+                {
+                    questions.map((q, idx) => {
+                        const answer = answers.find((a) => a.questionId === q.id);
+                        const isCurrent = idx === currentIndex;
 
-                    return (
-                        <button
-                            key={q.id}
-                            onClick={() => context === "practice" && setCurrentIndex(idx)}
-                            disabled={context === "exam"}
-                            className={cn(
-                                "w-10 h-10 rounded-full text-xs font-medium transition-all relative flex items-center justify-center",
-                                !answer && !isCurrent && "bg-muted hover:bg-muted/80",
-                                isCurrent && "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2",
-                                answer && isCorrect && "bg-green-500 text-white",
-                                answer && !isCorrect && "bg-red-500 text-white",
-                                context === "exam" && "cursor-default"
-                            )}
-                        >
-                            <span className="absolute -top-1 -right-1">
-                                {getModeIcon(q.mode)}
-                            </span>
-                            {idx + 1}
-                        </button>
-                    );
-                })}
+                        let isCorrect = false;
+                        if (answer) {
+                            if (answer.mode === "QUIZ") {
+                                isCorrect = (answer as QuizAnswer).isCorrect;
+                            } else if (answer.mode === "CODE") {
+                                isCorrect = (answer as CodeAnswer).isCorrect;
+                            } else if (answer.mode === "MOCK") {
+                                isCorrect = ((answer as MockAnswer).score || 0) >= 70;
+                            }
+                        }
+
+                        return (
+                            <button
+                                key={q.id}
+                                onClick={() => context === "practice" && setCurrentIndex(idx)}
+                                disabled={context === "exam"}
+                                className={cn(
+                                    "w-10 h-10 rounded-full text-xs font-medium transition-all relative flex items-center justify-center",
+                                    !answer && !isCurrent && "bg-muted hover:bg-muted/80",
+                                    isCurrent && "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2",
+                                    answer && isCorrect && "bg-green-500 text-white",
+                                    answer && !isCorrect && "bg-red-500 text-white",
+                                    context === "exam" && "cursor-default"
+                                )}
+                            >
+                                <span className="absolute -top-1 -right-1">
+                                    {getModeIcon(q.mode)}
+                                </span>
+                                {idx + 1}
+                            </button>
+                        );
+                    })
+                }
             </div>
         </div>
     );

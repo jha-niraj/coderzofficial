@@ -8,14 +8,14 @@ import {
 } from "lucide-react"
 import { 
     Tabs, TabsContent, TabsList, TabsTrigger 
-} from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
+} from "@repo/ui/components/ui/tabs"
+import { Card, CardContent } from "@repo/ui/components/ui/card"
 import { 
     Avatar, AvatarFallback, AvatarImage 
-} from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "../../lib/utils"
+} from "@repo/ui/components/ui/avatar"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { cn } from "@repo/ui/lib/utils"
 import SmoothScroll from "@/components/smoothscroll"
 
 // Sample data for the leaderboard

@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from '@/components/ui/dialog'
-import { 
-    Loader2, Sparkles, CheckCircle2, Zap, Brain, Code2, Rocket 
+} from '@repo/ui/components/ui/dialog'
+import {
+    Sparkles, CheckCircle2, Brain, Rocket
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -141,19 +141,16 @@ export function GenerationProgressDialog({ open, progress = 0, status = 'waiting
                         </AnimatePresence>
                     </DialogDescription>
                 </DialogHeader>
-
                 <div className="space-y-4 mt-4">
-                    {/* Progress Bar */}
                     <div className="relative">
                         <div className="h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
                             <motion.div
-                                className={`h-full ${
-                                    stage === 'generating'
+                                className={`h-full ${stage === 'generating'
                                         ? 'bg-blue-500'
                                         : stage === 'finalizing'
-                                        ? 'bg-purple-500'
-                                        : 'bg-orange-500'
-                                }`}
+                                            ? 'bg-purple-500'
+                                            : 'bg-orange-500'
+                                    }`}
                                 animate={{
                                     width: `${progressPercentage}%`,
                                 }}
@@ -169,8 +166,6 @@ export function GenerationProgressDialog({ open, progress = 0, status = 'waiting
                             </span>
                         </div>
                     </div>
-
-                    {/* Time Elapsed */}
                     <div className="text-center">
                         <p className="text-2xl font-mono font-bold text-neutral-900 dark:text-neutral-100">
                             {formatTime(elapsedTime)}
@@ -179,8 +174,6 @@ export function GenerationProgressDialog({ open, progress = 0, status = 'waiting
                             Time elapsed
                         </p>
                     </div>
-
-                    {/* Info Messages */}
                     <div className="bg-neutral-50 dark:bg-neutral-900 rounded-lg p-4 border border-neutral-200 dark:border-neutral-800">
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-sm">
@@ -209,8 +202,6 @@ export function GenerationProgressDialog({ open, progress = 0, status = 'waiting
                             </div>
                         </div>
                     </div>
-
-                    {/* Patient Message */}
                     <p className="text-xs text-center text-neutral-500 dark:text-neutral-400">
                         ⏱️ This usually takes around 60-90 seconds. Please be patient!
                     </p>

@@ -9,15 +9,15 @@ import {
     Search, Lightbulb, Grid, List, Loader2, BookOpen, Clock, Eye, Heart,
     ChevronLeft, ChevronRight, Plus
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@repo/ui/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import { cn } from "../../lib/utils";
+} from "@repo/ui/components/ui/select";
+import { cn } from "@repo/ui/lib/utils";
 import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
 
 interface Concept {

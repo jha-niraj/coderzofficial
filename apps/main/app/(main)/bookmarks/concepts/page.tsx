@@ -8,10 +8,10 @@ import {
     Lightbulb, ChevronRight, Loader2, Clock, Target, BookmarkMinus,
     BookOpen, Heart
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
 import { getConceptBookmarks } from "@/actions/(main)/bookmarks/bookmarks.action";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const difficultyColors = {

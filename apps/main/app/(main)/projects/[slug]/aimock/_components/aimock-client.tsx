@@ -11,16 +11,16 @@ import {
     Sparkles, Coins, Clock, Trophy, Star, TrendingUp, Target,
     MessageSquare
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { Progress } from '@repo/ui/components/ui/progress'
+import { Separator } from '@repo/ui/components/ui/separator'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from '@/components/ui/dialog'
+} from '@repo/ui/components/ui/dialog'
 import { Orb, AgentState } from '@/components/ui/orb'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import {
     generateProjectMockKnowledgeBase,
     createProjectMockSession,

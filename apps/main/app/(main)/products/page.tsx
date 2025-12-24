@@ -5,14 +5,14 @@ import {
 	ArrowRight, Sparkles, Users, FolderKanban, Zap, Trophy, Rocket,
 	Lightbulb, Shield, Heart, TrendingUp, Calendar, Clock, Plus, ChevronRight
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
 import {
 	Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
-} from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+} from "@repo/ui/components/ui/sheet"
+import { Input } from "@repo/ui/components/ui/input"
+import { Textarea } from "@repo/ui/components/ui/textarea"
+import { Label } from "@repo/ui/components/ui/label"
 import Link from "next/link"
 import SmoothScroll from "@/components/smoothscroll"
 import { useState } from "react"

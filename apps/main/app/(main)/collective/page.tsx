@@ -2,14 +2,14 @@
 
 import { Suspense, useState } from "react"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
 import {
 	Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs"
+} from "@repo/ui/components/ui/tabs"
 import {
 	Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
-} from "@/components/ui/sheet"
+} from "@repo/ui/components/ui/sheet"
 import {
 	Plus, Users, Trophy, Clock, Vote, HelpCircle, Sparkles, Target,
 	Award, Zap, CheckCircle, ChevronRight, ArrowRight, Flame
@@ -88,7 +88,7 @@ const howItWorks = [
 ]
 
 import { TrendingUp } from "lucide-react" // Import missed above
-import { Card } from "@/components/ui/card"
+import { Card } from "@repo/ui/components/ui/card"
 
 export default function CollectivePage() {
 	const [showHowItWorks, setShowHowItWorks] = useState(false)

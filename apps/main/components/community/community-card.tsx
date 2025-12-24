@@ -6,11 +6,12 @@ import Image from 'next/image'
 import {
     Users, MessageSquare, CheckCircle2, TrendingUp, Sparkles, Lock, Globe
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { cn } from '../../lib/utils'
+import {
+    Card, CardContent
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { cn } from '@repo/ui/lib/utils'
 
 interface CommunityCardProps {
     community: {
@@ -76,14 +77,14 @@ export function CommunityCard({
                                     : `linear-gradient(135deg, ${community.themeColor}60, ${community.themeColor}30)`
                             }}
                         >
-                            {/* Trending Badge */}
-                            {community.isTrending && (
-                                <Badge className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                                    <TrendingUp className="w-3 h-3 mr-1" />
-                                    Trending
-                                </Badge>
-                            )}
-                            {/* Logo */}
+                            {
+                                community.isTrending && (
+                                    <Badge className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                                        <TrendingUp className="w-3 h-3 mr-1" />
+                                        Trending
+                                    </Badge>
+                                )
+                            }
                             <div className="absolute -bottom-8 left-4">
                                 <div
                                     className="w-16 h-16 rounded-2xl border-4 border-white dark:border-neutral-900 flex items-center justify-center text-2xl font-bold shadow-lg overflow-hidden"
@@ -91,16 +92,18 @@ export function CommunityCard({
                                         backgroundColor: community.themeColor
                                     }}
                                 >
-                                    {community.logo ? (
-                                        <Image
-                                            src={community.logo}
-                                            alt={community.name}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    ) : (
-                                        <span className="text-white">{community.name.charAt(0)}</span>
-                                    )}
+                                    {
+                                        community.logo ? (
+                                            <Image
+                                                src={community.logo}
+                                                alt={community.name}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-white">{community.name.charAt(0)}</span>
+                                        )
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -111,12 +114,16 @@ export function CommunityCard({
                                         <h3 className="font-bold text-lg text-neutral-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                             {community.name}
                                         </h3>
-                                        {community.isVerified && (
-                                            <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                                        )}
-                                        {isPrivate && (
-                                            <Lock className="w-4 h-4 text-neutral-400 flex-shrink-0" />
-                                        )}
+                                        {
+                                            community.isVerified && (
+                                                <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                                            )
+                                        }
+                                        {
+                                            isPrivate && (
+                                                <Lock className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+                                            )
+                                        }
                                     </div>
                                     <Badge variant="secondary" className="text-xs bg-neutral-100 dark:bg-neutral-800">
                                         {community.category}
@@ -130,11 +137,11 @@ export function CommunityCard({
                                 <div className="flex items-center gap-4 text-sm text-neutral-500">
                                     <span className="flex items-center gap-1.5 font-medium">
                                         <Users className="w-4 h-4" />
-                                        {memberCount >= 1000 ? `${(memberCount/1000).toFixed(1)}k` : memberCount}
+                                        {memberCount >= 1000 ? `${(memberCount / 1000).toFixed(1)}k` : memberCount}
                                     </span>
                                     <span className="flex items-center gap-1.5">
                                         <MessageSquare className="w-4 h-4" />
-                                        {postCount >= 1000 ? `${(postCount/1000).toFixed(1)}k` : postCount}
+                                        {postCount >= 1000 ? `${(postCount / 1000).toFixed(1)}k` : postCount}
                                     </span>
                                 </div>
                                 <Button
@@ -181,26 +188,30 @@ export function CommunityCard({
                             className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0 overflow-hidden"
                             style={{ backgroundColor: community.themeColor }}
                         >
-                            {community.logo ? (
-                                <Image
-                                    src={community.logo}
-                                    alt={community.name}
-                                    width={48}
-                                    height={48}
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <span className="text-white">{community.name.charAt(0)}</span>
-                            )}
+                            {
+                                community.logo ? (
+                                    <Image
+                                        src={community.logo}
+                                        alt={community.name}
+                                        width={48}
+                                        height={48}
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-white">{community.name.charAt(0)}</span>
+                                )
+                            }
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
                                 <span className="font-semibold text-sm text-neutral-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">
                                     {community.name}
                                 </span>
-                                {community.isVerified && (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                                )}
+                                {
+                                    community.isVerified && (
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                                    )
+                                }
                             </div>
                             <div className="flex items-center gap-2 text-xs text-neutral-500">
                                 <span className="flex items-center gap-1">
@@ -234,7 +245,6 @@ export function CommunityCard({
         )
     }
 
-    // Default variant
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -252,12 +262,14 @@ export function CommunityCard({
                                 : `linear-gradient(135deg, ${community.themeColor}40, ${community.themeColor}20)`
                         }}
                     >
-                        {community.isTrending && (
-                            <Badge className="absolute top-2 right-2 bg-orange-500/90 text-white text-xs border-0">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Hot
-                            </Badge>
-                        )}
+                        {
+                            community.isTrending && (
+                                <Badge className="absolute top-2 right-2 bg-orange-500/90 text-white text-xs border-0">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Hot
+                                </Badge>
+                            )
+                        }
                         <div className="absolute -bottom-6 left-4">
                             <div
                                 className="w-14 h-14 rounded-xl border-4 border-white dark:border-neutral-900 flex items-center justify-center text-2xl shadow-md overflow-hidden"
@@ -265,17 +277,19 @@ export function CommunityCard({
                                     backgroundColor: community.themeColor
                                 }}
                             >
-                                {community.logo ? (
-                                    <Image
-                                        src={community.logo}
-                                        alt={community.name}
-                                        width={56}
-                                        height={56}
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <span className="text-white font-bold">{community.name.charAt(0)}</span>
-                                )}
+                                {
+                                    community.logo ? (
+                                        <Image
+                                            src={community.logo}
+                                            alt={community.name}
+                                            width={56}
+                                            height={56}
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <span className="text-white font-bold">{community.name.charAt(0)}</span>
+                                    )
+                                }
                             </div>
                         </div>
                     </div>
@@ -286,9 +300,11 @@ export function CommunityCard({
                                     <h3 className="font-semibold text-neutral-900 dark:text-white truncate group-hover:text-neutral-700 dark:group-hover:text-neutral-200 transition-colors">
                                         {community.name}
                                     </h3>
-                                    {community.isVerified && (
-                                        <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                                    )}
+                                    {
+                                        community.isVerified && (
+                                            <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                        )
+                                    }
                                 </div>
                                 <Badge variant="secondary" className="mt-1 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
                                     {community.category}

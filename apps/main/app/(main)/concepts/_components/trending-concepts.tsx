@@ -6,13 +6,13 @@ import Image from "next/image";
 import {
     ArrowRight, Eye, Heart, Clock, BookOpen
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent, CardFooter
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
 
 interface Concept {

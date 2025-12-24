@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
 
-} from '@/components/ui/card'
+} from '@repo/ui/components/ui/card'
 import {
 	CheckCircle2, Download, Home, Receipt, Sparkles, CreditCard, ArrowRight
 } from 'lucide-react'

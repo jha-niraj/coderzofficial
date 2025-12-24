@@ -8,21 +8,21 @@ import {
 	MoreVertical, Trash2, Clock, Users
 } from "lucide-react";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 import {
 	DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 	DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+} from "@repo/ui/components/ui/dropdown-menu";
+import { Badge } from "@repo/ui/components/ui/badge";
+import toast from "@repo/ui/components/ui/sonner";
 import { updateStudio, deleteStudio } from "@/actions/(main)/studios/studio.action";
 import StudioBlockEditor from "./studio-block-editor";
 import StudioAIPanel from "./studio-ai-panel";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import type {
 	StudioEditorProps, BlockContent
 } from "@/types/studio";
-import { Input } from "../ui/input";
+import { Input } from "@repo/ui/components/ui/input";
 
 export default function StudioEditor({ studio }: StudioEditorProps) {
 	const router = useRouter();

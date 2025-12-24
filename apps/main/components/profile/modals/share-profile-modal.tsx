@@ -4,19 +4,18 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
 	Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@repo/ui/components/ui/dialog";
+import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
+import { Label } from "@repo/ui/components/ui/label";
 import {
-
 	Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs";
+} from "@repo/ui/components/ui/tabs";
 import {
 	Copy, Check, Link as LinkIcon, Mail, Twitter, Linkedin, Facebook,
 	MessageCircle, Code, Download, QrCode, Share2
 } from "lucide-react";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface ShareProfileModalProps {
 	isOpen: boolean;

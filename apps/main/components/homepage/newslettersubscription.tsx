@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
+import { Input } from "@repo/ui/components/ui/input"
 import { Mail } from "lucide-react"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner"
 
 export function NewsletterSubscription() {
     const [email, setEmail] = useState("")

@@ -123,7 +123,7 @@ export async function getMessages(conversationId: string, limit: number = 50, cu
             success: true, 
             messages: messagesData.reverse(), // Reverse to show oldest first
             hasMore,
-            nextCursor: hasMore ? messages[limit - 1].id : null
+            nextCursor: hasMore ? messages[limit - 1]?.id || null : null
         }
     } catch (error) {
         console.error("Get messages error:", error)

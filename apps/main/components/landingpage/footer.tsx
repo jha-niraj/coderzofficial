@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
     Twitter, Linkedin, Github, Youtube, Command,
 } from "lucide-react";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import { NewsletterSubscription } from "../homepage/newslettersubscription";
 
 export default function Footer() {

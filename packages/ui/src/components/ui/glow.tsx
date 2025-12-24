@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "../../lib/utils"; // Adjust if not using this helper
+import { cn } from "@repo/ui/lib/utils"; // Adjust if not using this helper
 import { cva, VariantProps } from "class-variance-authority";
 
 const glowVariants = cva("absolute w-full", {

@@ -1,38 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
 import {
-  Share2,
-  Bookmark,
-  BookmarkCheck,
-  Heart,
-  MessageCircle,
-  UserPlus,
-  UserCheck,
-  Twitter,
-  Facebook,
-  Linkedin,
-  Link2,
-  Copy,
-  Check,
-  ThumbsUp,
-  Flag,
-  Users,
-  Star,
-  Github,
-  ExternalLink,
-  Download,
-  Eye
+  Share2, Bookmark, BookmarkCheck, Heart, MessageCircle, UserPlus, UserCheck,
+  Twitter, Facebook, Linkedin, Copy, Check, Flag, Eye
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { toast } from "sonner"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import {
+  Card, CardContent
+} from "@repo/ui/components/ui/card"
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
+} from "@repo/ui/components/ui/dialog"
+import { Textarea } from "@repo/ui/components/ui/textarea"
+import { Label } from "@repo/ui/components/ui/label"
+import { Separator } from "@repo/ui/components/ui/separator"
+import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
 
 interface ProjectSocialData {
@@ -164,7 +148,6 @@ export function ProjectSocialFeatures({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Main Social Actions */}
       <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-900/50">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-4">
@@ -176,9 +159,7 @@ export function ProjectSocialFeatures({
               </Badge>
             </div>
           </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Like Button */}
             <Button
               variant={project.userInteractions.isLiked ? "default" : "outline"}
               size="sm"
@@ -190,8 +171,6 @@ export function ProjectSocialFeatures({
               <Heart className={`w-4 h-4 ${project.userInteractions.isLiked ? "fill-current" : ""}`} />
               <span className="hidden sm:inline">{project.stats.likes}</span>
             </Button>
-
-            {/* Bookmark Button */}
             <Button
               variant={project.userInteractions.isBookmarked ? "default" : "outline"}
               size="sm"
@@ -200,15 +179,15 @@ export function ProjectSocialFeatures({
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
                 : "hover:bg-blue-50 dark:hover:bg-blue-950/20"}`}
             >
-              {project.userInteractions.isBookmarked ? (
-                <BookmarkCheck className="w-4 h-4" />
-              ) : (
-                <Bookmark className="w-4 h-4" />
-              )}
+              {
+                project.userInteractions.isBookmarked ? (
+                  <BookmarkCheck className="w-4 h-4" />
+                ) : (
+                  <Bookmark className="w-4 h-4" />
+                )
+              }
               <span className="hidden sm:inline">{project.stats.bookmarks}</span>
             </Button>
-
-            {/* Share Button */}
             <Button
               variant="outline"
               size="sm"
@@ -218,8 +197,6 @@ export function ProjectSocialFeatures({
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">{project.stats.shares}</span>
             </Button>
-
-            {/* Comments */}
             <Button
               variant="outline"
               size="sm"
@@ -231,8 +208,6 @@ export function ProjectSocialFeatures({
           </div>
         </CardContent>
       </Card>
-
-      {/* Creator Card */}
       <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-900/50">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
@@ -253,7 +228,6 @@ export function ProjectSocialFeatures({
                 </div>
               </div>
             </div>
-
             <Button
               variant={project.creator.isFollowing ? "outline" : "default"}
               size="sm"
@@ -262,23 +236,23 @@ export function ProjectSocialFeatures({
                 ? "border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20"
                 : "bg-purple-600 hover:bg-purple-700 text-white"}
             >
-              {project.creator.isFollowing ? (
-                <>
-                  <UserCheck className="w-4 h-4 mr-2" />
-                  Following
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Follow
-                </>
-              )}
+              {
+                project.creator.isFollowing ? (
+                  <>
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Following
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Follow
+                  </>
+                )
+              }
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Additional Actions */}
       <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-900/50">
         <CardContent className="pt-6">
           <div className="space-y-3">
@@ -293,20 +267,20 @@ export function ProjectSocialFeatures({
                 <Share2 className="w-4 h-4 mr-2" />
                 Share Project
               </Button>
-
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleCopyLink}
                 className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
-                {copiedLink ? (
-                  <><Check className="w-4 h-4 mr-2" />Copied!</>
-                ) : (
-                  <><Copy className="w-4 h-4 mr-2" />Copy Link</>
-                )}
+                {
+                  copiedLink ? (
+                    <><Check className="w-4 h-4 mr-2" />Copied!</>
+                  ) : (
+                    <><Copy className="w-4 h-4 mr-2" />Copy Link</>
+                  )
+                }
               </Button>
-
               <Button
                 variant="ghost"
                 size="sm"
@@ -320,8 +294,6 @@ export function ProjectSocialFeatures({
           </div>
         </CardContent>
       </Card>
-
-      {/* Share Dialog */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
         <DialogContent>
           <DialogHeader>
@@ -330,9 +302,7 @@ export function ProjectSocialFeatures({
               Share "{project.title}" with your network
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4">
-            {/* Copy Link */}
             <div>
               <Label className="text-sm font-medium">Copy Link</Label>
               <div className="flex gap-2 mt-1">
@@ -347,7 +317,6 @@ export function ProjectSocialFeatures({
 
             <Separator />
 
-            {/* Social Platforms */}
             <div>
               <Label className="text-sm font-medium mb-3 block">Share on Social Media</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -359,7 +328,6 @@ export function ProjectSocialFeatures({
                   <Twitter className="w-4 h-4 text-blue-400" />
                   Twitter
                 </Button>
-
                 <Button
                   variant="outline"
                   onClick={() => handleSocialShare("facebook")}
@@ -368,7 +336,6 @@ export function ProjectSocialFeatures({
                   <Facebook className="w-4 h-4 text-blue-600" />
                   Facebook
                 </Button>
-
                 <Button
                   variant="outline"
                   onClick={() => handleSocialShare("linkedin")}
@@ -377,7 +344,6 @@ export function ProjectSocialFeatures({
                   <Linkedin className="w-4 h-4 text-blue-700" />
                   LinkedIn
                 </Button>
-
                 <Button
                   variant="outline"
                   onClick={() => handleSocialShare("reddit")}
@@ -391,8 +357,6 @@ export function ProjectSocialFeatures({
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Report Dialog */}
       <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
         <DialogContent>
           <DialogHeader>
@@ -401,7 +365,6 @@ export function ProjectSocialFeatures({
               Help us maintain a safe and respectful community by reporting inappropriate content.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4">
             <div>
               <Label htmlFor="report-reason">Reason for reporting</Label>
@@ -413,7 +376,6 @@ export function ProjectSocialFeatures({
                 className="mt-1"
               />
             </div>
-
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
@@ -477,14 +439,15 @@ export function CompactSocialFeatures({
           ? "text-blue-600"
           : "text-gray-400 hover:text-blue-600"}`}
       >
-        {project.userInteractions.isBookmarked ? (
-          <BookmarkCheck className="w-4 h-4" />
-        ) : (
-          <Bookmark className="w-4 h-4" />
-        )}
+        {
+          project.userInteractions.isBookmarked ? (
+            <BookmarkCheck className="w-4 h-4" />
+          ) : (
+            <Bookmark className="w-4 h-4" />
+          )
+        }
         <span className="ml-1 text-xs">{project.stats.bookmarks}</span>
       </Button>
-
       <Button
         variant="ghost"
         size="sm"
@@ -538,7 +501,7 @@ interface FollowButtonProps {
 export function FollowButton({ user, onFollow, size = "md", className }: FollowButtonProps) {
   // Map size to valid Button sizes
   const buttonSize = size === "md" ? "default" : size === "lg" ? "lg" : "sm"
-  
+
   return (
     <Button
       variant={user.isFollowing ? "outline" : "default"}
@@ -548,17 +511,19 @@ export function FollowButton({ user, onFollow, size = "md", className }: FollowB
         ? "border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20"
         : "bg-purple-600 hover:bg-purple-700 text-white"} ${className}`}
     >
-      {user.isFollowing ? (
-        <>
-          <UserCheck className="w-4 h-4 mr-2" />
-          Following
-        </>
-      ) : (
-        <>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Follow
-        </>
-      )}
+      {
+        user.isFollowing ? (
+          <>
+            <UserCheck className="w-4 h-4 mr-2" />
+            Following
+          </>
+        ) : (
+          <>
+            <UserPlus className="w-4 h-4 mr-2" />
+            Follow
+          </>
+        )
+      }
     </Button>
   )
 }

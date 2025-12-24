@@ -4,15 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from '@/components/ui/sheet'
+} from '@repo/ui/components/ui/sheet'
 import {
     Avatar, AvatarFallback, AvatarImage
-} from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+} from '@repo/ui/components/ui/avatar'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Card, CardContent, CardHeader, CardTitle
-} from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
+} from '@repo/ui/components/ui/card'
+import { Progress } from '@repo/ui/components/ui/progress'
 import {
     CheckCircle2, Clock, Trophy, Target, Calendar, Loader2
 } from 'lucide-react'

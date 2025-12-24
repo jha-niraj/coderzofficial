@@ -4,16 +4,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from '@repo/auth'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@repo/ui/components/ui/card'
+import { Input } from '@repo/ui/components/ui/input'
+import { Label } from '@repo/ui/components/ui/label'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+} from '@repo/ui/components/ui/select'
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
-} from '@/components/ui/dialog'
+} from '@repo/ui/components/ui/dialog'
 import {
     Command, CommandEmpty, CommandGroup, CommandInput, CommandItem
 } from '@/components/ui/command'
@@ -26,9 +26,9 @@ import {
     AlertCircle, Plus, X as XIcon
 } from 'lucide-react'
 import { useDebounce } from '@/hooks/use-debounce'
-import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '../../lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { cn } from '@repo/ui/lib/utils'
 import { getColleges, getCompanies } from '@/actions/(main)/user/college.action'
 import { checkUsernameAvailability, completeOnboarding } from '@/actions/(main)/user/onboarding.action'
 import { uploadResume } from '@/actions/(main)/user/resume.action'

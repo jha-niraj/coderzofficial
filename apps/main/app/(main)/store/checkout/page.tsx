@@ -6,14 +6,14 @@ import Image from "next/image"
 import {
     ChevronRight, CreditCard, Minus, Plus, Trash2, Truck,
     Coffee, Code, AlertTriangle, CheckCircle2, ShoppingCart } from "lucide-react";
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Input } from "@repo/ui/components/ui/input"
+import { Label } from "@repo/ui/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { Separator } from "@repo/ui/components/ui/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui/components/ui/select"
+import { Badge } from "@repo/ui/components/ui/badge"
 
 export default function CheckoutPage() {
     const [step, setStep] = useState<"cart" | "shipping" | "payment" | "confirm">("cart")

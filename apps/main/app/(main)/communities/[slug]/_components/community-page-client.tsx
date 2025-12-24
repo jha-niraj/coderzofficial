@@ -9,25 +9,25 @@ import {
     MoreHorizontal, CheckCircle2, Lock, Globe, UserPlus, LogOut, Loader2, ChevronDown,
     RefreshCw, HelpCircle, Code2, Plus
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Avatar, AvatarFallback, AvatarImage
-} from '@/components/ui/avatar'
+} from '@repo/ui/components/ui/avatar'
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from '@/components/ui/tabs'
+} from '@repo/ui/components/ui/tabs'
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+} from '@repo/ui/components/ui/dropdown-menu'
 import { PostCard } from '@/components/community/post-card'
 import { PostComposer } from '@/components/community/post-composer'
 import { CommunityInfoSidebar } from '@/components/community/community-sidebar'
 import { MagicSheet } from '@/components/community/magic-sheet'
 import { getCommunityPosts } from '@/actions/(main)/community/post.action'
 import { joinCommunity, leaveCommunity } from '@/actions/(main)/community/community.action'
-import { toast } from 'sonner'
-import { cn } from '../../lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
+import { cn } from '@repo/ui/lib/utils'
 import { useInView } from 'react-intersection-observer'
 
 interface CommunityPageClientProps {

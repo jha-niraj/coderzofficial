@@ -7,17 +7,17 @@ import {
     Plus, BookOpen, Award, Eye, Heart, Users, Clock, Loader2, MoreVertical,
     Trash2, Share2, Globe, Lock, CheckCircle2, XCircle, AlertCircle
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs";
+} from "@repo/ui/components/ui/tabs";
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+} from "@repo/ui/components/ui/dropdown-menu";
 import {
     getUserPracticeSets, getUserExamSets
 } from "@/actions/(main)/assessments/user-sets.action";

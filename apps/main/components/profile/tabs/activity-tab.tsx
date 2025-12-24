@@ -4,16 +4,16 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Activity, Calendar, Flame, TrendingUp, Clock, Award, BookOpen, Code,
     MessageSquare, Star
 } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from "@/components/ui/tooltip";
+} from "@repo/ui/components/ui/tooltip";
 
 interface ActivityTabProps {
     user: {

@@ -7,11 +7,11 @@ import {
     ArrowLeft, Flame, CheckCircle2, Lock, Users, Trophy, 
     Brain, ChevronRight, Star, Clock, Zap, TrendingUp
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { cn } from '../../lib/utils'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { Progress } from '@repo/ui/components/ui/progress'
+import { cn } from '@repo/ui/lib/utils'
 
 interface CrucibleProblem {
     id: string

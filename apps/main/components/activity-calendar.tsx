@@ -3,17 +3,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
     Card, CardContent, CardHeader, CardTitle
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from '@repo/ui/components/ui/card';
+import { Button } from '@repo/ui/components/ui/button';
+import { Badge } from '@repo/ui/components/ui/badge';
 import {
     Flame, TrendingUp, Calendar, ChevronLeft, ChevronRight, BookOpen, Clock,
     Coins, Trophy, Zap, Target, Code, Brain, Award, Activity as ActivityIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActivityType } from '@prisma/client';
-import { toast } from 'sonner';
-import { DailyActivitySummary, getActivityCalendar, getDailyActivitySummary, getUserStreak, StreakInfo } from '@/actions/(main)/user/activity.action';
+import toast from '@repo/ui/components/ui/sonner';
+import { 
+    DailyActivitySummary, getActivityCalendar, getDailyActivitySummary, getUserStreak, 
+    StreakInfo 
+} from '@/actions/(main)/user/activity.action';
 
 interface DayActivity {
     date: Date;

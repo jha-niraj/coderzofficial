@@ -1,12 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent } from "@repo/ui/components/ui/card"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { CalendarDays, Trophy, Users, ThumbsUp, ExternalLink, Github, Clock, Check } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@repo/ui/components/ui/dialog"
 import SmoothScroll from "@/components/smoothscroll"
 import { useState } from "react"
 

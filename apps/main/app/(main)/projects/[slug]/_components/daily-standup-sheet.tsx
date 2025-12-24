@@ -5,13 +5,13 @@ import { motion } from 'framer-motion'
 import {
     Calendar, Clock, Loader2, CheckCircle2, AlertCircle, Trophy, X
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from '@/components/ui/sheet'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
-import { toast } from 'sonner'
+} from '@repo/ui/components/ui/sheet'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import toast from '@repo/ui/components/ui/sonner'
 import { checkStandupConfig, createStandupConfig } from '@/actions/(main)/projects/standup.action'
 
 interface DailyStandupSheetProps {

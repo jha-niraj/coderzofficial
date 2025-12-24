@@ -6,32 +6,32 @@ import {
     Code, FileQuestion, Loader2, Lock, Mic, Sparkles, Zap, Globe,
     HelpCircle, GraduationCap
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Label } from '@repo/ui/components/ui/label'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Switch } from '@repo/ui/components/ui/switch'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+} from '@repo/ui/components/ui/select'
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
     SheetFooter
-} from '@/components/ui/sheet'
+} from '@repo/ui/components/ui/sheet'
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from '@/components/ui/tooltip'
-import { cn } from '../../lib/utils'
-import { toast } from 'sonner'
+} from '@repo/ui/components/ui/tooltip'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
     createExamSet, EXAM_SET_CREDIT_COST, getAssessmentTopics
 } from '@/actions/(main)/assessments/user-sets.action'
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty
-} from '@prisma/client'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '@repo/prisma/client'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 
 // Language configs
 const LANGUAGES: Record<string, { label: string; icon: string }> = {
@@ -328,21 +328,23 @@ export function CreateExamSheet({
                         <div className="space-y-2">
                             <Label>Difficulty</Label>
                             <div className="grid grid-cols-2 gap-2">
-                                {DIFFICULTIES.map((diff) => (
-                                    <button
-                                        key={diff.key}
-                                        type="button"
-                                        onClick={() => setDifficulty(diff.key)}
-                                        className={cn(
-                                            "p-3 rounded-lg border-2 transition-all text-center",
-                                            difficulty === diff.key
-                                                ? "border-primary bg-primary/5"
-                                                : "border-muted hover:border-muted-foreground/50"
-                                        )}
-                                    >
-                                        <Badge className={diff.color}>{diff.label}</Badge>
-                                    </button>
-                                ))}
+                                {
+                                    DIFFICULTIES.map((diff) => (
+                                        <button
+                                            key={diff.key}
+                                            type="button"
+                                            onClick={() => setDifficulty(diff.key)}
+                                            className={cn(
+                                                "p-3 rounded-lg border-2 transition-all text-center",
+                                                difficulty === diff.key
+                                                    ? "border-primary bg-primary/5"
+                                                    : "border-muted hover:border-muted-foreground/50"
+                                            )}
+                                        >
+                                            <Badge className={diff.color}>{diff.label}</Badge>
+                                        </button>
+                                    ))
+                                }
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Exams require Intermediate or Hard difficulty

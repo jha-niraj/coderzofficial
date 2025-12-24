@@ -10,20 +10,20 @@ import {
     Hash, Plus, X, Upload, Camera, Smile, ChevronDown, Type, CheckSquare,
     ListOrdered, ToggleLeft, GripVertical, Trash2
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Label } from '@/components/ui/label'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Label } from '@repo/ui/components/ui/label'
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from '@/components/ui/tooltip'
+} from '@repo/ui/components/ui/tooltip'
 import {
     Popover, PopoverContent, PopoverTrigger
 } from '@/components/ui/popover'
-import { cn } from '../../lib/utils'
+import { cn } from '@repo/ui/lib/utils'
 import { createCommunity } from '@/actions/(main)/community/community.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 // Emoji picker for category icons
 const CATEGORY_ICONS = [

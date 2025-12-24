@@ -6,15 +6,15 @@ import Link from 'next/link'
 import {
     TrendingUp, Flame, RefreshCw, Loader2, Clock, Award
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Tabs, TabsList, TabsTrigger
-} from '@/components/ui/tabs'
+} from '@repo/ui/components/ui/tabs'
 import { CommunitySidebar } from '@/components/community/community-sidebar'
 import { PostCard } from '@/components/community/post-card'
 import { getTrendingPosts } from '@/actions/(main)/community/post.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 interface TrendingPageClientProps {
     user: {

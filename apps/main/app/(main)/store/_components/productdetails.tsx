@@ -1,12 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Heart, Minus, Plus, Share2, Star, Truck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@repo/ui/components/ui/button";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@repo/ui/components/ui/label";
+import { Badge } from "@repo/ui/components/ui/badge";
 
 export default function ProductDetails({ productId } : { productId: string }) {
     const product = {

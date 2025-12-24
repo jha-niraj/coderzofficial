@@ -8,13 +8,13 @@ import {
     Globe, Heart, Loader2, Lock, Mic, Play, Sparkles, Target,
     Trophy, Users, Zap, Share2, Eye
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import { cn } from '../../lib/utils'
-import { toast } from 'sonner'
+import { Button } from '@repo/ui/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui/components/ui/avatar'
+import { Separator } from '@repo/ui/components/ui/separator'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
     getPracticeSetDetails,

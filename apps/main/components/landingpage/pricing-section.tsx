@@ -6,9 +6,9 @@ import { motion } from "framer-motion"
 import {
     ChevronRight, Wallet, Lock, Infinity, Server
 } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Switch } from "@repo/ui/components/ui/switch"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 import { BentoPricing } from "@/components/ui/bento-pricing"
 
 export default function PricingSection() {

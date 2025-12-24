@@ -4,19 +4,19 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/dialog";
+import { Button } from "@repo/ui/components/ui/button";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { Label } from "@repo/ui/components/ui/label";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import {
     ThumbsUp, Star, Loader2, Check, Sparkles, Award, Users
 } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "../../lib/utils";
+import toast from "@repo/ui/components/ui/sonner";
+import { cn } from "@repo/ui/lib/utils";
 
 interface EndorseSkillModalProps {
     isOpen: boolean;

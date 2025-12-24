@@ -2,16 +2,18 @@
 
 import { useState } from "react"
 import { updateChatSettings } from "@/actions/(chat)/settings.action"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@repo/ui/components/ui/label"
+import { Switch } from "@repo/ui/components/ui/switch"
+import { Button } from "@repo/ui/components/ui/button"
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
+} from "@repo/ui/components/ui/card"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+} from "@repo/ui/components/ui/select"
 import { Save, Loader2, Bell, Volume2, Shield, Eye, MessageCircle, Users } from "lucide-react"
-import { toast } from "sonner"
-import { cn } from "../../lib/utils"
+import toast from "@repo/ui/components/ui/sonner"
+import { cn } from "@repo/ui/lib/utils"
 
 type ChatSettings = {
     id: string
@@ -57,7 +59,6 @@ export default function ChatSettingsForm({ settings }: { settings: ChatSettings 
 
     return (
         <div className="space-y-6">
-            {/* Notifications Section */}
             <Card className="border-border/50">
                 <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
@@ -93,8 +94,6 @@ export default function ChatSettingsForm({ settings }: { settings: ChatSettings 
                     </SettingRow>
                 </CardContent>
             </Card>
-
-            {/* Privacy Section */}
             <Card className="border-border/50">
                 <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
@@ -151,8 +150,6 @@ export default function ChatSettingsForm({ settings }: { settings: ChatSettings 
                     </SettingRow>
                 </CardContent>
             </Card>
-
-            {/* Save Button */}
             <div className={cn(
                 "sticky bottom-0 p-4 bg-background/95 backdrop-blur border-t border-border/50 -mx-6 -mb-6 transition-all",
                 hasChanges ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
@@ -162,17 +159,19 @@ export default function ChatSettingsForm({ settings }: { settings: ChatSettings 
                     disabled={saving || !hasChanges}
                     className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-black font-semibold"
                 >
-                    {saving ? (
-                        <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Saving...
-                        </>
-                    ) : (
-                        <>
-                            <Save className="w-4 h-4 mr-2" />
-                            Save Changes
-                        </>
-                    )}
+                    {
+                        saving ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-4 h-4 mr-2" />
+                                Save Changes
+                            </>
+                        )
+                    }
                 </Button>
             </div>
         </div>

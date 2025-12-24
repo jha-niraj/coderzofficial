@@ -2,8 +2,8 @@
 
 import {
 	Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+} from "@repo/ui/components/ui/dialog"
+import { Button } from "@repo/ui/components/ui/button"
 import { AlertTriangle, Code2 } from "lucide-react"
 
 interface SubmitConfirmDialogProps {

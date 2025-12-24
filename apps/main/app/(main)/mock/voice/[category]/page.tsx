@@ -3,11 +3,11 @@
 import { useState, useEffect, use, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+} from '@repo/ui/components/ui/select'
 import {
     ArrowLeft, Filter, Plus, Sparkles
 } from 'lucide-react'

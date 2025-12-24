@@ -2,21 +2,21 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Button } from "@repo/ui/components/ui/button"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@repo/ui/components/ui/sheet"
+import { Input } from "@repo/ui/components/ui/input"
+import { Textarea } from "@repo/ui/components/ui/textarea"
+import { Label } from "@repo/ui/components/ui/label"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@repo/ui/components/ui/card"
 import { AlertCircle, Sparkles } from 'lucide-react';
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@repo/ui/components/ui/badge'
 import ShimmerButton from '@/components/ui/shimmer-button'
 import ShineBorder from '@/components/ui/shine-border'
 import { RainbowButton } from '@/components/ui/rainbow-button'
 import axios from 'axios'
 import Link from 'next/link'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 interface JobListingProps {
     title: string;

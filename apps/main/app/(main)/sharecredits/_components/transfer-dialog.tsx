@@ -7,14 +7,14 @@ import {
 } from "lucide-react"
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle
-} from "@/components/ui/dialog"
+} from "@repo/ui/components/ui/dialog"
 import {
     Button
-} from "@/components/ui/button"
+} from "@repo/ui/components/ui/button"
 import {
     Avatar, AvatarFallback, AvatarImage
 
-} from "@/components/ui/avatar"
+} from "@repo/ui/components/ui/avatar"
 import { toast } from "sonner"
 
 interface TransferDialogProps {

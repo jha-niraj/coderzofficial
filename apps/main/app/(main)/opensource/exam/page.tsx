@@ -12,17 +12,17 @@ import {
 } from "lucide-react";
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Progress } from "@repo/ui/components/ui/progress";
 import { 
     RadioGroup, RadioGroupItem 
 } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@repo/ui/components/ui/label";
+import { Textarea } from "@repo/ui/components/ui/textarea";
 import { toast } from "sonner";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import {
     getLearningProgress, recordExamResult
 } from "@/actions/(main)/opensource";

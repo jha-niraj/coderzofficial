@@ -8,34 +8,29 @@ import {
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { getAllUsers, bulkUpdateUsers } from "@/actions/user.action"
+import { toast } from "@repo/ui/components/ui/sonner"
 
 interface User {
     id: string
-    name: string
+    name: string | null
     email: string
-    image?: string
+    image?: string | null
+    username?: string | null
     role: "Student" | "Admin"
     credits: number
-    xp: number
-    createdAt: string
+    currentXp: number
+    currentLevel: number
+    emailVerified: boolean | null
+    createdAt: Date | string
     status: "active" | "inactive"
 }
 
-// Mock data - replace with actual API
-const mockUsers: User[] = Array.from({ length: 50 }, (_, i) => ({
-    id: `user-${i + 1}`,
-    name: `User ${i + 1}`,
-    email: `user${i + 1}@example.com`,
-    role: i % 10 === 0 ? "Admin" : "Student",
-    credits: Math.floor(Math.random() * 5000),
-    xp: Math.floor(Math.random() * 10000),
-    createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-    status: Math.random() > 0.1 ? "active" : "inactive"
-}))
-
 export default function UsersPage() {
-    const [users, setUsers] = useState<User[]>(mockUsers)
-    const [isLoading, setIsLoading] = useState(false)
+    const [users, setUsers] = useState<User[]>([])
+    const [totalUsers, setTotalUsers] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [roleFilter, setRoleFilter] = useState<"all" | "Student" | "Admin">("all")
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
@@ -43,27 +38,88 @@ export default function UsersPage() {
     const [selectedUsers, setSelectedUsers] = useState<string[]>([])
     const itemsPerPage = 10
 
-    // Filter users
-    const filteredUsers = users.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesRole = roleFilter === "all" || user.role === roleFilter
-        const matchesStatus = statusFilter === "all" || user.status === statusFilter
-        return matchesSearch && matchesRole && matchesStatus
-    })
+    // Fetch users
+    useEffect(() => {
+        fetchUsers()
+    }, [currentPage, searchQuery, roleFilter, statusFilter])
 
-    // Paginate
-    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
-    const paginatedUsers = filteredUsers.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    )
+    async function fetchUsers() {
+        setIsLoading(true)
+        try {
+            const result = await getAllUsers(
+                {
+                    search: searchQuery || undefined,
+                    role: roleFilter,
+                    status: statusFilter,
+                },
+                {
+                    page: currentPage,
+                    limit: itemsPerPage,
+                }
+            )
+
+            if (result.success && result.data) {
+                setUsers(result.data.users)
+                setTotalUsers(result.data.total)
+                setTotalPages(result.data.pages)
+            } else {
+                toast.error(result.error || "Failed to fetch users")
+            }
+        } catch (error) {
+            console.error("Failed to fetch users:", error)
+            toast.error("Failed to fetch users")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (currentPage === 1) {
+                fetchUsers()
+            } else {
+                setCurrentPage(1)
+            }
+        }, 500)
+
+        return () => clearTimeout(timer)
+    }, [searchQuery])
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        if (currentPage !== 1) {
+            setCurrentPage(1)
+        }
+    }, [roleFilter, statusFilter])
+
+    // Handle bulk add credits
+    async function handleBulkAddCredits() {
+        const amount = prompt("Enter credits amount to add:")
+        if (!amount || isNaN(Number(amount))) return
+
+        try {
+            const result = await bulkUpdateUsers(selectedUsers, {
+                addCredits: Number(amount),
+            })
+
+            if (result.success) {
+                toast.success(`Added ${amount} credits to ${selectedUsers.length} users`)
+                setSelectedUsers([])
+                fetchUsers()
+            } else {
+                toast.error(result.error || "Failed to update users")
+            }
+        } catch (error) {
+            toast.error("Failed to update users")
+        }
+    }
 
     const toggleSelectAll = () => {
-        if (selectedUsers.length === paginatedUsers.length) {
+        if (selectedUsers.length === users.length) {
             setSelectedUsers([])
         } else {
-            setSelectedUsers(paginatedUsers.map(u => u.id))
+            setSelectedUsers(users.map(u => u.id))
         }
     }
 
@@ -72,6 +128,17 @@ export default function UsersPage() {
             prev.includes(userId) 
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
+        )
+    }
+
+    if (isLoading && users.length === 0) {
+        return (
+            <div className="p-6 lg:p-8 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-neutral-400 mx-auto mb-4" />
+                    <p className="text-neutral-500 dark:text-neutral-400">Loading users...</p>
+                </div>
+            </div>
         )
     }
 
@@ -148,7 +215,7 @@ export default function UsersPage() {
                                 <th className="text-left p-4 w-12">
                                     <input
                                         type="checkbox"
-                                        checked={selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0}
+                                        checked={selectedUsers.length === users.length && users.length > 0}
                                         onChange={toggleSelectAll}
                                         className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-red-500 focus:ring-red-500"
                                     />
@@ -163,7 +230,20 @@ export default function UsersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedUsers.map((user) => (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={8} className="p-8 text-center">
+                                        <Loader2 className="w-8 h-8 animate-spin text-neutral-400 mx-auto" />
+                                    </td>
+                                </tr>
+                            ) : users.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="p-8 text-center text-neutral-500 dark:text-neutral-400">
+                                        No users found
+                                    </td>
+                                </tr>
+                            ) : (
+                                users.map((user) => (
                                 <tr 
                                     key={user.id}
                                     className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
@@ -178,14 +258,22 @@ export default function UsersPage() {
                                     </td>
                                     <td className="p-4">
                                         <Link href={`/users/${user.id}`} className="flex items-center gap-3 group">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-sm font-bold text-neutral-600 dark:text-neutral-300">
-                                                    {user.name[0]}
-                                                </span>
-                                            </div>
+                                            {user.image ? (
+                                                <img
+                                                    src={user.image}
+                                                    alt={user.name || user.email}
+                                                    className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-800"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-sm font-bold text-neutral-600 dark:text-neutral-300">
+                                                        {(user.name || user.email)[0].toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="font-medium text-neutral-900 dark:text-white group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors">
-                                                    {user.name}
+                                                    {user.name || "No name"}
                                                 </p>
                                                 <p className="text-sm text-neutral-500 dark:text-neutral-400">{user.email}</p>
                                             </div>
@@ -209,7 +297,7 @@ export default function UsersPage() {
                                     </td>
                                     <td className="p-4">
                                         <span className="font-medium text-neutral-900 dark:text-white">
-                                            {user.xp.toLocaleString()}
+                                            {user.currentXp.toLocaleString()}
                                         </span>
                                     </td>
                                     <td className="p-4">
@@ -235,7 +323,8 @@ export default function UsersPage() {
                                         </button>
                                     </td>
                                 </tr>
-                            ))}
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -243,7 +332,7 @@ export default function UsersPage() {
                 {/* Pagination */}
                 <div className="flex items-center justify-between p-4 border-t border-neutral-200 dark:border-neutral-800">
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalUsers)} of {totalUsers} users
                     </p>
                     <div className="flex items-center gap-2">
                         <button
@@ -276,7 +365,10 @@ export default function UsersPage() {
                 >
                     <span className="text-sm font-medium">{selectedUsers.length} selected</span>
                     <div className="h-4 w-px bg-neutral-700 dark:bg-neutral-300" />
-                    <button className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors">
+                    <button 
+                        onClick={handleBulkAddCredits}
+                        className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors"
+                    >
                         <CreditCard className="w-4 h-4" />
                         Add Credits
                     </button>

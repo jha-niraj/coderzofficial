@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Code2, Layers, Terminal } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import { getCategoryById } from '../data/categories'
 
 export default function CategoryPage() {

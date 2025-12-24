@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import {
     Sheet, SheetContent
-} from "@/components/ui/sheet";
+} from "@repo/ui/components/ui/sheet";
 import Image from "next/image";
 import { ArrowRight, Menu } from "lucide-react";
 import { AnimatePresence } from "framer-motion";

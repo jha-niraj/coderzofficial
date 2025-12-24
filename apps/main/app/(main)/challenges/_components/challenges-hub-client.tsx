@@ -8,13 +8,13 @@ import {
     Clock, Star, Lock, CheckCircle2, Play, Sparkles,
     Code2, Brain, Target, TrendingUp, ArrowRight
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { Progress } from '@repo/ui/components/ui/progress'
 import { seedSampleChallenges } from '@/actions/(main)/challenges/seed-challenges.action'
-import { toast } from 'sonner'
-import { cn } from '../../lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
+import { cn } from '@repo/ui/lib/utils'
 
 interface ForgeTrack {
     id: string

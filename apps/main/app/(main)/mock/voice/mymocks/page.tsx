@@ -8,17 +8,17 @@ import {
     Loader2, FolderOpen
 } from 'lucide-react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
-} from '@/components/ui/card'
+} from '@repo/ui/components/ui/card'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '../../lib/utils'
+} from "@repo/ui/components/ui/select"
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
+import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import { MockInterviewCard } from '../../_components/mock-interview-card'
 import { CreateMockSheet } from '../../_components/create-mock-sheet'

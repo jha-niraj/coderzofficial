@@ -2,9 +2,9 @@
 
 import {
 	Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+} from "@repo/ui/components/ui/dialog"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
 import { Code2, BookOpen, Clock, Zap } from "lucide-react"
 
 interface AnswerDialogProps {

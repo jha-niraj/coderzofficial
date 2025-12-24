@@ -4,13 +4,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/ui/avatar";
+import { Input } from "@repo/ui/components/ui/input";
 import {
     UserPlus, Gift, Copy, Check, Users, Coins
 } from "lucide-react";

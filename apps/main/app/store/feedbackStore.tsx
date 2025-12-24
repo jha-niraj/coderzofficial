@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { FeedbackCategory, FeedbackStatus } from '@prisma/client';
-import { toast } from 'sonner';
+import toast from '@repo/ui/components/ui/sonner';
 import { 
     getFeedbackByStatus, submitFeedback, upvoteFeedback, updateFeedbackStatus, assignReward 
 } from '@/actions/(main)/user/feedback.action';

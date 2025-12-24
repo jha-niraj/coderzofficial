@@ -9,18 +9,18 @@ import {
     Loader2, Search, Star, Users, DollarSign, X, BookOpen, GraduationCap,
     Trophy
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { Button } from '@repo/ui/components/ui/button'
+import { Card, CardContent } from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Input } from '@repo/ui/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+} from "@repo/ui/components/ui/select"
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger
-} from "@/components/ui/sheet"
-import { cn } from '../../lib/utils'
+} from "@repo/ui/components/ui/sheet"
+import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getProjects, DIFFICULTY_LEVELS } from '@/actions/(main)/opensource'
 import { OSIssueDifficulty } from '@prisma/client'

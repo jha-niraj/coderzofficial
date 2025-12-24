@@ -4,19 +4,19 @@ import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Progress } from '@repo/ui/components/ui/progress'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
+import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
     ArrowLeft, Award, BookOpen, Clock, Code, FileQuestion, Loader2,
     Medal, Mic, Play, Plus, Sparkles, Target, Eye, Heart, AlertTriangle
 } from 'lucide-react'
-import { cn } from '../../lib/utils'
-import { toast } from 'sonner'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty
 } from '@prisma/client'

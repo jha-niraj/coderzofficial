@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { Separator } from "@repo/ui/components/ui/separator";
 import {
 	Trophy, Users, Calendar, Clock, ExternalLink, Star, Play, CheckCircle, ArrowLeft,
 } from "lucide-react";

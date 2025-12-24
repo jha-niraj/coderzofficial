@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import {
 	LayoutGrid, FolderKanban, Activity, Code2, FileText, User
 } from "lucide-react";

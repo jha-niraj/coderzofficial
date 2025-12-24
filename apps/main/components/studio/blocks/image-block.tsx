@@ -6,8 +6,8 @@ import Image from "next/image";
 import {
 	Image as ImageIcon, Download, Maximize2, X, Sparkles
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "../../lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
+import { cn } from "@repo/ui/lib/utils";
 
 interface StudioImageBlockProps {
 	media?: {

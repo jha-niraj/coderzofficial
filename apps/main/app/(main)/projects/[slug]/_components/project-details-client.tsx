@@ -9,29 +9,29 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
-} from '@/components/ui/card'
+} from '@repo/ui/components/ui/card'
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
+} from '@repo/ui/components/ui/tabs'
+import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
     SheetTrigger, SheetFooter
-} from '@/components/ui/sheet'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+} from '@repo/ui/components/ui/sheet'
+import { Input } from '@repo/ui/components/ui/input'
+import { Label } from '@repo/ui/components/ui/label'
+import { Textarea } from '@repo/ui/components/ui/textarea'
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from '@/components/ui/tooltip'
+} from '@repo/ui/components/ui/tooltip'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from '@/components/ui/dialog'
-import { toast } from 'sonner'
+} from '@repo/ui/components/ui/dialog'
+import toast from '@repo/ui/components/ui/sonner'
 import { startProject, submitProject } from '@/actions/(main)/projects/project.action'
 import { ProjectDetailsClientProps, ProjectV2Page } from '@/types/project'
 import { FeatureSuggestionSheet } from '@/components/projects/feature-suggestion-sheet'
@@ -44,7 +44,7 @@ import DailyStandupSheet from './daily-standup-sheet'
 import BlueprintFlowchart from '@/components/projects/blueprint-flowchart'
 import TaskListProgress, { TaskItem } from '@/components/projects/task-list-progress'
 import ErrorsTab from '@/components/projects/errors-tab'
-import { cn } from '../../lib/utils'
+import { cn } from '@repo/ui/lib/utils'
 
 // ============================================================================
 // Milestone Component

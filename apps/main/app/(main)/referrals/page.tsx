@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Users, CheckCircle, Clock, Gift, Copy, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent } from "@repo/ui/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
     Pagination, PaginationContent, PaginationEllipsis, PaginationItem,

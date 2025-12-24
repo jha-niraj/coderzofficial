@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@repo/ui/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 
 interface LoadingDialogProps {

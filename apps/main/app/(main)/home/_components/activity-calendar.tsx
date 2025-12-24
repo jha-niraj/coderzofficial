@@ -4,11 +4,11 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import { CalendarDays, Flame } from "lucide-react";
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from "@/components/ui/tooltip";
+} from "@repo/ui/components/ui/tooltip";
 
 interface ActivityData {
     date: Date;

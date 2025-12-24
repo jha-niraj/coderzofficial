@@ -5,9 +5,9 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { ArrowLeft, Clock, Award, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Badge } from "@repo/ui/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@repo/ui/components/ui/dialog"
 import { companies, publicInterviews } from "@/app/(main)/interview/_components/mockdata"
 import type { Company, Role } from "@/types/interview"
 

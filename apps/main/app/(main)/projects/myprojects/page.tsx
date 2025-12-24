@@ -5,20 +5,20 @@ import { motion } from "framer-motion"
 import {
 	Plus, ArrowRight, Code2, Trophy, Play, CheckCircle2, Search,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@repo/ui/components/ui/button"
 import {
 	Card, CardContent, CardHeader
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+} from "@repo/ui/components/ui/card"
+import { Input } from "@repo/ui/components/ui/input"
 import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+} from "@repo/ui/components/ui/select"
 import {
 	Pagination, PaginationContent, PaginationItem, PaginationLink,
 	PaginationNext, PaginationPrevious
 } from "@/components/ui/pagination"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
 import { toast } from "sonner"
 import Link from "next/link"
 import { getUserProjects, deleteProject } from "@/actions/(main)/projects/project.action"

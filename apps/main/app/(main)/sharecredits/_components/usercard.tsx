@@ -2,11 +2,11 @@
 
 import { motion } from "framer-motion"
 import { Plus, Minus, Send } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@repo/ui/components/ui/button"
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+} from "@repo/ui/components/ui/avatar"
+import { Badge } from "@repo/ui/components/ui/badge"
 
 interface UserCardProps {
     user: {

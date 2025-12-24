@@ -27,8 +27,9 @@ enum AdminInviteStatus {
 // Admin Access Control - Links to existing User model
 model AdminAccess {
     id              String          @id @default(cuid())
-    
+
     userId          String          @unique
+    user            User            @relation("UserAdminAccess", fields: [userId], references: [id], onDelete: Cascade)
     
     // Role & Status
     adminRole       AdminRole       @default(MODULE_MANAGER)

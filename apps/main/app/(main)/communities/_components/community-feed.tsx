@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Loader2, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import { PostCard } from '@/components/community/post-card'
 import { PostComposer } from '@/components/community/post-composer'
 import { CommunityCard } from '@/components/community/community-card'
 import { getGlobalFeed } from '@/actions/(main)/community/post.action'
 import { joinCommunity } from '@/actions/(main)/community/community.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { CommunityPostType } from '@prisma/client'
 
 interface CommunityFeedProps {

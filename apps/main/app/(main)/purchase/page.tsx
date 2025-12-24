@@ -2,23 +2,23 @@
 
 import { useState } from 'react'
 import { useSession } from '@repo/auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Label } from '@repo/ui/components/ui/label'
+import { Slider } from '@repo/ui/components/ui/slider'
 import {
 	Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from '@/components/ui/sheet'
+} from '@repo/ui/components/ui/sheet'
 import {
 	Dialog, DialogContent
-} from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
+} from '@repo/ui/components/ui/dialog'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
 	Receipt, Zap, Gift, AlertTriangle, ShieldCheck, Clock, Activity, Terminal, 
 	Server, CheckCircle2, Loader2, Wallet
 } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { paymentConfig, calculatePrice } from '@/lib/payment-config'
 import { computeUsageForCredits, creditUsageConfig, formatCountRange } from '@/lib/credit-usage'

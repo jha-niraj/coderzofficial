@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { TrendingUp } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@repo/ui/components/ui/badge";
 
 export function ProgressHeader() {
 	return (

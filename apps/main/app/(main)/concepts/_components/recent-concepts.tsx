@@ -5,8 +5,8 @@ import Link from "next/link";
 import {
     ArrowRight, Clock, BookOpen, Sparkles
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
 
 interface Concept {

@@ -7,14 +7,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
     Eye, Heart, Clock, BookOpen, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
 import {
     Card, CardContent, CardFooter
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
 
 interface Concept {

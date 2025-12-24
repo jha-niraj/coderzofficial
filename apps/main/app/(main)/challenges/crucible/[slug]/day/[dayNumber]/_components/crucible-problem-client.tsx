@@ -10,18 +10,18 @@ import {
     Lightbulb, BookOpen, Brain, ChevronRight, ChevronLeft,
     HelpCircle, XCircle, Zap, Code2, PlayCircle, ExternalLink
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { Input } from '@repo/ui/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
 import {
     Sheet,
     SheetContent,
     SheetDescription,
     SheetHeader,
     SheetTitle,
-} from '@/components/ui/sheet'
+} from '@repo/ui/components/ui/sheet'
 import {
     Accordion,
     AccordionContent,
@@ -29,8 +29,8 @@ import {
     AccordionTrigger,
 } from '@/components/ui/accordion'
 import { submitCrucibleAnswer, revealCrucibleHint, getUserCrucibleInput } from '@/actions/(main)/challenges/crucible.action'
-import { toast } from 'sonner'
-import { cn } from '../../lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
+import { cn } from '@repo/ui/lib/utils'
 
 interface LearningModule {
     id: string

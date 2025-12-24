@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@repo/prisma";
 
 function slugifyName(name: string) {
     return name.toLowerCase().replace(/\s+/g, "");

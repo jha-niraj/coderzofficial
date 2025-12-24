@@ -1,16 +1,16 @@
 "use client"
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 import { Star, Users, CalendarDays, Briefcase, Code, MessageSquare } from "lucide-react"
 import Link from "next/link"
-import { cn } from "../../lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 import { useState } from "react"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter as DialogFooterUI,
     DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog"
+} from "@repo/ui/components/ui/dialog"
 
 export interface BaseInterviewPlan {
     id: string

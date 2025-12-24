@@ -7,16 +7,16 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Trophy, Share2, Users, TrendingUp, Check
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Progress } from '@/components/ui/progress'
+import { Button } from '@repo/ui/components/ui/button'
+import { Card, CardContent } from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui/components/ui/avatar'
+import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink,
     PaginationNext, PaginationPrevious
 } from '@/components/ui/pagination'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { getProjectLeaderboard } from '@/actions/(main)/projects/leaderboard.action'
 import {
     formatScore, getScoreColor, getRankBadgeColor, getRankSuffix

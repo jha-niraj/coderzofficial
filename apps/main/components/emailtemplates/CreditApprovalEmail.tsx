@@ -1,4 +1,6 @@
-import { Html, Body, Head, Heading, Hr, Container, Preview, Section, Text, Button, Img } from '@react-email/components';
+import { 
+	Html, Body, Head, Heading, Hr, Container, Preview, Section, Text, Button 
+} from '@react-email/components';
 
 interface CreditApprovalEmailProps {
 	userName: string;

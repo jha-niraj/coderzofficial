@@ -7,10 +7,10 @@ import Image from "next/image";
 import {
     FolderKanban, ChevronRight, Loader2, Clock, Users, ListTodo
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
 import { getProjectBookmarks } from "@/actions/(main)/bookmarks/bookmarks.action";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const difficultyColors = {

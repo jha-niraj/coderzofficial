@@ -3,17 +3,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
+import { Card, CardContent } from '@repo/ui/components/ui/card'
 import {
 	Brain, Sparkles, TrendingUp, Trophy, Target, Star, Award, ChevronRight,
 	Code, FileQuestion, Mic, BookOpen, Zap, ArrowRight, Play, Flame, Medal,
 	GraduationCap, BarChart3, Eye, Heart, Clock, Loader2, Users
 } from 'lucide-react'
-import { cn } from '../../lib/utils'
-import { toast } from 'sonner'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
 import { getPublicPracticeSets, getPublicExamSets } from '@/actions/(main)/assessments/user-sets.action'
 import type { PracticeSetPreview, ExamSetPreview } from '@/types/assessment'
 

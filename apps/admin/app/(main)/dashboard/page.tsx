@@ -9,6 +9,8 @@ import {
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { getDashboardStats, getAuditLogs } from "@/actions/admin.action"
+import { toast } from "@repo/ui/components/ui/sonner"
 
 interface StatCardProps {
     title: string
@@ -141,28 +143,80 @@ function RecentActivity({ activities }: RecentActivityProps) {
 
 export default function AdminDashboard() {
     const { data: session } = useSession()
-    const [stats, setStats] = useState({
-        totalUsers: "12,456",
-        activeToday: "342",
-        totalCredits: "1.2M",
-        revenue: "₹45,230"
-    })
+    const [stats, setStats] = useState<any>(null)
+    const [recentActivities, setRecentActivities] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
-    // Mock data - replace with actual API calls
+    useEffect(() => {
+        async function fetchData() {
+            setIsLoading(true)
+            try {
+                const [statsRes, logsRes] = await Promise.all([
+                    getDashboardStats(),
+                    getAuditLogs(1, 5)
+                ])
+
+                if (statsRes.success && statsRes.data) {
+                    setStats(statsRes.data)
+                }
+
+                if (logsRes.success && logsRes.data) {
+                    // Transform audit logs to activities
+                    const activities = logsRes.data.logs.map((log: any) => ({
+                        id: log.id,
+                        action: log.description || `${log.action} on ${log.resourceType}`,
+                        user: log.adminUser?.email || "System",
+                        time: getTimeAgo(new Date(log.createdAt)),
+                        type: getActivityType(log.module)
+                    }))
+                    setRecentActivities(activities)
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard data:", error)
+                toast.error("Failed to load dashboard data")
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchData()
+    }, [])
+
+    function getTimeAgo(date: Date): string {
+        const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
+        if (seconds < 60) return `${seconds}s ago`
+        const minutes = Math.floor(seconds / 60)
+        if (minutes < 60) return `${minutes}m ago`
+        const hours = Math.floor(minutes / 60)
+        if (hours < 24) return `${hours}h ago`
+        return `${Math.floor(hours / 24)}d ago`
+    }
+
+    function getActivityType(module: string): "user" | "credit" | "project" | "system" {
+        if (module === "users") return "user"
+        if (module === "credits") return "credit"
+        if (module === "projects") return "project"
+        return "system"
+    }
+
+    // Pending actions - these would come from specific queries in production
     const pendingActions = [
-        { title: "Credit requests awaiting approval", count: 23, type: "warning" as const, href: "/credits/requests" },
-        { title: "Feedback items marked as BUG", count: 5, type: "warning" as const, href: "/feedback" },
-        { title: "Project ideas pending review", count: 12, type: "info" as const, href: "/projects/ideas" },
-        { title: "Community reports flagged", count: 3, type: "warning" as const, href: "/communities/reports" },
+        { title: "Credit requests awaiting approval", count: 0, type: "warning" as const, href: "/credits/requests" },
+        { title: "Feedback items marked as BUG", count: 0, type: "warning" as const, href: "/feedback" },
+        { title: "Project ideas pending review", count: 0, type: "info" as const, href: "/projects/ideas" },
+        { title: "Community reports flagged", count: 0, type: "warning" as const, href: "/communities/reports" },
     ]
 
-    const recentActivities = [
-        { id: "1", action: "User earned 500 XP from project completion", user: "john@example.com", time: "2m ago", type: "user" as const },
-        { id: "2", action: "New project 'AI Bot' created", user: "System", time: "5m ago", type: "project" as const },
-        { id: "3", action: "Credit request approved (+500)", user: "admin@example.com", time: "10m ago", type: "credit" as const },
-        { id: "4", action: "New user registration", user: "newuser@example.com", time: "15m ago", type: "user" as const },
-        { id: "5", action: "Feedback #123 marked complete", user: "support@example.com", time: "20m ago", type: "system" as const },
-    ]
+    if (isLoading || !stats) {
+        return (
+            <div className="p-6 lg:p-8 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <Activity className="w-12 h-12 animate-spin text-neutral-400 mx-auto mb-4" />
+                    <p className="text-neutral-500 dark:text-neutral-400">Loading dashboard...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
@@ -180,15 +234,15 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard
                     title="Total Users"
-                    value={stats.totalUsers}
-                    change={12}
+                    value={stats.totalUsers.toLocaleString()}
+                    change={stats.growthRate}
                     icon={Users}
                     href="/users"
                     color="bg-gradient-to-br from-blue-500 to-blue-600"
                 />
                 <StatCard
                     title="Active Today"
-                    value={stats.activeToday}
+                    value={stats.activeToday.toString()}
                     change={5}
                     icon={Activity}
                     href="/analytics"
@@ -196,18 +250,18 @@ export default function AdminDashboard() {
                 />
                 <StatCard
                     title="Total Credits"
-                    value={stats.totalCredits}
+                    value={stats.totalCredits.toLocaleString()}
                     change={8}
                     icon={CreditCard}
                     href="/credits"
                     color="bg-gradient-to-br from-purple-500 to-purple-600"
                 />
                 <StatCard
-                    title="Revenue (30d)"
-                    value={stats.revenue}
-                    change={-3}
+                    title="New Users (30d)"
+                    value={stats.newUsersThisMonth.toLocaleString()}
+                    change={stats.growthRate}
                     icon={TrendingUp}
-                    href="/credits/payments"
+                    href="/users"
                     color="bg-gradient-to-br from-amber-500 to-amber-600"
                 />
             </div>
@@ -244,8 +298,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* Quick Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                     <div className="flex items-center gap-3 mb-4">
@@ -261,7 +313,6 @@ export default function AdminDashboard() {
                         View sessions <ArrowRight className="w-4 h-4" />
                     </Link>
                 </div>
-
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
@@ -276,7 +327,6 @@ export default function AdminDashboard() {
                         View projects <ArrowRight className="w-4 h-4" />
                     </Link>
                 </div>
-
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">

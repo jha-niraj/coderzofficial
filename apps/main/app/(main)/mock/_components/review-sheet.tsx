@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle 
-} from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+} from '@repo/ui/components/ui/sheet'
+import { Button } from '@repo/ui/components/ui/button'
+import { Label } from '@repo/ui/components/ui/label'
+import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
     Star, AlertCircle, Loader2, CheckCircle, MessageSquare 
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { submitReview } from '@/actions/(main)/mockvoice/review.action'
 
 interface ReviewSheetProps {

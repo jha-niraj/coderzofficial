@@ -1,6 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Trophy, Medal, Award, TrendingUp } from "lucide-react";
 import { getChallengeLeaderboard } from "@/actions/(main)/collective/challenge.actions";
 

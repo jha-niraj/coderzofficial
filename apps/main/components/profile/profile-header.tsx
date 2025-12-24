@@ -3,13 +3,13 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
 	Camera, Edit2, Share2, Settings, MapPin, Briefcase, Calendar,
 	Link as LinkIcon, Mail, Check, Copy
 } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import { toast } from "sonner";
 import Link from "next/link";
 

@@ -4,15 +4,15 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+} from "@repo/ui/components/ui/dialog"
+import { Input } from "@repo/ui/components/ui/input"
+import { Label } from "@repo/ui/components/ui/label"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Progress } from "@repo/ui/components/ui/progress"
 import { toast } from "sonner"
 import {
 	Code, Users, PenTool, Mail, Github, Code2, Linkedin, Twitter, FileText, Hash, Plus,

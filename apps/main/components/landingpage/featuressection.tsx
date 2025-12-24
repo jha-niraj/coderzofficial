@@ -4,7 +4,7 @@ import {
     BrainCircuit, Code2, GraduationCap, BarChart3, GitMerge, FileCode, ArrowRight
 } from 'lucide-react'
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/ui/button';
 import Link from 'next/link';
 
 const features = [

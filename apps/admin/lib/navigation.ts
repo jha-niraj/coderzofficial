@@ -27,7 +27,9 @@ import {
     Flag,
     Activity,
     Bell,
-    Database
+    Database,
+    User,
+    Lock
 } from "lucide-react"
 
 export interface NavigationItem {
@@ -145,6 +147,8 @@ export const adminNavigation: NavigationConfig = {
             requiredPermission: "admin_management",
             children: [
                 { name: "All Admins", path: "admins", icon: UserCheck },
+                { name: "Access Control", path: "admins/access", icon: Lock },
+                { name: "My Profile", path: "admins/profile", icon: User },
                 { name: "Invitations", path: "admins/invitations", icon: FileText },
                 { name: "Audit Logs", path: "admins/audit", icon: Activity },
             ]

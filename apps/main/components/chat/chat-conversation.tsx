@@ -5,19 +5,19 @@ import {
     getMessages, sendMessage, markMessagesAsRead
 } from "@/actions/(chat)/message.action"
 import { getConversations } from "@/actions/(chat)/conversation.action"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
+import { Input } from "@repo/ui/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar"
+} from "@repo/ui/components/ui/avatar"
 import {
     Send, Image as ImageIcon, Loader2, MoreVertical
 } from "lucide-react"
 import { useSession } from '@repo/auth'
 import { formatDistanceToNow } from "date-fns"
-import { cn } from "../../lib/utils"
-import { toast } from "sonner"
+import { cn } from "@repo/ui/lib/utils"
+import toast from "@repo/ui/components/ui/sonner"
 import { uploadImageToCloudinary } from "@/actions/(common)/shared/upload.action"
 import Image from "next/image"
 

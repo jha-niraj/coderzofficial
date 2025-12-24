@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@repo/ui/components/ui/card"
 import { motion, useAnimationControls } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 

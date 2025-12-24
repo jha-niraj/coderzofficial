@@ -2,31 +2,21 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "../../lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
 import {
-    Play,
-    CheckCircle2,
-    XCircle,
-    ChevronRight,
-    ChevronLeft,
-    Clock,
-    Lightbulb,
-    RefreshCw,
-    Terminal,
-    Code2,
-    FileCode,
+    Card, CardContent, CardHeader, CardTitle, CardDescription
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
+import { cn } from "@repo/ui/lib/utils";
+import {
+    Play, CheckCircle2, XCircle, ChevronRight, ChevronLeft, Clock, Lightbulb,
+    RefreshCw, Terminal, Code2, FileCode
 } from "lucide-react";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+    Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
+} from "@repo/ui/components/ui/tooltip";
 import { DIFFICULTY_CONFIG } from "@/types/assessment";
 import type { QuestionDifficulty, AssessmentQuestionType } from "@prisma/client";
 import dynamic from "next/dynamic";
@@ -136,14 +126,14 @@ export function CodeMode({
 
     // Initialize code with starter code
     useEffect(() => {
-        setCode(currentQuestion.starterCode || "");
+        setCode(currentQuestion?.starterCode || "");
         setOutput(null);
         setTestResults([]);
         setShowResult(false);
         setShowHint(false);
         setQuestionStartTime(Date.now());
         setActiveTab("code");
-    }, [currentIndex, currentQuestion.starterCode]);
+    }, [currentIndex, currentQuestion?.starterCode]);
 
     // Timer effect
     useEffect(() => {
@@ -193,7 +183,7 @@ export function CodeMode({
         setOutput(null);
 
         try {
-            const result = await onRunCode(code, currentQuestion.language);
+            const result = await onRunCode(code, currentQuestion?.language || "JavaScript");
             setOutput(result.error || result.output);
             setActiveTab("output");
         } catch (error) {
@@ -210,13 +200,13 @@ export function CodeMode({
         const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
 
         try {
-            const result = await onSubmitCode(currentQuestion.id, code, timeTaken);
+            const result = await onSubmitCode(currentQuestion?.id || "", code, timeTaken);
 
             const testsPassed = result.testResults.filter((t) => t.passed).length;
             const totalTests = result.testResults.length;
 
             const answer: CodeAnswer = {
-                questionId: currentQuestion.id,
+                questionId: currentQuestion?.id || "",
                 code,
                 isCorrect: result.isCorrect,
                 testsPassed,
@@ -250,24 +240,23 @@ export function CodeMode({
     };
 
     const handleReset = () => {
-        setCode(currentQuestion.starterCode || "");
+        setCode(currentQuestion?.starterCode || "");
         setOutput(null);
         setTestResults([]);
     };
 
     const toggleHint = () => {
-        if (currentQuestion.hints && currentQuestion.hints.length > 0) {
+        if (currentQuestion?.hints && currentQuestion?.hints.length > 0) {
             setShowHint((prev) => !prev);
-            setUsedHints((prev) => new Set(prev).add(currentQuestion.id));
+            setUsedHints((prev) => new Set(prev).add(currentQuestion?.id || ""));
         }
     };
 
-    const difficultyConfig = DIFFICULTY_CONFIG[currentQuestion.difficulty];
-    const visibleTestCases = currentQuestion.testCases.filter((tc) => !tc.isHidden);
+    const difficultyConfig = DIFFICULTY_CONFIG[currentQuestion?.difficulty || "EASY"];
+    const visibleTestCases = currentQuestion?.testCases.filter((tc) => !tc.isHidden) || [];
 
     return (
         <div className="w-full max-w-6xl mx-auto space-y-4">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Badge variant="outline" className={cn(difficultyConfig.bg, difficultyConfig.text)}>
@@ -275,124 +264,127 @@ export function CodeMode({
                     </Badge>
                     <Badge variant="outline">
                         <Code2 className="w-3 h-3 mr-1" />
-                        {currentQuestion.language}
+                        {currentQuestion?.language || "JavaScript"}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
                         Problem {currentIndex + 1} of {questions.length}
                     </span>
                 </div>
-
                 <div className="flex items-center gap-4">
-                    {showTimer && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <Clock className="w-4 h-4" />
-                            <span className={cn(
-                                timeLimit && totalTime > timeLimit * 0.8 && "text-red-500 font-medium"
-                            )}>
-                                {formatTime(timeLimit ? timeLimit - totalTime : totalTime)}
-                            </span>
-                        </div>
-                    )}
-
-                    {onExit && (
-                        <Button variant="ghost" size="sm" onClick={onExit}>
-                            Exit
-                        </Button>
-                    )}
+                    {
+                        showTimer && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <Clock className="w-4 h-4" />
+                                <span className={cn(
+                                    timeLimit && totalTime > timeLimit * 0.8 && "text-red-500 font-medium"
+                                )}>
+                                    {formatTime(timeLimit ? timeLimit - totalTime : totalTime)}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        onExit && (
+                            <Button variant="ghost" size="sm" onClick={onExit}>
+                                Exit
+                            </Button>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Progress */}
-            {showProgress && (
-                <div className="space-y-2">
-                    <Progress value={progress} className="h-2" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{answeredCount} completed</span>
-                        <span>{correctCount} passed</span>
+            {
+                showProgress && (
+                    <div className="space-y-2">
+                        <Progress value={progress} className="h-2" />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{answeredCount} completed</span>
+                            <span>{correctCount} passed</span>
+                        </div>
                     </div>
-                </div>
-            )}
-
+                )
+            }
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Problem Description */}
                 <Card className="lg:row-span-2">
                     <CardHeader>
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
                                 <CardTitle className="text-lg font-medium">
-                                    {currentQuestion.question}
+                                    {currentQuestion?.question || ""}
                                 </CardTitle>
-                                {currentQuestion.points && (
-                                    <CardDescription className="mt-1">
-                                        {currentQuestion.points} points
-                                    </CardDescription>
-                                )}
+                                {
+                                    currentQuestion?.points && (
+                                        <CardDescription className="mt-1">
+                                            {currentQuestion?.points} points
+                                        </CardDescription>
+                                    )
+                                }
                             </div>
-
-                            {allowHints && currentQuestion.hints && currentQuestion.hints.length > 0 && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={toggleHint}
-                                                className={cn(
-                                                    usedHints.has(currentQuestion.id) && "text-amber-500"
-                                                )}
-                                            >
-                                                <Lightbulb className="w-4 h-4" />
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Show hint</TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
+                            {
+                                allowHints && currentQuestion?.hints && currentQuestion?.hints.length > 0 && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={toggleHint}
+                                                    className={cn(
+                                                        usedHints.has(currentQuestion.id) && "text-amber-500"
+                                                    )}
+                                                >
+                                                    <Lightbulb className="w-4 h-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Show hint</TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )
+                            }
                         </div>
                     </CardHeader>
-
                     <CardContent className="space-y-4">
-                        {/* Hint */}
                         <AnimatePresence>
-                            {showHint && currentQuestion.hints && currentQuestion.hints[0] && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
-                                >
-                                    <p className="text-sm text-amber-800 dark:text-amber-200">
-                                        <strong>Hint:</strong> {currentQuestion.hints[0]}
-                                    </p>
-                                </motion.div>
-                            )}
+                            {
+                                showHint && currentQuestion?.hints && currentQuestion?.hints[0] && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+                                    >
+                                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                                            <strong>Hint:</strong> {currentQuestion.hints[0]}
+                                        </p>
+                                    </motion.div>
+                                )
+                            }
                         </AnimatePresence>
-
-                        {/* Test Cases */}
                         <div className="space-y-3">
                             <h4 className="text-sm font-medium">Example Test Cases</h4>
-                            {visibleTestCases.slice(0, 3).map((tc, idx) => (
-                                <div key={idx} className="p-3 bg-muted rounded-lg text-sm font-mono">
-                                    <div className="flex gap-2">
-                                        <span className="text-muted-foreground">Input:</span>
-                                        <span>{tc.input}</span>
+                            {
+                                visibleTestCases.slice(0, 3).map((tc, idx) => (
+                                    <div key={idx} className="p-3 bg-muted rounded-lg text-sm font-mono">
+                                        <div className="flex gap-2">
+                                            <span className="text-muted-foreground">Input:</span>
+                                            <span>{tc.input}</span>
+                                        </div>
+                                        <div className="flex gap-2 mt-1">
+                                            <span className="text-muted-foreground">Expected:</span>
+                                            <span>{tc.expectedOutput}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-2 mt-1">
-                                        <span className="text-muted-foreground">Expected:</span>
-                                        <span>{tc.expectedOutput}</span>
-                                    </div>
-                                </div>
-                            ))}
-                            {currentQuestion.testCases.some((tc) => tc.isHidden) && (
-                                <p className="text-xs text-muted-foreground">
-                                    + {currentQuestion.testCases.filter((tc) => tc.isHidden).length} hidden test cases
-                                </p>
-                            )}
+                                ))
+                            }
+                            {
+                                currentQuestion?.testCases.some((tc) => tc.isHidden) && (
+                                    <p className="text-xs text-muted-foreground">
+                                        + {currentQuestion.testCases.filter((tc) => tc.isHidden).length} hidden test cases
+                                    </p>
+                                )
+                            }
                         </div>
                     </CardContent>
                 </Card>
-
-                {/* Code Editor & Output */}
                 <div className="space-y-4">
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
                         <div className="flex items-center justify-between">
@@ -410,7 +402,6 @@ export function CodeMode({
                                     Tests
                                 </TabsTrigger>
                             </TabsList>
-
                             <div className="flex items-center gap-2">
                                 <TooltipProvider>
                                     <Tooltip>
@@ -424,76 +415,79 @@ export function CodeMode({
                                 </TooltipProvider>
                             </div>
                         </div>
-
                         <TabsContent value="code" className="mt-4">
                             <div className="h-[400px] border rounded-lg overflow-hidden">
                                 <CodeEditor
-                                    language={currentQuestion.language.toLowerCase()}
+                                    language={currentQuestion?.language?.toLowerCase() || "javascript"}
                                     forceCode={code}
-                                    initialCode={currentQuestion.starterCode || ""}
+                                    initialCode={currentQuestion?.starterCode || ""}
                                     onChange={(value) => setCode(value || "")}
                                     height="400px"
                                 />
                             </div>
                         </TabsContent>
-
                         <TabsContent value="output" className="mt-4">
                             <div className="h-[400px] bg-zinc-900 text-zinc-100 p-4 rounded-lg font-mono text-sm overflow-auto">
-                                {output ? (
-                                    <pre>{output}</pre>
-                                ) : (
-                                    <span className="text-zinc-500">
-                                        Run your code to see output here...
-                                    </span>
-                                )}
+                                {
+                                    output ? (
+                                        <pre>{output}</pre>
+                                    ) : (
+                                        <span className="text-zinc-500">
+                                            Run your code to see output here...
+                                        </span>
+                                    )
+                                }
                             </div>
                         </TabsContent>
-
                         <TabsContent value="tests" className="mt-4">
                             <div className="h-[400px] bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-auto space-y-3">
-                                {testResults.length > 0 ? (
-                                    testResults.map((result, idx) => (
-                                        <div
-                                            key={idx}
-                                            className={cn(
-                                                "p-3 rounded-lg border",
-                                                result.passed
-                                                    ? "bg-green-900/20 border-green-700"
-                                                    : "bg-red-900/20 border-red-700"
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-2 mb-2">
-                                                {result.passed ? (
-                                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                                ) : (
-                                                    <XCircle className="w-4 h-4 text-red-500" />
+                                {
+                                    testResults.length > 0 ? (
+                                        testResults.map((result, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={cn(
+                                                    "p-3 rounded-lg border",
+                                                    result.passed
+                                                        ? "bg-green-900/20 border-green-700"
+                                                        : "bg-red-900/20 border-red-700"
                                                 )}
-                                                <span className="font-medium">
-                                                    Test Case {idx + 1}
-                                                </span>
+                                            >
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    {
+                                                        result.passed ? (
+                                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                        ) : (
+                                                            <XCircle className="w-4 h-4 text-red-500" />
+                                                        )
+                                                    }
+                                                    <span className="font-medium">
+                                                        Test Case {idx + 1}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs space-y-1 font-mono">
+                                                    <div>Input: {result.input}</div>
+                                                    <div>Expected: {result.expectedOutput}</div>
+                                                    <div>Got: {result.actualOutput}</div>
+                                                    {
+                                                        result.error && (
+                                                            <div className="text-red-400">Error: {result.error}</div>
+                                                        )
+                                                    }
+                                                </div>
                                             </div>
-                                            <div className="text-xs space-y-1 font-mono">
-                                                <div>Input: {result.input}</div>
-                                                <div>Expected: {result.expectedOutput}</div>
-                                                <div>Got: {result.actualOutput}</div>
-                                                {result.error && (
-                                                    <div className="text-red-400">Error: {result.error}</div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <span className="text-zinc-500">
-                                        Submit your code to see test results...
-                                    </span>
-                                )}
+                                        ))
+                                    ) : (
+                                        <span className="text-zinc-500">
+                                            Submit your code to see test results...
+                                        </span>
+                                    )
+                                }
                             </div>
                         </TabsContent>
                     </Tabs>
                 </div>
             </div>
-
-            {/* Actions */}
             <div className="flex items-center justify-between pt-4 border-t">
                 <Button
                     variant="outline"
@@ -503,89 +497,96 @@ export function CodeMode({
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     Previous
                 </Button>
-
                 <div className="flex items-center gap-2">
-                    {onRunCode && (
-                        <Button
-                            variant="outline"
-                            onClick={handleRunCode}
-                            disabled={isRunning || !code.trim()}
-                        >
-                            <Play className="w-4 h-4 mr-2" />
-                            {isRunning ? "Running..." : "Run Code"}
-                        </Button>
-                    )}
-
-                    {!showResult ? (
-                        <Button
-                            onClick={handleSubmitCode}
-                            disabled={isSubmitting || !code.trim()}
-                        >
-                            {isSubmitting ? "Submitting..." : "Submit Solution"}
-                        </Button>
-                    ) : (
-                        <Button onClick={handleNext}>
-                            {currentIndex < questions.length - 1 ? (
-                                <>
-                                    Next Problem
-                                    <ChevronRight className="w-4 h-4 ml-2" />
-                                </>
-                            ) : (
-                                "Complete"
-                            )}
-                        </Button>
-                    )}
+                    {
+                        onRunCode && (
+                            <Button
+                                variant="outline"
+                                onClick={handleRunCode}
+                                disabled={isRunning || !code.trim()}
+                            >
+                                <Play className="w-4 h-4 mr-2" />
+                                {isRunning ? "Running..." : "Run Code"}
+                            </Button>
+                        )
+                    }
+                    {
+                        !showResult ? (
+                            <Button
+                                onClick={handleSubmitCode}
+                                disabled={isSubmitting || !code.trim()}
+                            >
+                                {isSubmitting ? "Submitting..." : "Submit Solution"}
+                            </Button>
+                        ) : (
+                            <Button onClick={handleNext}>
+                                {
+                                    currentIndex < questions.length - 1 ? (
+                                        <>
+                                            Next Problem
+                                            <ChevronRight className="w-4 h-4 ml-2" />
+                                        </>
+                                    ) : (
+                                        "Complete"
+                                    )
+                                }
+                            </Button>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Result Summary */}
             <AnimatePresence>
-                {showResult && testResults.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                    >
-                        <Card className={cn(
-                            "border-2",
-                            testResults.every((t) => t.passed)
-                                ? "border-green-500 bg-green-50 dark:bg-green-900/10"
-                                : "border-orange-500 bg-orange-50 dark:bg-orange-900/10"
-                        )}>
-                            <CardContent className="py-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        {testResults.every((t) => t.passed) ? (
-                                            <CheckCircle2 className="w-6 h-6 text-green-500" />
-                                        ) : (
-                                            <XCircle className="w-6 h-6 text-orange-500" />
-                                        )}
-                                        <div>
-                                            <p className="font-medium">
-                                                {testResults.filter((t) => t.passed).length} / {testResults.length} test cases passed
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {testResults.every((t) => t.passed)
-                                                    ? "Great job! All tests passed."
-                                                    : "Some tests failed. Review your solution."}
-                                            </p>
+                {
+                    showResult && testResults.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                        >
+                            <Card className={cn(
+                                "border-2",
+                                testResults.every((t) => t.passed)
+                                    ? "border-green-500 bg-green-50 dark:bg-green-900/10"
+                                    : "border-orange-500 bg-orange-50 dark:bg-orange-900/10"
+                            )}>
+                                <CardContent className="py-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            {
+                                                testResults.every((t) => t.passed) ? (
+                                                    <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                                ) : (
+                                                    <XCircle className="w-6 h-6 text-orange-500" />
+                                                )
+                                            }
+                                            <div>
+                                                <p className="font-medium">
+                                                    {testResults.filter((t) => t.passed).length} / {testResults.length} test cases passed
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {testResults.every((t) => t.passed)
+                                                        ? "Great job! All tests passed."
+                                                        : "Some tests failed. Review your solution."}
+                                                </p>
+                                            </div>
                                         </div>
+                                        {
+                                            context === "practice" && currentQuestion?.solutionCode && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setCode(currentQuestion.solutionCode || "")}
+                                                >
+                                                    View Solution
+                                                </Button>
+                                            )
+                                        }
                                     </div>
-
-                                    {context === "practice" && currentQuestion.solutionCode && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCode(currentQuestion.solutionCode || "")}
-                                        >
-                                            View Solution
-                                        </Button>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    )
+                }
             </AnimatePresence>
         </div>
     );

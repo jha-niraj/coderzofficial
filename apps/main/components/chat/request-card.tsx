@@ -6,11 +6,13 @@ import {
 } from "@/actions/(main)/community/follow.action"
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Check, X, Clock, UserCheck, UserX } from "lucide-react"
-import { toast } from "sonner"
+} from "@repo/ui/components/ui/avatar"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { 
+    Check, X, Clock, UserCheck, UserX 
+} from "lucide-react"
+import toast from "@repo/ui/components/ui/sonner"
 import { useRouter } from "next/navigation"
 
 type User = {

@@ -10,12 +10,12 @@ import {
     XCircle, Lightbulb, Play, Code2, HelpCircle, Zap,
     ChevronRight, ChevronLeft, X, ExternalLink, PlayCircle
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { Input } from '@repo/ui/components/ui/input'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
 import {
     Sheet,
     SheetContent,
@@ -23,7 +23,7 @@ import {
     SheetHeader,
     SheetTitle,
     SheetTrigger,
-} from '@/components/ui/sheet'
+} from '@repo/ui/components/ui/sheet'
 import {
     Accordion,
     AccordionContent,
@@ -31,8 +31,8 @@ import {
     AccordionTrigger,
 } from '@/components/ui/accordion'
 import { submitForgeStep, revealForgeHint } from '@/actions/(main)/challenges/forge.action'
-import { toast } from 'sonner'
-import { cn } from '../../lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
+import { cn } from '@repo/ui/lib/utils'
 
 interface LearningModule {
     id: string

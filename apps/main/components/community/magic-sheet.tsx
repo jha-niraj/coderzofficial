@@ -6,11 +6,11 @@ import {
     Plus, MessageCircle, HelpCircle, FileText, Users, Mic, BarChart3,
     GraduationCap, Code2, Video, Calendar, Lightbulb, Rocket
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
-} from '@/components/ui/sheet'
-import { cn } from '../../lib/utils'
+} from '@repo/ui/components/ui/sheet'
+import { cn } from '@repo/ui/lib/utils'
 
 interface MagicSheetProps {
     communityId?: string
@@ -165,7 +165,7 @@ export function QuickActionsBar({ communityId }: { communityId?: string }) {
     return (
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {
-                QUICK_ACTIONS[0].items.slice(0, 4).map((item) => {
+                QUICK_ACTIONS[0]?.items?.slice(0, 4).map((item) => {
                     const Icon = item.icon
                     return (
                         <Button

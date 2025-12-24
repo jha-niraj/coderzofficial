@@ -10,7 +10,7 @@ import Sidebar, {
 import { WifiOff, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { cn } from '../../lib/utils';
+import { cn } from '@repo/ui/lib/utils';
 
 interface LayoutProps {
     children: React.ReactNode
@@ -23,15 +23,15 @@ const MainContent = ({ children, routes }: { children: React.ReactNode; routes: 
     return (
         <>
             <Sidebar routes={routes} />
-            <div className="flex flex-col flex-1 min-h-screen bg-neutral-100 dark:bg-neutral-900">
+            <div className="flex flex-col flex-1 h-screen overflow-hidden bg-neutral-100 dark:bg-neutral-900">
                 <main className={cn(
-                    "transition-all duration-300 min-h-screen",
+                    "transition-all duration-300 h-screen",
                     "ml-0",
                     isCollapsed ? "md:ml-[70px]" : "md:ml-[200px]"
                 )}>
                     {/* Content Container with Border Effect - matching admin layout */}
-                    <div className="min-h-screen bg-white dark:bg-neutral-950 md:rounded-l-3xl md:border-l border-neutral-200 dark:border-neutral-800 shadow-xl">
-                        <div className="h-full w-full overflow-y-auto p-4 md:p-6">
+                    <div className="h-screen bg-white dark:bg-neutral-950 md:rounded-l-3xl md:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
+                        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent p-4 md:p-6">
                             {children}
                         </div>
                     </div>

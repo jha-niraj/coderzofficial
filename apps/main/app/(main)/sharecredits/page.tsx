@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { 
     Search, ArrowRight, Sparkles, History, UserX, Loader2
 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@repo/ui/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent } from "@repo/ui/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useUserStore } from "@/app/store/useUserStore"
 import BenefitsSection from "./_components/benefits-section"
@@ -17,7 +17,7 @@ import TransferDialog from "./_components/transfer-dialog"
 import SmoothScroll from "@/components/smoothscroll"
 import { searchUsers } from "@/actions/(main)/user/user.action"
 import { getTransferHistory } from "@/actions/(main)/subscription/credits.action"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@repo/ui/components/ui/badge"
 
 const LoadingSpinner = () => (
     <div className="flex flex-col items-center justify-center py-12">

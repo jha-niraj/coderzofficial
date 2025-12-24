@@ -2,8 +2,8 @@
 
 import type React from "react"
 import { useState, useRef, useEffect, Suspense } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
+import { Input } from "@repo/ui/components/ui/input"
 import {
 	CheckCircle2, RefreshCw, ShieldCheck, Loader2
 } from "lucide-react"

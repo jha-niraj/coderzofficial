@@ -4,11 +4,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+} from "@repo/ui/components/ui/card";
+import { Label } from "@repo/ui/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@repo/ui/components/ui/button";
+import { Separator } from "@repo/ui/components/ui/separator";
 import {
     Filter, SlidersHorizontal, RotateCcw
 } from "lucide-react";

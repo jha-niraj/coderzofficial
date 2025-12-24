@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
+import { Card } from "@repo/ui/components/ui/card";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import {
     Zap, TrendingUp, Coins, Flame, Sparkles
 } from "lucide-react";

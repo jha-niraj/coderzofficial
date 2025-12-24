@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 import {
     Sparkles, FileText, Brain, Image as ImageIcon, MessageCircle, Code, Save,
     Layers, GraduationCap, CheckCircle2, Zap

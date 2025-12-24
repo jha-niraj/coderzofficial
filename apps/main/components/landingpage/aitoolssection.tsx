@@ -6,8 +6,8 @@ import {
     Briefcase, LayoutTemplate, GitPullRequest, ShieldCheck,
     ScanSearch, BrainCircuit, ArrowRight, Lock, Sparkles, Clock
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 
 const tools = [
     {

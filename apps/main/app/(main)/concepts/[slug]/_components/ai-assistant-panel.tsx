@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 import {
     X, Send, Sparkles, Loader2, Bot, User
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar";
 import { ConceptStepType } from "@prisma/client";
 
 interface ConceptStep {

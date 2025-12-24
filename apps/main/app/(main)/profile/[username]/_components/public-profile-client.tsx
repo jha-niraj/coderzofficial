@@ -3,22 +3,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ProfileHeader,
-    ProfileTabs,
-    ProfileSidebar,
-    OverviewTab,
-    SkillsTab,
-    ProjectsTab,
-    ActivityTab,
-    ResumeTab,
-    AboutTab,
-    ShareProfileModal,
-    type ProfileTab,
+    ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, SkillsTab, 
+    ProjectsTab, ActivityTab, ResumeTab, AboutTab, ShareProfileModal,
+    type ProfileTab
 } from "@/components/profile";
 import { trackProfileView } from "@/actions/(main)/user/profile.action";
 import { toggleFollow } from "@/actions/(main)/community/follow.action";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface PublicProfileClientProps {
     user: any;

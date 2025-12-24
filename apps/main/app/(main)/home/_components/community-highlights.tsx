@@ -3,11 +3,11 @@
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import {
     Users, Heart, MessageCircle, ArrowRight, Sparkles
 } from "lucide-react";

@@ -4,14 +4,14 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle
-} from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+} from "@repo/ui/components/ui/sheet"
+import { Button } from "@repo/ui/components/ui/button"
+import { Input } from "@repo/ui/components/ui/input"
+import { Label } from "@repo/ui/components/ui/label"
+import { Separator } from "@repo/ui/components/ui/separator"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+} from "@repo/ui/components/ui/select"
 import { X, Plus, Loader, CalendarIcon } from "lucide-react"
 import { useUserStore } from "@/app/store/useUserStore"
 import { UserSkill, UserCertification } from "@/types/user"
@@ -21,7 +21,7 @@ import {
     Popover, PopoverContent, PopoverTrigger
 } from "@/components/ui/popover"
 import { format } from "date-fns"
-import { cn } from "../../lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 
 interface SkillsAndCertificationsSheetProps {
     open: boolean

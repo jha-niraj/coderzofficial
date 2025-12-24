@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 import { Users, Loader2 } from "lucide-react";
 import { joinChallenge } from "@/actions/(main)/collective/challenge.actions";
 import { toast } from "sonner";

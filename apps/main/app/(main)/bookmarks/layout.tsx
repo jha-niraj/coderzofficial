@@ -8,8 +8,8 @@ import {
     Bookmark, Lightbulb, FolderKanban, MessageSquare, GraduationCap,
     LayoutDashboard, ChevronLeft, ChevronRight, Sparkles, LucideIcon
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "../../lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
+import { cn } from "@repo/ui/lib/utils";
 import { getBookmarksSummary } from "@/actions/(main)/bookmarks/bookmarks.action";
 
 interface SidebarLink {

@@ -7,23 +7,23 @@ import {
     Play, ChevronRight, ChevronDown, RotateCcw, Zap, Brain, Trophy, ListChecks
 } from 'lucide-react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent
-} from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
+} from '@repo/ui/components/ui/card'
+import { Progress } from '@repo/ui/components/ui/progress'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
-} from '@/components/ui/dialog'
-import { Separator } from '@/components/ui/separator'
-import { cn } from '../../lib/utils'
-import { toast } from 'sonner'
+} from '@repo/ui/components/ui/dialog'
+import { Separator } from '@repo/ui/components/ui/separator'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
 import { updateTaskStatus } from '@/actions/(main)/projects/project.action'
 import { checkTaskDetailExists, generateTaskDetail, getTaskDetail } from '@/actions/(main)/projects/task-details.action'
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from '@/components/ui/tooltip'
+} from '@repo/ui/components/ui/tooltip'
 
 // ============================================================================
 // Types

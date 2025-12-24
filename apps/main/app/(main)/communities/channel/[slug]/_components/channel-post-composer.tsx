@@ -3,15 +3,15 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { X, Send, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Textarea } from '@repo/ui/components/ui/textarea'
 import {
     Avatar, AvatarFallback, AvatarImage
-} from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+} from '@repo/ui/components/ui/avatar'
+import { Badge } from '@repo/ui/components/ui/badge'
 import { createChannelPost } from '@/actions/(main)/community/channel.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 interface ChannelPostComposerProps {
     channel: string

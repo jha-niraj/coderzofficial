@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useOptimistic } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
 import { ThumbsUp, ThumbsDown, Users } from "lucide-react";
 import { voteOnProposal } from "@/actions/(main)/collective/proposal.actions";
 import { toast } from "sonner";

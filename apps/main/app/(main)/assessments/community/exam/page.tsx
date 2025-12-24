@@ -7,21 +7,21 @@ import {
     Search, Filter, Award, Clock, Users, Heart, Eye, Code2, CheckCircle2,
     MessageSquare, Shuffle, Loader2, SlidersHorizontal
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent, CardFooter, CardHeader
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@repo/ui/components/ui/select";
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger
-} from "@/components/ui/sheet";
+} from "@repo/ui/components/ui/sheet";
 import { getPublicExamSets } from "@/actions/(main)/assessments/user-sets.action";
 import type { ExamSetPreview } from "@/types/assessment";
 import {

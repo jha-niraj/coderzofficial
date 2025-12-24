@@ -8,12 +8,12 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import { Badge } from '@repo/ui/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { searchSimilarProjects } from '@/actions/(main)/projects/project.action'
 import { ProjectEchoSchema } from '@/actions/(main)/schemas/projects.schema'
 import {
@@ -23,7 +23,7 @@ import {
 import { ProjectCard } from '@/components/projects/project-card'
 import { GenerationProgressDialog } from '@/components/projects/generation-progress-dialog'
 import { z } from 'zod'
-import { cn } from '../../lib/utils'
+import { cn } from '@repo/ui/lib/utils'
 import { ProjectV2Basic } from '@/types/project'
 
 type FormData = z.infer<typeof ProjectEchoSchema>

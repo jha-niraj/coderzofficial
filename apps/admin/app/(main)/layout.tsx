@@ -1,8 +1,10 @@
 "use client"
 
-import { SidebarProvider, useSidebar } from "@/components/navigation/sidebarprovider"
+import { 
+    SidebarProvider, useSidebar 
+} from "@/components/navigation/sidebarprovider"
 import { AdminSidebar } from "@/components/navigation/sidebar"
-import { cn } from "@/lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 import { useSession } from "@repo/auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -33,20 +35,20 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900">
+        <div className="h-screen overflow-hidden bg-neutral-100 dark:bg-neutral-900">
             <AdminSidebar />
             
-            {/* Main Content Area */}
             <main
                 className={cn(
-                    "min-h-screen transition-all duration-300",
+                    "h-screen transition-all duration-300",
                     "lg:ml-64",
                     isCollapsed && "lg:ml-[90px]"
                 )}
             >
-                {/* Content Container with Border Effect */}
-                <div className="min-h-screen bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl">
-                    {children}
+                <div className="h-screen bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
+                    <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+                        {children}
+                    </div>
                 </div>
             </main>
         </div>

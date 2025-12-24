@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import {
     Brain, Sparkles, TrendingUp, Trophy, Users, Zap, ArrowRight, Plus, Target,
     Clock, Star, Mic, Award, Timer, ChevronRight, Shield
@@ -19,7 +19,7 @@ import {
     getAdminMocksByCategory, getFeaturedAdminMocks, getFeaturedPublicMocks
 } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES } from './_constants/mock-categories'
-import { cn } from '../../lib/utils'
+import { cn } from '@repo/ui/lib/utils'
 
 const stats = [
     { icon: <Users className="w-5 h-5" />, value: '15K+', label: 'Completed', icon2: Trophy },

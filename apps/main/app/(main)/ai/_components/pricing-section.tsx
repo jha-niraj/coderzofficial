@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@repo/ui/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Check } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui/components/ui/select"
 
 const flexiPackPlans = [
     { title: "1 Interview Pack", description: "Ace your next interview.", priceINR: "₹500", priceUSD: "$6" },

@@ -4,22 +4,22 @@ import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+} from "@repo/ui/components/ui/dialog";
+import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { Label } from "@repo/ui/components/ui/label";
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs";
+} from "@repo/ui/components/ui/tabs";
 import {
     User, Camera, Briefcase, MapPin, Globe, Loader2, Check, ImageIcon, Sparkles
 } from "lucide-react";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import { useUserStore } from "@/app/store/useUserStore";
 import { updateProfileSettings } from "@/actions/(main)/user/profile.action";
 import Image from "next/image";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 
 interface EditProfileModalProps {
     isOpen: boolean;

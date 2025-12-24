@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/ui/dialog";
 import {
     ImageIcon, Share, Download, Copy, Twitter, Linkedin, Plus, Calendar, Eye,
     TrendingUp, Shield, ExternalLink, Sparkles, MoreVertical, Heart, Zap, Code2, X

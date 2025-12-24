@@ -1,32 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Card } from "@repo/ui/components/ui/card"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-} from "@/components/ui/sheet"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
+} from '@repo/ui/components/ui/sheet'
+import {
+    Avatar, AvatarFallback, AvatarImage
+} from "@repo/ui/components/ui/avatar"
 import { formatDistanceToNow } from "date-fns"
 import {
-    Lightbulb,
-    Eye,
-    Plus,
-    CheckCircle,
-    XCircle,
-    Clock,
-    ListTodo,
-    Crown,
-    Users2,
-    User,
+    Lightbulb, Eye, Plus, CheckCircle, ListTodo, Crown, Users2, User
 } from "lucide-react"
-import { addSuggestionToTasks, updateSuggestionStatus, adoptSuggestionToMyTasks, adoptVisitorSuggestionToTasks } from "@/actions/(main)/projects/feature-suggestions.action"
-import { toast } from "sonner"
+import {
+    addSuggestionToTasks, updateSuggestionStatus, adoptSuggestionToMyTasks,
+    adoptVisitorSuggestionToTasks
+} from "@/actions/(main)/projects/feature-suggestions.action"
+import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
 
 interface Suggestion {
@@ -322,8 +314,6 @@ export function FeatureSuggestionsList({
                                             />
                                         )
                                     }
-
-                                    {/* Type, Status, and Source */}
                                     <div className="flex flex-wrap gap-2">
                                         <Badge className={getTypeColor(selectedSuggestion.type)} variant="outline">
                                             {selectedSuggestion.type.replace("_", " ")}
@@ -333,142 +323,155 @@ export function FeatureSuggestionsList({
                                         </Badge>
                                         {getSuggestionSourceBadge(selectedSuggestion.suggestedBy)}
                                     </div>
-
-                                    {/* Description */}
                                     <div>
                                         <h3 className="font-semibold mb-2">Description</h3>
                                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                                             {selectedSuggestion.description}
                                         </p>
                                     </div>
-
-                                    {/* Tags */}
-                                    {selectedSuggestion.tags.length > 0 && (
-                                        <div>
-                                            <h3 className="font-semibold mb-2">Tags</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {selectedSuggestion.tags.map((tag) => (
-                                                    <Badge key={tag} variant="secondary">
-                                                        {tag}
-                                                    </Badge>
-                                                ))}
+                                    {
+                                        selectedSuggestion.tags.length > 0 && (
+                                            <div>
+                                                <h3 className="font-semibold mb-2">Tags</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {
+                                                        selectedSuggestion.tags.map((tag) => (
+                                                            <Badge key={tag} variant="secondary">
+                                                                {tag}
+                                                            </Badge>
+                                                        ))
+                                                    }
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-
-                                    {/* Actions for Creator - Only for Creator/Enrolled suggestions to adopt */}
-                                    {isCreator && (selectedSuggestion.suggestedBy === "CREATOR" || selectedSuggestion.suggestedBy === "ENROLLED_USER") && selectedSuggestion.addedToTasks && selectedSuggestion.task && (
-                                        <div className="space-y-3 pt-4 border-t">
-                                            <h3 className="font-semibold">Add to My Tasks</h3>
-                                            {!selectedSuggestion.adoptedByCurrentUser ? (
+                                        )
+                                    }
+                                    {
+                                        isCreator && (selectedSuggestion.suggestedBy === "CREATOR" || selectedSuggestion.suggestedBy === "ENROLLED_USER") && selectedSuggestion.addedToTasks && selectedSuggestion.task && (
+                                            <div className="space-y-3 pt-4 border-t">
+                                                <h3 className="font-semibold">Add to My Tasks</h3>
+                                                {
+                                                    !selectedSuggestion.adoptedByCurrentUser ? (
+                                                        <div className="space-y-2">
+                                                            <p className="text-sm text-muted-foreground">
+                                                                This suggestion has been added as a task. You can add it to your task list.
+                                                            </p>
+                                                            <Button
+                                                                onClick={() => handleAdoptToMyTasks(selectedSuggestion.id)}
+                                                                disabled={loading === selectedSuggestion.id}
+                                                                className="w-full gap-2"
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                                Add to My Tasks
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 p-3 rounded-lg">
+                                                            <CheckCircle className="h-4 w-4" />
+                                                            This task is already in your list
+                                                        </div>
+                                                    )
+                                                }
+                                                {
+                                                    selectedSuggestion.addedByUsers.length > 0 && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {selectedSuggestion.addedByUsers.length} {selectedSuggestion.addedByUsers.length === 1 ? 'user has' : 'users have'} added this task
+                                                        </p>
+                                                    )
+                                                }
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        (isEnrolled || isCreator) && selectedSuggestion.suggestedBy === "VISITOR" && (
+                                            <div className="space-y-3 pt-4 border-t">
+                                                <h3 className="font-semibold">Visitor Suggestion</h3>
                                                 <div className="space-y-2">
                                                     <p className="text-sm text-muted-foreground">
-                                                        This suggestion has been added as a task. You can add it to your task list.
+                                                        This is a community suggestion. You can add it to your own task list if you find it useful.
                                                     </p>
-                                                    <Button
-                                                        onClick={() => handleAdoptToMyTasks(selectedSuggestion.id)}
-                                                        disabled={loading === selectedSuggestion.id}
-                                                        className="w-full gap-2"
-                                                    >
-                                                        <Plus className="h-4 w-4" />
-                                                        Add to My Tasks
-                                                    </Button>
+                                                    {
+                                                        !selectedSuggestion.adoptedByCurrentUser ? (
+                                                            <Button
+                                                                onClick={() => handleAdoptVisitorSuggestion(selectedSuggestion.id)}
+                                                                disabled={loading === selectedSuggestion.id}
+                                                                className="w-full gap-2"
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                                Add to My Tasks
+                                                            </Button>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 p-3 rounded-lg">
+                                                                <CheckCircle className="h-4 w-4" />
+                                                                This task is already in your list
+                                                            </div>
+                                                        )
+                                                    }
+                                                    {
+                                                        selectedSuggestion.addedByUsers.length > 0 && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {selectedSuggestion.addedByUsers.length} {selectedSuggestion.addedByUsers.length === 1 ? 'user has' : 'users have'} added this to their tasks
+                                                            </p>
+                                                        )
+                                                    }
                                                 </div>
-                                            ) : (
-                                                <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 p-3 rounded-lg">
-                                                    <CheckCircle className="h-4 w-4" />
-                                                    This task is already in your list
-                                                </div>
-                                            )}
-                                            {selectedSuggestion.addedByUsers.length > 0 && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    {selectedSuggestion.addedByUsers.length} {selectedSuggestion.addedByUsers.length === 1 ? 'user has' : 'users have'} added this task
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Actions for Enrolled Users (including creator) - Visitor suggestions */}
-                                    {(isEnrolled || isCreator) && selectedSuggestion.suggestedBy === "VISITOR" && (
-                                        <div className="space-y-3 pt-4 border-t">
-                                            <h3 className="font-semibold">Visitor Suggestion</h3>
-                                            <div className="space-y-2">
-                                                <p className="text-sm text-muted-foreground">
-                                                    This is a community suggestion. You can add it to your own task list if you find it useful.
-                                                </p>
-                                                {!selectedSuggestion.adoptedByCurrentUser ? (
-                                                    <Button
-                                                        onClick={() => handleAdoptVisitorSuggestion(selectedSuggestion.id)}
-                                                        disabled={loading === selectedSuggestion.id}
-                                                        className="w-full gap-2"
-                                                    >
-                                                        <Plus className="h-4 w-4" />
-                                                        Add to My Tasks
-                                                    </Button>
-                                                ) : (
-                                                    <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 p-3 rounded-lg">
-                                                        <CheckCircle className="h-4 w-4" />
-                                                        This task is already in your list
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        isEnrolled && !isCreator && selectedSuggestion.addedToTasks && selectedSuggestion.task && (
+                                            <div className="space-y-3 pt-4 border-t">
+                                                <h3 className="font-semibold">Add to My Tasks</h3>
+                                                {
+                                                    !selectedSuggestion.adoptedByCurrentUser ? (
+                                                        <div className="space-y-2">
+                                                            <p className="text-sm text-muted-foreground">
+                                                                This suggestion has been added as a task. You can add it to your task list.
+                                                            </p>
+                                                            <Button
+                                                                onClick={() => handleAdoptToMyTasks(selectedSuggestion.id)}
+                                                                disabled={loading === selectedSuggestion.id}
+                                                                className="w-full gap-2"
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                                Add to My Tasks
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 p-3 rounded-lg">
+                                                            <CheckCircle className="h-4 w-4" />
+                                                            This task is already in your list
+                                                        </div>
+                                                    )
+                                                }
+                                                {
+                                                    selectedSuggestion.addedByUsers.length > 0 && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {selectedSuggestion.addedByUsers.length} {selectedSuggestion.addedByUsers.length === 1 ? 'user has' : 'users have'} added this task
+                                                        </p>
+                                                    )
+                                                }
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        !isEnrolled && !isCreator && (selectedSuggestion.suggestedBy === "CREATOR" || selectedSuggestion.suggestedBy === "ENROLLED_USER") && (
+                                            <div className="pt-4 border-t">
+                                                <div className="flex items-start gap-2 text-sm text-blue-500 bg-blue-500/10 p-3 rounded-lg">
+                                                    <Lightbulb className="h-4 w-4 mt-0.5" />
+                                                    <div>
+                                                        <p className="font-medium">Enroll to access this task</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            This suggestion was added as a task by {selectedSuggestion.suggestedBy === "CREATOR" ? "the creator" : "an enrolled user"}. Enroll in the project to add it to your task list.
+                                                        </p>
                                                     </div>
-                                                )}
-                                                {selectedSuggestion.addedByUsers.length > 0 && (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {selectedSuggestion.addedByUsers.length} {selectedSuggestion.addedByUsers.length === 1 ? 'user has' : 'users have'} added this to their tasks
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Actions for Enrolled Users */}
-                                    {isEnrolled && !isCreator && selectedSuggestion.addedToTasks && selectedSuggestion.task && (
-                                        <div className="space-y-3 pt-4 border-t">
-                                            <h3 className="font-semibold">Add to My Tasks</h3>
-                                            {!selectedSuggestion.adoptedByCurrentUser ? (
-                                                <div className="space-y-2">
-                                                    <p className="text-sm text-muted-foreground">
-                                                        This suggestion has been added as a task. You can add it to your task list.
-                                                    </p>
-                                                    <Button
-                                                        onClick={() => handleAdoptToMyTasks(selectedSuggestion.id)}
-                                                        disabled={loading === selectedSuggestion.id}
-                                                        className="w-full gap-2"
-                                                    >
-                                                        <Plus className="h-4 w-4" />
-                                                        Add to My Tasks
-                                                    </Button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 p-3 rounded-lg">
-                                                    <CheckCircle className="h-4 w-4" />
-                                                    This task is already in your list
-                                                </div>
-                                            )}
-                                            {selectedSuggestion.addedByUsers.length > 0 && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    {selectedSuggestion.addedByUsers.length} {selectedSuggestion.addedByUsers.length === 1 ? 'user has' : 'users have'} added this task
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Info for visitors about creator/enrolled suggestions */}
-                                    {!isEnrolled && !isCreator && (selectedSuggestion.suggestedBy === "CREATOR" || selectedSuggestion.suggestedBy === "ENROLLED_USER") && (
-                                        <div className="pt-4 border-t">
-                                            <div className="flex items-start gap-2 text-sm text-blue-500 bg-blue-500/10 p-3 rounded-lg">
-                                                <Lightbulb className="h-4 w-4 mt-0.5" />
-                                                <div>
-                                                    <p className="font-medium">Enroll to access this task</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        This suggestion was added as a task by {selectedSuggestion.suggestedBy === "CREATOR" ? "the creator" : "an enrolled user"}. Enroll in the project to add it to your task list.
-                                                    </p>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )
+                                    }
                                 </div>
                             </>
-                        )}
+                        )
+                    }
                 </SheetContent>
             </Sheet>
         </>

@@ -8,22 +8,22 @@ import {
     ArrowLeft, ArrowRight, BookOpen, Code, Copy, GitBranch, Terminal,
     Check, X, AlertCircle, Loader2, CheckCircle, Clock
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from '@/components/ui/tabs'
-import { cn } from '../../lib/utils'
+} from '@repo/ui/components/ui/tabs'
+import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
     getLearnModule, completeLesson
 } from '@/actions/(main)/opensource'
-import { toast } from 'sonner'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import toast from '@repo/ui/components/ui/sonner'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 

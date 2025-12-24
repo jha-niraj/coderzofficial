@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
 	FileQuestion, CheckCircle, XCircle, ChevronRight, RotateCcw, Trophy, Clock
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "../../lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { cn } from "@repo/ui/lib/utils";
 import { submitQuizAttempt } from "@/actions/(main)/studios/studio.action";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface QuizQuestion {
 	id: string;
@@ -51,14 +51,14 @@ export default function StudioQuizBlock({ quiz, topic }: StudioQuizBlockProps) {
 	const questions = quiz.questions as QuizQuestion[];
 	const question = questions[currentQuestion];
 	const progress = ((currentQuestion + 1) / questions.length) * 100;
-	const hasAnswered = selectedAnswers[question?.id] !== undefined;
-	const isCorrect = hasAnswered && selectedAnswers[question?.id] === question?.correctAnswer;
+	const hasAnswered = selectedAnswers[question?.id || ""] !== undefined;
+	const isCorrect = hasAnswered && selectedAnswers[question?.id || ""] === question?.correctAnswer;
 
 	const handleSelectAnswer = (answerIndex: number) => {
 		if (hasAnswered) return;
 		setSelectedAnswers((prev) => ({
 			...prev,
-			[question.id]: answerIndex,
+			[question?.id || ""]: answerIndex,
 		}));
 		setShowExplanation(true);
 	};
@@ -189,7 +189,7 @@ export default function StudioQuizBlock({ quiz, topic }: StudioQuizBlockProps) {
 						<div className="space-y-3">
 							{
 								question?.options.map((option, index) => {
-									const isSelected = selectedAnswers[question.id] === index;
+									const isSelected = selectedAnswers[question?.id || ""] === index;
 									const isCorrectAnswer = index === question.correctAnswer;
 
 									return (
@@ -257,7 +257,7 @@ export default function StudioQuizBlock({ quiz, topic }: StudioQuizBlockProps) {
 						</div>
 						<AnimatePresence>
 							{
-								showExplanation && question?.explanation && (
+								showExplanation && question?.explanation && question?.id && (
 									<motion.div
 										initial={{ opacity: 0, height: 0 }}
 										animate={{ opacity: 1, height: "auto" }}
@@ -265,7 +265,7 @@ export default function StudioQuizBlock({ quiz, topic }: StudioQuizBlockProps) {
 										className="mt-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20"
 									>
 										<p className="text-sm text-blue-800 dark:text-blue-300">
-											<strong>Explanation:</strong> {question.explanation}
+											<strong>Explanation:</strong> {question?.explanation}
 										</p>
 									</motion.div>
 								)

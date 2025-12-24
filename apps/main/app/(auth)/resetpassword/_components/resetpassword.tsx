@@ -2,16 +2,16 @@
 
 import { FormEvent, useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
+import { Label } from "@repo/ui/components/ui/label";
+import { Button } from "@repo/ui/components/ui/button";
 import {
     RefreshCw, CheckCircle2, Lock, Loader2
 } from "lucide-react";
 import {
     resetPasswordWithOTP, sendPasswordResetOTP
 } from "@/actions/(auth)/auth/auth.actions";
-import { toast } from 'sonner';
+import toast from '@repo/ui/components/ui/sonner';
 import { motion } from 'framer-motion';
 
 const ResetPassword = (): JSX.Element => {

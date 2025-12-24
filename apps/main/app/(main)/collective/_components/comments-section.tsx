@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
 import { addComment } from "@/actions/(main)/collective/proposal.actions";
 import { toast } from "sonner";

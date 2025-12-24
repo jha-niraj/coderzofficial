@@ -4,18 +4,18 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
+import { Progress } from "@repo/ui/components/ui/progress";
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
     DialogTitle, DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@repo/ui/components/ui/dialog";
+import { Input } from "@repo/ui/components/ui/input";
+import { Label } from "@repo/ui/components/ui/label";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@repo/ui/components/ui/select";
 import {
     Target, Plus, CheckCircle2, Circle, Trophy
 } from "lucide-react";

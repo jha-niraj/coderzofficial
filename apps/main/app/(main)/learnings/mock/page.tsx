@@ -6,10 +6,10 @@ import Link from "next/link";
 import {
     Mic, ChevronRight, Loader2, Calendar, PlayCircle, CheckCircle2, XCircle
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
 import { getMockLearnings } from "@/actions/(main)/learnings/learnings.action";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 
 const statusStyles = {
     COMPLETED: {

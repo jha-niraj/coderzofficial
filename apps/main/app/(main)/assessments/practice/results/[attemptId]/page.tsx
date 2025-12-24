@@ -21,17 +21,17 @@ import {
     AlertCircle,
     PartyPopper,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@repo/ui/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Progress } from "@repo/ui/components/ui/progress";
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import { toast } from "sonner";
 import { getPracticeAttemptResults } from "@/actions/(main)/assessments/user-sets.action";
 import { DIFFICULTY_CONFIG, LANGUAGE_CONFIG } from "@/types/assessment";

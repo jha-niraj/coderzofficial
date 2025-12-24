@@ -9,10 +9,10 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    LogOut, User, Bell, BellOff, Sparkles, Bug, Brain, Briefcase, Users, Video,
-    MessageSquare, Cable, Share2, MessageCircleCodeIcon, Trophy, FolderKanban,
-    User2, Building2, ChevronLeft, ChevronRight, ChevronDown, Award, Coins, Crown, Menu,
-    Loader, TrendingUp, Zap, Notebook, Users2
+    LogOut, User, Bell, BellOff, Sparkles, Brain, Briefcase, Users, Video, MessageSquare, 
+    Cable, Share2, MessageCircleCodeIcon, Trophy, FolderKanban, User2, Building2, ChevronLeft, 
+    ChevronRight, ChevronDown, Award, Coins, Crown, Menu, Loader, TrendingUp, Zap, Notebook, 
+    Users2
 } from "lucide-react";
 import {
     TooltipProvider, Tooltip, TooltipTrigger, TooltipContent

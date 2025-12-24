@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@repo/ui/components/ui/sheet"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Slider } from "@repo/ui/components/ui/slider"
+import { Switch } from "@repo/ui/components/ui/switch"
+import { Label } from "@repo/ui/components/ui/label"
+import { Separator } from "@repo/ui/components/ui/separator"
 import {
 	Sparkles, Target, MessageSquare, Code, BookOpen,
 	CreditCard, Zap, Calculator, TrendingUp, AlertCircle,

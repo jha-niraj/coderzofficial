@@ -7,16 +7,16 @@ import {
     ArrowLeft, CheckCircle, Code, DollarSign, ExternalLink, GitBranch, GitMerge,
     GitPullRequest, Loader2, Rocket, Star, Target, Trophy, Zap, AlertCircle, Eye
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent, CardHeader, CardTitle
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Tabs, TabsList, TabsTrigger
-} from '@/components/ui/tabs'
-import { cn } from '../../lib/utils'
+} from '@repo/ui/components/ui/tabs'
+import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
     getUserContributions, getUserContributionStats, getUserCertificationStatus

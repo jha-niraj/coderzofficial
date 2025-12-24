@@ -4,18 +4,18 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     FolderKanban, ExternalLink, Filter, Grid3X3, List, Pin, Clock,
     CheckCircle2, PlayCircle, Circle, Github, Search
 } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { Input } from "@/components/ui/input";
+import { cn } from "@repo/ui/lib/utils";
+import { Input } from "@repo/ui/components/ui/input";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@repo/ui/components/ui/select";
 import Link from "next/link";
 
 interface ProjectsTabProps {

@@ -3,20 +3,20 @@
 import { useState, useEffect } from "react"
 import { getConversations } from "@/actions/(chat)/conversation.action"
 import { getTotalUnreadCount } from "@/actions/(chat)/message.action"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
+import { Input } from "@repo/ui/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar"
+} from "@repo/ui/components/ui/avatar"
 import {
     Search, UserPlus, Settings, MessageSquare
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
-import { cn } from "../../lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 
 type Conversation = {
     id: string

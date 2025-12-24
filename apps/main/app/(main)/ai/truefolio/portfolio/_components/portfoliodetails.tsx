@@ -4,16 +4,16 @@ import React, { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@repo/ui/components/ui/dialog"
+import { Input } from "@repo/ui/components/ui/input"
+import { Label } from "@repo/ui/components/ui/label"
 import {
     Copy, RefreshCw, Github, Code2, Linkedin, Twitter, FileText, Mail, ExternalLink, Award,
     TrendingUp, Sparkles, Target, ArrowRight, Briefcase, Brain, CheckCircle2, Zap, CreditCard,

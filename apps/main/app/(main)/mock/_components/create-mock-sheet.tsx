@@ -4,31 +4,31 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '@repo/ui/components/ui/sheet'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Label } from '@repo/ui/components/ui/label'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import { Switch } from '@repo/ui/components/ui/switch'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+} from '@repo/ui/components/ui/select'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from '@/components/ui/dialog'
+} from '@repo/ui/components/ui/dialog'
 import {
     Sparkles, FileText, Globe, Lock, Loader2, CheckCircle, AlertCircle,
     Brain, Zap, Info, Clock, ChevronRight, BookOpen
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { createCustomMockVoice } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../voice/_constants/mock-categories'
 import { MockCategory } from '@prisma/client'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/app/store/useUserStore'
-import { cn } from '../../lib/utils'
+import { cn } from '@repo/ui/lib/utils'
 import Link from 'next/link'
 
 interface CreateMockSheetProps {

@@ -4,9 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
     Search, X, Layers, BookOpen
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@repo/ui/components/ui/input";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     ConceptCategory, ConceptDifficulty
 } from "@prisma/client";

@@ -4,13 +4,13 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 import {
-	Type, Heading1, Heading2, Heading3, List, ListOrdered, Code,
-	Image as ImageIcon, Video, FileQuestion, Layers, Quote, Minus,
-	CheckSquare, Mic, Plus, GripVertical, Trash2, Sparkles
+	Type, Heading1, Heading2, Heading3, List, ListOrdered, Code, Image as ImageIcon, 
+	Video, FileQuestion, Layers, Quote, Minus, CheckSquare, Mic, Plus, GripVertical, 
+	Trash2, Sparkles
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "../../lib/utils";
-import { toast } from "sonner";
+import { Button } from "@repo/ui/components/ui/button";
+import { cn } from "@repo/ui/lib/utils";
+import toast from "@repo/ui/components/ui/sonner";
 import StudioQuizBlock from "./blocks/quiz-block";
 import StudioFlashcardBlock from "./blocks/flashcard-block";
 import StudioCodeBlock from "./blocks/code-block";
@@ -24,7 +24,7 @@ import type {
 	EditorBlock, BlockContent, StudioQuiz, StudioFlashcardDeck,
 	StudioCodeBlock as CodeBlockType, StudioMediaBlock
 } from "@/types/studio";
-import { Textarea } from "../ui/textarea";
+import { Textarea } from "@repo/ui/components/ui/textarea";
 
 interface StudioBlockEditorProps {
 	studioId: string;
@@ -213,7 +213,7 @@ export default function StudioBlockEditor({
 					deleteBlock(blockId);
 					const index = blocks.findIndex((b) => b.id === blockId);
 					if (index > 0) {
-						setActiveBlockId(blocks[index - 1].id);
+						setActiveBlockId(blocks[index - 1]?.id || "");
 					}
 				}
 			}

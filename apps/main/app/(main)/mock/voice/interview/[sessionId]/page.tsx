@@ -4,17 +4,17 @@ import { use, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
 import { 
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle 
-} from '@/components/ui/dialog'
+} from '@repo/ui/components/ui/dialog'
 import { Orb, AgentState } from '@/components/ui/orb'
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff,
     Loader2, CheckCircle2, AlertCircle
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import {
     saveConversationData, updateSessionStatus, getSessionDetails
 } from '@/actions/(main)/mockvoice/session.action'

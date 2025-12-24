@@ -5,9 +5,9 @@ import { useSession } from '@repo/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useState } from 'react';
 import { Mail, CheckCircle, RefreshCw, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { Button } from '@repo/ui/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card';
+import toast from '@repo/ui/components/ui/sonner';
 
 const WaitingPage = () => {
     const { data: session } = useSession();

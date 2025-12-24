@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
 import {
     Video, Sparkles, Eye, Smile, TrendingUp, CheckCircle,
     ArrowLeft, Bell, Calendar, Star, Users, Trophy, Target
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 const features = [
     {

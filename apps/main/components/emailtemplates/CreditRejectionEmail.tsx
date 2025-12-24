@@ -1,4 +1,6 @@
-import { Html, Body, Head, Heading, Hr, Container, Preview, Section, Text, Button } from '@react-email/components';
+import { 
+    Html, Body, Head, Heading, Hr, Container, Preview, Section, Text, Button 
+} from '@react-email/components';
 
 interface CreditRejectionEmailProps {
     userName: string;
@@ -224,7 +226,6 @@ export const CreditRejectionEmail: React.FC<CreditRejectionEmailProps> = ({
                             </Button>
                         </div>
                     </Section>
-
                     <Hr style={{ borderColor: '#e5e7eb', margin: '24px 0' }} />
                     <Section style={{ textAlign: 'center' }}>
                         <Text style={{

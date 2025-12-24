@@ -1,18 +1,24 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
-    Youtube, FileText, BookOpen, GraduationCap, MessageCircle, 
-    Wrench, Palette, Sparkles, Github, ExternalLink, ThumbsUp, 
-    Eye, Trash2, Shield
+import {
+    Card, CardContent, CardHeader, CardTitle
+} from '@repo/ui/components/ui/card'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import {
+    Avatar, AvatarFallback, AvatarImage
+} from '@repo/ui/components/ui/avatar'
+import {
+    Youtube, FileText, BookOpen, GraduationCap, MessageCircle, Wrench, Palette,
+    Sparkles, Github, ExternalLink, ThumbsUp, Eye, Trash2, Shield
 } from 'lucide-react'
-import { getProjectResources, toggleResourceHelpful, deleteProjectResource, incrementResourceView } from '@/actions/(main)/projects/resources.action'
+import {
+    getProjectResources, toggleResourceHelpful, deleteProjectResource,
+    incrementResourceView
+} from '@/actions/(main)/projects/resources.action'
 import { ResourceType } from '@prisma/client'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { formatDistanceToNow } from 'date-fns'
 
 const RESOURCE_TYPES = [
@@ -76,7 +82,7 @@ export default function ResourcesList({ projectId, currentUserId, isCreator }: R
         if (result.success && result.resources) {
             setResources(result.resources)
             setFilteredResources(result.resources)
-            
+
             // Check which ones current user marked as helpful
             if (currentUserId) {
                 const marked: Record<string, boolean> = {}
@@ -110,10 +116,10 @@ export default function ResourcesList({ projectId, currentUserId, isCreator }: R
         const result = await toggleResourceHelpful(resourceId)
         if (result.success) {
             setMarkedHelpful(prev => ({ ...prev, [resourceId]: result.marked! }))
-            
+
             // Update resource count
-            setResources(prev => prev.map(r => 
-                r.id === resourceId 
+            setResources(prev => prev.map(r =>
+                r.id === resourceId
                     ? { ...r, helpfulCount: r.helpfulCount + (result.marked ? 1 : -1) }
                     : r
             ))
@@ -152,136 +158,143 @@ export default function ResourcesList({ projectId, currentUserId, isCreator }: R
 
     return (
         <div className="space-y-6">
-            {/* Filter Buttons */}
             <div className="flex flex-wrap gap-2">
-                {RESOURCE_TYPES.map((type) => {
-                    const Icon = type.icon
-                    const count = type.value === 'ALL' ? resources.length : (typeCounts[type.value] || 0)
-                    
-                    return (
-                        <Button
-                            key={type.value}
-                            variant={selectedType === type.value ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setSelectedType(type.value)}
-                            className="gap-2"
-                        >
-                            <Icon className="w-4 h-4" />
-                            {type.label}
-                            {count > 0 && (
-                                <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
-                                    {count}
-                                </Badge>
-                            )}
-                        </Button>
-                    )
-                })}
-            </div>
-
-            {/* Resources Grid */}
-            {filteredResources.length === 0 ? (
-                <div className="text-center py-12">
-                    <FileText className="w-12 h-12 mx-auto text-neutral-400 mb-4" />
-                    <p className="text-neutral-600 dark:text-neutral-400">
-                        {selectedType === 'ALL' 
-                            ? 'No resources added yet. Be the first to share!' 
-                            : `No ${RESOURCE_TYPES.find(t => t.value === selectedType)?.label} resources found`
-                        }
-                    </p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {filteredResources.map((resource) => {
-                        const Icon = RESOURCE_ICONS[resource.type as ResourceType]
-                        const colorClass = RESOURCE_COLORS[resource.type as ResourceType]
-                        const canDelete = currentUserId && (resource.userId === currentUserId || isCreator)
+                {
+                    RESOURCE_TYPES.map((type) => {
+                        const Icon = type.icon
+                        const count = type.value === 'ALL' ? resources.length : (typeCounts[type.value] || 0)
 
                         return (
-                            <Card key={resource.id} className="hover:shadow-lg transition-shadow">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Badge className={`${colorClass} gap-1`}>
-                                                    <Icon className="w-3 h-3" />
-                                                    {resource.type.replace(/_/g, ' ')}
-                                                </Badge>
-                                                {resource.isOfficial && (
-                                                    <Badge variant="outline" className="gap-1">
-                                                        <Shield className="w-3 h-3" />
-                                                        Official
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <CardTitle className="text-lg break-words">
-                                                {resource.title}
-                                            </CardTitle>
-                                        </div>
-                                        {canDelete && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDelete(resource.id)}
-                                                className="flex-shrink-0"
-                                            >
-                                                <Trash2 className="w-4 h-4 text-red-600" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {resource.description && (
-                                        <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                                            {resource.description}
-                                        </p>
-                                    )}
-
-                                    {/* Link */}
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-between"
-                                        onClick={() => handleResourceClick(resource)}
-                                    >
-                                        <span className="truncate text-sm">{resource.link}</span>
-                                        <ExternalLink className="w-4 h-4 ml-2 flex-shrink-0" />
-                                    </Button>
-
-                                    {/* Footer */}
-                                    <div className="flex items-center justify-between pt-2 border-t border-neutral-200 dark:border-neutral-800">
-                                        <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
-                                            <div className="flex items-center gap-1">
-                                                <Avatar className="h-6 w-6">
-                                                    <AvatarImage src={resource.user.image} />
-                                                    <AvatarFallback>{resource.user.name?.[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <span>{resource.user.username || resource.user.name}</span>
-                                            </div>
-                                            <span>•</span>
-                                            <span>{formatDistanceToNow(new Date(resource.createdAt), { addSuffix: true })}</span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-400">
-                                                <Eye className="w-4 h-4" />
-                                                <span>{resource.views}</span>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleToggleHelpful(resource.id)}
-                                                className={markedHelpful[resource.id] ? 'text-blue-600' : ''}
-                                            >
-                                                <ThumbsUp className={`w-4 h-4 ${markedHelpful[resource.id] ? 'fill-current' : ''}`} />
-                                                <span className="ml-1">{resource.helpfulCount}</span>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <Button
+                                key={type.value}
+                                variant={selectedType === type.value ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setSelectedType(type.value)}
+                                className="gap-2"
+                            >
+                                <Icon className="w-4 h-4" />
+                                {type.label}
+                                {
+                                    count > 0 && (
+                                        <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                                            {count}
+                                        </Badge>
+                                    )
+                                }
+                            </Button>
                         )
-                    })}
-                </div>
-            )}
+                    })
+                }
+            </div>
+            {
+                filteredResources.length === 0 ? (
+                    <div className="text-center py-12">
+                        <FileText className="w-12 h-12 mx-auto text-neutral-400 mb-4" />
+                        <p className="text-neutral-600 dark:text-neutral-400">
+                            {
+                                selectedType === 'ALL'
+                                    ? 'No resources added yet. Be the first to share!'
+                                    : `No ${RESOURCE_TYPES.find(t => t.value === selectedType)?.label} resources found`
+                            }
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                        {
+                            filteredResources.map((resource) => {
+                                const Icon = RESOURCE_ICONS[resource.type as ResourceType]
+                                const colorClass = RESOURCE_COLORS[resource.type as ResourceType]
+                                const canDelete = currentUserId && (resource.userId === currentUserId || isCreator)
+
+                                return (
+                                    <Card key={resource.id} className="hover:shadow-lg transition-shadow">
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Badge className={`${colorClass} gap-1`}>
+                                                            <Icon className="w-3 h-3" />
+                                                            {resource.type.replace(/_/g, ' ')}
+                                                        </Badge>
+                                                        {
+                                                            resource.isOfficial && (
+                                                                <Badge variant="outline" className="gap-1">
+                                                                    <Shield className="w-3 h-3" />
+                                                                    Official
+                                                                </Badge>
+                                                            )
+                                                        }
+                                                    </div>
+                                                    <CardTitle className="text-lg break-words">
+                                                        {resource.title}
+                                                    </CardTitle>
+                                                </div>
+                                                {
+                                                    canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(resource.id)}
+                                                            className="flex-shrink-0"
+                                                        >
+                                                            <Trash2 className="w-4 h-4 text-red-600" />
+                                                        </Button>
+                                                    )
+                                                }
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            {
+                                                resource.description && (
+                                                    <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                                                        {resource.description}
+                                                    </p>
+                                                )
+                                            }
+                                            <Button
+                                                variant="outline"
+                                                className="w-full justify-between"
+                                                onClick={() => handleResourceClick(resource)}
+                                            >
+                                                <span className="truncate text-sm">{resource.link}</span>
+                                                <ExternalLink className="w-4 h-4 ml-2 flex-shrink-0" />
+                                            </Button>
+                                            <div className="flex items-center justify-between pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                                                <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                                                    <div className="flex items-center gap-1">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={resource.user.image} />
+                                                            <AvatarFallback>{resource.user.name?.[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span>{resource.user.username || resource.user.name}</span>
+                                                    </div>
+                                                    <span>•</span>
+                                                    <span>{formatDistanceToNow(new Date(resource.createdAt), { addSuffix: true })}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-400">
+                                                        <Eye className="w-4 h-4" />
+                                                        <span>{resource.views}</span>
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleToggleHelpful(resource.id)}
+                                                        className={markedHelpful[resource.id] ? 'text-blue-600' : ''}
+                                                    >
+                                                        <ThumbsUp className={`w-4 h-4 ${markedHelpful[resource.id] ? 'fill-current' : ''}`} />
+                                                        <span className="ml-1">{resource.helpfulCount}</span>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })
+                        }
+                    </div>
+                )
+            }
         </div>
     )
 }

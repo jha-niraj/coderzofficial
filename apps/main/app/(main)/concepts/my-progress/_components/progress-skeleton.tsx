@@ -3,7 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
 	Card, CardContent 
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 
 export function ProgressSkeleton() {
 	return (

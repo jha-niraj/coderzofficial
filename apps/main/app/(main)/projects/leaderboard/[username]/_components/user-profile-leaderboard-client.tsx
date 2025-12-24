@@ -6,15 +6,15 @@ import { format } from 'date-fns'
 import {
     ArrowLeft, Trophy, Calendar, Target, CheckCircle2, Clock, Sparkles, TrendingUp
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Avatar, AvatarFallback, AvatarImage
-} from '@/components/ui/avatar'
-import { Progress } from '@/components/ui/progress'
+} from '@repo/ui/components/ui/avatar'
+import { Progress } from '@repo/ui/components/ui/progress'
 
 interface UserProfileLeaderboardClientProps {
     userProfile: any

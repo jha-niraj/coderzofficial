@@ -5,13 +5,13 @@ import Link from 'next/link'
 import {
     ArrowRight, Lightbulb, Sparkles, Layers
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import { categories, type Category } from './data/categories'
 import { useState } from 'react'
 import { SubmitProjectIdeaSheet } from '@/components/projects/submit-project-idea-sheet'
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription
-} from '@/components/ui/sheet'
+} from '@repo/ui/components/ui/sheet'
 
 export default function ProjectIdeasPage() {
     const [submitSheetOpen, setSubmitSheetOpen] = useState(false)

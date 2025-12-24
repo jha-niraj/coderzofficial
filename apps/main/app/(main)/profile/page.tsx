@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "@/app/store/useUserStore";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
 import {
     AlertCircle, User as UserIcon, RefreshCw
 } from "lucide-react";
@@ -13,7 +13,7 @@ import {
     ActivityTab, SkillsTab, ResumeTab, AboutTab, ShareProfileModal, EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import {
     getOwnProfile, getUserProfileStats, endorseSkill, pinProject, unpinProject
 } from "@/actions/(main)/user/profile.action";

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 import { 
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from "@/components/ui/select";
+} from "@repo/ui/components/ui/select";
 import { Play, Send, Copy, Check, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface CodeEditorProps {
     language?: string;

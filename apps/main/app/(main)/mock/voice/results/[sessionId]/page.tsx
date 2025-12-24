@@ -4,18 +4,18 @@ import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Progress } from '@repo/ui/components/ui/progress'
+import { Separator } from '@repo/ui/components/ui/separator'
 import {
     ArrowLeft, Download, Share2, CheckCircle, AlertTriangle,
     TrendingUp, Target, MessageSquare, Loader2, Trophy, Star
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { getSessionDetails } from '@/actions/(main)/mockvoice/session.action'
 import { generateAIFeedback } from '@/actions/(main)/mockvoice/conversation.action'
 import { ReviewSheet } from '../../../_components/review-sheet'

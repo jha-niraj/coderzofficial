@@ -5,8 +5,8 @@ import Link from "next/link"
 import {
     Zap, Wallet, ArrowRight, Check, Activity
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
 
 export default function CreditsSection() {
     return (

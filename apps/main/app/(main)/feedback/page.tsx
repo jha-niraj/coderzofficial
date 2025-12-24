@@ -1,21 +1,21 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@repo/ui/components/ui/button"
 import { 
     MessageSquare, Upload, X 
 } from "lucide-react"
 import FeedbackList from "./_components/feedbacklist"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Sheet, SheetContent } from "@repo/ui/components/ui/sheet"
+import { Input } from "@repo/ui/components/ui/input"
+import { Label } from "@repo/ui/components/ui/label"
 import { 
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+} from "@repo/ui/components/ui/select"
+import { Textarea } from "@repo/ui/components/ui/textarea"
 import { 
     SheetFooter, SheetHeader, SheetTitle, SheetDescription 
-} from "@/components/ui/sheet"
+} from "@repo/ui/components/ui/sheet"
 import { toast } from "sonner"
 import { FeedbackCategory, FeedbackStatus } from "@prisma/client"
 import { useFeedbackStore } from "@/app/store/feedbackStore"

@@ -3,8 +3,8 @@
 import { useState, useRef } from "react"
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+} from "@repo/ui/components/ui/dialog"
+import { Button } from "@repo/ui/components/ui/button"
 import { Upload, X, FileText, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 

@@ -2,10 +2,10 @@ import Link from "next/link"
 import Image from "next/image"
 import { ChevronRight, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Separator } from "@repo/ui/components/ui/separator"
+import { Input } from "@repo/ui/components/ui/input"
 
 export default function CartPage() {
     const cartItems = [

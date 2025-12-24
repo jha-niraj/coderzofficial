@@ -7,31 +7,31 @@ import {
     GitBranch, GitPullRequest, GraduationCap, Loader2, Plus, Star, 
     Users, AlertCircle
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
 import { 
     Tabs, TabsContent, TabsList, TabsTrigger 
-} from '@/components/ui/tabs'
+} from '@repo/ui/components/ui/tabs'
 import { 
     Avatar, AvatarFallback, AvatarImage 
-} from '@/components/ui/avatar'
+} from '@repo/ui/components/ui/avatar'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+} from "@repo/ui/components/ui/select"
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from "@/components/ui/dialog"
-import { cn } from '../../lib/utils'
+} from "@repo/ui/components/ui/dialog"
+import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
     getProjectBySlug, getProjectIssues, claimIssue, getUserCertificationStatus, 
     DIFFICULTY_LEVELS
 } from '@/actions/(main)/opensource'
 import { OSIssueDifficulty, OSIssueStatus } from '@prisma/client'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { formatDistanceToNow } from 'date-fns'
 
 const typeColors: Record<string, { bg: string; text: string }> = {

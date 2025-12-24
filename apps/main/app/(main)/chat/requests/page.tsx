@@ -1,6 +1,6 @@
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs"
+} from "@repo/ui/components/ui/tabs"
 import {
     getFollowRequests, getSentFollowRequests
 } from "@/actions/(main)/community/follow.action"

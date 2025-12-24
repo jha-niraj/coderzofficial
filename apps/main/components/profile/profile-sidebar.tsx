@@ -3,15 +3,15 @@
 import { motion } from "framer-motion";
 import {
 	Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
 	Github, Linkedin, Twitter, Globe, Trophy, Zap, Share2, BookOpen, Target,
 	ArrowRight
 } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 
 interface ProfileSidebarProps {

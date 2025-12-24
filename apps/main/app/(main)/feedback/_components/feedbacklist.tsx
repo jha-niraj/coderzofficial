@@ -3,17 +3,17 @@
 import { useState, useEffect } from "react"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+} from "@repo/ui/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
+import { Button } from "@repo/ui/components/ui/button"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
-} from "@/components/ui/dialog"
+} from "@repo/ui/components/ui/dialog"
 import { 
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter 
-} from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@repo/ui/components/ui/sheet"
+import { Input } from "@repo/ui/components/ui/input"
+import { Label } from "@repo/ui/components/ui/label"
 import { formatDistanceToNow } from "date-fns"
 import {
     ChevronUp, Award, Gift, LightbulbIcon

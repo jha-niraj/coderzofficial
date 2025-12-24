@@ -6,17 +6,17 @@ import {
     CheckCircle2, Code2, Eye, BarChart3, HelpCircle, Zap, Lightbulb, Copy,
     Check, Play, ChevronDown, ChevronUp
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@repo/ui/components/ui/label";
+import { Textarea } from "@repo/ui/components/ui/textarea";
 import {
     Collapsible, CollapsibleTrigger
-} from "@/components/ui/collapsible";
+} from "@repo/ui/components/ui/collapsible";
 import { toast } from "sonner";
 import { LucideIcon } from "lucide-react";
 import { ConceptStepType } from "@prisma/client";

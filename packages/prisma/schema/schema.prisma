@@ -626,6 +626,11 @@ model User {
     // Random practice sessions
     randomPracticeSessions RandomPracticeSession[] @relation("RandomPracticeSessions")
 
+    // ===============================================
+    // ADMIN SYSTEM RELATIONS
+    // ===============================================
+    adminAccess AdminAccess? @relation("UserAdminAccess")
+
     @@index([username])
     @@index([email])
 }

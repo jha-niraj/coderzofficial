@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getPublicProjects } from '@/actions/(main)/projects/project.action'
 import { ProjectCard, ProjectCardSkeleton } from '@/components/projects/project-card'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import Link from 'next/link'
 import { Rocket, Terminal, AlertCircle } from 'lucide-react'
 import { ProjectV2Basic } from '@/types/project'

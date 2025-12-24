@@ -8,11 +8,11 @@ import {
     ChevronRight, Flame, Clock, Trophy, TrendingUp, Loader2,
     CheckCircle2, Play
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Progress } from "@repo/ui/components/ui/progress";
 import { getLearningsSummary } from "@/actions/(main)/learnings/learnings.action";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 
 const moduleConfig = {
     projects: {

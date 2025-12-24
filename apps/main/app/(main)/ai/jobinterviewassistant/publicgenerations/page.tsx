@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Input } from "@/components/ui/input"
+import { Input } from "@repo/ui/components/ui/input"
 import { 
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+} from "@repo/ui/components/ui/select"
+import { Button } from "@repo/ui/components/ui/button"
 import { ArrowLeft, Search } from "lucide-react"
 import Link from "next/link"
 import { getPublicInterviewPlans, purchaseInterviewPlan } from "@/actions/(main)/ai/jobinterview.action"

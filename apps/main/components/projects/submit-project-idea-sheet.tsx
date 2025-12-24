@@ -7,16 +7,16 @@ import {
 import Image from 'next/image'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+} from '@repo/ui/components/ui/sheet'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import { Label } from '@repo/ui/components/ui/label'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { toast } from 'sonner'
+} from '@repo/ui/components/ui/select'
+import { Badge } from '@repo/ui/components/ui/badge'
+import toast from '@repo/ui/components/ui/sonner'
 import { submitProjectIdea } from '@/actions/(main)/projects/project-ideas.action'
 import { uploadImageToCloudinary } from '@/actions/(common)/shared/upload.action'
 

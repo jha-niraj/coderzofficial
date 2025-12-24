@@ -1,7 +1,6 @@
 "use server"
 
-import { Anthropic } from '@anthropic-ai/sdk';
-import prisma from '@/lib/prisma';
+import prisma from '@repo/prisma';
 import { Prisma, CreditType, Currency } from '@prisma/client';
 import { auth } from '@repo/auth';
 import Exa from "exa-js";
@@ -10,7 +9,10 @@ import { nanoid } from 'nanoid';
 import { trackActivity } from '@/actions/(main)/user/activity.action';
 import { ActivityType } from '@prisma/client';
 // Import ElevenLabs speech utility
-import { transcribeWithElevenLabs, quickTranscribeWithElevenLabs, detailedTranscribeWithElevenLabs, isElevenLabsConfigured } from '@/lib/elevenlabs-speech';
+import { 
+	transcribeWithElevenLabs, quickTranscribeWithElevenLabs, 
+	detailedTranscribeWithElevenLabs, isElevenLabsConfigured 
+} from '@/lib/elevenlabs-speech';
 // Import organized prompts
 import { 
 	getInterviewGenerationPrompt, 
@@ -102,7 +104,7 @@ interface EvaluateUserQuestionResponseResult {
 // Function to fetch company info using Exa
 async function fetchCompanyInfo(url: string): Promise<CompanyInfo | null> {
 	try {
-		const companyDomain = url.replace(/^https?:\/\//, '').split('/')[0].replace('www.', '');
+		const companyDomain = url.replace(/^https?:\/\//, '').split('/')[0]?.replace('www.', '') || '';
 		
 		const result = (await exa.getContents(
 			[companyDomain],
@@ -192,7 +194,7 @@ function cleanAndParseJSON(jsonString: string): any {
 				
 				if (scoreMatch && feedbackMatch) {
 					const evaluation = {
-						score: parseInt(scoreMatch[1]),
+						score: parseInt(scoreMatch[1] || '0'),
 						feedback: feedbackMatch[1],
 						strengths: [] as string[],
 						improvements: [] as string[],
@@ -204,14 +206,14 @@ function cleanAndParseJSON(jsonString: string): any {
 					
 					// Parse arrays if available
 					if (strengthsMatch) {
-						evaluation.strengths = strengthsMatch[1]
+						evaluation.strengths = strengthsMatch[1]?.split(',') || []
 							.split(',')
 							.map((s: string) => s.trim().replace(/^["']|["']$/g, ''))
 							.filter((s: string) => s);
 					}
 					
 					if (improvementsMatch) {
-						evaluation.improvements = improvementsMatch[1]
+						evaluation.improvements = improvementsMatch[1]?.split(',') || []
 							.split(',')
 							.map((s: string) => s.trim().replace(/^["']|["']$/g, ''))
 							.filter((s: string) => s);

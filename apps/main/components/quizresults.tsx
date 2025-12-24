@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/components/ui/tabs";
+import { Button } from "@repo/ui/components/ui/button";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
+} from "@repo/ui/components/ui/table";
+import { Separator } from "@repo/ui/components/ui/separator";
 import {
     Check, X, ArrowLeft, Flag, Download, Share2, AlertCircle
 } from "lucide-react";
@@ -20,11 +20,11 @@ import {
     Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, Legend
 } from "recharts";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { Progress } from "@/components/ui/progress";
+import { ChartContainer, ChartTooltipContent } from "@repo/ui/components/ui/chart";
+import { Progress } from "@repo/ui/components/ui/progress";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@repo/ui/components/ui/select";
 import { motion } from "framer-motion";
 
 type QuizResultsProps = {

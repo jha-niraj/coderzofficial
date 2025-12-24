@@ -7,15 +7,15 @@ import {
 	History, Trophy, Clock, CheckCircle2, XCircle, Calendar, BookOpen, Award,
 	TrendingUp, BarChart3, Loader2, ChevronRight, Filter
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
 	Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+} from "@repo/ui/components/ui/tabs";
+import { Progress } from "@repo/ui/components/ui/progress";
 import {
 	getUserPracticeAttempts, getUserExamAttempts
 } from "@/actions/(main)/assessments/user-sets.action";

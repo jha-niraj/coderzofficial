@@ -8,11 +8,11 @@ import {
     Lightbulb, ChevronRight, Loader2, Clock, Target, CheckCircle2,
     BookOpen, Play
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Progress } from "@repo/ui/components/ui/progress";
 import { getConceptLearnings } from "@/actions/(main)/learnings/learnings.action";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 
 const difficultyColors = {
     BEGINNER: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",

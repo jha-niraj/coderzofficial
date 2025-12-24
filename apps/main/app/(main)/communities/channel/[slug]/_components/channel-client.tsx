@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     RefreshCw, Loader2, Plus, MessageSquare
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
 import { CommunitySidebar } from '@/components/community/community-sidebar'
 import { PostCard } from '@/components/community/post-card'
 import { ChannelPostComposer } from './channel-post-composer'
 import { getChannelPosts } from '@/actions/(main)/community/channel.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { useInView } from 'react-intersection-observer'
 
 interface ChannelPageClientProps {

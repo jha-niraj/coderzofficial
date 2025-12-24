@@ -9,10 +9,10 @@ import {
     Target, Brain, Code, MessageSquare,
     Shield, CheckCircle, Globe, ChevronUp, FileQuestion, Cpu
 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import { Input } from "@repo/ui/components/ui/input"
+import { Button } from "@repo/ui/components/ui/button"
+import { Textarea } from "@repo/ui/components/ui/textarea"
+import { Label } from "@repo/ui/components/ui/label"
 import { toast } from "sonner"
 import { useUserStore } from "@/app/store/useUserStore"
 import { 

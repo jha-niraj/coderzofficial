@@ -7,17 +7,17 @@ import { useParams, useRouter } from 'next/navigation'
 import {
     ArrowLeft, Sparkles, Play, Filter, Search, Heart, Eye, TrendingUp, CheckCircle2, Code2, Layers, Terminal
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+} from '@repo/ui/components/ui/select'
 import { getCategoryById, getTechnologyById } from '../../data/categories'
 import {
     getProjectIdeasByTechnology, getTopUpvotedProjects
 } from '@/actions/(main)/projects/project-ideas.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 export default function TechnologyProjectsPage() {
     const params = useParams()

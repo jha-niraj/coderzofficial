@@ -5,14 +5,18 @@ import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { signIn, useSession } from '@repo/auth'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
+import {
+	Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@repo/ui/components/ui/dialog"
+import { Button } from "@repo/ui/components/ui/button"
+import { Input } from "@repo/ui/components/ui/input"
+import { Separator } from "@repo/ui/components/ui/separator"
 import { useAuthDialog } from "./use-auth-dialog"
-import { Mail, Eye, EyeOff, LogIn, XCircle, CircleHelp } from "lucide-react"
+import {
+	Mail, Eye, EyeOff, LogIn, XCircle, CircleHelp
+} from "lucide-react"
 import type { ReadonlyURLSearchParams } from "next/navigation"
-import { Label } from "../ui/label"
+import { Label } from "@repo/ui/components/ui/label"
 
 export function AuthDialog() {
 	const { status } = useSession()
@@ -87,17 +91,11 @@ export function AuthDialog() {
 			<DialogContent
 				className="max-w-md w-full p-0 border-0 bg-transparent shadow-none"
 			>
-				{/* Backdrop blur overlay */}
 				<div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
-				
-				{/* Main dialog container */}
+
 				<div className="relative z-50 mx-auto">
-					{/* Glass effect container */}
 					<div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl">
-						{/* Subtle gradient overlay for depth */}
 						<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl pointer-events-none" />
-						
-						{/* Content */}
 						<div className="relative p-8">
 							<DialogHeader className="text-center mb-8">
 								<DialogTitle className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
@@ -108,15 +106,15 @@ export function AuthDialog() {
 								</DialogDescription>
 							</DialogHeader>
 
-							{error && (
-								<div className="mb-6 flex items-center gap-3 p-4 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/50 rounded-xl text-red-700 dark:text-red-400 text-sm backdrop-blur-sm">
-									<XCircle className="w-5 h-5 flex-shrink-0" />
-									<span>{error}</span>
-								</div>
-							)}
-
+							{
+								error && (
+									<div className="mb-6 flex items-center gap-3 p-4 bg-red-50/80 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/50 rounded-xl text-red-700 dark:text-red-400 text-sm backdrop-blur-sm">
+										<XCircle className="w-5 h-5 flex-shrink-0" />
+										<span>{error}</span>
+									</div>
+								)
+							}
 							<div className="space-y-6">
-								{/* Google Sign In */}
 								<Button
 									type="button"
 									variant="outline"
@@ -151,7 +149,6 @@ export function AuthDialog() {
 									Continue with Google
 								</Button>
 
-								{/* Divider */}
 								<div className="relative my-6">
 									<Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
 									<span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-4 text-sm text-gray-500 dark:text-gray-400">
@@ -159,7 +156,6 @@ export function AuthDialog() {
 									</span>
 								</div>
 
-								{/* Email/Password Form */}
 								<form onSubmit={onCredentialsSignIn} className="space-y-5">
 									<div className="space-y-2">
 										<Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -178,7 +174,6 @@ export function AuthDialog() {
 											/>
 										</div>
 									</div>
-
 									<div className="space-y-2">
 										<Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
 											Password
@@ -205,35 +200,32 @@ export function AuthDialog() {
 											</Button>
 										</div>
 									</div>
-
-									<Button 
-										type="submit" 
-										disabled={submitting} 
+									<Button
+										type="submit"
+										disabled={submitting}
 										className="w-full h-12 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 									>
-										{submitting ? (
-											<div className="flex items-center gap-2">
-												<div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-												Signing in...
-											</div>
-										) : (
-											<>
-												<LogIn className="w-4 h-4 mr-2" />
-												Sign in
-											</>
-										)}
+										{
+											submitting ? (
+												<div className="flex items-center gap-2">
+													<div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+													Signing in...
+												</div>
+											) : (
+												<>
+													<LogIn className="w-4 h-4 mr-2" />
+													Sign in
+												</>
+											)
+										}
 									</Button>
 								</form>
-
-								{/* Help text */}
 								<div className="flex items-start gap-3 p-4 bg-gray-50/80 dark:bg-gray-800/50 rounded-xl backdrop-blur-sm">
 									<CircleHelp className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
 									<p className="text-sm text-gray-600 dark:text-gray-400">
 										New to our platform? You'll be able to create an account after signing in with Google, or use the signup link below.
 									</p>
 								</div>
-
-								{/* Signup section */}
 								<div className="pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
 									<div className="text-center space-y-4">
 										<p className="text-sm text-gray-600 dark:text-gray-400">

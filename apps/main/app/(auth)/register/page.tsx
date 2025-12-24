@@ -8,9 +8,9 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Check, X, Gift, Code2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Input } from "@repo/ui/components/ui/input";
+import { Button } from "@repo/ui/components/ui/button";
+import { Label } from "@repo/ui/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppContext } from "@/app/context/usercontext";
 

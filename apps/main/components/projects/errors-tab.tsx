@@ -3,69 +3,28 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    AlertTriangle,
-    ThumbsUp,
-    AlertCircle,
-    Plus,
-    Search,
-    Filter,
-    ChevronDown,
-    Code2,
-    CheckCircle2,
-    Loader2,
-    Bug,
-    Shield,
-    Zap,
-    Database,
-    Globe,
-    Settings,
-    Layers,
-    Sparkles,
-    Eye
+    AlertTriangle, ThumbsUp, AlertCircle, Plus, ChevronDown, Code2, CheckCircle2, 
+    Loader2, Bug, Shield, Zap, Database, Globe, Settings, Layers
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Label } from '@repo/ui/components/ui/label'
+import { Textarea } from '@repo/ui/components/ui/textarea'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@repo/ui/components/ui/select'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet'
+    Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
+    SheetTrigger
+} from '@repo/ui/components/ui/sheet'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
+    Card, CardContent
+} from '@repo/ui/components/ui/card'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { cn } from '../../lib/utils'
-import { toast } from 'sonner'
-import {
-    getProjectErrors,
-    createProjectError,
-    voteOnError,
-    getProjectErrorStats,
+    getProjectErrors, createProjectError, voteOnError, getProjectErrorStats
 } from '@/actions/(main)/projects/project-errors.action'
 
 // ============================================================================
@@ -132,12 +91,12 @@ const severityConfig = {
 // Error Card Component
 // ============================================================================
 
-function ErrorCard({ 
-    error, 
-    onVote 
-}: { 
+function ErrorCard({
+    error,
+    onVote
+}: {
     error: ProjectError
-    onVote: (errorId: string, voteType: 'helpful' | 'encountered') => void 
+    onVote: (errorId: string, voteType: 'helpful' | 'encountered') => void
 }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const CategoryIcon = categoryConfig[error.category]?.icon || Bug
@@ -149,18 +108,14 @@ function ErrorCard({
             animate={{ opacity: 1, y: 0 }}
             className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden hover:shadow-lg transition-shadow"
         >
-            {/* Header */}
             <div className="p-4">
                 <div className="flex items-start gap-3">
-                    {/* Category Icon */}
                     <div className={cn(
                         'p-2 rounded-lg text-white',
                         categoryConfig[error.category]?.color || 'bg-neutral-500'
                     )}>
                         <CategoryIcon className="w-4 h-4" />
                     </div>
-
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
                             <h4 className="font-semibold text-neutral-900 dark:text-white line-clamp-1">
@@ -173,19 +128,19 @@ function ErrorCard({
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">
                             {error.description}
                         </p>
-
-                        {/* Tags */}
-                        {error.tags && error.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-3">
-                                {error.tags.slice(0, 3).map((tag, idx) => (
-                                    <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Actions */}
+                        {
+                            error.tags && error.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                    {
+                                        error.tags.slice(0, 3).map((tag, idx) => (
+                                            <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
+                                                {tag}
+                                            </span>
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <button
@@ -224,74 +179,71 @@ function ErrorCard({
                     </div>
                 </div>
             </div>
-
-            {/* Expanded Solution */}
             <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="px-4 pb-4 pt-2 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
-                            {/* Solution */}
-                            <div>
-                                <h5 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Solution
-                                </h5>
-                                <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
-                                    {error.solution}
-                                </p>
-                            </div>
-
-                            {/* Error Code */}
-                            {error.errorCode && (
-                                <div>
-                                    <h5 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
-                                        <Code2 className="w-4 h-4" />
-                                        Problematic Code
-                                    </h5>
-                                    <pre className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-xs overflow-x-auto">
-                                        <code className="text-red-800 dark:text-red-200">{error.errorCode}</code>
-                                    </pre>
-                                </div>
-                            )}
-
-                            {/* Fixed Code */}
-                            {error.fixedCode && (
+                {
+                    isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="px-4 pb-4 pt-2 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
                                 <div>
                                     <h5 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2">
                                         <CheckCircle2 className="w-4 h-4" />
-                                        Corrected Code
+                                        Solution
                                     </h5>
-                                    <pre className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-xs overflow-x-auto">
-                                        <code className="text-green-800 dark:text-green-200">{error.fixedCode}</code>
-                                    </pre>
-                                </div>
-                            )}
-
-                            {/* Task Link */}
-                            {error.task && (
-                                <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-2 border border-neutral-200 dark:border-neutral-800">
-                                    <p className="text-xs text-neutral-500">
-                                        Related to task: <span className="font-medium text-neutral-700 dark:text-neutral-300">{error.task.title}</span>
+                                    <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                                        {error.solution}
                                     </p>
                                 </div>
-                            )}
-
-                            {/* Submitted By */}
-                            <div className="flex items-center gap-2 text-xs text-neutral-500">
-                                <span>Submitted by</span>
-                                <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                                    {error.submittedBy.name || error.submittedBy.username || 'Anonymous'}
-                                </span>
+                                {
+                                    error.errorCode && (
+                                        <div>
+                                            <h5 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
+                                                <Code2 className="w-4 h-4" />
+                                                Problematic Code
+                                            </h5>
+                                            <pre className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-xs overflow-x-auto">
+                                                <code className="text-red-800 dark:text-red-200">{error.errorCode}</code>
+                                            </pre>
+                                        </div>
+                                    )
+                                }
+                                {
+                                    error.fixedCode && (
+                                        <div>
+                                            <h5 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2">
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                Corrected Code
+                                            </h5>
+                                            <pre className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-xs overflow-x-auto">
+                                                <code className="text-green-800 dark:text-green-200">{error.fixedCode}</code>
+                                            </pre>
+                                        </div>
+                                    )
+                                }
+                                {
+                                    error.task && (
+                                        <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-2 border border-neutral-200 dark:border-neutral-800">
+                                            <p className="text-xs text-neutral-500">
+                                                Related to task: <span className="font-medium text-neutral-700 dark:text-neutral-300">{error.task.title}</span>
+                                            </p>
+                                        </div>
+                                    )
+                                }
+                                <div className="flex items-center gap-2 text-xs text-neutral-500">
+                                    <span>Submitted by</span>
+                                    <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                                        {error.submittedBy.name || error.submittedBy.username || 'Anonymous'}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    </motion.div>
-                )}
+                        </motion.div>
+                    )
+                }
             </AnimatePresence>
         </motion.div>
     )
@@ -301,12 +253,12 @@ function ErrorCard({
 // Submit Error Sheet
 // ============================================================================
 
-function SubmitErrorSheet({ 
-    projectId, 
-    onSubmit 
-}: { 
+function SubmitErrorSheet({
+    projectId,
+    onSubmit
+}: {
     projectId: string
-    onSubmit: () => void 
+    onSubmit: () => void
 }) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -383,9 +335,7 @@ function SubmitErrorSheet({
                         Help others avoid the same pitfalls you encountered
                     </SheetDescription>
                 </SheetHeader>
-
                 <div className="space-y-4 py-6">
-                    {/* Title */}
                     <div className="space-y-2">
                         <Label htmlFor="title">Error Title *</Label>
                         <Input
@@ -395,8 +345,6 @@ function SubmitErrorSheet({
                             onChange={(e) => setForm({ ...form, title: e.target.value })}
                         />
                     </div>
-
-                    {/* Category & Severity */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Category</Label>
@@ -405,9 +353,11 @@ function SubmitErrorSheet({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {Object.entries(categoryConfig).map(([key, { label }]) => (
-                                        <SelectItem key={key} value={key}>{label}</SelectItem>
-                                    ))}
+                                    {
+                                        Object.entries(categoryConfig).map(([key, { label }]) => (
+                                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                                        ))
+                                    }
                                 </SelectContent>
                             </Select>
                         </div>
@@ -425,8 +375,6 @@ function SubmitErrorSheet({
                             </Select>
                         </div>
                     </div>
-
-                    {/* Description */}
                     <div className="space-y-2">
                         <Label htmlFor="description">What happened? *</Label>
                         <Textarea
@@ -437,8 +385,6 @@ function SubmitErrorSheet({
                             rows={3}
                         />
                     </div>
-
-                    {/* Solution */}
                     <div className="space-y-2">
                         <Label htmlFor="solution">How did you fix it? *</Label>
                         <Textarea
@@ -449,8 +395,6 @@ function SubmitErrorSheet({
                             rows={3}
                         />
                     </div>
-
-                    {/* Error Code */}
                     <div className="space-y-2">
                         <Label htmlFor="errorCode">Problematic Code (optional)</Label>
                         <Textarea
@@ -462,8 +406,6 @@ function SubmitErrorSheet({
                             className="font-mono text-sm"
                         />
                     </div>
-
-                    {/* Fixed Code */}
                     <div className="space-y-2">
                         <Label htmlFor="fixedCode">Corrected Code (optional)</Label>
                         <Textarea
@@ -475,8 +417,6 @@ function SubmitErrorSheet({
                             className="font-mono text-sm"
                         />
                     </div>
-
-                    {/* Tags */}
                     <div className="space-y-2">
                         <Label htmlFor="tags">Tags (comma separated)</Label>
                         <Input
@@ -487,24 +427,25 @@ function SubmitErrorSheet({
                         />
                     </div>
                 </div>
-
                 <SheetFooter>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || !form.title || !form.description || !form.solution}
                         className="w-full bg-gradient-to-r from-amber-500 to-orange-600"
                     >
-                        {loading ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                Submitting...
-                            </>
-                        ) : (
-                            <>
-                                <AlertTriangle className="w-4 h-4 mr-2" />
-                                Submit Error
-                            </>
-                        )}
+                        {
+                            loading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    Submitting...
+                                </>
+                            ) : (
+                                <>
+                                    <AlertTriangle className="w-4 h-4 mr-2" />
+                                    Submit Error
+                                </>
+                            )
+                        }
                     </Button>
                 </SheetFooter>
             </SheetContent>
@@ -565,7 +506,7 @@ export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTa
                         ...err,
                         hasVotedHelpful: voteType === 'helpful' ? !err.hasVotedHelpful : err.hasVotedHelpful,
                         hasVotedEncountered: voteType === 'encountered' ? !err.hasVotedEncountered : err.hasVotedEncountered,
-                        helpfulCount: voteType === 'helpful' 
+                        helpfulCount: voteType === 'helpful'
                             ? (err.hasVotedHelpful ? err.helpfulCount - 1 : err.helpfulCount + 1)
                             : err.helpfulCount,
                         encounteredCount: voteType === 'encountered'
@@ -580,7 +521,6 @@ export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTa
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
@@ -591,42 +531,42 @@ export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTa
                         Community-shared pitfalls and solutions
                     </p>
                 </div>
-                {(isEnrolled || isCreator) && (
-                    <SubmitErrorSheet projectId={projectId} onSubmit={fetchErrors} />
-                )}
+                {
+                    (isEnrolled || isCreator) && (
+                        <SubmitErrorSheet projectId={projectId} onSubmit={fetchErrors} />
+                    )
+                }
             </div>
-
-            {/* Stats */}
-            {stats && stats.totalErrors > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
-                        <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats.totalErrors}</div>
-                            <div className="text-xs text-amber-600 dark:text-amber-500">Total Errors</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-800">
-                        <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.bySeverity?.HIGH || 0}</div>
-                            <div className="text-xs text-red-600 dark:text-red-500">Common</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-                        <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.bySeverity?.MEDIUM || 0}</div>
-                            <div className="text-xs text-blue-600 dark:text-blue-500">Occasional</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800">
-                        <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.bySeverity?.LOW || 0}</div>
-                            <div className="text-xs text-green-600 dark:text-green-500">Rare</div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-
-            {/* Filters */}
+            {
+                stats && stats.totalErrors > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
+                            <CardContent className="p-4">
+                                <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats.totalErrors}</div>
+                                <div className="text-xs text-amber-600 dark:text-amber-500">Total Errors</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-800">
+                            <CardContent className="p-4">
+                                <div className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.bySeverity?.HIGH || 0}</div>
+                                <div className="text-xs text-red-600 dark:text-red-500">Common</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+                            <CardContent className="p-4">
+                                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.bySeverity?.MEDIUM || 0}</div>
+                                <div className="text-xs text-blue-600 dark:text-blue-500">Occasional</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800">
+                            <CardContent className="p-4">
+                                <div className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.bySeverity?.LOW || 0}</div>
+                                <div className="text-xs text-green-600 dark:text-green-500">Rare</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )
+            }
             <div className="flex flex-wrap items-center gap-3">
                 <Select value={filter.category} onValueChange={(v) => setFilter(prev => ({ ...prev, category: v }))}>
                     <SelectTrigger className="w-[140px]">
@@ -634,12 +574,13 @@ export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTa
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="ALL">All Categories</SelectItem>
-                        {Object.entries(categoryConfig).map(([key, { label }]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
+                        {
+                            Object.entries(categoryConfig).map(([key, { label }]) => (
+                                <SelectItem key={key} value={key}>{label}</SelectItem>
+                            ))
+                        }
                     </SelectContent>
                 </Select>
-
                 <Select value={filter.severity} onValueChange={(v) => setFilter(prev => ({ ...prev, severity: v }))}>
                     <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Frequency" />
@@ -651,7 +592,6 @@ export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTa
                         <SelectItem value="LOW">Rare</SelectItem>
                     </SelectContent>
                 </Select>
-
                 <Select value={filter.sortBy} onValueChange={(v: any) => setFilter(prev => ({ ...prev, sortBy: v }))}>
                     <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Sort" />
@@ -663,36 +603,38 @@ export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTa
                     </SelectContent>
                 </Select>
             </div>
-
-            {/* Error List */}
-            {loading ? (
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
-                </div>
-            ) : errors.length === 0 ? (
-                <div className="text-center py-12">
-                    <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-700" />
-                    <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-1">No errors shared yet</h4>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-                        Be the first to help others by sharing common pitfalls
-                    </p>
-                    {(isEnrolled || isCreator) && (
-                        <SubmitErrorSheet projectId={projectId} onSubmit={fetchErrors} />
-                    )}
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {errors.map((error) => (
-                        <ErrorCard 
-                            key={error.id} 
-                            error={error} 
-                            onVote={handleVote}
-                        />
-                    ))}
-                </div>
-            )}
+            {
+                loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                    </div>
+                ) : errors.length === 0 ? (
+                    <div className="text-center py-12">
+                        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-700" />
+                        <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-1">No errors shared yet</h4>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+                            Be the first to help others by sharing common pitfalls
+                        </p>
+                        {
+                            (isEnrolled || isCreator) && (
+                                <SubmitErrorSheet projectId={projectId} onSubmit={fetchErrors} />
+                            )
+                        }
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {
+                            errors.map((error) => (
+                                <ErrorCard
+                                    key={error.id}
+                                    error={error}
+                                    onVote={handleVote}
+                                />
+                            ))
+                        }
+                    </div>
+                )
+            }
         </div>
     )
 }
-
-

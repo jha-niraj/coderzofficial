@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+} from '@repo/ui/components/ui/sheet'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Separator } from '@repo/ui/components/ui/separator'
 import {
     Sparkles, Clock, Brain, CheckCircle, Calendar, Play, X,
     AlertCircle, Trophy, Target, Zap
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { createMockVoiceSession } from '@/actions/(main)/mockvoice/session.action'
 import Link from 'next/link'
 

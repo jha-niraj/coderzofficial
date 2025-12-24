@@ -8,13 +8,13 @@ import {
     ArrowLeft, Heart, Share2, Eye, Calendar, User, CheckCircle2, XCircle, Clock,
     Code2, Layers, Tag, TrendingUp, MessageSquare, ExternalLink, Sparkles
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { Separator } from '@repo/ui/components/ui/separator'
+import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui/components/ui/avatar'
 import { getProjectIdeaById, toggleProjectUpvote, checkUserUpvote } from '@/actions/(main)/projects/project-ideas.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { getCategoryById, getTechnologyById } from '../../../data/categories'
 
 export default function ProjectIdeaDetailPage() {

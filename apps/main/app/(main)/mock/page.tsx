@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
 import { 
     Card, CardContent, CardDescription, CardHeader, CardTitle 
-} from '@/components/ui/card'
+} from '@repo/ui/components/ui/card'
 import {
     ArrowRight, Brain, Video, Building2, Users, Phone, Sparkles, CheckCircle, TrendingUp, 
     Trophy, Target, Zap, Star, MessageSquare, Mic, Award, Timer, Shield

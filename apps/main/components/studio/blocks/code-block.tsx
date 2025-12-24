@@ -6,14 +6,13 @@ import dynamic from "next/dynamic";
 import {
 	Play, Copy, Check, Maximize2, Minimize2, Loader2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import { cn } from "../../lib/utils";
+} from "@repo/ui/components/ui/select";
+import { cn } from "@repo/ui/lib/utils";
 import { saveCodeBlock } from "@/actions/(main)/studios/studio.action";
-import { toast } from "sonner";
-import { useTheme } from "next-themes";
+import toast from "@repo/ui/components/ui/sonner";
 
 // Dynamically import Monaco to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -58,7 +57,6 @@ export default function StudioCodeBlock({
 	initialData,
 	onChange,
 }: StudioCodeBlockProps) {
-	const { theme } = useTheme();
 	const [language, setLanguage] = useState(initialData?.language || "javascript");
 	const [code, setCode] = useState(initialData?.code || getDefaultCode(initialData?.language || "javascript"));
 	const [isExpanded, setIsExpanded] = useState(false);

@@ -2,9 +2,9 @@ import Link from "next/link"
 import Image from "next/image"
 import { CheckCircle2, ChevronRight, Package, Truck } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@repo/ui/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Separator } from "@repo/ui/components/ui/separator"
 
 export default function OrderConfirmationPage() {
     // This would normally be fetched from an order state or API

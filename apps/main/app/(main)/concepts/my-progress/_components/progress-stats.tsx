@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import {
 	Card, CardContent
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
 	CheckCircle, Clock, Flame, BookOpen, Zap
 } from "lucide-react";

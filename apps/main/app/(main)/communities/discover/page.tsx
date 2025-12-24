@@ -7,19 +7,19 @@ import {
     Search, Filter, Users, TrendingUp, Sparkles, Plus, ChevronDown, Loader2,
     Grid, List, CheckCircle2
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+} from '@repo/ui/components/ui/select'
 import { CommunityCard } from '@/components/community/community-card'
 import {
     getPublicCommunities, joinCommunity, leaveCommunity, getUserCommunities,
     getCommunityCategories
 } from '@/actions/(main)/community/community.action'
-import { toast } from 'sonner'
-import { cn } from '../../lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
+import { cn } from '@repo/ui/lib/utils'
 
 const CATEGORIES = [
     'All',

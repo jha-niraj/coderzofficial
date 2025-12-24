@@ -20,11 +20,11 @@ import {
 	Share2,
 	Award
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { Separator } from "@repo/ui/components/ui/separator";
 import { getExamSetDetails, toggleExamSetLike, startExamSetAttempt } from "@/actions/(main)/assessments/user-sets.action";
 import { toast } from "sonner";
 import type { ExamSetDetails } from "@/types/assessment";

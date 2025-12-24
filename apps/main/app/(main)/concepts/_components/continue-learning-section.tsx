@@ -5,10 +5,10 @@ import Link from "next/link";
 import {
     ArrowRight, Play, CheckCircle2, Clock
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { Button } from "@repo/ui/components/ui/button";
 import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
 
 interface ConceptProgress {

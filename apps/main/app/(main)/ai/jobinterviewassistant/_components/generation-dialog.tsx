@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@repo/ui/components/ui/dialog"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Slider } from "@repo/ui/components/ui/slider"
+import { Switch } from "@repo/ui/components/ui/switch"
+import { Label } from "@repo/ui/components/ui/label"
 import { 
     Sparkles, Target, MessageSquare, Code, BookOpen, 
     CreditCard, Zap, Calculator, TrendingUp, AlertCircle,

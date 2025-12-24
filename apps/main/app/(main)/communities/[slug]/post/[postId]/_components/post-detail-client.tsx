@@ -9,22 +9,22 @@ import {
     ArrowLeft, Heart, MessageCircle, Share2, MoreHorizontal, Pin, Lock, CheckCircle,
     UserPlus, UserMinus, Send, Loader2, Flag, Bookmark, Copy, Twitter, Linkedin
 } from 'lucide-react'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardFooter, CardHeader } from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui/components/ui/avatar'
+import { Textarea } from '@repo/ui/components/ui/textarea'
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
     DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+} from '@repo/ui/components/ui/dropdown-menu'
 import { CommunitySidebar } from '@/components/community/community-sidebar'
-import { cn } from '../../lib/utils'
+import { cn } from '@repo/ui/lib/utils'
 import {
     togglePostLike, createComment, toggleCommentLike
 } from '@/actions/(main)/community/post.action'
 import { toggleFollow } from '@/actions/(main)/community/follow.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 interface PostDetailClientProps {
     user: {

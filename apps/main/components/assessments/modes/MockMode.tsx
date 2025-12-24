@@ -2,35 +2,23 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "../../lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
 import {
-    Mic,
-    MicOff,
-    Send,
-    ChevronRight,
-    ChevronLeft,
-    Clock,
-    Lightbulb,
-    MessageSquare,
-    User,
-    Bot,
-    Volume2,
-    VolumeX,
-    RotateCcw,
+    Card, CardContent, CardHeader, CardTitle, CardDescription
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { cn } from "@repo/ui/lib/utils";
+import {
+    Mic, MicOff, Send, ChevronRight, ChevronLeft, Clock, Lightbulb, User,
+    Bot, Volume2, VolumeX, RotateCcw
 } from "lucide-react";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+    Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
+} from "@repo/ui/components/ui/tooltip";
 import { DIFFICULTY_CONFIG } from "@/types/assessment";
-import type { QuestionDifficulty, AssessmentQuestionType } from "@prisma/client";
+import type { QuestionDifficulty, AssessmentQuestionType } from "@repo/prisma/client";
 
 // ==================== TYPES ====================
 
@@ -79,7 +67,6 @@ export interface MockModeProps {
 }
 
 // ==================== COMPONENT ====================
-
 export function MockMode({
     questions,
     onSubmitAnswer,
@@ -168,10 +155,10 @@ export function MockMode({
         const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
 
         try {
-            const result = await onSubmitAnswer(currentQuestion.id, answer, timeTaken);
+            const result = await onSubmitAnswer(currentQuestion?.id || "", answer, timeTaken);
 
             const mockAnswer: MockAnswer = {
-                questionId: currentQuestion.id,
+                questionId: currentQuestion?.id || "",
                 textAnswer: answer,
                 feedback: result.feedback.suggestedAnswer,
                 score: result.feedback.score,
@@ -209,7 +196,7 @@ export function MockMode({
     };
 
     const toggleHint = () => {
-        if (currentQuestion.hints && currentQuestion.hints.length > 0) {
+        if (currentQuestion?.hints && currentQuestion?.hints.length > 0) {
             setShowHint((prev) => !prev);
         }
     };
@@ -221,7 +208,7 @@ export function MockMode({
 
     const speakQuestion = () => {
         if ("speechSynthesis" in window) {
-            const utterance = new SpeechSynthesisUtterance(currentQuestion.question);
+            const utterance = new SpeechSynthesisUtterance(currentQuestion?.question || "");
             utterance.onstart = () => setIsSpeaking(true);
             utterance.onend = () => setIsSpeaking(false);
             window.speechSynthesis.speak(utterance);
@@ -235,7 +222,7 @@ export function MockMode({
         }
     };
 
-    const difficultyConfig = DIFFICULTY_CONFIG[currentQuestion.difficulty];
+    const difficultyConfig = DIFFICULTY_CONFIG[currentQuestion?.difficulty || "EASY"];
 
     const getScoreColor = (score: number) => {
         if (score >= 80) return "text-green-500";
@@ -245,52 +232,53 @@ export function MockMode({
 
     return (
         <div className="w-full max-w-4xl mx-auto space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Badge variant="outline" className={cn(difficultyConfig.bg, difficultyConfig.text)}>
                         {difficultyConfig.label}
                     </Badge>
-                    {currentQuestion.category && (
-                        <Badge variant="secondary">{currentQuestion.category}</Badge>
-                    )}
+                    {
+                        currentQuestion?.category && (
+                            <Badge variant="secondary">{currentQuestion.category}</Badge>
+                        )
+                    }
                     <span className="text-sm text-muted-foreground">
                         Question {currentIndex + 1} of {questions.length}
                     </span>
                 </div>
-
                 <div className="flex items-center gap-4">
-                    {showTimer && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <Clock className="w-4 h-4" />
-                            <span className={cn(
-                                timeLimit && totalTime > timeLimit * 0.8 && "text-red-500 font-medium"
-                            )}>
-                                {formatTime(timeLimit ? timeLimit - totalTime : totalTime)}
-                            </span>
-                        </div>
-                    )}
-
-                    {onExit && (
-                        <Button variant="ghost" size="sm" onClick={onExit}>
-                            Exit
-                        </Button>
-                    )}
+                    {
+                        showTimer && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <Clock className="w-4 h-4" />
+                                <span className={cn(
+                                    timeLimit && totalTime > timeLimit * 0.8 && "text-red-500 font-medium"
+                                )}>
+                                    {formatTime(timeLimit ? timeLimit - totalTime : totalTime)}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        onExit && (
+                            <Button variant="ghost" size="sm" onClick={onExit}>
+                                Exit
+                            </Button>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Progress */}
-            {showProgress && (
-                <div className="space-y-2">
-                    <Progress value={progress} className="h-2" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{answeredCount} answered</span>
-                        <span>Avg Score: {avgScore}%</span>
+            {
+                showProgress && (
+                    <div className="space-y-2">
+                        <Progress value={progress} className="h-2" />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{answeredCount} answered</span>
+                            <span>Avg Score: {avgScore}%</span>
+                        </div>
                     </div>
-                </div>
-            )}
-
-            {/* Interview Question Card */}
+                )
+            }
             <Card>
                 <CardHeader>
                     <div className="flex items-start justify-between">
@@ -301,84 +289,89 @@ export function MockMode({
                             <div className="flex-1">
                                 <CardDescription className="mb-2">Interviewer</CardDescription>
                                 <CardTitle className="text-lg font-medium leading-relaxed">
-                                    {currentQuestion.question}
+                                    {currentQuestion?.question || ""}
                                 </CardTitle>
                             </div>
                         </div>
-
                         <div className="flex items-center gap-2">
-                            {enableVoice && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={isSpeaking ? stopSpeaking : speakQuestion}
-                                            >
-                                                {isSpeaking ? (
-                                                    <VolumeX className="w-4 h-4" />
-                                                ) : (
-                                                    <Volume2 className="w-4 h-4" />
-                                                )}
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            {isSpeaking ? "Stop" : "Read aloud"}
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
-
-                            {allowHints && currentQuestion.hints && currentQuestion.hints.length > 0 && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={toggleHint}
-                                            >
-                                                <Lightbulb className="w-4 h-4" />
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Show hint</TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
+                            {
+                                enableVoice && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={isSpeaking ? stopSpeaking : speakQuestion}
+                                                >
+                                                    {
+                                                        isSpeaking ? (
+                                                            <VolumeX className="w-4 h-4" />
+                                                        ) : (
+                                                            <Volume2 className="w-4 h-4" />
+                                                        )
+                                                    }
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                {isSpeaking ? "Stop" : "Read aloud"}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )
+                            }
+                            {
+                                allowHints && currentQuestion?.hints && currentQuestion?.hints.length > 0 && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={toggleHint}
+                                                >
+                                                    <Lightbulb className="w-4 h-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Show hint</TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )
+                            }
                         </div>
                     </div>
                 </CardHeader>
-
                 <CardContent className="space-y-4">
-                    {/* Expected Topics */}
-                    {currentQuestion.expectedTopics && currentQuestion.expectedTopics.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                            {currentQuestion.expectedTopics.map((topic, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">
-                                    {topic}
-                                </Badge>
-                            ))}
-                        </div>
-                    )}
+                    {
+                        currentQuestion?.expectedTopics && currentQuestion?.expectedTopics.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {
+                                    currentQuestion?.expectedTopics.map((topic, idx) => (
+                                        <Badge key={idx} variant="outline" className="text-xs">
+                                            {topic}
+                                        </Badge>
+                                    ))
+                                }
+                            </div>
+                        )
+                    }
 
-                    {/* Hint */}
                     <AnimatePresence>
-                        {showHint && currentQuestion.hints && currentQuestion.hints[0] && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
-                            >
-                                <p className="text-sm text-amber-800 dark:text-amber-200">
-                                    <strong>Hint:</strong> {currentQuestion.hints[0]}
-                                </p>
-                            </motion.div>
-                        )}
+                        {
+                            showHint && currentQuestion?.hints && currentQuestion?.hints[0] && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+                                >
+                                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                                        <strong>Hint:</strong> {currentQuestion.hints[0]}
+                                    </p>
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
-
-                    {/* Answer Input */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
@@ -386,7 +379,6 @@ export function MockMode({
                             </div>
                             <span className="text-sm font-medium">Your Answer</span>
                         </div>
-
                         <Textarea
                             ref={textareaRef}
                             value={answer}
@@ -396,117 +388,127 @@ export function MockMode({
                             disabled={showResult || isSubmitting}
                         />
 
-                        {enableVoice && (
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant={isRecording ? "destructive" : "outline"}
-                                    size="sm"
-                                    onClick={toggleRecording}
-                                    disabled={showResult}
-                                >
-                                    {isRecording ? (
-                                        <>
-                                            <MicOff className="w-4 h-4 mr-2" />
-                                            Stop Recording
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Mic className="w-4 h-4 mr-2" />
-                                            Record Answer
-                                        </>
-                                    )}
-                                </Button>
-                                {isRecording && (
-                                    <span className="text-sm text-red-500 animate-pulse">
-                                        Recording...
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* AI Feedback */}
-                    <AnimatePresence>
-                        {showResult && feedback && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="space-y-4"
-                            >
-                                {/* Score */}
-                                <div className="p-4 bg-muted rounded-lg">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="font-medium">AI Evaluation</span>
-                                        <span className={cn("text-2xl font-bold", getScoreColor(feedback.score))}>
-                                            {feedback.score}/100
-                                        </span>
-                                    </div>
-                                    <Progress value={feedback.score} className="h-2" />
+                        {
+                            enableVoice && (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant={isRecording ? "destructive" : "outline"}
+                                        size="sm"
+                                        onClick={toggleRecording}
+                                        disabled={showResult}
+                                    >
+                                        {
+                                            isRecording ? (
+                                                <>
+                                                    <MicOff className="w-4 h-4 mr-2" />
+                                                    Stop Recording
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Mic className="w-4 h-4 mr-2" />
+                                                    Record Answer
+                                                </>
+                                            )
+                                        }
+                                    </Button>
+                                    {
+                                        isRecording && (
+                                            <span className="text-sm text-red-500 animate-pulse">
+                                                Recording...
+                                            </span>
+                                        )
+                                    }
                                 </div>
-
-                                {/* Strengths */}
-                                {feedback.strengths.length > 0 && (
-                                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                        <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
-                                            ✓ Strengths
-                                        </h4>
-                                        <ul className="space-y-1">
-                                            {feedback.strengths.map((s, idx) => (
-                                                <li key={idx} className="text-sm text-green-700 dark:text-green-300">
-                                                    • {s}
-                                                </li>
-                                            ))}
-                                        </ul>
+                            )
+                        }
+                    </div>
+                    <AnimatePresence>
+                        {
+                            showResult && feedback && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="space-y-4"
+                                >
+                                    <div className="p-4 bg-muted rounded-lg">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="font-medium">AI Evaluation</span>
+                                            <span className={cn("text-2xl font-bold", getScoreColor(feedback.score))}>
+                                                {feedback.score}/100
+                                            </span>
+                                        </div>
+                                        <Progress value={feedback.score} className="h-2" />
                                     </div>
-                                )}
+                                    {
+                                        feedback.strengths.length > 0 && (
+                                            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                                <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
+                                                    ✓ Strengths
+                                                </h4>
+                                                <ul className="space-y-1">
+                                                    {
+                                                        feedback.strengths.map((s, idx) => (
+                                                            <li key={idx} className="text-sm text-green-700 dark:text-green-300">
+                                                                • {s}
+                                                            </li>
+                                                        ))
+                                                    }
+                                                </ul>
+                                            </div>
+                                        )
+                                    }
 
-                                {/* Improvements */}
-                                {feedback.improvements.length > 0 && (
-                                    <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-                                        <h4 className="font-medium text-orange-800 dark:text-orange-200 mb-2">
-                                            → Areas for Improvement
-                                        </h4>
-                                        <ul className="space-y-1">
-                                            {feedback.improvements.map((i, idx) => (
-                                                <li key={idx} className="text-sm text-orange-700 dark:text-orange-300">
-                                                    • {i}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
+                                    {
+                                        feedback.improvements.length > 0 && (
+                                            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                                                <h4 className="font-medium text-orange-800 dark:text-orange-200 mb-2">
+                                                    → Areas for Improvement
+                                                </h4>
+                                                <ul className="space-y-1">
+                                                    {
+                                                        feedback.improvements.map((i, idx) => (
+                                                            <li key={idx} className="text-sm text-orange-700 dark:text-orange-300">
+                                                                • {i}
+                                                            </li>
+                                                        ))
+                                                    }
+                                                </ul>
+                                            </div>
+                                        )
+                                    }
 
-                                {/* Suggested Answer */}
-                                {feedback.suggestedAnswer && (
-                                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                        <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                                            📝 Sample Answer
-                                        </h4>
-                                        <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
-                                            {feedback.suggestedAnswer}
-                                        </p>
-                                    </div>
-                                )}
+                                    {
+                                        feedback.suggestedAnswer && (
+                                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                                                    📝 Sample Answer
+                                                </h4>
+                                                <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+                                                    {feedback.suggestedAnswer}
+                                                </p>
+                                            </div>
+                                        )
+                                    }
 
-                                {/* Follow-up Question */}
-                                {feedback.followUpQuestion && (
-                                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-                                        <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">
-                                            🤔 Follow-up Question
-                                        </h4>
-                                        <p className="text-sm text-purple-700 dark:text-purple-300">
-                                            {feedback.followUpQuestion}
-                                        </p>
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
+                                    {
+                                        feedback.followUpQuestion && (
+                                            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                                                <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">
+                                                    🤔 Follow-up Question
+                                                </h4>
+                                                <p className="text-sm text-purple-700 dark:text-purple-300">
+                                                    {feedback.followUpQuestion}
+                                                </p>
+                                            </div>
+                                        )
+                                    }
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
                 </CardContent>
             </Card>
-
-            {/* Navigation */}
             <div className="flex items-center justify-between">
                 <Button
                     variant="outline"
@@ -516,69 +518,76 @@ export function MockMode({
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     Previous
                 </Button>
-
                 <div className="flex items-center gap-2">
-                    {showResult && (
-                        <Button variant="ghost" onClick={handleReset}>
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            Try Again
-                        </Button>
-                    )}
+                    {
+                        showResult && (
+                            <Button variant="ghost" onClick={handleReset}>
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Try Again
+                            </Button>
+                        )
+                    }
 
-                    {!showResult ? (
-                        <Button
-                            onClick={handleSubmitAnswer}
-                            disabled={!answer.trim() || isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                "Evaluating..."
-                            ) : (
-                                <>
-                                    <Send className="w-4 h-4 mr-2" />
-                                    Submit Answer
-                                </>
-                            )}
-                        </Button>
-                    ) : (
-                        <Button onClick={handleNext}>
-                            {currentIndex < questions.length - 1 ? (
-                                <>
-                                    Next Question
-                                    <ChevronRight className="w-4 h-4 ml-2" />
-                                </>
-                            ) : (
-                                "Complete Interview"
-                            )}
-                        </Button>
-                    )}
+                    {
+                        !showResult ? (
+                            <Button
+                                onClick={handleSubmitAnswer}
+                                disabled={!answer.trim() || isSubmitting}
+                            >
+                                {
+                                    isSubmitting ? (
+                                        "Evaluating..."
+                                    ) : (
+                                        <>
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Submit Answer
+                                        </>
+                                    )
+                                }
+                            </Button>
+                        ) : (
+                            <Button onClick={handleNext}>
+                                {
+                                    currentIndex < questions.length - 1 ? (
+                                        <>
+                                            Next Question
+                                            <ChevronRight className="w-4 h-4 ml-2" />
+                                        </>
+                                    ) : (
+                                        "Complete Interview"
+                                    )
+                                }
+                            </Button>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Question Navigation */}
             <div className="flex flex-wrap gap-2 justify-center pt-4 border-t">
-                {questions.map((q, idx) => {
-                    const qAnswer = answers.find((a) => a.questionId === q.id);
-                    const isCurrent = idx === currentIndex;
+                {
+                    questions.map((q, idx) => {
+                        const qAnswer = answers.find((a) => a.questionId === q.id);
+                        const isCurrent = idx === currentIndex;
 
-                    return (
-                        <button
-                            key={q.id}
-                            onClick={() => context === "practice" && setCurrentIndex(idx)}
-                            disabled={context === "exam"}
-                            className={cn(
-                                "w-8 h-8 rounded-full text-xs font-medium transition-all",
-                                !qAnswer && !isCurrent && "bg-muted hover:bg-muted/80",
-                                isCurrent && "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2",
-                                qAnswer && qAnswer.score !== undefined && qAnswer.score >= 70 && "bg-green-500 text-white",
-                                qAnswer && qAnswer.score !== undefined && qAnswer.score >= 40 && qAnswer.score < 70 && "bg-yellow-500 text-white",
-                                qAnswer && qAnswer.score !== undefined && qAnswer.score < 40 && "bg-red-500 text-white",
-                                context === "exam" && "cursor-default"
-                            )}
-                        >
-                            {idx + 1}
-                        </button>
-                    );
-                })}
+                        return (
+                            <button
+                                key={q?.id || ""}
+                                onClick={() => context === "practice" && setCurrentIndex(idx)}
+                                disabled={context === "exam"}
+                                className={cn(
+                                    "w-8 h-8 rounded-full text-xs font-medium transition-all",
+                                    !qAnswer && !isCurrent && "bg-muted hover:bg-muted/80",
+                                    isCurrent && "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2",
+                                    qAnswer && qAnswer.score !== undefined && qAnswer.score >= 70 && "bg-green-500 text-white",
+                                    qAnswer && qAnswer.score !== undefined && qAnswer.score >= 40 && qAnswer.score < 70 && "bg-yellow-500 text-white",
+                                    qAnswer && qAnswer.score !== undefined && qAnswer.score < 40 && "bg-red-500 text-white",
+                                    context === "exam" && "cursor-default"
+                                )}
+                            >
+                                {idx + 1}
+                            </button>
+                        );
+                    })
+                }
             </div>
         </div>
     );

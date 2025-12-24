@@ -5,8 +5,8 @@ import { motion } from "framer-motion"
 import {
     ArrowRight, GitBranch, GitMerge, Terminal, Banknote, ShieldCheck
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 
 const tracks = [
     {

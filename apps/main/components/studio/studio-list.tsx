@@ -8,29 +8,29 @@ import {
 	Edit, Globe, Lock, Clock, Sparkles, Users
 } from "lucide-react";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/ui/button";
 import {
 	Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
 	DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+} from "@repo/ui/components/ui/dropdown-menu";
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
 	DialogTitle, DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/components/ui/dialog";
+import { Input } from "@repo/ui/components/ui/input";
+import { Label } from "@repo/ui/components/ui/label";
+import { Textarea } from "@repo/ui/components/ui/textarea";
 import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/select";
+import { Switch } from "@repo/ui/components/ui/switch";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
 	getStudios, createStudio, deleteStudio
 } from "@/actions/(main)/studios/studio.action";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import type {
 	StudioListItem, StudioCategory, StudioVisibility
 } from "@/types/studio";

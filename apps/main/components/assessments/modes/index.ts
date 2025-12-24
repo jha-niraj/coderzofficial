@@ -9,23 +9,18 @@
  */
 
 export { QuizMode } from "./QuizMode";
-export type { QuizQuestion, QuizAnswer, QuizModeProps } from "./QuizMode";
+export type { 
+    QuizQuestion, QuizAnswer, QuizModeProps 
+} from "./QuizMode";
 
 export { CodeMode } from "./CodeMode";
 export type { 
-    CodeQuestion, 
-    CodeAnswer, 
-    CodeModeProps, 
-    TestCase, 
-    TestResult 
+    CodeQuestion, CodeAnswer, CodeModeProps, TestCase, TestResult 
 } from "./CodeMode";
 
 export { MockMode } from "./MockMode";
 export type { 
-    MockQuestion, 
-    MockAnswer, 
-    MockModeProps, 
-    AIFeedback 
+    MockQuestion, MockAnswer, MockModeProps, AIFeedback 
 } from "./MockMode";
 
 export { MixedMode } from "./MixedMode";

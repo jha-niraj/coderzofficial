@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
-} from '@/components/ui/card'
+} from '@repo/ui/components/ui/card'
 import {
     Clock, Users, Star, Sparkles, Brain, TrendingUp, Lock, Globe, Shield
 } from 'lucide-react'

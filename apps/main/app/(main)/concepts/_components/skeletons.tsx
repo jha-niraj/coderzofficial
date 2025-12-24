@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Card, CardContent, CardFooter
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 
 export function ConceptsHeroSkeleton() {
     return (

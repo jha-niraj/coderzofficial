@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+} from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Sparkles, FolderKanban, BookOpen, Code2, MessageSquare, Gamepad2, Map,
     Wrench, GraduationCap, Palette, FileText, Briefcase, GitBranch, ChevronRight

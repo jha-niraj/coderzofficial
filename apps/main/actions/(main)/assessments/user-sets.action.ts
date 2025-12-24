@@ -20,7 +20,7 @@ import {
     PUBLIC_CREDIT_REFUND_PERCENT,
     PRACTICE_SET_CREDIT_COST,
 } from "@/types/assessment";
-import { slugify } from "../../lib/utils";
+import { slugify } from "@repo/ui/lib/utils";
 
 // Re-export constants for backward compatibility
 export { PRACTICE_SET_CREDIT_COST, EXAM_SET_CREDIT_COST, PUBLIC_CREDIT_REFUND_PERCENT };

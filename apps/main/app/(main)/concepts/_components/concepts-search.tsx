@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import {
     Search, Sparkles
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Input } from "@repo/ui/components/ui/input";
+import { Button } from "@repo/ui/components/ui/button";
+import { Card } from "@repo/ui/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 
 const popularSearches = [

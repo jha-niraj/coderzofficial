@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React, { useState } from "react";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";

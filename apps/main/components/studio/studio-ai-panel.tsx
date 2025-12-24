@@ -5,14 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
 	Send, Sparkles, User, Bot, Trash2, Copy, Check
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
+import { Button } from "@repo/ui/components/ui/button";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
+import toast from "@repo/ui/components/ui/sonner";
 import {
 	sendChatMessage, clearChatHistory
 } from "@/actions/(main)/studios/studio.action";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";

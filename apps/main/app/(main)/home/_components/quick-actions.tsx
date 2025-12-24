@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
     FolderKanban, BookOpen, Code2, MessageSquare, Gamepad2, Rocket, ArrowRight
 } from "lucide-react";

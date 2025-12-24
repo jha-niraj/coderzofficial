@@ -574,3 +574,48 @@ export async function setAdminPassword(newPassword: string): Promise<AdminRespon
         return { success: false, error: "Failed to set password" }
     }
 }
+
+// Change password with current password verification
+export async function changeAdminPassword(currentPassword: string, newPassword: string): Promise<AdminResponse> {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) {
+            return { success: false, error: "Not authenticated" }
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { id: true, hashedPassword: true }
+        })
+        if (!user || !user.hashedPassword) {
+            return { success: false, error: "User not found" }
+        }
+
+        const valid = await bcrypt.compare(currentPassword, user.hashedPassword)
+        if (!valid) {
+            return { success: false, error: "Current password is incorrect" }
+        }
+
+        const hashedNew = await bcrypt.hash(newPassword, 12)
+        await prisma.user.update({ where: { id: user.id }, data: { hashedPassword: hashedNew } })
+
+        const adminAccess = await prisma.adminAccess.findUnique({ where: { userId: user.id } })
+        if (adminAccess) {
+            await prisma.adminAuditLog.create({
+                data: {
+                    adminId: adminAccess.id,
+                    action: "UPDATE",
+                    module: "admin_management",
+                    resourceType: "User",
+                    resourceId: user.id,
+                    description: "Changed password"
+                }
+            })
+        }
+
+        return { success: true }
+    } catch (error) {
+        console.error("Change password error:", error)
+        return { success: false, error: "Failed to change password" }
+    }
+}

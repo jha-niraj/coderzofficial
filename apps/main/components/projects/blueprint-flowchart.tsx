@@ -2,24 +2,16 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import {
-    ReactFlow,
-    Node,
-    Edge,
-    Controls,
-    Background,
-    BackgroundVariant,
-    useNodesState,
-    useEdgesState,
-    Position,
-    MarkerType,
-    Handle,
+    ReactFlow, Node, Edge, Controls, Background, BackgroundVariant, useNodesState,
+    useEdgesState, Position, MarkerType, Handle
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, ChevronUp, Layers, Target, Code2, Brain, Trophy, CheckCircle2, Sparkles, AlertCircle, BookOpen, Play } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { cn } from '../../lib/utils'
+import {
+    ChevronDown, ChevronUp, Layers, Code2, Brain, Trophy, CheckCircle2, Sparkles, Play
+} from 'lucide-react'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { cn } from '@repo/ui/lib/utils'
 
 // ============================================================================
 // Custom Node Types
@@ -69,8 +61,7 @@ function TaskNode({ data }: { data: TaskNodeData }) {
             statusColors[data.status]
         )}>
             <Handle type="target" position={Position.Top} className="!bg-neutral-400 !w-2 !h-2" />
-            
-            {/* Header */}
+
             <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
@@ -82,32 +73,34 @@ function TaskNode({ data }: { data: TaskNodeData }) {
                     {data.difficulty}
                 </Badge>
             </div>
-            
-            {/* Title */}
             <h4 className={cn(
                 'font-semibold text-sm leading-tight mb-1',
                 data.status === 'COMPLETED' ? 'line-through text-neutral-500' : 'text-neutral-900 dark:text-white'
             )}>
                 {data.label}
             </h4>
-            
-            {/* Description */}
-            {data.description && (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
-                    {data.description}
-                </p>
-            )}
-            
-            {/* Tags */}
-            {data.tags && data.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                    {data.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
-                            {tag}
-                        </span>
-                    ))}
-                </div>
-            )}
+
+            {
+                data.description && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                        {data.description}
+                    </p>
+                )
+            }
+
+            {
+                data.tags && data.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                        {
+                            data.tags.slice(0, 3).map((tag, idx) => (
+                                <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
+                                    {tag}
+                                </span>
+                            ))
+                        }
+                    </div>
+                )
+            }
 
             <Handle type="source" position={Position.Bottom} className="!bg-neutral-400 !w-2 !h-2" />
         </div>
@@ -134,25 +127,29 @@ function MilestoneNode({ data }: { data: MilestoneNodeData }) {
             typeStyles[data.type]
         )}>
             <Handle type="target" position={Position.Top} className="!bg-white !w-2 !h-2" />
-            
+
             <div className="flex items-center gap-3">
                 {typeIcons[data.type]}
                 <div>
                     <h4 className="font-bold text-sm">{data.label}</h4>
-                    {data.description && (
-                        <p className="text-xs opacity-90">{data.description}</p>
-                    )}
+                    {
+                        data.description && (
+                            <p className="text-xs opacity-90">{data.description}</p>
+                        )
+                    }
                 </div>
             </div>
-            
-            {data.progress !== undefined && (
-                <div className="mt-2 bg-white/20 rounded-full h-1.5">
-                    <div 
-                        className="bg-white rounded-full h-full transition-all duration-500" 
-                        style={{ width: `${data.progress}%` }}
-                    />
-                </div>
-            )}
+
+            {
+                data.progress !== undefined && (
+                    <div className="mt-2 bg-white/20 rounded-full h-1.5">
+                        <div
+                            className="bg-white rounded-full h-full transition-all duration-500"
+                            style={{ width: `${data.progress}%` }}
+                        />
+                    </div>
+                )
+            }
 
             <Handle type="source" position={Position.Bottom} className="!bg-white !w-2 !h-2" />
         </div>
@@ -205,11 +202,11 @@ interface BlueprintFlowchartProps {
     onTaskClick?: (taskId: string) => void
 }
 
-export default function BlueprintFlowchart({ 
-    tasks, 
-    projectTitle, 
+export default function BlueprintFlowchart({
+    tasks,
+    projectTitle,
     progressPercentage = 0,
-    onTaskClick 
+    onTaskClick
 }: BlueprintFlowchartProps) {
     const [isExpanded, setIsExpanded] = useState(true)
 
@@ -217,10 +214,10 @@ export default function BlueprintFlowchart({
     const { initialNodes, initialEdges } = useMemo(() => {
         const nodes: Node[] = []
         const edges: Edge[] = []
-        
+
         const sortedTasks = [...tasks].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
         const totalTasks = sortedTasks.length
-        
+
         // Calculate layout positions
         const tasksPerRow = 4
         const nodeWidth = 260
@@ -235,8 +232,8 @@ export default function BlueprintFlowchart({
             id: 'start',
             type: 'milestone',
             position: { x: startX + ((tasksPerRow - 1) * (nodeWidth + horizontalGap)) / 2, y: 20 },
-            data: { 
-                label: 'Start Project', 
+            data: {
+                label: 'Start Project',
                 description: projectTitle,
                 type: 'start',
                 progress: progressPercentage,
@@ -247,7 +244,7 @@ export default function BlueprintFlowchart({
         sortedTasks.forEach((task, index) => {
             const row = Math.floor(index / tasksPerRow)
             const col = row % 2 === 0 ? index % tasksPerRow : tasksPerRow - 1 - (index % tasksPerRow)
-            
+
             const statusMap: Record<string, 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED'> = {
                 'TO_DO': 'NOT_STARTED',
                 'IN_PROGRESS': 'IN_PROGRESS',
@@ -257,9 +254,9 @@ export default function BlueprintFlowchart({
             nodes.push({
                 id: task.id,
                 type: 'task',
-                position: { 
-                    x: startX + col * (nodeWidth + horizontalGap), 
-                    y: startY + row * (nodeHeight + verticalGap) 
+                position: {
+                    x: startX + col * (nodeWidth + horizontalGap),
+                    y: startY + row * (nodeHeight + verticalGap)
                 },
                 data: {
                     label: task.title,
@@ -278,12 +275,12 @@ export default function BlueprintFlowchart({
         nodes.push({
             id: 'end',
             type: 'milestone',
-            position: { 
-                x: startX + ((tasksPerRow - 1) * (nodeWidth + horizontalGap)) / 2, 
+            position: {
+                x: startX + ((tasksPerRow - 1) * (nodeWidth + horizontalGap)) / 2,
                 y: startY + (lastRow + 1) * (nodeHeight + verticalGap) + 50
             },
-            data: { 
-                label: 'Project Complete!', 
+            data: {
+                label: 'Project Complete!',
                 description: 'Congratulations!',
                 type: 'end',
             },
@@ -295,7 +292,7 @@ export default function BlueprintFlowchart({
             edges.push({
                 id: 'start-to-first',
                 source: 'start',
-                target: sortedTasks[0].id,
+                target: sortedTasks[0]?.id ?? '',
                 type: 'smoothstep',
                 animated: progressPercentage < 100,
                 style: { stroke: '#6366f1', strokeWidth: 2 },
@@ -309,23 +306,23 @@ export default function BlueprintFlowchart({
             const nextTask = sortedTasks[i + 1]
             const currentRow = Math.floor(i / tasksPerRow)
             const nextRow = Math.floor((i + 1) / tasksPerRow)
-            
-            const isCompleted = currentTask.status === 'COMPLETED'
-            
+
+            const isCompleted = currentTask?.status === 'COMPLETED'
+
             edges.push({
-                id: `${currentTask.id}-to-${nextTask.id}`,
-                source: currentTask.id,
-                target: nextTask.id,
+                id: `${currentTask?.id}-to-${nextTask?.id}`,
+                source: currentTask?.id ?? '',
+                target: nextTask?.id ?? '',
                 type: currentRow !== nextRow ? 'smoothstep' : 'smoothstep',
                 animated: !isCompleted && progressPercentage < 100,
-                style: { 
-                    stroke: isCompleted ? '#22c55e' : '#6366f1', 
+                style: {
+                    stroke: isCompleted ? '#22c55e' : '#6366f1',
                     strokeWidth: 2,
                     opacity: isCompleted ? 1 : 0.6,
                 },
-                markerEnd: { 
-                    type: MarkerType.ArrowClosed, 
-                    color: isCompleted ? '#22c55e' : '#6366f1' 
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: isCompleted ? '#22c55e' : '#6366f1'
                 },
             })
         }
@@ -335,10 +332,10 @@ export default function BlueprintFlowchart({
             const lastTask = sortedTasks[sortedTasks.length - 1]
             edges.push({
                 id: 'last-to-end',
-                source: lastTask.id,
+                source: lastTask?.id ?? '',
                 target: 'end',
                 type: 'smoothstep',
-                animated: lastTask.status !== 'COMPLETED',
+                animated: lastTask?.status !== 'COMPLETED',
                 style: { stroke: '#6366f1', strokeWidth: 2, opacity: 0.6 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
             })
@@ -359,13 +356,12 @@ export default function BlueprintFlowchart({
     // Calculate height based on tasks
     const flowchartHeight = useMemo(() => {
         const tasksPerRow = 4
-        const rows = Math.ceil(tasks.length / tasksPerRow)
+        const rows = Math.ceil(tasks?.length ?? 0 / tasksPerRow)
         return Math.max(500, 250 + rows * 250)
-    }, [tasks.length])
+    }, [tasks?.length ?? 0])
 
     return (
         <div className="w-full bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-            {/* Header */}
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="w-full px-6 py-4 flex items-center justify-between bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
@@ -384,7 +380,6 @@ export default function BlueprintFlowchart({
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    {/* Progress indicator */}
                     <div className="hidden sm:flex items-center gap-2">
                         <div className="w-32 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                             <motion.div
@@ -398,56 +393,56 @@ export default function BlueprintFlowchart({
                             {Math.round(progressPercentage)}%
                         </span>
                     </div>
-                    {isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-neutral-400" />
-                    ) : (
-                        <ChevronDown className="w-5 h-5 text-neutral-400" />
-                    )}
+                    {
+                        isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-neutral-400" />
+                        ) : (
+                            <ChevronDown className="w-5 h-5 text-neutral-400" />
+                        )
+                    }
                 </div>
             </button>
-
-            {/* Flowchart */}
             <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: flowchartHeight, opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="overflow-hidden"
-                    >
-                        <ReactFlow
-                            nodes={nodes}
-                            edges={edges}
-                            onNodesChange={onNodesChange}
-                            onEdgesChange={onEdgesChange}
-                            onNodeClick={handleNodeClick}
-                            nodeTypes={nodeTypes}
-                            fitView
-                            fitViewOptions={{ padding: 0.2 }}
-                            minZoom={0.3}
-                            maxZoom={1.5}
-                            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-                            proOptions={{ hideAttribution: true }}
-                            className="bg-transparent"
+                {
+                    isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: flowchartHeight, opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                            className="overflow-hidden"
                         >
-                            <Background 
-                                variant={BackgroundVariant.Dots} 
-                                gap={20} 
-                                size={1} 
-                                color="#d4d4d8"
-                                className="dark:opacity-30"
-                            />
-                            <Controls 
-                                className="!bg-white dark:!bg-neutral-800 !border-neutral-200 dark:!border-neutral-700 !rounded-xl !shadow-lg"
-                                showInteractive={false}
-                            />
-                        </ReactFlow>
-                    </motion.div>
-                )}
+                            <ReactFlow
+                                nodes={nodes}
+                                edges={edges}
+                                onNodesChange={onNodesChange}
+                                onEdgesChange={onEdgesChange}
+                                onNodeClick={handleNodeClick}
+                                nodeTypes={nodeTypes}
+                                fitView
+                                fitViewOptions={{ padding: 0.2 }}
+                                minZoom={0.3}
+                                maxZoom={1.5}
+                                defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                                proOptions={{ hideAttribution: true }}
+                                className="bg-transparent"
+                            >
+                                <Background
+                                    variant={BackgroundVariant.Dots}
+                                    gap={20}
+                                    size={1}
+                                    color="#d4d4d8"
+                                    className="dark:opacity-30"
+                                />
+                                <Controls
+                                    className="!bg-white dark:!bg-neutral-800 !border-neutral-200 dark:!border-neutral-700 !rounded-xl !shadow-lg"
+                                    showInteractive={false}
+                                />
+                            </ReactFlow>
+                        </motion.div>
+                    )
+                }
             </AnimatePresence>
         </div>
     )
 }
-
-

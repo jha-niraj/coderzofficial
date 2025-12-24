@@ -8,17 +8,17 @@ import {
     FolderOpen, Gift, GitBranch, GitPullRequest, GraduationCap, Loader2, Lock,
     Search, Star, Target, Trophy, Users
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Card, CardContent, CardHeader, CardTitle
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Progress } from '@/components/ui/progress'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Input } from '@repo/ui/components/ui/input'
+import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
-import { cn } from '../../lib/utils'
+} from "@repo/ui/components/ui/select"
+import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
     getProjects, getUserCertificationStatus, PROJECT_TYPES, DIFFICULTY_LEVELS,

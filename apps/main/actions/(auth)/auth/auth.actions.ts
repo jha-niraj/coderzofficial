@@ -2,7 +2,7 @@
 
 import { prisma } from "@repo/prisma"
 import { sendEmail } from "@/utils/mail"
-import bcrypt from "bcrypt"
+import bcryptjs from "bcryptjs"
 
 interface AuthResponse {
     success: boolean
@@ -210,7 +210,7 @@ export async function resetPasswordWithOTP(email: string, otp: string, newPasswo
         }
 
         // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        const hashedPassword = await bcryptjs.hash(newPassword, 10)
 
         // Update password and clear reset OTP
         await prisma.user.update({

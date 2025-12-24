@@ -1,32 +1,17 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { 
-  TrendingUp, 
-  Trophy, 
-  Users, 
-  Star, 
-  Clock, 
-  CheckCircle2, 
-  Target, 
-  Brain,
-  Code2,
-  Calendar,
-  Eye,
-  ThumbsUp,
-  GitFork,
-  Zap,
-  Award,
-  Activity,
-  BarChart3,
-  PieChart,
-  ArrowUpRight,
-  ArrowDownRight
+import {
+  TrendingUp, Trophy, Users, Star, Clock, CheckCircle2, Target, Code2, Eye,
+  ThumbsUp, Zap, Award, Activity, BarChart3, PieChart, ArrowUpRight, ArrowDownRight
 } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
+} from "@repo/ui/components/ui/card"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Progress } from "@repo/ui/components/ui/progress"
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger
+} from "@repo/ui/components/ui/tabs"
 import Image from "next/image"
 
 interface ProjectStats {
@@ -124,7 +109,6 @@ interface ProgressComponentProps {
 export function ProjectAnalytics({ stats, className }: AnalyticsComponentProps) {
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Overview Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           icon={<Eye className="h-5 w-5" />}
@@ -155,8 +139,6 @@ export function ProjectAnalytics({ stats, className }: AnalyticsComponentProps) 
           trend={5.7}
         />
       </div>
-
-      {/* Detailed Analytics Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -164,13 +146,11 @@ export function ProjectAnalytics({ stats, className }: AnalyticsComponentProps) 
           <TabsTrigger value="trends">Trends</TabsTrigger>
           <TabsTrigger value="leaderboard">Top Builders</TabsTrigger>
         </TabsList>
-
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CompletionRateChart completionRate={stats.completionRate} />
             <DifficultyDistributionChart distribution={stats.difficultyDistribution} />
           </div>
-          
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -180,29 +160,30 @@ export function ProjectAnalytics({ stats, className }: AnalyticsComponentProps) 
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {stats.technologyPopularity.slice(0, 5).map((tech, index) => (
-                  <div key={tech.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded bg-gradient-to-br from-purple-500 to-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                        {index + 1}
+                {
+                  stats.technologyPopularity.slice(0, 5).map((tech, index) => (
+                    <div key={tech.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded bg-gradient-to-br from-purple-500 to-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {tech.name}
+                        </span>
                       </div>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {tech.name}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <Progress value={tech.percentage} className="w-20" />
+                        <span className="text-sm text-gray-600 dark:text-gray-400 w-12">
+                          {tech.percentage}%
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={tech.percentage} className="w-20" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400 w-12">
-                        {tech.percentage}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                }
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="engagement" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
@@ -225,11 +206,9 @@ export function ProjectAnalytics({ stats, className }: AnalyticsComponentProps) 
             />
           </div>
         </TabsContent>
-
         <TabsContent value="trends" className="space-y-6">
           <WeeklyTrendsChart weeklyStats={stats.weeklyStats} />
         </TabsContent>
-
         <TabsContent value="leaderboard" className="space-y-6">
           <TopPerformersLeaderboard performers={stats.topPerformers} />
         </TabsContent>
@@ -242,7 +221,6 @@ export function ProjectAnalytics({ stats, className }: AnalyticsComponentProps) 
 export function UserProjectAnalytics({ userStats, className }: UserStatsComponentProps) {
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Personal Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           icon={<Code2 className="h-5 w-5" />}
@@ -269,8 +247,6 @@ export function UserProjectAnalytics({ userStats, className }: UserStatsComponen
           color="purple"
         />
       </div>
-
-      {/* Additional Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -301,43 +277,46 @@ export function UserProjectAnalytics({ userStats, className }: UserStatsComponen
             <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-gray-400">Completion Rate</span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {userStats.totalProjects > 0 
+                {userStats.totalProjects > 0
                   ? Math.round((userStats.completedProjects / userStats.totalProjects) * 100)
                   : 0}%
               </span>
             </div>
           </CardContent>
         </Card>
-
-        {userStats.badges.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Recent Badges
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {userStats.badges.slice(0, 3).map((badge) => (
-                  <div key={badge.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                      <span className="text-lg">{badge.icon}</span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {badge.name}
+        {
+          userStats.badges.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Recent Badges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {
+                    userStats.badges.slice(0, 3).map((badge) => (
+                      <div key={badge.id} className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                          <span className="text-lg">{badge.icon}</span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {badge.name}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            {new Date(badge.earnedAt).toLocaleDateString()}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {new Date(badge.earnedAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    ))
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          )
+        }
       </div>
     </div>
   )
@@ -347,7 +326,6 @@ export function UserProjectAnalytics({ userStats, className }: UserStatsComponen
 export function ProjectProgressAnalytics({ progress, className }: ProgressComponentProps) {
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Progress Overview */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -364,7 +342,6 @@ export function ProjectProgressAnalytics({ progress, className }: ProgressCompon
             <span className="text-sm font-bold">{progress.progressPercentage}%</span>
           </div>
           <Progress value={progress.progressPercentage} className="h-3" />
-          
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-blue-600" />
@@ -381,95 +358,96 @@ export function ProjectProgressAnalytics({ progress, className }: ProgressCompon
           </div>
         </CardContent>
       </Card>
-
-      {/* Current Task */}
-      {progress.currentTask && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Current Task</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
-                <Code2 className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">
-                  {progress.currentTask.title}
+      {
+        progress.currentTask && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Current Task</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                  <Code2 className="h-5 w-5 text-white" />
                 </div>
-                <Badge variant="outline" className="text-xs mt-1">
-                  {progress.currentTask.difficulty}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Milestone Progress */}
-      {progress.milestone && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Current Milestone: {progress.milestone.name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm font-bold">
-                {progress.milestone.progress}/{progress.milestone.target}
-              </span>
-            </div>
-            <Progress 
-              value={(progress.milestone.progress / progress.milestone.target) * 100} 
-              className="h-2"
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Upcoming Tasks */}
-      {progress.upcomingTasks.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Tasks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {progress.upcomingTasks.slice(0, 3).map((task, index) => (
-                <div key={task.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">
-                      {index + 1}
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {task.title}
-                    </span>
+                <div>
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    {progress.currentTask.title}
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    ~{task.estimatedTime}min
-                  </span>
+                  <Badge variant="outline" className="text-xs mt-1">
+                    {progress.currentTask.difficulty}
+                  </Badge>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </CardContent>
+          </Card>
+        )
+      }
+      {
+        progress.milestone && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                Current Milestone: {progress.milestone.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Progress</span>
+                <span className="text-sm font-bold">
+                  {progress.milestone.progress}/{progress.milestone.target}
+                </span>
+              </div>
+              <Progress
+                value={(progress.milestone.progress / progress.milestone.target) * 100}
+                className="h-2"
+              />
+            </CardContent>
+          </Card>
+        )
+      }
+      {
+        progress.upcomingTasks.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {
+                  progress.upcomingTasks.slice(0, 3).map((task, index) => (
+                    <div key={task.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {task.title}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        ~{task.estimatedTime}min
+                      </span>
+                    </div>
+                  ))
+                }
+              </div>
+            </CardContent>
+          </Card>
+        )
+      }
     </div>
   )
 }
 
 // Helper Components
-
-function StatCard({ 
-  icon, 
-  title, 
-  value, 
-  color, 
-  trend 
-}: { 
+function StatCard({
+  icon,
+  title,
+  value,
+  color,
+  trend
+}: {
   icon: React.ReactNode
   title: string
   value: string
@@ -478,7 +456,7 @@ function StatCard({
 }) {
   const colorClasses = {
     blue: "from-blue-500 to-blue-600",
-    green: "from-green-500 to-green-600", 
+    green: "from-green-500 to-green-600",
     purple: "from-purple-500 to-purple-600",
     yellow: "from-yellow-500 to-yellow-600",
     red: "from-red-500 to-red-600"
@@ -491,12 +469,14 @@ function StatCard({
           <div className={`p-2 rounded-lg bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]} text-white`}>
             {icon}
           </div>
-          {trend !== undefined && (
-            <div className={`flex items-center gap-1 text-xs ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {trend >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-              {Math.abs(trend)}%
-            </div>
-          )}
+          {
+            trend !== undefined && (
+              <div className={`flex items-center gap-1 text-xs ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {trend >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                {Math.abs(trend)}%
+              </div>
+            )
+          }
         </div>
         <div className="mt-4">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
@@ -550,13 +530,13 @@ function CompletionRateChart({ completionRate }: { completionRate: number }) {
   )
 }
 
-function DifficultyDistributionChart({ 
-  distribution 
-}: { 
-  distribution: { beginner: number; intermediate: number; advanced: number } 
+function DifficultyDistributionChart({
+  distribution
+}: {
+  distribution: { beginner: number; intermediate: number; advanced: number }
 }) {
   const total = distribution.beginner + distribution.intermediate + distribution.advanced
-  
+
   return (
     <Card>
       <CardHeader>
@@ -566,29 +546,31 @@ function DifficultyDistributionChart({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {Object.entries(distribution).map(([level, count]) => {
-          const percentage = total > 0 ? Math.round((count / total) * 100) : 0
-          const colors = {
-            beginner: "bg-green-500",
-            intermediate: "bg-blue-500", 
-            advanced: "bg-purple-500"
-          }
-          
-          return (
-            <div key={level}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="font-medium capitalize">{level}</span>
-                <span>{count} ({percentage}%)</span>
+        {
+          Object.entries(distribution).map(([level, count]) => {
+            const percentage = total > 0 ? Math.round((count / total) * 100) : 0
+            const colors = {
+              beginner: "bg-green-500",
+              intermediate: "bg-blue-500",
+              advanced: "bg-purple-500"
+            }
+
+            return (
+              <div key={level}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium capitalize">{level}</span>
+                  <span>{count} ({percentage}%)</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${colors[level as keyof typeof colors]}`}
+                    style={{ width: `${percentage}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full ${colors[level as keyof typeof colors]}`}
-                  style={{ width: `${percentage}%` }}
-                ></div>
-              </div>
-            </div>
-          )
-        })}
+            )
+          })
+        }
       </CardContent>
     </Card>
   )
@@ -605,30 +587,32 @@ function WeeklyTrendsChart({ weeklyStats }: { weeklyStats: any[] }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {weeklyStats.slice(-4).map((week, index) => (
-            <div key={week.week} className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">{week.week}</span>
-                <span className="text-gray-600 dark:text-gray-400">
-                  {week.views} views • {week.started} started • {week.completed} completed
-                </span>
+          {
+            weeklyStats.slice(-4).map((week, index) => (
+              <div key={week.week} className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">{week.week}</span>
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {week.views} views • {week.started} started • {week.completed} completed
+                  </span>
+                </div>
+                <div className="flex gap-1 h-2">
+                  <div
+                    className="bg-blue-500 rounded-sm flex-grow"
+                    style={{ flex: week.views }}
+                  ></div>
+                  <div
+                    className="bg-green-500 rounded-sm flex-grow"
+                    style={{ flex: week.started }}
+                  ></div>
+                  <div
+                    className="bg-purple-500 rounded-sm flex-grow"
+                    style={{ flex: week.completed }}
+                  ></div>
+                </div>
               </div>
-              <div className="flex gap-1 h-2">
-                <div 
-                  className="bg-blue-500 rounded-sm flex-grow" 
-                  style={{ flex: week.views }}
-                ></div>
-                <div 
-                  className="bg-green-500 rounded-sm flex-grow" 
-                  style={{ flex: week.started }}
-                ></div>
-                <div 
-                  className="bg-purple-500 rounded-sm flex-grow" 
-                  style={{ flex: week.completed }}
-                ></div>
-              </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
       </CardContent>
     </Card>
@@ -646,32 +630,33 @@ function TopPerformersLeaderboard({ performers }: { performers: any[] }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {performers.slice(0, 5).map((performer, index) => (
-            <div key={performer.username} className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                index === 0 ? 'bg-yellow-500' : 
-                index === 1 ? 'bg-gray-400' : 
-                index === 2 ? 'bg-orange-500' : 'bg-purple-500'
-              }`}>
-                {index + 1}
-              </div>
-              <Image 
-                src={performer.avatar} 
-                alt={performer.username}
-                className="w-8 h-8 rounded-full"
-                width={32}
-                height={32}
-              />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-white">
-                  {performer.username}
+          {
+            performers.slice(0, 5).map((performer, index) => (
+              <div key={performer.username} className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === 0 ? 'bg-yellow-500' :
+                  index === 1 ? 'bg-gray-400' :
+                    index === 2 ? 'bg-orange-500' : 'bg-purple-500'
+                  }`}>
+                  {index + 1}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  {performer.xp} XP • {Math.round(performer.completionTime / 60)}h
+                <Image
+                  src={performer.avatar}
+                  alt={performer.username}
+                  className="w-8 h-8 rounded-full"
+                  width={32}
+                  height={32}
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    {performer.username}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    {performer.xp} XP • {Math.round(performer.completionTime / 60)}h
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
       </CardContent>
     </Card>

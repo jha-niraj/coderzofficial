@@ -4,17 +4,17 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui/components/ui/button";
 import {
     Avatar, AvatarFallback, AvatarImage
-} from "@/components/ui/avatar";
+} from "@repo/ui/components/ui/avatar";
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
     DialogTitle, DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@repo/ui/components/ui/dialog";
+import { Input } from "@repo/ui/components/ui/input";
+import { Label } from "@repo/ui/components/ui/label";
 import {
     Coins, Send, ArrowDownLeft, Sparkles
 } from "lucide-react";

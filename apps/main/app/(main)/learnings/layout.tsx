@@ -7,7 +7,7 @@ import {
     GraduationCap, FolderKanban, Lightbulb, Film, Mic2, Users,
     ChevronRight, LayoutDashboard
 } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 
 const sidebarLinks = [
     {

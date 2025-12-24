@@ -6,9 +6,9 @@ import {
 	Layers, ChevronLeft, ChevronRight, RotateCcw, ThumbsUp, ThumbsDown,
 	Shuffle, Lightbulb, Trophy
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "../../lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
+import { Progress } from "@repo/ui/components/ui/progress";
+import { cn } from "@repo/ui/lib/utils";
 import { saveFlashcardSession } from "@/actions/(main)/studios/studio.action";
 
 interface FlashCard {
@@ -68,9 +68,9 @@ export default function StudioFlashcardBlock({ deck, topic }: StudioFlashcardBlo
 		// Update progress
 		setCardProgress((prev) => ({
 			...prev,
-			[card.id]: {
-				correct: (prev[card.id]?.correct || 0) + (isCorrect ? 1 : 0),
-				incorrect: (prev[card.id]?.incorrect || 0) + (isCorrect ? 0 : 1),
+			[card?.id || ""]: {
+				correct: (prev[card?.id || ""]?.correct || 0) + (isCorrect ? 1 : 0),
+				incorrect: (prev[card?.id || ""]?.incorrect || 0) + (isCorrect ? 0 : 1),
 				lastSeen: new Date(),
 			},
 		}));
@@ -95,9 +95,9 @@ export default function StudioFlashcardBlock({ deck, topic }: StudioFlashcardBlo
 				studyTime,
 				cardProgress: {
 					...cardProgress,
-					[card.id]: {
-						correct: (cardProgress[card.id]?.correct || 0) + (isCorrect ? 1 : 0),
-						incorrect: (cardProgress[card.id]?.incorrect || 0) + (isCorrect ? 0 : 1),
+					[card?.id || ""]: {
+						correct: (cardProgress[card?.id || ""]?.correct || 0) + (isCorrect ? 1 : 0),
+						incorrect: (cardProgress[card?.id || ""]?.incorrect || 0) + (isCorrect ? 0 : 1),
 						lastSeen: new Date(),
 					},
 				},
@@ -251,7 +251,7 @@ export default function StudioFlashcardBlock({ deck, topic }: StudioFlashcardBlo
 				</div>
 				<AnimatePresence>
 					{
-						showHint && card?.hint && (
+						showHint && card?.hint && card?.id && (
 							<motion.div
 								initial={{ opacity: 0, height: 0 }}
 								animate={{ opacity: 1, height: "auto" }}
@@ -263,7 +263,7 @@ export default function StudioFlashcardBlock({ deck, topic }: StudioFlashcardBlo
 									<span className="text-sm font-medium">Hint:</span>
 								</div>
 								<p className="text-sm text-amber-800 dark:text-amber-300 mt-1">
-									{card.hint}
+									{card?.hint}
 								</p>
 							</motion.div>
 						)
@@ -280,7 +280,7 @@ export default function StudioFlashcardBlock({ deck, topic }: StudioFlashcardBlo
 							<ChevronRight className="h-4 w-4" />
 						</Button>
 						{
-							card?.hint && !isFlipped && (
+							card?.hint && card?.id && !isFlipped && (
 								<Button
 									variant="outline"
 									size="sm"

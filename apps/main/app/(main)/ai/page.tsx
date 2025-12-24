@@ -11,14 +11,14 @@ import {
     ShieldCheck,
     TestTube2
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 import {
     Tabs, TabsList, TabsTrigger
-} from "@/components/ui/tabs"
+} from "@repo/ui/components/ui/tabs"
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle
-} from "@/components/ui/dialog"
+} from "@repo/ui/components/ui/dialog"
 import SmoothScroll from "@/components/smoothscroll"
 import { useRouter } from "next/navigation"
 

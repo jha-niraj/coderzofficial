@@ -10,22 +10,22 @@ import {
     Terminal, Monitor, Smartphone, Database, Globe, Cpu, Shield, Box,
     FilePlus2, X, FileEdit, Upload, Wand2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui/components/ui/input";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { Label } from "@repo/ui/components/ui/label";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent
-} from "@/components/ui/card";
+} from "@repo/ui/components/ui/card";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@repo/ui/components/ui/select";
+import { Separator } from "@repo/ui/components/ui/separator";
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import { toast } from "sonner";
 import ConceptCodeEditor from "./concept-code-editor";
-import { cn } from "../../lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import Image from "next/image";
 
 // --- Types ---

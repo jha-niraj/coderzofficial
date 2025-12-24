@@ -3,46 +3,25 @@
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ChevronDown,
-    ChevronRight,
-    CheckCircle2,
-    Circle,
-    Play,
-    Target,
-    Info,
-    Sparkles,
-    Clock,
-    Loader2,
-    AlertCircle,
-    BookOpen,
-    RotateCcw
+    ChevronDown, ChevronRight, CheckCircle2, Play, Sparkles, Loader2, RotateCcw,
+    AlertCircle, Info, Target
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
+import { Progress } from '@repo/ui/components/ui/progress'
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import { cn } from '../../lib/utils'
-import { toast } from 'sonner'
+    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from '@repo/ui/components/ui/dialog'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
 import { updateTaskStatus } from '@/actions/(main)/projects/project.action'
-import { checkTaskDetailExists, generateTaskDetail, getTaskDetail } from '@/actions/(main)/projects/task-details.action'
+import {
+    checkTaskDetailExists, generateTaskDetail, getTaskDetail
+} from '@/actions/(main)/projects/task-details.action'
 
 // ============================================================================
 // Types
 // ============================================================================
-
 export interface TaskItem {
     id: string
     title: string
@@ -91,13 +70,13 @@ interface TaskListProgressProps {
 // Task Item Component
 // ============================================================================
 
-function TaskItemCard({ 
-    task, 
-    index, 
+function TaskItemCard({
+    task,
+    index,
     total,
     projectSlug,
-    onStatusChange 
-}: { 
+    onStatusChange
+}: {
     task: TaskItem
     index: number
     total: number
@@ -129,11 +108,11 @@ function TaskItemCard({
         try {
             const newStatus = task.status === 'COMPLETED' ? 'IN_PROGRESS' : 'COMPLETED'
             const result = await updateTaskStatus(task.id, newStatus)
-            
+
             if (result.success) {
                 toast.success(
-                    newStatus === 'COMPLETED' 
-                        ? '🎉 Task completed!' 
+                    newStatus === 'COMPLETED'
+                        ? '🎉 Task completed!'
                         : 'Task reopened'
                 )
                 onStatusChange()
@@ -149,11 +128,11 @@ function TaskItemCard({
 
     const handleStartTask = async () => {
         if (task.status !== 'TO_DO') return
-        
+
         setIsUpdating(true)
         try {
             const result = await updateTaskStatus(task.id, 'IN_PROGRESS')
-            
+
             if (result.success) {
                 toast.success('Task started! Good luck! 🚀')
                 onStatusChange()
@@ -229,43 +208,45 @@ function TaskItemCard({
                 statusStyles[task.status]
             )}
         >
-            {/* Task Header */}
             <div className="p-4">
                 <div className="flex items-start gap-3">
-                    {/* Checkbox / Status Icon */}
                     <div className="pt-0.5">
-                        {task.status === 'TO_DO' ? (
-                            <button
-                                onClick={handleStartTask}
-                                disabled={isUpdating}
-                                className="w-6 h-6 rounded-full border-2 border-neutral-300 dark:border-neutral-600 hover:border-blue-500 dark:hover:border-blue-400 flex items-center justify-center transition-colors group"
-                            >
-                                {isUpdating ? (
-                                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                                ) : (
-                                    <Play className="w-3 h-3 text-neutral-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                )}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleStatusToggle}
-                                disabled={isUpdating}
-                                className="relative"
-                            >
-                                {isUpdating ? (
-                                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                                ) : task.status === 'COMPLETED' ? (
-                                    <CheckCircle2 className="w-6 h-6 text-green-500 fill-green-500" />
-                                ) : (
-                                    <div className="w-6 h-6 rounded-full border-2 border-blue-500 bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                    </div>
-                                )}
-                            </button>
-                        )}
+                        {
+                            task.status === 'TO_DO' ? (
+                                <button
+                                    onClick={handleStartTask}
+                                    disabled={isUpdating}
+                                    className="w-6 h-6 rounded-full border-2 border-neutral-300 dark:border-neutral-600 hover:border-blue-500 dark:hover:border-blue-400 flex items-center justify-center transition-colors group"
+                                >
+                                    {
+                                        isUpdating ? (
+                                            <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                        ) : (
+                                            <Play className="w-3 h-3 text-neutral-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        )
+                                    }
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleStatusToggle}
+                                    disabled={isUpdating}
+                                    className="relative"
+                                >
+                                    {
+                                        isUpdating ? (
+                                            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                                        ) : task.status === 'COMPLETED' ? (
+                                            <CheckCircle2 className="w-6 h-6 text-green-500 fill-green-500" />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full border-2 border-blue-500 bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                                                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                            </div>
+                                        )
+                                    }
+                                </button>
+                            )
+                        }
                     </div>
-
-                    {/* Task Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
@@ -276,263 +257,293 @@ function TaskItemCard({
                                     <Badge className={cn('text-[10px] px-1.5 py-0 border', difficultyColors[task.difficulty])}>
                                         {task.difficulty}
                                     </Badge>
-                                    {task.status === 'IN_PROGRESS' && (
-                                        <Badge className="text-[10px] px-1.5 py-0 bg-blue-500 text-white animate-pulse">
-                                            IN PROGRESS
-                                        </Badge>
-                                    )}
+                                    {
+                                        task.status === 'IN_PROGRESS' && (
+                                            <Badge className="text-[10px] px-1.5 py-0 bg-blue-500 text-white animate-pulse">
+                                                IN PROGRESS
+                                            </Badge>
+                                        )
+                                    }
                                 </div>
                                 <h4 className={cn(
                                     'font-semibold text-base',
-                                    task.status === 'COMPLETED' 
-                                        ? 'line-through text-neutral-500 dark:text-neutral-400' 
+                                    task.status === 'COMPLETED'
+                                        ? 'line-through text-neutral-500 dark:text-neutral-400'
                                         : 'text-neutral-900 dark:text-white'
                                 )}>
                                     {task.title}
                                 </h4>
                             </div>
-
-                            {/* Expand Button */}
                             <button
                                 onClick={handleToggleExpand}
                                 className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                             >
-                                {isExpanded ? (
-                                    <ChevronDown className="w-5 h-5 text-neutral-400" />
-                                ) : (
-                                    <ChevronRight className="w-5 h-5 text-neutral-400" />
-                                )}
+                                {
+                                    isExpanded ? (
+                                        <ChevronDown className="w-5 h-5 text-neutral-400" />
+                                    ) : (
+                                        <ChevronRight className="w-5 h-5 text-neutral-400" />
+                                    )
+                                }
                             </button>
                         </div>
-
-                        {/* Tags */}
-                        {task.tags && task.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                                {task.tags.slice(0, 4).map((tag, idx) => (
-                                    <span 
-                                        key={idx} 
-                                        className="text-[11px] px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
+                        {
+                            task.tags && task.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {
+                                        task.tags.slice(0, 4).map((tag, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="text-[11px] px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
                     </div>
                 </div>
             </div>
-
-            {/* Expanded Content */}
             <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="px-4 pb-4 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-                            {/* AI Detailed Roadmap Section */}
-                            {task.status !== 'TO_DO' && (
-                                <div className="mb-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <Sparkles className="w-4 h-4 text-purple-500" />
-                                            <span className="text-sm font-semibold text-neutral-900 dark:text-white">
-                                                Detailed Roadmap
-                                            </span>
-                                        </div>
-                                        {!hasDetailAccess && !isCheckingDetail && (
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => setShowDetailDialog(true)}
-                                                className="h-7 text-xs gap-1"
-                                            >
-                                                <Sparkles className="w-3 h-3" />
-                                                Unlock (1 credit)
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    {isCheckingDetail && (
-                                        <div className="flex items-center gap-2 text-sm text-neutral-500">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Loading...
-                                        </div>
-                                    )}
-
-                                    {hasDetailAccess && taskDetail && (
-                                        <div className="space-y-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-                                            {/* Sub-tasks */}
-                                            <div>
-                                                <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-2">
-                                                    Sub-tasks Breakdown:
-                                                </p>
-                                                <div className="space-y-2">
-                                                    {taskDetail.subTasks.map((sub, idx) => (
-                                                        <div 
-                                                            key={idx}
-                                                            className="flex items-start gap-2 text-xs bg-white dark:bg-neutral-900 p-2 rounded-lg"
-                                                        >
-                                                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[10px] font-bold">
-                                                                {idx + 1}
-                                                            </span>
-                                                            <div>
-                                                                <p className="font-medium text-neutral-900 dark:text-white">{sub.title}</p>
-                                                                <p className="text-neutral-600 dark:text-neutral-400">{sub.description}</p>
-                                                                {sub.command && (
-                                                                    <code className="block mt-1 bg-neutral-900 text-green-400 px-2 py-1 rounded text-[10px] font-mono">
-                                                                        {sub.command}
-                                                                    </code>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                {
+                    isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="px-4 pb-4 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                                {
+                                    task.status !== 'TO_DO' && (
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Sparkles className="w-4 h-4 text-purple-500" />
+                                                    <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                                                        Detailed Roadmap
+                                                    </span>
                                                 </div>
+                                                {
+                                                    !hasDetailAccess && !isCheckingDetail && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => setShowDetailDialog(true)}
+                                                            className="h-7 text-xs gap-1"
+                                                        >
+                                                            <Sparkles className="w-3 h-3" />
+                                                            Unlock (1 credit)
+                                                        </Button>
+                                                    )
+                                                }
                                             </div>
 
-                                            {/* Errors to watch */}
-                                            {(taskDetail.commonErrors.length > 0 || taskDetail.errorsToWatchout.length > 0) && (
-                                                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
-                                                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-1 flex items-center gap-1">
-                                                        <AlertCircle className="w-3 h-3" />
-                                                        Watch Out For:
+                                            {
+                                                isCheckingDetail && (
+                                                    <div className="flex items-center gap-2 text-sm text-neutral-500">
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        Loading...
+                                                    </div>
+                                                )
+                                            }
+
+                                            {
+                                                hasDetailAccess && taskDetail && (
+                                                    <div className="space-y-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                                                        <div>
+                                                            <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                                                                Sub-tasks Breakdown:
+                                                            </p>
+                                                            <div className="space-y-2">
+                                                                {
+                                                                    taskDetail.subTasks.map((sub, idx) => (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className="flex items-start gap-2 text-xs bg-white dark:bg-neutral-900 p-2 rounded-lg"
+                                                                        >
+                                                                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[10px] font-bold">
+                                                                                {idx + 1}
+                                                                            </span>
+                                                                            <div>
+                                                                                <p className="font-medium text-neutral-900 dark:text-white">{sub.title}</p>
+                                                                                <p className="text-neutral-600 dark:text-neutral-400">{sub.description}</p>
+                                                                                {
+                                                                                    sub.command && (
+                                                                                        <code className="block mt-1 bg-neutral-900 text-green-400 px-2 py-1 rounded text-[10px] font-mono">
+                                                                                            {sub.command}
+                                                                                        </code>
+                                                                                    )
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        {
+                                                            (taskDetail.commonErrors.length > 0 || taskDetail.errorsToWatchout.length > 0) && (
+                                                                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
+                                                                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-1 flex items-center gap-1">
+                                                                        <AlertCircle className="w-3 h-3" />
+                                                                        Watch Out For:
+                                                                    </p>
+                                                                    <ul className="space-y-1">
+                                                                        {
+                                                                            [...taskDetail.commonErrors, ...taskDetail.errorsToWatchout].slice(0, 3).map((err, idx) => (
+                                                                                <li key={idx} className="text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-1">
+                                                                                    <span>⚠️</span>
+                                                                                    <span>{err}</span>
+                                                                                </li>
+                                                                            ))
+                                                                        }
+                                                                    </ul>
+                                                                </div>
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+
+                                            {
+                                                !hasDetailAccess && !isCheckingDetail && (
+                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded-lg">
+                                                        💡 Get AI-powered sub-tasks breakdown, approach tips, and common errors to avoid.
                                                     </p>
-                                                    <ul className="space-y-1">
-                                                        {[...taskDetail.commonErrors, ...taskDetail.errorsToWatchout].slice(0, 3).map((err, idx) => (
-                                                            <li key={idx} className="text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-1">
-                                                                <span>⚠️</span>
-                                                                <span>{err}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
+                                                )
+                                            }
                                         </div>
-                                    )}
+                                    )
+                                }
 
-                                    {!hasDetailAccess && !isCheckingDetail && (
-                                        <p className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded-lg">
-                                            💡 Get AI-powered sub-tasks breakdown, approach tips, and common errors to avoid.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Implementation Steps */}
-                            {task.description && task.description.length > 0 && (
-                                <div className="mb-4">
-                                    <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
-                                        <Target className="w-4 h-4" />
-                                        Implementation Steps
-                                    </h5>
-                                    <ol className="space-y-1.5">
-                                        {task.description.map((step, idx) => (
-                                            <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs font-medium">
-                                                    {idx + 1}
-                                                </span>
-                                                <span>{step}</span>
-                                            </li>
-                                        ))}
-                                    </ol>
-                                </div>
-                            )}
-
-                            {/* Success Criteria */}
-                            {task.criteria && task.criteria.length > 0 && (
-                                <div className="mb-4">
-                                    <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                        Success Criteria
-                                    </h5>
-                                    <ul className="space-y-1">
-                                        {task.criteria.map((criterion, idx) => (
-                                            <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                                                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                                <span>{criterion}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {/* Hints */}
-                            {task.hints && task.hints.length > 0 && (
-                                <div className="mb-4">
-                                    <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
-                                        <Info className="w-4 h-4 text-blue-600" />
-                                        Hints
-                                    </h5>
-                                    <div className="space-y-1">
-                                        {task.hints.map((hint, idx) => (
-                                            <p key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
-                                                💡 {hint}
-                                            </p>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-                                {task.status === 'TO_DO' && (
-                                    <Button
-                                        onClick={handleStartTask}
-                                        disabled={isUpdating}
-                                        className="flex-1 bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                                        Start Task
-                                    </Button>
-                                )}
-                                {task.status === 'IN_PROGRESS' && (
-                                    <>
-                                        <Button
-                                            onClick={handleStatusToggle}
-                                            disabled={isUpdating}
-                                            className="flex-1 bg-green-600 hover:bg-green-700"
-                                        >
-                                            {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                                            Mark Complete
-                                        </Button>
-                                        <Button
-                                            onClick={async () => {
-                                                setIsUpdating(true)
-                                                const result = await updateTaskStatus(task.id, 'TO_DO')
-                                                if (result.success) {
-                                                    toast.info('Task moved back to To Do')
-                                                    onStatusChange()
+                                {
+                                    task.description && task.description.length > 0 && (
+                                        <div className="mb-4">
+                                            <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
+                                                <Target className="w-4 h-4" />
+                                                Implementation Steps
+                                            </h5>
+                                            <ol className="space-y-1.5">
+                                                {
+                                                    task.description.map((step, idx) => (
+                                                        <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                                                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs font-medium">
+                                                                {idx + 1}
+                                                            </span>
+                                                            <span>{step}</span>
+                                                        </li>
+                                                    ))
                                                 }
-                                                setIsUpdating(false)
-                                            }}
-                                            disabled={isUpdating}
-                                            variant="outline"
-                                        >
-                                            <RotateCcw className="w-4 h-4" />
-                                        </Button>
-                                    </>
-                                )}
-                                {task.status === 'COMPLETED' && (
-                                    <Button
-                                        onClick={handleStatusToggle}
-                                        disabled={isUpdating}
-                                        variant="outline"
-                                        className="flex-1"
-                                    >
-                                        {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
-                                        Reopen Task
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                                            </ol>
+                                        </div>
+                                    )
+                                }
 
-            {/* Generate Detail Dialog */}
+                                {
+                                    task.criteria && task.criteria.length > 0 && (
+                                        <div className="mb-4">
+                                            <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                                Success Criteria
+                                            </h5>
+                                            <ul className="space-y-1">
+                                                {
+                                                    task.criteria.map((criterion, idx) => (
+                                                        <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                                                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                            <span>{criterion}</span>
+                                                        </li>
+                                                    ))
+                                                }
+                                            </ul>
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    task.hints && task.hints.length > 0 && (
+                                        <div className="mb-4">
+                                            <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
+                                                <Info className="w-4 h-4 text-blue-600" />
+                                                Hints
+                                            </h5>
+                                            <div className="space-y-1">
+                                                {
+                                                    task.hints.map((hint, idx) => (
+                                                        <p key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
+                                                            💡 {hint}
+                                                        </p>
+                                                    ))
+                                                }
+                                            </div>
+                                        </div>
+                                    )
+                                }
+
+                                <div className="flex gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                                    {
+                                        task.status === 'TO_DO' && (
+                                            <Button
+                                                onClick={handleStartTask}
+                                                disabled={isUpdating}
+                                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                            >
+                                                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                                                Start Task
+                                            </Button>
+                                        )
+                                    }
+                                    {
+                                        task.status === 'IN_PROGRESS' && (
+                                            <>
+                                                <Button
+                                                    onClick={handleStatusToggle}
+                                                    disabled={isUpdating}
+                                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                                >
+                                                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                                    Mark Complete
+                                                </Button>
+                                                <Button
+                                                    onClick={async () => {
+                                                        setIsUpdating(true)
+                                                        const result = await updateTaskStatus(task.id, 'TO_DO')
+                                                        if (result.success) {
+                                                            toast.info('Task moved back to To Do')
+                                                            onStatusChange()
+                                                        }
+                                                        setIsUpdating(false)
+                                                    }}
+                                                    disabled={isUpdating}
+                                                    variant="outline"
+                                                >
+                                                    <RotateCcw className="w-4 h-4" />
+                                                </Button>
+                                            </>
+                                        )
+                                    }
+                                    {
+                                        task.status === 'COMPLETED' && (
+                                            <Button
+                                                onClick={handleStatusToggle}
+                                                disabled={isUpdating}
+                                                variant="outline"
+                                                className="flex-1"
+                                            >
+                                                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                                                Reopen Task
+                                            </Button>
+                                        )
+                                    }
+                                </div>
+                            </div>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence>
             <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -571,22 +582,24 @@ function TaskItemCard({
                         <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
                             Skip
                         </Button>
-                        <Button 
-                            onClick={handleGenerateDetail} 
+                        <Button
+                            onClick={handleGenerateDetail}
                             disabled={isGeneratingDetail}
                             className="bg-purple-600 hover:bg-purple-700"
                         >
-                            {isGeneratingDetail ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    Generating...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-4 h-4 mr-2" />
-                                    Unlock
-                                </>
-                            )}
+                            {
+                                isGeneratingDetail ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4 mr-2" />
+                                        Unlock
+                                    </>
+                                )
+                            }
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -598,7 +611,6 @@ function TaskItemCard({
 // ============================================================================
 // Main Component
 // ============================================================================
-
 export default function TaskListProgress({
     tasks,
     projectSlug,
@@ -610,8 +622,8 @@ export default function TaskListProgress({
     const [filter, setFilter] = useState<'ALL' | 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED'>('ALL')
 
     const sortedTasks = [...tasks].sort((a, b) => a.orderIndex - b.orderIndex)
-    const filteredTasks = filter === 'ALL' 
-        ? sortedTasks 
+    const filteredTasks = filter === 'ALL'
+        ? sortedTasks
         : sortedTasks.filter(t => t.status === filter)
 
     const handleTaskUpdate = useCallback(() => {
@@ -622,7 +634,6 @@ export default function TaskListProgress({
 
     return (
         <div className="space-y-6">
-            {/* Progress Header */}
             <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-indigo-200 dark:border-indigo-800">
                 <div className="flex items-center justify-between mb-4">
                     <div>
@@ -640,8 +651,6 @@ export default function TaskListProgress({
                     </div>
                 </div>
                 <Progress value={progressPercentage} className="h-3" />
-                
-                {/* Milestones */}
                 <div className="flex justify-between mt-4 text-xs text-neutral-500 dark:text-neutral-400">
                     <span className={progressPercentage >= 0 ? 'text-green-600 font-medium' : ''}>Start</span>
                     <span className={progressPercentage >= 50 ? 'text-green-600 font-medium' : ''}>
@@ -656,57 +665,56 @@ export default function TaskListProgress({
                 </div>
             </div>
 
-            {/* Filter Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2">
-                {(['ALL', 'TO_DO', 'IN_PROGRESS', 'COMPLETED'] as const).map((status) => {
-                    const count = status === 'ALL' 
-                        ? tasks.length 
-                        : tasks.filter(t => t.status === status).length
-                    const labels = {
-                        ALL: 'All',
-                        TO_DO: 'To Do',
-                        IN_PROGRESS: 'In Progress',
-                        COMPLETED: 'Completed',
-                    }
-                    return (
-                        <button
-                            key={status}
-                            onClick={() => setFilter(status)}
-                            className={cn(
-                                'px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap',
-                                filter === status
-                                    ? 'bg-neutral-900 dark:bg-white text-white dark:text-black'
-                                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-                            )}
-                        >
-                            {labels[status]} ({count})
-                        </button>
-                    )
-                })}
+                {
+                    (['ALL', 'TO_DO', 'IN_PROGRESS', 'COMPLETED'] as const).map((status) => {
+                        const count = status === 'ALL'
+                            ? tasks.length
+                            : tasks.filter(t => t.status === status).length
+                        const labels = {
+                            ALL: 'All',
+                            TO_DO: 'To Do',
+                            IN_PROGRESS: 'In Progress',
+                            COMPLETED: 'Completed',
+                        }
+                        return (
+                            <button
+                                key={status}
+                                onClick={() => setFilter(status)}
+                                className={cn(
+                                    'px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap',
+                                    filter === status
+                                        ? 'bg-neutral-900 dark:bg-white text-white dark:text-black'
+                                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                                )}
+                            >
+                                {labels[status]} ({count})
+                            </button>
+                        )
+                    })
+                }
             </div>
-
-            {/* Task List */}
             <div className="space-y-3">
-                {filteredTasks.length === 0 ? (
-                    <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                        <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p>No tasks in this category</p>
-                    </div>
-                ) : (
-                    filteredTasks.map((task, index) => (
-                        <TaskItemCard
-                            key={task.id}
-                            task={task}
-                            index={index}
-                            total={filteredTasks.length}
-                            projectSlug={projectSlug}
-                            onStatusChange={handleTaskUpdate}
-                        />
-                    ))
-                )}
+                {
+                    filteredTasks.length === 0 ? (
+                        <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+                            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                            <p>No tasks in this category</p>
+                        </div>
+                    ) : (
+                        filteredTasks.map((task, index) => (
+                            <TaskItemCard
+                                key={task.id}
+                                task={task}
+                                index={index}
+                                total={filteredTasks.length}
+                                projectSlug={projectSlug}
+                                onStatusChange={handleTaskUpdate}
+                            />
+                        ))
+                    )
+                }
             </div>
         </div>
     )
 }
-
-

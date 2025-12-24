@@ -3,15 +3,15 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
 import {
     Phone, Sparkles, Target, TrendingUp, CheckCircle,
     ArrowLeft, Star, Users, Trophy, Calendar, Clock,
     Award, Shield, MapPin, Briefcase, ChevronLeft, ChevronRight
 } from 'lucide-react'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@repo/ui/components/ui/sheet'
 import {
     Pagination,
     PaginationContent,
@@ -21,7 +21,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from '@/components/ui/pagination'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 // Mock mentor data
 const generateMentors = () => {

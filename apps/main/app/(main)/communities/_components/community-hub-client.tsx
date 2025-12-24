@@ -7,10 +7,10 @@ import {
     TrendingUp, Users, Sparkles, ChevronRight, RefreshCw, Plus,
     Loader2, Home, UserCheck
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Tabs, TabsList, TabsTrigger
-} from '@/components/ui/tabs'
+} from '@repo/ui/components/ui/tabs'
 import { CommunitySidebar } from '@/components/community/community-sidebar'
 import { CommunityCard } from '@/components/community/community-card'
 import { PostCard } from '@/components/community/post-card'
@@ -20,7 +20,7 @@ import { getGlobalFeed, getFollowingFeed } from '@/actions/(main)/community/post
 import {
     joinCommunity, leaveCommunity
 } from '@/actions/(main)/community/community.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 import { useInView } from 'react-intersection-observer'
 
 interface CommunityHubClientProps {

@@ -1,47 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
     Shield, Search, UserPlus, Mail, Clock, CheckCircle, 
-    XCircle, MoreHorizontal, Copy, Trash2, Settings
+    XCircle, MoreHorizontal, Copy, Trash2, Settings, Loader2
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
+import { toast } from "@repo/ui/components/ui/sonner"
+import { 
+    getAdminUsers, 
+    getPendingInvitations, 
+    createAdminInvitation, 
+    revokeInvitation,
+    updateAdminStatus 
+} from "@/actions/admin.action"
 
-interface AdminUser {
-    id: string
-    name: string
-    email: string
-    role: "SUPER_ADMIN" | "CONTENT_ADMIN" | "FINANCE_ADMIN" | "COMMUNITY_ADMIN" | "MODULE_MANAGER" | "VIEWER"
-    status: "ACTIVE" | "INACTIVE" | "SUSPENDED"
-    lastLoginAt: string | null
-    createdAt: string
-}
+type AdminRole = "SUPER_ADMIN" | "CONTENT_ADMIN" | "FINANCE_ADMIN" | "COMMUNITY_ADMIN" | "MODULE_MANAGER" | "VIEWER"
 
-interface Invitation {
-    id: string
-    code: string
-    email: string
-    role: AdminUser["role"]
-    status: "PENDING" | "USED" | "EXPIRED"
-    expiresAt: string
-    createdAt: string
-}
-
-// Mock data
-const mockAdmins: AdminUser[] = [
-    { id: "1", name: "Super Admin", email: "superadmin@thecoderz.com", role: "SUPER_ADMIN", status: "ACTIVE", lastLoginAt: new Date().toISOString(), createdAt: "2024-01-01" },
-    { id: "2", name: "Content Manager", email: "content@thecoderz.com", role: "CONTENT_ADMIN", status: "ACTIVE", lastLoginAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), createdAt: "2024-02-15" },
-    { id: "3", name: "Finance Admin", email: "finance@thecoderz.com", role: "FINANCE_ADMIN", status: "ACTIVE", lastLoginAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), createdAt: "2024-03-01" },
-]
-
-const mockInvitations: Invitation[] = [
-    { id: "1", code: "ADMIN-X7K2M9P4", email: "newadmin@example.com", role: "CONTENT_ADMIN", status: "PENDING", expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date().toISOString() },
-    { id: "2", code: "ADMIN-P3Q8N5R2", email: "viewer@example.com", role: "VIEWER", status: "PENDING", expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
-]
-
-const roleColors: Record<AdminUser["role"], string> = {
+const roleColors: Record<AdminRole, string> = {
     SUPER_ADMIN: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
     CONTENT_ADMIN: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400",
     FINANCE_ADMIN: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
@@ -54,23 +31,79 @@ export default function AdminManagementPage() {
     const [activeTab, setActiveTab] = useState<"admins" | "invitations">("admins")
     const [showInviteModal, setShowInviteModal] = useState(false)
     const [inviteEmail, setInviteEmail] = useState("")
-    const [inviteRole, setInviteRole] = useState<AdminUser["role"]>("CONTENT_ADMIN")
+    const [inviteRole, setInviteRole] = useState<AdminRole>("CONTENT_ADMIN")
+    const [admins, setAdmins] = useState<any[]>([])
+    const [invitations, setInvitations] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
 
-    const handleCreateInvitation = () => {
+    useEffect(() => {
+        loadData()
+    }, [])
+
+    async function loadData() {
+        setLoading(true)
+        try {
+            const [adminsRes, invitesRes] = await Promise.all([
+                getAdminUsers(),
+                getPendingInvitations()
+            ])
+            
+            if (adminsRes.success) setAdmins(adminsRes.data || [])
+            if (invitesRes.success) setInvitations(invitesRes.data || [])
+        } catch (error) {
+            console.error("Load data error:", error)
+            toast.error("Failed to load data")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    async function handleCreateInvitation() {
         if (!inviteEmail) {
             toast.error("Please enter an email address")
             return
         }
 
-        // Generate a mock code
-        const code = `ADMIN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
-        
-        toast.success("Invitation created!", {
-            description: `Code: ${code} sent to ${inviteEmail}`
-        })
-        
-        setShowInviteModal(false)
-        setInviteEmail("")
+        setSubmitting(true)
+        try {
+            const result = await createAdminInvitation({
+                email: inviteEmail,
+                adminRole: inviteRole,
+            })
+            
+            if (result.success) {
+                toast.success("Invitation created!", {
+                    description: `Access code sent to ${inviteEmail}`
+                })
+                setShowInviteModal(false)
+                setInviteEmail("")
+                setInviteRole("CONTENT_ADMIN")
+                loadData()
+            } else {
+                toast.error(result.error || "Failed to create invitation")
+            }
+        } catch (error) {
+            console.error("Create invitation error:", error)
+            toast.error("An error occurred")
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    async function handleRevokeInvitation(invitationId: string) {
+        try {
+            const result = await revokeInvitation(invitationId)
+            if (result.success) {
+                toast.success("Invitation revoked")
+                loadData()
+            } else {
+                toast.error(result.error || "Failed to revoke invitation")
+            }
+        } catch (error) {
+            console.error("Revoke error:", error)
+            toast.error("An error occurred")
+        }
     }
 
     const copyToClipboard = (text: string) => {
@@ -111,7 +144,7 @@ export default function AdminManagementPage() {
                             : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
                     )}
                 >
-                    Active Admins ({mockAdmins.length})
+                    Active Admins ({admins.length})
                     {activeTab === "admins" && (
                         <motion.div
                             layoutId="adminTab"
@@ -128,7 +161,7 @@ export default function AdminManagementPage() {
                             : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
                     )}
                 >
-                    Pending Invitations ({mockInvitations.filter(i => i.status === "PENDING").length})
+                    Pending Invitations ({invitations.length})
                     {activeTab === "invitations" && (
                         <motion.div
                             layoutId="adminTab"
@@ -141,6 +174,11 @@ export default function AdminManagementPage() {
             {/* Admins Table */}
             {activeTab === "admins" && (
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                        </div>
+                    ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
@@ -154,7 +192,7 @@ export default function AdminManagementPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {mockAdmins.map((admin) => (
+                                {admins.map((admin) => (
                                     <tr 
                                         key={admin.id}
                                         className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
@@ -162,21 +200,21 @@ export default function AdminManagementPage() {
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-                                                    <span className="text-white font-bold">{admin.name[0]}</span>
+                                                    <span className="text-white font-bold">{(admin.user?.name || admin.user?.email || "A")[0]}</span>
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium text-neutral-900 dark:text-white">{admin.name}</p>
-                                                    <p className="text-sm text-neutral-500">{admin.email}</p>
+                                                    <p className="font-medium text-neutral-900 dark:text-white">{admin.user?.name || "Unknown"}</p>
+                                                    <p className="text-sm text-neutral-500">{admin.user?.email}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="p-4">
                                             <span className={cn(
                                                 "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium",
-                                                roleColors[admin.role]
+                                                roleColors[admin.adminRole as AdminRole]
                                             )}>
                                                 <Shield className="w-3 h-3" />
-                                                {admin.role.replace(/_/g, " ")}
+                                                {admin.adminRole.replace(/_/g, " ")}
                                             </span>
                                         </td>
                                         <td className="p-4">
@@ -194,8 +232,8 @@ export default function AdminManagementPage() {
                                             </span>
                                         </td>
                                         <td className="p-4 text-sm text-neutral-500">
-                                            {admin.lastLoginAt 
-                                                ? new Date(admin.lastLoginAt).toLocaleString()
+                                            {admin.lastLogin 
+                                                ? new Date(admin.lastLogin).toLocaleString()
                                                 : "Never"
                                             }
                                         </td>
@@ -212,12 +250,23 @@ export default function AdminManagementPage() {
                             </tbody>
                         </table>
                     </div>
+                    )}
                 </div>
             )}
 
             {/* Invitations Table */}
             {activeTab === "invitations" && (
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                        </div>
+                    ) : invitations.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12">
+                            <Mail className="w-12 h-12 text-neutral-400 mb-4" />
+                            <p className="text-neutral-500 dark:text-neutral-400">No pending invitations</p>
+                        </div>
+                    ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
@@ -231,7 +280,7 @@ export default function AdminManagementPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {mockInvitations.map((invite) => (
+                                {invitations.map((invite) => (
                                     <tr 
                                         key={invite.id}
                                         className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
@@ -278,18 +327,7 @@ export default function AdminManagementPage() {
                                         <td className="p-4">
                                             <div className="flex items-center gap-1">
                                                 <button
-                                                    onClick={() => {
-                                                        toast.success("Invitation resent!")
-                                                    }}
-                                                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
-                                                    title="Resend"
-                                                >
-                                                    <Mail className="w-4 h-4 text-neutral-500" />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        toast.success("Invitation revoked")
-                                                    }}
+                                                    onClick={() => handleRevokeInvitation(invite.id)}
                                                     className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                                                     title="Revoke"
                                                 >
@@ -302,6 +340,7 @@ export default function AdminManagementPage() {
                             </tbody>
                         </table>
                     </div>
+                    )}
                 </div>
             )}
 
@@ -338,7 +377,7 @@ export default function AdminManagementPage() {
                                 </label>
                                 <select
                                     value={inviteRole}
-                                    onChange={(e) => setInviteRole(e.target.value as AdminUser["role"])}
+                                    onChange={(e) => setInviteRole(e.target.value as AdminRole)}
                                     className="w-full px-4 py-3 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                                 >
                                     <option value="CONTENT_ADMIN">Content Admin</option>
@@ -358,9 +397,17 @@ export default function AdminManagementPage() {
                             </button>
                             <button
                                 onClick={handleCreateInvitation}
-                                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-lg hover:from-red-600 hover:to-orange-600 transition-colors"
+                                disabled={submitting}
+                                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-lg hover:from-red-600 hover:to-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
                             >
-                                Send Invitation
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    "Send Invitation"
+                                )}
                             </button>
                         </div>
                     </motion.div>

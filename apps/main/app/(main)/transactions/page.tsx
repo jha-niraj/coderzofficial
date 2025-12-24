@@ -5,12 +5,12 @@ import { motion } from "framer-motion"
 import { useSession } from '@repo/auth'
 import {
 	Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+} from "@repo/ui/components/ui/card"
+import { Badge } from "@repo/ui/components/ui/badge"
 import {
 	Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+} from "@repo/ui/components/ui/tabs"
+import { Button } from "@repo/ui/components/ui/button"
 import {
 	Receipt, ArrowUpRight, ArrowDownLeft, Calendar, Clock, ExternalLink, RefreshCw, CreditCard, Send
 } from "lucide-react"

@@ -2,15 +2,15 @@
 
 import {
     Card, CardContent, CardFooter, CardHeader
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
 import {
-    Clock, Users, ArrowRight, Eye, Trophy, Brain, CheckCircle2, Play
+    Clock, Users, Eye, Trophy, Brain, CheckCircle2, Play
 } from 'lucide-react'
 import Link from 'next/link'
-import { Progress } from '@/components/ui/progress'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Progress } from '@repo/ui/components/ui/progress'
+import { Skeleton } from '@repo/ui/components/ui/skeleton'
 
 interface ProjectCardProps {
     project: {

@@ -10,20 +10,20 @@ import {
 } from 'lucide-react'
 import {
     Card, CardContent, CardFooter, CardHeader
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+} from '@repo/ui/components/ui/card'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Button } from '@repo/ui/components/ui/button'
 import {
     Avatar, AvatarFallback, AvatarImage
-} from '@/components/ui/avatar'
+} from '@repo/ui/components/ui/avatar'
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
     DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { cn } from '../../lib/utils'
+} from '@repo/ui/components/ui/dropdown-menu'
+import { cn } from '@repo/ui/lib/utils'
 import { CommunityPostType } from '@prisma/client'
 import { togglePostLike } from '@/actions/(main)/community/post.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 interface PostCardProps {
     post: {
@@ -92,7 +92,7 @@ export function PostCard({
     const [isLiking, setIsLiking] = useState(false)
 
     const typeConfig = POST_TYPE_CONFIG[post.type] || POST_TYPE_CONFIG.DISCUSSION
-    const TypeIcon = typeConfig.icon
+    const TypeIcon = typeConfig?.icon ?? MessageCircle
 
     const handleLike = async (e: React.MouseEvent) => {
         e.preventDefault()
@@ -101,7 +101,6 @@ export function PostCard({
         if (isLiking) return
         setIsLiking(true)
 
-        // Optimistic update
         setIsLiked(!isLiked)
         setLikeCount(prev => isLiked ? prev - 1 : prev + 1)
 
@@ -215,9 +214,9 @@ export function PostCard({
                     </CardHeader>
                     <CardContent className={cn("pt-0", compact && "pb-3")}>
                         <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline" className={cn("text-xs", typeConfig.color)}>
+                            <Badge variant="outline" className={cn("text-xs", typeConfig?.color ?? 'text-black')}>
                                 <TypeIcon className="w-3 h-3 mr-1" />
-                                {typeConfig.label}
+                                {typeConfig?.label ?? 'Discussion'}
                             </Badge>
                             {
                                 post.type === 'QUESTION' && post.isAnswered && (

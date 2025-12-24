@@ -6,21 +6,21 @@ import {
     MessageCircle, HelpCircle, FileText, Image as ImageIcon, Code2, X, Loader2, Plus,
     Hash, Link as LinkIcon, Send
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@repo/ui/components/ui/card'
+import { Button } from '@repo/ui/components/ui/button'
+import { Input } from '@repo/ui/components/ui/input'
+import { Textarea } from '@repo/ui/components/ui/textarea'
+import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Avatar, AvatarFallback, AvatarImage
-} from '@/components/ui/avatar'
+} from '@repo/ui/components/ui/avatar'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
-import { cn } from '../../lib/utils'
+} from '@repo/ui/components/ui/select'
+import { cn } from '@repo/ui/lib/utils'
 import { CommunityPostType } from '@prisma/client'
 import { createPost } from '@/actions/(main)/community/post.action'
-import { toast } from 'sonner'
+import toast from '@repo/ui/components/ui/sonner'
 
 interface PostComposerProps {
     communityId: string

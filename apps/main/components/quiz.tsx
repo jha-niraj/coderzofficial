@@ -1,21 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group";
+import { Checkbox } from "@repo/ui/components/ui/checkbox";
+import { Button } from "@repo/ui/components/ui/button";
+import { Label } from "@repo/ui/components/ui/label";
+import { Progress } from "@repo/ui/components/ui/progress";
 import {
     Timer, ChevronLeft, ChevronRight, Menu, AlertCircle, Flag, AlertTriangle, Clock
 } from "lucide-react";
 import {
     Sheet, SheetContent, SheetTrigger
-} from "@/components/ui/sheet";
+} from "@repo/ui/components/ui/sheet";
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
     DialogTitle
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/ui/dialog";
 import { useRouter } from "next/navigation";
 
 export type QuizOption = {
@@ -250,7 +250,7 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
         (value: string) => {
             setUserAnswers((prev) => ({
                 ...prev,
-                [questions[currentQuestionIndex].id]: [value],
+                [questions[currentQuestionIndex]?.id || ""]: [value],
             }));
             setHasUnsavedChanges(true);
         },
@@ -260,7 +260,7 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
     const handleMultipleChoiceChange = useCallback(
         (optionId: string, checked: boolean) => {
             setUserAnswers((prev) => {
-                const currentAnswers = [...(prev[questions[currentQuestionIndex].id] || [])];
+                const currentAnswers = [...(prev[questions[currentQuestionIndex]?.id || ""] || [])];
                 if (checked) {
                     if (!currentAnswers.includes(optionId)) {
                         currentAnswers.push(optionId);
@@ -273,7 +273,7 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
                 }
                 return {
                     ...prev,
-                    [questions[currentQuestionIndex].id]: currentAnswers,
+                    [questions[currentQuestionIndex]?.id || ""]: currentAnswers,
                 };
             });
             setHasUnsavedChanges(true);
@@ -283,7 +283,7 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
 
     const handleFlagQuestion = useCallback(() => {
         setFlaggedQuestions((prev) => {
-            const questionId = questions[currentQuestionIndex].id;
+            const questionId = questions[currentQuestionIndex]?.id || "";
             if (prev.includes(questionId)) {
                 return prev.filter((id) => id !== questionId);
             }
@@ -296,7 +296,7 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
     }, []);
 
     const isQuestionAnswered = useCallback((questionId: string) => {
-        return userAnswers[questionId]?.length > 0;
+        return userAnswers[questionId || ""] && userAnswers[questionId || ""].length > 0;
     }, [userAnswers]);
 
     const formatTime = (seconds: number) => {
@@ -411,8 +411,8 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
                                             <Checkbox
                                                 id={option.id}
                                                 checked={userAnswers[currentQuestion.id]?.includes(option.id) || false}
-                                                onCheckedChange={(checked) =>
-                                                    handleMultipleChoiceChange(option.id, checked as boolean)
+                                                onCheckedChange={(checked: boolean) =>
+                                                    handleMultipleChoiceChange(option.id, checked)
                                                 }
                                             />
                                             <Label htmlFor={option.id} className="flex-1 cursor-pointer">
