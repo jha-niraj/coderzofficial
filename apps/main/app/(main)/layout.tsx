@@ -23,16 +23,16 @@ const MainContent = ({ children, routes }: { children: React.ReactNode; routes: 
     return (
         <>
             <Sidebar routes={routes} />
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-col flex-1 min-h-screen bg-neutral-100 dark:bg-neutral-900">
                 <main className={cn(
-                    "backdrop-blur-sm transition-all duration-300 ml-0",
+                    "transition-all duration-300 min-h-screen",
+                    "ml-0",
                     isCollapsed ? "md:ml-[70px]" : "md:ml-[200px]"
                 )}>
-                    <div className="h-full w-full flex justify-center overflow-y-auto">
-                        <div className="w-full p-4">
-                            <div className="bg-background/70 backdrop-blur-lg border border-border rounded-2xl shadow-2xl overflow-hidden">
-                                {children}
-                            </div>
+                    {/* Content Container with Border Effect - matching admin layout */}
+                    <div className="min-h-screen bg-white dark:bg-neutral-950 md:rounded-l-3xl md:border-l border-neutral-200 dark:border-neutral-800 shadow-xl">
+                        <div className="h-full w-full overflow-y-auto p-4 md:p-6">
+                            {children}
                         </div>
                     </div>
                 </main>

@@ -16,17 +16,22 @@
         "@repo/prisma": "workspace:*",
         "@repo/ui": "workspace:*",
         "@repo/auth": "workspace:*",
+        "bcryptjs": "^3.0.3",
+        "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
         "framer-motion": "^12.23.26",
         "lucide-react": "^0.562.0",
         "next": "15.4.10",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "resend": "^6.6.0"
+        "resend": "^6.6.0",
+        "sonner": "^2.0.3",
+        "tailwind-merge": "^2.6.0"
     },
     "devDependencies": {
         "@repo/eslint-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
+        "@types/bcryptjs": "^2.4.6",
         "@types/node": "^22.15.3",
         "@types/react": "19.2.2",
         "@types/react-dom": "19.2.2",

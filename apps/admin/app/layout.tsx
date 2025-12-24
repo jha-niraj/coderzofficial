@@ -101,7 +101,7 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						{children}
+							{children}
 						<SonnerToaster position="top-center" closeButton richColors />
 					</ThemeProvider>
 				</Providers>

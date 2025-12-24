@@ -7,35 +7,35 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from '@repo/auth';
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import {
     LogOut, User, Bell, BellOff, Sparkles, Bug, Brain, Briefcase, Users, Video,
     MessageSquare, Cable, Share2, MessageCircleCodeIcon, Trophy, FolderKanban,
-    User2, Building2, ChevronLeft, ChevronRight, Award, Coins, Crown, Menu,
+    User2, Building2, ChevronLeft, ChevronRight, ChevronDown, Award, Coins, Crown, Menu,
     Loader, TrendingUp, Zap, Notebook, Users2
 } from "lucide-react";
 import {
     TooltipProvider, Tooltip, TooltipTrigger, TooltipContent
-} from "@/components/ui/tooltip";
-import { cn } from "../../lib/utils";
+} from "@repo/ui/components/ui/tooltip";
+import { cn } from "@repo/ui/lib/utils";
 import mainWebLogo from "@/utils/titlelogo.png";
 import { format } from "date-fns";
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/ui/dialog";
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
-} from "@/components/ui/sheet";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@repo/ui/components/ui/sheet";
+import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
 import { FaTools } from "react-icons/fa";
-import { ThemeToggle } from "../ui/theme-toggle";
+import { ThemeToggle } from "@repo/ui/components/themetoggle";
 import { useUserStore } from "@/app/store/useUserStore";
 import { motion } from "framer-motion";
-import { Slider } from "../ui/slider";
-import { Label } from "../ui/label";
+import { Slider } from "@repo/ui/components/ui/slider";
+import { Label } from "@repo/ui/components/ui/label";    
 import { convertXpToCredits } from "@/actions/(main)/subscription/credits.action";
-import { Progress } from "../ui/progress";
+import { Progress } from "@repo/ui/components/ui/progress";
 import { getUserReferralCode } from "@/actions/(main)/user/user.action";
 
 // Context for sidebar state
@@ -101,6 +101,8 @@ interface NavDropdownProps {
     icon: React.ReactNode;
     label: string;
     isCollapsed: boolean;
+    isExpanded: boolean;
+    onToggle: () => void;
     dropdownItems: Array<{
         path: string;
         name: string;
@@ -120,68 +122,15 @@ interface Notification {
     createdAt: Date;
 }
 
+// AnimatePresence imported from framer-motion
+import { AnimatePresence } from "framer-motion";
+
 const NavDropdown = ({ 
-    isActive, onNavigate, icon, label, isCollapsed, dropdownItems 
+    isActive, onNavigate, icon, label, isCollapsed, isExpanded, onToggle, dropdownItems 
 }: NavDropdownProps) => {
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-    const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
-
-    const calculatePosition = () => {
-        if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setDropdownPosition({
-                top: rect.top,
-                left: rect.right + 8
-            });
-        }
-    };
-
-    const handleMouseEnter = () => {
-        if (dropdownTimeoutRef.current) {
-            clearTimeout(dropdownTimeoutRef.current);
-        }
-        calculatePosition();
-        setIsDropdownOpen(true);
-    };
-
-    const handleMouseLeave = () => {
-        if (dropdownTimeoutRef.current) {
-            clearTimeout(dropdownTimeoutRef.current);
-        }
-        dropdownTimeoutRef.current = setTimeout(() => {
-            setIsDropdownOpen(false);
-        }, 150);
-    };
-
-    const handleClick = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        calculatePosition();
-        setIsDropdownOpen(!isDropdownOpen);
-    };
-
-    useEffect(() => {
-        if (!isDropdownOpen) return;
-
-        const handleClickOutside = (e: MouseEvent) => {
-            if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-                const dropdown = document.querySelector(`[data-dropdown="${label}"]`);
-                if (dropdown && !dropdown.contains(e.target as Node)) {
-                    setIsDropdownOpen(false);
-                }
-            }
-        };
-
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
-    }, [isDropdownOpen, label]);
-
     const buttonContent = (
         <button
-            ref={buttonRef}
-            onClick={handleClick}
+            onClick={onToggle}
             className={cn(
                 "flex items-center rounded-lg p-2.5 text-sm font-medium transition-all cursor-pointer group w-full",
                 isCollapsed ? "justify-center" : "justify-start gap-3",
@@ -191,16 +140,20 @@ const NavDropdown = ({
             )}
         >
             <div className="h-5 w-5 flex-shrink-0">{icon}</div>
-            {!isCollapsed && <span className="truncate">{label}</span>}
+            {!isCollapsed && (
+                <>
+                    <span className="truncate flex-1 text-left">{label}</span>
+                    <ChevronDown className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        isExpanded && "rotate-180"
+                    )} />
+                </>
+            )}
         </button>
     );
 
     return (
-        <div
-            className="relative w-full"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-        >
+        <div className="w-full">
             {
                 isCollapsed ? (
                     <Tooltip>
@@ -215,54 +168,50 @@ const NavDropdown = ({
                     buttonContent
                 )
             }
-            {
-                isDropdownOpen && (
-                    <div
-                        data-dropdown={label}
-                        className="fixed bg-white dark:bg-neutral-950 border border-border rounded-lg shadow-xl z-50 min-w-[220px] overflow-hidden"
-                        style={{
-                            top: `${dropdownPosition.top}px`,
-                            left: `${dropdownPosition.left}px`
-                        }}
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-2">
+            <AnimatePresence>
+                {
+                    isExpanded && !isCollapsed && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden pl-4 mt-1 space-y-0.5"
+                        >
                             {
                                 dropdownItems.map((item, index) => (
                                     <button
                                         key={index}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
+                                        onClick={() => {
                                             if (!item.comingSoon) {
                                                 onNavigate(item.path);
-                                                setIsDropdownOpen(false);
+                                            } else {
+                                                toast.info("Coming Soon", {
+                                                    description: `${item.name} feature is under development`
+                                                });
                                             }
                                         }}
                                         disabled={item.comingSoon}
                                         className={cn(
-                                            "w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm rounded-md transition-colors",
+                                            "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors",
                                             item.comingSoon
                                                 ? "text-muted-foreground cursor-not-allowed opacity-60"
-                                                : "text-foreground hover:bg-neutral-900 hover:text-white"
+                                                : "text-muted-foreground hover:text-foreground hover:bg-accent"
                                         )}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-lg">
-                                                {
-                                                    typeof item.icon === 'string' ? (
-                                                        <span>{item.icon}</span>
-                                                    ) : (
-                                                        <div className={item.iconColor}>{item.icon}</div>
-                                                    )
-                                                }
-                                            </div>
-                                            <span className="font-medium text-left">{item.name}</span>
+                                        <div className="w-7 h-7 bg-accent rounded-lg flex items-center justify-center text-sm">
+                                            {
+                                                typeof item.icon === 'string' ? (
+                                                    <span>{item.icon}</span>
+                                                ) : (
+                                                    <div className={item.iconColor}>{item.icon}</div>
+                                                )
+                                            }
                                         </div>
+                                        <span className="font-medium text-left flex-1">{item.name}</span>
                                         {
                                             item.comingSoon && (
-                                                <span className="text-[10px] px-2 py-0.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded-full border border-yellow-500/20 font-semibold">
+                                                <span className="text-[10px] px-1.5 py-0.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded border border-yellow-500/20 font-semibold">
                                                     SOON
                                                 </span>
                                             )
@@ -270,10 +219,10 @@ const NavDropdown = ({
                                     </button>
                                 ))
                             }
-                        </div>
-                    </div>
-                )
-            }
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence>
         </div>
     );
 };
@@ -339,6 +288,9 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
     const [referralLink, setReferralLink] = useState("");
     const profileTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const notificationsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    
+    // Expanded dropdown state for accordion behavior
+    const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
 
     const {
         currentXp, credits, currentLevel, fetchCreditsAndXp, addCredits,
@@ -373,6 +325,11 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
         setProfileDropdownOpen(false);
         router.push(`/${href}`);
         onClose?.();
+    };
+    
+    // Toggle dropdown with accordion behavior (only one open at a time)
+    const toggleDropdown = (dropdownName: string) => {
+        setExpandedDropdown(prev => prev === dropdownName ? null : dropdownName);
     };
 
     // Check if specific routes are active
@@ -657,6 +614,8 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
                         icon={<FolderKanban className="h-5 w-5" />}
                         label="Projects"
                         isCollapsed={isCollapsed}
+                        isExpanded={expandedDropdown === 'projects'}
+                        onToggle={() => toggleDropdown('projects')}
                         dropdownItems={projectsDropdown}
                     />
                     <NavDropdown
@@ -665,6 +624,8 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
                         icon={<Sparkles className="h-5 w-5" />}
                         label="AI Tools"
                         isCollapsed={isCollapsed}
+                        isExpanded={expandedDropdown === 'ai'}
+                        onToggle={() => toggleDropdown('ai')}
                         dropdownItems={aiDropdown}
                     />
                     <NavDropdown
@@ -673,6 +634,8 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
                         icon={<Users className="h-5 w-5" />}
                         label="Products"
                         isCollapsed={isCollapsed}
+                        isExpanded={expandedDropdown === 'products'}
+                        onToggle={() => toggleDropdown('products')}
                         dropdownItems={toolsDropdown}
                     />
                     <NavDropdown
@@ -681,6 +644,8 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
                         icon={<Video className="h-5 w-5" />}
                         label="Mock"
                         isCollapsed={isCollapsed}
+                        isExpanded={expandedDropdown === 'mock'}
+                        onToggle={() => toggleDropdown('mock')}
                         dropdownItems={mockDropdown}
                     />
                 </div>
@@ -1101,7 +1066,7 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
                                 min={0}
                                 max={maxConvertibleXp}
                                 step={10}
-                                onValueChange={(value) => setXpToConvert(value[0])}
+                                onValueChange={(value: number[]) => setXpToConvert(value[0] as number)}
                                 className="mt-4"
                             />
                         </div>
