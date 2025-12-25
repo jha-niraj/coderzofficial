@@ -67,6 +67,10 @@ export default function UsersPage() {
     const itemsPerPage = 10
     const [sheetOpen, setSheetOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<UserSheetData | null>(null)
+    // Email dialog state (moved to component scope)
+    const [showEmailBox, setShowEmailBox] = useState(false);
+    const [emailContent, setEmailContent] = useState("");
+    const [sending, setSending] = useState(false);
 
     const fetchUsers = useCallback(async () => {
         setIsLoading(true)
@@ -411,74 +415,66 @@ export default function UsersPage() {
                                                                                 Add Credits
                                                                             </Button>
                                                                             {
-                                                                                (() => {
-                                                                                    const [showEmailBox, setShowEmailBox] = useState(false);
-                                                                                    const [emailContent, setEmailContent] = useState("");
-                                                                                    const [sending, setSending] = useState(false);
-
-                                                                                    const handleSendEmail = async () => {
-                                                                                        if (!emailContent.trim()) {
-                                                                                            toast.error("Email content cannot be empty");
-                                                                                            return;
-                                                                                        }
-                                                                                        setSending(true);
-                                                                                        try {
-                                                                                            const result = await adminSendEmail({
-                                                                                                to: selectedUser?.email || "",
-                                                                                                subject: "Message from Admin",
-                                                                                                text: emailContent,
-                                                                                            });
-                                                                                            if (result.success) {
-                                                                                                toast.success("Email sent successfully");
-                                                                                                setShowEmailBox(false);
-                                                                                                setEmailContent("");
-                                                                                            } else {
-                                                                                                toast.error(result.error || "Failed to send email");
-                                                                                            }
-                                                                                        } catch (err) {
-                                                                                            toast.error("Failed to send email");
-                                                                                        } finally {
-                                                                                            setSending(false);
-                                                                                        }
-                                                                                    };
-
-                                                                                    return showEmailBox ? (
-                                                                                        <div className="flex flex-col gap-2 w-full">
-                                                                                            <textarea
-                                                                                                className="w-full min-h-[80px] rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                                                                                                placeholder="Write your message to the user..."
-                                                                                                value={emailContent}
-                                                                                                onChange={e => setEmailContent(e.target.value)}
+                                                                                showEmailBox ? (
+                                                                                    <div className="flex flex-col gap-2 w-full">
+                                                                                        <textarea
+                                                                                            className="w-full min-h-[80px] rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                                                                            placeholder="Write your message to the user..."
+                                                                                            value={emailContent}
+                                                                                            onChange={e => setEmailContent(e.target.value)}
+                                                                                            disabled={sending}
+                                                                                        />
+                                                                                        <div className="flex gap-2">
+                                                                                            <Button
+                                                                                                variant="secondary"
+                                                                                                className="flex-1"
+                                                                                                onClick={() => setShowEmailBox(false)}
                                                                                                 disabled={sending}
-                                                                                            />
-                                                                                            <div className="flex gap-2">
-                                                                                                <Button
-                                                                                                    variant="secondary"
-                                                                                                    className="flex-1"
-                                                                                                    onClick={() => setShowEmailBox(false)}
-                                                                                                    disabled={sending}
-                                                                                                >
-                                                                                                    Cancel
-                                                                                                </Button>
-                                                                                                <Button
-                                                                                                    className="flex-1"
-                                                                                                    onClick={handleSendEmail}
-                                                                                                    disabled={sending}
-                                                                                                >
-                                                                                                    {sending ? "Sending..." : "Send Email"}
-                                                                                                </Button>
-                                                                                            </div>
+                                                                                            >
+                                                                                                Cancel
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                className="flex-1"
+                                                                                                onClick={async () => {
+                                                                                                    if (!emailContent.trim()) {
+                                                                                                        toast.error("Email content cannot be empty");
+                                                                                                        return;
+                                                                                                    }
+                                                                                                    setSending(true);
+                                                                                                    try {
+                                                                                                        const result = await adminSendEmail({
+                                                                                                            to: selectedUser?.email || "",
+                                                                                                            subject: "Message from Admin",
+                                                                                                            text: emailContent,
+                                                                                                        });
+                                                                                                        if (result.success) {
+                                                                                                            toast.success("Email sent successfully");
+                                                                                                            setShowEmailBox(false);
+                                                                                                            setEmailContent("");
+                                                                                                        } else {
+                                                                                                            toast.error(result.error || "Failed to send email");
+                                                                                                        }
+                                                                                                    } catch {
+                                                                                                        toast.error("Failed to send email");
+                                                                                                    } finally {
+                                                                                                        setSending(false);
+                                                                                                    }
+                                                                                                }}
+                                                                                                disabled={sending}
+                                                                                            >
+                                                                                                {sending ? "Sending..." : "Send Email"}
+                                                                                            </Button>
                                                                                         </div>
-                                                                                    ) : (
-                                                                                        <Button
-                                                                                            className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors"
-                                                                                            onClick={() => setShowEmailBox(true)}
-                                                                                        >
-                                                                                            <Mail className="w-4 h-4" />
-                                                                                            Send Email
-                                                                                        </Button>
-                                                                                    );
-                                                                                })()
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <Button
+                                                                                        className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors"
+                                                                                        onClick={() => setShowEmailBox(true)}
+                                                                                    >
+                                                                                        <Mail className="w-4 h-4" />
+                                                                                        Send Email
+                                                                                    </Button>
+                                                                                )
                                                                             }
                                                                             <Button
                                                                                 onClick={() => setSelectedUsers([])}
