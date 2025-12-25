@@ -1,107 +1,115 @@
 "use client"
 
-import { useState } from "react"
-import {
-    CreditCard, Search, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle,
-    ArrowRight
-} from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { CreditCard, Search, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle, ArrowRight, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { cn } from "@repo/ui/lib/utils"
 import Link from "next/link"
 import { Input } from "@repo/ui/components/ui/input"
 import { Select, SelectItem } from "@repo/ui/components/ui/select"
+import {
+    getAllTransactions,
+    getCreditRequests,
+    getCreditStats
+} from "@/actions/credit.action"
+
+import type { CreditType, Currency } from "@repo/prisma/client"
 
 interface Transaction {
     id: string
     userId: string
-    userName: string
-    userEmail: string
-    type: "PURCHASE" | "SPEND" | "BONUS" | "REWARD"
     amount: number
+    type: CreditType
     description: string
     createdAt: string
+    currency: Currency
+    user: {
+        id: string
+        name: string | null
+        email: string
+        image: string | null
+    }
 }
 
-// Mock data generator functions
-const getRandomAmount = () => {
-    const amounts = [100, 250, 500, 1000, -50, -100, -200]
-    return amounts[Math.floor(Math.random() * amounts.length)] ?? 100
-}
-
-const getRandomDescription = () => {
-    const descriptions = [
-        "Credit package purchase",
-        "Mock interview session",
-        "Project completion bonus",
-        "Referral reward",
-        "Assessment unlock",
-        "Daily login bonus"
-    ]
-    return descriptions[Math.floor(Math.random() * descriptions.length)] ?? "Transaction"
-}
-
-const getRandomType = (): Transaction["type"] => {
-    const types: Transaction["type"][] = ["PURCHASE", "SPEND", "BONUS", "REWARD"]
-    return types[Math.floor(Math.random() * types.length)] ?? "PURCHASE"
-}
-
-const mockTransactions: Transaction[] = Array.from({ length: 30 }, (_, i) => ({
-    id: `txn-${i + 1}`,
-    userId: `user-${Math.floor(Math.random() * 100)}`,
-    userName: `User ${Math.floor(Math.random() * 100)}`,
-    userEmail: `user${Math.floor(Math.random() * 100)}@example.com`,
-    type: getRandomType(),
-    amount: getRandomAmount(),
-    description: getRandomDescription(),
-    createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
-}))
 
 interface CreditRequest {
     id: string
     userId: string
-    userName: string
-    userEmail: string
     requestedCredits: number
     linkedinPostUrl: string
     status: "PENDING" | "APPROVED" | "REJECTED"
     createdAt: string
+    user: {
+        id: string
+        name: string | null
+        email: string
+        image: string | null
+    }
 }
 
-const getRandomRequestedCredits = () => {
-    const amounts = [300, 500, 750, 1000]
-    return amounts[Math.floor(Math.random() * amounts.length)] ?? 500
-}
 
-const mockRequests: CreditRequest[] = Array.from({ length: 10 }, (_, i) => ({
-    id: `req-${i + 1}`,
-    userId: `user-${Math.floor(Math.random() * 100)}`,
-    userName: `User ${Math.floor(Math.random() * 100)}`,
-    userEmail: `user${Math.floor(Math.random() * 100)}@example.com`,
-    requestedCredits: getRandomRequestedCredits(),
-    linkedinPostUrl: "https://linkedin.com/posts/...",
-    status: "PENDING" as const,
-    createdAt: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000).toISOString()
-}))
+type Tab = "overview" | "transactions" | "requests"
 
-type Tab = "overview" | "transactions" | "requests";
 export default function CreditsPage() {
     const [activeTab, setActiveTab] = useState<Tab>("overview")
     const [searchQuery, setSearchQuery] = useState("")
-    const [typeFilter, setTypeFilter] = useState<"all" | Transaction["type"]>("all")
+    const [typeFilter, setTypeFilter] = useState<"all" | CreditType>("all")
+    const [transactions, setTransactions] = useState<Transaction[]>([])
+    const [requests, setRequests] = useState<CreditRequest[]>([])
+    const [stats, setStats] = useState<{ totalCredits: number, pendingRequests: number, totalTransactions: number, totalPayments: number }>({
+        totalCredits: 0,
+        pendingRequests: 0,
+        totalTransactions: 0,
+        totalPayments: 0
+    })
+    const [loading, setLoading] = useState(true)
 
-    const stats = {
-        totalInCirculation: "1,245,678",
-        purchasedThisMonth: "125,000",
-        spentThisMonth: "89,500",
-        pendingRequests: mockRequests.filter(r => r.status === "PENDING").length
-    }
+    // Fetch stats
+    useEffect(() => {
+        getCreditStats().then(res => {
+            if (res.success && res.data) setStats(res.data)
+        })
+    }, [])
 
-    const filteredTransactions = mockTransactions.filter(txn => {
-        const matchesSearch = txn.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            txn.userEmail.toLowerCase().includes(searchQuery.toLowerCase())
+    // Fetch transactions
+    const fetchTransactions = useCallback(() => {
+        setLoading(true)
+        getAllTransactions(
+            { type: typeFilter === "all" ? undefined : typeFilter },
+            { page: 1, limit: 50 }
+        ).then(res => {
+            if (res.success && res.data) setTransactions(res.data.transactions)
+        }).finally(() => setLoading(false))
+    }, [typeFilter])
+
+    useEffect(() => {
+        fetchTransactions()
+    }, [fetchTransactions])
+
+    // Fetch requests
+    useEffect(() => {
+        getCreditRequests("PENDING", { page: 1, limit: 10 }).then(res => {
+            if (res.success && res.data) setRequests(res.data.requests)
+        })
+    }, [])
+
+    const filteredTransactions = transactions.filter(txn => {
+        const matchesSearch = (txn.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (txn.user?.email || "").toLowerCase().includes(searchQuery.toLowerCase())
         const matchesType = typeFilter === "all" || txn.type === typeFilter
         return matchesSearch && matchesType
     })
+
+    if(loading) {
+        return (
+            <div className="p-6 lg:p-8 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-neutral-400 mx-auto mb-4" />
+                    <p className="text-neutral-500 dark:text-neutral-400">Loading feedback...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
@@ -121,7 +129,7 @@ export default function CreditsPage() {
                             <CreditCard className="w-5 h-5 text-white" />
                         </div>
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalInCirculation}</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalCredits.toLocaleString()}</p>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">Total in Circulation</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
@@ -130,8 +138,8 @@ export default function CreditsPage() {
                             <ArrowUpRight className="w-5 h-5 text-white" />
                         </div>
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.purchasedThisMonth}</p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Purchased This Month</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalPayments.toLocaleString()}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Payments</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -139,8 +147,8 @@ export default function CreditsPage() {
                             <ArrowDownRight className="w-5 h-5 text-white" />
                         </div>
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.spentThisMonth}</p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Spent This Month</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalTransactions.toLocaleString()}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Transactions</p>
                 </div>
                 <Link href="/credits/requests">
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 hover:border-amber-500 dark:hover:border-amber-500 transition-colors cursor-pointer group">
@@ -162,7 +170,7 @@ export default function CreditsPage() {
                     ["overview", "transactions", "requests"].map((tab) => (
                         <button
                             key={tab}
-                            onClick={() => setActiveTab(tab as "overview" || "transactions" || "requests")}
+                            onClick={() => setActiveTab(tab as Tab)}
                             className={cn(
                                 "px-6 py-3 text-sm font-medium transition-colors relative",
                                 activeTab === tab
@@ -195,7 +203,7 @@ export default function CreditsPage() {
                             </div>
                             <div className="space-y-3">
                                 {
-                                    mockTransactions.slice(0, 5).map((txn) => (
+                                    transactions.slice(0, 5).map((txn) => (
                                         <div key={txn.id} className="flex items-center justify-between py-3 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
                                             <div className="flex items-center gap-3">
                                                 <div className={cn(
@@ -210,7 +218,7 @@ export default function CreditsPage() {
                                                     }
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">{txn.userName}</p>
+                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">{txn.user?.name || txn.user?.email}</p>
                                                     <p className="text-xs text-neutral-500">{txn.description}</p>
                                                 </div>
                                             </div>
@@ -234,11 +242,11 @@ export default function CreditsPage() {
                             </div>
                             <div className="space-y-3">
                                 {
-                                    mockRequests.slice(0, 5).map((req) => (
+                                    requests.slice(0, 5).map((req) => (
                                         <div key={req.id} className="flex items-center justify-between py-3 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
                                             <div>
-                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">{req.userName}</p>
-                                                <p className="text-xs text-neutral-500">{req.userEmail}</p>
+                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">{req.user?.name || req.user?.email}</p>
+                                                <p className="text-xs text-neutral-500">{req.user?.email}</p>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className="font-semibold text-neutral-900 dark:text-white">{req.requestedCredits}</span>
@@ -304,8 +312,8 @@ export default function CreditsPage() {
                                             >
                                                 <td className="p-4">
                                                     <div>
-                                                        <p className="font-medium text-neutral-900 dark:text-white">{txn.userName}</p>
-                                                        <p className="text-sm text-neutral-500">{txn.userEmail}</p>
+                                                        <p className="font-medium text-neutral-900 dark:text-white">{txn.user?.name || txn.user?.email}</p>
+                                                        <p className="text-sm text-neutral-500">{txn.user?.email}</p>
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
@@ -360,15 +368,15 @@ export default function CreditsPage() {
                                 </thead>
                                 <tbody>
                                     {
-                                        mockRequests.map((req) => (
+                                        requests.map((req) => (
                                             <tr
                                                 key={req.id}
                                                 className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors"
                                             >
                                                 <td className="p-4">
                                                     <div>
-                                                        <p className="font-medium text-neutral-900 dark:text-white">{req.userName}</p>
-                                                        <p className="text-sm text-neutral-500">{req.userEmail}</p>
+                                                        <p className="font-medium text-neutral-900 dark:text-white">{req.user?.name || req.user?.email}</p>
+                                                        <p className="text-sm text-neutral-500">{req.user?.email}</p>
                                                     </div>
                                                 </td>
                                                 <td className="p-4">

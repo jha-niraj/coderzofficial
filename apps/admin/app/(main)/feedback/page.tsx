@@ -207,7 +207,7 @@ export default function FeedbackPage() {
                     </div>
                     <Select
                         value={categoryFilter}
-                        onValueChange={(value) => setCategoryFilter(value)}
+                        onValueChange={(value) => setCategoryFilter(value as "all" | "BUG" | "FEATURE" | "UI" | "OTHER")}
                     >
                         <SelectItem value="all">All Categories</SelectItem>
                         <SelectItem value="BUG">Bug</SelectItem>
@@ -217,7 +217,7 @@ export default function FeedbackPage() {
                     </Select>
                     <Select
                         value={statusFilter}
-                        onValueChange={(value) => setStatusFilter(value)}
+                        onValueChange={(value) => setStatusFilter(value as "all" | "UNDER_REVIEW" | "PLANNED" | "COMPLETED")}
                     >
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
@@ -307,7 +307,7 @@ export default function FeedbackPage() {
                                         <div className="flex items-center gap-2">
                                             <Select
                                                 value={item.status}
-                                                onValueChange={(value) => handleStatusChange(item.id, value)}
+                                                onValueChange={(value) => handleStatusChange(item.id, value as "UNDER_REVIEW" | "PLANNED" | "COMPLETED")}
                                             >
                                                 <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
                                                 <SelectItem value="PLANNED">Planned</SelectItem>
@@ -332,7 +332,7 @@ export default function FeedbackPage() {
                                                 item.rewards && (
                                                     <span className="px-3 py-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg flex items-center gap-2">
                                                         <Award className="w-4 h-4" />
-                                                        {item.rewards.credits} credits{item.rewards.xp && `, ${item.rewards.xp} XP`}
+                                                        {item.rewards.credits} credits{typeof item.rewards.xp === 'number' ? `, ${item.rewards.xp} XP` : ''}
                                                     </span>
                                                 )
                                             }
