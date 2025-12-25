@@ -37,11 +37,10 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     return (
         <div className="h-screen overflow-hidden bg-neutral-100 dark:bg-neutral-900">
             <AdminSidebar />
-            
             <main
                 className={cn(
                     "h-screen transition-all duration-300",
-                    "lg:ml-64",
+                    "lg:ml-64 p-3",
                     isCollapsed && "lg:ml-[90px]"
                 )}
             >

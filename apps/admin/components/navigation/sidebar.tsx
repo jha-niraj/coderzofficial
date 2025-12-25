@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useSession, signOut } from "@repo/auth"
 import { cn } from "@repo/ui/lib/utils"
 import {
-    User, LogOut, ChevronLeft, ChevronRight, Mail, Phone, ChevronDown, Shield
+    User, LogOut, ChevronLeft, ChevronRight, ChevronDown, Shield
 } from "lucide-react"
 import {
     Tooltip, TooltipTrigger, TooltipContent, TooltipProvider
@@ -14,12 +14,13 @@ import {
 import { useSidebar } from "./sidebarprovider"
 import { toast } from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
-import { 
-    adminNavigation, type NavigationItem 
+import {
+    adminNavigation, type NavigationItem
 } from "@/lib/navigation"
-import { Sheet, SheetContent } from "@repo/ui/components/ui/sheet"
+import { 
+    Sheet, SheetContent 
+} from "@repo/ui/components/ui/sheet"
 import { motion, AnimatePresence } from "framer-motion"
-import { Bell } from "lucide-react"
 
 export function AdminSidebar() {
     const { isCollapsed, setIsCollapsed } = useSidebar()
@@ -176,7 +177,6 @@ export function AdminSidebar() {
 
     const SidebarContent = () => (
         <>
-            {/* Header */}
             <div className={cn("p-6 flex items-center relative border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "justify-center" : "gap-3")}>
                 <Link href="/dashboard" className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0">
@@ -200,8 +200,6 @@ export function AdminSidebar() {
                     {isCollapsed ? <ChevronRight className="w-4 h-4 text-neutral-900 dark:text-white" /> : <ChevronLeft className="w-4 h-4 text-neutral-900 dark:text-white" />}
                 </button>
             </div>
-
-            {/* Navigation */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent">
                 {navItems?.map((item) => renderNavItem(item))}
                 {
@@ -219,84 +217,7 @@ export function AdminSidebar() {
                     )
                 }
             </nav>
-
-            {/* Footer */}
             <div className="mt-auto border-t border-neutral-200 dark:border-neutral-800">
-                {/* Support Links */}
-                <div className={cn(
-                    "p-3 border-b border-neutral-200 dark:border-neutral-800",
-                    isCollapsed ? "space-y-3" : "grid grid-cols-2 gap-4"
-                )}>
-                    <div className={cn(isCollapsed && "flex flex-col items-center")}>
-                        {
-                            !isCollapsed && (
-                                <p className="text-[10px] font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400 mb-2 tracking-widest">Support</p>
-                            )
-                        }
-                        <div className={cn(
-                            "flex gap-2",
-                            isCollapsed ? "flex-col items-center" : "justify-start"
-                        )}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link href="tel:+1234567890" className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
-                                        <Phone className="w-4 h-4" />
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-800 dark:border-neutral-200">
-                                    Call Support
-                                </TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link href="mailto:admin@thecoderz.com" className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
-                                        <Mail className="w-4 h-4" />
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-800 dark:border-neutral-200">
-                                    Email Support
-                                </TooltipContent>
-                            </Tooltip>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Notifications */}
-                <div className="p-3 border-b border-neutral-200 dark:border-neutral-800">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Link
-                                href="/notifications"
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all w-full",
-                                    pathname === '/notifications'
-                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
-                                        : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
-                                    isCollapsed && "justify-center"
-                                )}
-                            >
-                                <div className="relative">
-                                    <Bell className="h-5 w-5 flex-shrink-0" />
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                </div>
-                                {
-                                    !isCollapsed && (
-                                        <span className="whitespace-nowrap overflow-hidden">Notifications</span>
-                                    )
-                                }
-                            </Link>
-                        </TooltipTrigger>
-                        {
-                            isCollapsed && (
-                                <TooltipContent side="right" className="bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-800 dark:border-neutral-200">
-                                    Notifications
-                                </TooltipContent>
-                            )
-                        }
-                    </Tooltip>
-                </div>
-
-                {/* Profile Section */}
                 {
                     status === "authenticated" && session ? (
                         <div
@@ -340,8 +261,6 @@ export function AdminSidebar() {
                                     )
                                 }
                             </button>
-
-                            {/* Profile Dropdown */}
                             {
                                 profileDropdownOpen && (
                                     <div
@@ -426,7 +345,6 @@ export function AdminSidebar() {
 
     return (
         <TooltipProvider>
-            {/* Mobile Toggle */}
             <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
                 className="fixed top-6 left-6 z-50 lg:hidden bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all shadow-lg"
@@ -440,8 +358,6 @@ export function AdminSidebar() {
                     )
                 }
             </button>
-
-            {/* Mobile Overlay */}
             {
                 isMobileOpen && (
                     <div
@@ -450,11 +366,9 @@ export function AdminSidebar() {
                     />
                 )
             }
-
-            {/* Desktop Sidebar */}
             <aside
                 className={cn(
-                    "fixed top-0 left-0 h-screen bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800 flex flex-col z-40 transition-all duration-300",
+                    "fixed top-0 left-0 h-screen bg-neutral-100 dark:bg-neutral-900 flex flex-col z-40 transition-all duration-300",
                     "hidden lg:flex",
                     isCollapsed ? "lg:w-[90px]" : "lg:w-64",
                     "lg:translate-x-0"
@@ -462,8 +376,6 @@ export function AdminSidebar() {
             >
                 <SidebarContent />
             </aside>
-
-            {/* Mobile Sidebar */}
             <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
                 <SheetContent side="left" className="p-0 w-64 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
                     <div className="flex flex-col h-full">
@@ -474,6 +386,3 @@ export function AdminSidebar() {
         </TooltipProvider>
     )
 }
-
-
-

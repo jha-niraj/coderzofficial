@@ -232,7 +232,7 @@ export default function AdminDashboard() {
     }
 
     return (
-        <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="p-6 lg:p-8 w-full mx-auto">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
                     Welcome back, {session?.user?.name?.split(' ')[0] || 'Admin'}
