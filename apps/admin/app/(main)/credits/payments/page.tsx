@@ -48,7 +48,7 @@ export default function CreditPaymentsPage() {
         } finally {
             setLoading(false)
         }
-    }, [status, page]);
+    }, [page, statusFilter]);
 
     useEffect(() => {
         fetchPayments()

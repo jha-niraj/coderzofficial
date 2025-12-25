@@ -80,7 +80,7 @@ export default function FeedbackPage() {
         } finally {
             setIsLoading(false)
         }
-    }, [categoryFilter, status]);
+    }, [categoryFilter, currentPage, statusFilter, searchQuery]);
 
     useEffect(() => {
         fetchFeedback()
@@ -95,13 +95,13 @@ export default function FeedbackPage() {
             }
         }, 500)
         return () => clearTimeout(timer)
-    }, [searchQuery])
+    }, [searchQuery, currentPage, fetchFeedback])
 
     useEffect(() => {
         if (currentPage !== 1) {
             setCurrentPage(1)
         }
-    }, [categoryFilter, statusFilter])
+    }, [categoryFilter, statusFilter, currentPage])
 
     const handleStatusChange = useCallback(async(feedbackId: string, newStatus: "UNDER_REVIEW" | "PLANNED" | "COMPLETED") => {
         try {
@@ -116,7 +116,7 @@ export default function FeedbackPage() {
             console.log("Error Occurred while updating status: " + error);
             toast.error("Failed to update status")
         }
-    }, [categoryFilter, status]);
+    }, [fetchFeedback]);
 
     const handleAssignReward = useCallback(async(feedbackId: string, credits: number, xp: number) => {
         try {
@@ -133,7 +133,7 @@ export default function FeedbackPage() {
             console.log("Error Occurred while assigning reward: " + error);
             toast.error("Failed to assign reward")
         }
-    }, [categoryFilter, status]);
+    }, [fetchFeedback]);
 
     const handleDelete = useCallback(async(feedbackId: string) => {
         if (!confirm("Are you sure you want to delete this feedback?")) return
@@ -150,7 +150,7 @@ export default function FeedbackPage() {
             console.log("Error Occurred while deleting Feedback: " + error);
             toast.error("Failed to delete feedback")
         }
-    }, [categoryFilter, status]);
+    }, [fetchFeedback]);
 
     const getCategoryColor = (category: string) => {
         switch (category) {
@@ -207,7 +207,7 @@ export default function FeedbackPage() {
                     </div>
                     <Select
                         value={categoryFilter}
-                        onValueChange={(value) => setCategoryFilter(value as any)}
+                        onValueChange={(value) => setCategoryFilter(value)}
                     >
                         <SelectItem value="all">All Categories</SelectItem>
                         <SelectItem value="BUG">Bug</SelectItem>
@@ -217,7 +217,7 @@ export default function FeedbackPage() {
                     </Select>
                     <Select
                         value={statusFilter}
-                        onValueChange={(value) => setStatusFilter(value as any)}
+                        onValueChange={(value) => setStatusFilter(value)}
                     >
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
@@ -307,7 +307,7 @@ export default function FeedbackPage() {
                                         <div className="flex items-center gap-2">
                                             <Select
                                                 value={item.status}
-                                                onValueChange={(value) => handleStatusChange(item.id, value as any)}
+                                                onValueChange={(value) => handleStatusChange(item.id, value)}
                                             >
                                                 <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
                                                 <SelectItem value="PLANNED">Planned</SelectItem>
