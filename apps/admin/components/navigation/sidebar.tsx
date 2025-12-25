@@ -21,6 +21,7 @@ import {
     Sheet, SheetContent 
 } from "@repo/ui/components/ui/sheet"
 import { motion, AnimatePresence } from "framer-motion"
+import { ThemeToggle } from "@repo/ui/components/themetoggle"
 
 export function AdminSidebar() {
     const { isCollapsed, setIsCollapsed } = useSidebar()
@@ -218,6 +219,7 @@ export function AdminSidebar() {
                 }
             </nav>
             <div className="mt-auto border-t border-neutral-200 dark:border-neutral-800">
+                <ThemeToggle />
                 {
                     status === "authenticated" && session ? (
                         <div
