@@ -12,6 +12,10 @@ import { format } from "date-fns"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import {
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription
+} from "@repo/ui/components/ui/sheet"
+import { Button } from "@repo/ui/components/ui/button"
 
 interface Transfer {
     id: string,
@@ -244,83 +248,88 @@ export default function CreditTransfersPage() {
                     )
                 }
             </div>
-            {
-                showTransferModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white dark:bg-neutral-900 rounded-xl max-w-md w-full p-6">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">
-                                Transfer Credits
-                            </h2>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                        From User ID
-                                    </Label>
-                                    <Input
-                                        type="text"
-                                        value={transferData.fromUserId}
-                                        onChange={(e) => setTransferData({ ...transferData, fromUserId: e.target.value })}
-                                        className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        placeholder="Enter user ID"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                        To User ID
-                                    </Label>
-                                    <Input
-                                        type="text"
-                                        value={transferData.toUserId}
-                                        onChange={(e) => setTransferData({ ...transferData, toUserId: e.target.value })}
-                                        className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        placeholder="Enter user ID"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                        Amount
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        value={transferData.amount}
-                                        onChange={(e) => setTransferData({ ...transferData, amount: parseInt(e.target.value) })}
-                                        className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        placeholder="Enter amount"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                        Description (optional)
-                                    </Label>
-                                    <Textarea
-                                        value={transferData.description}
-                                        onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
-                                        className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        rows={3}
-                                        placeholder="Enter description"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex gap-3 mt-6">
-                                <button
-                                    onClick={() => setShowTransferModal(false)}
-                                    disabled={submitting}
-                                    className="flex-1 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleTransfer}
-                                    disabled={submitting}
-                                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-lg hover:from-red-600 hover:to-orange-600 disabled:opacity-50"
-                                >
-                                    {submitting ? "Transferring..." : "Transfer"}
-                                </button>
-                            </div>
+            <Sheet open={showTransferModal} onOpenChange={setShowTransferModal}>
+                <SheetContent side="right" className="max-w-md w-full">
+                    <SheetHeader>
+                        <SheetTitle>Transfer Credits</SheetTitle>
+                        <SheetDescription>Transfer credits between users</SheetDescription>
+                    </SheetHeader>
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            handleTransfer();
+                        }}
+                        className="space-y-4 mt-4"
+                    >
+                        <div>
+                            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                From User ID
+                            </Label>
+                            <Input
+                                type="text"
+                                value={transferData.fromUserId}
+                                onChange={e => setTransferData({ ...transferData, fromUserId: e.target.value })}
+                                className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                placeholder="Enter user ID"
+                            />
                         </div>
-                    </div>
-                )
-            }
+                        <div>
+                            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                To User ID
+                            </Label>
+                            <Input
+                                type="text"
+                                value={transferData.toUserId}
+                                onChange={e => setTransferData({ ...transferData, toUserId: e.target.value })}
+                                className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                placeholder="Enter user ID"
+                            />
+                        </div>
+                        <div>
+                            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                Amount
+                            </Label>
+                            <Input
+                                type="number"
+                                value={transferData.amount}
+                                onChange={e => setTransferData({ ...transferData, amount: parseInt(e.target.value) })}
+                                className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                placeholder="Enter amount"
+                            />
+                        </div>
+                        <div>
+                            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                Description (optional)
+                            </Label>
+                            <Textarea
+                                value={transferData.description}
+                                onChange={e => setTransferData({ ...transferData, description: e.target.value })}
+                                className="w-full px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                rows={3}
+                                placeholder="Enter description"
+                            />
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                className="flex-1"
+                                onClick={() => setShowTransferModal(false)}
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="flex-1"
+                                disabled={submitting}
+                            >
+                                {submitting ? "Transferring..." : "Transfer"}
+                            </Button>
+                        </div>
+                    </form>
+                </SheetContent>
+            </Sheet>
         </div>
     )
 }

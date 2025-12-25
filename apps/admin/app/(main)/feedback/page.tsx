@@ -5,7 +5,7 @@ import {
     MessageCircle, Search, ChevronLeft, ChevronRight, Loader2, Award, Trash2,
     CheckCircle, Clock, AlertCircle
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { cn } from "@repo/ui/lib/utils"
 import {
     getAllFeedback, updateFeedbackStatus, assignReward, deleteFeedback
@@ -14,6 +14,10 @@ import { toast } from "@repo/ui/components/ui/sonner"
 import { Select, SelectItem } from "@repo/ui/components/ui/select"
 import { Label } from "@repo/ui/components/ui/label"
 import { Input } from "@repo/ui/components/ui/input"
+import {
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription
+} from "@repo/ui/components/ui/sheet"
+import { Button } from "@repo/ui/components/ui/button"
 import Image from "next/image"
 
 interface Feedback {
@@ -378,85 +382,70 @@ export default function FeedbackPage() {
                     </div>
                 )
             }
-            <AnimatePresence>
-                {
-                    showRewardDialog && selectedFeedback && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                            onClick={() => setShowRewardDialog(false)}
+            <Sheet open={showRewardDialog && !!selectedFeedback} onOpenChange={setShowRewardDialog}>
+                <SheetContent side="right" className="max-w-md w-full">
+                    <SheetHeader>
+                        <SheetTitle>Assign Reward</SheetTitle>
+                        <SheetDescription>{selectedFeedback?.title}</SheetDescription>
+                    </SheetHeader>
+                    {
+                    selectedFeedback && (
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const credits = Number(formData.get("credits"));
+                                const xp = Number(formData.get("xp"));
+                                handleAssignReward(selectedFeedback.id, credits, xp);
+                            }}
+                            className="space-y-4 mt-4"
                         >
-                            <motion.div
-                                initial={{ scale: 0.95, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.95, opacity: 0 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 max-w-md w-full"
-                            >
-                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-                                    Assign Reward
-                                </h3>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-                                    {selectedFeedback.title}
-                                </p>
-                                <form
-                                    onSubmit={(e) => {
-                                        e.preventDefault()
-                                        const formData = new FormData(e.currentTarget)
-                                        const credits = Number(formData.get("credits"))
-                                        const xp = Number(formData.get("xp"))
-                                        handleAssignReward(selectedFeedback.id, credits, xp)
-                                    }}
-                                    className="space-y-4"
+                            <div>
+                                <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                    Credits
+                                </Label>
+                                <Input
+                                    type="number"
+                                    name="credits"
+                                    required
+                                    min="0"
+                                    defaultValue="100"
+                                    className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                />
+                            </div>
+                            <div>
+                                <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                    XP (Optional)
+                                </Label>
+                                <Input
+                                    type="number"
+                                    name="xp"
+                                    min="0"
+                                    defaultValue="50"
+                                    className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                />
+                            </div>
+                            <div className="flex items-center gap-3 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="flex-1"
+                                    onClick={() => setShowRewardDialog(false)}
                                 >
-                                    <div>
-                                        <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                                            Credits
-                                        </Label>
-                                        <Input
-                                            type="number"
-                                            name="credits"
-                                            required
-                                            min="0"
-                                            defaultValue="100"
-                                            className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                                            XP (Optional)
-                                        </Label>
-                                        <Input
-                                            type="number"
-                                            name="xp"
-                                            min="0"
-                                            defaultValue="50"
-                                            className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-3 pt-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowRewardDialog(false)}
-                                            className="flex-1 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-lg hover:from-red-600 hover:to-orange-600 transition-colors"
-                                        >
-                                            Assign
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
-                        </motion.div>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-1"
+                                >
+                                    Assign
+                                </Button>
+                            </div>
+                        </form>
                     )
-                }
-            </AnimatePresence>
+                    }
+                </SheetContent>
+            </Sheet>
         </div>
     )
 }

@@ -1,3 +1,27 @@
+// Send custom email to user (admin action)
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function adminSendEmail({ to, subject, text }: { to: string; subject: string; text: string }): Promise<AdminResponse> {
+    try {
+        const { success, error } = await checkAdminAccess();
+        if (!success) return { success: false, error };
+
+        const result = await resend.emails.send({
+            from: "The Coder'z <noreply@coderzai.xyz>",
+            to,
+            subject,
+            text,
+        });
+        if (result.error) {
+            return { success: false, error: result.error.message || "Failed to send email" };
+        }
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message || "Failed to send email" };
+    }
+}
 "use server"
 
 import { Currency, prisma } from "@repo/prisma"

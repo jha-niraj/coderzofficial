@@ -6,11 +6,15 @@ import {
     Mail, Shield, CreditCard, Download, UserPlus, Loader2,
     MoreHorizontal
 } from "lucide-react"
+import {
+    Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetFooter,
+    SheetClose
+} from "@repo/ui/components/ui/sheet"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import {
-    getAllUsers, bulkUpdateUsers
+    getAllUsers, bulkUpdateUsers, adminSendEmail
 } from "@/actions/user.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { Input } from "@repo/ui/components/ui/input"
@@ -19,19 +23,35 @@ import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import { Button } from "@repo/ui/components/ui/button"
 import Image from "next/image"
 
+
 interface User {
-    id: string
-    name: string | null
-    email: string
-    image?: string | null
-    username?: string | null
-    role: "Student" | "Admin"
-    credits: number
-    currentXp: number
-    currentLevel: number
-    emailVerified: boolean | null
-    createdAt: Date | string
-    status: "active" | "inactive"
+    id: string;
+    name: string | null;
+    email: string;
+    image?: string | null;
+    username?: string | null;
+    role: "Student" | "Admin";
+    credits: number;
+    currentXp: number;
+    currentLevel: number;
+    emailVerified: boolean | null;
+    createdAt: Date | string;
+    status: "active" | "inactive";
+}
+
+interface UserSheetData extends User {
+    phone?: string | null;
+    location?: string | null;
+    yearofbirth?: number | null;
+    tagline?: string | null;
+    aboutme?: string | null;
+    college?: string | null;
+    interests?: string[];
+    skills?: string[];
+    github?: string | null;
+    linkedin?: string | null;
+    twitter?: string | null;
+    website?: string | null;
 }
 
 export default function UsersPage() {
@@ -45,6 +65,8 @@ export default function UsersPage() {
     const [currentPage, setCurrentPage] = useState(1)
     const [selectedUsers, setSelectedUsers] = useState<string[]>([])
     const itemsPerPage = 10
+    const [sheetOpen, setSheetOpen] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<UserSheetData | null>(null)
 
     const fetchUsers = useCallback(async () => {
         setIsLoading(true)
@@ -121,6 +143,16 @@ export default function UsersPage() {
         } catch (err) {
             console.error("Failed to update users:", err)
             toast.error("Failed to update users")
+        }
+    }
+
+    const fetchUserDetails = async (userId: string) => {
+        // Replace with your actual fetch logic or server action
+        // For now, just find from users list (simulate details)
+        const user = users.find(u => u.id === userId)
+        if (user) {
+            setSelectedUser({ ...user })
+            setSheetOpen(true)
         }
     }
 
@@ -319,9 +351,153 @@ export default function UsersPage() {
                                                 {new Date(user.createdAt).toLocaleDateString()}
                                             </td>
                                             <td className="p-4">
-                                                <Button className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">
-                                                    <MoreHorizontal className="w-4 h-4 text-neutral-500" />
-                                                </Button>
+                                                <Sheet open={sheetOpen && selectedUser?.id === user.id} onOpenChange={setSheetOpen}>
+                                                    <SheetTrigger asChild>
+                                                        <Button className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors" onClick={() => fetchUserDetails(user.id)}>
+                                                            <MoreHorizontal className="w-4 h-4 text-neutral-500" />
+                                                        </Button>
+                                                    </SheetTrigger>
+                                                    <SheetContent side="right" className="max-w-md w-full">
+                                                        <SheetHeader>
+                                                            <SheetTitle>User Details</SheetTitle>
+                                                        </SheetHeader>
+                                                        {
+                                                            selectedUser && (
+                                                                <div className="space-y-4">
+                                                                    <div className="flex flex-col items-center gap-2">
+                                                                        {
+                                                                            selectedUser.image ? (
+                                                                                <Image src={selectedUser.image} alt={selectedUser.name || selectedUser.email} className="w-20 h-20 rounded-full border" width={80} height={80} />
+                                                                            ) : (
+                                                                                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-300 flex items-center justify-center">
+                                                                                    <span className="text-2xl font-bold text-neutral-600">{(selectedUser.name || selectedUser.email)?.[0]?.toUpperCase() || ""}</span>
+                                                                                </div>
+                                                                            )
+                                                                        }
+                                                                        <div className="text-center">
+                                                                            <div className="text-xl font-bold">{selectedUser.name}</div>
+                                                                            <div className="text-sm text-neutral-500">{selectedUser.email}</div>
+                                                                            <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                                                                                <span className="px-2 py-1 rounded bg-neutral-100 text-xs">{selectedUser.role}</span>
+                                                                                {selectedUser.emailVerified && <span className="px-2 py-1 rounded bg-emerald-100 text-xs">Verified</span>}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        <div className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4" /> {selectedUser.email}</div>
+                                                                        {selectedUser.phone && <div className="flex items-center gap-2 text-sm"><span>📞</span> {selectedUser.phone}</div>}
+                                                                        {selectedUser.location && <div className="flex items-center gap-2 text-sm"><span>📍</span> {selectedUser.location}</div>}
+                                                                        {selectedUser.yearofbirth && <div className="flex items-center gap-2 text-sm"><span>🎂</span> {selectedUser.yearofbirth}</div>}
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-2">
+                                                                        <div className="font-semibold">Credits: <span className="font-normal">{selectedUser.credits}</span></div>
+                                                                        <div className="font-semibold">XP: <span className="font-normal">{selectedUser.currentXp}</span></div>
+                                                                        <div className="font-semibold">Level: <span className="font-normal">{selectedUser.currentLevel}</span></div>
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-2">
+                                                                        <Button variant="outline" className="w-full flex items-center gap-2"><Mail className="w-4 h-4" />Send Email</Button>
+                                                                        <motion.div
+                                                                            initial={{ opacity: 0, y: 20 }}
+                                                                            animate={{ opacity: 1, y: 0 }}
+                                                                            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-2xl p-4 flex items-center gap-4 z-50"
+                                                                        >
+                                                                            <span className="text-sm font-medium">{selectedUsers.length} selected</span>
+                                                                            <div className="h-4 w-px bg-neutral-700 dark:bg-neutral-300" />
+                                                                            <Button
+                                                                                onClick={handleBulkAddCredits}
+                                                                                className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors"
+                                                                            >
+                                                                                <CreditCard className="w-4 h-4" />
+                                                                                Add Credits
+                                                                            </Button>
+                                                                            {
+                                                                                (() => {
+                                                                                    const [showEmailBox, setShowEmailBox] = useState(false);
+                                                                                    const [emailContent, setEmailContent] = useState("");
+                                                                                    const [sending, setSending] = useState(false);
+
+                                                                                    const handleSendEmail = async () => {
+                                                                                        if (!emailContent.trim()) {
+                                                                                            toast.error("Email content cannot be empty");
+                                                                                            return;
+                                                                                        }
+                                                                                        setSending(true);
+                                                                                        try {
+                                                                                            const result = await adminSendEmail({
+                                                                                                to: selectedUser?.email || "",
+                                                                                                subject: "Message from Admin",
+                                                                                                text: emailContent,
+                                                                                            });
+                                                                                            if (result.success) {
+                                                                                                toast.success("Email sent successfully");
+                                                                                                setShowEmailBox(false);
+                                                                                                setEmailContent("");
+                                                                                            } else {
+                                                                                                toast.error(result.error || "Failed to send email");
+                                                                                            }
+                                                                                        } catch (err) {
+                                                                                            toast.error("Failed to send email");
+                                                                                        } finally {
+                                                                                            setSending(false);
+                                                                                        }
+                                                                                    };
+
+                                                                                    return showEmailBox ? (
+                                                                                        <div className="flex flex-col gap-2 w-full">
+                                                                                            <textarea
+                                                                                                className="w-full min-h-[80px] rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                                                                                placeholder="Write your message to the user..."
+                                                                                                value={emailContent}
+                                                                                                onChange={e => setEmailContent(e.target.value)}
+                                                                                                disabled={sending}
+                                                                                            />
+                                                                                            <div className="flex gap-2">
+                                                                                                <Button
+                                                                                                    variant="secondary"
+                                                                                                    className="flex-1"
+                                                                                                    onClick={() => setShowEmailBox(false)}
+                                                                                                    disabled={sending}
+                                                                                                >
+                                                                                                    Cancel
+                                                                                                </Button>
+                                                                                                <Button
+                                                                                                    className="flex-1"
+                                                                                                    onClick={handleSendEmail}
+                                                                                                    disabled={sending}
+                                                                                                >
+                                                                                                    {sending ? "Sending..." : "Send Email"}
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <Button
+                                                                                            className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors"
+                                                                                            onClick={() => setShowEmailBox(true)}
+                                                                                        >
+                                                                                            <Mail className="w-4 h-4" />
+                                                                                            Send Email
+                                                                                        </Button>
+                                                                                    );
+                                                                                })()
+                                                                            }
+                                                                            <Button
+                                                                                onClick={() => setSelectedUsers([])}
+                                                                                className="text-sm font-medium text-neutral-400 dark:text-neutral-600 hover:text-white dark:hover:text-neutral-900 transition-colors"
+                                                                            >
+                                                                                Clear
+                                                                            </Button>
+                                                                        </motion.div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        <SheetFooter className="mt-6">
+                                                            <SheetClose asChild>
+                                                                <Button variant="secondary" className="w-full">Close</Button>
+                                                            </SheetClose>
+                                                        </SheetFooter>
+                                                    </SheetContent>
+                                                </Sheet>
                                             </td>
                                         </tr>
                                     ))
@@ -355,35 +531,6 @@ export default function UsersPage() {
                     </div>
                 </div>
             </div>
-            {
-                selectedUsers.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl shadow-2xl p-4 flex items-center gap-4 z-50"
-                    >
-                        <span className="text-sm font-medium">{selectedUsers.length} selected</span>
-                        <div className="h-4 w-px bg-neutral-700 dark:bg-neutral-300" />
-                        <Button
-                            onClick={handleBulkAddCredits}
-                            className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors"
-                        >
-                            <CreditCard className="w-4 h-4" />
-                            Add Credits
-                        </Button>
-                        <Button className="flex items-center gap-2 text-sm font-medium hover:text-red-400 dark:hover:text-red-600 transition-colors">
-                            <Mail className="w-4 h-4" />
-                            Send Email
-                        </Button>
-                        <Button
-                            onClick={() => setSelectedUsers([])}
-                            className="text-sm font-medium text-neutral-400 dark:text-neutral-600 hover:text-white dark:hover:text-neutral-900 transition-colors"
-                        >
-                            Clear
-                        </Button>
-                    </motion.div>
-                )
-            }
         </div>
     )
 }

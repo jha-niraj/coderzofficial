@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getCurrentAdmin, changeAdminPassword } from "@/actions/admin.action"
+import { 
+    getCurrentAdmin, changeAdminPassword 
+} from "@/actions/admin.action"
 import {
     Shield, BadgeCheck, KeyRound, Loader2, Mail
 } from "lucide-react"
