@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "@repo/auth"
-import { 
-    Users, CreditCard, FolderKanban, Mic, TrendingUp, TrendingDown, 
+import {
+    Users, CreditCard, FolderKanban, Mic, TrendingUp, TrendingDown,
     Activity, Clock, ArrowRight, AlertCircle, CheckCircle, Bell
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { 
-    getDashboardStats, getAuditLogs 
+import {
+    getDashboardStats, getAuditLogs
 } from "@/actions/admin.action"
 import { toast } from "@repo/ui/components/ui/sonner"
+import type { StatsData } from "@/types/admin"
 
 interface StatCardProps {
     title: string
@@ -38,7 +39,7 @@ function StatCard({ title, value, change, icon: Icon, href, color }: StatCardPro
                     </div>
                     <div className={cn(
                         "flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full",
-                        isPositive 
+                        isPositive
                             ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400"
                     )}>
@@ -124,29 +125,39 @@ function RecentActivity({ activities }: RecentActivityProps) {
 
     return (
         <div className="space-y-3">
-            {activities.map((activity) => {
-                const Icon = icons[activity.type]
-                return (
-                    <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", colors[activity.type])}>
-                            <Icon className="w-4 h-4 text-white" />
+            {
+                activities.map((activity) => {
+                    const Icon = icons[activity.type]
+                    return (
+                        <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", colors[activity.type])}>
+                                <Icon className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm text-neutral-900 dark:text-white">{activity.action}</p>
+                                <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{activity.user}</p>
+                            </div>
+                            <span className="text-xs text-neutral-400 flex-shrink-0">{activity.time}</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm text-neutral-900 dark:text-white">{activity.action}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{activity.user}</p>
-                        </div>
-                        <span className="text-xs text-neutral-400 flex-shrink-0">{activity.time}</span>
-                    </div>
-                )
-            })}
+                    )
+                })
+            }
         </div>
     )
 }
 
+interface ActivityItem {
+    id: string
+    action: string
+    user: string
+    time: string
+    type: "user" | "credit" | "project" | "system"
+}
+
 export default function AdminDashboard() {
     const { data: session } = useSession()
-    const [stats, setStats] = useState<any>(null)
-    const [recentActivities, setRecentActivities] = useState<any[]>([])
+    const [stats, setStats] = useState<StatsData | null>(null)
+    const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
@@ -164,7 +175,7 @@ export default function AdminDashboard() {
 
                 if (logsRes.success && logsRes.data) {
                     // Transform audit logs to activities
-                    const activities = logsRes.data.logs.map((log: any) => ({
+                    const activities = logsRes.data.logs.map((log: ActivityItem & { createdAt: string; module: string; adminUser?: { email: string }; description?: string; action: string; resourceType: string }) => ({
                         id: log.id,
                         action: log.description || `${log.action} on ${log.resourceType}`,
                         user: log.adminUser?.email || "System",
@@ -222,29 +233,26 @@ export default function AdminDashboard() {
 
     return (
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-            {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
                     Welcome back, {session?.user?.name?.split(' ')[0] || 'Admin'}
                 </h1>
                 <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-                    Here's what's happening with your platform today.
+                    Here&apos;s what&apos;s happening with your platform today.
                 </p>
             </div>
-
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard
                     title="Total Users"
-                    value={stats.totalUsers.toLocaleString()}
-                    change={stats.growthRate}
+                    value={stats?.totalUsers?.toLocaleString() || ""}
+                    change={stats.growthRate as number}
                     icon={Users}
                     href="/users"
                     color="bg-gradient-to-br from-blue-500 to-blue-600"
                 />
                 <StatCard
                     title="Active Today"
-                    value={stats.activeToday.toString()}
+                    value={stats?.activeToday?.toString() || ""}
                     change={5}
                     icon={Activity}
                     href="/analytics"
@@ -252,7 +260,7 @@ export default function AdminDashboard() {
                 />
                 <StatCard
                     title="Total Credits"
-                    value={stats.totalCredits.toLocaleString()}
+                    value={stats?.totalCredits?.toLocaleString() || ""}
                     change={8}
                     icon={CreditCard}
                     href="/credits"
@@ -260,17 +268,14 @@ export default function AdminDashboard() {
                 />
                 <StatCard
                     title="New Users (30d)"
-                    value={stats.newUsersThisMonth.toLocaleString()}
-                    change={stats.growthRate}
+                    value={stats?.newUsersThisMonth?.toLocaleString() || ""}
+                    change={stats.growthRate as number}
                     icon={TrendingUp}
                     href="/users"
                     color="bg-gradient-to-br from-amber-500 to-amber-600"
                 />
             </div>
-
-            {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Pending Actions */}
                 <div className="lg:col-span-2">
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -280,14 +285,14 @@ export default function AdminDashboard() {
                             </span>
                         </div>
                         <div className="space-y-3">
-                            {pendingActions.map((action, index) => (
-                                <PendingAction key={index} {...action} />
-                            ))}
+                            {
+                                pendingActions.map((action, index) => (
+                                    <PendingAction key={index} {...action} />
+                                ))
+                            }
                         </div>
                     </div>
                 </div>
-
-                {/* Recent Activity */}
                 <div className="lg:col-span-1">
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 h-full">
                         <div className="flex items-center justify-between mb-4">

@@ -69,7 +69,12 @@ export async function getCurrentAdmin(): Promise<AdminResponse<any>> {
         }
 
         const adminAccess = await prisma.adminAccess.findUnique({
-            where: { userId: session.user.id }
+            where: {
+                userId: session.user.id 
+            },
+            select: {
+                permissions: true
+            }
         })
 
         if (!adminAccess) {
@@ -77,15 +82,22 @@ export async function getCurrentAdmin(): Promise<AdminResponse<any>> {
         }
 
         const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { id: true, name: true, email: true, image: true }
+            where: { 
+                id: session.user.id 
+            },
+            select: { 
+                id: true, 
+                name: true, 
+                email: true, 
+                image: true 
+            }
         })
 
         return { 
             success: true, 
             data: { 
                 ...adminAccess, 
-                user 
+                user: user 
             } 
         }
     } catch (error) {
@@ -456,10 +468,16 @@ export async function getDashboardStats(): Promise<AdminResponse<any>> {
         ] = await Promise.all([
             prisma.user.count(),
             prisma.user.count({
-                where: { createdAt: { gte: thirtyDaysAgo } }
+                where: { 
+                    createdAt: { 
+                        gte: thirtyDaysAgo 
+                    } 
+                }
             }),
             prisma.adminAccess.count({
-                where: { status: "ACTIVE" }
+                where: { 
+                    status: "ACTIVE" 
+                }
             })
         ])
 

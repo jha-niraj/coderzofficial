@@ -3,11 +3,11 @@
 // ============================================
 
 enum AdminRole {
-    SUPER_ADMIN      // Full access to everything
-    CONTENT_ADMIN    // Manage content modules (projects, mocks, assessments)
-    FINANCE_ADMIN    // Manage credits & payments
-    COMMUNITY_ADMIN  // Manage communities & moderation
-    MODULE_MANAGER   // Specific module access only
+    SUPER_ADMIN
+    CONTENT_ADMIN
+    FINANCE_ADMIN
+    COMMUNITY_ADMIN
+    MODULE_MANAGER
     VIEWER           // Read-only access
 }
 
@@ -31,7 +31,6 @@ model AdminAccess {
     userId          String          @unique
     user            User            @relation("UserAdminAccess", fields: [userId], references: [id], onDelete: Cascade)
     
-    // Role & Status
     adminRole       AdminRole       @default(MODULE_MANAGER)
     status          AdminStatus     @default(ACTIVE)
     
@@ -44,13 +43,11 @@ model AdminAccess {
     loginCount      Int             @default(0)
     
     // Invitation info
-    invitedBy       String?         // AdminAccess.id who invited
-    inviteCode      String?         // Code used to join
+    invitedBy       String?      
+    inviteCode      String?        
     
-    // Password for admin (separate from user password)
     hashedPassword  String?
     
-    // Temporary access code (for initial setup)
     accessCode      String?
     accessCodeExpiry DateTime?
     
@@ -195,6 +192,3 @@ model AdminSystemSettings {
     
     @@index([key])
 }
-
-
-

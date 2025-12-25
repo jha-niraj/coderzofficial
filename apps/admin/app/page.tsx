@@ -58,6 +58,7 @@ export default function AdminSignInPage() {
                 router.push("/dashboard")
             }
         } catch (error) {
+            console.log("Error occurred while signing; " + error); 
             toast.error("Sign in failed", {
                 description: "An unexpected error occurred"
             })
@@ -110,9 +111,10 @@ export default function AdminSignInPage() {
                 })
                 router.push("/dashboard")
             }
-        } catch (error: any) {
+        } catch (error) {
+            console.log("Error occurred while verification: " + error);
             toast.error("Verification failed", {
-                description: error.message || "Invalid or expired access code"
+                description: "Invalid or expired access code"
             })
         } finally {
             setIsLoading(false)

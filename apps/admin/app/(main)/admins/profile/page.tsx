@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { getCurrentAdmin, changeAdminPassword } from "@/actions/admin.action"
-import { Shield, BadgeCheck, KeyRound, Loader2, Mail } from "lucide-react"
+import {
+    Shield, BadgeCheck, KeyRound, Loader2, Mail
+} from "lucide-react"
 import { toast } from "@repo/ui/components/ui/sonner"
+import type { AdminUser } from "@/types/admin"
+import { Label } from "@repo/ui/components/ui/label"
+import { Input } from "@repo/ui/components/ui/input"
 
 export default function AdminProfilePage() {
-    const [admin, setAdmin] = useState<any>(null)
+    const [admin, setAdmin] = useState<AdminUser | null>(null)
     const [loading, setLoading] = useState(true)
     const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" })
     const [changing, setChanging] = useState(false)
@@ -15,8 +20,10 @@ export default function AdminProfilePage() {
         (async () => {
             setLoading(true)
             const res = await getCurrentAdmin()
-            if (res.success) setAdmin(res.data)
-            else toast.error(res.error || "Failed to load admin profile")
+            if (res.success)
+                setAdmin(res.data)
+            else
+                toast.error(res.error || "Failed to load admin profile")
             setLoading(false)
         })()
     }, [])
@@ -42,21 +49,25 @@ export default function AdminProfilePage() {
         if (modules.length === 0) return <p className="text-sm text-neutral-500 dark:text-neutral-400">No permissions assigned.</p>
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {modules.map((mod) => (
-                    <div key={mod} className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 bg-white dark:bg-neutral-900">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-neutral-900 dark:text-white capitalize">{mod}</span>
-                            <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                {
+                    modules.map((mod) => (
+                        <div key={mod} className="border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 bg-white dark:bg-neutral-900">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium text-neutral-900 dark:text-white capitalize">{mod}</span>
+                                <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {
+                                    (perms[mod] || []).map((lvl) => (
+                                        <span key={lvl} className="px-2 py-0.5 text-xs rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
+                                            {lvl}
+                                        </span>
+                                    ))
+                                }
+                            </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            {(perms[mod] || []).map((lvl) => (
-                                <span key={lvl} className="px-2 py-0.5 text-xs rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                                    {lvl}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                ))}
+                    ))
+                }
             </div>
         )
     }
@@ -78,32 +89,26 @@ export default function AdminProfilePage() {
                 </h1>
                 <p className="text-neutral-500 dark:text-neutral-400">View your admin details, permissions, and change your password.</p>
             </div>
-
-            {/* Profile card */}
             <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-8">
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-xl font-bold">
-                        {admin?.user?.name?.charAt(0) || 'A'}
+                        {admin?.name?.charAt(0) || 'A'}
                     </div>
                     <div>
-                        <div className="text-lg font-semibold text-neutral-900 dark:text-white">{admin?.user?.name}</div>
+                        <div className="text-lg font-semibold text-neutral-900 dark:text-white">{admin?.name}</div>
                         <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
-                            <Mail className="w-4 h-4" /> {admin?.user?.email}
+                            <Mail className="w-4 h-4" /> {admin?.email}
                         </div>
                         <div className="mt-1 text-xs px-2 py-0.5 inline-flex rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                            Role: {admin?.adminRole}
+                            Role: {admin?.role}
                         </div>
                     </div>
                 </div>
             </div>
-
-            {/* Permissions */}
             <div className="mb-8">
                 <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">Access Permissions</h2>
-                {renderPermissions(admin?.permissions || {})}
+                {renderPermissions(admin?.permissions as unknown as Record<string, string[]> || {})}
             </div>
-
-            {/* Change password */}
             <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                 <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                     <KeyRound className="w-5 h-5" /> Change Password
@@ -121,8 +126,8 @@ export default function AdminProfilePage() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">New password</label>
-                        <input
+                        <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">New password</Label>
+                        <Input
                             type="password"
                             value={pwd.next}
                             onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
@@ -132,8 +137,8 @@ export default function AdminProfilePage() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Confirm new password</label>
-                        <input
+                        <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Confirm new password</Label>
+                        <Input
                             type="password"
                             value={pwd.confirm}
                             onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}

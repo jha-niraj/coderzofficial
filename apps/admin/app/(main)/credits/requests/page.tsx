@@ -1,35 +1,49 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { 
-    Search, CheckCircle, XCircle, Clock, Loader2, AlertCircle 
+import { useState, useEffect, useCallback } from "react"
+import {
+    Search, CheckCircle, XCircle, Clock, Loader2, AlertCircle
 } from "lucide-react"
-import { 
-    getCreditRequests, approveCreditRequest, rejectCreditRequest 
+import {
+    getCreditRequests, approveCreditRequest, rejectCreditRequest
 } from "@/actions/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
+import { Input } from "@repo/ui/components/ui/input"
+import { CreditRequestStatus } from "@repo/prisma/client"
+
+interface CreditRequests {
+    id: string,
+    userId: string,
+    requestedCredits: string,
+    amount: number,
+    status: CreditRequestStatus,
+    createdAt: string,
+    description: string,
+    user: {
+        id: string,
+        name: string,
+        email: string,
+        image?: string
+    }
+}
 
 export default function CreditRequestsPage() {
-    const [requests, setRequests] = useState<any[]>([])
+    const [requests, setRequests] = useState<CreditRequests[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [processingId, setProcessingId] = useState<string | null>(null)
 
-    useEffect(() => {
-        fetchRequests()
-    }, [page, searchTerm])
-
-    async function fetchRequests() {
+    const fetchRequests = useCallback(async () => {
         setLoading(true)
         try {
-const result = await getCreditRequests('PENDING', { page, limit: 20 })
+            const result = await getCreditRequests('PENDING', { page, limit: 20 })
 
             if (result.success && result.data) {
                 setRequests(result.data.requests)
-setTotalPages(result.data.pages || 1)
+                setTotalPages(result.data.pages || 1)
             } else {
                 toast.error(result.error || "Failed to fetch requests")
             }
@@ -39,12 +53,16 @@ setTotalPages(result.data.pages || 1)
         } finally {
             setLoading(false)
         }
-    }
+    }, [page]);
 
-async function handleApprove(requestId: string, amount: number) {
+    useEffect(() => {
+        fetchRequests()
+    }, [page, searchTerm, fetchRequests])
+
+    async function handleApprove(requestId: string, amount: number) {
         setProcessingId(requestId)
         try {
-const result = await approveCreditRequest(requestId, amount)
+            const result = await approveCreditRequest(requestId, amount)
             if (result.success) {
                 toast.success("Request approved successfully")
                 fetchRequests() // Refresh list
@@ -86,7 +104,6 @@ const result = await approveCreditRequest(requestId, amount)
 
     return (
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-neutral-900 dark:text-white flex items-center gap-3">
@@ -104,11 +121,9 @@ const result = await approveCreditRequest(requestId, amount)
                     </span>
                 </div>
             </div>
-
-            {/* Search */}
             <div className="relative mb-6">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                <input
+                <Input
                     type="text"
                     placeholder="Search by user email or request ID..."
                     value={searchTerm}
@@ -116,118 +131,121 @@ const result = await approveCreditRequest(requestId, amount)
                     className="w-full pl-10 pr-4 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
             </div>
-
-            {/* Requests List */}
             <div className="space-y-4">
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
-                    </div>
-                ) : requests.length === 0 ? (
-                    <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-12 text-center">
-                        <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                            All caught up!
-                        </h3>
-                        <p className="text-neutral-500 dark:text-neutral-400">
-                            No pending credit requests at the moment.
-                        </p>
-                    </div>
-                ) : (
-                    requests.map((request) => (
-                        <div
-                            key={request.id}
-                            className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
-                        >
-                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                <div className="flex items-start gap-4 flex-1">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-                                        {request.user?.name?.charAt(0) || "U"}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                                                {request.user?.name || "Unknown User"}
-                                            </h3>
-                                            <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
-                                                PENDING
-                                            </span>
+                {
+                    loading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                        </div>
+                    ) : requests.length === 0 ? (
+                        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-12 text-center">
+                            <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                                All caught up!
+                            </h3>
+                            <p className="text-neutral-500 dark:text-neutral-400">
+                                No pending credit requests at the moment.
+                            </p>
+                        </div>
+                    ) : (
+                        requests.map((request) => (
+                            <div
+                                key={request.id}
+                                className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
+                            >
+                                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                    <div className="flex items-start gap-4 flex-1">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                                            {request.user?.name?.charAt(0) || "U"}
                                         </div>
-                                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
-                                            {request.user?.email}
-                                        </p>
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span className="text-neutral-500 dark:text-neutral-400">Amount:</span>
-                                                <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">
-                                                    {request.amount} credits
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                                                    {request.user?.name || "Unknown User"}
+                                                </h3>
+                                                <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
+                                                    PENDING
                                                 </span>
                                             </div>
-                                            <div>
-                                                <span className="text-neutral-500 dark:text-neutral-400">Requested:</span>
-                                                <span className="ml-2 text-neutral-900 dark:text-white">
-                                                    {format(new Date(request.createdAt), "MMM dd, yyyy")}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        {request.description && (
-                                            <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3">
-                                                {request.description}
+                                            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
+                                                {request.user?.email}
                                             </p>
-                                        )}
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <span className="text-neutral-500 dark:text-neutral-400">Amount:</span>
+                                                    <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">
+                                                        {request.amount} credits
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-neutral-500 dark:text-neutral-400">Requested:</span>
+                                                    <span className="ml-2 text-neutral-900 dark:text-white">
+                                                        {format(new Date(request.createdAt), "MMM dd, yyyy")}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {
+                                                request.description && (
+                                                    <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3">
+                                                        {request.description}
+                                                    </p>
+                                                )
+                                            }
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="flex gap-2 lg:flex-col lg:items-end">
-                                    <button
-onClick={() => handleApprove(request.id, request.amount)}
-                                        disabled={processingId === request.id}
-                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        {processingId === request.id ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <CheckCircle className="w-4 h-4" />
-                                        )}
-                                        Approve
-                                    </button>
-                                    <button
-                                        onClick={() => openRejectDialog(request.id)}
-                                        disabled={processingId === request.id}
-                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        <XCircle className="w-4 h-4" />
-                                        Reject
-                                    </button>
+                                    <div className="flex gap-2 lg:flex-col lg:items-end">
+                                        <button
+                                            onClick={() => handleApprove(request.id, request.amount)}
+                                            disabled={processingId === request.id}
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {
+                                                processingId === request.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <CheckCircle className="w-4 h-4" />
+                                                )
+                                            }
+                                            Approve
+                                        </button>
+                                        <button
+                                            onClick={() => openRejectDialog(request.id)}
+                                            disabled={processingId === request.id}
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                            Reject
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
-                )}
+                        ))
+                    )
+                }
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between">
-                    <button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                        className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Previous
-                    </button>
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Page {page} of {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                        className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Next
-                    </button>
-                </div>
-            )}
+            {
+                totalPages > 1 && (
+                    <div className="mt-6 flex items-center justify-between">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                            Page {page} of {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={page === totalPages}
+                            className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )
+            }
         </div>
     )
 }

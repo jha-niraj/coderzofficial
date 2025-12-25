@@ -31,8 +31,18 @@ export async function getAllTransactions(filters?: any, pagination?: any): Promi
                 where,
                 include: {
                     user: {
-                        select: { id: true, name: true, email: true, image: true },
+                        select: { 
+                            id: true, 
+                            name: true, 
+                            email: true, 
+                            image: true 
+                        },
                     },
+                    payment: {
+                        select: {
+                            status: true
+                        }
+                    }
                 },
                 orderBy: { createdAt: "desc" },
                 skip,
@@ -43,7 +53,11 @@ export async function getAllTransactions(filters?: any, pagination?: any): Promi
 
         return {
             success: true,
-            data: { transactions, total, pages: Math.ceil(total / limit) },
+            data: { 
+                transactions, 
+                total, 
+                pages: Math.ceil(total / limit) 
+            },
         }
     } catch (error) {
         console.error("Get transactions error:", error)
@@ -71,7 +85,12 @@ export async function getCreditRequests(status?: string, pagination?: any): Prom
                 where,
                 include: {
                     user: {
-                        select: { id: true, name: true, email: true, image: true },
+                        select: { 
+                            id: true, 
+                            name: true, 
+                            email: true, 
+                            image: true 
+                        },
                     },
                 },
                 orderBy: { createdAt: "desc" },
@@ -83,7 +102,11 @@ export async function getCreditRequests(status?: string, pagination?: any): Prom
 
         return {
             success: true,
-            data: { requests, total, pages: Math.ceil(total / limit) },
+            data: { 
+                requests, 
+                total,
+                pages: Math.ceil(total / limit) 
+            },
         }
     } catch (error) {
         console.error("Get credit requests error:", error)
@@ -198,10 +221,18 @@ export async function getCreditTransfers(filters?: any, pagination?: any): Promi
             prisma.creditTransfer.findMany({
                 include: {
                     sender: {
-                        select: { id: true, name: true, email: true },
+                        select: { 
+                            id: true, 
+                            name: true, 
+                            email: true 
+                        },
                     },
                     receiver: {
-                        select: { id: true, name: true, email: true },
+                        select: { 
+                            id: true, 
+                            name: true, 
+                            email: true 
+                        },
                     },
                 },
                 orderBy: { createdAt: "desc" },
@@ -303,7 +334,11 @@ export async function getPayments(filters?: any, pagination?: any): Promise<Admi
                 where,
                 include: {
                     user: {
-                        select: { id: true, name: true, email: true },
+                        select: { 
+                            id: true, 
+                            name: true, 
+                            email: true 
+                        },
                     },
                 },
                 orderBy: { createdAt: "desc" },
@@ -315,7 +350,11 @@ export async function getPayments(filters?: any, pagination?: any): Promise<Admi
 
         return {
             success: true,
-            data: { payments, total, pages: Math.ceil(total / limit) },
+            data: { 
+                payments, 
+                total, 
+                pages: Math.ceil(total / limit) 
+            },
         }
     } catch (error) {
         console.error("Get payments error:", error)

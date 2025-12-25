@@ -4,16 +4,46 @@ import { useState, useEffect } from "react"
 import {
     BarChart3, Users, TrendingUp, Activity, Download, Loader2
 } from "lucide-react"
-import { 
-    getOverviewStats, getUserGrowthStats, getEngagementStats, getModuleUsageStats 
+import {
+    getOverviewStats, getUserGrowthStats, getEngagementStats, getModuleUsageStats
 } from "@/actions/analytics.action"
 import { toast } from "@repo/ui/components/ui/sonner"
+import type { ChartData } from "@/types/admin"
+
+interface OverviewStats {
+    totalUsers?: number
+    newUsers?: number
+    totalProjects?: number
+    activeCommunities?: number
+    totalFeedback?: number
+}
+
+interface UserGrowthData {
+    chartData: ChartData[]
+    total: number
+}
+
+interface EngagementData {
+    projectsStarted?: number
+    feedbackSubmitted?: number
+    communitiesJoined?: number
+    mocksCompleted?: number
+}
+
+interface ModuleItem {
+    name: string
+    count: number
+}
+
+interface ModuleUsageData {
+    modules: ModuleItem[]
+}
 
 export default function AnalyticsPage() {
-    const [overviewStats, setOverviewStats] = useState<any>(null)
-    const [userGrowth, setUserGrowth] = useState<any>(null)
-    const [engagement, setEngagement] = useState<any>(null)
-    const [moduleUsage, setModuleUsage] = useState<any>(null)
+    const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null)
+    const [userGrowth, setUserGrowth] = useState<UserGrowthData | null>(null)
+    const [engagement, setEngagement] = useState<EngagementData | null>(null)
+    const [moduleUsage, setModuleUsage] = useState<ModuleUsageData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
@@ -70,9 +100,8 @@ export default function AnalyticsPage() {
                     Export Report
                 </button>
             </div>
-
-            {/* Overview Stats */}
-            {overviewStats && (
+            {
+            overviewStats && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <div className="flex items-center gap-3 mb-2">
@@ -90,7 +119,6 @@ export default function AnalyticsPage() {
                             +{overviewStats.newUsers} new this period
                         </p>
                     </div>
-
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
@@ -104,7 +132,6 @@ export default function AnalyticsPage() {
                             </div>
                         </div>
                     </div>
-
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
@@ -118,7 +145,6 @@ export default function AnalyticsPage() {
                             </div>
                         </div>
                     </div>
-
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
@@ -133,36 +159,37 @@ export default function AnalyticsPage() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* User Growth Chart */}
-            {userGrowth && (
+            )
+            }
+            {
+            userGrowth && (
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
                         User Growth
                     </h2>
                     <div className="h-64 flex items-end justify-between gap-2">
-                        {userGrowth.chartData?.slice(0, 30).map((item: any, index: number) => (
+                        {
+                        userGrowth.chartData?.slice(0, 30).map((item: ChartData, index: number) => (
                             <div key={index} className="flex-1 flex flex-col items-center gap-2">
                                 <div
                                     className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t"
                                     style={{
-                                        height: `${Math.max((item.count / Math.max(...userGrowth.chartData.map((d: any) => d.count))) * 100, 5)}%`,
+                                        height: `${Math.max((item.value / Math.max(...userGrowth.chartData.map((d: ChartData) => d.value))) * 100, 5)}%`,
                                     }}
                                 />
                             </div>
-                        ))}
+                        ))
+                        }
                     </div>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-4 text-center">
                         Last 30 days • Total new users: {userGrowth.total}
                     </p>
                 </div>
-            )}
-
-            {/* Engagement & Module Usage */}
+            )
+            }
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Engagement Stats */}
-                {engagement && (
+                {
+                engagement && (
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
                             Engagement Metrics
@@ -194,36 +221,39 @@ export default function AnalyticsPage() {
                             </div>
                         </div>
                     </div>
-                )}
-
-                {/* Module Usage */}
-                {moduleUsage && (
+                )
+                }
+                {
+                moduleUsage && (
                     <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
                             Module Usage
                         </h2>
                         <div className="space-y-3">
-                            {moduleUsage.modules?.map((module: any, index: number) => (
-                                <div key={index} className="space-y-2">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-neutral-600 dark:text-neutral-400">{module.name}</span>
-                                        <span className="font-semibold text-neutral-900 dark:text-white">
-                                            {module.count?.toLocaleString()}
-                                        </span>
+                            {
+                                moduleUsage.modules?.map((module: ModuleItem, index: number) => (
+                                    <div key={index} className="space-y-2">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-neutral-600 dark:text-neutral-400">{module.name}</span>
+                                            <span className="font-semibold text-neutral-900 dark:text-white">
+                                                {module.count?.toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-2">
+                                            <div
+                                                className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full"
+                                                style={{
+                                                    width: `${Math.max((module.count / Math.max(...moduleUsage.modules.map((m: ModuleItem) => m.count))) * 100, 5)}%`,
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-2">
-                                        <div
-                                            className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full"
-                                            style={{
-                                                width: `${Math.max((module.count / Math.max(...moduleUsage.modules.map((m: any) => m.count))) * 100, 5)}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                            }
                         </div>
                     </div>
-                )}
+                )
+                }
             </div>
         </div>
     )
