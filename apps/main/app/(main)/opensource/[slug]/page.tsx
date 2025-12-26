@@ -260,7 +260,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
                                     {project.title}
                                 </h1>
-                                <Badge className={cn(typeColors[project.type].bg, typeColors[project.type].text)}>
+                                <Badge className={cn(typeColors[project.type]?.bg ?? 'bg-neutral-100', typeColors[project.type]?.text ?? 'text-neutral-700')}>
                                     {project.type}
                                 </Badge>
                                 {
@@ -424,11 +424,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                                                                 }
 
                                                                 <div className="flex items-center gap-3 flex-wrap">
-                                                                    <Badge className={cn(diffColors.bg, diffColors.text, "text-xs")}>
-                                                                        <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", diffColors.dot)} />
+                                                                    <Badge className={cn(diffColors?.bg, diffColors?.text, "text-xs")}>
+                                                                        <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", diffColors?.dot)} />
                                                                         {DIFFICULTY_LEVELS.find(d => d.value === issue.difficulty)?.label.replace(/[🌱🟢🟡🔴⚫]\s?/, '') || issue.difficulty}
                                                                     </Badge>
-                                                                    <Badge className={cn(statColors.bg, statColors.text, "text-xs")}>
+                                                                    <Badge className={cn(statColors?.bg, statColors?.text, "text-xs")}>
                                                                         {issue.status.replace('_', ' ')}
                                                                     </Badge>
                                                                     {

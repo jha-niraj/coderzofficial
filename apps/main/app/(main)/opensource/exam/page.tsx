@@ -16,8 +16,8 @@ import {
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Progress } from "@repo/ui/components/ui/progress";
-import { 
-    RadioGroup, RadioGroupItem 
+import {
+    RadioGroup, RadioGroupItem
 } from "@repo/ui/components/ui/radio-group";
 import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
@@ -455,7 +455,7 @@ export default function CertificationExamPage() {
                 answers: Object.entries(answers).map(([questionId, answer]) => ({
                     questionId,
                     answer: String(answer),
-                    isCorrect: feedback[questionId].correct,
+                    isCorrect: feedback[questionId]?.correct ?? false,
                 })),
                 score,
                 passed,
@@ -1012,7 +1012,7 @@ export default function CertificationExamPage() {
                                                             key={q.id}
                                                             className={cn(
                                                                 "p-4 rounded-lg border",
-                                                                examResult?.feedback[q.id].correct
+                                                                examResult?.feedback[q.id]?.correct
                                                                     ? "bg-green-500/5 border-green-500/30"
                                                                     : "bg-red-500/5 border-red-500/30"
                                                             )}
@@ -1037,7 +1037,7 @@ export default function CertificationExamPage() {
                                                                     {
                                                                         !examResult?.feedback?.[q.id]?.correct && (
                                                                             <p className="text-xs mt-2 text-muted-foreground">
-                                                                                💡 {examResult.feedback[q.id].explanation}
+                                                                                💡 {examResult?.feedback?.[q.id]?.explanation}
                                                                             </p>
                                                                         )
                                                                     }

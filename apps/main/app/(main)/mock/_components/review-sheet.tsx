@@ -95,178 +95,184 @@ export function ReviewSheet({ isOpen, onClose, sessionId, existingRating }: Revi
         <Sheet open={isOpen} onOpenChange={onClose}>
             <SheetContent side="right" className="sm:max-w-xl overflow-y-auto">
                 <AnimatePresence mode="wait">
-                    {step === 'rating' ? (
-                        <motion.div
-                            key="rating"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                        >
-                            <SheetHeader className="mb-6">
-                                <SheetTitle className="flex items-center gap-2 text-2xl">
-                                    <MessageSquare className="w-6 h-6 text-blue-600" />
-                                    How was your experience?
-                                </SheetTitle>
-                                <SheetDescription>
-                                    Your feedback helps us improve mock interviews for everyone
-                                </SheetDescription>
-                            </SheetHeader>
-
-                            <div className="space-y-6">
-                                {/* Star Rating */}
-                                <div className="space-y-3">
-                                    <Label className="text-base font-semibold">
-                                        Rate this mock interview *
-                                    </Label>
-                                    <div className="flex gap-2 items-center">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <motion.button
-                                                key={star}
-                                                type="button"
-                                                onClick={() => setRating(star)}
-                                                onMouseEnter={() => setHoveredRating(star)}
-                                                onMouseLeave={() => setHoveredRating(0)}
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                className="focus:outline-none"
-                                            >
-                                                <Star
-                                                    className={`w-10 h-10 transition-colors ${star <= (hoveredRating || rating)
-                                                            ? 'fill-amber-400 text-amber-400'
-                                                            : 'text-neutral-300 dark:text-neutral-700'
-                                                        }`}
-                                                />
-                                            </motion.button>
-                                        ))}
-                                        {rating > 0 && (
-                                            <span className="ml-3 text-lg font-semibold text-amber-600">
-                                                {rating === 1 && 'Poor'}
-                                                {rating === 2 && 'Fair'}
-                                                {rating === 3 && 'Good'}
-                                                {rating === 4 && 'Very Good'}
-                                                {rating === 5 && 'Excellent'}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
-
-                                {/* Additional Feedback */}
-                                <div className="space-y-3">
-                                    <Label htmlFor="feedback" className="text-base font-semibold">
-                                        Additional Comments (Optional)
-                                    </Label>
-                                    <Textarea
-                                        id="feedback"
-                                        placeholder="Share your thoughts about the interview experience, AI responses, questions quality, etc..."
-                                        value={feedback}
-                                        onChange={(e) => setFeedback(e.target.value)}
-                                        className="min-h-[100px]"
-                                    />
-                                </div>
-
-                                {/* Issues Section - Only show if rating is low or always? Let's always show it */}
-                                {rating > 0 && rating <= 3 && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="space-y-3"
-                                    >
-                                        <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-lg">
-                                            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                                            <p className="text-sm text-amber-700 dark:text-amber-400">
-                                                We&apos;re sorry to hear that. Help us improve by selecting any issues you encountered:
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                <div className="space-y-3">
-                                    <Label className="text-base font-semibold">
-                                        Did you encounter any issues?
-                                    </Label>
+                    {
+                        step === 'rating' ? (
+                            <motion.div
+                                key="rating"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                            >
+                                <SheetHeader className="mb-6">
+                                    <SheetTitle className="flex items-center gap-2 text-2xl">
+                                        <MessageSquare className="w-6 h-6 text-blue-600" />
+                                        How was your experience?
+                                    </SheetTitle>
+                                    <SheetDescription>
+                                        Your feedback helps us improve mock interviews for everyone
+                                    </SheetDescription>
+                                </SheetHeader>
+                                <div className="space-y-6">
                                     <div className="space-y-3">
-                                        {ISSUE_OPTIONS.map((issue) => (
-                                            <div key={issue.value} className="flex items-center space-x-3">
-                                                <Checkbox
-                                                    id={issue.value}
-                                                    checked={selectedIssues.includes(issue.value)}
-                                                    onCheckedChange={() => handleIssueToggle(issue.value)}
-                                                />
-                                                <Label
-                                                    htmlFor={issue.value}
-                                                    className="text-sm font-normal cursor-pointer"
-                                                >
-                                                    {issue.label}
-                                                </Label>
-                                            </div>
-                                        ))}
+                                        <Label className="text-base font-semibold">
+                                            Rate this mock interview *
+                                        </Label>
+                                        <div className="flex gap-2 items-center">
+                                            {
+                                                [1, 2, 3, 4, 5].map((star) => (
+                                                    <motion.button
+                                                        key={star}
+                                                        type="button"
+                                                        onClick={() => setRating(star)}
+                                                        onMouseEnter={() => setHoveredRating(star)}
+                                                        onMouseLeave={() => setHoveredRating(0)}
+                                                        whileHover={{ scale: 1.1 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        className="focus:outline-none"
+                                                    >
+                                                        <Star
+                                                            className={`w-10 h-10 transition-colors ${star <= (hoveredRating || rating)
+                                                                ? 'fill-amber-400 text-amber-400'
+                                                                : 'text-neutral-300 dark:text-neutral-700'
+                                                                }`}
+                                                        />
+                                                    </motion.button>
+                                                ))
+                                            }
+                                            {
+                                                rating > 0 && (
+                                                    <span className="ml-3 text-lg font-semibold text-amber-600">
+                                                        {rating === 1 && 'Poor'}
+                                                        {rating === 2 && 'Fair'}
+                                                        {rating === 3 && 'Good'}
+                                                        {rating === 4 && 'Very Good'}
+                                                        {rating === 5 && 'Excellent'}
+                                                    </span>
+                                                )
+                                            }
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Other Issue Details */}
-                                {selectedIssues.includes('OTHER') && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="space-y-3"
-                                    >
-                                        <Label htmlFor="issue-details" className="text-base font-semibold">
-                                            Please describe the issue
+                                    <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
+
+                                    <div className="space-y-3">
+                                        <Label htmlFor="feedback" className="text-base font-semibold">
+                                            Additional Comments (Optional)
                                         </Label>
                                         <Textarea
-                                            id="issue-details"
-                                            placeholder="Provide details about the issue you encountered..."
-                                            value={issueDetails}
-                                            onChange={(e) => setIssueDetails(e.target.value)}
-                                            className="min-h-[80px]"
+                                            id="feedback"
+                                            placeholder="Share your thoughts about the interview experience, AI responses, questions quality, etc..."
+                                            value={feedback}
+                                            onChange={(e) => setFeedback(e.target.value)}
+                                            className="min-h-[100px]"
                                         />
-                                    </motion.div>
-                                )}
+                                    </div>
 
-                                {/* Submit Button */}
-                                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                                    <Button
-                                        onClick={handleSubmit}
-                                        disabled={rating === 0 || isSubmitting}
-                                        className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-100"
-                                        size="lg"
-                                    >
-                                        {isSubmitting ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Submitting...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CheckCircle className="w-4 h-4 mr-2" />
-                                                Submit Review
-                                            </>
-                                        )}
-                                    </Button>
+                                    {
+                                        rating > 0 && rating <= 3 && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                className="space-y-3"
+                                            >
+                                                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-lg">
+                                                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                                                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                                                        We&apos;re sorry to hear that. Help us improve by selecting any issues you encountered:
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        )
+                                    }
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-semibold">
+                                            Did you encounter any issues?
+                                        </Label>
+                                        <div className="space-y-3">
+                                            {
+                                                ISSUE_OPTIONS.map((issue) => (
+                                                    <div key={issue.value} className="flex items-center space-x-3">
+                                                        <Checkbox
+                                                            id={issue.value}
+                                                            checked={selectedIssues.includes(issue.value)}
+                                                            onCheckedChange={() => handleIssueToggle(issue.value)}
+                                                        />
+                                                        <Label
+                                                            htmlFor={issue.value}
+                                                            className="text-sm font-normal cursor-pointer"
+                                                        >
+                                                            {issue.label}
+                                                        </Label>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+
+                                    {
+                                        selectedIssues.includes('OTHER') && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                className="space-y-3"
+                                            >
+                                                <Label htmlFor="issue-details" className="text-base font-semibold">
+                                                    Please describe the issue
+                                                </Label>
+                                                <Textarea
+                                                    id="issue-details"
+                                                    placeholder="Provide details about the issue you encountered..."
+                                                    value={issueDetails}
+                                                    onChange={(e) => setIssueDetails(e.target.value)}
+                                                    className="min-h-[80px]"
+                                                />
+                                            </motion.div>
+                                        )
+                                    }
+
+                                    <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                        <Button
+                                            onClick={handleSubmit}
+                                            disabled={rating === 0 || isSubmitting}
+                                            className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-100"
+                                            size="lg"
+                                        >
+                                            {
+                                                isSubmitting ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        Submitting...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                                        Submit Review
+                                                    </>
+                                                )
+                                            }
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="success"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex flex-col items-center justify-center py-20"
-                        >
-                            <CheckCircle className="w-20 h-20 text-green-600 mb-6" />
-                            <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
-                                Thank You!
-                            </h3>
-                            <p className="text-neutral-600 dark:text-neutral-400 text-center max-w-sm">
-                                Your feedback has been submitted successfully. We appreciate your input!
-                            </p>
-                        </motion.div>
-                    )}
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="success"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex flex-col items-center justify-center py-20"
+                            >
+                                <CheckCircle className="w-20 h-20 text-green-600 mb-6" />
+                                <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
+                                    Thank You!
+                                </h3>
+                                <p className="text-neutral-600 dark:text-neutral-400 text-center max-w-sm">
+                                    Your feedback has been submitted successfully. We appreciate your input!
+                                </p>
+                            </motion.div>
+                        )
+                    }
                 </AnimatePresence>
             </SheetContent>
         </Sheet>
     )
 }
-

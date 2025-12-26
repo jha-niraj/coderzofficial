@@ -3,21 +3,21 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { 
-	Search, ArrowRight, Zap 
+import {
+	Search, ArrowRight, Zap
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
-import { 
-	Card, CardContent 
+import {
+	Card, CardContent
 } from "@repo/ui/components/ui/card"
 import { Input } from "@repo/ui/components/ui/input"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
-	AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+	AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
 	AlertDialogDescription, AlertDialogHeader, AlertDialogTitle
 } from "@repo/ui/components/ui/alert-dialog"
-import { 
-	publicInterviews, companies 
+import {
+	publicInterviews, companies
 } from "@/app/(main)/interview/_components/mockdata"
 import type { Company, Role } from "@/types/interview"
 
@@ -60,7 +60,6 @@ export default function PublicInterviewsPage() {
 
 	return (
 		<div className="min-h-screen bg-background">
-			{/* Header */}
 			<header className="sticky top-0 z-50 w-full backdrop-blur-lg bg-background/80 border-b border-border">
 				<div className="container flex h-16 items-center justify-between">
 					<Link href="/" className="flex items-center gap-2 font-bold hover:opacity-80 transition-opacity">
@@ -88,9 +87,7 @@ export default function PublicInterviewsPage() {
 					</nav>
 				</div>
 			</header>
-
 			<main className="flex-1">
-				{/* Hero Section */}
 				<section className="w-full py-12 md:py-16 border-b border-border">
 					<div className="container px-4 md:px-6">
 						<motion.div
@@ -104,8 +101,6 @@ export default function PublicInterviewsPage() {
 								Learn from real interview experiences shared by the community. Practice with proven strategies and get
 								inspired.
 							</p>
-
-							{/* Company Access Section */}
 							<div className="bg-muted/50 border border-border rounded-lg p-6 mb-8">
 								<h3 className="font-semibold mb-4">Want to see all public interviews for a specific company?</h3>
 								<p className="text-sm text-muted-foreground mb-4">
@@ -113,18 +108,18 @@ export default function PublicInterviewsPage() {
 									details.
 								</p>
 								<div className="flex flex-wrap gap-2 justify-center">
-									{topCompanies.map((company) => (
-										<Link key={company?.id} href={`/interview/${company?.id}`}>
-											<Button variant="outline" size="sm" className="rounded-full bg-transparent">
-												{company?.name}
-												<ArrowRight className="ml-2 size-3" />
-											</Button>
-										</Link>
-									))}
+									{
+										topCompanies.map((company) => (
+											<Link key={company?.id} href={`/interview/${company?.id}`}>
+												<Button variant="outline" size="sm" className="rounded-full bg-transparent">
+													{company?.name}
+													<ArrowRight className="ml-2 size-3" />
+												</Button>
+											</Link>
+										))
+									}
 								</div>
 							</div>
-
-							{/* Search */}
 							<div className="relative max-w-md mx-auto">
 								<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
 								<Input
@@ -138,86 +133,79 @@ export default function PublicInterviewsPage() {
 						</motion.div>
 					</div>
 				</section>
-
-				{/* Public Interviews Grid */}
 				<section className="w-full py-12 md:py-16">
 					<div className="container px-4 md:px-6">
-						{filteredInterviews.length === 0 ? (
-							<div className="text-center py-12">
-								<p className="text-muted-foreground text-lg">No interviews found for &quot;{searchQuery}&quot;</p>
-							</div>
-						) : (
-							<motion.div
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ duration: 0.5 }}
-								className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-							>
-								{filteredInterviews.map((interview, index) => (
-									<motion.div
-										key={interview.id}
-										initial={{ opacity: 0, y: 20 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{ duration: 0.5, delay: index * 0.05 }}
-									>
-										<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-lg hover:border-primary/50 hover:scale-105">
-											<CardContent className="p-6 flex flex-col h-full">
-												{/* Header with Company and Badge */}
-												<div className="flex items-start justify-between mb-4">
-													<div className="flex items-center gap-3">
-														<div className="text-3xl">{getCompanyLogo(interview.companyId)}</div>
-														<div>
-															<p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-																{getCompanyName(interview.companyId)}
-															</p>
-															<p className="text-sm font-semibold text-foreground">
-																{getRoleName(interview.companyId, interview.roleId)}
-															</p>
+						{
+							filteredInterviews.length === 0 ? (
+								<div className="text-center py-12">
+									<p className="text-muted-foreground text-lg">No interviews found for &quot;{searchQuery}&quot;</p>
+								</div>
+							) : (
+								<motion.div
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									transition={{ duration: 0.5 }}
+									className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+								>
+									{
+										filteredInterviews.map((interview, index) => (
+											<motion.div
+												key={interview.id}
+												initial={{ opacity: 0, y: 20 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ duration: 0.5, delay: index * 0.05 }}
+											>
+												<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-lg hover:border-primary/50 hover:scale-105">
+													<CardContent className="p-6 flex flex-col h-full">
+														<div className="flex items-start justify-between mb-4">
+															<div className="flex items-center gap-3">
+																<div className="text-3xl">{getCompanyLogo(interview.companyId)}</div>
+																<div>
+																	<p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+																		{getCompanyName(interview.companyId)}
+																	</p>
+																	<p className="text-sm font-semibold text-foreground">
+																		{getRoleName(interview.companyId, interview.roleId)}
+																	</p>
+																</div>
+															</div>
+															<Badge variant="secondary" className="rounded-full whitespace-nowrap">
+																Public
+															</Badge>
 														</div>
-													</div>
-													<Badge variant="secondary" className="rounded-full whitespace-nowrap">
-														Public
-													</Badge>
-												</div>
-
-												{/* Creator Info */}
-												<div className="mb-4 pb-4 border-b border-border/50">
-													<p className="text-xs text-muted-foreground mb-1">Created by</p>
-													<p className="font-semibold text-foreground">{interview.userName}</p>
-													<p className="text-xs text-muted-foreground">{interview.userSchool}</p>
-												</div>
-
-												{/* Feedback */}
-												<p className="text-sm text-muted-foreground mb-6 flex-grow italic">&quot;{interview.feedback}&quot;</p>
-
-												{/* Date */}
-												<p className="text-xs text-muted-foreground mb-4">
-													{new Date(interview.createdAt).toLocaleDateString("en-US", {
-														month: "short",
-														day: "numeric",
-														year: "numeric",
-													})}
-												</p>
-
-												{/* Practice Button */}
-												<Button
-													onClick={() => handlePracticeClick(interview)}
-													className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-												>
-													<Zap className="size-4 mr-2" />
-													Practice This
-												</Button>
-											</CardContent>
-										</Card>
-									</motion.div>
-								))}
-							</motion.div>
-						)}
+														<div className="mb-4 pb-4 border-b border-border/50">
+															<p className="text-xs text-muted-foreground mb-1">Created by</p>
+															<p className="font-semibold text-foreground">{interview.userName}</p>
+															<p className="text-xs text-muted-foreground">{interview.userSchool}</p>
+														</div>
+														<p className="text-sm text-muted-foreground mb-6 flex-grow italic">&quot;{interview.feedback}&quot;</p>
+														<p className="text-xs text-muted-foreground mb-4">
+															{
+																new Date(interview.createdAt).toLocaleDateString("en-US", {
+																	month: "short",
+																	day: "numeric",
+																	year: "numeric",
+																})
+															}
+														</p>
+														<Button
+															onClick={() => handlePracticeClick(interview)}
+															className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+														>
+															<Zap className="size-4 mr-2" />
+															Practice This
+														</Button>
+													</CardContent>
+												</Card>
+											</motion.div>
+										))
+									}
+								</motion.div>
+							)
+						}
 					</div>
 				</section>
 			</main>
-
-			{/* Practice Dialog */}
 			<AlertDialog open={showPracticeDialog} onOpenChange={setShowPracticeDialog}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -232,12 +220,10 @@ export default function PublicInterviewsPage() {
 									Created by <span className="font-medium text-foreground">{selectedInterview?.userName}</span>
 								</p>
 							</div>
-
 							<div className="bg-muted/50 rounded-lg p-4 space-y-2">
 								<p className="text-sm font-medium text-foreground">Interview Type</p>
 								<p className="text-sm text-muted-foreground">Public Interview Experience</p>
 							</div>
-
 							<div className="bg-primary/10 rounded-lg p-4 space-y-2">
 								<p className="text-sm font-medium text-foreground flex items-center gap-2">
 									<Zap className="size-4 text-primary" />

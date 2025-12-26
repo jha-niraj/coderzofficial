@@ -86,7 +86,7 @@ export default function PublicGenerationsPage() {
         fetchPlans()
     }, [])
 
-    const filteredPositions = useMemo(() => {
+    const _filteredPositions = useMemo(() => {
         const s = new Set<string>(["All"])
         plans.forEach((p) => s.add(p.position))
         return Array.from(s)

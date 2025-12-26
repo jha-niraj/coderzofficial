@@ -16,13 +16,13 @@ import {
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
     Code, MessageSquare, ArrowLeft, Calendar, Globe, Briefcase, Copy, Check,
-    ChevronRight, Target, Clock, Lightbulb, FileText, Users, Brain, Sparkles,
-    Award, TrendingUp, BarChart3, Send, Loader2, CheckCircle, Mic, Type, Square,
+    ChevronRight, Target, Clock, Lightbulb, FileText, Users, Brain, Award,
+    TrendingUp, BarChart3, Send, Loader2, CheckCircle, Mic, Type, Square,
     Lock, ArrowRight, X, Workflow
 } from "lucide-react"
 import Link from "next/link"
 import {
-    getGenerationBySlug, evaluateCode, generateQuestionAnswer, getQuestionAnswer,
+    getGenerationBySlug, evaluateCode, getQuestionAnswer,
     transcribeVoiceToText, evaluateUserQuestionResponse,
     getAllUserQuestionResponses
 } from "@/actions/(main)/ai/jobinterview.action"
@@ -83,7 +83,9 @@ interface UserResponse {
     score?: number
     userAnswer?: string
     answerMethod?: string
-    [key: string]: any
+    questionType?: string
+    questionIndex?: number
+    [key: string]: string | number | undefined
 }
 
 interface GenerationResponse {
@@ -106,7 +108,7 @@ function CopyButton({ text, className = "" }: CopyButtonProps) {
             setCopied(true)
             toast.success("Copied to clipboard!")
             setTimeout(() => setCopied(false), 2000)
-        } catch (error) {
+        } catch (_err) {
             toast.error("Failed to copy")
         }
     }
@@ -242,8 +244,8 @@ interface QuestionAnsweringProps {
     questionIndex: number
     interviewId: string
     expertAnswer?: string
-    existingResponse?: any
-    onResponseSaved?: (response: any) => void
+    existingResponse?: UserResponse
+    onResponseSaved?: (response: UserResponse) => void
     includePractice: boolean
     includeAnswers: boolean
 }
@@ -521,78 +523,96 @@ function QuestionAnswering({
                                 )
                             }
                             <div className="space-y-6">
-                                {feedback?.strengths?.length > 0 && (
-                                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-700 rounded-lg p-4 shadow-sm">
-                                        <h4 className="text-green-800 dark:text-green-300 font-semibold text-base flex items-center gap-2 mb-3">
-                                            <TrendingUp className="h-5 w-5 text-green-600" />
-                                            Strengths
-                                        </h4>
-                                        <ul className="space-y-2">
-                                            {feedback?.strengths?.map((strength: string, index: number) => (
-                                                <li key={index} className="flex items-start gap-3">
-                                                    <CheckCircle className="h-4 w-4 mt-1 text-green-600 flex-shrink-0" />
-                                                    <span className="text-sm text-slate-800 dark:text-slate-300">{strength}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                                {feedback?.improvements?.length > 0 && (
-                                    <div className="bg-blue-50 dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 shadow-sm">
-                                        <h4 className="text-blue-800 dark:text-blue-300 font-semibold text-base flex items-center gap-2 mb-3">
-                                            <Target className="h-5 w-5 text-blue-600" />
-                                            Areas for Improvement
-                                        </h4>
-                                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {feedback?.improvements?.map((improvement: string, index: number) => (
-                                                <li key={index} className="flex items-start gap-3">
-                                                    <ArrowRight className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
-                                                    <span className="text-sm text-left text-slate-800 dark:text-slate-300">{improvement}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                                {feedback.comparedToExpert && (
-                                    <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-700 rounded-lg p-4 shadow-sm">
-                                        <h4 className="text-purple-800 dark:text-purple-300 font-semibold text-base flex items-center gap-2 mb-4">
-                                            <Users className="h-5 w-5 text-purple-600" />
-                                            Comparison with Expert Answer
-                                        </h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                            {feedback?.comparedToExpert?.similarities?.length > 0 && (
-                                                <div>
-                                                    <h5 className="text-sm text-left font-medium text-green-800 dark:text-green-300 mb-2">
-                                                        ✅ Similarities
-                                                    </h5>
-                                                    <ul className="space-y-2">
-                                                        {feedback?.comparedToExpert?.similarities?.map((similarity: string, index: number) => (
-                                                            <li key={index} className="flex items-start gap-3">
-                                                                <CheckCircle className="h-3 w-3 mt-1 text-green-600 flex-shrink-0" />
-                                                                <span className="text-sm text-left text-slate-700 dark:text-slate-300">{similarity}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                            {feedback?.comparedToExpert?.missingPoints?.length > 0 && (
-                                                <div>
-                                                    <h5 className="text-sm text-left font-medium text-red-800 dark:text-red-300 mb-2">
-                                                        ❌ Missing Key Points
-                                                    </h5>
-                                                    <ul className="space-y-2">
-                                                        {feedback.comparedToExpert.missingPoints.map((point: string, index: number) => (
-                                                            <li key={index} className="flex items-start gap-3">
-                                                                <X className="h-3 w-3 mt-1 text-red-600 flex-shrink-0" />
-                                                                <span className="text-sm text-left text-slate-700 dark:text-slate-300">{point}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
+                                {
+                                    (feedback?.strengths?.length ?? 0) > 0 && (
+                                        <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-700 rounded-lg p-4 shadow-sm">
+                                            <h4 className="text-green-800 dark:text-green-300 font-semibold text-base flex items-center gap-2 mb-3">
+                                                <TrendingUp className="h-5 w-5 text-green-600" />
+                                                Strengths
+                                            </h4>
+                                            <ul className="space-y-2">
+                                                {
+                                                    feedback?.strengths?.map((strength: string, index: number) => (
+                                                        <li key={index} className="flex items-start gap-3">
+                                                            <CheckCircle className="h-4 w-4 mt-1 text-green-600 flex-shrink-0" />
+                                                            <span className="text-sm text-slate-800 dark:text-slate-300">{strength}</span>
+                                                        </li>
+                                                    ))
+                                                }
+                                            </ul>
                                         </div>
-                                    </div>
-                                )}
+                                    )
+                                }
+                                {
+                                    (feedback?.improvements?.length ?? 0) > 0 && (
+                                        <div className="bg-blue-50 dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 shadow-sm">
+                                            <h4 className="text-blue-800 dark:text-blue-300 font-semibold text-base flex items-center gap-2 mb-3">
+                                                <Target className="h-5 w-5 text-blue-600" />
+                                                Areas for Improvement
+                                            </h4>
+                                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {
+                                                    feedback?.improvements?.map((improvement: string, index: number) => (
+                                                        <li key={index} className="flex items-start gap-3">
+                                                            <ArrowRight className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
+                                                            <span className="text-sm text-left text-slate-800 dark:text-slate-300">{improvement}</span>
+                                                        </li>
+                                                    ))
+                                                }
+                                            </ul>
+                                        </div>
+                                    )
+                                }
+                                {
+                                    feedback.comparedToExpert && (
+                                        <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-700 rounded-lg p-4 shadow-sm">
+                                            <h4 className="text-purple-800 dark:text-purple-300 font-semibold text-base flex items-center gap-2 mb-4">
+                                                <Users className="h-5 w-5 text-purple-600" />
+                                                Comparison with Expert Answer
+                                            </h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                {
+                                                    (feedback?.comparedToExpert?.similarities?.length ?? 0) > 0 && (
+                                                        <div>
+                                                            <h5 className="text-sm text-left font-medium text-green-800 dark:text-green-300 mb-2">
+                                                                ✅ Similarities
+                                                            </h5>
+                                                            <ul className="space-y-2">
+                                                                {
+                                                                    feedback?.comparedToExpert?.similarities?.map((similarity: string, index: number) => (
+                                                                        <li key={index} className="flex items-start gap-3">
+                                                                            <CheckCircle className="h-3 w-3 mt-1 text-green-600 flex-shrink-0" />
+                                                                            <span className="text-sm text-left text-slate-700 dark:text-slate-300">{similarity}</span>
+                                                                        </li>
+                                                                    ))
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    )
+                                                }
+                                                {
+                                                    (feedback?.comparedToExpert?.missingPoints?.length ?? 0) > 0 && (
+                                                        <div>
+                                                            <h5 className="text-sm text-left font-medium text-red-800 dark:text-red-300 mb-2">
+                                                                ❌ Missing Key Points
+                                                            </h5>
+                                                            <ul className="space-y-2">
+                                                                {
+                                                                    feedback.comparedToExpert?.missingPoints?.map((point: string, index: number) => (
+                                                                        <li key={index} className="flex items-start gap-3">
+                                                                            <X className="h-3 w-3 mt-1 text-red-600 flex-shrink-0" />
+                                                                            <span className="text-sm text-left text-slate-700 dark:text-slate-300">{point}</span>
+                                                                        </li>
+                                                                    ))
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    )
+                                                }
+                                            </div>
+                                        </div>
+                                    )
+                                }
                             </div>
                         </CardContent>
                     </Card>
@@ -694,9 +714,9 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
     const loadExistingCodingSolutions = async (generation: Generation) => {
         const codingQuestions = generation.generatedContent.codingQuestions.map(q => ({ text: q.question, type: 'coding' }))
 
-        const solutions: Record<string, any> = {}
+        const _solutions: Record<string, UserResponse> = {}
 
-        const results = await Promise.allSettled(
+        const _results = await Promise.allSettled(
             codingQuestions.map(async (question) => {
                 try {
                     const result = await getQuestionAnswer(question.text, generation.id)
@@ -704,7 +724,7 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
                         return { questionText: question.text, solution: result.data }
                     }
                     return null
-                } catch (error) {
+                } catch (_err) {
                     console.log('No existing solution for:', question.text)
                     return null
                 }
@@ -724,8 +744,8 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
         try {
             const result = await getAllUserQuestionResponses(interviewId)
             if (result.success && result.data) {
-                const responsesMap: Record<string, any> = {}
-                result.data.forEach((response: any) => {
+                const responsesMap: Record<string, UserResponse> = {}
+                result.data.forEach((response: UserResponse) => {
                     const key = `${response.questionType}-${response.questionIndex}`
                     responsesMap[key] = response
                 })
@@ -751,7 +771,7 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
         }))
     }
 
-    const handleCodeSubmit = async (code: string, language: string, questionText: string) => {
+    const _handleCodeSubmit = async (code: string, language: string, questionText: string) => {
         if (!generation) return
 
         try {

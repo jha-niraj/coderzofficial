@@ -436,9 +436,9 @@ export default function OpenSourcePage() {
                                                                 <div className="flex items-start gap-4">
                                                                     <div className={cn(
                                                                         "w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0",
-                                                                        typeColors[project.type].bg
+                                                                        typeColors[project.type]?.bg
                                                                     )}>
-                                                                        <Code className={cn("w-7 h-7", typeColors[project.type].text)} />
+                                                                        <Code className={cn("w-7 h-7", typeColors[project.type]?.text)} />
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="flex items-start justify-between gap-4">
@@ -447,7 +447,7 @@ export default function OpenSourcePage() {
                                                                                     <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                                                                                         {project.title}
                                                                                     </h3>
-                                                                                    <Badge className={cn("text-xs", typeColors[project.type].bg, typeColors[project.type].text)}>
+                                                                                    <Badge className={cn("text-xs", typeColors[project.type]?.bg, typeColors[project.type]?.text)}>
                                                                                         {project.type}
                                                                                     </Badge>
                                                                                     {

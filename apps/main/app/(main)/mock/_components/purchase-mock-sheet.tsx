@@ -224,7 +224,6 @@ export function PurchaseMockSheet({ isOpen, onClose, mock, userCredits }: Purcha
 
                     <Separator />
 
-                    {/* INFO SECTIONS - Moved below actions */}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="flex flex-col items-center p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-lg border border-neutral-200 dark:border-neutral-800">
                             <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />

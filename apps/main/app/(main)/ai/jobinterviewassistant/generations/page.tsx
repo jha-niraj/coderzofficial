@@ -146,7 +146,7 @@ export default function MyPlansPage() {
                                 className="pl-10"
                             />
                         </div>
-                        <Select value={visibility} onValueChange={(v: any) => setVisibility(v)}>
+                        <Select value={visibility} onValueChange={(v: "all" | "public" | "private") => setVisibility(v)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Visibility" />
                             </SelectTrigger>

@@ -5,24 +5,24 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import {
-    Users, UserPlus, MessageSquare, TrendingUp, CheckCircle, ArrowLeft, 
+    Users, UserPlus, MessageSquare, TrendingUp, CheckCircle, ArrowLeft,
     Plus, Star, Globe, Lock, Target, Trophy, Calendar, Brain
 } from 'lucide-react'
-import { 
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle    
+import {
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from '@repo/ui/components/ui/sheet'
 import { Input } from '@repo/ui/components/ui/input'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Label } from '@repo/ui/components/ui/label'
-import { 
-    RadioGroup, RadioGroupItem 
+import {
+    RadioGroup, RadioGroupItem
 } from '@repo/ui/components/ui/radio-group'
-import { 
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import toast from '@repo/ui/components/ui/sonner'
 
@@ -125,7 +125,6 @@ export default function PeerToPeerMockPage() {
 
     return (
         <main className="min-h-screen bg-white dark:bg-neutral-950">
-            {/* Header */}
             <div className="max-w-7xl mx-auto px-6 py-8">
                 <Link href="/mockinterview">
                     <Button variant="ghost" className="mb-4">
@@ -134,8 +133,6 @@ export default function PeerToPeerMockPage() {
                     </Button>
                 </Link>
             </div>
-
-            {/* Hero Section */}
             <section className="relative overflow-hidden py-20 bg-white dark:bg-neutral-950">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
@@ -148,18 +145,15 @@ export default function PeerToPeerMockPage() {
                             <Users className="w-3 h-3 mr-1.5" />
                             Peer-to-Peer Interview Practice
                         </Badge>
-
                         <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-600 dark:from-neutral-50 dark:to-neutral-400">
                             Practice Together,
                             <br />
                             Grow Together
                         </h1>
-
                         <p className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
                             Connect with fellow developers for realistic mock interviews. Give and receive feedback,
                             practice interviewing skills, and build your professional network.
                         </p>
-
                         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                             <Button
                                 size="lg"
@@ -181,41 +175,39 @@ export default function PeerToPeerMockPage() {
                     </motion.div>
                 </div>
             </section>
-
-            {/* Stats Section */}
             <section className="py-12 border-y border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        {[
-                            { value: '6K+', label: 'Sessions Held', icon: Users },
-                            { value: '3.2K', label: 'Active Users', icon: UserPlus },
-                            { value: '4.7/5', label: 'Avg Rating', icon: Star },
-                            { value: '92%', label: 'Satisfaction', icon: Trophy },
-                        ].map((stat, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                viewport={{ once: true }}
-                                className="text-center"
-                            >
-                                <div className="flex justify-center mb-2">
-                                    <stat.icon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                                </div>
-                                <div className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-1">
-                                    {stat.value}
-                                </div>
-                                <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                                    {stat.label}
-                                </div>
-                            </motion.div>
-                        ))}
+                        {
+                            [
+                                { value: '6K+', label: 'Sessions Held', icon: Users },
+                                { value: '3.2K', label: 'Active Users', icon: UserPlus },
+                                { value: '4.7/5', label: 'Avg Rating', icon: Star },
+                                { value: '92%', label: 'Satisfaction', icon: Trophy },
+                            ].map((stat, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    viewport={{ once: true }}
+                                    className="text-center"
+                                >
+                                    <div className="flex justify-center mb-2">
+                                        <stat.icon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                                    </div>
+                                    <div className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-1">
+                                        {stat.value}
+                                    </div>
+                                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        {stat.label}
+                                    </div>
+                                </motion.div>
+                            ))
+                        }
                     </div>
                 </div>
             </section>
-
-            {/* How It Works */}
             <section className="py-16 bg-white dark:bg-neutral-950">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
@@ -231,9 +223,7 @@ export default function PeerToPeerMockPage() {
                             Two ways to practice: private sessions with friends or public sessions with the community
                         </p>
                     </motion.div>
-
                     <div className="grid md:grid-cols-2 gap-8 mb-12">
-                        {/* Private Sessions */}
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -247,23 +237,23 @@ export default function PeerToPeerMockPage() {
                                     <h3 className="text-2xl font-bold text-neutral-900 dark:text-white">Private Sessions</h3>
                                 </div>
                                 <div className="space-y-4">
-                                    {[
-                                        'Create a private session with custom details',
-                                        'Get a unique shareable link',
-                                        'Send to specific people you want to practice with',
-                                        'AI generates interview questions for both participants',
-                                        'Practice in a comfortable, private environment'
-                                    ].map((step, idx) => (
-                                        <div key={idx} className="flex items-start gap-3">
-                                            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
-                                            <span className="text-neutral-600 dark:text-neutral-400">{step}</span>
-                                        </div>
-                                    ))}
+                                    {
+                                        [
+                                            'Create a private session with custom details',
+                                            'Get a unique shareable link',
+                                            'Send to specific people you want to practice with',
+                                            'AI generates interview questions for both participants',
+                                            'Practice in a comfortable, private environment'
+                                        ].map((step, idx) => (
+                                            <div key={idx} className="flex items-start gap-3">
+                                                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
+                                                <span className="text-neutral-600 dark:text-neutral-400">{step}</span>
+                                            </div>
+                                        ))
+                                    }
                                 </div>
                             </div>
                         </motion.div>
-
-                        {/* Public Sessions */}
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -277,26 +267,26 @@ export default function PeerToPeerMockPage() {
                                     <h3 className="text-2xl font-bold text-neutral-900 dark:text-white">Public Sessions</h3>
                                 </div>
                                 <div className="space-y-4">
-                                    {[
-                                        'Create a public session visible to everyone',
-                                        'Set max participants and scheduling details',
-                                        'Other users can request to join your session',
-                                        'Accept requests and schedule the interview',
-                                        'AI generates questions for all participants before start'
-                                    ].map((step, idx) => (
-                                        <div key={idx} className="flex items-start gap-3">
-                                            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
-                                            <span className="text-neutral-600 dark:text-neutral-400">{step}</span>
-                                        </div>
-                                    ))}
+                                    {
+                                        [
+                                            'Create a public session visible to everyone',
+                                            'Set max participants and scheduling details',
+                                            'Other users can request to join your session',
+                                            'Accept requests and schedule the interview',
+                                            'AI generates questions for all participants before start'
+                                        ].map((step, idx) => (
+                                            <div key={idx} className="flex items-start gap-3">
+                                                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
+                                                <span className="text-neutral-600 dark:text-neutral-400">{step}</span>
+                                            </div>
+                                        ))
+                                    }
                                 </div>
                             </div>
                         </motion.div>
                     </div>
                 </div>
             </section>
-
-            {/* Features Section */}
             <section className="py-16 bg-neutral-50 dark:bg-neutral-900/50 border-y border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
@@ -312,57 +302,57 @@ export default function PeerToPeerMockPage() {
                             Experience realistic interview scenarios with real people
                         </p>
                     </motion.div>
-
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                        {features.map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                viewport={{ once: true }}
-                            >
-                                <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-xl p-6 border border-neutral-200 dark:border-neutral-800 h-full">
-                                    <div className="p-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-neutral-700 dark:text-neutral-300 w-fit mb-4">
-                                        {feature.icon}
+                        {
+                            features.map((feature, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-xl p-6 border border-neutral-200 dark:border-neutral-800 h-full">
+                                        <div className="p-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-neutral-700 dark:text-neutral-300 w-fit mb-4">
+                                            {feature.icon}
+                                        </div>
+                                        <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">
+                                            {feature.title}
+                                        </h3>
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                            {feature.description}
+                                        </p>
                                     </div>
-                                    <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">
-                                        {feature.title}
-                                    </h3>
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                        {feature.description}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        ))}
+                                </motion.div>
+                            ))
+                        }
                     </div>
-
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {benefits.map((benefit, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: index * 0.1 }}
-                                viewport={{ once: true }}
-                                className="text-center"
-                            >
-                                <div className="inline-flex items-center justify-center w-12 h-12 bg-neutral-100 dark:bg-neutral-800 rounded-lg mb-3">
-                                    <benefit.icon className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
-                                </div>
-                                <h4 className="font-semibold text-neutral-900 dark:text-white mb-1 text-sm">
-                                    {benefit.title}
-                                </h4>
-                                <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                                    {benefit.description}
-                                </p>
-                            </motion.div>
-                        ))}
+                        {
+                            benefits.map((benefit, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    viewport={{ once: true }}
+                                    className="text-center"
+                                >
+                                    <div className="inline-flex items-center justify-center w-12 h-12 bg-neutral-100 dark:bg-neutral-800 rounded-lg mb-3">
+                                        <benefit.icon className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
+                                    </div>
+                                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-1 text-sm">
+                                        {benefit.title}
+                                    </h4>
+                                    <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                                        {benefit.description}
+                                    </p>
+                                </motion.div>
+                            ))
+                        }
                     </div>
                 </div>
             </section>
-
-            {/* Public Sessions */}
             <section id="public-sessions" className="py-16 bg-white dark:bg-neutral-950">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
@@ -388,7 +378,6 @@ export default function PeerToPeerMockPage() {
                                 Create Session
                             </Button>
                         </div>
-
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {publicSessions.map((session, index) => (
                                 <motion.div
@@ -424,13 +413,15 @@ export default function PeerToPeerMockPage() {
                                                 </div>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                {session.tags.map((tag, idx) => (
-                                                    <Badge key={idx} variant="outline" className="text-xs">
-                                                        {tag}
-                                                    </Badge>
-                                                ))}
+                                                {
+                                                    session.tags.map((tag, idx) => (
+                                                        <Badge key={idx} variant="outline" className="text-xs">
+                                                            {tag}
+                                                        </Badge>
+                                                    ))
+                                                }
                                             </div>
-                                            <Button 
+                                            <Button
                                                 className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200"
                                                 disabled={session.participants >= session.maxParticipants}
                                             >
@@ -439,13 +430,12 @@ export default function PeerToPeerMockPage() {
                                         </CardContent>
                                     </Card>
                                 </motion.div>
-                            ))}
+                            ))
+                            }
                         </div>
                     </motion.div>
                 </div>
             </section>
-
-            {/* CTA Section */}
             <section className="py-20 bg-neutral-50 dark:bg-neutral-900/50 border-t border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-4xl mx-auto px-6">
                     <motion.div
@@ -482,8 +472,6 @@ export default function PeerToPeerMockPage() {
                     </motion.div>
                 </div>
             </section>
-
-            {/* Create Session Sheet */}
             <Sheet open={createSheetOpen} onOpenChange={setCreateSheetOpen}>
                 <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
                     <SheetHeader>
@@ -492,7 +480,6 @@ export default function PeerToPeerMockPage() {
                             Set up a mock interview session with other developers
                         </SheetDescription>
                     </SheetHeader>
-                    
                     <div className="space-y-6 py-6">
                         <div className="space-y-3">
                             <Label>Session Type</Label>
@@ -523,7 +510,6 @@ export default function PeerToPeerMockPage() {
                                 </div>
                             </RadioGroup>
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="title">Session Title</Label>
                             <Input
@@ -533,7 +519,6 @@ export default function PeerToPeerMockPage() {
                                 onChange={(e) => setTitle(e.target.value)}
                             />
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea
@@ -544,7 +529,6 @@ export default function PeerToPeerMockPage() {
                                 rows={3}
                             />
                         </div>
-
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="level">Level</Label>
@@ -560,7 +544,6 @@ export default function PeerToPeerMockPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-
                             <div className="space-y-2">
                                 <Label htmlFor="duration">Duration (min)</Label>
                                 <Select value={duration} onValueChange={setDuration}>
@@ -576,33 +559,33 @@ export default function PeerToPeerMockPage() {
                                 </Select>
                             </div>
                         </div>
-
-                        {sessionType === 'public' && (
-                            <div className="space-y-2">
-                                <Label htmlFor="maxParticipants">Max Participants</Label>
-                                <Select value={maxParticipants} onValueChange={setMaxParticipants}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="2">2 people</SelectItem>
-                                        <SelectItem value="3">3 people</SelectItem>
-                                        <SelectItem value="4">4 people</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-
+                        {
+                            sessionType === 'public' && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="maxParticipants">Max Participants</Label>
+                                    <Select value={maxParticipants} onValueChange={setMaxParticipants}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="2">2 people</SelectItem>
+                                            <SelectItem value="3">3 people</SelectItem>
+                                            <SelectItem value="4">4 people</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )
+                        }
                         <div className="pt-4 space-y-3">
-                            <Button 
+                            <Button
                                 className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200"
                                 onClick={handleCreateSession}
                             >
                                 Create Session
                             </Button>
                             <p className="text-xs text-center text-neutral-600 dark:text-neutral-400">
-                                {sessionType === 'private' ? 
-                                    'You\'ll get a shareable link after creation' : 
+                                {sessionType === 'private' ?
+                                    'You\'ll get a shareable link after creation' :
                                     'AI will generate interview questions before the session'
                                 }
                             </p>

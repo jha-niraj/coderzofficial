@@ -3,22 +3,22 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { 
-	Moon, Sun, ArrowRight, Star, Search 
+import {
+	Moon, Sun, ArrowRight, Star, Search
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { 
-	Card, CardContent 
+import {
+	Card, CardContent
 } from "@repo/ui/components/ui/card"
 import { Input } from "@repo/ui/components/ui/input"
 import {
-	AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+	AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
 	AlertDialogDescription, AlertDialogHeader, AlertDialogTitle
 } from "@repo/ui/components/ui/alert-dialog"
 import useTheme from "@repo/ui/components/themetoggle"
-import { 
-	companies, publicInterviews 
+import {
+	companies, publicInterviews
 } from "@/app/(main)/interview/_components/mockdata"
 
 export default function LandingPage() {
@@ -100,7 +100,6 @@ export default function LandingPage() {
 
 	return (
 		<div className="flex min-h-[100dvh] flex-col">
-			{/* Header - Minimal */}
 			<header
 				className={`sticky top-0 z-50 w-full backdrop-blur-lg transition-all duration-300 ${isScrolled ? "bg-background/80 shadow-sm" : "bg-transparent"
 					}`}
@@ -120,9 +119,7 @@ export default function LandingPage() {
 					</div>
 				</div>
 			</header>
-
 			<main className="flex-1">
-				{/* Hero Section with Search */}
 				<section className="w-full py-20 md:py-32 lg:py-40 overflow-hidden">
 					<div className="container px-4 md:px-6 relative">
 						<div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-black bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
@@ -154,24 +151,30 @@ export default function LandingPage() {
 										onChange={(e) => setSearchQuery(e.target.value)}
 										className="pl-10 rounded-full h-12 text-base"
 									/>
-									{searchQuery && filteredCompanies.length > 0 && (
-										<div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-10">
-											{filteredCompanies.map((company) => (
-												<button
-													key={company}
-													onClick={() => handleCompanySelect(company)}
-													className="w-full text-left px-4 py-2 hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
-												>
-													{company}
-												</button>
-											))}
-										</div>
-									)}
-									{searchQuery && filteredCompanies.length === 0 && (
-										<div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-10 p-4 text-center text-sm text-muted-foreground">
-											Company not found. Request it below!
-										</div>
-									)}
+									{
+										searchQuery && filteredCompanies.length > 0 && (
+											<div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-10">
+												{
+													filteredCompanies.map((company) => (
+														<button
+															key={company}
+															onClick={() => handleCompanySelect(company)}
+															className="w-full text-left px-4 py-2 hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+														>
+															{company}
+														</button>
+													))
+												}
+											</div>
+										)
+									}
+									{
+										searchQuery && filteredCompanies.length === 0 && (
+											<div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-10 p-4 text-center text-sm text-muted-foreground">
+												Company not found. Request it below!
+											</div>
+										)
+									}
 								</div>
 								<p className="text-xs text-muted-foreground">
 									We won&apos;t judge your spelling in the search box. (The AI might, though.)
@@ -197,8 +200,6 @@ export default function LandingPage() {
 						</motion.div>
 					</div>
 				</section>
-
-				{/* Company Dialog */}
 				<AlertDialog open={showCompanyDialog} onOpenChange={setShowCompanyDialog}>
 					<AlertDialogContent>
 						<AlertDialogHeader>
@@ -227,8 +228,6 @@ export default function LandingPage() {
 						</div>
 					</AlertDialogContent>
 				</AlertDialog>
-
-				{/* How It Works Section */}
 				<section id="how-it-works" className="w-full py-20 md:py-32 bg-muted/30 relative overflow-hidden">
 					<div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-black bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_40%,transparent_100%)]"></div>
 
@@ -248,55 +247,55 @@ export default function LandingPage() {
 								Here&apos;s what happens when you stop pretending to prepare:
 							</p>
 						</motion.div>
-
 						<div className="grid md:grid-cols-5 gap-8 md:gap-6 relative">
 							<div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-border to-transparent -translate-y-1/2 z-0"></div>
 
-							{[
-								{
-									step: "01",
-									title: "Choose your company",
-									description: "From Google to Zoom — we've mapped the latest interview flows. No guesswork.",
-								},
-								{
-									step: "02",
-									title: "Pick your role",
-									description: "SDE-1? Data Engineer? Pick your poison. We'll tailor the entire process.",
-								},
-								{
-									step: "03",
-									title: "Face your AI interviewer",
-									description:
-										"Simulated calls, real coding rounds, design boards — the works. (Yes, you can cry between rounds. We support that.)",
-								},
-								{
-									step: "04",
-									title: "Get scored, not roasted",
-									description: "Receive structured feedback on every round. Learn faster, improve smarter.",
-								},
-								{
-									step: "05",
-									title: "Repeat until confidence",
-									description: "Practice until caffeine is replaced by actual confidence.",
-								},
-							].map((step, i) => (
-								<motion.div
-									key={i}
-									initial={{ opacity: 0, y: 20 }}
-									whileInView={{ opacity: 1, y: 0 }}
-									viewport={{ once: true }}
-									transition={{ duration: 0.5, delay: i * 0.1 }}
-									className="relative z-10 flex flex-col items-center text-center space-y-4"
-								>
-									<div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xl font-bold shadow-lg">
-										{step.step}
-									</div>
-									<h3 className="text-lg font-bold">{step.title}</h3>
-									<p className="text-sm text-muted-foreground">{step.description}</p>
-								</motion.div>
-							))}
+							{
+								[
+									{
+										step: "01",
+										title: "Choose your company",
+										description: "From Google to Zoom — we've mapped the latest interview flows. No guesswork.",
+									},
+									{
+										step: "02",
+										title: "Pick your role",
+										description: "SDE-1? Data Engineer? Pick your poison. We'll tailor the entire process.",
+									},
+									{
+										step: "03",
+										title: "Face your AI interviewer",
+										description:
+											"Simulated calls, real coding rounds, design boards — the works. (Yes, you can cry between rounds. We support that.)",
+									},
+									{
+										step: "04",
+										title: "Get scored, not roasted",
+										description: "Receive structured feedback on every round. Learn faster, improve smarter.",
+									},
+									{
+										step: "05",
+										title: "Repeat until confidence",
+										description: "Practice until caffeine is replaced by actual confidence.",
+									},
+								].map((step, i) => (
+									<motion.div
+										key={i}
+										initial={{ opacity: 0, y: 20 }}
+										whileInView={{ opacity: 1, y: 0 }}
+										viewport={{ once: true }}
+										transition={{ duration: 0.5, delay: i * 0.1 }}
+										className="relative z-10 flex flex-col items-center text-center space-y-4"
+									>
+										<div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xl font-bold shadow-lg">
+											{step.step}
+										</div>
+										<h3 className="text-lg font-bold">{step.title}</h3>
+										<p className="text-sm text-muted-foreground">{step.description}</p>
+									</motion.div>
+								))
+							}
 						</div>
-
 						<div className="flex justify-center mt-12">
 							<Button size="lg" variant="outline" className="rounded-full bg-transparent">
 								Try a Demo (Coming Soon)
@@ -304,8 +303,6 @@ export default function LandingPage() {
 						</div>
 					</div>
 				</section>
-
-				{/* Public Interviews Section */}
 				<section className="w-full py-20 md:py-32">
 					<div className="container px-4 md:px-6">
 						<motion.div
@@ -323,7 +320,6 @@ export default function LandingPage() {
 								See how others performed, get inspired, and learn from the community&apos;s shared experiences.
 							</p>
 						</motion.div>
-
 						<motion.div
 							variants={container}
 							initial="hidden"
@@ -331,52 +327,54 @@ export default function LandingPage() {
 							viewport={{ once: true }}
 							className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8"
 						>
-							{topPublicInterviews.map((interview) => {
-								const companyName = companies.find((c) => c.id === interview.companyId)?.name || "Unknown"
+							{
+								topPublicInterviews.map((interview) => {
+									const companyName = companies.find((c) => c.id === interview.companyId)?.name || "Unknown"
 
-								return (
-									<motion.div key={interview.id} variants={item}>
-										<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md hover:border-primary/50 hover:scale-105">
-											<CardContent className="p-5 flex flex-col h-full">
-												<div className="mb-4">
-													<p className="text-xs font-semibold text-primary mb-1">{companyName}</p>
-													<p className="text-sm font-bold text-foreground line-clamp-1">
-														{companies.find((c) => c.id === interview.companyId)?.roles[0]?.name || "Interview"}
-													</p>
-												</div>
+									return (
+										<motion.div key={interview.id} variants={item}>
+											<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md hover:border-primary/50 hover:scale-105">
+												<CardContent className="p-5 flex flex-col h-full">
+													<div className="mb-4">
+														<p className="text-xs font-semibold text-primary mb-1">{companyName}</p>
+														<p className="text-sm font-bold text-foreground line-clamp-1">
+															{companies.find((c) => c.id === interview.companyId)?.roles[0]?.name || "Interview"}
+														</p>
+													</div>
+													<div className="mb-4 p-3 bg-muted/50 rounded-lg flex-grow">
+														<p className="text-xs text-muted-foreground mb-1">Created by</p>
+														<p className="font-semibold text-sm text-foreground">{interview.userName}</p>
+														<p className="text-xs text-muted-foreground">{interview.userSchool}</p>
+													</div>
 
-												<div className="mb-4 p-3 bg-muted/50 rounded-lg flex-grow">
-													<p className="text-xs text-muted-foreground mb-1">Created by</p>
-													<p className="font-semibold text-sm text-foreground">{interview.userName}</p>
-													<p className="text-xs text-muted-foreground">{interview.userSchool}</p>
-												</div>
+													<p className="text-xs text-muted-foreground line-clamp-2 mb-4 italic">&quot;{interview.feedback}&quot;</p>
 
-												<p className="text-xs text-muted-foreground line-clamp-2 mb-4 italic">&quot;{interview.feedback}&quot;</p>
-
-												<div className="flex items-center justify-between pt-3 border-t border-border/40">
-													<p className="text-xs text-muted-foreground">
-														{new Date(interview.createdAt).toLocaleDateString("en-US", {
-															month: "short",
-															day: "numeric",
-														})}
-													</p>
-													<Button
-														size="sm"
-														variant="ghost"
-														className="h-7 px-2 text-xs"
-														onClick={() => handlePracticeClick(interview)}
-													>
-														Practice
-														<ArrowRight className="ml-1 size-3" />
-													</Button>
-												</div>
-											</CardContent>
-										</Card>
-									</motion.div>
-								)
-							})}
+													<div className="flex items-center justify-between pt-3 border-t border-border/40">
+														<p className="text-xs text-muted-foreground">
+															{
+																new Date(interview.createdAt).toLocaleDateString("en-US", {
+																	month: "short",
+																	day: "numeric",
+																})
+															}
+														</p>
+														<Button
+															size="sm"
+															variant="ghost"
+															className="h-7 px-2 text-xs"
+															onClick={() => handlePracticeClick(interview)}
+														>
+															Practice
+															<ArrowRight className="ml-1 size-3" />
+														</Button>
+													</div>
+												</CardContent>
+											</Card>
+										</motion.div>
+									)
+								})
+							}
 						</motion.div>
-
 						<div className="text-center">
 							<Link href="/interview/public">
 								<Button size="lg" className="rounded-full">
@@ -387,8 +385,6 @@ export default function LandingPage() {
 						</div>
 					</div>
 				</section>
-
-				{/* Companies Covered Section */}
 				<section id="companies" className="w-full py-20 md:py-32 bg-muted/30">
 					<div className="container px-4 md:px-6">
 						<motion.div
@@ -408,7 +404,6 @@ export default function LandingPage() {
 								We&apos;ve mapped interview processes of 100+ top companies so far. Here&apos;s your sneak peek:
 							</p>
 						</motion.div>
-
 						<motion.div
 							variants={container}
 							initial="hidden"
@@ -416,19 +411,20 @@ export default function LandingPage() {
 							viewport={{ once: true }}
 							className="grid gap-4 sm:grid-cols-2 md:grid-cols-5 mb-12"
 						>
-							{companyList.map((company, i) => (
-								<motion.div key={i} variants={item}>
-									<Link href={`/interview/${getCompanyId(company)}`}>
-										<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
-											<CardContent className="p-6 flex items-center justify-center h-full">
-												<p className="font-semibold text-center">{company}</p>
-											</CardContent>
-										</Card>
-									</Link>
-								</motion.div>
-							))}
+							{
+								companyList.map((company, i) => (
+									<motion.div key={i} variants={item}>
+										<Link href={`/interview/${getCompanyId(company)}`}>
+											<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
+												<CardContent className="p-6 flex items-center justify-center h-full">
+													<p className="font-semibold text-center">{company}</p>
+												</CardContent>
+											</Card>
+										</Link>
+									</motion.div>
+								))
+							}
 						</motion.div>
-
 						<div className="text-center space-y-4">
 							<p className="text-muted-foreground">
 								Didn&apos;t find your company? Hit &quot;Request&quot; below — we&apos;ll add it before your next panic attack.
@@ -439,8 +435,6 @@ export default function LandingPage() {
 						</div>
 					</div>
 				</section>
-
-				{/* What Makes CodeEdge Different */}
 				<section className="w-full py-20 md:py-32">
 					<div className="container px-4 md:px-6">
 						<motion.div
@@ -460,7 +454,6 @@ export default function LandingPage() {
 								You&apos;ve practiced fake interviews long enough. Time to try the real fake interview.
 							</p>
 						</motion.div>
-
 						<div className="max-w-4xl mx-auto overflow-x-auto">
 							<table className="w-full text-sm">
 								<thead>
@@ -470,28 +463,28 @@ export default function LandingPage() {
 									</tr>
 								</thead>
 								<tbody>
-									{[
-										{ others: "One 20-min AI chat", codeEdge: "Full 5-round company-specific simulation" },
-										{
-											others: "Same questions for everyone",
-											codeEdge: "Tailored questions by company, role, and level",
-										},
-										{ others: "Boring feedback", codeEdge: "Dynamic scoring and voice-based HR reviews" },
-										{ others: "Pay and pray", codeEdge: "Earn, share, and save credits (CodeCoins)" },
-										{ others: "Mock once", codeEdge: "Build real interview confidence" },
-									].map((row, i) => (
-										<tr key={i} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-											<td className="py-4 px-4 text-muted-foreground">{row.others}</td>
-											<td className="py-4 px-4 font-medium text-foreground">{row.codeEdge}</td>
-										</tr>
-									))}
+									{
+										[
+											{ others: "One 20-min AI chat", codeEdge: "Full 5-round company-specific simulation" },
+											{
+												others: "Same questions for everyone",
+												codeEdge: "Tailored questions by company, role, and level",
+											},
+											{ others: "Boring feedback", codeEdge: "Dynamic scoring and voice-based HR reviews" },
+											{ others: "Pay and pray", codeEdge: "Earn, share, and save credits (CodeCoins)" },
+											{ others: "Mock once", codeEdge: "Build real interview confidence" },
+										].map((row, i) => (
+											<tr key={i} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+												<td className="py-4 px-4 text-muted-foreground">{row.others}</td>
+												<td className="py-4 px-4 font-medium text-foreground">{row.codeEdge}</td>
+											</tr>
+										))
+									}
 								</tbody>
 							</table>
 						</div>
 					</div>
 				</section>
-
-				{/* Testimonials Section */}
 				<section id="testimonials" className="w-full py-20 md:py-32 bg-muted/30">
 					<div className="container px-4 md:px-6">
 						<motion.div
@@ -507,58 +500,61 @@ export default function LandingPage() {
 							<h2 className="text-3xl md:text-4xl font-bold tracking-tight">Brutal. Honest. Effective.</h2>
 							<p className="max-w-[800px] text-muted-foreground md:text-lg">Just like the real interviews.</p>
 						</motion.div>
-
 						<div className="grid gap-6 md:grid-cols-3">
-							{[
-								{
-									quote: "CodeEdge roasted me harder than my actual Microsoft interviewer. I passed the next week.",
-									author: "Rishabh",
-									school: "IIT Delhi",
-									rating: 5,
-								},
-								{
-									quote: "Finally, a mock that didn't feel like talking to a chatbot with amnesia.",
-									author: "Neha",
-									school: "PES Bengaluru",
-									rating: 5,
-								},
-								{
-									quote: "I scored 52% on my first try. Then 91%. It's addictive, in a painful way.",
-									author: "Ankit",
-									school: "NIT Trichy",
-									rating: 5,
-								},
-							].map((testimonial, i) => (
-								<motion.div
-									key={i}
-									initial={{ opacity: 0, y: 20 }}
-									whileInView={{ opacity: 1, y: 0 }}
-									viewport={{ once: true }}
-									transition={{ duration: 0.5, delay: i * 0.1 }}
-								>
-									<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md">
-										<CardContent className="p-6 flex flex-col h-full">
-											<div className="flex mb-4">
-												{Array(testimonial.rating)
-													.fill(0)
-													.map((_, j) => (
-														<Star key={j} className="size-4 text-yellow-500 fill-yellow-500" />
-													))}
-											</div>
-											<p className="text-lg mb-6 flex-grow italic">&quot;{testimonial.quote}&quot;</p>
-											<div className="flex items-center gap-3 mt-auto pt-4 border-t border-border/40">
-												<div className="size-10 rounded-full bg-muted flex items-center justify-center text-foreground font-medium">
-													{testimonial.author.charAt(0)}
+							{
+								[
+									{
+										quote: "CodeEdge roasted me harder than my actual Microsoft interviewer. I passed the next week.",
+										author: "Rishabh",
+										school: "IIT Delhi",
+										rating: 5,
+									},
+									{
+										quote: "Finally, a mock that didn't feel like talking to a chatbot with amnesia.",
+										author: "Neha",
+										school: "PES Bengaluru",
+										rating: 5,
+									},
+									{
+										quote: "I scored 52% on my first try. Then 91%. It's addictive, in a painful way.",
+										author: "Ankit",
+										school: "NIT Trichy",
+										rating: 5,
+									},
+								].map((testimonial, i) => (
+									<motion.div
+										key={i}
+										initial={{ opacity: 0, y: 20 }}
+										whileInView={{ opacity: 1, y: 0 }}
+										viewport={{ once: true }}
+										transition={{ duration: 0.5, delay: i * 0.1 }}
+									>
+										<Card className="h-full overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur transition-all hover:shadow-md">
+											<CardContent className="p-6 flex flex-col h-full">
+												<div className="flex mb-4">
+													{
+														Array(testimonial.rating)
+															.fill(0)
+															.map((_, j) => (
+																<Star key={j} className="size-4 text-yellow-500 fill-yellow-500" />
+															))
+													}
 												</div>
-												<div>
-													<p className="font-medium">{testimonial.author}</p>
-													<p className="text-sm text-muted-foreground">{testimonial.school}</p>
+												<p className="text-lg mb-6 flex-grow italic">&quot;{testimonial.quote}&quot;</p>
+												<div className="flex items-center gap-3 mt-auto pt-4 border-t border-border/40">
+													<div className="size-10 rounded-full bg-muted flex items-center justify-center text-foreground font-medium">
+														{testimonial.author.charAt(0)}
+													</div>
+													<div>
+														<p className="font-medium">{testimonial.author}</p>
+														<p className="text-sm text-muted-foreground">{testimonial.school}</p>
+													</div>
 												</div>
-											</div>
-										</CardContent>
-									</Card>
-								</motion.div>
-							))}
+											</CardContent>
+										</Card>
+									</motion.div>
+								))
+							}
 						</div>
 
 						<div className="text-center mt-8 text-muted-foreground">
@@ -566,8 +562,6 @@ export default function LandingPage() {
 						</div>
 					</div>
 				</section>
-
-				{/* Pricing Section - Credits Model */}
 				<section id="pricing" className="w-full py-20 md:py-32 bg-muted/30 relative overflow-hidden">
 					<div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-black bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_40%,transparent_100%)]"></div>
 
@@ -588,7 +582,6 @@ export default function LandingPage() {
 								your experience publicly, pay half. Keep it private, pay full. Motivation meets gamification.
 							</p>
 						</motion.div>
-
 						<div className="max-w-2xl mx-auto">
 							<motion.div
 								initial={{ opacity: 0, y: 20 }}
@@ -611,7 +604,6 @@ export default function LandingPage() {
 												</div>
 												<p className="text-sm text-muted-foreground">Credits • Only you can see your results</p>
 											</div>
-
 											<div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
 												<div className="flex items-center justify-between mb-2">
 													<p className="font-semibold">Public Interview</p>
@@ -622,7 +614,6 @@ export default function LandingPage() {
 												</p>
 											</div>
 										</div>
-
 										<div className="space-y-3">
 											<p className="text-sm text-muted-foreground text-center">
 												Because if it costs you nothing, you&apos;ll probably skip it.
@@ -640,8 +631,6 @@ export default function LandingPage() {
 						</div>
 					</div>
 				</section>
-
-				{/* Waitlist Section */}
 				<section className="w-full py-20 md:py-32">
 					<div className="container px-4 md:px-6">
 						<motion.div

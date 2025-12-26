@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import crypto from 'crypto';
 
 const octokit = new Octokit({
 	auth: process.env.GITHUB_NIRAJ_JHA_TOKEN,
@@ -7,7 +8,6 @@ const octokit = new Octokit({
 // ==========================================
 // REPOSITORY STATS
 // ==========================================
-
 export async function getRepoStats(owner: string, repo: string) {
 	try {
 		const [commits, pulls, contributors] = await Promise.all([
@@ -669,7 +669,6 @@ export async function listForks(owner: string, repo: string, options?: {
 // ==========================================
 
 export function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
-	const crypto = require('crypto');
 	const hmac = crypto.createHmac('sha256', secret);
 	const digest = 'sha256=' + hmac.update(payload).digest('hex');
 	return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));

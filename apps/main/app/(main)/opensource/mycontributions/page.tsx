@@ -305,7 +305,7 @@ export default function MyContributionsPage() {
                                     {
                                         filteredContributions.map((contribution, index) => {
                                             const statusConfig = statusColors[contribution.status] || statusColors.CLAIMED
-                                            const StatusIcon = statusConfig.icon
+                                            const StatusIcon = statusConfig?.icon
 
                                             return (
                                                 <motion.div
@@ -317,9 +317,13 @@ export default function MyContributionsPage() {
                                                 >
                                                     <div className={cn(
                                                         "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                                                        statusConfig.bg
+                                                        statusConfig?.bg
                                                     )}>
-                                                        <StatusIcon className={cn("w-5 h-5", statusConfig.text)} />
+                                                        {
+                                                            StatusIcon && (
+                                                                <StatusIcon className={cn("w-5 h-5", statusConfig?.text)} />
+                                                            )
+                                                        }
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-1">
@@ -337,7 +341,7 @@ export default function MyContributionsPage() {
                                                             >
                                                                 {contribution.issue.project.title}
                                                             </Link>
-                                                            <Badge className={cn("text-xs", statusConfig.bg, statusConfig.text)}>
+                                                            <Badge className={cn("text-xs", statusConfig?.bg, statusConfig?.text)}>
                                                                 {contribution.status.replace('_', ' ')}
                                                             </Badge>
                                                             <span className="text-neutral-500">

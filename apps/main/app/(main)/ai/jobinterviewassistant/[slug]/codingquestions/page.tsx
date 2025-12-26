@@ -59,7 +59,7 @@ interface InterviewGeneration {
 		technicalQuestions?: unknown[];
 		behavioralQuestions?: unknown[];
 	};
-	createdAt: string;
+	createdAt: Date | string;
 }
 
 export default function CodingQuestionsPage({ params }: { params: Promise<{ slug: string }> }) {

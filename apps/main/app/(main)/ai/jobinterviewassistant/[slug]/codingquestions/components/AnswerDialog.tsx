@@ -5,14 +5,27 @@ import {
 } from "@repo/ui/components/ui/dialog"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { 
-	Code2, BookOpen, Clock, Zap 
+import {
+	Code2, BookOpen, Clock, Zap
 } from "lucide-react"
+
+interface AnswerContent {
+	solution: string;
+	explanation?: string;
+	approach?: string;
+	keyPoints?: string[];
+	timeComplexity?: string;
+	spaceComplexity?: string;
+}
+
+interface AnswerObject {
+	answer?: AnswerContent;
+}
 
 interface AnswerDialogProps {
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	answer: any
+	answer: AnswerObject | null
 	language: string
 	onMoveToEditor: () => void
 }

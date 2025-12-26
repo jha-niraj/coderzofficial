@@ -110,7 +110,7 @@ export default function OpenSourceLearnPage() {
 
     // Ensure modules is always an array before using array methods
     const safeModules = Array.isArray(modules) ? modules : []
-    
+
     const totalLessons = safeModules.reduce((acc, module) => acc + (module._count?.lessons || module.lessons?.length || 0), 0)
     const completedLessons = safeModules.reduce((acc, module) => acc + (module.userProgress?.lessonsCompleted || 0), 0)
     const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
@@ -140,7 +140,6 @@ export default function OpenSourceLearnPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-100 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
-            {/* Header */}
             <div className="sticky top-0 z-50 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-6xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
@@ -160,22 +159,22 @@ export default function OpenSourceLearnPage() {
                                 </p>
                             </div>
                         </div>
-                        {user && (
-                            <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Overall Progress</p>
-                                    <p className="text-lg font-bold text-neutral-900 dark:text-white">{overallProgress}%</p>
+                        {
+                            user && (
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Overall Progress</p>
+                                        <p className="text-lg font-bold text-neutral-900 dark:text-white">{overallProgress}%</p>
+                                    </div>
+                                    <div className="w-32">
+                                        <Progress value={overallProgress} className="h-2" />
+                                    </div>
                                 </div>
-                                <div className="w-32">
-                                    <Progress value={overallProgress} className="h-2" />
-                                </div>
-                            </div>
-                        )}
+                            )
+                        }
                     </div>
                 </div>
             </div>
-
-            {/* Hero Section */}
             <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-orange-600/10" />
                 <div className="max-w-6xl mx-auto px-4 py-12">
@@ -219,146 +218,152 @@ export default function OpenSourceLearnPage() {
                     </motion.div>
                 </div>
             </div>
-
-            {/* Modules */}
             <div className="max-w-6xl mx-auto px-4 py-8">
-                {safeModules.length === 0 ? (
-                    <Card className="border-dashed border-2 border-neutral-200 dark:border-neutral-800">
-                        <CardContent className="flex flex-col items-center justify-center py-16">
-                            <BookOpen className="w-12 h-12 text-neutral-400 mb-4" />
-                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                                No modules available yet
-                            </h3>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                Learning modules are being prepared. Check back soon!
-                            </p>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid gap-6">
-                        {safeModules.map((module, index) => {
-                            const iconName = module.icon || 'BookOpen'
-                            const Icon = iconMap[iconName] || BookOpen
-                            const colorKey = slugColorMap[module.slug] || 'purple'
-                            const colors = colorClasses[colorKey]
-                            const unlocked = isModuleUnlocked(module, index)
-                            const moduleProgress = getModuleProgress(module)
-                            const isComplete = module.userProgress?.isCompleted ?? false
+                {
+                    safeModules.length === 0 ? (
+                        <Card className="border-dashed border-2 border-neutral-200 dark:border-neutral-800">
+                            <CardContent className="flex flex-col items-center justify-center py-16">
+                                <BookOpen className="w-12 h-12 text-neutral-400 mb-4" />
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                                    No modules available yet
+                                </h3>
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                    Learning modules are being prepared. Check back soon!
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-6">
+                            {
+                                safeModules.map((module, index) => {
+                                    const iconName = module.icon || 'BookOpen'
+                                    const Icon = iconMap[iconName] || BookOpen
+                                    const colorKey = slugColorMap[module.slug] || 'purple'
+                                    const colors = colorClasses[colorKey]
+                                    const unlocked = isModuleUnlocked(module, index)
+                                    const moduleProgress = getModuleProgress(module)
+                                    const isComplete = module.userProgress?.isCompleted ?? false
 
-                            return (
-                                <motion.div
-                                    key={module.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                >
-                                    <Card className={cn(
-                                        "relative overflow-hidden transition-all",
-                                        !unlocked && "opacity-60",
-                                        unlocked && "hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-700"
-                                    )}>
-                                        <CardContent className="p-6">
-                                            <div className="flex items-start gap-6">
-                                                <div className={cn(
-                                                    "flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center",
-                                                    colors.bg
-                                                )}>
-                                                    <Icon className={cn("w-8 h-8", colors.text)} />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-start justify-between gap-4 mb-2">
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-sm text-neutral-500 dark:text-neutral-500">
-                                                                    Module {index + 1}
-                                                                </span>
+                                    return (
+                                        <motion.div
+                                            key={module.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.1 }}
+                                        >
+                                            <Card className={cn(
+                                                "relative overflow-hidden transition-all",
+                                                !unlocked && "opacity-60",
+                                                unlocked && "hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-700"
+                                            )}>
+                                                <CardContent className="p-6">
+                                                    <div className="flex items-start gap-6">
+                                                        <div className={cn(
+                                                            "flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center",
+                                                            colors?.bg
+                                                        )}>
+                                                            <Icon className={cn("w-8 h-8", colors?.text)} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-start justify-between gap-4 mb-2">
+                                                                <div>
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="text-sm text-neutral-500 dark:text-neutral-500">
+                                                                            Module {index + 1}
+                                                                        </span>
+                                                                        {
+                                                                            isComplete && (
+                                                                                <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                                                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                                                                    Completed
+                                                                                </Badge>
+                                                                            )
+                                                                        }
+                                                                        {
+                                                                            !unlocked && (
+                                                                                <Badge variant="outline" className="text-neutral-500">
+                                                                                    <Lock className="w-3 h-3 mr-1" />
+                                                                                    Locked
+                                                                                </Badge>
+                                                                            )
+                                                                        }
+                                                                    </div>
+                                                                    <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">
+                                                                        {module.title}
+                                                                    </h3>
+                                                                    <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
+                                                                        {module.description}
+                                                                    </p>
+                                                                </div>
+                                                                <Link href={unlocked ? `/opensource/learn/${module.slug}` : '#'}>
+                                                                    <Button
+                                                                        disabled={!unlocked}
+                                                                        className={cn(
+                                                                            "gap-2",
+                                                                            unlocked && "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900"
+                                                                        )}
+                                                                    >
+                                                                        {isComplete ? 'Review' : moduleProgress > 0 ? 'Continue' : 'Start'}
+                                                                        <ArrowRight className="w-4 h-4" />
+                                                                    </Button>
+                                                                </Link>
+                                                            </div>
+                                                            <div className="flex items-center gap-4 mt-4 text-sm">
+                                                                <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                                                                    <BookOpen className="w-4 h-4" />
+                                                                    <span>{module._count.lessons || module.lessons.length} lessons</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                                                                    <Clock className="w-4 h-4" />
+                                                                    <span>{formatDuration(module.estimatedMinutes)}</span>
+                                                                </div>
                                                                 {
-                                                                isComplete && (
-                                                                    <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                                                                        <CheckCircle className="w-3 h-3 mr-1" />
-                                                                        Completed
-                                                                    </Badge>
-                                                                )
-                                                                }
-                                                                {
-                                                                !unlocked && (
-                                                                    <Badge variant="outline" className="text-neutral-500">
-                                                                        <Lock className="w-3 h-3 mr-1" />
-                                                                        Locked
-                                                                    </Badge>
-                                                                )
+                                                                    module.lessons.some(l => l.type === 'INTERACTIVE') && (
+                                                                        <Badge variant="outline" className="text-xs">
+                                                                            <Terminal className="w-3 h-3 mr-1" />
+                                                                            Hands-on
+                                                                        </Badge>
+                                                                    )
                                                                 }
                                                             </div>
-                                                            <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">
-                                                                {module.title}
-                                                            </h3>
-                                                            <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
-                                                                {module.description}
-                                                            </p>
+                                                            {
+                                                                unlocked && moduleProgress > 0 && (
+                                                                    <div className="mt-4">
+                                                                        <div className="flex items-center justify-between text-xs mb-1">
+                                                                            <span className="text-neutral-600 dark:text-neutral-400">
+                                                                                {module.userProgress?.lessonsCompleted || 0} of {module._count.lessons || module.lessons.length} lessons completed
+                                                                            </span>
+                                                                            <span className="font-medium text-neutral-900 dark:text-white">
+                                                                                {moduleProgress}%
+                                                                            </span>
+                                                                        </div>
+                                                                        <Progress value={moduleProgress} className="h-1.5" />
+                                                                    </div>
+                                                                )
+                                                            }
+                                                            {
+                                                                !unlocked && index > 0 && (
+                                                                    <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                                                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                                                                            🔒 Complete &quot;{modules[index - 1]?.title}&quot; to unlock
+                                                                        </p>
+                                                                    </div>
+                                                                )
+                                                            }
                                                         </div>
-                                                        <Link href={unlocked ? `/opensource/learn/${module.slug}` : '#'}>
-                                                            <Button
-                                                                disabled={!unlocked}
-                                                                className={cn(
-                                                                    "gap-2",
-                                                                    unlocked && "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900"
-                                                                )}
-                                                            >
-                                                                {isComplete ? 'Review' : moduleProgress > 0 ? 'Continue' : 'Start'}
-                                                                <ArrowRight className="w-4 h-4" />
-                                                            </Button>
-                                                        </Link>
                                                     </div>
-                                                    <div className="flex items-center gap-4 mt-4 text-sm">
-                                                        <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                                                            <BookOpen className="w-4 h-4" />
-                                                            <span>{module._count.lessons || module.lessons.length} lessons</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                                                            <Clock className="w-4 h-4" />
-                                                            <span>{formatDuration(module.estimatedMinutes)}</span>
-                                                        </div>
-                                                        {module.lessons.some(l => l.type === 'INTERACTIVE') && (
-                                                            <Badge variant="outline" className="text-xs">
-                                                                <Terminal className="w-3 h-3 mr-1" />
-                                                                Hands-on
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    {unlocked && moduleProgress > 0 && (
-                                                        <div className="mt-4">
-                                                            <div className="flex items-center justify-between text-xs mb-1">
-                                                                <span className="text-neutral-600 dark:text-neutral-400">
-                                                                    {module.userProgress?.lessonsCompleted || 0} of {module._count.lessons || module.lessons.length} lessons completed
-                                                                </span>
-                                                                <span className="font-medium text-neutral-900 dark:text-white">
-                                                                    {moduleProgress}%
-                                                                </span>
-                                                            </div>
-                                                            <Progress value={moduleProgress} className="h-1.5" />
-                                                        </div>
-                                                    )}
-                                                    {!unlocked && index > 0 && (
-                                                        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                                            <p className="text-sm text-amber-800 dark:text-amber-300">
-                                                                🔒 Complete &quot;{modules[index - 1]?.title}&quot; to unlock
-                                                            </p>
-                                                        </div>
-                                                    )}
+                                                </CardContent>
+                                                <div className="absolute -right-6 -bottom-6 text-[120px] font-bold text-neutral-100 dark:text-neutral-800 select-none">
+                                                    {index + 1}
                                                 </div>
-                                            </div>
-                                        </CardContent>
-                                        <div className="absolute -right-6 -bottom-6 text-[120px] font-bold text-neutral-100 dark:text-neutral-800 select-none">
-                                            {index + 1}
-                                        </div>
-                                    </Card>
-                                </motion.div>
-                            )
-                        })}
-                    </div>
-                )}
-
-                {/* CTA Card */}
+                                            </Card>
+                                        </motion.div>
+                                    )
+                                })
+                            }
+                        </div>
+                    )
+                }
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

@@ -1,5 +1,5 @@
-import { 
-    Card, CardContent, CardFooter, CardHeader 
+import {
+    Card, CardContent, CardFooter, CardHeader
 } from '@repo/ui/components/ui/card'
 import { Skeleton } from '@repo/ui/components/ui/skeleton'
 
@@ -18,21 +18,18 @@ export function MockCardSkeleton() {
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-5/6" />
             </CardHeader>
-            
             <CardContent className="px-5 pb-4 flex-1 space-y-3.5">
                 <div className="flex flex-wrap gap-1.5">
                     <Skeleton className="h-5 w-16 rounded-full" />
                     <Skeleton className="h-5 w-20 rounded-full" />
                     <Skeleton className="h-5 w-14 rounded-full" />
                 </div>
-                
                 <div className="flex items-center gap-4">
                     <Skeleton className="h-4 w-16" />
                     <Skeleton className="h-4 w-16" />
                     <Skeleton className="h-4 w-16" />
                 </div>
             </CardContent>
-            
             <CardFooter className="p-5 pt-0">
                 <Skeleton className="h-9 w-full" />
             </CardFooter>
@@ -43,15 +40,15 @@ export function MockCardSkeleton() {
 export function StatsSkeleton() {
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[...Array(4)].map((_, i) => (
-                <div key={i} className="text-center">
-                    <Skeleton className="h-10 w-10 rounded-xl mx-auto mb-3" />
-                    <Skeleton className="h-8 w-24 mx-auto mb-1" />
-                    <Skeleton className="h-4 w-32 mx-auto" />
-                </div>
-            ))}
+            {
+                [...Array(4)].map((_, i) => (
+                    <div key={i} className="text-center">
+                        <Skeleton className="h-10 w-10 rounded-xl mx-auto mb-3" />
+                        <Skeleton className="h-8 w-24 mx-auto mb-1" />
+                        <Skeleton className="h-4 w-32 mx-auto" />
+                    </div>
+                ))
+            }
         </div>
     )
 }
-
-

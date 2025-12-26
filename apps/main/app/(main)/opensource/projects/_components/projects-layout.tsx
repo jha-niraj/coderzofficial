@@ -171,8 +171,8 @@ export default function ProjectsLayout({ children, type }: { children?: React.Re
                     <div className="flex items-start justify-between gap-8">
                         <div>
                             <div className="flex items-center gap-3 mb-3">
-                                <div className={cn("p-3 rounded-xl", typeColors[type].bg)}>
-                                    <TypeIcon className={cn("w-6 h-6", typeColors[type].text)} />
+                                <div className={cn("p-3 rounded-xl", typeColors[type]?.bg)}>
+                                    <TypeIcon className={cn("w-6 h-6", typeColors[type]?.text)} />
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -211,8 +211,8 @@ export default function ProjectsLayout({ children, type }: { children?: React.Re
                                             size="sm"
                                             className={cn(
                                                 "gap-2",
-                                                isActive && typeColors[item.type].bg,
-                                                isActive && typeColors[item.type].text
+                                                isActive && typeColors[item.type]?.bg,
+                                                isActive && typeColors[item.type]?.text
                                             )}
                                         >
                                             <Icon className="w-4 h-4" />
@@ -446,9 +446,9 @@ export default function ProjectsLayout({ children, type }: { children?: React.Re
                                                                 <div className="flex items-start gap-4">
                                                                     <div className={cn(
                                                                         "w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0",
-                                                                        typeColors[project.type].bg
+                                                                        typeColors[project.type]?.bg
                                                                     )}>
-                                                                        <Code className={cn("w-7 h-7", typeColors[project.type].text)} />
+                                                                        <Code className={cn("w-7 h-7", typeColors[project.type]?.text)} />
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="flex items-start justify-between gap-4">
@@ -457,7 +457,7 @@ export default function ProjectsLayout({ children, type }: { children?: React.Re
                                                                                     <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-green-600 transition-colors">
                                                                                         {project.title}
                                                                                     </h3>
-                                                                                    <Badge className={cn("text-xs", typeColors[project.type].bg, typeColors[project.type].text)}>
+                                                                                    <Badge className={cn("text-xs", typeColors[project.type]?.bg, typeColors[project.type]?.text)}>
                                                                                         {project.type}
                                                                                     </Badge>
                                                                                     {

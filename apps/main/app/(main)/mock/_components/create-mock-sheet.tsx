@@ -196,7 +196,6 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                 }
             }}>
                 <SheetContent className="w-full sm:max-w-2xl overflow-hidden p-0 bg-white dark:bg-neutral-950">
-                    {/* Header with Step Indicator */}
                     <div className="p-6 border-b border-neutral-200 dark:border-neutral-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
                         <SheetHeader>
                             <div className="flex items-center gap-3">
@@ -213,30 +212,30 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                                 </div>
                             </div>
                         </SheetHeader>
-
-                        {/* Step Indicator */}
                         <div className="flex items-center gap-2 mt-6">
-                            {[1, 2, 3].map((s) => (
-                                <div key={s} className="flex-1 flex items-center gap-2">
-                                    <div className={cn(
-                                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
-                                        step >= s
-                                            ? "bg-purple-600 text-white"
-                                            : "bg-neutral-200 dark:bg-neutral-700 text-neutral-500"
-                                    )}>
-                                        {step > s ? <CheckCircle className="w-4 h-4" /> : s}
-                                    </div>
-                                    {s < 3 && (
+                            {
+                                [1, 2, 3].map((s) => (
+                                    <div key={s} className="flex-1 flex items-center gap-2">
                                         <div className={cn(
-                                            "flex-1 h-1 rounded-full transition-all",
-                                            step > s ? "bg-purple-600" : "bg-neutral-200 dark:bg-neutral-700"
-                                        )} />
-                                    )}
-                                </div>
-                            ))}
+                                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                                            step >= s
+                                                ? "bg-purple-600 text-white"
+                                                : "bg-neutral-200 dark:bg-neutral-700 text-neutral-500"
+                                        )}>
+                                            {step > s ? <CheckCircle className="w-4 h-4" /> : s}
+                                        </div>
+                                        {
+                                            s < 3 && (
+                                                <div className={cn(
+                                                    "flex-1 h-1 rounded-full transition-all",
+                                                    step > s ? "bg-purple-600" : "bg-neutral-200 dark:bg-neutral-700"
+                                                )} />
+                                            )
+                                        }
+                                    </div>
+                                ))
+                            }
                         </div>
-
-                        {/* Credit Info */}
                         <div className="flex items-center gap-3 mt-4 text-sm">
                             <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
                                 <Sparkles className="w-3 h-3 mr-1" />
@@ -247,481 +246,496 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                             </span>
                         </div>
                     </div>
-
-                    {/* Scrollable Content Area */}
                     <ScrollArea className="h-[calc(100vh-340px)]">
                         <div className="p-6">
                             <AnimatePresence mode="wait">
-                                {/* Step 1: Basic Information */}
-                                {step === 1 && (
-                                    <motion.div
-                                        key="step1"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-5"
-                                    >
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
-                                                Basic Information
-                                            </h3>
-                                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                                Tell us about the role you&apos;re preparing for
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="title">Position Title *</Label>
-                                                <Input
-                                                    id="title"
-                                                    placeholder="e.g., Senior Frontend Developer, SDE-2, Product Manager"
-                                                    value={formData.title}
-                                                    onChange={(e) => handleTitleChange(e.target.value)}
-                                                    className="h-11"
-                                                />
-                                                <p className="text-xs text-neutral-500">
-                                                    Be specific about the role you&apos;re preparing for
+                                {
+                                    step === 1 && (
+                                        <motion.div
+                                            key="step1"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-5"
+                                        >
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
+                                                    Basic Information
+                                                </h3>
+                                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                                    Tell us about the role you&apos;re preparing for
                                                 </p>
                                             </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="description">Description *</Label>
-                                                <Textarea
-                                                    id="description"
-                                                    placeholder="Describe the key areas you want to focus on, specific technologies, or any particular challenges..."
-                                                    value={formData.description}
-                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                    rows={3}
-                                                    className="resize-none"
-                                                />
-                                                <p className="text-xs text-neutral-500">
-                                                    The AI will use this to generate relevant questions
-                                                </p>
-                                            </div>
-
-                                            {/* Category Selection */}
-                                            <div className="space-y-2">
-                                                <Label>Interview Category *</Label>
-                                                <Select
-                                                    value={formData.category}
-                                                    onValueChange={(value) => setFormData({ ...formData, category: value as MockCategory })}
-                                                >
-                                                    <SelectTrigger className="h-11">
-                                                        <SelectValue placeholder="Select a category" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {MOCK_CATEGORIES.filter(c => c.value !== 'ALL').map((category) => (
-                                                            <SelectItem key={category.value} value={category.value}>
-                                                                <span className="flex items-center gap-2">
-                                                                    <span>{category.icon}</span>
-                                                                    <span>{category.label}</span>
-                                                                </span>
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <p className="text-xs text-neutral-500">
-                                                    Choose the type of interview you want to practice
-                                                </p>
-                                            </div>
-
-                                            <div className="grid grid-cols-3 gap-3">
+                                            <div className="space-y-4">
                                                 <div className="space-y-2">
-                                                    <Label>Experience Level</Label>
-                                                    <Select
-                                                        value={formData.level}
-                                                        onValueChange={(value) => setFormData({ ...formData, level: value })}
-                                                    >
-                                                        <SelectTrigger className="h-11">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {MOCK_LEVELS.filter(l => l.value !== 'ALL').map((level) => (
-                                                                <SelectItem key={level.value} value={level.value}>
-                                                                    {level.label}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Duration</Label>
-                                                    <Select
-                                                        value={formData.duration.toString()}
-                                                        onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
-                                                    >
-                                                        <SelectTrigger className="h-11">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="10">10 min</SelectItem>
-                                                            <SelectItem value="15">15 min</SelectItem>
-                                                            <SelectItem value="20">20 min</SelectItem>
-                                                            <SelectItem value="25">25 min</SelectItem>
-                                                            <SelectItem value="30">30 min</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Questions</Label>
-                                                    <Select
-                                                        value={formData.questionsCount.toString()}
-                                                        onValueChange={(value) => setFormData({ ...formData, questionsCount: parseInt(value) })}
-                                                    >
-                                                        <SelectTrigger className="h-11">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="3">3 qs</SelectItem>
-                                                            <SelectItem value="5">5 qs</SelectItem>
-                                                            <SelectItem value="7">7 qs</SelectItem>
-                                                            <SelectItem value="10">10 qs</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* Step 2: Knowledge Base (Optional) */}
-                                {step === 2 && (
-                                    <motion.div
-                                        key="step2"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-5"
-                                    >
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
-                                                Knowledge Base (Optional)
-                                            </h3>
-                                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                                Paste your syllabus, study notes, or any content you want the interviewer to focus on
-                                            </p>
-                                        </div>
-
-                                        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                                            <div className="flex gap-2">
-                                                <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                                                <div className="text-sm text-blue-900 dark:text-blue-100">
-                                                    <p className="font-medium mb-1">Pro Tip</p>
-                                                    <p className="text-blue-700 dark:text-blue-300">
-                                                        Adding your syllabus or course content helps the AI ask more targeted questions.
-                                                        If you skip this, the AI will generate questions based on the position title and description.
+                                                    <Label htmlFor="title">Position Title *</Label>
+                                                    <Input
+                                                        id="title"
+                                                        placeholder="e.g., Senior Frontend Developer, SDE-2, Product Manager"
+                                                        value={formData.title}
+                                                        onChange={(e) => handleTitleChange(e.target.value)}
+                                                        className="h-11"
+                                                    />
+                                                    <p className="text-xs text-neutral-500">
+                                                        Be specific about the role you&apos;re preparing for
                                                     </p>
                                                 </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="description">Description *</Label>
+                                                    <Textarea
+                                                        id="description"
+                                                        placeholder="Describe the key areas you want to focus on, specific technologies, or any particular challenges..."
+                                                        value={formData.description}
+                                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                        rows={3}
+                                                        className="resize-none"
+                                                    />
+                                                    <p className="text-xs text-neutral-500">
+                                                        The AI will use this to generate relevant questions
+                                                    </p>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Interview Category *</Label>
+                                                    <Select
+                                                        value={formData.category}
+                                                        onValueChange={(value) => setFormData({ ...formData, category: value as MockCategory })}
+                                                    >
+                                                        <SelectTrigger className="h-11">
+                                                            <SelectValue placeholder="Select a category" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {
+                                                                MOCK_CATEGORIES.filter(c => c.value !== 'ALL').map((category) => (
+                                                                    <SelectItem key={category.value} value={category.value}>
+                                                                        <span className="flex items-center gap-2">
+                                                                            <span>{category.icon}</span>
+                                                                            <span>{category.label}</span>
+                                                                        </span>
+                                                                    </SelectItem>
+                                                                ))
+                                                            }
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <p className="text-xs text-neutral-500">
+                                                        Choose the type of interview you want to practice
+                                                    </p>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    <div className="space-y-2">
+                                                        <Label>Experience Level</Label>
+                                                        <Select
+                                                            value={formData.level}
+                                                            onValueChange={(value) => setFormData({ ...formData, level: value })}
+                                                        >
+                                                            <SelectTrigger className="h-11">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {
+                                                                    MOCK_LEVELS.filter(l => l.value !== 'ALL').map((level) => (
+                                                                        <SelectItem key={level.value} value={level.value}>
+                                                                            {level.label}
+                                                                        </SelectItem>
+                                                                    ))
+                                                                }
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Duration</Label>
+                                                        <Select
+                                                            value={formData.duration.toString()}
+                                                            onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
+                                                        >
+                                                            <SelectTrigger className="h-11">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="10">10 min</SelectItem>
+                                                                <SelectItem value="15">15 min</SelectItem>
+                                                                <SelectItem value="20">20 min</SelectItem>
+                                                                <SelectItem value="25">25 min</SelectItem>
+                                                                <SelectItem value="30">30 min</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Questions</Label>
+                                                        <Select
+                                                            value={formData.questionsCount.toString()}
+                                                            onValueChange={(value) => setFormData({ ...formData, questionsCount: parseInt(value) })}
+                                                        >
+                                                            <SelectTrigger className="h-11">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="3">3 qs</SelectItem>
+                                                                <SelectItem value="5">5 qs</SelectItem>
+                                                                <SelectItem value="7">7 qs</SelectItem>
+                                                                <SelectItem value="10">10 qs</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </motion.div>
+                                    )
+                                }
 
-                                        <div className="space-y-3">
-                                            <Textarea
-                                                placeholder={`Paste your study materials, syllabus, or notes here...
-
-Example:
-- Chapter 1: JavaScript Fundamentals
-  - Variables, Data Types, Operators
-  - Functions and Scope
-  - Arrays and Objects
-  
-- Chapter 2: React Basics
-  - Components and Props
-  - State Management
-  - Hooks (useState, useEffect)
-  
-This helps the AI interviewer focus on these specific topics.`}
-                                                value={formData.knowledgeBase}
-                                                onChange={(e) => setFormData({ ...formData, knowledgeBase: e.target.value })}
-                                                rows={12}
-                                                className="font-mono text-sm resize-none"
-                                            />
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className={formData.knowledgeBase.length > 0
-                                                    ? 'text-green-600 dark:text-green-400'
-                                                    : 'text-neutral-500'
-                                                }>
-                                                    {formData.knowledgeBase.length} characters
-                                                </span>
-                                                {formData.knowledgeBase.length === 0 && (
-                                                    <span className="text-neutral-500 text-xs">
-                                                        Optional - Skip if you want AI to generate content
+                                {
+                                    step === 2 && (
+                                        <motion.div
+                                            key="step2"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-5"
+                                        >
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
+                                                    Knowledge Base (Optional)
+                                                </h3>
+                                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                                    Paste your syllabus, study notes, or any content you want the interviewer to focus on
+                                                </p>
+                                            </div>
+                                            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                                                <div className="flex gap-2">
+                                                    <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                                    <div className="text-sm text-blue-900 dark:text-blue-100">
+                                                        <p className="font-medium mb-1">Pro Tip</p>
+                                                        <p className="text-blue-700 dark:text-blue-300">
+                                                            Adding your syllabus or course content helps the AI ask more targeted questions.
+                                                            If you skip this, the AI will generate questions based on the position title and description.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <Textarea
+                                                    placeholder={`Paste your study materials, syllabus, or notes here...
+                                                    Example:
+                                                    - Chapter 1: JavaScript Fundamentals
+                                                    - Variables, Data Types, Operators
+                                                    - Functions and Scope
+                                                    - Arrays and Objects
+                                                    
+                                                    - Chapter 2: React Basics
+                                                    - Components and Props
+                                                    - State Management
+                                                    - Hooks (useState, useEffect)
+                                                    
+                                                    This helps the AI interviewer focus on these specific topics.`}
+                                                    value={formData.knowledgeBase}
+                                                    onChange={(e) => setFormData({ ...formData, knowledgeBase: e.target.value })}
+                                                    rows={12}
+                                                    className="font-mono text-sm resize-none"
+                                                />
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className={formData.knowledgeBase.length > 0
+                                                        ? 'text-green-600 dark:text-green-400'
+                                                        : 'text-neutral-500'
+                                                    }>
+                                                        {formData.knowledgeBase.length} characters
                                                     </span>
-                                                )}
-                                                {formData.knowledgeBase.length > 0 && (
-                                                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* Step 3: Additional Options & Summary */}
-                                {step === 3 && (
-                                    <motion.div
-                                        key="step3"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-5"
-                                    >
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
-                                                Additional Options
-                                            </h3>
-                                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                                Configure resume context and visibility
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            {/* Resume Toggle */}
-                                            <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-start gap-3">
-                                                        <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                                                        <div>
-                                                            <div className="font-medium text-neutral-900 dark:text-white">
-                                                                Include Resume Context
-                                                            </div>
-                                                            <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                                                                AI will ask questions based on your experience
-                                                            </div>
-                                                            <Badge variant="outline" className="text-xs mt-1">
-                                                                +5 credits
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                    <Switch
-                                                        checked={formData.includeResume}
-                                                        onCheckedChange={handleResumeToggle}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Visibility Toggle */}
-                                            <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-start gap-3">
-                                                        {formData.isPublic ? (
-                                                            <Globe className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
-                                                        ) : (
-                                                            <Lock className="w-5 h-5 text-neutral-500 mt-0.5" />
-                                                        )}
-                                                        <div>
-                                                            <div className="font-medium text-neutral-900 dark:text-white">
-                                                                {formData.isPublic ? 'Public' : 'Private'}
-                                                            </div>
-                                                            <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                                                                {formData.isPublic
-                                                                    ? 'Anyone can use this mock (50% discount)'
-                                                                    : 'Only you can access this mock'}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <Switch
-                                                        checked={formData.isPublic}
-                                                        onCheckedChange={(checked) => setFormData({ ...formData, isPublic: checked })}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {formData.isPublic && (
-                                                <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-xl">
-                                                    <div className="flex gap-2">
-                                                        <Info className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                                                        <div className="text-sm text-green-900 dark:text-green-100">
-                                                            <p className="font-medium mb-1">Community Contribution!</p>
-                                                            <p className="text-green-700 dark:text-green-300">
-                                                                Making your mock public helps others prepare and gives you a 50% discount.
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Cost Summary */}
-                                            <div className="p-5 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-200 dark:border-neutral-800">
-                                                <div className="space-y-3">
-                                                    <h4 className="font-semibold text-base">Cost Summary</h4>
-                                                    <div className="space-y-2.5">
-                                                        <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
-                                                            <span>Duration ({formData.duration} min)</span>
-                                                            <span className="font-medium">{baseCredits}c</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
-                                                            <span>Questions ({formData.questionsCount} × 2c)</span>
-                                                            <span className="font-medium">{questionCredits}c</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
-                                                            <span>Visibility</span>
-                                                            <span className={`font-medium ${formData.isPublic ? 'text-green-600 dark:text-green-400' : ''}`}>
-                                                                {formData.isPublic ? '-50%' : 'Private'}
+                                                    {
+                                                        formData.knowledgeBase.length === 0 && (
+                                                            <span className="text-neutral-500 text-xs">
+                                                                Optional - Skip if you want AI to generate content
                                                             </span>
-                                                        </div>
-                                                        {formData.includeResume && (
-                                                            <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
-                                                                <span>Resume Context</span>
-                                                                <span className="font-medium">+{resumeCredits}c</span>
+                                                        )
+                                                    }
+                                                    {
+                                                        formData.knowledgeBase.length > 0 && (
+                                                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                                        )
+                                                    }
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )
+                                }
+
+                                {
+                                    step === 3 && (
+                                        <motion.div
+                                            key="step3"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-5"
+                                        >
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
+                                                    Additional Options
+                                                </h3>
+                                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                                    Configure resume context and visibility
+                                                </p>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-start gap-3">
+                                                            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                                                            <div>
+                                                                <div className="font-medium text-neutral-900 dark:text-white">
+                                                                    Include Resume Context
+                                                                </div>
+                                                                <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                                    AI will ask questions based on your experience
+                                                                </div>
+                                                                <Badge variant="outline" className="text-xs mt-1">
+                                                                    +5 credits
+                                                                </Badge>
                                                             </div>
-                                                        )}
-                                                        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-2" />
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-semibold text-base">Total</span>
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                                                <span className="font-bold text-xl text-neutral-900 dark:text-white">
-                                                                    {totalCredits}
+                                                        </div>
+                                                        <Switch
+                                                            checked={formData.includeResume}
+                                                            onCheckedChange={handleResumeToggle}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-start gap-3">
+                                                            {
+                                                                formData.isPublic ? (
+                                                                    <Globe className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
+                                                                ) : (
+                                                                    <Lock className="w-5 h-5 text-neutral-500 mt-0.5" />
+                                                                )
+                                                            }
+                                                            <div>
+                                                                <div className="font-medium text-neutral-900 dark:text-white">
+                                                                    {formData.isPublic ? 'Public' : 'Private'}
+                                                                </div>
+                                                                <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                                    {formData.isPublic
+                                                                        ? 'Anyone can use this mock (50% discount)'
+                                                                        : 'Only you can access this mock'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Switch
+                                                            checked={formData.isPublic}
+                                                            onCheckedChange={(checked) => setFormData({ ...formData, isPublic: checked })}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {
+                                                    formData.isPublic && (
+                                                        <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-xl">
+                                                            <div className="flex gap-2">
+                                                                <Info className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                                                                <div className="text-sm text-green-900 dark:text-green-100">
+                                                                    <p className="font-medium mb-1">Community Contribution!</p>
+                                                                    <p className="text-green-700 dark:text-green-300">
+                                                                        Making your mock public helps others prepare and gives you a 50% discount.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                                <div className="p-5 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                                                    <div className="space-y-3">
+                                                        <h4 className="font-semibold text-base">Cost Summary</h4>
+                                                        <div className="space-y-2.5">
+                                                            <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
+                                                                <span>Duration ({formData.duration} min)</span>
+                                                                <span className="font-medium">{baseCredits}c</span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
+                                                                <span>Questions ({formData.questionsCount} × 2c)</span>
+                                                                <span className="font-medium">{questionCredits}c</span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
+                                                                <span>Visibility</span>
+                                                                <span className={`font-medium ${formData.isPublic ? 'text-green-600 dark:text-green-400' : ''}`}>
+                                                                    {formData.isPublic ? '-50%' : 'Private'}
                                                                 </span>
-                                                                <span className="text-sm text-neutral-600 dark:text-neutral-400">credits</span>
+                                                            </div>
+                                                            {
+                                                                formData.includeResume && (
+                                                                    <div className="flex items-center justify-between text-sm text-neutral-700 dark:text-neutral-300">
+                                                                        <span>Resume Context</span>
+                                                                        <span className="font-medium">+{resumeCredits}c</span>
+                                                                    </div>
+                                                                )
+                                                            }
+                                                            <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-2" />
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="font-semibold text-base">Total</span>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                                                    <span className="font-bold text-xl text-neutral-900 dark:text-white">
+                                                                        {totalCredits}
+                                                                    </span>
+                                                                    <span className="text-sm text-neutral-600 dark:text-neutral-400">credits</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                )}
+                                        </motion.div>
+                                    )
+                                }
                             </AnimatePresence>
                         </div>
                     </ScrollArea>
-
-                    {/* Footer with Navigation */}
                     <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-                        {userCredits < totalCredits && (
-                            <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
-                                <div className="flex gap-2">
-                                    <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
-                                    <div className="text-sm text-red-900 dark:text-red-100">
-                                        Insufficient credits.{' '}
-                                        <Link href="/purchase" className="underline">Purchase credits</Link>
+                        {
+                            userCredits < totalCredits && (
+                                <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                    <div className="flex gap-2">
+                                        <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                        <div className="text-sm text-red-900 dark:text-red-100">
+                                            Insufficient credits.{' '}
+                                            <Link href="/purchase" className="underline">Purchase credits</Link>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )
+                        }
                         <div className="flex gap-3">
-                            {step > 1 && (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setStep(step - 1)}
-                                    disabled={processing !== 'idle'}
-                                    className="flex-1"
-                                >
-                                    Back
-                                </Button>
-                            )}
-                            {step < 3 ? (
-                                <Button
-                                    onClick={() => setStep(step + 1)}
-                                    disabled={!canProceed()}
-                                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-                                >
-                                    Continue
-                                    <ChevronRight className="w-4 h-4 ml-1" />
-                                </Button>
-                            ) : (
-                                <Button
-                                    onClick={handleSubmit}
-                                    disabled={processing !== 'idle' || userCredits < totalCredits}
-                                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-                                >
-                                    {processing === 'processing' ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Creating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="w-4 h-4 mr-2" />
-                                            Create Mock ({totalCredits} Credits)
-                                        </>
-                                    )}
-                                </Button>
-                            )}
+                            {
+                                step > 1 && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setStep(step - 1)}
+                                        disabled={processing !== 'idle'}
+                                        className="flex-1"
+                                    >
+                                        Back
+                                    </Button>
+                                )
+                            }
+                            {
+                                step < 3 ? (
+                                    <Button
+                                        onClick={() => setStep(step + 1)}
+                                        disabled={!canProceed()}
+                                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                                    >
+                                        Continue
+                                        <ChevronRight className="w-4 h-4 ml-1" />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={processing !== 'idle' || userCredits < totalCredits}
+                                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                                    >
+                                        {
+                                            processing === 'processing' ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Creating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="w-4 h-4 mr-2" />
+                                                    Create Mock ({totalCredits} Credits)
+                                                </>
+                                            )
+                                        }
+                                    </Button>
+                                )
+                            }
                         </div>
                     </div>
                 </SheetContent>
             </Sheet>
-
-            {/* Processing/Success Dialog */}
             <Dialog open={processing === 'processing' || processing === 'success'} onOpenChange={() => { }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            {processing === 'processing' ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
-                                    Creating Your Mock Interview
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle className="w-5 h-5 text-green-600" />
-                                    Mock Interview Created!
-                                </>
-                            )}
+                            {
+                                processing === 'processing' ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                                        Creating Your Mock Interview
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle className="w-5 h-5 text-green-600" />
+                                        Mock Interview Created!
+                                    </>
+                                )
+                            }
                         </DialogTitle>
                         <DialogDescription>
-                            {processing === 'processing' ? (
-                                'Our AI is generating a comprehensive knowledge base for your mock interview...'
-                            ) : (
-                                'Your custom mock interview is ready!'
-                            )}
+                            {
+                                processing === 'processing' ? (
+                                    'Our AI is generating a comprehensive knowledge base for your mock interview...'
+                                ) : (
+                                    'Your custom mock interview is ready!'
+                                )
+                            }
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <AnimatePresence mode="wait">
-                            {processing === 'processing' && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="space-y-3"
-                                >
-                                    <div className="flex items-center gap-3 text-sm">
-                                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                                        <span>Analyzing your requirements...</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-sm">
-                                        <Brain className="w-4 h-4 text-purple-600" />
-                                        <span>Generating relevant questions...</span>
-                                    </div>
-                                    {formData.knowledgeBase && (
+                            {
+                                processing === 'processing' && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="space-y-3"
+                                    >
                                         <div className="flex items-center gap-3 text-sm">
-                                            <BookOpen className="w-4 h-4 text-orange-600" />
-                                            <span>Processing your study materials...</span>
+                                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                            <span>Analyzing your requirements...</span>
                                         </div>
-                                    )}
-                                    {formData.includeResume && (
                                         <div className="flex items-center gap-3 text-sm">
-                                            <FileText className="w-4 h-4 text-green-600" />
-                                            <span>Processing resume context...</span>
+                                            <Brain className="w-4 h-4 text-purple-600" />
+                                            <span>Generating relevant questions...</span>
                                         </div>
-                                    )}
-                                    <div className="flex items-center gap-3 text-sm">
-                                        <Sparkles className="w-4 h-4 text-amber-600" />
-                                        <span>Finalizing knowledge base...</span>
-                                    </div>
-                                </motion.div>
-                            )}
-                            {processing === 'success' && (
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="flex flex-col items-center justify-center py-8"
-                                >
-                                    <CheckCircle className="w-20 h-20 text-green-600 mb-4" />
-                                    <p className="text-center text-neutral-600 dark:text-neutral-400">
-                                        Ready to start your mock interview
-                                    </p>
-                                </motion.div>
-                            )}
+                                        {
+                                            formData.knowledgeBase && (
+                                                <div className="flex items-center gap-3 text-sm">
+                                                    <BookOpen className="w-4 h-4 text-orange-600" />
+                                                    <span>Processing your study materials...</span>
+                                                </div>
+                                            )
+                                        }
+                                        {
+                                            formData.includeResume && (
+                                                <div className="flex items-center gap-3 text-sm">
+                                                    <FileText className="w-4 h-4 text-green-600" />
+                                                    <span>Processing resume context...</span>
+                                                </div>
+                                            )
+                                        }
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Sparkles className="w-4 h-4 text-amber-600" />
+                                            <span>Finalizing knowledge base...</span>
+                                        </div>
+                                    </motion.div>
+                                )
+                            }
+                            {
+                                processing === 'success' && (
+                                    <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        className="flex flex-col items-center justify-center py-8"
+                                    >
+                                        <CheckCircle className="w-20 h-20 text-green-600 mb-4" />
+                                        <p className="text-center text-neutral-600 dark:text-neutral-400">
+                                            Ready to start your mock interview
+                                        </p>
+                                    </motion.div>
+                                )
+                            }
                         </AnimatePresence>
                     </div>
                 </DialogContent>
             </Dialog>
-
-            {/* Choose Action Dialog */}
             <Dialog open={processing === 'choose-action'} onOpenChange={() => { }}>
                 <DialogContent className="sm:max-w-lg p-8">
                     <DialogHeader className="space-y-3">
@@ -758,8 +772,6 @@ This helps the AI interviewer focus on these specific topics.`}
                     </div>
                 </DialogContent>
             </Dialog>
-
-            {/* Resume Required Dialog */}
             <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>

@@ -5,8 +5,8 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import {
     Video, Eye, Smile, TrendingUp, CheckCircle, ArrowLeft, Bell, Calendar, Target
@@ -83,7 +83,6 @@ export default function AIVideoMockPage() {
 
     return (
         <main className="min-h-screen bg-white dark:bg-neutral-950">
-            {/* Header */}
             <div className="max-w-7xl mx-auto px-6 py-8">
                 <Link href="/mockinterview">
                     <Button variant="ghost" className="mb-4">
@@ -92,8 +91,6 @@ export default function AIVideoMockPage() {
                     </Button>
                 </Link>
             </div>
-
-            {/* Hero Section */}
             <section className="relative overflow-hidden py-20 bg-white dark:bg-neutral-950">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
@@ -106,15 +103,12 @@ export default function AIVideoMockPage() {
                             <Video className="w-3 h-3 mr-1.5" />
                             Coming Soon
                         </Badge>
-
                         <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-600 dark:from-neutral-50 dark:to-neutral-400">
                             AI Video Mock Interview
                         </h1>
-
                         <p className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
                             The future of interview preparation. Practice with AI-powered video interviews that analyze not just what you say, but how you present yourself.
                         </p>
-
                         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                             <Button
                                 size="lg"
@@ -136,7 +130,6 @@ export default function AIVideoMockPage() {
                                 </Link>
                             </Button>
                         </div>
-
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/20 rounded-full border border-amber-200 dark:border-amber-800">
                             <Calendar className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                             <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Expected Launch: Q1 2026</span>
@@ -144,8 +137,6 @@ export default function AIVideoMockPage() {
                     </motion.div>
                 </div>
             </section>
-
-            {/* Features Section */}
             <section className="py-16 bg-neutral-50 dark:bg-neutral-900/50 border-y border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
@@ -161,34 +152,33 @@ export default function AIVideoMockPage() {
                             Advanced features to make your video mock interviews incredibly effective
                         </p>
                     </motion.div>
-
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {features.map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                viewport={{ once: true }}
-                            >
-                                <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-xl p-6 border border-neutral-200 dark:border-neutral-800 h-full">
-                                    <div className="p-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-neutral-700 dark:text-neutral-300 w-fit mb-4">
-                                        {feature.icon}
+                        {
+                            features.map((feature, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <div className="bg-white dark:bg-neutral-900 shadow-lg rounded-xl p-6 border border-neutral-200 dark:border-neutral-800 h-full">
+                                        <div className="p-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-neutral-700 dark:text-neutral-300 w-fit mb-4">
+                                            {feature.icon}
+                                        </div>
+                                        <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">
+                                            {feature.title}
+                                        </h3>
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                            {feature.description}
+                                        </p>
                                     </div>
-                                    <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">
-                                        {feature.title}
-                                    </h3>
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                        {feature.description}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        ))}
+                                </motion.div>
+                            ))
+                        }
                     </div>
                 </div>
             </section>
-
-            {/* Preview Mocks */}
             <section className="py-16 bg-white dark:bg-neutral-950">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
@@ -204,45 +194,44 @@ export default function AIVideoMockPage() {
                             Here&apos;s a sneak peek at the types of video mock interviews we&apos;re preparing
                         </p>
                     </motion.div>
-
                     <div className="grid md:grid-cols-3 gap-6">
-                        {mockVideoInterviews.map((interview, index) => (
-                            <motion.div
-                                key={interview.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                viewport={{ once: true }}
-                            >
-                                <Card className="h-full bg-white dark:bg-neutral-900 shadow-lg border border-neutral-200 dark:border-neutral-800">
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between mb-2">
-                                            <Badge className="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-0">
-                                                {interview.level}
-                                            </Badge>
-                                            <Video className="w-5 h-5 text-neutral-400" />
-                                        </div>
-                                        <CardTitle className="text-lg">{interview.title}</CardTitle>
-                                        <CardDescription className="text-sm">{interview.description}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                            <Target className="w-4 h-4" />
-                                            <span>{interview.category}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                            <Calendar className="w-4 h-4" />
-                                            <span>{interview.duration} minutes</span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
+                        {
+                            mockVideoInterviews.map((interview, index) => (
+                                <motion.div
+                                    key={interview.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <Card className="h-full bg-white dark:bg-neutral-900 shadow-lg border border-neutral-200 dark:border-neutral-800">
+                                        <CardHeader>
+                                            <div className="flex items-start justify-between mb-2">
+                                                <Badge className="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-0">
+                                                    {interview.level}
+                                                </Badge>
+                                                <Video className="w-5 h-5 text-neutral-400" />
+                                            </div>
+                                            <CardTitle className="text-lg">{interview.title}</CardTitle>
+                                            <CardDescription className="text-sm">{interview.description}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                                <Target className="w-4 h-4" />
+                                                <span>{interview.category}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                                <Calendar className="w-4 h-4" />
+                                                <span>{interview.duration} minutes</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))
+                        }
                     </div>
                 </div>
             </section>
-
-            {/* Upcoming Features */}
             <section className="py-16 bg-neutral-50 dark:bg-neutral-900/50 border-y border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-4xl mx-auto px-6">
                     <motion.div
@@ -255,25 +244,25 @@ export default function AIVideoMockPage() {
                             Planned Features
                         </h2>
                         <div className="grid md:grid-cols-2 gap-4">
-                            {upcomingFeatures.map((feature, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    viewport={{ once: true }}
-                                    className="flex items-start gap-3 p-4 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800"
-                                >
-                                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
-                                    <span className="text-neutral-700 dark:text-neutral-300">{feature}</span>
-                                </motion.div>
-                            ))}
+                            {
+                                upcomingFeatures.map((feature, index) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        viewport={{ once: true }}
+                                        className="flex items-start gap-3 p-4 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800"
+                                    >
+                                        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
+                                        <span className="text-neutral-700 dark:text-neutral-300">{feature}</span>
+                                    </motion.div>
+                                ))
+                            }
                         </div>
                     </motion.div>
                 </div>
             </section>
-
-            {/* CTA Section */}
             <section className="py-20 bg-white dark:bg-neutral-950">
                 <div className="max-w-4xl mx-auto px-6">
                     <motion.div

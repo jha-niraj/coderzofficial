@@ -91,7 +91,6 @@ export default function MyInterviewsPage() {
 
 	return (
 		<div className="min-h-screen bg-background">
-			{/* Header */}
 			<header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
 				<div className="container flex h-16 items-center justify-between px-4 md:px-6">
 					<Link href={`/interview/${company.id}`} className="flex items-center gap-2">
@@ -105,9 +104,7 @@ export default function MyInterviewsPage() {
 					<div className="w-20" />
 				</div>
 			</header>
-
 			<main className="container px-4 py-12 md:px-6 md:py-20">
-				{/* Page Header */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -117,107 +114,106 @@ export default function MyInterviewsPage() {
 					<h1 className="text-4xl font-bold tracking-tight mb-4">My {company.name} Interviews</h1>
 					<p className="text-lg text-muted-foreground">Track your progress and continue your interview preparations.</p>
 				</motion.div>
+				{
+					myCompanyInterviews.length === 0 ? (
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							className="text-center py-12 border border-dashed rounded-lg"
+						>
+							<p className="text-muted-foreground mb-4">You haven&apos;t started any interviews yet.</p>
+							<Link href={`/interview/${company.id}`}>
+								<Button>Start an Interview</Button>
+							</Link>
+						</motion.div>
+					) : (
+						<motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+							{
+								myCompanyInterviews.map((interview) => {
+									const role = company.roles.find((r) => r.id === interview.roleId)
+									const completionPercentage = role ? (interview.completedRounds.length / role.rounds.length) * 100 : 0
 
-				{/* Interviews List */}
-				{myCompanyInterviews.length === 0 ? (
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						className="text-center py-12 border border-dashed rounded-lg"
-					>
-						<p className="text-muted-foreground mb-4">You haven&apos;t started any interviews yet.</p>
-						<Link href={`/interview/${company.id}`}>
-							<Button>Start an Interview</Button>
-						</Link>
-					</motion.div>
-				) : (
-					<motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-						{myCompanyInterviews.map((interview) => {
-							const role = company.roles.find((r) => r.id === interview.roleId)
-							const completionPercentage = role ? (interview.completedRounds.length / role.rounds.length) * 100 : 0
-
-							return (
-								<motion.div key={interview.id} variants={item}>
-									<Card className="overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur hover:shadow-md transition-all">
-										<CardContent className="p-6">
-											<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-												{/* Interview Info */}
-												<div className="flex-grow">
-													<div className="flex items-start justify-between mb-4">
-														<div>
-															<h3 className="text-xl font-bold mb-2">{role?.name}</h3>
-															<div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-																<Clock className="size-4" />
-																<span>Started {interview.startedAt.toLocaleDateString()}</span>
+									return (
+										<motion.div key={interview.id} variants={item}>
+											<Card className="overflow-hidden border-border/40 bg-gradient-to-b from-background to-muted/10 backdrop-blur hover:shadow-md transition-all">
+												<CardContent className="p-6">
+													<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+														<div className="flex-grow">
+															<div className="flex items-start justify-between mb-4">
+																<div>
+																	<h3 className="text-xl font-bold mb-2">{role?.name}</h3>
+																	<div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+																		<Clock className="size-4" />
+																		<span>Started {interview.startedAt.toLocaleDateString()}</span>
+																	</div>
+																</div>
+																<div className="flex gap-2">
+																	<Badge variant={interview.type === "public" ? "default" : "secondary"}>
+																		{interview.type}
+																	</Badge>
+																	<Badge variant={interview.status === "completed" ? "default" : "outline"}>
+																		{interview.status}
+																	</Badge>
+																</div>
 															</div>
+															<div className="space-y-2">
+																<div className="flex items-center justify-between text-sm">
+																	<span className="text-muted-foreground">Progress</span>
+																	<span className="font-semibold">
+																		{interview.completedRounds.length} of {role?.rounds.length} rounds
+																	</span>
+																</div>
+																<Progress value={completionPercentage} className="h-2" />
+															</div>
+															{
+																interview.status === "completed" && (
+																	<div className="mt-4 p-3 bg-muted/50 rounded-lg">
+																		<p className="text-sm text-muted-foreground mb-2">Overall Score</p>
+																		<p className="text-2xl font-bold text-primary">{interview.overallScore?.toFixed(1)}</p>
+																	</div>
+																)
+															}
 														</div>
-														<div className="flex gap-2">
-															<Badge variant={interview.type === "public" ? "default" : "secondary"}>
-																{interview.type}
-															</Badge>
-															<Badge variant={interview.status === "completed" ? "default" : "outline"}>
-																{interview.status}
-															</Badge>
+														<div className="flex flex-col gap-2 md:flex-col md:w-auto">
+															{
+																interview.status === "in-progress" ? (
+																	<>
+																		<Link href={`/interview/${company.id}/${interview.roleId}`}>
+																			<Button className="w-full md:w-auto">
+																				<Play className="size-4 mr-2" />
+																				Continue
+																			</Button>
+																		</Link>
+																		<Button variant="outline" className="w-full md:w-auto bg-transparent">
+																			Pause
+																		</Button>
+																	</>
+																) : (
+																	<>
+																		<Link href={`/interview/${company.id}/${interview.roleId}`}>
+																			<Button variant="outline" className="w-full md:w-auto bg-transparent">
+																				<CheckCircle2 className="size-4 mr-2" />
+																				View Results
+																			</Button>
+																		</Link>
+																		<Button className="w-full md:w-auto">
+																			<Play className="size-4 mr-2" />
+																			Retry
+																		</Button>
+																	</>
+																)
+															}
 														</div>
 													</div>
-
-													{/* Progress */}
-													<div className="space-y-2">
-														<div className="flex items-center justify-between text-sm">
-															<span className="text-muted-foreground">Progress</span>
-															<span className="font-semibold">
-																{interview.completedRounds.length} of {role?.rounds.length} rounds
-															</span>
-														</div>
-														<Progress value={completionPercentage} className="h-2" />
-													</div>
-
-													{/* Scores */}
-													{interview.status === "completed" && (
-														<div className="mt-4 p-3 bg-muted/50 rounded-lg">
-															<p className="text-sm text-muted-foreground mb-2">Overall Score</p>
-															<p className="text-2xl font-bold text-primary">{interview.overallScore?.toFixed(1)}</p>
-														</div>
-													)}
-												</div>
-
-												{/* Actions */}
-												<div className="flex flex-col gap-2 md:flex-col md:w-auto">
-													{interview.status === "in-progress" ? (
-														<>
-															<Link href={`/interview/${company.id}/${interview.roleId}`}>
-																<Button className="w-full md:w-auto">
-																	<Play className="size-4 mr-2" />
-																	Continue
-																</Button>
-															</Link>
-															<Button variant="outline" className="w-full md:w-auto bg-transparent">
-																Pause
-															</Button>
-														</>
-													) : (
-														<>
-															<Link href={`/interview/${company.id}/${interview.roleId}`}>
-																<Button variant="outline" className="w-full md:w-auto bg-transparent">
-																	<CheckCircle2 className="size-4 mr-2" />
-																	View Results
-																</Button>
-															</Link>
-															<Button className="w-full md:w-auto">
-																<Play className="size-4 mr-2" />
-																Retry
-															</Button>
-														</>
-													)}
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-								</motion.div>
-							)
-						})}
-					</motion.div>
-				)}
+												</CardContent>
+											</Card>
+										</motion.div>
+									)
+								})
+							}
+						</motion.div>
+					)
+				}
 			</main>
 		</div>
 	)

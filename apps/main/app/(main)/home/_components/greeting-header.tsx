@@ -119,7 +119,7 @@ export default function GreetingHeader({ user }: GreetingHeaderProps) {
                 className="grid grid-cols-2 sm:grid-cols-4 gap-4"
             >
                 {
-                    stats.map((stat, index) => (
+                    stats.map((stat) => (
                         <motion.div key={stat.label} variants={itemVariants}>
                             <Card
                                 className={`relative overflow-hidden p-4 ${stat.bgColor} border-0 backdrop-blur-sm`}

@@ -107,9 +107,9 @@ const statusColors = {
 }
 
 function formatTime(seconds: number): string {
-    const displayMins = Math.floor(seconds / 60)
-    const displaySecs = seconds % 60
-    return `\${displayMins.toString().padStart(2, '0')}:\${displaySecs.toString().padStart(2, '0')}`
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 function ExamContent() {
@@ -164,12 +164,12 @@ function ExamContent() {
             router.push(`/assessments/exam/set/\${examSetId}`)
         } else {
             // Start a new AI-generated exam
-            const _params = new URLSearchParams({
+            const params = new URLSearchParams({
                 language: selectedLanguage,
                 difficulty: selectedDifficulty,
                 mode: selectedMode,
             })
-            router.push(`/assessments/exam/session?\${params.toString()}`)
+            router.push(`/assessments/exam/session?${params.toString()}`)
         }
     }
 

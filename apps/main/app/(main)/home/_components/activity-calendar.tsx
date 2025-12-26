@@ -84,7 +84,8 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
     const currentStreak = useMemo(() => {
         let streak = 0;
         for (let i = calendarData.length - 1; i >= 0; i--) {
-            if (calendarData[i].xp > 0) {
+            const day = calendarData[i];
+            if (day && day.xp > 0) {
                 streak++;
             } else if (i < calendarData.length - 1) {
                 // Allow today to be empty, break on past empty days
@@ -100,7 +101,8 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
         let currentWeek: typeof calendarData = [];
 
         // Pad the beginning to align with week start
-        const firstDay = calendarData[0].date.getDay();
+        const firstDayData = calendarData[0];
+        const firstDay = firstDayData ? firstDayData.date.getDay() : 0;
         for (let i = 0; i < firstDay; i++) {
             currentWeek.push({ date: new Date(0), xp: -1, count: 0 });
         }
