@@ -3,7 +3,7 @@
 import prisma from "@repo/prisma";
 import { auth } from '@repo/auth';
 import { revalidatePath } from "next/cache";
-import { GoalType } from "@prisma/client";
+import { GoalType } from "@repo/prisma/client";
 
 // Get user's home page data
 export async function getHomeData() {
@@ -168,10 +168,10 @@ export async function getHomeData() {
         // Transform data for client
         const transformedUser = user
             ? {
-                  ...user,
-                  currentStreak: user.userStats?.currentStreak || 0,
-                  longestStreak: user.userStats?.longestStreak || 0,
-              }
+                ...user,
+                currentStreak: user.userStats?.currentStreak || 0,
+                longestStreak: user.userStats?.longestStreak || 0,
+            }
             : null;
 
         // Transform activity calendar data

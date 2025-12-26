@@ -2,22 +2,22 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@repo/ui/components/ui/button"
-import { 
-    MessageSquare, Upload, X 
+import {
+    MessageSquare, Upload, X
 } from "lucide-react"
 import FeedbackList from "./_components/feedbacklist"
 import { Sheet, SheetContent } from "@repo/ui/components/ui/sheet"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
-import { 
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import { Textarea } from "@repo/ui/components/ui/textarea"
-import { 
-    SheetFooter, SheetHeader, SheetTitle, SheetDescription 
+import {
+    SheetFooter, SheetHeader, SheetTitle, SheetDescription
 } from "@repo/ui/components/ui/sheet"
 import { toast } from "sonner"
-import { FeedbackCategory, FeedbackStatus } from "@prisma/client"
+import { FeedbackCategory, FeedbackStatus } from "@repo/prisma/client"
 import { useFeedbackStore } from "@/app/store/feedbackStore"
 import { motion } from "framer-motion"
 import { uploadImageToCloudinary } from "@/actions/(common)/shared/upload.action"

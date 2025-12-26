@@ -21,8 +21,10 @@ import {
 import {
     getUserPracticeSets, getUserExamSets
 } from "@/actions/(main)/assessments/user-sets.action";
-import { toast } from "sonner";
-import type { PracticeSetPreview, ExamSetPreview } from "@/types/assessment";
+import toast from "@repo/ui/components/ui/sonner";
+import type { 
+    PracticeSetPreview, ExamSetPreview 
+} from "@/types/assessment";
 
 const statusIcons = {
     GENERATING: Clock,

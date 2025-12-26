@@ -20,7 +20,7 @@ import CreditsSection from "@/components/landingpage/credits-section";
 import { Button } from "@repo/ui/components/ui/button";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/landingpage/footer";
-import { useSession } from "@repo/auth";
+import { useSession } from '@repo/auth/client';
 import { PublicProjectsGrid } from "@/app/(main)/projects/_components/public-projects-grid";
 import PricingSection from "@/components/landingpage/pricing-section";
 import AIToolsSection from "@/components/landingpage/aitoolssection";

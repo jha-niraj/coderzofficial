@@ -18,7 +18,7 @@ import {
 import toast from '@repo/ui/components/ui/sonner'
 import { addProjectResource } from '@/actions/(main)/projects/resources.action'
 import { useRouter } from 'next/navigation'
-import { ResourceType } from '@prisma/client'
+import { ResourceType } from '@repo/prisma/client'
 
 const RESOURCE_TYPES = [
     { value: 'YOUTUBE_VIDEO', label: 'YouTube Video', icon: Youtube, color: 'text-red-600' },

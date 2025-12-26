@@ -18,7 +18,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select";
 import { cn } from "@repo/ui/lib/utils";
-import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
+import { ConceptCategory, ConceptDifficulty } from "@repo/prisma/client";
 
 interface Concept {
     id: string;
@@ -112,7 +112,7 @@ export default function BrowsePageClient({
 }: BrowsePageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    
+
     const [concepts] = useState(initialConcepts);
     const [search, setSearch] = useState(initialSearch || "");
     const [category, setCategory] = useState(initialCategory || "All");
@@ -123,7 +123,7 @@ export default function BrowsePageClient({
 
     const updateFilters = useCallback((updates: Record<string, string | undefined>) => {
         const params = new URLSearchParams(searchParams.toString());
-        
+
         Object.entries(updates).forEach(([key, value]) => {
             if (value && value !== "All") {
                 params.set(key, value);
@@ -131,7 +131,7 @@ export default function BrowsePageClient({
                 params.delete(key);
             }
         });
-        
+
         params.delete("page");
         router.push(`/concepts/browse?${params.toString()}`);
     }, [router, searchParams]);
@@ -415,7 +415,7 @@ export default function BrowsePageClient({
                                 >
                                     <ChevronLeft className="w-4 h-4" />
                                 </Button>
-                                
+
                                 {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                                     let pageNum;
                                     if (pagination.totalPages <= 5) {
@@ -427,7 +427,7 @@ export default function BrowsePageClient({
                                     } else {
                                         pageNum = pagination.page - 2 + i;
                                     }
-                                    
+
                                     return (
                                         <Button
                                             key={pageNum}
@@ -445,7 +445,7 @@ export default function BrowsePageClient({
                                         </Button>
                                     );
                                 })}
-                                
+
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -470,7 +470,7 @@ export default function BrowsePageClient({
                         viewport={{ once: true }}
                     >
                         <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-4">
-                            Can't find what you're looking for?
+                            Can&apos;t find what you&apos;re looking for?
                         </h2>
                         <p className="text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
                             Create your own concept and share your knowledge with the community.

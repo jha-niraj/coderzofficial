@@ -447,7 +447,7 @@ export async function getProfileCompletion() {
 // PROFILE REDESIGN - NEW FEATURES
 // ============================================
 
-import { ProfileTheme, ProfileLayout, ProfileVisibility } from "@prisma/client";
+import { ProfileTheme, ProfileLayout, ProfileVisibility } from "@repo/prisma/client";
 
 /**
  * Get user's own profile (full access)

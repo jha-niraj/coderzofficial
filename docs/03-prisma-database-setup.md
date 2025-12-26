@@ -127,7 +127,7 @@ mkdir -p packages/database/src
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "6.14.0"
+    "@repo/prisma/client": "6.14.0"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
@@ -286,7 +286,7 @@ DIRECT_URL="postgresql://user:password@localhost:5432/mydb?schema=public"
 
 ```typescript
 // packages/database/src/client.ts
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@repo/prisma/client";
 
 // Store instance in globalThis to survive hot reloads
 const globalForPrisma = globalThis as unknown as {
@@ -319,7 +319,7 @@ export { PrismaClient };
 export { db, PrismaClient } from "./client";
 
 // Re-export all Prisma types (User, Post, Role, etc.)
-export * from "@prisma/client";
+export * from "@repo/prisma/client";
 ```
 
 ---
@@ -333,7 +333,7 @@ export * from "@prisma/client";
 {
   "dependencies": {
     "@repo/database": "workspace:*",
-    "@prisma/client": "6.14.0"  // ⚠️ IMPORTANT: Must match database package version
+    "@repo/prisma/client": "6.14.0"  // ⚠️ IMPORTANT: Must match database package version
   }
 }
 ```
@@ -343,30 +343,30 @@ export * from "@prisma/client";
 {
   "dependencies": {
     "@repo/database": "workspace:*",
-    "@prisma/client": "6.14.0"  // ⚠️ IMPORTANT: Must match database package version
+    "@repo/prisma/client": "6.14.0"  // ⚠️ IMPORTANT: Must match database package version
   }
 }
 ```
 
-### ⚠️ Why Apps Need @prisma/client Directly?
+### ⚠️ Why Apps Need @repo/prisma/client Directly?
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│             WHY @PRISMA/CLIENT IN APPS?                         │
+│             WHY @repo/prisma/client IN APPS?                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Next.js marks @prisma/client as "external" (not bundled).     │
+│  Next.js marks @repo/prisma/client as "external" (not bundled).     │
 │  This means it must be resolvable from the app's directory.    │
 │                                                                 │
 │  Without it in apps:                                            │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Build looks for: apps/main/node_modules/@prisma/client │   │
+│  │  Build looks for: apps/main/node_modules/@repo/prisma/client │   │
 │  │  ❌ Not found!                                           │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  With it in apps:                                               │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Build looks for: apps/main/node_modules/@prisma/client │   │
+│  │  Build looks for: apps/main/node_modules/@repo/prisma/client │   │
 │  │  ✅ Found! (pnpm symlinks it)                            │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
@@ -436,8 +436,8 @@ export default async function Home() {
 │                                                                 │
 │  1. Turbo starts building apps/main                            │
 │  2. apps/main imports from @repo/database                      │
-│  3. @repo/database exports from @prisma/client                 │
-│  4. @prisma/client hasn't been generated yet!                  │
+│  3. @repo/database exports from @repo/prisma/client                 │
+│  4. @repo/prisma/client hasn't been generated yet!                  │
 │  5. ❌ BUILD FAILS                                              │
 │                                                                 │
 │  ✅ With proper configuration:                                  │
@@ -536,7 +536,7 @@ export default async function Home() {
 prisma:warn We could not find your Prisma schema in the default locations
 ```
 
-**Cause:** When `@prisma/client` is installed at the monorepo root (hoisted by pnpm), its postinstall script runs from the root and can't find the schema in `packages/database/prisma/`.
+**Cause:** When `@repo/prisma/client` is installed at the monorepo root (hoisted by pnpm), its postinstall script runs from the root and can't find the schema in `packages/database/prisma/`.
 
 **Solution:** Configure the schema location in root package.json:
 
@@ -631,13 +631,13 @@ x Could not find "main#generate" in root turbo.json or "generate" in package
 ### Issue 3: Version Mismatch
 
 ```
-Package @prisma/client can't be external
+Package @repo/prisma/client can't be external
 The package resolves to a different version when requested from 
 the project directory (5.22.0) compared to the package requested
  from the importing module (6.19.1).
 ```
 
-**Cause:** Different versions of `@prisma/client` in different packages
+**Cause:** Different versions of `@repo/prisma/client` in different packages
 
 **Solution:** Ensure ALL packages use the SAME version:
 
@@ -645,45 +645,45 @@ the project directory (5.22.0) compared to the package requested
 // packages/database/package.json
 {
   "dependencies": {
-    "@prisma/client": "6.14.0"
+    "@repo/prisma/client": "6.14.0"
   }
 }
 
 // apps/main/package.json
 {
   "dependencies": {
-    "@prisma/client": "6.14.0"  // Same version!
+    "@repo/prisma/client": "6.14.0"  // Same version!
   }
 }
 
 // apps/admin/package.json
 {
   "dependencies": {
-    "@prisma/client": "6.14.0"  // Same version!
+    "@repo/prisma/client": "6.14.0"  // Same version!
   }
 }
 ```
 
 ---
 
-### Issue 4: @prisma/client Can't Be External
+### Issue 4: @repo/prisma/client Can't Be External
 
 ```
-Package @prisma/client can't be external
-The request @prisma/client matches serverExternalPackages
+Package @repo/prisma/client can't be external
+The request @repo/prisma/client matches serverExternalPackages
 The request could not be resolved by Node.js from the project directory.
 ```
 
-**Cause:** `@prisma/client` is only in `packages/database`, but Next.js needs it resolvable from apps.
+**Cause:** `@repo/prisma/client` is only in `packages/database`, but Next.js needs it resolvable from apps.
 
-**Solution:** Add `@prisma/client` to each app's dependencies:
+**Solution:** Add `@repo/prisma/client` to each app's dependencies:
 
 ```json
 // apps/main/package.json
 {
   "dependencies": {
     "@repo/database": "workspace:*",
-    "@prisma/client": "6.14.0"  // Add this!
+    "@repo/prisma/client": "6.14.0"  // Add this!
   }
 }
 ```
@@ -723,8 +723,8 @@ Add to Vercel:
 |-------|-------|----------|
 | Schema not found | Schema in non-default location | Add `prisma.schema` to root package.json |
 | Generate task not found | Task not defined | Add `generate` task to turbo.json |
-| Version mismatch | Different @prisma/client versions | Use same version everywhere |
-| Can't be external | Client not in app dependencies | Add @prisma/client to apps |
+| Version mismatch | Different @repo/prisma/client versions | Use same version everywhere |
+| Can't be external | Client not in app dependencies | Add @repo/prisma/client to apps |
 | Too many connections | Multiple Prisma instances | Use singleton pattern |
 
 ---

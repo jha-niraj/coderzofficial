@@ -8,7 +8,7 @@ import {
     Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar';
 import {
-    Calendar, GripVertical, MessageCircle, Paperclip, Plus, Eye
+    Calendar, GripVertical, MessageCircle, Paperclip, Eye
 } from 'lucide-react';
 
 export interface TaskCard {

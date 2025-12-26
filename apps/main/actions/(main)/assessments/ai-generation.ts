@@ -3,9 +3,9 @@
 import OpenAI from 'openai'
 import {
     AssessmentMode, QuestionDifficulty, AssessmentQuestionType,
-} from '@prisma/client'
-import type { 
-    GeneratedQuestion, AIGenerationConfig, MockInterviewConfig 
+} from '@repo/prisma/client'
+import type {
+    GeneratedQuestion, AIGenerationConfig, MockInterviewConfig
 } from '@/types/assessment'
 
 // Initialize OpenAI client
@@ -314,20 +314,20 @@ function validateQuestionType(
 
 function formatMockQuestion(q: any): string {
     let question = q.question || q.mainQuestion
-    
+
     if (q.followUpQuestions && Array.isArray(q.followUpQuestions)) {
         question += '\n\nFollow-up questions the interviewer might ask:\n'
         q.followUpQuestions.forEach((fq: string, i: number) => {
             question += `${i + 1}. ${fq}\n`
         })
     }
-    
+
     return question
 }
 
 function formatInterviewExplanation(q: any): string {
     let explanation = ''
-    
+
     if (q.keyPoints && Array.isArray(q.keyPoints)) {
         explanation += 'Key Points to Cover:\n'
         q.keyPoints.forEach((point: string, i: number) => {
@@ -335,14 +335,14 @@ function formatInterviewExplanation(q: any): string {
         })
         explanation += '\n'
     }
-    
+
     if (q.commonMistakes && Array.isArray(q.commonMistakes)) {
         explanation += 'Common Mistakes to Avoid:\n'
         q.commonMistakes.forEach((mistake: string, i: number) => {
             explanation += `• ${mistake}\n`
         })
     }
-    
+
     return explanation || q.answerExplanation || 'Discuss the key concepts thoroughly.'
 }
 

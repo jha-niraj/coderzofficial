@@ -51,7 +51,7 @@ interface FeatureSuggestionsListProps {
     projectSlug: string
     isCreator: boolean
     isEnrolled: boolean
-    currentUserId: string | null
+    currentUserId?: string | null
 }
 
 export function FeatureSuggestionsList({
@@ -76,6 +76,7 @@ export function FeatureSuggestionsList({
                 toast.error(result.message)
             }
         } catch (error) {
+            console.log("Error occurred while adding task: " + error);
             toast.error("Failed to add to tasks")
         } finally {
             setLoading(null)
@@ -94,6 +95,7 @@ export function FeatureSuggestionsList({
                 toast.error(result.message)
             }
         } catch (error) {
+            console.log("Error occurred while adopting task: " + error);
             toast.error("Failed to adopt task")
         } finally {
             setLoading(null)
@@ -112,6 +114,7 @@ export function FeatureSuggestionsList({
                 toast.error(result.message)
             }
         } catch (error) {
+            console.log("Error occurred while adding task: " + error);
             toast.error("Failed to add task")
         } finally {
             setLoading(null)
@@ -129,6 +132,7 @@ export function FeatureSuggestionsList({
                 toast.error(result.message)
             }
         } catch (error) {
+            console.log("Error occurred while updating task: " + error);
             toast.error("Failed to update status")
         } finally {
             setLoading(null)

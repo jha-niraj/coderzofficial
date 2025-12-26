@@ -5,25 +5,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-    ArrowLeft, ArrowRight, BookOpen, Code, Copy, GitBranch, Terminal,
-    Check, X, AlertCircle, Loader2, CheckCircle, Clock
+    ArrowLeft, ArrowRight, BookOpen, Copy, Terminal, Check, AlertCircle,
+    Loader2, CheckCircle, Clock
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import {
-    Card, CardContent, CardDescription, CardHeader, CardTitle
+    Card, CardContent
 } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
-import {
-    Tabs, TabsContent, TabsList, TabsTrigger
-} from '@repo/ui/components/ui/tabs'
 import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
     getLearnModule, completeLesson
 } from '@/actions/(main)/opensource'
 import toast from '@repo/ui/components/ui/sonner'
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -104,7 +100,7 @@ export default function ModulePage({ params }: { params: Promise<{ moduleId: str
             const result = await completeLesson(currentLesson.id, {
                 timeSpent: currentLesson.estimatedMinutes * 60
             })
-            
+
             if (result.success) {
                 toast.success('Lesson completed!')
                 // Update local state
@@ -112,8 +108,8 @@ export default function ModulePage({ params }: { params: Promise<{ moduleId: str
                     if (!prev) return prev
                     return {
                         ...prev,
-                        lessons: prev.lessons.map(l => 
-                            l.id === currentLesson.id 
+                        lessons: prev.lessons.map(l =>
+                            l.id === currentLesson.id
                                 ? { ...l, completion: { isCompleted: true, completedAt: new Date() } }
                                 : l
                         ),
@@ -175,7 +171,6 @@ export default function ModulePage({ params }: { params: Promise<{ moduleId: str
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-100 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
-            {/* Header */}
             <div className="sticky top-0 z-50 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-7xl mx-auto px-4 py-3">
                     <div className="flex items-center justify-between">
@@ -202,57 +197,55 @@ export default function ModulePage({ params }: { params: Promise<{ moduleId: str
                     </div>
                 </div>
             </div>
-
             <div className="max-w-7xl mx-auto flex">
-                {/* Sidebar - Lesson List */}
                 <div className="w-72 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 min-h-[calc(100vh-60px)]">
                     <div className="sticky top-16 p-4">
                         <h3 className="font-semibold text-neutral-900 dark:text-white mb-4">Lessons</h3>
                         <div className="space-y-1">
-                            {module.lessons.map((lesson, index) => {
-                                const isCompleted = lesson.completion?.isCompleted
-                                const isCurrent = index === currentLessonIndex
+                            {
+                                module.lessons.map((lesson, index) => {
+                                    const isCompleted = lesson.completion?.isCompleted
+                                    const isCurrent = index === currentLessonIndex
 
-                                return (
-                                    <button
-                                        key={lesson.id}
-                                        onClick={() => setCurrentLessonIndex(index)}
-                                        className={cn(
-                                            "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all",
-                                            isCurrent 
-                                                ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" 
-                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                        )}
-                                    >
-                                        <div className={cn(
-                                            "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0",
-                                            isCompleted 
-                                                ? "bg-green-100 dark:bg-green-900/30 text-green-600" 
-                                                : isCurrent
-                                                    ? "bg-purple-600 text-white"
-                                                    : "bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400"
-                                        )}>
-                                            {isCompleted ? <Check className="w-3 h-3" /> : index + 1}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className={cn(
-                                                "text-sm font-medium truncate",
-                                                isCurrent ? "text-purple-700 dark:text-purple-400" : "text-neutral-700 dark:text-neutral-300"
+                                    return (
+                                        <button
+                                            key={lesson.id}
+                                            onClick={() => setCurrentLessonIndex(index)}
+                                            className={cn(
+                                                "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all",
+                                                isCurrent
+                                                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                                                    : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0",
+                                                isCompleted
+                                                    ? "bg-green-100 dark:bg-green-900/30 text-green-600"
+                                                    : isCurrent
+                                                        ? "bg-purple-600 text-white"
+                                                        : "bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400"
                                             )}>
-                                                {lesson.title}
-                                            </p>
-                                            <p className="text-xs text-neutral-500">
-                                                {lesson.estimatedMinutes} min • {lesson.type === 'INTERACTIVE' ? 'Hands-on' : 'Reading'}
-                                            </p>
-                                        </div>
-                                    </button>
-                                )
-                            })}
+                                                {isCompleted ? <Check className="w-3 h-3" /> : index + 1}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className={cn(
+                                                    "text-sm font-medium truncate",
+                                                    isCurrent ? "text-purple-700 dark:text-purple-400" : "text-neutral-700 dark:text-neutral-300"
+                                                )}>
+                                                    {lesson.title}
+                                                </p>
+                                                <p className="text-xs text-neutral-500">
+                                                    {lesson.estimatedMinutes} min • {lesson.type === 'INTERACTIVE' ? 'Hands-on' : 'Reading'}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    )
+                                })
+                            }
                         </div>
                     </div>
                 </div>
-
-                {/* Main Content */}
                 <div className="flex-1 p-8">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -262,140 +255,149 @@ export default function ModulePage({ params }: { params: Promise<{ moduleId: str
                             exit={{ opacity: 0, y: -20 }}
                             className="max-w-3xl mx-auto"
                         >
-                            {currentLesson && (
-                                <>
-                                    {/* Lesson Header */}
-                                    <div className="mb-8">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Badge variant="outline">
-                                                {currentLesson.type === 'INTERACTIVE' ? (
-                                                    <><Terminal className="w-3 h-3 mr-1" /> Hands-on</>
-                                                ) : (
-                                                    <><BookOpen className="w-3 h-3 mr-1" /> Reading</>
-                                                )}
-                                            </Badge>
-                                            <Badge variant="outline">
-                                                <Clock className="w-3 h-3 mr-1" />
-                                                {currentLesson.estimatedMinutes} min
-                                            </Badge>
-                                            {currentLesson.completion?.isCompleted && (
-                                                <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                                    Completed
+                            {
+                                currentLesson && (
+                                    <>
+                                        <div className="mb-8">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Badge variant="outline">
+                                                    {
+                                                        currentLesson.type === 'INTERACTIVE' ? (
+                                                            <><Terminal className="w-3 h-3 mr-1" /> Hands-on</>
+                                                        ) : (
+                                                            <><BookOpen className="w-3 h-3 mr-1" /> Reading</>
+                                                        )
+                                                    }
                                                 </Badge>
-                                            )}
+                                                <Badge variant="outline">
+                                                    <Clock className="w-3 h-3 mr-1" />
+                                                    {currentLesson.estimatedMinutes} min
+                                                </Badge>
+                                                {
+                                                    currentLesson.completion?.isCompleted && (
+                                                        <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                                            Completed
+                                                        </Badge>
+                                                    )
+                                                }
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                                {currentLesson.title}
+                                            </h2>
+                                            {
+                                                currentLesson.description && (
+                                                    <p className="text-neutral-600 dark:text-neutral-400 mt-2">
+                                                        {currentLesson.description}
+                                                    </p>
+                                                )
+                                            }
                                         </div>
-                                        <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                            {currentLesson.title}
-                                        </h2>
-                                        {currentLesson.description && (
-                                            <p className="text-neutral-600 dark:text-neutral-400 mt-2">
-                                                {currentLesson.description}
-                                            </p>
-                                        )}
-                                    </div>
+                                        <Card className="mb-8">
+                                            <CardContent className="p-8">
+                                                <div className="prose prose-neutral dark:prose-invert max-w-none">
+                                                    <ReactMarkdown
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            code({ node, className, children, ...props }) {
+                                                                const match = /language-(\w+)/.exec(className || '')
+                                                                const codeString = String(children).replace(/\n$/, '')
 
-                                    {/* Lesson Content */}
-                                    <Card className="mb-8">
-                                        <CardContent className="p-8">
-                                            <div className="prose prose-neutral dark:prose-invert max-w-none">
-                                                <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm]}
-                                                    components={{
-                                                        code({ node, className, children, ...props }) {
-                                                            const match = /language-(\w+)/.exec(className || '')
-                                                            const codeString = String(children).replace(/\n$/, '')
-                                                            
-                                                            if (match) {
+                                                                if (match) {
+                                                                    return (
+                                                                        <div className="relative group">
+                                                                            <pre className="bg-neutral-900 dark:bg-neutral-950 rounded-lg p-4 overflow-x-auto">
+                                                                                <code className={className} {...props}>
+                                                                                    {children}
+                                                                                </code>
+                                                                            </pre>
+                                                                            <button
+                                                                                onClick={() => copyToClipboard(codeString)}
+                                                                                className="absolute top-2 right-2 p-2 rounded-md bg-neutral-800 hover:bg-neutral-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                            >
+                                                                                {
+                                                                                    copiedCode === codeString ? (
+                                                                                        <Check className="w-4 h-4 text-green-400" />
+                                                                                    ) : (
+                                                                                        <Copy className="w-4 h-4 text-neutral-400" />
+                                                                                    )
+                                                                                }
+                                                                            </button>
+                                                                        </div>
+                                                                    )
+                                                                }
                                                                 return (
-                                                                    <div className="relative group">
-                                                                        <pre className="bg-neutral-900 dark:bg-neutral-950 rounded-lg p-4 overflow-x-auto">
-                                                                            <code className={className} {...props}>
-                                                                                {children}
-                                                                            </code>
-                                                                        </pre>
-                                                                        <button
-                                                                            onClick={() => copyToClipboard(codeString)}
-                                                                            className="absolute top-2 right-2 p-2 rounded-md bg-neutral-800 hover:bg-neutral-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                        >
-                                                                            {copiedCode === codeString ? (
-                                                                                <Check className="w-4 h-4 text-green-400" />
-                                                                            ) : (
-                                                                                <Copy className="w-4 h-4 text-neutral-400" />
-                                                                            )}
-                                                                        </button>
-                                                                    </div>
+                                                                    <code className="bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-sm" {...props}>
+                                                                        {children}
+                                                                    </code>
+                                                                )
+                                                            },
+                                                            blockquote({ children }) {
+                                                                return (
+                                                                    <blockquote className="border-l-4 border-purple-500 pl-4 italic text-neutral-600 dark:text-neutral-400">
+                                                                        {children}
+                                                                    </blockquote>
                                                                 )
                                                             }
-                                                            return (
-                                                                <code className="bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-sm" {...props}>
-                                                                    {children}
-                                                                </code>
-                                                            )
-                                                        },
-                                                        blockquote({ children }) {
-                                                            return (
-                                                                <blockquote className="border-l-4 border-purple-500 pl-4 italic text-neutral-600 dark:text-neutral-400">
-                                                                    {children}
-                                                                </blockquote>
-                                                            )
-                                                        }
-                                                    }}
-                                                >
-                                                    {currentLesson.content || 'No content available for this lesson.'}
-                                                </ReactMarkdown>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    {/* Navigation */}
-                                    <div className="flex items-center justify-between">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setCurrentLessonIndex(prev => prev - 1)}
-                                            disabled={currentLessonIndex === 0}
-                                            className="gap-2"
-                                        >
-                                            <ArrowLeft className="w-4 h-4" />
-                                            Previous
-                                        </Button>
-
-                                        <div className="flex items-center gap-3">
-                                            {!currentLesson.completion?.isCompleted && user && (
-                                                <Button
-                                                    onClick={handleCompleteLesson}
-                                                    disabled={completing}
-                                                    className="bg-green-600 hover:bg-green-700 text-white gap-2"
-                                                >
-                                                    {completing ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        }}
+                                                    >
+                                                        {currentLesson.content || 'No content available for this lesson.'}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                        <div className="flex items-center justify-between">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setCurrentLessonIndex(prev => prev - 1)}
+                                                disabled={currentLessonIndex === 0}
+                                                className="gap-2"
+                                            >
+                                                <ArrowLeft className="w-4 h-4" />
+                                                Previous
+                                            </Button>
+                                            <div className="flex items-center gap-3">
+                                                {
+                                                    !currentLesson.completion?.isCompleted && user && (
+                                                        <Button
+                                                            onClick={handleCompleteLesson}
+                                                            disabled={completing}
+                                                            className="bg-green-600 hover:bg-green-700 text-white gap-2"
+                                                        >
+                                                            {
+                                                                completing ? (
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                ) : (
+                                                                    <Check className="w-4 h-4" />
+                                                                )
+                                                            }
+                                                            Mark as Complete
+                                                        </Button>
+                                                    )
+                                                }
+                                                {
+                                                    currentLessonIndex < module.lessons.length - 1 ? (
+                                                        <Button
+                                                            onClick={() => setCurrentLessonIndex(prev => prev + 1)}
+                                                            className="gap-2"
+                                                        >
+                                                            Next Lesson
+                                                            <ArrowRight className="w-4 h-4" />
+                                                        </Button>
                                                     ) : (
-                                                        <Check className="w-4 h-4" />
-                                                    )}
-                                                    Mark as Complete
-                                                </Button>
-                                            )}
-
-                                            {currentLessonIndex < module.lessons.length - 1 ? (
-                                                <Button
-                                                    onClick={() => setCurrentLessonIndex(prev => prev + 1)}
-                                                    className="gap-2"
-                                                >
-                                                    Next Lesson
-                                                    <ArrowRight className="w-4 h-4" />
-                                                </Button>
-                                            ) : (
-                                                <Link href="/opensource/exam">
-                                                    <Button className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
-                                                        Take Certification Exam
-                                                        <ArrowRight className="w-4 h-4" />
-                                                    </Button>
-                                                </Link>
-                                            )}
+                                                        <Link href="/opensource/exam">
+                                                            <Button className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
+                                                                Take Certification Exam
+                                                                <ArrowRight className="w-4 h-4" />
+                                                            </Button>
+                                                        </Link>
+                                                    )
+                                                }
+                                            </div>
                                         </div>
-                                    </div>
-                                </>
-                            )}
+                                    </>
+                                )
+                            }
                         </motion.div>
                     </AnimatePresence>
                 </div>

@@ -17,7 +17,7 @@ import {
     getProjectResources, toggleResourceHelpful, deleteProjectResource,
     incrementResourceView
 } from '@/actions/(main)/projects/resources.action'
-import { ResourceType } from '@prisma/client'
+import { ResourceType } from '@repo/prisma/client'
 import toast from '@repo/ui/components/ui/sonner'
 import { formatDistanceToNow } from 'date-fns'
 

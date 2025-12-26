@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signOut } from '@repo/auth'
+import { useSession, signOut } from '@repo/auth/client';
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Input } from '@repo/ui/components/ui/input'

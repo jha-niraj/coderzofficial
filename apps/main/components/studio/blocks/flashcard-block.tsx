@@ -27,7 +27,7 @@ interface StudioFlashcardBlockProps {
 	topic?: string;
 }
 
-export default function StudioFlashcardBlock({ deck, topic }: StudioFlashcardBlockProps) {
+export default function StudioFlashcardBlock({ deck }: StudioFlashcardBlockProps) {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isFlipped, setIsFlipped] = useState(false);
 	const [showHint, setShowHint] = useState(false);

@@ -4,10 +4,10 @@ import { auth } from "@repo/auth"
 import prisma from "@repo/prisma"
 import { uploadImageToCloudinary } from "@/actions/(common)/shared/upload.action"
 import { revalidatePath } from "next/cache"
-import type { 
+import type {
     FeatureSuggestionWithUser
 } from "@/types/projectv2"
-import type { FeatureSuggestionType } from "@prisma/client"
+import type { FeatureSuggestionType } from "@repo/prisma/client"
 
 export async function createFeatureSuggestion(formData: FormData) {
     try {
@@ -73,7 +73,7 @@ export async function createFeatureSuggestion(formData: FormData) {
             const imageFormData = new FormData()
             imageFormData.append("file", imageFile)
             const uploadResult = await uploadImageToCloudinary(imageFormData)
-            
+
             if (uploadResult.success && uploadResult.url) {
                 imageUrl = uploadResult.url
             }
@@ -185,7 +185,7 @@ export async function createFeatureSuggestion(formData: FormData) {
 
             return {
                 success: true,
-                message: isCreator 
+                message: isCreator
                     ? "Task added successfully! It's now available for all enrolled users as a suggestion."
                     : "Task added to your list! Other enrolled users can adopt it from suggestions.",
                 data: suggestion
@@ -226,7 +226,7 @@ export async function createFeatureSuggestion(formData: FormData) {
 export async function getFeatureSuggestions(projectId: string) {
     try {
         const session = await auth()
-        
+
         const suggestions = await prisma.projectV2FeatureSuggestion.findMany({
             where: { projectId },
             include: {
@@ -304,12 +304,12 @@ export async function adoptSuggestionToMyTasks(suggestionId: string, projectSlug
 
         // Get project details
         const project = await prisma.projectV2.findUnique({
-            where: { 
-                id: suggestion.projectId 
+            where: {
+                id: suggestion.projectId
             },
-            select: { 
-                id: true, 
-                createdBy: true 
+            select: {
+                id: true,
+                createdBy: true
             }
         })
 
@@ -486,7 +486,7 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
                         "Code follows project standards",
                         "Properly tested and working"
                     ],
-                    hints: suggestion.tags.length > 0 
+                    hints: suggestion.tags.length > 0
                         ? suggestion.tags.map((tag: string) => `Consider the ${tag} aspect`)
                         : ["Review the suggestion details carefully"],
                     badges: [suggestion.type],
@@ -610,7 +610,7 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
                     "Code follows project standards",
                     "Properly tested and working"
                 ],
-                hints: suggestion.tags.length > 0 
+                hints: suggestion.tags.length > 0
                     ? suggestion.tags.map((tag: string) => `Consider the ${tag} aspect`)
                     : ["Review the suggestion details carefully", "Consider the user's use case"],
                 badges: [suggestion.type],
@@ -711,18 +711,18 @@ export async function updateSuggestionStatus(suggestionId: string, status: strin
 
         // Check if user is the project creator
         if (suggestion.project.createdBy !== session.user.id) {
-            return { 
-                success: false, 
-                message: "Only project creators can update suggestion status" 
+            return {
+                success: false,
+                message: "Only project creators can update suggestion status"
             }
         }
 
         await prisma.projectV2FeatureSuggestion.update({
-            where: { 
-                id: suggestionId 
+            where: {
+                id: suggestionId
             },
-            data: { 
-                status: status as any 
+            data: {
+                status: status as any
             }
         })
 

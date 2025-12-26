@@ -108,7 +108,7 @@ export default function StudioImageBlock({ media, data }: StudioImageBlockProps)
 							<div className="flex items-start gap-2">
 								<Sparkles className="h-4 w-4 text-purple-500 mt-0.5 shrink-0" />
 								<p className="text-sm text-neutral-600 dark:text-neutral-400 italic">
-									"{prompt}"
+									&quot;{prompt}&quot;
 								</p>
 							</div>
 						</div>
@@ -149,7 +149,7 @@ export default function StudioImageBlock({ media, data }: StudioImageBlockProps)
 						{
 							prompt && (
 								<div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 max-w-2xl">
-									<p className="text-white text-center text-sm">"{prompt}"</p>
+									<p className="text-white text-center text-sm">&quot;{prompt}&quot;</p>
 								</div>
 							)
 						}

@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Button } from '@repo/ui/components/ui/button'
 import { cn } from '@repo/ui/lib/utils'
 
-const MonacoEditor = dynamic(() => import('@monaco-editor'), { ssr: false })
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
 export function CodeBlock({ code, language = 'typescript', className }: { code: string; language?: string; className?: string }) {
 	const [copied, setCopied] = useState(false)

@@ -4,35 +4,30 @@ import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-    ArrowLeft,
-    Loader2,
-    AlertCircle,
-    Clock,
-    CheckCircle2,
+    ArrowLeft, Loader2, AlertCircle, Clock, CheckCircle2
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { QuizMode, CodeMode, MockMode, MixedMode } from "@/components/assessments/modes";
-import type { QuizQuestion, CodeQuestion, MockQuestion, MixedQuestion } from "@/components/assessments/modes";
+    Card, CardContent
+} from "@repo/ui/components/ui/card";
 import {
-    submitPracticeSetAnswer,
-    completePracticeSetAttempt,
-    getPracticeAttemptResults,
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@repo/ui/components/ui/alert-dialog";
+import toast from '@repo/ui/components/ui/sonner'
+import {
+    QuizMode, CodeMode, MockMode, MixedMode
+} from "@/components/assessments/modes";
+import type {
+    QuizQuestion, CodeQuestion, MockQuestion, MixedQuestion
+} from "@/components/assessments/modes";
+import {
+    submitPracticeSetAnswer, completePracticeSetAttempt,
+    getPracticeAttemptResults
 } from "@/actions/(main)/assessments/user-sets.action";
-import { AssessmentMode, AssessmentQuestionType, QuestionDifficulty } from "@prisma/client";
-
-// ==================== TYPES ====================
+import {
+    AssessmentMode, AssessmentQuestionType, QuestionDifficulty
+} from "@repo/prisma/client";
 
 interface AttemptQuestion {
     id: string;
@@ -59,8 +54,6 @@ interface AttemptData {
     questions: AttemptQuestion[];
 }
 
-// ==================== PAGE COMPONENT ====================
-
 export default function PracticeAttemptPage({
     params,
 }: {
@@ -68,7 +61,7 @@ export default function PracticeAttemptPage({
 }) {
     const { attemptId } = use(params);
     const router = useRouter();
-    
+
     const [attemptData, setAttemptData] = useState<AttemptData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isCompleting, setIsCompleting] = useState(false);
@@ -117,9 +110,9 @@ export default function PracticeAttemptPage({
             const result = await submitPracticeSetAnswer(
                 attemptId,
                 questionId,
-                answer, // selectedOption
-                undefined, // codeAnswer
-                undefined // textAnswer
+                answer,
+                undefined,
+                undefined
             );
 
             return {
@@ -137,9 +130,9 @@ export default function PracticeAttemptPage({
             const result = await submitPracticeSetAnswer(
                 attemptId,
                 questionId,
-                undefined, // selectedOption
-                code, // codeAnswer
-                undefined // textAnswer
+                undefined,
+                code,
+                undefined
             );
 
             // Mock test results - in production, this would be actual test execution
@@ -277,7 +270,6 @@ export default function PracticeAttemptPage({
         }));
     };
 
-    // Loading state
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -289,7 +281,6 @@ export default function PracticeAttemptPage({
         );
     }
 
-    // No data state
     if (!attemptData) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -309,7 +300,6 @@ export default function PracticeAttemptPage({
         );
     }
 
-    // Completing state
     if (isCompleting) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -322,7 +312,6 @@ export default function PracticeAttemptPage({
         );
     }
 
-    // Render appropriate mode
     const renderMode = () => {
         switch (attemptData.mode) {
             case "QUIZ":
@@ -396,7 +385,6 @@ export default function PracticeAttemptPage({
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-            {/* Header */}
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
                 <div className="container py-4">
                     <div className="flex items-center gap-4">
@@ -411,20 +399,20 @@ export default function PracticeAttemptPage({
                                 Practice Mode • {attemptData.totalQuestions} questions
                             </p>
                         </div>
-                        {attemptData.timeLimit && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Clock className="w-4 h-4" />
-                                <span>Timed</span>
-                            </div>
-                        )}
+                        {
+                            attemptData.timeLimit && (
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Clock className="w-4 h-4" />
+                                    <span>Timed</span>
+                                </div>
+                            )
+                        }
                     </div>
                 </div>
             </div>
 
-            {/* Content */}
             <div className="container py-8">{renderMode()}</div>
 
-            {/* Exit Confirmation Dialog */}
             <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

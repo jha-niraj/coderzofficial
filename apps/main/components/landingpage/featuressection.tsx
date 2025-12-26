@@ -55,7 +55,7 @@ export default function FeaturesSection() {
                         The Full Stack.
                     </h2>
                     <p className="text-lg text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto font-light">
-                        A complete ecosystem designed to take you from "Hello World" to Senior Engineer.
+                        A complete ecosystem designed to take you from &quot;Hello World&quot; to Senior Engineer.
                     </p>
                 </motion.div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

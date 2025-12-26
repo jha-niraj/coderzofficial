@@ -1,8 +1,7 @@
 import { prisma } from "@repo/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcrypt";
+import bcryptjs from "bcryptjs";
 import { RequestBody } from "@/types";
-import { ActivityType } from "@prisma/client";
 import { Resend } from "resend";
 import { 
     createSignupActivity, generateReferralCode, processReferral 
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('Creating new user...');
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcryptjs.hash(password, 10);
         const newUserReferralCode = await generateReferralCode(name);
 
         const verifyOTP = Math.floor(100000 + Math.random() * 900000).toString();

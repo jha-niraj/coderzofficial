@@ -18,7 +18,7 @@ import { CreateMockSheet } from '../../_components/create-mock-sheet'
 import { PurchaseMockSheet } from '../../_components/purchase-mock-sheet'
 import { getAllPublicMocks } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../_constants/mock-categories'
-import { MockCategory } from '@prisma/client'
+import { MockCategory } from '@repo/prisma/client'
 
 export default function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
     const resolvedParams = use(params)

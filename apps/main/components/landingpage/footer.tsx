@@ -58,7 +58,7 @@ export default function Footer() {
                                 <div className="w-8 h-8 bg-neutral-900 dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-neutral-900 font-bold">
                                     <Command className="w-4 h-4" />
                                 </div>
-                                <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">The Coder'z</span>
+                                <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">The Coder&apos;z</span>
                             </Link>
                             <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-8 leading-relaxed max-w-xs">
                                 The operating system for engineering students.

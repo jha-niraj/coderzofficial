@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '@repo/ui/lib/utils';
+import { Button } from '@repo/ui/components/ui/button';
+import { Badge } from '@repo/ui/components/ui/badge';
 import {
     CheckIcon, SparklesIcon, Zap, Gift, ArrowRight
 } from 'lucide-react';

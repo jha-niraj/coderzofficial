@@ -9,7 +9,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar";
-import { ConceptStepType } from "@prisma/client";
+import { ConceptStepType } from "@repo/prisma/client";
 
 interface ConceptStep {
     id: string;
@@ -158,8 +158,8 @@ export default function AIAssistantPanel({
                                         </Avatar>
                                         <div
                                             className={`rounded-lg px-4 py-2 max-w-[80%] ${message.role === "user"
-                                                    ? "bg-blue-500 text-white"
-                                                    : "bg-neutral-100 dark:bg-neutral-800"
+                                                ? "bg-blue-500 text-white"
+                                                : "bg-neutral-100 dark:bg-neutral-800"
                                                 }`}
                                         >
                                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>

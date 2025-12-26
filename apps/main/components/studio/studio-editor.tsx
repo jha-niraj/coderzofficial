@@ -15,7 +15,9 @@ import {
 } from "@repo/ui/components/ui/dropdown-menu";
 import { Badge } from "@repo/ui/components/ui/badge";
 import toast from "@repo/ui/components/ui/sonner";
-import { updateStudio, deleteStudio } from "@/actions/(main)/studios/studio.action";
+import { 
+	updateStudio, deleteStudio 
+} from "@/actions/(main)/studios/studio.action";
 import StudioBlockEditor from "./studio-block-editor";
 import StudioAIPanel from "./studio-ai-panel";
 import { cn } from "@repo/ui/lib/utils";

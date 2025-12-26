@@ -77,7 +77,7 @@ export default function AIToolsSection() {
                             Tools that make you <span className="text-neutral-400 dark:text-neutral-600">dangerous.</span>
                         </h2>
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 font-light leading-relaxed max-w-2xl">
-                            We don't build generic wrappers. We build specialized agents that help you architect systems, contribute to open source, and land high-impact roles.
+                            We don&apos;t build generic wrappers. We build specialized agents that help you architect systems, contribute to open source, and land high-impact roles.
                         </p>
                     </motion.div>
                     <motion.div

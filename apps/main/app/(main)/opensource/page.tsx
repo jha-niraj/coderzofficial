@@ -24,7 +24,7 @@ import {
     getProjects, getUserCertificationStatus, PROJECT_TYPES, DIFFICULTY_LEVELS,
     getLearningProgress
 } from '@/actions/(main)/opensource'
-import { OSProjectType, OSIssueDifficulty } from '@prisma/client'
+import { OSProjectType, OSIssueDifficulty } from '@repo/prisma/client'
 
 // Project type icons
 const typeIcons: Record<string, React.ReactNode> = {

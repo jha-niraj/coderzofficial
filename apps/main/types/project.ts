@@ -2,12 +2,12 @@
 // This file contains all type definitions for the ProjectV2 system
 
 import {
-  ProjectV2Visibility,
-  ProjectV2Difficulty,
-  UserProjectV2Status,
-  TaskKanbanStatus,
-  QuizV2Difficulty,
-} from "@prisma/client";
+    ProjectV2Visibility,
+    ProjectV2Difficulty,
+    UserProjectV2Status,
+    TaskKanbanStatus,
+    QuizV2Difficulty,
+} from "@repo/prisma/client";
 
 // ============================================================================
 // Core Project Types
@@ -284,7 +284,7 @@ export interface ApiResponse<T> {
     error?: string
 }
 
-export interface ProjectApiResponse extends ApiResponse<ProjectV2Full> {}
-export interface TasksApiResponse extends ApiResponse<TasksPageData> {}
-export interface QuizApiResponse extends ApiResponse<Quiz> {}
-export interface QuizAttemptApiResponse extends ApiResponse<QuizResult> {}
+export interface ProjectApiResponse extends ApiResponse<ProjectV2Full> { }
+export interface TasksApiResponse extends ApiResponse<TasksPageData> { }
+export interface QuizApiResponse extends ApiResponse<Quiz> { }
+export interface QuizAttemptApiResponse extends ApiResponse<QuizResult> { }

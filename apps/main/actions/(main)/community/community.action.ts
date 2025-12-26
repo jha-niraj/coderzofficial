@@ -3,9 +3,9 @@
 import { prisma } from "@repo/prisma"
 import { getServerSession } from '@repo/auth'
 import { revalidatePath } from "next/cache"
-import { 
-    CommunityVisibility, CommunityRole 
-} from "@prisma/client"
+import {
+    CommunityVisibility, CommunityRole
+} from "@repo/prisma/client"
 import { authOptions } from '@repo/auth'
 
 // ==================== TYPES ====================
@@ -134,7 +134,7 @@ export async function createCommunity(input: CreateCommunityInput) {
 export async function getCommunityBySlug(slug: string) {
     try {
         const session = await getServerSession(authOptions)
-        
+
         const community = await prisma.community.findUnique({
             where: { slug },
             include: {
@@ -182,8 +182,8 @@ export async function getCommunityBySlug(slug: string) {
             return { success: false, error: "This community is private" }
         }
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: {
                 ...community,
                 isMember: !!membership,
@@ -446,8 +446,8 @@ export async function joinCommunity(communityId: string) {
         }
 
         revalidatePath(`/community/${community.slug}`)
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: membership,
             message: isApproved ? "Joined successfully!" : "Join request sent!"
         }

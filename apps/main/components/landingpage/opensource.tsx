@@ -127,11 +127,11 @@ export default function OpenSourceSection() {
                         <div>
                             <div className="flex items-center gap-2 text-green-400 font-mono text-sm mb-4">
                                 <Terminal className="w-4 h-4" />
-                                <span>git commit -m "feat: first contribution"</span>
+                                <span>git commit -m &quot;feat: first contribution&quot;</span>
                             </div>
                             <h3 className="text-2xl font-bold text-white mb-2">Ready to ship code?</h3>
                             <p className="text-neutral-400 max-w-lg">
-                                Join 10,000+ developers building the future. Start with our "Good First Issue" filter.
+                                Join 10,000+ developers building the future. Start with our &quot;Good First Issue&quot; filter.
                             </p>
                         </div>
                         <div className="flex gap-4">

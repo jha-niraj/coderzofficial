@@ -2,7 +2,7 @@
 
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
-import { OSContributionType, OSContributionStatus } from '@prisma/client'
+import { OSContributionType, OSContributionStatus } from '@repo/prisma/client'
 
 // ==========================================
 // USER CONTRIBUTION ACTIONS
@@ -356,7 +356,7 @@ export async function getUserRank() {
             success: true,
             rank: higherRanked + 1,
             totalContributors,
-            percentile: totalContributors > 0 
+            percentile: totalContributors > 0
                 ? Math.round(((totalContributors - higherRanked) / totalContributors) * 100)
                 : 0
         }

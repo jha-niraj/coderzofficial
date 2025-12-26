@@ -3,9 +3,9 @@
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
-import { 
-    OSIssueStatus, OSIssueDifficulty 
-} from '@prisma/client'
+import {
+    OSIssueStatus, OSIssueDifficulty
+} from '@repo/prisma/client'
 import * as github from '@/lib/github'
 
 // ==========================================
@@ -202,9 +202,9 @@ export async function claimIssue(issueId: string) {
         })
 
         if (!userStats?.isCertified) {
-            return { 
-                success: false, 
-                error: 'You must complete the Open Source certification first' 
+            return {
+                success: false,
+                error: 'You must complete the Open Source certification first'
             }
         }
 
@@ -233,9 +233,9 @@ export async function claimIssue(issueId: string) {
         })
 
         if (activeIssues >= issue.project.maxActiveIssues) {
-            return { 
-                success: false, 
-                error: `You can only work on ${issue.project.maxActiveIssues} issues at a time` 
+            return {
+                success: false,
+                error: `You can only work on ${issue.project.maxActiveIssues} issues at a time`
             }
         }
 

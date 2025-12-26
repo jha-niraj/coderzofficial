@@ -16,7 +16,7 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@repo/ui/components/ui/alert-dialog"
 import { publicInterviews, companies } from "@/app/(main)/interview/_components/mockdata"
 import type { Company, Role } from "@/types/interview"
 

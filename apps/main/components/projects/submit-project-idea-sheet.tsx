@@ -207,7 +207,7 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
                 <SheetHeader>
                     <SheetTitle>Submit Project Idea</SheetTitle>
                     <SheetDescription>
-                        Share your project idea with the community. You'll earn 20 XP once it's approved!
+                        Share your project idea with the community. You&qpos;ll earn 20 XP once it&apos;s approved!
                     </SheetDescription>
                 </SheetHeader>
                 <div className="space-y-6 mt-6">

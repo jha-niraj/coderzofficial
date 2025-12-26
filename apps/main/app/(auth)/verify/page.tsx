@@ -10,7 +10,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation"
 import toast from '@repo/ui/components/ui/sonner'
 import { verifyOTP, resendVerificationOTP } from "@/actions/(auth)/auth/auth.actions"
-import { signIn } from '@repo/auth'
+import { signIn } from '@repo/auth/client';
 import { motion } from "framer-motion"
 
 function VerifyContent() {

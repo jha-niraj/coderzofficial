@@ -24,7 +24,7 @@ import { MockInterviewCard } from '../../_components/mock-interview-card'
 import { CreateMockSheet } from '../../_components/create-mock-sheet'
 import { getCreatedVoiceMocks } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../_constants/mock-categories'
-import { MockCategory } from '@prisma/client'
+import { MockCategory } from '@repo/prisma/client'
 
 // Category icons mapping
 const categoryIcons: Record<string, React.ReactNode> = {

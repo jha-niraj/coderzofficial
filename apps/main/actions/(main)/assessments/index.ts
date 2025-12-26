@@ -4,7 +4,7 @@ import { auth } from '@repo/auth';
 import { prisma } from "@repo/prisma";
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty, AssessmentQuestionType
-} from "@prisma/client";
+} from "@repo/prisma/client";
 
 // ==================== RE-EXPORTS ====================
 // Export types and functions from practice and exam actions
@@ -125,18 +125,18 @@ export async function getAssessmentDashboard() {
             }))
         ].sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime()).slice(0, 10);
 
-    // Language progress - now derived from topic progress JSON or exam attempts
-    const languageProgress = stats?.topicProgress 
-      ? Object.entries(stats.topicProgress as Record<string, any>).map(([_, data]) => ({
-          language: data.language,
-          practiceCompleted: data.practiced || 0,
-          examsCompleted: data.examsTaken || 0,
-          examsPassed: data.examsPassed || 0,
-          accuracy: data.avgScore || 0,
-          highestScore: data.highestScore || 0,
-          totalXP: 0
-        }))
-      : [];        // Define achievements
+        // Language progress - now derived from topic progress JSON or exam attempts
+        const languageProgress = stats?.topicProgress
+            ? Object.entries(stats.topicProgress as Record<string, any>).map(([_, data]) => ({
+                language: data.language,
+                practiceCompleted: data.practiced || 0,
+                examsCompleted: data.examsTaken || 0,
+                examsPassed: data.examsPassed || 0,
+                accuracy: data.avgScore || 0,
+                highestScore: data.highestScore || 0,
+                totalXP: 0
+            }))
+            : [];        // Define achievements
         const achievements = await calculateAchievements(userId, totals);
 
         const dashboard: DashboardStats = {

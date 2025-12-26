@@ -4,29 +4,22 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-	ArrowLeft,
-	Clock,
-	Trophy,
-	Users,
-	Heart,
-	Play,
-	Lock,
-	CheckCircle2,
-	Code2,
-	MessageSquare,
-	Shuffle,
-	Eye,
-	Loader2,
-	Share2,
-	Award
+	ArrowLeft, Clock, Trophy, Users, Heart, Play, Lock, CheckCircle2, 
+	Code2, MessageSquare, Shuffle, Eye, Loader2, Share2, Award
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { 
+	Card, CardContent, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card";
+import { 
+	Avatar, AvatarFallback, AvatarImage 
+} from "@repo/ui/components/ui/avatar";
 import { Separator } from "@repo/ui/components/ui/separator";
-import { getExamSetDetails, toggleExamSetLike, startExamSetAttempt } from "@/actions/(main)/assessments/user-sets.action";
-import { toast } from "sonner";
+import { 
+	getExamSetDetails, toggleExamSetLike, startExamSetAttempt 
+} from "@/actions/(main)/assessments/user-sets.action";
+import toast from "@repo/ui/components/ui/sonner";
 import type { ExamSetDetails } from "@/types/assessment";
 
 const modeIcons = {

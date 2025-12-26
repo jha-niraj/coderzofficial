@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import {
 	ConceptCategory, ConceptDifficulty
-} from "@prisma/client";
+} from "@repo/prisma/client";
 import { toggleConceptBookmark } from "@/actions/(main)/concepts/concept.action";
 import { toast } from "sonner";
 
@@ -85,6 +85,7 @@ export function BookmarksGrid({ bookmarks: initialBookmarks }: BookmarksGridProp
 				toast.error(result.error || "Failed to remove bookmark");
 			}
 		} catch (error) {
+			console.log("Error occurred while removing bookmark: " + error);
 			toast.error("Something went wrong");
 		} finally {
 			setRemovingId(null);

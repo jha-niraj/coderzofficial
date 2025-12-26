@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
+import { ConceptCategory, ConceptDifficulty } from "@repo/prisma/client";
 import {
     Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card";
 import { Label } from "@repo/ui/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group";
 import { Button } from "@repo/ui/components/ui/button";
 import { Separator } from "@repo/ui/components/ui/separator";
 import {
@@ -177,8 +177,8 @@ export default function BrowseFilters({
                             <button
                                 onClick={() => updateFilter("category", null)}
                                 className={`w-full text-left px-2 py-1.5 rounded text-sm transition-colors ${!currentCategory
-                                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                        : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                                    : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                     }`}
                             >
                                 All Categories
@@ -191,8 +191,8 @@ export default function BrowseFilters({
                                             key={cat.category}
                                             onClick={() => updateFilter("category", cat.category)}
                                             className={`w-full text-left px-2 py-1.5 rounded text-sm transition-colors flex items-center justify-between ${currentCategory === cat.category
-                                                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                                    : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                                 }`}
                                         >
                                             <span className="flex items-center gap-2">

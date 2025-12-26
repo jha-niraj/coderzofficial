@@ -2,7 +2,7 @@
 
 import { auth } from "@repo/auth";
 import prisma from "@repo/prisma";
-import { ResourceType } from "@prisma/client"
+import { ResourceType } from "@repo/prisma/client"
 import { revalidatePath } from "next/cache"
 
 /**

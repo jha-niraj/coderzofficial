@@ -2,7 +2,7 @@
 
 import { auth } from '@repo/auth'
 import prisma from '@repo/prisma'
-import { AssessmentLanguage } from '@prisma/client'
+import { AssessmentLanguage } from '@repo/prisma/client'
 
 /**
  * Get authenticated user ID or throw error

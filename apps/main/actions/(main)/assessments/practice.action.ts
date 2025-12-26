@@ -5,7 +5,7 @@ import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty, AssessmentQuestionType
-} from "@prisma/client";
+} from "@repo/prisma/client";
 
 // ==================== TYPES ====================
 export type PracticeQuestion = {
@@ -118,6 +118,10 @@ export async function getTopicsByLanguage(language: AssessmentLanguage) {
                 totalCompleted += progress.completed;
                 totalQuestions += sub._count.questions;
 
+                // Check if previous submodule is completed to determine unlock status
+                const prevSubModuleId = idx > 0 ? topic.subModules[idx - 1]?.id : undefined;
+                const isPrevCompleted = prevSubModuleId ? (userProgress[prevSubModuleId]?.completed || 0) > 0 : false;
+
                 return {
                     id: sub.id,
                     name: sub.name,
@@ -128,7 +132,7 @@ export async function getTopicsByLanguage(language: AssessmentLanguage) {
                     completedCount: progress.completed,
                     accuracyRate: progress.accuracy,
                     // First sub-module is always unlocked, or if previous is completed
-                    isUnlocked: idx === 0 || (userProgress[topic.subModules[idx - 1]?.id]?.completed || 0) > 0
+                    isUnlocked: idx === 0 || isPrevCompleted
                 };
             });
 

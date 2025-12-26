@@ -7,15 +7,18 @@ export type { AuthOptions, Account, Profile } from './next-auth';
 // Re-export next-auth for convenience
 export { default as NextAuth } from 'next-auth';
 
-// Client-side exports
-export { signIn, signOut, useSession, SessionProvider } from 'next-auth/react';
-
-// Middleware exports
-export { withAuth } from 'next-auth/middleware';
-export type { NextRequestWithAuth } from 'next-auth/middleware';
-
 // Server-side helpers - re-export from next-auth
 export { getServerSession as getSession } from 'next-auth/next';
 
 // Export utility functions
 export * from './utils/referral';
+
+// =========================================================
+// IMPORTANT: Separate imports for different runtime contexts
+// =========================================================
+// For MIDDLEWARE (Edge Runtime):
+//   import { withAuth, type NextRequestWithAuth } from '@repo/auth/middleware';
+//
+// For CLIENT components (React):
+//   import { signIn, signOut, useSession, SessionProvider } from '@repo/auth/client';
+// =========================================================

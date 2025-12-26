@@ -214,7 +214,8 @@ export default function CodeEditor({
             toast.success("Code copied to clipboard!");
             setTimeout(() => setCopied(false), 2000);
         } catch (error) {
-            toast.error("Failed to copy code");
+            console.log("Failed to copy code: " + error);
+            toast.error("Failed to copy code: " + error);
         }
     };
 

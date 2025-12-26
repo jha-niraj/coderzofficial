@@ -9,7 +9,7 @@ import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Progress } from "@repo/ui/components/ui/progress";
 import { Button } from "@repo/ui/components/ui/button";
-import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
+import { ConceptCategory, ConceptDifficulty } from "@repo/prisma/client";
 
 interface ConceptProgress {
     id: string;

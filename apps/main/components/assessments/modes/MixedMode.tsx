@@ -12,7 +12,7 @@ import {
 import { DIFFICULTY_CONFIG } from "@/types/assessment";
 import type {
     QuestionDifficulty, AssessmentQuestionType
-} from "@prisma/client";
+} from "@repo/prisma/client";
 
 // Import individual mode components
 import { QuizMode, type QuizQuestion, type QuizAnswer } from "./QuizMode";

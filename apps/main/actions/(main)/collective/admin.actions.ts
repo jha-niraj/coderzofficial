@@ -3,7 +3,7 @@
 import { auth } from '@repo/auth';
 import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
-import { ChallengeStepType } from "@prisma/client";
+import { ChallengeStepType } from "@repo/prisma/client";
 
 export async function getTopProposals() {
 	const session = await auth();
@@ -429,8 +429,10 @@ async function updateChallengeLeaderboard(challengeId: string, userId: string) {
 		});
 
 		for (let i = 0; i < leaderboard.length; i++) {
+			const entry = leaderboard[i];
+			if (!entry) continue;
 			await prisma.challengeLeaderboard.update({
-				where: { id: leaderboard[i].id },
+				where: { id: entry.id },
 				data: { rank: i + 1 },
 			});
 		}

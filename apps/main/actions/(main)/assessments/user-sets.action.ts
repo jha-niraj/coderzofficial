@@ -3,9 +3,9 @@
 import { auth } from '@repo/auth';
 import prisma from "@repo/prisma";
 import { revalidatePath } from "next/cache";
-import { 
+import {
     UserContentStatus, AssessmentLanguage
-} from "@prisma/client";
+} from "@repo/prisma/client";
 
 // Import AI generation
 import { generateQuestionsWithAI } from "./ai-generation";

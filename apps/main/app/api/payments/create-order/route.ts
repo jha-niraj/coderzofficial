@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { auth } from '@repo/auth';
 import prisma from '@repo/prisma';
-import { 
-    creditPackages, convertToPaise, calculatePrice, paymentConfig 
+import {
+    creditPackages, convertToPaise, calculatePrice, paymentConfig
 } from '@/lib/payment-config';
-import { Currency } from '@prisma/client';
+import { Currency } from '@repo/prisma/client';
 
 export async function POST(req: NextRequest) {
     try {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         // Calculate amount
         const packageInfo = creditPackages.find(pkg => pkg.credits === credits);
         let amount: number;
-        
+
         if (packageInfo) {
             amount = currency === 'INR' ? packageInfo.inr : packageInfo.usd;
         } else {

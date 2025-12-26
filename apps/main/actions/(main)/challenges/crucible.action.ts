@@ -4,7 +4,7 @@ import { prisma } from '@repo/prisma'
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
 import { revalidatePath } from 'next/cache'
-import { CrucibleEventStatus } from '@prisma/client'
+import { CrucibleEventStatus } from '@repo/prisma/client'
 import crypto from 'crypto'
 
 // ===============================================
@@ -45,7 +45,7 @@ export async function getAllCrucibleEvents(options?: {
 export async function getCrucibleEventBySlug(slug: string) {
     try {
         const session = await getServerSession(authOptions)
-        
+
         const event = await prisma.crucibleEvent.findUnique({
             where: { slug },
             include: {
@@ -78,7 +78,7 @@ export async function getCrucibleEventBySlug(slug: string) {
         // Get user participation if logged in
         let participation = null
         let problemProgress: Record<string, any> = {}
-        
+
         if (session?.user?.id) {
             participation = await prisma.crucibleParticipation.findUnique({
                 where: {
@@ -103,9 +103,9 @@ export async function getCrucibleEventBySlug(slug: string) {
             })
         }
 
-        return { 
-            success: true, 
-            data: event, 
+        return {
+            success: true,
+            data: event,
             participation,
             problemProgress
         }
@@ -118,7 +118,7 @@ export async function getCrucibleEventBySlug(slug: string) {
 export async function getCrucibleProblem(eventSlug: string, dayNumber: number) {
     try {
         const session = await getServerSession(authOptions)
-        
+
         const event = await prisma.crucibleEvent.findUnique({
             where: { slug: eventSlug },
             select: { id: true, name: true, slug: true, themeColor: true }
@@ -155,7 +155,7 @@ export async function getCrucibleProblem(eventSlug: string, dayNumber: number) {
         let userInput = null
         let submissions: any[] = []
         let isSolved = false
-        
+
         if (session?.user?.id) {
             // Check if user has participated
             let participation = await prisma.crucibleParticipation.findUnique({
@@ -222,8 +222,8 @@ export async function getCrucibleProblem(eventSlug: string, dayNumber: number) {
             isSolved = submissions.some(s => s.isCorrect)
         }
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: problem,
             event,
             userInput,
@@ -247,7 +247,7 @@ function generateUserInput(template: string, userId: string, problemId: string):
     // Create deterministic seed from userId and problemId
     const seed = crypto.createHash('md5').update(`${userId}-${problemId}`).digest('hex')
     const seedNum = parseInt(seed.substring(0, 8), 16)
-    
+
     // Simple seeded random function
     let currentSeed = seedNum
     const seededRandom = () => {
@@ -259,7 +259,7 @@ function generateUserInput(template: string, userId: string, problemId: string):
     // Template format: JSON with generation rules
     try {
         const rules = JSON.parse(template)
-        
+
         if (rules.type === 'dial_rotations') {
             // Generate dial rotation problem (like the example)
             const numRotations = rules.count || 100
@@ -488,8 +488,8 @@ export async function submitCrucibleAnswer(problemId: string, answer: string) {
 
         revalidatePath(`/challenges/crucible/${problem.event.slug}`)
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: submission,
             isCorrect,
             xpEarned,
@@ -576,8 +576,8 @@ export async function revealCrucibleHint(problemId: string, hintIndex: number) {
             })
         }
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: { text: hint?.text, xpCost: hint?.xpCost || 0 }
         }
     } catch (error) {

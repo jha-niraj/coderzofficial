@@ -120,6 +120,7 @@ function TaskItemCard({
                 toast.error(result.error || 'Failed to update task')
             }
         } catch (error) {
+            console.log("Error occurred while updating task: " + error);
             toast.error('Something went wrong')
         } finally {
             setIsUpdating(false)
@@ -143,6 +144,7 @@ function TaskItemCard({
                 toast.error(result.error || 'Failed to start task')
             }
         } catch (error) {
+            console.log("Error occurred while starting task: " + error);
             toast.error('Something went wrong')
         } finally {
             setIsUpdating(false)
@@ -161,6 +163,7 @@ function TaskItemCard({
                 }
             }
         } catch (error) {
+            console.log("Error occurred while checking task details: " + error);
             console.error('Error checking task detail:', error)
         } finally {
             setIsCheckingDetail(false)
@@ -182,6 +185,7 @@ function TaskItemCard({
                 toast.error(result.error || 'Failed to generate details')
             }
         } catch (error) {
+            console.log("Error occurred while generating task details: " + error);
             toast.error('Something went wrong')
         } finally {
             setIsGeneratingDetail(false)

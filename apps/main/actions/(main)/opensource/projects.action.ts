@@ -2,9 +2,9 @@
 
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
-import { 
-    OSProjectType, OSProjectStatus,  OSIssueDifficulty
-} from '@prisma/client'
+import {
+    OSProjectType, OSProjectStatus, OSIssueDifficulty
+} from '@repo/prisma/client'
 
 // ==========================================
 // PROJECT ACTIONS
@@ -174,7 +174,7 @@ export async function getProjectBySlug(slug: string) {
 export async function getFeaturedProjects() {
     try {
         const projects = await prisma.openSourceProject.findMany({
-            where: { 
+            where: {
                 status: 'ACTIVE',
             },
             take: 6,

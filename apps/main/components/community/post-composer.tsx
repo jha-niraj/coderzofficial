@@ -18,7 +18,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import { cn } from '@repo/ui/lib/utils'
-import { CommunityPostType } from '@prisma/client'
+import { CommunityPostType } from '@repo/prisma/client'
 import { createPost } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
 

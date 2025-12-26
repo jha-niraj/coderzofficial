@@ -12,7 +12,7 @@ import {
 import { MessageCircle, Send } from "lucide-react";
 import { addComment } from "@/actions/(main)/collective/proposal.actions";
 import toast from '@repo/ui/components/ui/sonner'
-import { useSession } from '@repo/auth';
+import { useSession } from '@repo/auth/client';
 import { formatDistanceToNow } from "date-fns";
 
 interface CommentsSectionProps {

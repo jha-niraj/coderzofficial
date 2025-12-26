@@ -3,7 +3,7 @@
 import { auth } from "@repo/auth";
 import prisma from "@repo/prisma";
 import OpenAI from "openai"
-import { CreditType, Currency } from "@prisma/client"
+import { CreditType, Currency } from "@repo/prisma/client"
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,

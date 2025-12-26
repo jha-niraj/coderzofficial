@@ -4,13 +4,13 @@ import { useState, useEffect } from "react"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@repo/ui/components/ui/skeleton"
 import { Button } from "@repo/ui/components/ui/button"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from "@repo/ui/components/ui/dialog"
-import { 
-    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter 
+import {
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter
 } from "@repo/ui/components/ui/sheet"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
@@ -18,8 +18,8 @@ import { formatDistanceToNow } from "date-fns"
 import {
     ChevronUp, Award, Gift, LightbulbIcon
 } from "lucide-react"
-import { useSession } from '@repo/auth'
-import { FeedbackStatus, FeedbackCategory, Role } from "@prisma/client"
+import { useSession } from '@repo/auth/client';
+import { FeedbackStatus, FeedbackCategory, Role } from "@repo/prisma/client"
 import Image from "next/image"
 import { useFeedbackStore } from "@/app/store/feedbackStore"
 
@@ -239,7 +239,7 @@ export default function FeedbackList({ status, onStatusChange, setFeedbackSheetS
                 }
             </div>
             <Sheet open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-                <SheetContent 
+                <SheetContent
                     className="max-w-2xl bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                     side="right"
                     style={{ maxWidth: '500px' }}
@@ -310,7 +310,7 @@ export default function FeedbackList({ status, onStatusChange, setFeedbackSheetS
                                                     <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Rewarded!</p>
                                                     <p className="text-xs text-amber-700 dark:text-amber-300">
                                                         {
-                                                        selectedItem.rewards.description} - {
+                                                            selectedItem.rewards.description} - {
                                                             selectedItem.rewards.type === "credits"
                                                                 ? `${selectedItem.rewards.credits} credits`
                                                                 : `${selectedItem.rewards.xp} XP`

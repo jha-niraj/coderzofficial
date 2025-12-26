@@ -1,13 +1,13 @@
 "use server"
 
 import prisma from '@repo/prisma';
-import { Prisma, CreditType, Currency } from '@prisma/client';
+import { Prisma, CreditType, Currency } from '@repo/prisma/client';
 import { auth } from '@repo/auth';
 import Exa from "exa-js";
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
 import { trackActivity } from '@/actions/(main)/user/activity.action';
-import { ActivityType } from '@prisma/client';
+import { ActivityType } from '@repo/prisma/client';
 // Import ElevenLabs speech utility
 import {
 	transcribeWithElevenLabs, quickTranscribeWithElevenLabs,

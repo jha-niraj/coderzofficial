@@ -3,7 +3,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { auth } from '@repo/auth';
 import prisma from '@repo/prisma';
-import { CreditType } from '@prisma/client';
+import { CreditType } from '@repo/prisma/client';
 
 export async function POST(req: NextRequest) {
     const session = await auth();
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         // Verify payment status
         if (paymentDetails.status !== 'captured') {
             console.log('Payment not captured, status:', paymentDetails.status);
-            
+
             // Update payment status to failed
             await prisma.payment.updateMany({
                 where: { orderId: razorpay_order_id },

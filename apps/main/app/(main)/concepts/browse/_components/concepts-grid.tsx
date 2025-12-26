@@ -15,7 +15,7 @@ import {
 import {
     Avatar, AvatarFallback, AvatarImage
 } from "@repo/ui/components/ui/avatar";
-import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
+import { ConceptCategory, ConceptDifficulty } from "@repo/prisma/client";
 
 interface Concept {
     id: string;

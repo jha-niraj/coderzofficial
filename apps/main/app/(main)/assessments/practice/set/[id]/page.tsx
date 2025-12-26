@@ -21,7 +21,7 @@ import {
     togglePracticeSetLike,
     startPracticeSetAttempt
 } from '@/actions/(main)/assessments/user-sets.action'
-import { AssessmentMode, QuestionDifficulty } from '@prisma/client'
+import { AssessmentMode, QuestionDifficulty } from '@repo/prisma/client'
 import { formatDistanceToNow } from 'date-fns'
 import type { PracticeSetDetails } from '@/types/assessment'
 
@@ -170,7 +170,6 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-            {/* Header */}
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
                 <div className="container py-4">
                     <div className="flex items-center gap-4">
@@ -201,11 +200,8 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
                     </div>
                 </div>
             </div>
-
             <div className="container py-8 grid lg:grid-cols-3 gap-8">
-                {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Overview */}
                     <Card>
                         <CardContent className="p-6 space-y-4">
                             <div className="flex items-start gap-4">
@@ -217,26 +213,27 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
                                     </p>
                                 </div>
                             </div>
-
                             <div className="flex flex-wrap gap-2">
-                                <Badge className={cn(difficulty.bg, difficulty.text)}>
+                                <Badge className={cn(difficulty?.bg, difficulty?.text)}>
                                     {practiceSet.difficulty}
                                 </Badge>
                                 <Badge variant="outline" className="gap-1">
                                     {modeIcons[practiceSet.mode as AssessmentMode]}
                                     {practiceSet.mode}
                                 </Badge>
-                                {practiceSet.isPublic ? (
-                                    <Badge variant="outline" className="gap-1 text-blue-600">
-                                        <Globe className="w-3 h-3" />
-                                        Public
-                                    </Badge>
-                                ) : (
-                                    <Badge variant="outline" className="gap-1">
-                                        <Lock className="w-3 h-3" />
-                                        Private
-                                    </Badge>
-                                )}
+                                {
+                                    practiceSet.isPublic ? (
+                                        <Badge variant="outline" className="gap-1 text-blue-600">
+                                            <Globe className="w-3 h-3" />
+                                            Public
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="gap-1">
+                                            <Lock className="w-3 h-3" />
+                                            Private
+                                        </Badge>
+                                    )
+                                }
                             </div>
 
                             <Separator />
@@ -261,62 +258,64 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Questions Preview */}
-                    {canStart && practiceSet.questions && practiceSet.questions.length > 0 ? (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">Questions Preview</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {practiceSet.questions?.slice(0, 3).map((q: { id: string; type: string; difficulty: QuestionDifficulty; question: string; codeSnippet?: string | null }, idx: number) => (
-                                    <div key={q.id} className="p-4 rounded-lg bg-muted/50">
-                                        <div className="flex items-start gap-3">
-                                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                                                {idx + 1}
-                                            </span>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {q.type}
-                                                    </Badge>
-                                                    <Badge variant="outline" className={cn("text-xs", difficultyColors[q.difficulty]?.text)}>
-                                                        {q.difficulty}
-                                                    </Badge>
+                    {
+                        canStart && practiceSet.questions && practiceSet.questions.length > 0 ? (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Questions Preview</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {
+                                        practiceSet.questions?.slice(0, 3).map((q: { id: string; type: string; difficulty: QuestionDifficulty; question: string; codeSnippet?: string | null }, idx: number) => (
+                                            <div key={q.id} className="p-4 rounded-lg bg-muted/50">
+                                                <div className="flex items-start gap-3">
+                                                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                                                        {idx + 1}
+                                                    </span>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {q.type}
+                                                            </Badge>
+                                                            <Badge variant="outline" className={cn("text-xs", difficultyColors[q.difficulty]?.text)}>
+                                                                {q.difficulty}
+                                                            </Badge>
+                                                        </div>
+                                                        <p className="text-sm">{q.question}</p>
+                                                        {
+                                                            q.codeSnippet && (
+                                                                <pre className="mt-2 p-2 rounded bg-neutral-100 dark:bg-neutral-900 text-xs overflow-x-auto">
+                                                                    <code>{q.codeSnippet}</code>
+                                                                </pre>
+                                                            )
+                                                        }
+                                                    </div>
                                                 </div>
-                                                <p className="text-sm">{q.question}</p>
-                                                {q.codeSnippet && (
-                                                    <pre className="mt-2 p-2 rounded bg-neutral-100 dark:bg-neutral-900 text-xs overflow-x-auto">
-                                                        <code>{q.codeSnippet}</code>
-                                                    </pre>
-                                                )}
                                             </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {practiceSet.questions?.length > 3 && (
-                                    <p className="text-sm text-muted-foreground text-center">
-                                        + {practiceSet.questions.length - 3} more questions
+                                        ))
+                                    }
+                                    {
+                                        practiceSet.questions?.length > 3 && (
+                                            <p className="text-sm text-muted-foreground text-center">
+                                                + {practiceSet.questions.length - 3} more questions
+                                            </p>
+                                        )
+                                    }
+                                </CardContent>
+                            </Card>
+                        ) : !canStart ? (
+                            <Card className="border-dashed">
+                                <CardContent className="p-8 text-center">
+                                    <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                                    <h3 className="font-semibold mb-2">Questions Hidden</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        Sign in to view and attempt the questions
                                     </p>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ) : !canStart ? (
-                        <Card className="border-dashed">
-                            <CardContent className="p-8 text-center">
-                                <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                                <h3 className="font-semibold mb-2">Questions Hidden</h3>
-                                <p className="text-muted-foreground text-sm">
-                                    Sign in to view and attempt the questions
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ) : null}
+                                </CardContent>
+                            </Card>
+                        ) : null}
                 </div>
-
-                {/* Sidebar */}
                 <div className="space-y-6">
-                    {/* Creator Info */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-sm">Created by</CardTitle>
@@ -340,62 +339,60 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Action Card */}
                     <Card>
                         <CardContent className="p-6 space-y-4">
-                            {practiceSet.isOwner ? (
-                                <>
-                                    <div className="text-center">
-                                        <Badge className="mb-2">Your Practice Set</Badge>
-                                        <p className="text-sm text-muted-foreground">
-                                            You created this practice set
+                            {
+                                practiceSet.isOwner ? (
+                                    <>
+                                        <div className="text-center">
+                                            <Badge className="mb-2">Your Practice Set</Badge>
+                                            <p className="text-sm text-muted-foreground">
+                                                You created this practice set
+                                            </p>
+                                        </div>
+                                        <Link href={`/assessments/practice/start/${id}`}>
+                                            <Button className="w-full gap-2">
+                                                <Play className="w-4 h-4" />
+                                                Start Practice
+                                            </Button>
+                                        </Link>
+                                    </>
+                                ) : canStart ? (
+                                    <>
+                                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 text-center">
+                                            <CheckCircle className="w-5 h-5 mx-auto mb-1" />
+                                            <p className="text-sm font-medium">Access Granted</p>
+                                        </div>
+                                        <Link href={`/assessments/practice/start/${id}`}>
+                                            <Button className="w-full gap-2">
+                                                <Play className="w-4 h-4" />
+                                                Start Practice
+                                            </Button>
+                                        </Link>
+                                        <p className="text-xs text-muted-foreground text-center">
+                                            Earn credits on completion
                                         </p>
-                                    </div>
-                                    <Link href={`/assessments/practice/start/${id}`}>
-                                        <Button className="w-full gap-2">
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-center">
+                                            <p className="text-lg text-muted-foreground">Sign in to start</p>
+                                        </div>
+                                        <Button
+                                            className="w-full gap-2"
+                                            onClick={() => router.push('/login')}
+                                        >
                                             <Play className="w-4 h-4" />
-                                            Start Practice
+                                            Sign In to Start
                                         </Button>
-                                    </Link>
-                                </>
-                            ) : canStart ? (
-                                <>
-                                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 text-center">
-                                        <CheckCircle className="w-5 h-5 mx-auto mb-1" />
-                                        <p className="text-sm font-medium">Access Granted</p>
-                                    </div>
-                                    <Link href={`/assessments/practice/start/${id}`}>
-                                        <Button className="w-full gap-2">
-                                            <Play className="w-4 h-4" />
-                                            Start Practice
-                                        </Button>
-                                    </Link>
-                                    <p className="text-xs text-muted-foreground text-center">
-                                        Earn credits on completion
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-center">
-                                        <p className="text-lg text-muted-foreground">Sign in to start</p>
-                                    </div>
-                                    <Button
-                                        className="w-full gap-2"
-                                        onClick={() => router.push('/login')}
-                                    >
-                                        <Play className="w-4 h-4" />
-                                        Sign In to Start
-                                    </Button>
-                                    <p className="text-xs text-muted-foreground text-center">
-                                        Earn credits on completion
-                                    </p>
-                                </>
-                            )}
+                                        <p className="text-xs text-muted-foreground text-center">
+                                            Earn credits on completion
+                                        </p>
+                                    </>
+                                )
+                            }
                         </CardContent>
                     </Card>
-
-                    {/* What's Included */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-sm">What's Included</CardTitle>

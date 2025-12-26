@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function getActiveChallenges(): Promise<any[]> {
 	try {
-		const challenges = await prisma.communityChallenge.findMany({
+		const challenges = await prisma.collectiveChallenge.findMany({
 			where: {
 				status: "ACTIVE",
 				startDate: { lte: new Date() },
@@ -84,7 +84,7 @@ export async function getChallengeDetails(challengeId: string) {
 	const session = await auth();
 
 	try {
-		const challenge = await prisma.communityChallenge.findUnique({
+		const challenge = await prisma.collectiveChallenge.findUnique({
 			where: { id: challengeId },
 			include: {
 				proposal: {

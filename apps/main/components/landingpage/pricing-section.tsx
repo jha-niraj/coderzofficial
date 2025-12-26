@@ -4,12 +4,12 @@ import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
-    ChevronRight, Wallet, Lock, Infinity, Server
+    ChevronRight, Wallet, Lock, Infinity as Infit, Server
 } from "lucide-react"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
-import { BentoPricing } from "@/components/ui/bento-pricing"
+import { BentoPricing } from "@/components/main/bentopricing"
 
 export default function PricingSection() {
     const [currency, setCurrency] = useState<"INR" | "USD">("INR")
@@ -33,7 +33,7 @@ export default function PricingSection() {
                         Pay for <span className="text-neutral-400 dark:text-neutral-600">execution.</span>
                     </h2>
                     <p className="text-lg text-neutral-600 dark:text-neutral-400 font-light leading-relaxed mb-8">
-                        We don't charge for idle time. Purchase credits and only spend them when you run our specialized agents or take certifications.
+                        We don&apos;t charge for idle time. Purchase credits and only spend them when you run our specialized agents or take certifications.
                     </p>
                     <div className="flex justify-center items-center gap-4 p-2 pl-4 pr-2 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 w-fit mx-auto">
                         <span className={`text-sm font-bold font-mono transition-colors ${currency === "INR" ? "text-neutral-900 dark:text-white" : "text-neutral-400"}`}>
@@ -73,7 +73,7 @@ export default function PricingSection() {
                                 desc: "AES-256 encryption for all payment data."
                             },
                             {
-                                icon: Infinity,
+                                icon: Infit,
                                 title: "Perpetual Credits",
                                 desc: "Credits never expire. Your balance is yours forever."
                             },

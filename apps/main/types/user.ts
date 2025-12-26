@@ -1,4 +1,4 @@
-import { SkillCategory } from "@prisma/client"
+import { SkillCategory } from "@repo/prisma/client"
 
 export type UserProfile = {
     id: string
@@ -29,7 +29,7 @@ export type UserProfile = {
     website?: string
     createdAt?: Date | string
     occupation?: string
-    creditsShared?: number  | null
+    creditsShared?: number | null
     maxCreditsShared?: number | null
 }
 

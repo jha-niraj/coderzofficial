@@ -3,8 +3,8 @@
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import {
-    ArrowLeft, BookOpen, CheckCircle, Clock, DollarSign, ExternalLink, 
-    GitBranch, GitPullRequest, GraduationCap, Loader2, Plus, Star, 
+    ArrowLeft, BookOpen, CheckCircle, Clock, DollarSign, ExternalLink,
+    GitBranch, GitPullRequest, GraduationCap, Loader2, Plus, Star,
     Users, AlertCircle
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -12,11 +12,11 @@ import {
     Card, CardContent
 } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Tabs, TabsContent, TabsList, TabsTrigger 
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
 } from '@repo/ui/components/ui/tabs'
-import { 
-    Avatar, AvatarFallback, AvatarImage 
+import {
+    Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -27,10 +27,10 @@ import {
 import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
-    getProjectBySlug, getProjectIssues, claimIssue, getUserCertificationStatus, 
+    getProjectBySlug, getProjectIssues, claimIssue, getUserCertificationStatus,
     DIFFICULTY_LEVELS
 } from '@/actions/(main)/opensource'
-import { OSIssueDifficulty, OSIssueStatus } from '@prisma/client'
+import { OSIssueDifficulty, OSIssueStatus } from '@repo/prisma/client'
 import toast from '@repo/ui/components/ui/sonner'
 import { formatDistanceToNow } from 'date-fns'
 

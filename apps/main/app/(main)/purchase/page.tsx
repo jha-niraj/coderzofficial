@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from '@repo/auth'
+import { useSession } from '@repo/auth/client';
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
 import { Label } from '@repo/ui/components/ui/label'
@@ -288,7 +288,7 @@ export default function PurchasePage() {
 											min={paymentConfig.minCredits}
 											max={paymentConfig.maxCredits}
 											step={10}
-											onValueChange={(vals) => setBasicCredits(vals[0])}
+											onValueChange={(vals) => setBasicCredits(vals[0]!)}
 											className="cursor-pointer"
 										/>
 									</div>

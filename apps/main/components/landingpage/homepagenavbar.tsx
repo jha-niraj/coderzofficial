@@ -10,8 +10,8 @@ import Image from "next/image";
 import { ArrowRight, Menu } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { useSession } from '@repo/auth';
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useSession } from '@repo/auth/client';
+import { ThemeToggle } from "@repo/ui/components/themetoggle";
 
 export default function Navbar() {
     const { data: session, status } = useSession();

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-    Users, MessageSquare, CheckCircle2, TrendingUp, Sparkles, Lock, Globe
+    Users, MessageSquare, CheckCircle2, TrendingUp, Sparkles, Lock
 } from 'lucide-react'
 import {
     Card, CardContent

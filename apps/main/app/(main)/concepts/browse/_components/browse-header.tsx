@@ -9,7 +9,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
     ConceptCategory, ConceptDifficulty
-} from "@prisma/client";
+} from "@repo/prisma/client";
 import { useState } from "react";
 
 interface BrowseHeaderProps {

@@ -23,7 +23,7 @@ import {
 import { cn } from '@repo/ui/lib/utils'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getProjects, DIFFICULTY_LEVELS } from '@/actions/(main)/opensource'
-import { OSIssueDifficulty } from '@prisma/client'
+import { OSIssueDifficulty } from '@repo/prisma/client'
 
 const typeColors: Record<string, { bg: string; text: string; border: string }> = {
     FREE: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', border: 'border-green-200 dark:border-green-800' },

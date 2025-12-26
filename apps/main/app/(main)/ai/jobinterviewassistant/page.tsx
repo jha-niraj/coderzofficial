@@ -4,9 +4,8 @@ import type React from "react"
 import { useEffect, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    Loader2, FileText, Sparkles, Users, Zap,
-    ChevronRight, Upload, Clock, Calendar, ArrowRight, ChevronDown,
-    Target, Brain, Code, MessageSquare,
+    Loader2, FileText, Sparkles, Users, Zap, ChevronRight, Upload, Clock, 
+    Calendar, ArrowRight, ChevronDown, Target, Brain, Code, MessageSquare,
     Shield, CheckCircle, Globe, ChevronUp, FileQuestion, Cpu
 } from "lucide-react"
 import { Input } from "@repo/ui/components/ui/input"

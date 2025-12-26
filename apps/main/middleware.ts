@@ -1,4 +1,4 @@
-import { withAuth, type NextRequestWithAuth } from "@repo/auth"
+import { withAuth, type NextRequestWithAuth } from "@repo/auth/middleware"
 import { NextResponse } from "next/server"
 
 // Protected routes that require authentication (only core user-specific functionality)
@@ -135,27 +135,27 @@ export default withAuth(
 		callbacks: {
 			authorized: ({ token, req }) => {
 				const { pathname } = req.nextUrl
-				
+
 				// Allow access to public routes
-				if (publicRoutes.some(route => 
+				if (publicRoutes.some(route =>
 					pathname === route || (route !== '/' && pathname.startsWith(route))
 				)) {
 					return true
 				}
-				
+
 				// Allow access to API routes
 				if (apiRoutes.some(route => pathname.startsWith(route))) {
 					return true
 				}
-				
+
 				// Check if route is protected
 				const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-				
+
 				// If it's a protected route, require authentication
 				if (isProtectedRoute) {
 					return !!token
 				}
-				
+
 				// Allow everything else
 				return true
 			},

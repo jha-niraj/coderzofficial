@@ -4,7 +4,7 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
 import { revalidatePath } from "next/cache"
-import { CommunityPostType, CommunityRole } from "@prisma/client"
+import { CommunityPostType, CommunityRole } from "@repo/prisma/client"
 
 // ==================== TYPES ====================
 export interface CreatePostInput {
@@ -58,7 +58,7 @@ export async function createPost(input: CreatePostInput) {
             const channel = await prisma.communityChannel.findUnique({
                 where: { id: input.channelId }
             })
-            
+
             if (channel?.type === 'ANNOUNCEMENTS') {
                 if (!['OWNER', 'ADMIN'].includes(membership.role)) {
                     return { success: false, error: "Only admins can post announcements" }
@@ -132,11 +132,11 @@ export async function getCommunityPosts(communityId: string, options?: {
             ...(isPinned !== undefined && { isPinned })
         }
 
-        const orderBy = sortBy === 'popular' 
+        const orderBy = sortBy === 'popular'
             ? [{ likeCount: 'desc' as const }, { createdAt: 'desc' as const }]
             : sortBy === 'trending'
-            ? [{ commentCount: 'desc' as const }, { likeCount: 'desc' as const }]
-            : [{ createdAt: 'desc' as const }]
+                ? [{ commentCount: 'desc' as const }, { likeCount: 'desc' as const }]
+                : [{ createdAt: 'desc' as const }]
 
         const posts = await prisma.communityPost.findMany({
             where,
@@ -172,7 +172,7 @@ export async function getCommunityPosts(communityId: string, options?: {
         // Check if current user has liked
         const session = await getServerSession(authOptions)
         let userLikes: string[] = []
-        
+
         if (session?.user?.id) {
             const likes = await prisma.communityPostLike.findMany({
                 where: {
@@ -189,10 +189,10 @@ export async function getCommunityPosts(communityId: string, options?: {
             isLiked: userLikes.includes(post.id)
         }))
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: postsWithUserData,
-            nextCursor: hasMore ? items[items.length - 1].id : undefined
+            nextCursor: hasMore ? items[items.length - 1]?.id : undefined
         }
     } catch (error) {
         console.error('Error fetching posts:', error)
@@ -331,7 +331,7 @@ export async function updatePost(postId: string, input: UpdatePostInput) {
                     }
                 }
             })
-            
+
             if (!membership || !['OWNER', 'ADMIN', 'MODERATOR'].includes(membership.role)) {
                 return { success: false, error: "You don't have permission" }
             }
@@ -381,7 +381,7 @@ export async function deletePost(postId: string) {
                     }
                 }
             })
-            
+
             if (!membership || !['OWNER', 'ADMIN', 'MODERATOR'].includes(membership.role)) {
                 return { success: false, error: "You don't have permission" }
             }
@@ -393,8 +393,8 @@ export async function deletePost(postId: string) {
 
         // Update counts
         await prisma.community.update({
-            where: { 
-                id: post.communityId ?? '' 
+            where: {
+                id: post.communityId ?? ''
             },
             data: { postCount: { decrement: 1 } }
         })
@@ -676,7 +676,7 @@ export async function getTrendingPosts(options?: {
                 dateFilter = undefined
         }
 
-        const where = dateFilter 
+        const where = dateFilter
             ? { createdAt: { gte: dateFilter } }
             : {}
 
@@ -742,10 +742,10 @@ export async function getTrendingPosts(options?: {
             isLiked: userLikes.includes(post.id)
         }))
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: postsWithUserData,
-            nextCursor: hasMore ? items[items.length - 1].id : undefined
+            nextCursor: hasMore ? items[items.length - 1]?.id : undefined
         }
     } catch (error) {
         console.error('Error fetching trending posts:', error)
@@ -834,10 +834,10 @@ export async function getFollowingFeed(options?: {
             isLiked: userLikes.includes(post.id)
         }))
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: postsWithUserData,
-            nextCursor: hasMore ? items[items.length - 1].id : undefined
+            nextCursor: hasMore ? items[items.length - 1]?.id : undefined
         }
     } catch (error) {
         console.error('Error fetching following feed:', error)
@@ -929,10 +929,10 @@ export async function getGlobalFeed(options?: {
             isLiked: userLikes.includes(post.id)
         }))
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: postsWithUserData,
-            nextCursor: hasMore ? items[items.length - 1].id : undefined
+            nextCursor: hasMore ? items[items.length - 1]?.id : undefined
         }
     } catch (error) {
         console.error('Error fetching global feed:', error)

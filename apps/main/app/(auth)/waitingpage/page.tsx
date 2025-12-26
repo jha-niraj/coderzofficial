@@ -1,7 +1,7 @@
 "use client"
 
 import axios from 'axios';
-import { useSession } from '@repo/auth';
+import { useSession } from '@repo/auth/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useState } from 'react';
 import { 

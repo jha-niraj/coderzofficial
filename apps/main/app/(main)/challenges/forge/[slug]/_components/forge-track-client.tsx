@@ -137,7 +137,7 @@ export function ForgeTrackClient({
         
         // Check if previous step is completed
         const prevStep = track.steps[index - 1]
-        const prevProgress = stepProgress[prevStep.id]
+        const prevProgress = stepProgress[prevStep?.id]
         if (prevProgress?.status === 'CORRECT') return 'available'
         
         return 'locked'

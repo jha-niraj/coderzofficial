@@ -21,7 +21,7 @@ import {
     DropdownMenuTrigger
 } from '@repo/ui/components/ui/dropdown-menu'
 import { cn } from '@repo/ui/lib/utils'
-import { CommunityPostType } from '@prisma/client'
+import { CommunityPostType } from '@repo/prisma/client'
 import { togglePostLike } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
 

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { voteOnProposal } from "@/actions/(main)/collective/proposal.actions";
 import toast from "@repo/ui/components/ui/sonner";
-import { useSession } from '@repo/auth';
+import { useSession } from '@repo/auth/client';
 
 interface VotingSectionProps {
   proposal: {

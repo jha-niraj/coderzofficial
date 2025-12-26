@@ -144,7 +144,7 @@ export function CommunitySidebar({
                                 ) : (
                                     <div className="px-3 py-4 text-center">
                                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">
-                                            You haven't joined any communities yet
+                                            You haven&apos;t joined any communities yet
                                         </p>
                                         <Link href="/communities/discover">
                                             <Button variant="outline" size="sm" className="gap-2">

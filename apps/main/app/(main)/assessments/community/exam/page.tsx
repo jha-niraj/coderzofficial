@@ -26,7 +26,7 @@ import { getPublicExamSets } from "@/actions/(main)/assessments/user-sets.action
 import type { ExamSetPreview } from "@/types/assessment";
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty
-} from "@prisma/client";
+} from "@repo/prisma/client";
 
 const LANGUAGES = [
     "JAVASCRIPT", "PYTHON", "TYPESCRIPT", "REACTJS", "NODEJS",

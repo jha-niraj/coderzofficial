@@ -1,14 +1,14 @@
 // Project V2 Types based on Prisma Schema
 
-import { 
-    ProjectV2Visibility, 
-    ProjectV2Difficulty, 
-    UserProjectV2Status, 
+import {
+    ProjectV2Visibility,
+    ProjectV2Difficulty,
+    UserProjectV2Status,
     TaskKanbanStatus,
     FeatureSuggestionType,
     FeatureSuggestionStatus,
     SuggestionSource
-} from '@prisma/client';
+} from '@repo/prisma/client';
 
 // Database return types
 export interface UserFromDB {

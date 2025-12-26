@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import {
     getConcepts, getCategories
 } from "@/actions/(main)/concepts/concept.action";
-import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
+import { ConceptCategory, ConceptDifficulty } from "@repo/prisma/client";
 import BrowsePageClient from "./_components/browse-page-client";
 
 export const metadata: Metadata = {

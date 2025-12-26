@@ -13,7 +13,7 @@ import {
 import {
     Pagination, PaginationContent, PaginationItem, PaginationLink,
     PaginationNext, PaginationPrevious
-} from '@/components/ui/pagination'
+} from '@repo/ui/components/ui/pagination'
 import {
     ArrowLeft, Search, Plus, Brain, ChevronRight, Target, Shield, Sparkles
 } from 'lucide-react'

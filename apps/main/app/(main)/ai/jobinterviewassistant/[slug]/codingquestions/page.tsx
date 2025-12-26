@@ -7,10 +7,12 @@ import {
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
-	Tabs, TabsContent
+	Tabs, TabsContent,
+	TabsList,
+	TabsTrigger
 } from "@repo/ui/components/ui/tabs"
 import {
-	CheckCircle, XCircle, Code2, Play, Send
+	CheckCircle, XCircle, Code2, Play, Send, ArrowLeft, Target, Lightbulb, Brain
 } from "lucide-react"
 import CodeEditor from "@/components/CodeEditor"
 import {
@@ -374,8 +376,8 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 										{selectedProblem + 1}. Coding Challenge
 									</h2>
 									<Badge
-										variant={currentProblem.difficulty === "Easy" ? "secondary" :
-											currentProblem.difficulty === "Medium" ? "default" : "destructive"}
+										variant={currentProblem?.difficulty === "Easy" ? "secondary" :
+											currentProblem?.difficulty === "Medium" ? "default" : "destructive"}
 										className="text-xs"
 									>
 										{currentProblem?.difficulty}
@@ -383,11 +385,11 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 								</div>
 								<div className="prose prose-sm dark:prose-invert max-w-none">
 									<p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-										{currentProblem.question}
+										{currentProblem?.question}
 									</p>
 								</div>
 								{
-									currentProblem.testCases && currentProblem.testCases.length > 0 && (
+									currentProblem?.testCases && currentProblem.testCases.length > 0 && (
 										<div className="mt-6">
 											<h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Examples</h3>
 											<div className="space-y-4">
@@ -428,7 +430,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 								}
 
 								{
-									currentProblem.hints && currentProblem.hints.length > 0 && (
+									currentProblem?.hints && currentProblem.hints.length > 0 && (
 										<div className="mt-6">
 											<h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
 												<Lightbulb className="h-4 w-4 text-yellow-500" />
@@ -516,7 +518,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 														language={selectedLanguage}
 														initialCode={generatedAnswer.answer?.solution || "// No solution available"}
 														readOnly={true}
-														questionType={currentProblem.questionType || "DSA"}
+														questionType={currentProblem?.questionType || "DSA"}
 														showRunSubmit={false}
 														allowCopyPaste={true}
 														allowRightClick={true}
@@ -714,7 +716,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 							language={selectedLanguage}
 							onRun={handleRun}
 							onSubmit={handleSubmitClick}
-							questionType={currentProblem.questionType || "DSA"}
+							questionType={currentProblem?.questionType || "DSA"}
 							readOnly={false}
 							allowedLanguages={allowedLanguages}
 							onLanguageChange={handleLanguageChange}

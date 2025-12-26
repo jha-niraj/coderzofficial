@@ -3,15 +3,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle 
+import {
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from '@repo/ui/components/ui/sheet'
 import { Button } from '@repo/ui/components/ui/button'
 import { Label } from '@repo/ui/components/ui/label'
 import { Textarea } from '@repo/ui/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { 
-    Star, AlertCircle, Loader2, CheckCircle, MessageSquare 
+import { Checkbox } from '@repo/ui/components/ui/checkbox'
+import {
+    Star, AlertCircle, Loader2, CheckCircle, MessageSquare
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import { submitReview } from '@/actions/(main)/mockvoice/review.action'
@@ -72,7 +72,7 @@ export function ReviewSheet({ isOpen, onClose, sessionId, existingRating }: Revi
 
             setStep('success')
             toast.success('Thank you for your feedback!')
-            
+
             // Close after 2 seconds and refresh
             setTimeout(() => {
                 onClose()
@@ -131,11 +131,10 @@ export function ReviewSheet({ isOpen, onClose, sessionId, existingRating }: Revi
                                                 className="focus:outline-none"
                                             >
                                                 <Star
-                                                    className={`w-10 h-10 transition-colors ${
-                                                        star <= (hoveredRating || rating)
+                                                    className={`w-10 h-10 transition-colors ${star <= (hoveredRating || rating)
                                                             ? 'fill-amber-400 text-amber-400'
                                                             : 'text-neutral-300 dark:text-neutral-700'
-                                                    }`}
+                                                        }`}
                                                 />
                                             </motion.button>
                                         ))}

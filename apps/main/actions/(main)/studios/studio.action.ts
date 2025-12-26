@@ -5,7 +5,7 @@ import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
 import * as fal from "@fal-ai/serverless-client";
-import { StudioVisibility } from "@prisma/client";
+import { StudioVisibility } from "@repo/prisma/client";
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -395,8 +395,8 @@ export async function generateImage(
             },
         });
 
-        return { 
-            mediaBlock, imageUrl: imageData?.url 
+        return {
+            mediaBlock, imageUrl: imageData?.url
         };
     } catch (error) {
         console.error("Error generating image:", error);

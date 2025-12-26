@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { signIn, useSession } from '@repo/auth'
+import { signIn, useSession } from '@repo/auth/client';
 import {
 	Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@repo/ui/components/ui/dialog"
@@ -223,13 +223,13 @@ export function AuthDialog() {
 								<div className="flex items-start gap-3 p-4 bg-gray-50/80 dark:bg-gray-800/50 rounded-xl backdrop-blur-sm">
 									<CircleHelp className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
 									<p className="text-sm text-gray-600 dark:text-gray-400">
-										New to our platform? You'll be able to create an account after signing in with Google, or use the signup link below.
+										New to our platform? You&apos;ll be able to create an account after signing in with Google, or use the signup link below.
 									</p>
 								</div>
 								<div className="pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
 									<div className="text-center space-y-4">
 										<p className="text-sm text-gray-600 dark:text-gray-400">
-											Don't have an account yet?
+											Don&apos;t have an account yet?
 										</p>
 										<Button
 											variant="outline"

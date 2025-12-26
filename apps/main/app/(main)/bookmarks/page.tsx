@@ -3,15 +3,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import {
     Bookmark, Lightbulb, FolderKanban, MessageSquare, GraduationCap,
-    ChevronRight, Loader2, Clock, Sparkles, BookMarked, LucideIcon
+    ChevronRight, Clock, BookMarked, LucideIcon
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { 
+    Card, CardContent 
+} from "@repo/ui/components/ui/card";
+import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import { getBookmarksSummary } from "@/actions/(main)/bookmarks/bookmarks.action";
 import { cn } from "@repo/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";

@@ -20,7 +20,7 @@ import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
 import {
 	AssessmentLanguage, AssessmentMode
-} from '@prisma/client'
+} from '@repo/prisma/client'
 import { CreateSetSheet } from '@/components/assessments/CreateSetSheet'
 import { getTopicsByLanguage } from '@/actions/(main)/assessments/practice.action'
 import { getUserPracticeSets } from '@/actions/(main)/assessments/user-sets.action'

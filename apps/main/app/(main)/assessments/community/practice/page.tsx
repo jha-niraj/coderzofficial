@@ -9,7 +9,9 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Input } from '@repo/ui/components/ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui/components/ui/avatar'
+import { 
+    Avatar, AvatarFallback, AvatarImage 
+} from '@repo/ui/components/ui/avatar'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
@@ -20,7 +22,9 @@ import { cn } from '@repo/ui/lib/utils'
 import {
     getPublicPracticeSets
 } from '@/actions/(main)/assessments/user-sets.action'
-import { AssessmentLanguage, AssessmentMode, QuestionDifficulty } from '@prisma/client'
+import { 
+    AssessmentLanguage, QuestionDifficulty 
+} from '@repo/prisma/client'
 import { formatDistanceToNow } from 'date-fns'
 import type { PracticeSetPreview } from '@/types/assessment'
 
@@ -338,7 +342,7 @@ export default function CommunityPracticePage() {
 
 function PracticeSetCard({ set }: { set: PracticeSetPreview }) {
     const lang = LANGUAGES[set.language]
-    const difficulty = difficultyColors[set.difficulty]
+    const difficulty = difficultyColors[set.difficulty] || { bg: 'bg-gray-100 dark:bg-gray-900/30', text: 'text-gray-700 dark:text-gray-400' }
 
     return (
         <Link href={`/assessments/practice/set/${set.id}`}>

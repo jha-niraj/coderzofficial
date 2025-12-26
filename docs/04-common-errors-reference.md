@@ -237,10 +237,10 @@ If you have a Prisma schema file in a custom path, you will need to run
 
 ---
 
-### Cannot Find Module '@prisma/client'
+### Cannot Find Module '@repo/prisma/client'
 
 ```
-Cannot find module '@prisma/client' or its corresponding type declarations.
+Cannot find module '@repo/prisma/client' or its corresponding type declarations.
 ```
 
 **Cause 1:** Prisma client not generated
@@ -260,39 +260,39 @@ pnpm install
 ### Prisma Client Version Mismatch
 
 ```
-Package @prisma/client can't be external
+Package @repo/prisma/client can't be external
 The package resolves to a different version when requested from 
 the project directory (5.22.0) compared to the package requested
  from the importing module (6.19.1).
 ```
 
-**Cause:** Different `@prisma/client` versions in different packages
+**Cause:** Different `@repo/prisma/client` versions in different packages
 
 **Solution:** Use SAME version everywhere:
 
 ```json
 // packages/database/package.json
-{ "dependencies": { "@prisma/client": "6.14.0" } }
+{ "dependencies": { "@repo/prisma/client": "6.14.0" } }
 
 // apps/main/package.json
-{ "dependencies": { "@prisma/client": "6.14.0" } }
+{ "dependencies": { "@repo/prisma/client": "6.14.0" } }
 
 // apps/admin/package.json  
-{ "dependencies": { "@prisma/client": "6.14.0" } }
+{ "dependencies": { "@repo/prisma/client": "6.14.0" } }
 ```
 
 ---
 
-### @prisma/client Can't Be External
+### @repo/prisma/client Can't Be External
 
 ```
-Package @prisma/client can't be external
-The request @prisma/client matches serverExternalPackages
+Package @repo/prisma/client can't be external
+The request @repo/prisma/client matches serverExternalPackages
 The request could not be resolved by Node.js from the project directory.
 Try to install it into the project directory
 ```
 
-**Cause:** `@prisma/client` not in app's dependencies
+**Cause:** `@repo/prisma/client` not in app's dependencies
 
 **Solution:** Add to each app:
 
@@ -301,7 +301,7 @@ Try to install it into the project directory
 {
   "dependencies": {
     "@repo/database": "workspace:*",
-    "@prisma/client": "6.14.0"  // Add this!
+    "@repo/prisma/client": "6.14.0"  // Add this!
   }
 }
 ```
@@ -476,7 +476,7 @@ Type error: Property 'X' does not exist on type 'Y'
        ├─── Contains "prisma" or "schema"
        │         ├─── Add prisma.schema to root package.json
        │         ├─── Run pnpm --filter @repo/database generate
-       │         └─── Check @prisma/client versions match
+       │         └─── Check @repo/prisma/client versions match
        │
        ├─── Contains "turbo" or "task not found"
        │         ├─── Define task in turbo.json
@@ -495,7 +495,7 @@ Type error: Property 'X' does not exist on type 'Y'
 ### Before Deploying to Production
 
 - [ ] All packages use `"workspace:*"` for local dependencies
-- [ ] `@prisma/client` versions match across all packages
+- [ ] `@repo/prisma/client` versions match across all packages
 - [ ] Root package.json has `prisma.schema` configured
 - [ ] Root package.json has `postinstall` script for Prisma
 - [ ] `turbo.json` has `generate` task defined

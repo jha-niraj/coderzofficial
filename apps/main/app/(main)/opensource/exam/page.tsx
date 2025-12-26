@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useSession } from '@repo/auth';
+import { useSession } from '@repo/auth/client';
 import {
     BookOpen, Brain, Trophy, Clock, CheckCircle2, XCircle, AlertTriangle,
     ChevronRight, ChevronLeft, Loader2, Shield, GitPullRequest, Terminal,
@@ -21,7 +21,7 @@ import {
 } from "@repo/ui/components/ui/radio-group";
 import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
-import toast from "repo/ui/components/ui/sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import { cn } from "@repo/ui/lib/utils";
 import {
     getLearningProgress, recordExamResult
@@ -1035,7 +1035,7 @@ export default function CertificationExamPage() {
                                                                         }
                                                                     </p>
                                                                     {
-                                                                        !examResult.feedback[q.id].correct && (
+                                                                        !examResult?.feedback?.[q.id]?.correct && (
                                                                             <p className="text-xs mt-2 text-muted-foreground">
                                                                                 💡 {examResult.feedback[q.id].explanation}
                                                                             </p>
@@ -1044,7 +1044,7 @@ export default function CertificationExamPage() {
                                                                 </div>
                                                                 <div>
                                                                     {
-                                                                        examResult.feedback[q.id].correct ? (
+                                                                        examResult?.feedback?.[q.id]?.correct ? (
                                                                             <CheckCircle2 className="h-6 w-6 text-green-500" />
                                                                         ) : (
                                                                             <XCircle className="h-6 w-6 text-red-500" />

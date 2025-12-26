@@ -4,7 +4,7 @@ import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
 import OpenAI from 'openai'
-import { MockCategory, MockLevel } from '@prisma/client'
+import { MockCategory, MockLevel } from '@repo/prisma/client'
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -246,7 +246,7 @@ export async function getMockById(mockId: string) {
 export async function createCustomMockVoice(input: CreateCustomMockInput) {
     try {
         const session = await auth()
-        
+
         if (!session?.user?.id) {
             return {
                 success: false,
@@ -298,7 +298,7 @@ export async function createCustomMockVoice(input: CreateCustomMockInput) {
 
         // Generate or use provided knowledge base
         let knowledgeBase: string
-        
+
         // If user provided their own knowledge base/syllabus, use it with enhancements
         if (input.knowledgeBase && input.knowledgeBase.trim().length > 50) {
             try {
@@ -536,7 +536,7 @@ export async function getFeaturedPublicMocks(limit: number = 6) {
 export async function getCreatedVoiceMocks(category?: MockCategory, limit: number = 50) {
     try {
         const session = await auth()
-        
+
         if (!session?.user?.id) {
             return {
                 success: false,
@@ -747,7 +747,7 @@ export async function getAllPublicMocks(params?: {
 export async function getUserCreatedMocks(userId?: string) {
     try {
         const session = await auth()
-        
+
         if (!session?.user?.id) {
             return {
                 success: false,
@@ -791,7 +791,7 @@ export async function getUserCreatedMocks(userId?: string) {
 export async function getUserMockSessions(userId?: string) {
     try {
         const session = await auth()
-        
+
         if (!session?.user?.id) {
             return {
                 success: false,
@@ -840,7 +840,7 @@ export async function getUserMockSessions(userId?: string) {
 export async function deleteCustomMock(mockId: string) {
     try {
         const session = await auth()
-        
+
         if (!session?.user?.id) {
             return {
                 success: false,

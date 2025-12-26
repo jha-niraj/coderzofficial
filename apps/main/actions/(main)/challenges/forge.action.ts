@@ -4,9 +4,9 @@ import { prisma } from '@repo/prisma'
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
 import { revalidatePath } from 'next/cache'
-import { 
-    ChallengeTrackLevel, ChallengeTrackStatus, Currency, CreditType, StepSubmissionStatus 
-} from '@prisma/client'
+import {
+    ChallengeTrackLevel, ChallengeTrackStatus, Currency, CreditType, StepSubmissionStatus
+} from '@repo/prisma/client'
 
 // ===============================================
 // GET ACTIONS
@@ -46,7 +46,7 @@ export async function getAllForgeTracks(options?: {
 export async function getForgeTrackBySlug(slug: string) {
     try {
         const session = await getServerSession(authOptions)
-        
+
         const track = await prisma.forgeTrack.findUnique({
             where: { slug },
             include: {
@@ -76,7 +76,7 @@ export async function getForgeTrackBySlug(slug: string) {
         // Get user enrollment if logged in
         let enrollment = null
         let stepProgress: Record<string, any> = {}
-        
+
         if (session?.user?.id) {
             enrollment = await prisma.forgeEnrollment.findUnique({
                 where: {
@@ -104,9 +104,9 @@ export async function getForgeTrackBySlug(slug: string) {
             })
         }
 
-        return { 
-            success: true, 
-            data: track, 
+        return {
+            success: true,
+            data: track,
             enrollment,
             stepProgress
         }
@@ -119,7 +119,7 @@ export async function getForgeTrackBySlug(slug: string) {
 export async function getForgeStep(trackSlug: string, stepNumber: number) {
     try {
         const session = await getServerSession(authOptions)
-        
+
         const track = await prisma.forgeTrack.findUnique({
             where: { slug: trackSlug },
             select: { id: true }
@@ -160,7 +160,7 @@ export async function getForgeStep(trackSlug: string, stepNumber: number) {
         // Get user's submissions for this step
         let submissions: any[] = []
         let enrollment = null
-        
+
         if (session?.user?.id) {
             enrollment = await prisma.forgeEnrollment.findUnique({
                 where: {
@@ -180,8 +180,8 @@ export async function getForgeStep(trackSlug: string, stepNumber: number) {
             })
         }
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: step,
             submissions,
             enrollment,
@@ -221,8 +221,8 @@ export async function getUserForgeProgress() {
             }
         })
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: { enrollments, completions }
         }
     } catch (error) {
@@ -466,8 +466,8 @@ export async function submitForgeStep(stepId: string, submission: string) {
 
         revalidatePath(`/challenges/forge/${step.track.slug}`)
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: submissionRecord,
             isCorrect,
             feedback,
@@ -515,8 +515,8 @@ export async function revealForgeHint(stepId: string, hintIndex: number) {
             })
         }
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: { text: hint?.text, xpCost: hint?.xpCost || 0 }
         }
     } catch (error) {

@@ -3,22 +3,23 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Moon, Sun, ArrowRight, Star, Search } from "lucide-react"
+import { 
+	Moon, Sun, ArrowRight, Star, Search 
+} from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Card, CardContent } from "@repo/ui/components/ui/card"
+import { 
+	Card, CardContent 
+} from "@repo/ui/components/ui/card"
 import { Input } from "@repo/ui/components/ui/input"
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useTheme } from "next-themes"
-import { companies, publicInterviews } from "@/app/(main)/interview/_components/mockdata"
+	AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+	AlertDialogDescription, AlertDialogHeader, AlertDialogTitle
+} from "@repo/ui/components/ui/alert-dialog"
+import { useTheme } from "@repo/ui/components/themetoggle"
+import { 
+	companies, publicInterviews 
+} from "@/app/(main)/interview/_components/mockdata"
 
 export default function LandingPage() {
 	const [isScrolled, setIsScrolled] = useState(false)

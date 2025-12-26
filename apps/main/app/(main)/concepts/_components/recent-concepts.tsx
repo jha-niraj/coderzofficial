@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
-import { ConceptCategory, ConceptDifficulty } from "@prisma/client";
+import { ConceptCategory, ConceptDifficulty } from "@repo/prisma/client";
 
 interface Concept {
     id: string;

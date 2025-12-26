@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import {
     ConceptCategory, ConceptDifficulty, ConceptStepType
-} from "@prisma/client";
+} from "@repo/prisma/client";
 import {
     toggleConceptLike, toggleConceptBookmark, updateConceptProgress
 } from "@/actions/(main)/concepts/concept.action";

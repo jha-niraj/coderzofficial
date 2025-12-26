@@ -3,7 +3,7 @@
 import { auth } from "@repo/auth";
 import prisma from "@repo/prisma";
 import OpenAI from "openai"
-import { QuizV2Difficulty, CreditType, Currency } from "@prisma/client"
+import { QuizV2Difficulty, CreditType, Currency } from "@repo/prisma/client"
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -53,8 +53,8 @@ export async function generateProjectQuiz(projectSlug: string) {
 
         // Check if quiz already exists
         if (project.quiz) {
-            return { 
-                success: true, 
+            return {
+                success: true,
                 quiz: {
                     id: project.quiz.id,
                     totalQuestions: project.quiz.totalQuestions,
@@ -288,7 +288,7 @@ export async function submitQuizAttempt(
             if (selectedAnswer !== undefined) {
                 const isCorrect = selectedAnswer === question.correctAnswer
                 if (isCorrect) correctAnswers++
-                
+
                 questionAnswers.push({
                     questionId: question.id,
                     selectedAnswer,

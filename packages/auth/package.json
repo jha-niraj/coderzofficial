@@ -8,7 +8,9 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./config": "./src/auth.ts",
-		"./types": "./src/next-auth.d.ts"
+		"./types": "./src/next-auth.d.ts",
+		"./middleware": "./src/middleware.ts",
+		"./client": "./src/client.ts"
 	},
 	"scripts": {
 		"lint": "eslint . --max-warnings 0",

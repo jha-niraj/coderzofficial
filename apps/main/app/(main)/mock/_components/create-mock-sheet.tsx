@@ -25,7 +25,7 @@ import {
 import toast from '@repo/ui/components/ui/sonner'
 import { createCustomMockVoice } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../voice/_constants/mock-categories'
-import { MockCategory } from '@prisma/client'
+import { MockCategory } from '@repo/prisma/client'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/app/store/useUserStore'
 import { cn } from '@repo/ui/lib/utils'
@@ -213,7 +213,7 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                                 </div>
                             </div>
                         </SheetHeader>
-                        
+
                         {/* Step Indicator */}
                         <div className="flex items-center gap-2 mt-6">
                             {[1, 2, 3].map((s) => (
@@ -235,7 +235,7 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                                 </div>
                             ))}
                         </div>
-                        
+
                         {/* Credit Info */}
                         <div className="flex items-center gap-3 mt-4 text-sm">
                             <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
@@ -269,7 +269,7 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                                                 Tell us about the role you're preparing for
                                             </p>
                                         </div>
-                                        
+
                                         <div className="space-y-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="title">Position Title *</Label>
@@ -402,14 +402,14 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                                                 Paste your syllabus, study notes, or any content you want the interviewer to focus on
                                             </p>
                                         </div>
-                                        
+
                                         <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl">
                                             <div className="flex gap-2">
                                                 <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                                                 <div className="text-sm text-blue-900 dark:text-blue-100">
                                                     <p className="font-medium mb-1">Pro Tip</p>
                                                     <p className="text-blue-700 dark:text-blue-300">
-                                                        Adding your syllabus or course content helps the AI ask more targeted questions. 
+                                                        Adding your syllabus or course content helps the AI ask more targeted questions.
                                                         If you skip this, the AI will generate questions based on the position title and description.
                                                     </p>
                                                 </div>
@@ -438,8 +438,8 @@ This helps the AI interviewer focus on these specific topics.`}
                                                 className="font-mono text-sm resize-none"
                                             />
                                             <div className="flex items-center justify-between text-sm">
-                                                <span className={formData.knowledgeBase.length > 0 
-                                                    ? 'text-green-600 dark:text-green-400' 
+                                                <span className={formData.knowledgeBase.length > 0
+                                                    ? 'text-green-600 dark:text-green-400'
                                                     : 'text-neutral-500'
                                                 }>
                                                     {formData.knowledgeBase.length} characters
@@ -474,7 +474,7 @@ This helps the AI interviewer focus on these specific topics.`}
                                                 Configure resume context and visibility
                                             </p>
                                         </div>
-                                        
+
                                         <div className="space-y-4">
                                             {/* Resume Toggle */}
                                             <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl">
@@ -645,7 +645,7 @@ This helps the AI interviewer focus on these specific topics.`}
             </Sheet>
 
             {/* Processing/Success Dialog */}
-            <Dialog open={processing === 'processing' || processing === 'success'} onOpenChange={() => {}}>
+            <Dialog open={processing === 'processing' || processing === 'success'} onOpenChange={() => { }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
@@ -722,7 +722,7 @@ This helps the AI interviewer focus on these specific topics.`}
             </Dialog>
 
             {/* Choose Action Dialog */}
-            <Dialog open={processing === 'choose-action'} onOpenChange={() => {}}>
+            <Dialog open={processing === 'choose-action'} onOpenChange={() => { }}>
                 <DialogContent className="sm:max-w-lg p-8">
                     <DialogHeader className="space-y-3">
                         <div className="flex justify-center">

@@ -14,7 +14,7 @@ import {
 import { 
     InterviewPlanCard, type BaseInterviewPlan 
 } from "../_components/interviewplancard"
-import { useSession } from '@repo/auth'
+import { useSession } from '@repo/auth/client';
 import { useRouter } from "next/navigation"
 import toast from '@repo/ui/components/ui/sonner'
 

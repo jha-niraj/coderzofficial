@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
+import {
     Card, CardContent, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card';
 import { Button } from '@repo/ui/components/ui/button';
@@ -11,11 +11,11 @@ import {
     Coins, Trophy, Zap, Target, Code, Brain, Award, Activity as ActivityIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ActivityType } from '@prisma/client';
+import { ActivityType } from '@repo/prisma/client';
 import toast from '@repo/ui/components/ui/sonner';
-import { 
-    DailyActivitySummary, getActivityCalendar, getDailyActivitySummary, getUserStreak, 
-    StreakInfo 
+import {
+    DailyActivitySummary, getActivityCalendar, getDailyActivitySummary, getUserStreak,
+    StreakInfo
 } from '@/actions/(main)/user/activity.action';
 
 interface DayActivity {

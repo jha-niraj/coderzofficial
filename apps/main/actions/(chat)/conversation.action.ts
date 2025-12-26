@@ -37,10 +37,10 @@ export async function getOrCreateConversation(participantId: string) {
         })
 
         if (!isFollowing && !isFollower) {
-            return { 
-                success: false, 
-                error: "You need to follow each other to start a conversation", 
-                conversation: null 
+            return {
+                success: false,
+                error: "You need to follow each other to start a conversation",
+                conversation: null
             }
         }
 
@@ -163,11 +163,11 @@ export async function getConversations() {
         })
 
         // Map conversations to include the "other" participant
-        const mappedConversations = conversations.map(conv => {
-            const otherParticipant = conv.participant1Id === session.user.id 
-                ? conv.participant2 
+        const mappedConversations = conversations.map((conv: typeof conversations[number]) => {
+            const otherParticipant = conv.participant1Id === session.user.id
+                ? conv.participant2
                 : conv.participant1
-            
+
             const lastMessage = conv.messages[0] || null
             const unreadCount = 0 // Will be calculated in message.action.ts
 
@@ -205,7 +205,7 @@ export async function deleteConversation(conversationId: string) {
             return { success: false, error: "Conversation not found" }
         }
 
-        if (conversation.participant1Id !== session.user.id && 
+        if (conversation.participant1Id !== session.user.id &&
             conversation.participant2Id !== session.user.id) {
             return { success: false, error: "Not authorized" }
         }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { useSession } from '@repo/auth'
+import { useSession } from '@repo/auth/client';
 import {
 	Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card"

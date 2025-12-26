@@ -11,7 +11,7 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group";
 import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import {
@@ -19,7 +19,7 @@ import {
 } from "@repo/ui/components/ui/collapsible";
 import { toast } from "sonner";
 import { LucideIcon } from "lucide-react";
-import { ConceptStepType } from "@prisma/client";
+import { ConceptStepType } from "@repo/prisma/client";
 import {
     submitQuizAnswer, submitChallengeCode
 } from "@/actions/(main)/concepts/concept.action";
@@ -243,12 +243,12 @@ export default function StepCard({
                                         <div
                                             key={option.id || index}
                                             className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${quizSubmitted
-                                                    ? option.isCorrect
-                                                        ? "bg-green-100 dark:bg-green-900/30 border-green-300"
-                                                        : selectedQuizOption === index
-                                                            ? "bg-red-100 dark:bg-red-900/30 border-red-300"
-                                                            : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700"
-                                                    : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 hover:border-pink-300"
+                                                ? option.isCorrect
+                                                    ? "bg-green-100 dark:bg-green-900/30 border-green-300"
+                                                    : selectedQuizOption === index
+                                                        ? "bg-red-100 dark:bg-red-900/30 border-red-300"
+                                                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700"
+                                                : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 hover:border-pink-300"
                                                 }`}
                                         >
                                             <RadioGroupItem value={index.toString()} id={`option-${index}`} />

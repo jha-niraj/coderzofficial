@@ -9,7 +9,7 @@ import {
     QuestionDifficulty,
     AssessmentQuestionType,
     UserContentStatus,
-} from '@prisma/client'
+} from '@repo/prisma/client'
 
 // ==================== INPUT TYPES ====================
 
@@ -49,7 +49,7 @@ export interface PracticeSetFilters {
     limit?: number
 }
 
-export interface ExamSetFilters extends PracticeSetFilters {}
+export interface ExamSetFilters extends PracticeSetFilters { }
 
 // ==================== QUESTION TYPES ====================
 
@@ -382,38 +382,38 @@ export const LANGUAGE_CONFIG: Record<AssessmentLanguage, { label: string; icon: 
 }
 
 export const DIFFICULTY_CONFIG: Record<QuestionDifficulty, { label: string; bg: string; text: string }> = {
-    EASY: { 
-        label: 'Easy', 
-        bg: 'bg-green-100 dark:bg-green-900/30', 
-        text: 'text-green-700 dark:text-green-400' 
+    EASY: {
+        label: 'Easy',
+        bg: 'bg-green-100 dark:bg-green-900/30',
+        text: 'text-green-700 dark:text-green-400'
     },
-    INTERMEDIATE: { 
-        label: 'Intermediate', 
-        bg: 'bg-yellow-100 dark:bg-yellow-900/30', 
-        text: 'text-yellow-700 dark:text-yellow-400' 
+    INTERMEDIATE: {
+        label: 'Intermediate',
+        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+        text: 'text-yellow-700 dark:text-yellow-400'
     },
-    HARD: { 
-        label: 'Hard', 
-        bg: 'bg-red-100 dark:bg-red-900/30', 
-        text: 'text-red-700 dark:text-red-400' 
+    HARD: {
+        label: 'Hard',
+        bg: 'bg-red-100 dark:bg-red-900/30',
+        text: 'text-red-700 dark:text-red-400'
     },
 }
 
 export const MODE_CONFIG: Record<AssessmentMode, { label: string; description: string }> = {
-    QUIZ: { 
-        label: 'Quiz', 
-        description: 'Multiple choice and theory questions' 
+    QUIZ: {
+        label: 'Quiz',
+        description: 'Multiple choice and theory questions'
     },
-    CODE: { 
-        label: 'Coding', 
-        description: 'Write and debug code' 
+    CODE: {
+        label: 'Coding',
+        description: 'Write and debug code'
     },
-    MOCK: { 
-        label: 'Mock Interview', 
-        description: 'Real interview scenario questions' 
+    MOCK: {
+        label: 'Mock Interview',
+        description: 'Real interview scenario questions'
     },
-    MIXED: { 
-        label: 'Mixed', 
-        description: 'Combination of all question types' 
+    MIXED: {
+        label: 'Mixed',
+        description: 'Combination of all question types'
     },
 }

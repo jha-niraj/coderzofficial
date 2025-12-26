@@ -4,7 +4,7 @@ import React, {
     useState, useEffect, useRef, createContext, useContext
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut, useSession } from '@repo/auth';
+import { signOut, useSession } from '@repo/auth/client';
 import Link from "next/link";
 import Image from "next/image";
 import toast from "@repo/ui/components/ui/sonner";

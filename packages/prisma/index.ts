@@ -13,7 +13,7 @@ if (process.env.NODE_ENV !== "production") {
 export default prisma;
 
 // Re-export types from Prisma Client
-export * from "@prisma/client";
+export * from "@repo/prisma/client";
 
 export const sanitizeFullTextSearch = (search: string) => {
     // remove unsupported characters for full text search

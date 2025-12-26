@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { joinChallenge } from "@/actions/(main)/collective/challenge.actions";
 import toast from '@repo/ui/components/ui/sonner'
-import { useSession } from '@repo/auth';
+import { useSession } from '@repo/auth/client';
 
 interface JoinChallengeButtonProps {
   challengeId: string;

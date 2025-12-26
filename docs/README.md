@@ -102,7 +102,7 @@ See [Part 4: Common Errors Reference](./04-common-errors-reference.md) for detai
 | Package not found (404) | Change `"*"` to `"workspace:*"` |
 | Prisma schema not found | Add `prisma.schema` to root package.json |
 | Styles not applied | Import `@repo/ui/styles/globals.css` in layout |
-| Version mismatch | Ensure same `@prisma/client` version everywhere |
+| Version mismatch | Ensure same `@repo/prisma/client` version everywhere |
 
 ---
 

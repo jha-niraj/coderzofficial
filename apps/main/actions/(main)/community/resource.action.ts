@@ -4,7 +4,7 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
 import { revalidatePath } from "next/cache"
-import { CommunityResourceType } from "@prisma/client"
+import { CommunityResourceType } from "@repo/prisma/client"
 
 // ==================== TYPES ====================
 export interface CreateResourceInput {
@@ -107,8 +107,8 @@ export async function getCommunityResources(communityId: string, options?: {
         const orderBy = sortBy === 'popular'
             ? [{ downloadCount: 'desc' as const }]
             : sortBy === 'name'
-            ? [{ title: 'asc' as const }]
-            : [{ createdAt: 'desc' as const }]
+                ? [{ title: 'asc' as const }]
+                : [{ createdAt: 'desc' as const }]
 
         const [resources, total] = await Promise.all([
             prisma.communityResource.findMany({
@@ -204,7 +204,7 @@ export async function deleteResource(resourceId: string) {
                     }
                 }
             })
-            
+
             if (!membership || !['OWNER', 'ADMIN', 'MODERATOR'].includes(membership.role)) {
                 return { success: false, error: "You don't have permission" }
             }

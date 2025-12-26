@@ -10,7 +10,7 @@ import { CommunityCard } from '@/components/community/community-card'
 import { getGlobalFeed } from '@/actions/(main)/community/post.action'
 import { joinCommunity } from '@/actions/(main)/community/community.action'
 import toast from '@repo/ui/components/ui/sonner'
-import { CommunityPostType } from '@prisma/client'
+import { CommunityPostType } from '@repo/prisma/client'
 
 interface CommunityFeedProps {
     user: {

@@ -18,7 +18,7 @@ import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
 import { DIFFICULTY_CONFIG } from "@/types/assessment";
-import type { QuestionDifficulty, AssessmentQuestionType } from "@prisma/client";
+import type { QuestionDifficulty, AssessmentQuestionType } from "@repo/prisma/client";
 import dynamic from "next/dynamic";
 
 // Dynamic import for CodeEditor to avoid SSR issues
@@ -187,6 +187,7 @@ export function CodeMode({
             setOutput(result.error || result.output);
             setActiveTab("output");
         } catch (error) {
+            console.log("Error occurred while running code: " + error);
             setOutput("Error running code. Please try again.");
         } finally {
             setIsRunning(false);

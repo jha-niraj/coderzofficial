@@ -2,24 +2,29 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Progress } from '@repo/ui/components/ui/progress'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
-import { Card, CardContent } from '@repo/ui/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+    Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@repo/ui/components/ui/tabs'
+import { 
+    Card, CardContent 
+} from '@repo/ui/components/ui/card'
+import { 
+    Alert, AlertDescription 
+} from '@repo/ui/components/ui/alert'
 import {
-    ArrowLeft, Award, BookOpen, Clock, Code, FileQuestion, Loader2,
-    Medal, Mic, Play, Plus, Sparkles, Target, Eye, Heart, AlertTriangle
+    ArrowLeft, Award, Clock, Code, FileQuestion, Loader2, Heart, AlertTriangle, 
+    Mic, Sparkles, Plus, Target, Medal, Play, Eye
 } from 'lucide-react'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty
-} from '@prisma/client'
+} from '@repo/prisma/client'
 import { CreateSetSheet } from '@/components/assessments/CreateSetSheet'
 import { getUserExamSets } from '@/actions/(main)/assessments/user-sets.action'
 import type { ExamSetPreview } from '@/types/assessment'
@@ -38,35 +43,35 @@ const LANGUAGES: Record<AssessmentLanguage, { label: string; icon: string; color
 }
 
 // Difficulty configs with exam-specific settings
-const DIFFICULTIES: Record<QuestionDifficulty, { 
-    label: string; 
-    color: string; 
-    timeLimit: number; 
-    passingScore: number; 
+const DIFFICULTIES: Record<QuestionDifficulty, {
+    label: string;
+    color: string;
+    timeLimit: number;
+    passingScore: number;
     questions: number;
     description: string;
 }> = {
-    EASY: { 
-        label: 'Easy', 
-        color: '#22c55e', 
-        timeLimit: 20 * 60, 
-        passingScore: 60, 
+    EASY: {
+        label: 'Easy',
+        color: '#22c55e',
+        timeLimit: 20 * 60,
+        passingScore: 60,
         questions: 15,
         description: 'Basic concepts and fundamentals'
     },
-    INTERMEDIATE: { 
-        label: 'Intermediate', 
-        color: '#f59e0b', 
-        timeLimit: 30 * 60, 
-        passingScore: 65, 
+    INTERMEDIATE: {
+        label: 'Intermediate',
+        color: '#f59e0b',
+        timeLimit: 30 * 60,
+        passingScore: 65,
         questions: 20,
         description: 'Working knowledge required'
     },
-    HARD: { 
-        label: 'Hard', 
-        color: '#ef4444', 
-        timeLimit: 45 * 60, 
-        passingScore: 70, 
+    HARD: {
+        label: 'Hard',
+        color: '#ef4444',
+        timeLimit: 45 * 60,
+        passingScore: 70,
         questions: 25,
         description: 'Expert level assessment'
     },
@@ -173,7 +178,6 @@ function ExamContent() {
 
     return (
         <main className="min-h-screen bg-white dark:bg-neutral-950">
-            {/* Header */}
             <section className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 py-8">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex items-center gap-4 mb-4">
@@ -206,14 +210,10 @@ function ExamContent() {
                     </div>
                 </div>
             </section>
-
-            {/* Main Content */}
             <section className="py-8">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex flex-col lg:flex-row gap-6">
-                        {/* Sidebar */}
                         <div className="lg:w-1/3 space-y-4">
-                            {/* Language Selector */}
                             <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                                 <h3 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
                                     <Code className="w-4 h-4" />
@@ -221,7 +221,8 @@ function ExamContent() {
                                 </h3>
                                 <ScrollArea className="max-h-[200px]">
                                     <div className="space-y-1">
-                                        {Object.entries(LANGUAGES).map(([key, lang]) => (
+                                        {
+                                        Object.entries(LANGUAGES).map(([key, lang]) => (
                                             <button
                                                 key={key}
                                                 onClick={() => setSelectedLanguage(key as AssessmentLanguage)}
@@ -235,19 +236,19 @@ function ExamContent() {
                                                 <span>{lang.icon}</span>
                                                 <span className="font-medium">{lang.label}</span>
                                             </button>
-                                        ))}
+                                        ))
+                                        }
                                     </div>
                                 </ScrollArea>
                             </div>
-
-                            {/* Difficulty Selector */}
                             <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                                 <h3 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
                                     <Target className="w-4 h-4" />
                                     Difficulty
                                 </h3>
                                 <div className="space-y-2">
-                                    {Object.entries(DIFFICULTIES).map(([key, config]) => (
+                                    {
+                                    Object.entries(DIFFICULTIES).map(([key, config]) => (
                                         <button
                                             key={key}
                                             onClick={() => setSelectedDifficulty(key as QuestionDifficulty)}
@@ -272,18 +273,18 @@ function ExamContent() {
                                                 <div>{formatTime(config.timeLimit)}</div>
                                             </div>
                                         </button>
-                                    ))}
+                                    ))
+                                    }
                                 </div>
                             </div>
-
-                            {/* Mode Selector */}
                             <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                                 <h3 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
                                     <Sparkles className="w-4 h-4" />
                                     Question Type
                                 </h3>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {Object.entries(MODES).map(([key, mode]) => (
+                                    {
+                                    Object.entries(MODES).map(([key, mode]) => (
                                         <button
                                             key={key}
                                             onClick={() => setSelectedMode(key as AssessmentMode)}
@@ -297,12 +298,11 @@ function ExamContent() {
                                             {mode.icon}
                                             <span className="text-xs font-medium">{mode.label}</span>
                                         </button>
-                                    ))}
+                                    ))
+                                    }
                                 </div>
                             </div>
                         </div>
-
-                        {/* Main Content Area */}
                         <div className="lg:w-2/3">
                             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'start-exam' | 'my-sets')}>
                                 <TabsList className="mb-4">
@@ -313,21 +313,20 @@ function ExamContent() {
                                     <TabsTrigger value="my-sets" className="flex items-center gap-2">
                                         <Sparkles className="w-4 h-4" />
                                         My Exam Sets
-                                        {filteredUserSets.length > 0 && (
+                                        {
+                                        filteredUserSets.length > 0 && (
                                             <Badge variant="secondary" className="ml-1">
                                                 {filteredUserSets.length}
                                             </Badge>
-                                        )}
+                                        )
+                                        }
                                     </TabsTrigger>
                                 </TabsList>
-
                                 <TabsContent value="start-exam">
-                                    {/* Exam Details Card */}
                                     <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                                         <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">
                                             Exam Details
                                         </h2>
-
                                         <div className="grid md:grid-cols-2 gap-4 mb-6">
                                             <div className="flex items-center gap-3 p-4 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
                                                 <Clock className="w-5 h-5 text-blue-500" />
@@ -366,7 +365,6 @@ function ExamContent() {
                                                 </div>
                                             </div>
                                         </div>
-
                                         <Alert className="mb-6">
                                             <AlertTriangle className="h-4 w-4" />
                                             <AlertDescription>
@@ -375,7 +373,6 @@ function ExamContent() {
                                                 Questions are AI-generated and unique to each attempt.
                                             </AlertDescription>
                                         </Alert>
-
                                         <Button
                                             size="lg"
                                             className="w-full bg-amber-600 hover:bg-amber-700"
@@ -386,7 +383,6 @@ function ExamContent() {
                                         </Button>
                                     </div>
                                 </TabsContent>
-
                                 <TabsContent value="my-sets">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
@@ -400,8 +396,8 @@ function ExamContent() {
                                             Create New
                                         </Button>
                                     </div>
-
-                                    {isLoadingUserSets ? (
+                                    {
+                                    isLoadingUserSets ? (
                                         <div className="flex items-center justify-center py-12">
                                             <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
                                         </div>
@@ -421,7 +417,8 @@ function ExamContent() {
                                         </div>
                                     ) : (
                                         <div className="grid md:grid-cols-2 gap-4">
-                                            {filteredUserSets.map((set, index) => (
+                                            {
+                                            filteredUserSets.map((set, index) => (
                                                 <motion.div
                                                     key={set.id}
                                                     initial={{ opacity: 0, y: 10 }}
@@ -448,11 +445,13 @@ function ExamContent() {
                                                                         {set.status === 'ACTIVE' ? 'Ready' : set.status}
                                                                     </Badge>
                                                                 </div>
-                                                                {set.isPublic && (
+                                                                {
+                                                                set.isPublic && (
                                                                     <Badge variant="secondary" className="text-xs">
                                                                         Public
                                                                     </Badge>
-                                                                )}
+                                                                )
+                                                                }
                                                             </div>
                                                             <h4 className="font-semibold text-neutral-900 dark:text-white mb-1 line-clamp-1">
                                                                 {set.title}
@@ -485,17 +484,17 @@ function ExamContent() {
                                                         </CardContent>
                                                     </Card>
                                                 </motion.div>
-                                            ))}
+                                            ))
+                                            }
                                         </div>
-                                    )}
+                                    )
+                                    }
                                 </TabsContent>
                             </Tabs>
                         </div>
                     </div>
                 </div>
             </section>
-
-            {/* Create Exam Set Sheet */}
             <CreateSetSheet
                 type="exam"
                 open={isCreateSheetOpen}

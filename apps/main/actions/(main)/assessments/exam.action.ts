@@ -5,7 +5,7 @@ import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty, AssessmentQuestionType
-} from "@prisma/client";
+} from "@repo/prisma/client";
 
 // ==================== TYPES ====================
 export type ExamQuestion = {
@@ -364,8 +364,11 @@ export async function submitExamAnswers(params: {
             if (!breakdown.byType[question.type]) {
                 breakdown.byType[question.type] = { correct: 0, total: 0 };
             }
-            breakdown && breakdown.byType[question.type].total++;
-            if (isCorrect) breakdown.byType[question.type]?.correct++;
+            const typeStats = breakdown.byType[question.type];
+            if (typeStats) {
+                typeStats.total++;
+                if (isCorrect) typeStats.correct++;
+            }
 
             return {
                 attemptId,
@@ -384,7 +387,7 @@ export async function submitExamAnswers(params: {
 
         // Calculate total points based on questions
         const totalPoints = questions.reduce((sum, q) => sum + getQuestionPoints(q.difficulty), 0);
-        
+
         // Calculate final results
         const percentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
         const passed = percentage >= attempt.passingScore;
@@ -401,7 +404,7 @@ export async function submitExamAnswers(params: {
         // Create certificate if passed
         let certificateId: string | null = null;
         const language = attempt.topic.language;
-        
+
         if (passed) {
             const certNumber = `CERT-${language}-${Date.now().toString(36).toUpperCase()}`;
             const certificate = await prisma.assessmentCertificate.create({
@@ -447,8 +450,8 @@ export async function submitExamAnswers(params: {
         await prisma.user.update({
             where: { id: session.user.id },
             data: {
-                currentXp: { 
-                    increment: coinsEarned 
+                currentXp: {
+                    increment: coinsEarned
                 },
                 totalXp: {
                     increment: coinsEarned
@@ -498,7 +501,7 @@ async function updateUserExamStats(
         // Calculate new average score
         const totalAttempts = existingStats.totalExamAttempts + 1;
         const newAvgScore = ((existingStats.avgExamScore * existingStats.totalExamAttempts) + updates.percentage) / totalAttempts;
-        
+
         await prisma.userAssessmentStats.update({
             where: { id: existingStats.id },
             data: {

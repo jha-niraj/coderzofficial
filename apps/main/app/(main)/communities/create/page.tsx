@@ -20,7 +20,7 @@ import {
 } from '@repo/ui/components/ui/tooltip'
 import {
     Popover, PopoverContent, PopoverTrigger
-} from '@/components/ui/popover'
+} from '@repo/ui/components/ui/popover'
 import { cn } from '@repo/ui/lib/utils'
 import { createCommunity } from '@/actions/(main)/community/community.action'
 import toast from '@repo/ui/components/ui/sonner'
@@ -168,7 +168,7 @@ export default function CreateCommunityPage() {
     }, [currentStep])
 
     const canProceed = () => {
-        switch (STEPS[currentStep].id) {
+        switch (STEPS[currentStep]?.id) {
             case 'name':
                 return formData.name.length >= 3 && formData.description.length >= 10
             case 'category':
@@ -457,7 +457,7 @@ export default function CreateCommunityPage() {
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.1 }}
                             >
-                                {currentStepConfig.title}
+                                {currentStepConfig?.title}
                             </motion.h1>
                             <motion.p
                                 className="text-neutral-600 dark:text-neutral-400"
@@ -465,7 +465,7 @@ export default function CreateCommunityPage() {
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.2 }}
                             >
-                                {currentStepConfig.subtitle}
+                                {currentStepConfig?.subtitle}
                             </motion.p>
                         </div>
                         <motion.div
@@ -474,7 +474,7 @@ export default function CreateCommunityPage() {
                             transition={{ delay: 0.3 }}
                         >
                             {
-                                currentStepConfig.id === 'name' && (
+                                currentStepConfig?.id === 'name' && (
                                     <div className="space-y-6">
                                         <Input
                                             ref={inputRef}
@@ -501,7 +501,7 @@ export default function CreateCommunityPage() {
                                 )
                             }
                             {
-                                currentStepConfig.id === 'category' && (
+                                currentStepConfig?.id === 'category' && (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                             {
@@ -620,7 +620,7 @@ export default function CreateCommunityPage() {
                                 )
                             }
                             {
-                                currentStepConfig.id === 'visibility' && (
+                                currentStepConfig?.id === 'visibility' && (
                                     <div className="space-y-4">
                                         {
                                             VISIBILITY_OPTIONS.map((option) => {
@@ -661,7 +661,7 @@ export default function CreateCommunityPage() {
                                 )
                             }
                             {
-                                currentStepConfig.id === 'sections' && (
+                                currentStepConfig?.id === 'sections' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {
                                             DEFAULT_SECTIONS.map((section) => {
@@ -705,7 +705,7 @@ export default function CreateCommunityPage() {
                                 )
                             }
                             {
-                                currentStepConfig.id === 'questions' && (
+                                currentStepConfig?.id === 'questions' && (
                                     <div className="space-y-6">
                                         <p className="text-sm text-neutral-500 text-center">
                                             These questions will be asked when users request to join your community
@@ -840,7 +840,7 @@ export default function CreateCommunityPage() {
                                 )
                             }
                             {
-                                currentStepConfig.id === 'rules' && (
+                                currentStepConfig?.id === 'rules' && (
                                     <div className="space-y-4">
                                         <div className="space-y-2">
                                             {
@@ -892,7 +892,7 @@ export default function CreateCommunityPage() {
                                 )
                             }
                             {
-                                currentStepConfig.id === 'customize' && (
+                                currentStepConfig?.id === 'customize' && (
                                     <div className="space-y-8">
                                         <div className="space-y-4">
                                             <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -1072,7 +1072,7 @@ export default function CreateCommunityPage() {
                                 )
                             }
                             {
-                                currentStepConfig.id === 'review' && (
+                                currentStepConfig?.id === 'review' && (
                                     <div className="space-y-6">
                                         <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
                                             <div
