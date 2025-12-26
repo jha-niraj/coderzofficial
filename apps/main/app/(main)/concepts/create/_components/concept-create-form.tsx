@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -62,7 +62,7 @@ interface Step {
     assignment: { title: string; description: string; hints: string[] };
 }
 
-const categories: { value: ConceptCategory; label: string; icon: any }[] = [
+const categories: { value: ConceptCategory; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { value: "WEB_DEVELOPMENT", label: "Web Development", icon: Globe },
     { value: "MOBILE_DEVELOPMENT", label: "Mobile Dev", icon: Smartphone },
     { value: "DATA_STRUCTURES", label: "Data Structures", icon: Database },
@@ -81,7 +81,7 @@ const difficulties: { value: ConceptDifficulty; label: string; color: string }[]
     { value: "EXPERT", label: "Expert", color: "bg-rose-500/10 text-rose-700 border-rose-200" },
 ];
 
-const stepTypes: { value: ConceptStepType; label: string; icon: any; }[] = [
+const stepTypes: { value: ConceptStepType; label: string; icon: React.ComponentType<{ className?: string }>; }[] = [
     { value: "EXPLANATION", label: "Explanation", icon: FileText },
     { value: "CODE", label: "Code Analysis", icon: Code2 },
     { value: "VISUALIZATION", label: "Visuals", icon: BarChart3 },
@@ -93,9 +93,9 @@ const stepTypes: { value: ConceptStepType; label: string; icon: any; }[] = [
 
 export default function ConceptCreateForm() {
     const router = useRouter();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+    const [, setGeneratingFor] = useState<string | null>(null);
 
     // Form State
     const [title, setTitle] = useState("");
@@ -117,6 +117,9 @@ export default function ConceptCreateForm() {
     ]);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
 
+    // Safely derive the active step (with fallback for type safety)
+    const activeStep = steps[activeStepIndex] ?? steps[0]!;
+
     // Toggle for "Context" (Primary Content) box
     const [showContextBox, setShowContextBox] = useState(false);
 
@@ -126,7 +129,7 @@ export default function ConceptCreateForm() {
 
     // Effect: When changing steps, check if content exists to determine visibility
     useEffect(() => {
-        const currentContent = steps[activeStepIndex]?.content || "";
+        const currentContent = activeStep?.content || "";
         setShowContextBox(currentContent.length > 0);
     }, [activeStepIndex, steps]);
 
@@ -162,22 +165,28 @@ export default function ConceptCreateForm() {
 
     const updateStep = (index: number, updates: Partial<Step>) => {
         const newSteps = [...steps];
-        newSteps[index] = { ...newSteps[index], ...updates };
+        newSteps[index] = { ...newSteps[index], ...updates } as Step;
         setSteps(newSteps);
     };
 
     const addCodeBlock = (stepIndex: number) => {
         const newSteps = [...steps];
-        newSteps[stepIndex].codeBlocks.push({
-            id: Date.now().toString(), title: "", language: "javascript", code: "", explanation: "",
-        });
-        setSteps(newSteps);
+        const step = newSteps[stepIndex];
+        if (step) {
+            step.codeBlocks.push({
+                id: Date.now().toString(), title: "", language: "javascript", code: "", explanation: "",
+            });
+            setSteps(newSteps);
+        }
     };
 
     const removeCodeBlock = (stepIndex: number, blockIndex: number) => {
         const newSteps = [...steps];
-        newSteps[stepIndex].codeBlocks.splice(blockIndex, 1);
-        setSteps(newSteps);
+        const step = newSteps[stepIndex];
+        if (step) {
+            step.codeBlocks.splice(blockIndex, 1);
+            setSteps(newSteps);
+        }
     };
 
     // --- AI Handlers (Mocked) ---
@@ -187,7 +196,7 @@ export default function ConceptCreateForm() {
         setGeneratingFor(type);
 
         setTimeout(() => {
-            const step = steps[activeStepIndex];
+            const step = activeStep;
             if (type === 'quiz') {
                 updateStep(activeStepIndex, {
                     quizQuestion: "What happens to the execution context when an asynchronous function is called?",
@@ -398,7 +407,7 @@ export default function ConceptCreateForm() {
                                 {/* Step Header */}
                                 <div className="px-8 py-5 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/80 dark:bg-neutral-900/80 backdrop-blur-sm flex-shrink-0 z-10">
                                     <Input
-                                        value={steps[activeStepIndex].title}
+                                        value={activeStep?.title}
                                         onChange={(e) => updateStep(activeStepIndex, { title: e.target.value })}
                                         className="text-xl font-bold bg-transparent border-0 px-0 h-auto focus-visible:ring-0 placeholder:text-neutral-300 w-full text-neutral-900 dark:text-white"
                                         placeholder={`Title for Step ${activeStepIndex + 1}`}
@@ -406,7 +415,7 @@ export default function ConceptCreateForm() {
                                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                                         {isGenerating && <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />}
                                         <Badge className="font-mono text-xs font-medium px-2 py-1 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-0">
-                                            {stepTypes.find(t => t.value === steps[activeStepIndex].type)?.label}
+                                            {stepTypes.find(t => t.value === activeStep?.type)?.label}
                                         </Badge>
                                     </div>
                                 </div>
@@ -421,7 +430,7 @@ export default function ConceptCreateForm() {
                                                 <Label className="font-mono text-xs font-medium uppercase text-neutral-500 pl-1">Module Type</Label>
                                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                                                     {stepTypes.map((type) => {
-                                                        const isSelected = steps[activeStepIndex].type === type.value;
+                                                        const isSelected = activeStep?.type === type.value;
                                                         return (
                                                             <button
                                                                 key={type.value}
@@ -463,7 +472,7 @@ export default function ConceptCreateForm() {
                                                     <div className="space-y-2 animate-in slide-in-from-top-2 fade-in duration-300">
                                                         <div className="relative">
                                                             <Textarea
-                                                                value={steps[activeStepIndex].content}
+                                                                value={activeStep?.content}
                                                                 onChange={(e) => updateStep(activeStepIndex, { content: e.target.value })}
                                                                 className="min-h-[140px] text-sm font-normal leading-relaxed rounded-xl border-neutral-200 dark:border-neutral-800 resize-y focus-visible:ring-1 pr-10"
                                                                 placeholder="Provide context, explanation, or instructions for this step..."
@@ -495,7 +504,7 @@ export default function ConceptCreateForm() {
                                             {/* 3. DYNAMIC MODULE EDITORS */}
                                             <AnimatePresence mode="wait">
                                                 <motion.div
-                                                    key={steps[activeStepIndex].type}
+                                                    key={activeStep?.type}
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, y: -10 }}
@@ -503,7 +512,7 @@ export default function ConceptCreateForm() {
                                                     className="space-y-6 pt-2"
                                                 >
                                                     {/* --- VISUALIZATION (Revamped) --- */}
-                                                    {steps[activeStepIndex].type === "VISUALIZATION" && (
+                                                    {activeStep?.type === "VISUALIZATION" && (
                                                         <div className="space-y-4">
                                                             <div className="bg-blue-50/50 dark:bg-blue-950/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-900/50 space-y-6">
                                                                 <div className="flex items-center justify-center p-1 bg-white dark:bg-neutral-950 rounded-lg w-fit mx-auto border border-neutral-200 dark:border-neutral-800">
@@ -521,131 +530,142 @@ export default function ConceptCreateForm() {
                                                                     </button>
                                                                 </div>
 
-                                                                {visMode === "generate" && (
-                                                                    <div className="space-y-3 animate-in fade-in zoom-in-95">
-                                                                        <div className="space-y-2">
-                                                                            <Label className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase">Image Prompt</Label>
-                                                                            <div className="flex gap-2">
-                                                                                <Input
-                                                                                    value={imagePrompt}
-                                                                                    onChange={(e) => setImagePrompt(e.target.value)}
-                                                                                    placeholder="Describe the diagram or chart you need..."
-                                                                                    className="bg-white dark:bg-neutral-950 border-blue-200 dark:border-blue-800"
-                                                                                />
-                                                                                <Button onClick={() => handleGenerate('image')} disabled={isGenerating} className="bg-blue-600 hover:bg-blue-700 text-white">
-                                                                                    {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                                                </Button>
+                                                                {
+                                                                    visMode === "generate" && (
+                                                                        <div className="space-y-3 animate-in fade-in zoom-in-95">
+                                                                            <div className="space-y-2">
+                                                                                <Label className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase">Image Prompt</Label>
+                                                                                <div className="flex gap-2">
+                                                                                    <Input
+                                                                                        value={imagePrompt}
+                                                                                        onChange={(e) => setImagePrompt(e.target.value)}
+                                                                                        placeholder="Describe the diagram or chart you need..."
+                                                                                        className="bg-white dark:bg-neutral-950 border-blue-200 dark:border-blue-800"
+                                                                                    />
+                                                                                    <Button onClick={() => handleGenerate('image')} disabled={isGenerating} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                                                                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                                                    </Button>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                )}
+                                                                    )
+                                                                }
 
-                                                                {visMode === "upload" && (
-                                                                    <div className="border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white/50 dark:bg-neutral-950/50 animate-in fade-in zoom-in-95 cursor-pointer hover:bg-blue-50/50 transition-colors">
-                                                                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mb-3">
-                                                                            <Upload className="w-5 h-5" />
+                                                                {
+                                                                    visMode === "upload" && (
+                                                                        <div className="border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white/50 dark:bg-neutral-950/50 animate-in fade-in zoom-in-95 cursor-pointer hover:bg-blue-50/50 transition-colors">
+                                                                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                                                                                <Upload className="w-5 h-5" />
+                                                                            </div>
+                                                                            <p className="text-sm font-medium text-neutral-900 dark:text-white">Click to upload or drag and drop</p>
+                                                                            <p className="text-xs text-neutral-500 mt-1">SVG, PNG, JPG (Max 2MB)</p>
                                                                         </div>
-                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">Click to upload or drag and drop</p>
-                                                                        <p className="text-xs text-neutral-500 mt-1">SVG, PNG, JPG (Max 2MB)</p>
-                                                                    </div>
-                                                                )}
+                                                                    )
+                                                                }
 
-                                                                {steps[activeStepIndex].visualizationImage && (
-                                                                    <div className="relative rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 group">
-                                                                        <Image
-                                                                            src={steps[activeStepIndex].visualizationImage}
-                                                                            alt="Visualization"
-                                                                            className="w-full h-64 object-cover bg-neutral-100 dark:bg-neutral-900"
-                                                                            height={256}
-                                                                            width={512}
-                                                                        />
-                                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                            <Button variant="destructive" size="sm" onClick={() => updateStep(activeStepIndex, { visualizationImage: "" })}>Remove Image</Button>
+                                                                {
+                                                                    activeStep?.visualizationImage && (
+                                                                        <div className="relative rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 group">
+                                                                            <Image
+                                                                                src={activeStep?.visualizationImage}
+                                                                                alt="Visualization"
+                                                                                className="w-full h-64 object-cover bg-neutral-100 dark:bg-neutral-900"
+                                                                                height={256}
+                                                                                width={512}
+                                                                            />
+                                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                                <Button variant="destructive" size="sm" onClick={() => updateStep(activeStepIndex, { visualizationImage: "" })}>Remove Image</Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                    }
+
+                                                    {/* --- QUIZ --- */}
+                                                    {
+                                                        activeStep.type === "QUIZ" && (
+                                                            <div className="space-y-4">
+                                                                {!activeStep.quizQuestion ? (
+                                                                    <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-neutral-50/50 dark:bg-neutral-900/50">
+                                                                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center mb-4">
+                                                                            <HelpCircle className="w-6 h-6" />
+                                                                        </div>
+                                                                        <h3 className="font-semibold text-sm mb-1 text-neutral-900 dark:text-white">No Questions Yet</h3>
+                                                                        <p className="text-xs text-neutral-500 max-w-xs mb-6">Generate a quiz question based on your system context.</p>
+                                                                        <Button
+                                                                            onClick={() => handleGenerate('quiz')}
+                                                                            disabled={isGenerating}
+                                                                            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs h-9 px-6 font-medium"
+                                                                        >
+                                                                            {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
+                                                                            Generate Question
+                                                                        </Button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="bg-purple-50/50 dark:bg-purple-950/10 rounded-2xl p-6 border border-purple-100 dark:border-purple-900 space-y-6 animate-in fade-in zoom-in-95">
+                                                                        <div className="space-y-2 relative">
+                                                                            <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Question</Label>
+                                                                            <Input
+                                                                                className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm font-medium h-10"
+                                                                                value={activeStep.quizQuestion}
+                                                                                onChange={(e) => updateStep(activeStepIndex, { quizQuestion: e.target.value })}
+                                                                            />
+                                                                            <Button size="icon" variant="ghost" className="absolute right-2 top-7 h-7 w-7 text-neutral-400 hover:text-red-500" onClick={() => updateStep(activeStepIndex, { quizQuestion: "" })}>
+                                                                                <X className="w-4 h-4" />
+                                                                            </Button>
+                                                                        </div>
+
+                                                                        <div className="space-y-3">
+                                                                            <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Options</Label>
+                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                                {activeStep.quizOptions.map((opt, i) => (
+                                                                                    <div key={i} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-colors bg-white dark:bg-neutral-950", opt.isCorrect ? "border-green-500 ring-1 ring-green-500/20" : "border-neutral-200 dark:border-neutral-800")}>
+                                                                                        <div
+                                                                                            className={cn("w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors", opt.isCorrect ? "bg-green-500 border-green-500 text-white" : "border-neutral-300 hover:border-neutral-400")}
+                                                                                            onClick={() => {
+                                                                                                const newOpts = activeStep.quizOptions.map((o, idx) => ({ ...o, isCorrect: idx === i }));
+                                                                                                updateStep(activeStepIndex, { quizOptions: newOpts });
+                                                                                            }}
+                                                                                        >
+                                                                                            {opt.isCorrect && <Check className="w-3 h-3" />}
+                                                                                        </div>
+                                                                                        <Input
+                                                                                            className="border-0 h-auto py-1 px-0 focus-visible:ring-0 bg-transparent text-sm text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400"
+                                                                                            placeholder={`Option ${i + 1}`}
+                                                                                            value={opt.text}
+                                                                                            onChange={(e) => {
+                                                                                                const newOpts = [...activeStep.quizOptions];
+                                                                                                const opt = newOpts[i];
+                                                                                                if (opt) {
+                                                                                                    opt.text = e.target.value;
+                                                                                                    updateStep(activeStepIndex, { quizOptions: newOpts });
+                                                                                                }
+                                                                                            }}
+                                                                                        />
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="space-y-2">
+                                                                            <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Explanation</Label>
+                                                                            <Textarea
+                                                                                className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm min-h-[80px]"
+                                                                                value={activeStep.quizExplanation}
+                                                                                onChange={(e) => updateStep(activeStepIndex, { quizExplanation: e.target.value })}
+                                                                            />
                                                                         </div>
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* --- QUIZ --- */}
-                                                    {steps[activeStepIndex].type === "QUIZ" && (
-                                                        <div className="space-y-4">
-                                                            {!steps[activeStepIndex].quizQuestion ? (
-                                                                <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-neutral-50/50 dark:bg-neutral-900/50">
-                                                                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center mb-4">
-                                                                        <HelpCircle className="w-6 h-6" />
-                                                                    </div>
-                                                                    <h3 className="font-semibold text-sm mb-1 text-neutral-900 dark:text-white">No Questions Yet</h3>
-                                                                    <p className="text-xs text-neutral-500 max-w-xs mb-6">Generate a quiz question based on your system context.</p>
-                                                                    <Button
-                                                                        onClick={() => handleGenerate('quiz')}
-                                                                        disabled={isGenerating}
-                                                                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs h-9 px-6 font-medium"
-                                                                    >
-                                                                        {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
-                                                                        Generate Question
-                                                                    </Button>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="bg-purple-50/50 dark:bg-purple-950/10 rounded-2xl p-6 border border-purple-100 dark:border-purple-900 space-y-6 animate-in fade-in zoom-in-95">
-                                                                    <div className="space-y-2 relative">
-                                                                        <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Question</Label>
-                                                                        <Input
-                                                                            className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm font-medium h-10"
-                                                                            value={steps[activeStepIndex].quizQuestion}
-                                                                            onChange={(e) => updateStep(activeStepIndex, { quizQuestion: e.target.value })}
-                                                                        />
-                                                                        <Button size="icon" variant="ghost" className="absolute right-2 top-7 h-7 w-7 text-neutral-400 hover:text-red-500" onClick={() => updateStep(activeStepIndex, { quizQuestion: "" })}>
-                                                                            <X className="w-4 h-4" />
-                                                                        </Button>
-                                                                    </div>
-
-                                                                    <div className="space-y-3">
-                                                                        <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Options</Label>
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                                            {steps[activeStepIndex].quizOptions.map((opt, i) => (
-                                                                                <div key={i} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-colors bg-white dark:bg-neutral-950", opt.isCorrect ? "border-green-500 ring-1 ring-green-500/20" : "border-neutral-200 dark:border-neutral-800")}>
-                                                                                    <div
-                                                                                        className={cn("w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors", opt.isCorrect ? "bg-green-500 border-green-500 text-white" : "border-neutral-300 hover:border-neutral-400")}
-                                                                                        onClick={() => {
-                                                                                            const newOpts = steps[activeStepIndex].quizOptions.map((o, idx) => ({ ...o, isCorrect: idx === i }));
-                                                                                            updateStep(activeStepIndex, { quizOptions: newOpts });
-                                                                                        }}
-                                                                                    >
-                                                                                        {opt.isCorrect && <Check className="w-3 h-3" />}
-                                                                                    </div>
-                                                                                    <Input
-                                                                                        className="border-0 h-auto py-1 px-0 focus-visible:ring-0 bg-transparent text-sm text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400"
-                                                                                        placeholder={`Option ${i + 1}`}
-                                                                                        value={opt.text}
-                                                                                        onChange={(e) => {
-                                                                                            const newOpts = [...steps[activeStepIndex].quizOptions];
-                                                                                            newOpts[i].text = e.target.value;
-                                                                                            updateStep(activeStepIndex, { quizOptions: newOpts });
-                                                                                        }}
-                                                                                    />
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="space-y-2">
-                                                                        <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Explanation</Label>
-                                                                        <Textarea
-                                                                            className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm min-h-[80px]"
-                                                                            value={steps[activeStepIndex].quizExplanation}
-                                                                            onChange={(e) => updateStep(activeStepIndex, { quizExplanation: e.target.value })}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                        )}
 
                                                     {/* --- CHALLENGE (CODING LAB) --- */}
-                                                    {steps[activeStepIndex].type === "CHALLENGE" && (
+                                                    {activeStep.type === "CHALLENGE" && (
                                                         <div className="space-y-4">
-                                                            {!steps[activeStepIndex].challengeDescription ? (
+                                                            {!activeStep.challengeDescription ? (
                                                                 <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-neutral-50/50 dark:bg-neutral-900/50">
                                                                     <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full flex items-center justify-center mb-4">
                                                                         <Zap className="w-6 h-6" />
@@ -666,7 +686,7 @@ export default function ConceptCreateForm() {
                                                                         <div className="space-y-2 w-full">
                                                                             <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Task Requirement</Label>
                                                                             <Textarea
-                                                                                value={steps[activeStepIndex].challengeDescription}
+                                                                                value={activeStep.challengeDescription}
                                                                                 onChange={(e) => updateStep(activeStepIndex, { challengeDescription: e.target.value })}
                                                                                 className="bg-white dark:bg-neutral-950 border-amber-100 dark:border-amber-900 min-h-[80px] text-sm"
                                                                             />
@@ -680,7 +700,7 @@ export default function ConceptCreateForm() {
                                                                             <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Starter Code</Label>
                                                                             <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
                                                                                 <ConceptCodeEditor
-                                                                                    code={steps[activeStepIndex].challengeStarterCode}
+                                                                                    code={activeStep.challengeStarterCode}
                                                                                     onChange={(c) => updateStep(activeStepIndex, { challengeStarterCode: c })}
                                                                                     height="160px"
                                                                                 />
@@ -690,7 +710,7 @@ export default function ConceptCreateForm() {
                                                                             <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Solution Code</Label>
                                                                             <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
                                                                                 <ConceptCodeEditor
-                                                                                    code={steps[activeStepIndex].challengeSolution}
+                                                                                    code={activeStep.challengeSolution}
                                                                                     onChange={(c) => updateStep(activeStepIndex, { challengeSolution: c })}
                                                                                     height="160px"
                                                                                 />
@@ -703,7 +723,7 @@ export default function ConceptCreateForm() {
                                                     )}
 
                                                     {/* --- CODE ANALYSIS --- */}
-                                                    {steps[activeStepIndex].type === "CODE" && (
+                                                    {activeStep.type === "CODE" && (
                                                         <div className="space-y-6">
                                                             <div className="flex items-center justify-between">
                                                                 <Label className="font-mono text-xs font-medium uppercase text-neutral-500">Code Blocks</Label>
@@ -713,7 +733,7 @@ export default function ConceptCreateForm() {
                                                             </div>
 
                                                             <div className="space-y-6">
-                                                                {steps[activeStepIndex].codeBlocks.map((block, idx) => (
+                                                                {activeStep.codeBlocks.map((block, idx) => (
                                                                     <div key={block.id} className="border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden bg-neutral-900 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2">
                                                                         <div className="flex items-center justify-between p-3 bg-neutral-800 border-b border-neutral-700">
                                                                             <div className="flex items-center gap-3">
@@ -722,8 +742,12 @@ export default function ConceptCreateForm() {
                                                                                     value={block.title}
                                                                                     onChange={(e) => {
                                                                                         const newSteps = [...steps];
-                                                                                        newSteps[activeStepIndex].codeBlocks[idx].title = e.target.value;
-                                                                                        setSteps(newSteps);
+                                                                                        const step = newSteps[activeStepIndex];
+                                                                                        const block = step?.codeBlocks[idx];
+                                                                                        if (block) {
+                                                                                            block.title = e.target.value;
+                                                                                            setSteps(newSteps);
+                                                                                        }
                                                                                     }}
                                                                                     placeholder="Filename.js"
                                                                                     className="bg-transparent border-0 text-white h-7 w-48 focus-visible:ring-0 placeholder:text-neutral-500 text-xs font-mono"
@@ -734,8 +758,12 @@ export default function ConceptCreateForm() {
                                                                                     value={block.language}
                                                                                     onValueChange={(v) => {
                                                                                         const newSteps = [...steps];
-                                                                                        newSteps[activeStepIndex].codeBlocks[idx].language = v;
-                                                                                        setSteps(newSteps);
+                                                                                        const step = newSteps[activeStepIndex];
+                                                                                        const codeBlock = step?.codeBlocks[idx];
+                                                                                        if (codeBlock) {
+                                                                                            codeBlock.language = v;
+                                                                                            setSteps(newSteps);
+                                                                                        }
                                                                                     }}
                                                                                 >
                                                                                     <SelectTrigger className="h-7 w-[100px] bg-neutral-900 border-neutral-700 text-xs text-neutral-300">
@@ -757,8 +785,12 @@ export default function ConceptCreateForm() {
                                                                             code={block.code}
                                                                             onChange={(c) => {
                                                                                 const newSteps = [...steps];
-                                                                                newSteps[activeStepIndex].codeBlocks[idx].code = c;
-                                                                                setSteps(newSteps);
+                                                                                const step = newSteps[activeStepIndex];
+                                                                                const codeBlock = step?.codeBlocks[idx];
+                                                                                if (codeBlock) {
+                                                                                    codeBlock.code = c;
+                                                                                    setSteps(newSteps);
+                                                                                }
                                                                             }}
                                                                             height="220px"
                                                                         />
@@ -771,15 +803,19 @@ export default function ConceptCreateForm() {
                                                                                     value={block.explanation}
                                                                                     onChange={(e) => {
                                                                                         const newSteps = [...steps];
-                                                                                        newSteps[activeStepIndex].codeBlocks[idx].explanation = e.target.value;
-                                                                                        setSteps(newSteps);
+                                                                                        const step = newSteps[activeStepIndex];
+                                                                                        const codeBlock = step?.codeBlocks[idx];
+                                                                                        if (codeBlock) {
+                                                                                            codeBlock.explanation = e.target.value;
+                                                                                            setSteps(newSteps);
+                                                                                        }
                                                                                     }}
                                                                                 />
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 ))}
-                                                                {steps[activeStepIndex].codeBlocks.length === 0 && (
+                                                                {activeStep.codeBlocks.length === 0 && (
                                                                     <div className="text-center p-12 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 bg-neutral-50/50 dark:bg-neutral-900/50">
                                                                         <Code2 className="w-8 h-8 mx-auto mb-3 opacity-30" />
                                                                         <p className="text-sm font-medium mb-1">No Code Blocks</p>
@@ -792,7 +828,7 @@ export default function ConceptCreateForm() {
                                                     )}
 
                                                     {/* --- COMPARISON --- */}
-                                                    {steps[activeStepIndex].type === "COMPARISON" && (
+                                                    {activeStep.type === "COMPARISON" && (
                                                         <div className="space-y-4">
                                                             <div className="bg-neutral-50/80 dark:bg-neutral-900/50 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 space-y-4">
                                                                 <div className="flex justify-between items-center">
@@ -802,11 +838,11 @@ export default function ConceptCreateForm() {
                                                                     </Button>
                                                                 </div>
                                                                 <div className="flex flex-wrap gap-2 items-center">
-                                                                    {steps[activeStepIndex].comparisonTopics.map((t, i) => (
+                                                                    {activeStep.comparisonTopics.map((t, i) => (
                                                                         <Badge key={i} variant="secondary" className="pl-3 pr-1 py-1 h-8 text-sm bg-white border border-neutral-200 shadow-sm">
                                                                             {t}
                                                                             <button className="ml-2 p-0.5 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-red-500" onClick={() => {
-                                                                                const newTopics = steps[activeStepIndex].comparisonTopics.filter((_, idx) => idx !== i);
+                                                                                const newTopics = activeStep.comparisonTopics.filter((_, idx) => idx !== i);
                                                                                 updateStep(activeStepIndex, { comparisonTopics: newTopics });
                                                                             }}>
                                                                                 <X className="w-3 h-3" />
@@ -820,7 +856,7 @@ export default function ConceptCreateForm() {
                                                                             if (e.key === "Enter") {
                                                                                 const val = (e.currentTarget as HTMLInputElement).value.trim();
                                                                                 if (val) {
-                                                                                    updateStep(activeStepIndex, { comparisonTopics: [...steps[activeStepIndex].comparisonTopics, val] });
+                                                                                    updateStep(activeStepIndex, { comparisonTopics: [...activeStep.comparisonTopics, val] });
                                                                                     (e.currentTarget as HTMLInputElement).value = "";
                                                                                 }
                                                                             }
@@ -830,9 +866,9 @@ export default function ConceptCreateForm() {
                                                             </div>
 
                                                             {/* Comparison Items Preview (Mock) */}
-                                                            {steps[activeStepIndex].comparisonItems.length > 0 && (
+                                                            {activeStep.comparisonItems.length > 0 && (
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2">
-                                                                    {steps[activeStepIndex].comparisonItems.map((item, i) => (
+                                                                    {activeStep.comparisonItems.map((item, i) => (
                                                                         <div key={i} className="border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 bg-white dark:bg-neutral-950">
                                                                             <h4 className="font-bold text-sm mb-1">{item.title}</h4>
                                                                             <p className="text-xs text-neutral-500 mb-3">{item.description}</p>
@@ -848,7 +884,6 @@ export default function ConceptCreateForm() {
 
                                                 </motion.div>
                                             </AnimatePresence>
-
                                         </div>
                                     </ScrollArea>
                                 </div>

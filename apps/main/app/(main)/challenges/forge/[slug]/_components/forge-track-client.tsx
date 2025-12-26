@@ -4,14 +4,14 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { 
-    ArrowLeft, Play, Lock, CheckCircle2, Zap, Clock, Users, Trophy, ChevronRight, 
-    BookOpen, Star, AlertCircle, Code2
+import {
+    ArrowLeft, Play, Lock, CheckCircle2, Zap, Clock, Users, Trophy, ChevronRight,
+    BookOpen, AlertCircle, Code2
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
@@ -98,7 +98,7 @@ export function ForgeTrackClient({
     const [showEnrollSheet, setShowEnrollSheet] = useState(false)
 
     const isEnrolled = !!enrollment
-    const progress = enrollment 
+    const progress = enrollment
         ? Math.round((enrollment.completedSteps / track.steps.length) * 100)
         : 0
 
@@ -130,26 +130,29 @@ export function ForgeTrackClient({
     const getStepStatus = (step: ForgeStep, index: number) => {
         const progress = stepProgress[step.id]
         if (progress?.status === 'CORRECT') return 'completed'
-        
+
         if (!isEnrolled) return 'locked'
-        
+
         if (index === 0) return 'available'
-        
+
         // Check if previous step is completed
         const prevStep = track.steps[index - 1]
-        const prevProgress = stepProgress[prevStep?.id]
-        if (prevProgress?.status === 'CORRECT') return 'available'
-        
+        const prevStepId = prevStep?.id
+        if (prevStepId) {
+            const prevProgress = stepProgress[prevStepId]
+            if (prevProgress?.status === 'CORRECT') return 'available'
+        }
+
         return 'locked'
     }
 
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
             {/* Hero Section */}
-            <section 
+            <section
                 className="relative overflow-hidden border-b border-neutral-200 dark:border-neutral-800"
-                style={{ 
-                    background: `linear-gradient(to bottom, ${track.themeColor}10, transparent)` 
+                style={{
+                    background: `linear-gradient(to bottom, ${track.themeColor}10, transparent)`
                 }}
             >
                 <div className="absolute inset-0 -z-10">
@@ -187,10 +190,10 @@ export function ForgeTrackClient({
                                 <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-3">
                                     {track.name}
                                 </h1>
-                                
+
                                 {track.narrativeTitle && (
                                     <p className="text-lg text-neutral-600 dark:text-neutral-400 italic mb-4">
-                                        "{track.narrativeTitle}"
+                                        &quot;{track.narrativeTitle}&quot;
                                     </p>
                                 )}
 
@@ -240,9 +243,9 @@ export function ForgeTrackClient({
                                         )}
                                     </CardTitle>
                                     <CardDescription>
-                                        {isEnrolled 
-                                            ? enrollment.isCompleted 
-                                                ? 'You have completed this track!' 
+                                        {isEnrolled
+                                            ? enrollment.isCompleted
+                                                ? 'You have completed this track!'
                                                 : 'Continue your journey'
                                             : 'Enroll to start learning'
                                         }
@@ -273,7 +276,7 @@ export function ForgeTrackClient({
 
                                     {isEnrolled ? (
                                         <Link href={`/challenges/forge/${track.slug}/step/${enrollment.currentStepNumber}`}>
-                                            <Button 
+                                            <Button
                                                 className="w-full gap-2"
                                                 style={{ backgroundColor: track.themeColor }}
                                             >
@@ -284,7 +287,7 @@ export function ForgeTrackClient({
                                     ) : (
                                         <Sheet open={showEnrollSheet} onOpenChange={setShowEnrollSheet}>
                                             <SheetTrigger asChild>
-                                                <Button 
+                                                <Button
                                                     className="w-full gap-2"
                                                     style={{ backgroundColor: track.themeColor }}
                                                     disabled={!canEnroll && !user}
@@ -303,7 +306,7 @@ export function ForgeTrackClient({
                                                 <SheetHeader>
                                                     <SheetTitle>Enroll in {track.name}</SheetTitle>
                                                     <SheetDescription>
-                                                        {track.isFree 
+                                                        {track.isFree
                                                             ? 'Start your learning journey for free!'
                                                             : `This will cost ${track.creditsRequired} credits from your balance.`
                                                         }
@@ -312,7 +315,7 @@ export function ForgeTrackClient({
 
                                                 <div className="mt-6 space-y-6">
                                                     <div className="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg space-y-3">
-                                                        <h4 className="font-semibold">What you'll get:</h4>
+                                                        <h4 className="font-semibold">What you&apos;ll get:</h4>
                                                         <ul className="space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
                                                             <li className="flex items-center gap-2">
                                                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -435,18 +438,18 @@ export function ForgeTrackClient({
                                         <Link href={`/challenges/forge/${track.slug}/step/${step.stepNumber}`}>
                                             <div className={cn(
                                                 "p-4 rounded-xl border transition-all hover:shadow-md cursor-pointer",
-                                                isCompleted 
+                                                isCompleted
                                                     ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20"
                                                     : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700"
                                             )}>
                                                 <div className="flex items-center gap-4">
-                                                    <div 
+                                                    <div
                                                         className={cn(
                                                             "w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold",
                                                             isCompleted ? "bg-emerald-500" : ""
                                                         )}
-                                                        style={{ 
-                                                            backgroundColor: isCompleted ? undefined : track.themeColor 
+                                                        style={{
+                                                            backgroundColor: isCompleted ? undefined : track.themeColor
                                                         }}
                                                     >
                                                         {isCompleted ? (
@@ -499,7 +502,7 @@ export function ForgeTrackClient({
                             The Story
                         </h2>
                         <p className="text-neutral-600 dark:text-neutral-400 italic leading-relaxed">
-                            "{track.narrativePremise}"
+                            &quot;{track.narrativePremise}&quot;
                         </p>
                     </div>
                 </section>

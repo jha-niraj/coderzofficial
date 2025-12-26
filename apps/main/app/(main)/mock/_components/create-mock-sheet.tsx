@@ -266,7 +266,7 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                                                 Basic Information
                                             </h3>
                                             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                                Tell us about the role you're preparing for
+                                                Tell us about the role you&apos;re preparing for
                                             </p>
                                         </div>
 
@@ -281,7 +281,7 @@ export function CreateMockSheet({ isOpen, onClose, userCredits }: CreateMockShee
                                                     className="h-11"
                                                 />
                                                 <p className="text-xs text-neutral-500">
-                                                    Be specific about the role you're preparing for
+                                                    Be specific about the role you&apos;re preparing for
                                                 </p>
                                             </div>
 

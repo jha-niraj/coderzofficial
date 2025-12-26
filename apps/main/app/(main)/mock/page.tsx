@@ -191,7 +191,7 @@ export default function MockInterviewLandingPage() {
                                 transition={{ delay: 0.3 }}
                             >
                                 Practice with AI interviewers, get real-time feedback, and land your dream job.
-                                Join {stats.activeUsers.toLocaleString()}+ developers who've aced their interviews.
+                                Join {stats.activeUsers.toLocaleString()}+ developers who&apos;ve aced their interviews.
                             </motion.p>
                             <motion.div
                                 className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
@@ -309,7 +309,7 @@ export default function MockInterviewLandingPage() {
                                                             )
                                                         }
                                                         {
-                                                            (type as any).isNew && (
+                                                            (type).isNew && (
                                                                 <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-0">
                                                                     New ✨
                                                                 </Badge>
@@ -432,7 +432,7 @@ export default function MockInterviewLandingPage() {
                                 Ready to Ace Your Interview?
                             </h2>
                             <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
-                                Join thousands of developers who've successfully landed their dream jobs with our AI-powered mock interviews.
+                                Join thousands of developers who&apos;ve successfully landed their dream jobs with our AI-powered mock interviews.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Button

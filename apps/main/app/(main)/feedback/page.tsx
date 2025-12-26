@@ -16,7 +16,7 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
     SheetFooter, SheetHeader, SheetTitle, SheetDescription
 } from "@repo/ui/components/ui/sheet"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner"
 import { FeedbackCategory, FeedbackStatus } from "@repo/prisma/client"
 import { useFeedbackStore } from "@/app/store/feedbackStore"
 import { motion } from "framer-motion"

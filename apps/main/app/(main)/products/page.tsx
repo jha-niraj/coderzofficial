@@ -305,7 +305,7 @@ export default function ProductsPage() {
 									Product Roadmap
 								</h2>
 								<p className="text-lg text-neutral-500 dark:text-neutral-400 font-light leading-relaxed">
-									We are building a comprehensive ecosystem. Here is what's currently in the pipeline.
+									We are building a comprehensive ecosystem. Here is what&apos;s currently in the pipeline.
 								</p>
 							</div>
 							<Button variant="ghost" className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white hidden md:flex">

@@ -324,7 +324,7 @@ export default function ResultsPage({
                                 <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-amber-600" />
                                 <h3 className="text-xl font-semibold mb-2">Feedback Not Available</h3>
                                 <p className="text-neutral-600 dark:text-neutral-400">
-                                    We couldn't generate feedback for this session. Please try again or contact support.
+                                    We couldn&apos;t generate feedback for this session. Please try again or contact support.
                                 </p>
                             </CardContent>
                         </Card>

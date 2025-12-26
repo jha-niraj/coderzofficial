@@ -22,6 +22,21 @@ import {
 import SubmitConfirmDialog from "./components/SubmitConfirmDialog"
 import Link from "next/link"
 
+interface TestResult {
+	passed: boolean;
+	input: string;
+	expected: string;
+	actual: string;
+}
+
+interface SubmissionResult {
+	passed: boolean;
+	score: number;
+	submittedAt: string;
+	language: string;
+	testResults?: TestResult[];
+}
+
 interface CodingQuestion {
 	question: string;
 	hints?: string[];
@@ -41,8 +56,8 @@ interface InterviewGeneration {
 	jobDescription: string;
 	generatedContent: {
 		codingQuestions?: CodingQuestion[];
-		technicalQuestions?: any[];
-		behavioralQuestions?: any[];
+		technicalQuestions?: unknown[];
+		behavioralQuestions?: unknown[];
 	};
 	createdAt: string;
 }
@@ -57,17 +72,17 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 	// Run test results (temporary, not stored in DB)
 	const [runResults, setRunResults] = useState<Array<{ passed: boolean; input: string; expected: string; actual: string }>>([])
 	const [isRunning, setIsRunning] = useState(false)
-	const [runEvaluation, setRunEvaluation] = useState<any>(null)
+	// const [runEvaluation, setRunEvaluation] = useState<any>(null)
 
 	// Submission results (stored in DB)
-	const [submissionResults, setSubmissionResults] = useState<any>(null)
-	const [previousSubmissions, setPreviousSubmissions] = useState<any[]>([])
+	const [submissionResults, setSubmissionResults] = useState<SubmissionResult | null>(null)
+	const [previousSubmissions, setPreviousSubmissions] = useState<SubmissionResult[]>([])
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [showSubmitDialog, setShowSubmitDialog] = useState(false)
 
 	// Answer related states
 	const [isGeneratingAnswer, setIsGeneratingAnswer] = useState(false)
-	const [generatedAnswer, setGeneratedAnswer] = useState<any>(null)
+	const [generatedAnswer, setGeneratedAnswer] = useState<{ answer?: { solution: string; explanation: string; approach: string; timeComplexity: string; spaceComplexity: string; keyPoints: string[] } } | null>(null)
 
 	// UI states
 	const [activeTab, setActiveTab] = useState("problem")
@@ -84,7 +99,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 			try {
 				const response = await getGenerationBySlug(slug)
 				if (response.success && response.data) {
-					const generationData = response.data as any;
+					const generationData = response.data as InterviewGeneration;
 					setGeneration(generationData);
 				} else {
 					console.error("Failed to fetch generation:", response.error)
@@ -139,7 +154,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 
 		setIsRunning(true);
 		setRunResults([]); // Clear previous run results
-		setRunEvaluation(null); // Clear previous run evaluation
+		// setRunEvaluation(null); // Clear previous run evaluation
 		setCurrentCode(submittedCode); // Update current code from editor
 
 		const problem = generation.generatedContent.codingQuestions[selectedProblem];
@@ -155,7 +170,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 
 			if (evaluationResponse.success && evaluationResponse.data) {
 				const evalData = evaluationResponse.data;
-				setRunEvaluation(evalData);
+				// setRunEvaluation(evalData);
 
 				// Create test results based on the evaluation score
 				const simulatedResults = [];
@@ -234,20 +249,20 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 		}
 	}
 
-	const getDifficultyColor = (difficulty: string) => {
-		switch (difficulty) {
-			case "Easy": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:text-white"
-			case "Medium": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 hover:text-white"
-			case "Hard": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:text-white"
-			default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 hover:text-white"
-		}
-	}
+	// const getDifficultyColor = (difficulty: string) => {
+	// 	switch (difficulty) {
+	// 		case "Easy": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:text-white"
+	// 		case "Medium": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 hover:text-white"
+	// 		case "Hard": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:text-white"
+	// 		default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 hover:text-white"
+	// 	}
+	// }
 
 	const handleProblemChange = (problemIndex: number) => {
 		setSelectedProblem(problemIndex);
 		// Clear all results and states when switching problems
 		setRunResults([]);
-		setRunEvaluation(null);
+		// setRunEvaluation(null);
 		setSubmissionResults(null);
 		setPreviousSubmissions([]);
 		setIsRunning(false);
@@ -261,7 +276,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 		setSelectedLanguage(language);
 		// Clear all results and states when switching languages
 		setRunResults([]);
-		setRunEvaluation(null);
+		// setRunEvaluation(null);
 		setSubmissionResults(null);
 		setPreviousSubmissions([]);
 		setIsRunning(false);
@@ -655,7 +670,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 															<div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
 																<span>Language: {submission.language}</span>
 																<span>Score: {submission.score}%</span>
-																<span>{submission.testResults?.filter((r: any) => r.passed).length || 0}/{submission.testResults?.length || 0} tests passed</span>
+																<span>{submission.testResults?.filter((r) => r.passed).length || 0}/{submission.testResults?.length || 0} tests passed</span>
 															</div>
 														</CardContent>
 													</Card>
@@ -698,7 +713,7 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 												<div className="flex items-center justify-between">
 													<span className="font-medium">Test Cases:</span>
 													<span>
-														{submissionResults.testResults?.filter((r: any) => r.passed).length || 0}/
+														{submissionResults.testResults?.filter((r) => r.passed).length || 0}/
 														{submissionResults.testResults?.length || 0} passed
 													</span>
 												</div>

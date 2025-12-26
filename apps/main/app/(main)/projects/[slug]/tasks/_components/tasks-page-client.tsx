@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
-    ArrowLeft, Target, Clock, CheckCircle2, Info, Sparkles, AlertCircle, BookOpen, Loader2,
-    Play, ChevronRight, ChevronDown, RotateCcw, Zap, Brain, Trophy, ListChecks
+    ArrowLeft, Target, CheckCircle2, Info, Sparkles, AlertCircle, Loader2,
+    Play, ChevronRight, ChevronDown, RotateCcw, Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
@@ -16,14 +16,12 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
 } from '@repo/ui/components/ui/dialog'
-import { Separator } from '@repo/ui/components/ui/separator'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
 import { updateTaskStatus } from '@/actions/(main)/projects/project.action'
-import { checkTaskDetailExists, generateTaskDetail, getTaskDetail } from '@/actions/(main)/projects/task-details.action'
-import {
-    Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from '@repo/ui/components/ui/tooltip'
+import { 
+    checkTaskDetailExists, generateTaskDetail, getTaskDetail 
+} from '@/actions/(main)/projects/task-details.action'
 
 // ============================================================================
 // Types
@@ -135,7 +133,7 @@ function TaskItem({
                 toast.error(result.error || 'Failed to update task')
             }
         } catch (error) {
-            toast.error('Something went wrong')
+            toast.error('Something went wrong: ' + error)
         } finally {
             setIsUpdating(false)
         }
@@ -157,7 +155,7 @@ function TaskItem({
                 toast.error(result.error || 'Failed to start task')
             }
         } catch (error) {
-            toast.error('Something went wrong')
+            toast.error('Something went wrong: ' + error)
         } finally {
             setIsUpdating(false)
         }
@@ -196,7 +194,7 @@ function TaskItem({
                 toast.error(result.error || 'Failed to generate details')
             }
         } catch (error) {
-            toast.error('Something went wrong')
+            toast.error('Something went wrong: ' + error)
         } finally {
             setIsGeneratingDetail(false)
         }

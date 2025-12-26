@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import {
-	Card, CardContent, CardFooter, CardHeader
-} from "@repo/ui/components/ui/card"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Input } from "@repo/ui/components/ui/input"

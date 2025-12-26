@@ -338,7 +338,7 @@ export function CommunityHubClient({
                             )
                         }
                         {
-                            userCommunities.length > 0 && (
+                            userCommunities.length > 0 && userCommunities[0] && (
                                 <div className="mb-6">
                                     <PostComposer
                                         communityId={userCommunities[0].id}

@@ -395,10 +395,10 @@ export default function MyContributionsPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-green-900 dark:text-green-200 mb-1">
-                                            🎉 You're a real contributor now!
+                                            🎉 You&apos;re a real contributor now!
                                         </h3>
                                         <p className="text-sm text-green-700 dark:text-green-300">
-                                            You've merged {stats.prsMerged} PR{stats.prsMerged > 1 ? 's' : ''} and solved {stats.issuesSolved || 0} issues.
+                                            You&apos;ve merged {stats.prsMerged} PR{stats.prsMerged > 1 ? 's' : ''} and solved {stats.issuesSolved || 0} issues.
                                             {stats.totalBountyEarned > 0 && ` Plus $${stats.totalBountyEarned} in bounties!`}
                                             {' '}Keep the momentum going!
                                         </p>

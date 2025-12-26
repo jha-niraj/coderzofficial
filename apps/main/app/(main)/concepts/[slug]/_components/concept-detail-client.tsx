@@ -17,7 +17,7 @@ import {
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import {
     ConceptCategory, ConceptDifficulty, ConceptStepType
 } from "@repo/prisma/client";
@@ -394,7 +394,9 @@ export default function ConceptDetailClient({
                                 ) : (
                                     <Button
                                         onClick={() => {
-                                            markStepComplete(currentStep.order);
+                                            if (currentStep) {
+                                                markStepComplete(currentStep.order);
+                                            }
                                             toast.success("🎉 Congratulations! You completed this concept!");
                                         }}
                                         className="bg-green-600 hover:bg-green-700"
@@ -467,7 +469,7 @@ export default function ConceptDetailClient({
                 </main>
                 <AnimatePresence>
                     {
-                        showAIAssistant && (
+                        showAIAssistant && currentStep && (
                             <motion.aside
                                 initial={{ width: 0, opacity: 0 }}
                                 animate={{ width: 384, opacity: 1 }}

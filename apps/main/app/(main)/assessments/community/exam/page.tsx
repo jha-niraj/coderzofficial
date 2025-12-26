@@ -345,7 +345,7 @@ export default function CommunityExamPage() {
                                 }
                                 {
                                     searchQuery && (
-                                        <Badge variant="secondary">"{searchQuery}"</Badge>
+                                        <Badge variant="secondary">&quot;{searchQuery}&quot;</Badge>
                                     )
                                 }
                                 <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -509,7 +509,7 @@ export default function CommunityExamPage() {
                         </>
                     )
                 }
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

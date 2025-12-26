@@ -75,7 +75,7 @@ const ResetPassword = (): JSX.Element | null => {
             const digits = pastedData.split("");
             setOtp(digits);
             inputRefs[5]?.current?.focus();
-        }   
+        }
     };
 
     const handleResend = async () => {
@@ -90,7 +90,7 @@ const ResetPassword = (): JSX.Element | null => {
             } else {
                 toast.error(result.error || "Failed to resend code");
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to resend code");
         }
     };
@@ -112,9 +112,9 @@ const ResetPassword = (): JSX.Element | null => {
             } else {
                 toast.error(result.error || "Reset failed");
                 setOtp(["", "", "", "", "", ""]);
-                inputRefs[0]?.current?.focus() || null;
-            } 
-        } catch (error) {
+                inputRefs[0]?.current?.focus();
+            }
+        } catch {
             toast.error("An unexpected error occurred");
         } finally {
             setIsLoading(false);

@@ -85,7 +85,7 @@ function VerifyContent() {
 			} else {
 				toast.error(result.error || "Failed to resend")
 			}
-		} catch (error) {
+		} catch {
 			toast.error("Failed to resend code")
 		}
 	}
@@ -131,9 +131,9 @@ function VerifyContent() {
 			} else {
 				toast.error(result.error || "Invalid code")
 				setCode(["", "", "", "", "", ""])
-				inputRefs[0]?.current?.focus() || null;
+				inputRefs[0]?.current?.focus();
 			}
-		} catch (error) {
+		} catch {
 			toast.error("Verification failed")
 		} finally {
 			setIsLoading(false)

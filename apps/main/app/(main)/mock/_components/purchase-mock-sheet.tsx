@@ -10,8 +10,8 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Separator } from '@repo/ui/components/ui/separator'
 import {
-    Sparkles, Clock, Brain, CheckCircle, Calendar, Play, X,
-    AlertCircle, Trophy, Target, Zap
+    Sparkles, Clock, Brain, CheckCircle, Calendar, Play, AlertCircle, 
+    Trophy, Target, Zap
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import { createMockVoiceSession } from '@/actions/(main)/mockvoice/session.action'
@@ -268,7 +268,7 @@ export function PurchaseMockSheet({ isOpen, onClose, mock, userCredits }: Purcha
                     <div>
                         <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                             <Brain className="w-5 h-5" />
-                            What You'll Practice
+                            What You&apos;ll Practice
                         </h3>
                         <div className="space-y-3">
                             {

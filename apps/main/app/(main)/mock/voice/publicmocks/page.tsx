@@ -15,7 +15,7 @@ import {
     PaginationNext, PaginationPrevious
 } from '@repo/ui/components/ui/pagination'
 import {
-    ArrowLeft, Search, Plus, Brain, ChevronRight, Target, Shield, Sparkles
+    ArrowLeft, Search, Plus, Brain, ChevronRight, Target
 } from 'lucide-react'
 import { MockInterviewCard } from '../../_components/mock-interview-card'
 import { MockCardSkeleton } from '../../_components/mock-card-skeleton'

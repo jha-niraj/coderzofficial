@@ -179,8 +179,8 @@ export default function OpenSourcePage() {
                                 </span>
                             </h1>
                             <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-6">
-                                Real projects, real impact, real money. We've made it embarrassingly easy to contribute
-                                to open source - unless you're still updating READMEs and calling it "contribution."
+                                Real projects, real impact, real money. We&apos;ve made it embarrassingly easy to contribute
+                                to open source - unless you&apos;re still updating READMEs and calling it &quot;contribution&quot;.
                                 <span className="text-neutral-900 dark:text-white font-medium"> No shade, but also... a little shade.</span>
                             </p>
                             <div className="grid grid-cols-4 gap-4">

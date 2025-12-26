@@ -677,7 +677,7 @@ export default function CertificationExamPage() {
                                                 <li>• The exam will auto-submit when time runs out</li>
                                                 <li>• You can navigate between questions before submitting</li>
                                                 <li>• If you fail, you can retake after 24 hours</li>
-                                                <li>• Hints are available for code questions (won't affect your score)</li>
+                                                <li>• Hints are available for code questions (won&apos;t affect your score)</li>
                                             </ul>
                                         </div>
                                     </CardContent>
@@ -1065,7 +1065,7 @@ export default function CertificationExamPage() {
                                                         Certificate Earned!
                                                     </h3>
                                                     <p className="text-muted-foreground mb-4">
-                                                        You're now certified to contribute to open source projects on our platform.
+                                                        You&apos;re now certified to contribute to open source projects on our platform.
                                                     </p>
                                                     <div className="flex gap-4 justify-center">
                                                         <Button onClick={() => router.push("/opensource")}>
@@ -1077,7 +1077,7 @@ export default function CertificationExamPage() {
                                             ) : (
                                                 <div className="p-6 rounded-lg bg-muted/30 border text-center">
                                                     <RotateCcw className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                                                    <h3 className="text-xl font-semibold mb-2">Don't Give Up!</h3>
+                                                    <h3 className="text-xl font-semibold mb-2">Don&apos;t Give Up!</h3>
                                                     <p className="text-muted-foreground mb-4">
                                                         Review the learning modules and try again in 24 hours.
                                                         Practice makes perfect!

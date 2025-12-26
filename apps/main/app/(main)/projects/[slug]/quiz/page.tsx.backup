@@ -28,7 +28,7 @@ import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group"
 import { Label } from "@repo/ui/components/ui/label"
 import { Alert, AlertDescription } from "@repo/ui/components/ui/alert"
 import { Separator } from "@repo/ui/components/ui/separator"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner";
 import Link from "next/link"
 import { getProjectQuiz, submitQuizAttempt } from "@/actions/ai-projects.action"
 

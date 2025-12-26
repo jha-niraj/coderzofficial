@@ -2,7 +2,21 @@
 	"$schema": "https://turborepo.com/schema.json",
 	"ui": "tui",
 	"globalEnv": [
-		".env"
+		".env",
+		"DATABASE_URL",
+		"DIRECT_URL",
+		"NODE_ENV",
+		"JWT_SECRET",
+		"NEXTAUTH_URL",
+		"RAZORPAY_KEY_SECRET",
+		"RESEND_API_KEY",
+		"TRUEFOOL_API_KEY",
+		"INTER_PLATFORM_SECRET",
+		"TRUEFOOL_DOMAIN",
+		"ELEVENLABS_AI_KEY",
+		"GITHUB_NIRAJ_JHA_TOKEN",
+		"WORKER_SECRET",
+		"OPENAI_API_KEY"
 	],
 	"tasks": {
 		"generate": {
@@ -21,7 +35,19 @@
 			],
 			"env": [
 				"DATABASE_URL",
-				"DIRECT_URL"
+				"DIRECT_URL",
+				"NODE_ENV",
+				"JWT_SECRET",
+				"NEXTAUTH_URL",
+				"RAZORPAY_KEY_SECRET",
+				"RESEND_API_KEY",
+				"TRUEFOOL_API_KEY",
+				"INTER_PLATFORM_SECRET",
+				"TRUEFOOL_DOMAIN",
+				"ELEVENLABS_AI_KEY",
+				"GITHUB_NIRAJ_JHA_TOKEN",
+				"WORKER_SECRET",
+				"OPENAI_API_KEY"
 			],
 			"inputs": [
 				"$TURBO_DEFAULT$",

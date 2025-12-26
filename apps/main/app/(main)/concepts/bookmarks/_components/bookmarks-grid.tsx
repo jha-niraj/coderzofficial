@@ -13,7 +13,7 @@ import {
 	ConceptCategory, ConceptDifficulty
 } from "@repo/prisma/client";
 import { toggleConceptBookmark } from "@/actions/(main)/concepts/concept.action";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 interface BookmarkItem {
 	id: string;

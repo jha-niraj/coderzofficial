@@ -31,6 +31,7 @@ export function RecentSubmissionsGrid() {
                     setLoading(true)
                 }
             } catch (err) {
+                console.error("Error fetching recent submissions: " + err)
                 setError(true)
             } finally {
                 setLoading(false)

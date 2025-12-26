@@ -15,7 +15,7 @@ import {
     Avatar, AvatarFallback, AvatarImage
 
 } from "@repo/ui/components/ui/avatar"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner";
 
 interface TransferDialogProps {
     open: boolean

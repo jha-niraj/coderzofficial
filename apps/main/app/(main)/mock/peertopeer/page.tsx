@@ -9,8 +9,8 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from '@repo/ui/components/ui/card'
 import {
-    Users, Sparkles, UserPlus, Link2, MessageSquare, TrendingUp, CheckCircle, 
-    ArrowLeft, Plus, Star, Globe, Lock, Target, ArrowRight, Trophy, Calendar, Brain
+    Users, UserPlus, MessageSquare, TrendingUp, CheckCircle, ArrowLeft, 
+    Plus, Star, Globe, Lock, Target, Trophy, Calendar, Brain
 } from 'lucide-react'
 import { 
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle    
@@ -18,7 +18,9 @@ import {
 import { Input } from '@repo/ui/components/ui/input'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Label } from '@repo/ui/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@repo/ui/components/ui/radio-group'
+import { 
+    RadioGroup, RadioGroupItem 
+} from '@repo/ui/components/ui/radio-group'
 import { 
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from '@repo/ui/components/ui/select'

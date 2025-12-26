@@ -299,7 +299,7 @@ export default function AIMockInterviewClient({
                                 </div>
 
                                 <div className="space-y-3">
-                                    <p className="font-semibold text-neutral-900 dark:text-white">What you'll get:</p>
+                                    <p className="font-semibold text-neutral-900 dark:text-white">What you&apos;ll get:</p>
                                     <ul className="space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
                                         <li className="flex items-start gap-2">
                                             <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />

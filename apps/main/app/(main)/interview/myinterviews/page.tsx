@@ -125,7 +125,7 @@ export default function MyInterviewsPage() {
 						animate={{ opacity: 1, y: 0 }}
 						className="text-center py-12 border border-dashed rounded-lg"
 					>
-						<p className="text-muted-foreground mb-4">You haven't started any interviews yet.</p>
+						<p className="text-muted-foreground mb-4">You haven&apos;t started any interviews yet.</p>
 						<Link href={`/interview/${company.id}`}>
 							<Button>Start an Interview</Button>
 						</Link>

@@ -1,12 +1,12 @@
 "use client"
 
-import { 
-    Card, CardContent, CardFooter, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardFooter, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
-import { 
-    Star, Briefcase, Code, MessageSquare 
+import {
+    Star, Briefcase, Code, MessageSquare
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@repo/ui/lib/utils"
@@ -100,7 +100,7 @@ export function InterviewPlanCard({
                     </span>
                     <span>by {plan.creator}</span>
                 </div>
-                
+
                 {/* Question breakdown */}
                 <div className="flex flex-wrap gap-2 mb-3">
                     {plan.technicalCount > 0 && (
@@ -168,7 +168,7 @@ export function InterviewPlanCard({
                             <DialogHeader>
                                 <DialogTitle>Purchase Interview Plan</DialogTitle>
                                 <DialogDescription>
-                                    This interview plan will cost {plan.cost} credits. You'll get access to all {totalQuestions} questions
+                                    This interview plan will cost {plan.cost} credits. You&apos;ll get access to all {totalQuestions} questions
                                     {plan.includeAnswers ? ' with detailed answers' : ''}
                                     {plan.includePractice ? ' and practice mode' : ''}. Do you want to continue?
                                 </DialogDescription>

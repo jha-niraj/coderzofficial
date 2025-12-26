@@ -3,336 +3,336 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
-  DialogTitle
+	Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
+	DialogTitle
 } from "@repo/ui/components/ui/dialog";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
-  CheckCircle2, Coins, FileCode, ListChecks, Sparkles, AlertCircle, Loader2, 
-  PartyPopper
+	CheckCircle2, Coins, FileCode, ListChecks, Sparkles, AlertCircle, Loader2,
+	PartyPopper
 } from "lucide-react";
 import { enrollInProject } from "@/actions/(main)/projects/project.action";
 import toast from "@repo/ui/components/ui/sonner";
 
 interface EnrollmentDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  projectId: string;
-  projectTitle: string;
-  projectSlug: string;
-  tasksCount: number;
-  userCredits: number;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	projectId: string;
+	projectTitle: string;
+	projectSlug: string;
+	tasksCount: number;
+	userCredits: number;
 }
 
 type EnrollmentStep = "confirm" | "processing" | "success" | "error";
 
 export function EnrollmentDialog({
-  open,
-  onOpenChange,
-  projectId,
-  projectTitle,
-  projectSlug,
-  tasksCount,
-  userCredits,
+	open,
+	onOpenChange,
+	projectId,
+	projectTitle,
+	projectSlug,
+	tasksCount,
+	userCredits,
 }: EnrollmentDialogProps) {
-  const router = useRouter();
-  const [step, setStep] = useState<EnrollmentStep>("confirm");
-  const [error, setError] = useState<string>("");
-  const [enrollmentData, setEnrollmentData] = useState<any>(null);
+	const router = useRouter();
+	const [step, setStep] = useState<EnrollmentStep>("confirm");
+	const [error, setError] = useState<string>("");
+	const [enrollmentData, setEnrollmentData] = useState<any>(null);
 
-  const enrollmentCost = 13;
-  const canAfford = userCredits >= enrollmentCost;
+	const enrollmentCost = 13;
+	const canAfford = userCredits >= enrollmentCost;
 
-  const handleEnroll = async () => {
-    if (!canAfford) {
-      toast.error("Insufficient credits");
-      return;
-    }
+	const handleEnroll = async () => {
+		if (!canAfford) {
+			toast.error("Insufficient credits");
+			return;
+		}
 
-    setStep("processing");
-    setError("");
+		setStep("processing");
+		setError("");
 
-    try {
-      const result = await enrollInProject(projectId);
+		try {
+			const result = await enrollInProject(projectId);
 
-      if (result.success) {
-        setEnrollmentData(result.data);
-        setStep("success");
-        toast.success("Successfully enrolled in project!");
-        
-        // Auto-close and redirect after 3 seconds
-        setTimeout(() => {
-          onOpenChange(false);
-          router.refresh();
-        }, 3000);
-      } else {
-        setError(result.error || "Failed to enroll");
-        setStep("error");
-        toast.error(result.error || "Failed to enroll");
-      }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
-      setStep("error");
-      toast.error("An unexpected error occurred");
-    }
-  };
+			if (result.success) {
+				setEnrollmentData(result.data);
+				setStep("success");
+				toast.success("Successfully enrolled in project!");
 
-  const handleClose = () => {
-    if (step === "processing") return; // Don't allow closing during processing
-    onOpenChange(false);
-    setTimeout(() => {
-      setStep("confirm");
-      setError("");
-      setEnrollmentData(null);
-    }, 300);
-  };
+				// Auto-close and redirect after 3 seconds
+				setTimeout(() => {
+					onOpenChange(false);
+					router.refresh();
+				}, 3000);
+			} else {
+				setError(result.error || "Failed to enroll");
+				setStep("error");
+				toast.error(result.error || "Failed to enroll");
+			}
+		} catch (err: any) {
+			setError(err.message || "An unexpected error occurred");
+			setStep("error");
+			toast.error("An unexpected error occurred");
+		}
+	};
 
-  const handleRetry = () => {
-    setStep("confirm");
-    setError("");
-  };
+	const handleClose = () => {
+		if (step === "processing") return; // Don't allow closing during processing
+		onOpenChange(false);
+		setTimeout(() => {
+			setStep("confirm");
+			setError("");
+			setEnrollmentData(null);
+		}, 300);
+	};
 
-  return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        {step === "confirm" && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-2xl">
-                <Sparkles className="h-6 w-6 text-yellow-500" />
-                Enroll in Project
-              </DialogTitle>
-              <DialogDescription>
-                Get instant access to this project and start building
-              </DialogDescription>
-            </DialogHeader>
+	const handleRetry = () => {
+		setStep("confirm");
+		setError("");
+	};
 
-            <div className="space-y-4 py-4">
-              {/* Project Info */}
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <h4 className="font-semibold text-lg mb-2">{projectTitle}</h4>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <ListChecks className="h-4 w-4" />
-                  <span>{tasksCount} tasks included</span>
-                </div>
-              </div>
+	return (
+		<Dialog open={open} onOpenChange={handleClose}>
+			<DialogContent className="sm:max-w-[500px]">
+				{step === "confirm" && (
+					<>
+						<DialogHeader>
+							<DialogTitle className="flex items-center gap-2 text-2xl">
+								<Sparkles className="h-6 w-6 text-yellow-500" />
+								Enroll in Project
+							</DialogTitle>
+							<DialogDescription>
+								Get instant access to this project and start building
+							</DialogDescription>
+						</DialogHeader>
 
-              {/* What's Included */}
-              <div className="space-y-2">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  What you'll get:
-                </h4>
-                <ul className="space-y-2 text-sm text-muted-foreground ml-6">
-                  <li className="flex items-start gap-2">
-                    <FileCode className="h-4 w-4 mt-0.5 text-blue-500" />
-                    <span>Complete project blueprint with all tasks</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <ListChecks className="h-4 w-4 mt-0.5 text-purple-500" />
-                    <span>Progress tracking for each task</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Sparkles className="h-4 w-4 mt-0.5 text-yellow-500" />
-                    <span>Access to suggest and vote on features</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-500" />
-                    <span>Lifetime access to project updates</span>
-                  </li>
-                </ul>
-              </div>
+						<div className="space-y-4 py-4">
+							{/* Project Info */}
+							<div className="rounded-lg border bg-muted/50 p-4">
+								<h4 className="font-semibold text-lg mb-2">{projectTitle}</h4>
+								<div className="flex items-center gap-2 text-sm text-muted-foreground">
+									<ListChecks className="h-4 w-4" />
+									<span>{tasksCount} tasks included</span>
+								</div>
+							</div>
 
-              {/* Pricing */}
-              <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Coins className="h-5 w-5 text-yellow-500" />
-                    <span className="font-semibold">Enrollment Cost</span>
-                  </div>
-                  <Badge variant="secondary" className="text-lg font-bold">
-                    {enrollmentCost} Credits
-                  </Badge>
-                </div>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  Your balance: {userCredits} credits
-                  {!canAfford && (
-                    <span className="text-destructive ml-2">
-                      (Insufficient credits)
-                    </span>
-                  )}
-                </div>
-              </div>
+							{/* What's Included */}
+							<div className="space-y-2">
+								<h4 className="font-semibold flex items-center gap-2">
+									<CheckCircle2 className="h-4 w-4 text-green-500" />
+									What you&apos;ll get:
+								</h4>
+								<ul className="space-y-2 text-sm text-muted-foreground ml-6">
+									<li className="flex items-start gap-2">
+										<FileCode className="h-4 w-4 mt-0.5 text-blue-500" />
+										<span>Complete project blueprint with all tasks</span>
+									</li>
+									<li className="flex items-start gap-2">
+										<ListChecks className="h-4 w-4 mt-0.5 text-purple-500" />
+										<span>Progress tracking for each task</span>
+									</li>
+									<li className="flex items-start gap-2">
+										<Sparkles className="h-4 w-4 mt-0.5 text-yellow-500" />
+										<span>Access to suggest and vote on features</span>
+									</li>
+									<li className="flex items-start gap-2">
+										<CheckCircle2 className="h-4 w-4 mt-0.5 text-green-500" />
+										<span>Lifetime access to project updates</span>
+									</li>
+								</ul>
+							</div>
 
-              {!canAfford && (
-                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-semibold text-destructive">
-                      Insufficient Credits
-                    </p>
-                    <p className="text-muted-foreground">
-                      You need {enrollmentCost - userCredits} more credits to enroll.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+							{/* Pricing */}
+							<div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<Coins className="h-5 w-5 text-yellow-500" />
+										<span className="font-semibold">Enrollment Cost</span>
+									</div>
+									<Badge variant="secondary" className="text-lg font-bold">
+										{enrollmentCost} Credits
+									</Badge>
+								</div>
+								<div className="mt-2 text-sm text-muted-foreground">
+									Your balance: {userCredits} credits
+									{!canAfford && (
+										<span className="text-destructive ml-2">
+											(Insufficient credits)
+										</span>
+									)}
+								</div>
+							</div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleEnroll}
-                disabled={!canAfford}
-                className="gap-2"
-              >
-                <Coins className="h-4 w-4" />
-                Enroll Now
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+							{!canAfford && (
+								<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 flex items-start gap-2">
+									<AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+									<div className="text-sm">
+										<p className="font-semibold text-destructive">
+											Insufficient Credits
+										</p>
+										<p className="text-muted-foreground">
+											You need {enrollmentCost - userCredits} more credits to enroll.
+										</p>
+									</div>
+								</div>
+							)}
+						</div>
 
-        {step === "processing" && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-center">Processing Enrollment</DialogTitle>
-            </DialogHeader>
+						<DialogFooter>
+							<Button variant="outline" onClick={handleClose}>
+								Cancel
+							</Button>
+							<Button
+								onClick={handleEnroll}
+								disabled={!canAfford}
+								className="gap-2"
+							>
+								<Coins className="h-4 w-4" />
+								Enroll Now
+							</Button>
+						</DialogFooter>
+					</>
+				)}
 
-            <div className="py-12 flex flex-col items-center justify-center space-y-6">
-              {/* Cool Loading Animation */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-24 w-24 rounded-full bg-primary/20 animate-ping" />
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-20 w-20 rounded-full bg-primary/30 animate-pulse" />
-                </div>
-                <div className="relative flex items-center justify-center h-24 w-24">
-                  <Sparkles className="h-12 w-12 text-primary animate-pulse" />
-                </div>
-              </div>
+				{step === "processing" && (
+					<>
+						<DialogHeader>
+							<DialogTitle className="text-center">Processing Enrollment</DialogTitle>
+						</DialogHeader>
 
-              <div className="text-center space-y-2">
-                <p className="font-semibold text-lg">Setting up your project...</p>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Creating your workspace
-                  </p>
-                  <p className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Initializing {tasksCount} tasks
-                  </p>
-                  <p className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Processing payment
-                  </p>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+						<div className="py-12 flex flex-col items-center justify-center space-y-6">
+							{/* Cool Loading Animation */}
+							<div className="relative">
+								<div className="absolute inset-0 flex items-center justify-center">
+									<div className="h-24 w-24 rounded-full bg-primary/20 animate-ping" />
+								</div>
+								<div className="absolute inset-0 flex items-center justify-center">
+									<div className="h-20 w-20 rounded-full bg-primary/30 animate-pulse" />
+								</div>
+								<div className="relative flex items-center justify-center h-24 w-24">
+									<Sparkles className="h-12 w-12 text-primary animate-pulse" />
+								</div>
+							</div>
 
-        {step === "success" && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-center text-2xl flex items-center justify-center gap-2">
-                <PartyPopper className="h-6 w-6 text-yellow-500" />
-                Enrollment Successful!
-              </DialogTitle>
-            </DialogHeader>
+							<div className="text-center space-y-2">
+								<p className="font-semibold text-lg">Setting up your project...</p>
+								<div className="space-y-1 text-sm text-muted-foreground">
+									<p className="flex items-center justify-center gap-2">
+										<Loader2 className="h-3 w-3 animate-spin" />
+										Creating your workspace
+									</p>
+									<p className="flex items-center justify-center gap-2">
+										<Loader2 className="h-3 w-3 animate-spin" />
+										Initializing {tasksCount} tasks
+									</p>
+									<p className="flex items-center justify-center gap-2">
+										<Loader2 className="h-3 w-3 animate-spin" />
+										Processing payment
+									</p>
+								</div>
+							</div>
+						</div>
+					</>
+				)}
 
-            <div className="py-8 flex flex-col items-center justify-center space-y-6">
-              {/* Success Animation */}
-              <div className="relative">
-                <div className="h-24 w-24 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle2 className="h-16 w-16 text-green-500 animate-pulse" />
-                </div>
-                <div className="absolute -top-2 -right-2">
-                  <Sparkles className="h-8 w-8 text-yellow-500 animate-bounce" />
-                </div>
-              </div>
+				{step === "success" && (
+					<>
+						<DialogHeader>
+							<DialogTitle className="text-center text-2xl flex items-center justify-center gap-2">
+								<PartyPopper className="h-6 w-6 text-yellow-500" />
+								Enrollment Successful!
+							</DialogTitle>
+						</DialogHeader>
 
-              <div className="text-center space-y-2">
-                <p className="font-semibold text-lg">
-                  Welcome to {enrollmentData?.projectTitle}!
-                </p>
-                <p className="text-muted-foreground">
-                  You've successfully enrolled in the project
-                </p>
-              </div>
+						<div className="py-8 flex flex-col items-center justify-center space-y-6">
+							{/* Success Animation */}
+							<div className="relative">
+								<div className="h-24 w-24 rounded-full bg-green-500/20 flex items-center justify-center">
+									<CheckCircle2 className="h-16 w-16 text-green-500 animate-pulse" />
+								</div>
+								<div className="absolute -top-2 -right-2">
+									<Sparkles className="h-8 w-8 text-yellow-500 animate-bounce" />
+								</div>
+							</div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="rounded-lg border bg-muted/50 p-3 text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {enrollmentData?.tasksCount}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Tasks Ready</div>
-                </div>
-                <div className="rounded-lg border bg-muted/50 p-3 text-center">
-                  <div className="text-2xl font-bold text-green-500">
-                    -{enrollmentData?.creditsSpent}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Credits Used</div>
-                </div>
-              </div>
+							<div className="text-center space-y-2">
+								<p className="font-semibold text-lg">
+									Welcome to {enrollmentData?.projectTitle}!
+								</p>
+								<p className="text-muted-foreground">
+									You&apos;ve successfully enrolled in the project
+								</p>
+							</div>
 
-              <p className="text-sm text-muted-foreground text-center">
-                Redirecting you to the project...
-              </p>
-            </div>
+							{/* Stats */}
+							<div className="grid grid-cols-2 gap-4 w-full">
+								<div className="rounded-lg border bg-muted/50 p-3 text-center">
+									<div className="text-2xl font-bold text-primary">
+										{enrollmentData?.tasksCount}
+									</div>
+									<div className="text-xs text-muted-foreground">Tasks Ready</div>
+								</div>
+								<div className="rounded-lg border bg-muted/50 p-3 text-center">
+									<div className="text-2xl font-bold text-green-500">
+										-{enrollmentData?.creditsSpent}
+									</div>
+									<div className="text-xs text-muted-foreground">Credits Used</div>
+								</div>
+							</div>
 
-            <DialogFooter className="sm:justify-center">
-              <Button
-                onClick={() => {
-                  onOpenChange(false);
-                  router.refresh();
-                }}
-                className="gap-2"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Start Building
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+							<p className="text-sm text-muted-foreground text-center">
+								Redirecting you to the project...
+							</p>
+						</div>
 
-        {step === "error" && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-center text-destructive flex items-center justify-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                Enrollment Failed
-              </DialogTitle>
-            </DialogHeader>
+						<DialogFooter className="sm:justify-center">
+							<Button
+								onClick={() => {
+									onOpenChange(false);
+									router.refresh();
+								}}
+								className="gap-2"
+							>
+								<CheckCircle2 className="h-4 w-4" />
+								Start Building
+							</Button>
+						</DialogFooter>
+					</>
+				)}
 
-            <div className="py-8 flex flex-col items-center justify-center space-y-6">
-              <div className="h-24 w-24 rounded-full bg-destructive/20 flex items-center justify-center">
-                <AlertCircle className="h-16 w-16 text-destructive" />
-              </div>
+				{step === "error" && (
+					<>
+						<DialogHeader>
+							<DialogTitle className="text-center text-destructive flex items-center justify-center gap-2">
+								<AlertCircle className="h-5 w-5" />
+								Enrollment Failed
+							</DialogTitle>
+						</DialogHeader>
 
-              <div className="text-center space-y-2">
-                <p className="font-semibold">Something went wrong</p>
-                <p className="text-sm text-muted-foreground">{error}</p>
-              </div>
-            </div>
+						<div className="py-8 flex flex-col items-center justify-center space-y-6">
+							<div className="h-24 w-24 rounded-full bg-destructive/20 flex items-center justify-center">
+								<AlertCircle className="h-16 w-16 text-destructive" />
+							</div>
 
-            <DialogFooter className="sm:justify-center gap-2">
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button onClick={handleRetry} className="gap-2">
-                Try Again
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
+							<div className="text-center space-y-2">
+								<p className="font-semibold">Something went wrong</p>
+								<p className="text-sm text-muted-foreground">{error}</p>
+							</div>
+						</div>
+
+						<DialogFooter className="sm:justify-center gap-2">
+							<Button variant="outline" onClick={handleClose}>
+								Cancel
+							</Button>
+							<Button onClick={handleRetry} className="gap-2">
+								Try Again
+							</Button>
+						</DialogFooter>
+					</>
+				)}
+			</DialogContent>
+		</Dialog>
+	);
 }

@@ -341,7 +341,7 @@ export default function OpenSourceLearnPage() {
                                                     {!unlocked && index > 0 && (
                                                         <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                                                             <p className="text-sm text-amber-800 dark:text-amber-300">
-                                                                🔒 Complete "{modules[index - 1]?.title}" to unlock
+                                                                🔒 Complete &quot;{modules[index - 1]?.title}&quot; to unlock
                                                             </p>
                                                         </div>
                                                     )}

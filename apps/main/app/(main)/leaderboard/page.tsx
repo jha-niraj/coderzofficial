@@ -2,16 +2,16 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { 
-    Trophy, Medal, Award, Flame, Code, Users, Gift, ChevronUp, ChevronDown, 
-    Sparkles, Crown, TrendingUp 
+import {
+    Trophy, Medal, Award, Flame, Code, Users, Gift, ChevronUp, ChevronDown,
+    TrendingUp
 } from "lucide-react"
-import { 
-    Tabs, TabsContent, TabsList, TabsTrigger 
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs"
 import { Card, CardContent } from "@repo/ui/components/ui/card"
-import { 
-    Avatar, AvatarFallback, AvatarImage 
+import {
+    Avatar, AvatarFallback, AvatarImage
 } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
@@ -196,100 +196,100 @@ export default function Leaderboard() {
                                 </TabsTrigger>
                             </TabsList>
                             {
-                            Object.entries(leaderboardData).map(([category, data]) => (
-                                <TabsContent key={category} value={category} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {
-                                        data.slice(0, 3).map((user, index) => (
-                                            <motion.div
-                                                key={user.id}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                            >
-                                                <Card
-                                                    className={cn(
-                                                        "relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]",
-                                                        user.rank === 1
-                                                            ? "border-yellow-500 bg-gradient-to-br from-yellow-50/80 to-orange-50/80 dark:from-yellow-950/20 dark:to-orange-950/20"
-                                                            : user.rank === 2
-                                                                ? "border-neutral-400 bg-gradient-to-br from-neutral-50/80 to-gray-50/80 dark:from-neutral-900/40 dark:to-gray-900/40"
-                                                                : "border-amber-700 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-950/20 dark:to-orange-950/20"
-                                                    )}
-                                                >
-                                                    {
-                                                    user.rank === 1 && (
-                                                        <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500" />
-                                                    )
-                                                    }
-                                                    <CardContent className="p-6">
-                                                        <div className="flex flex-col items-center text-center space-y-4">
-                                                            <div className="relative">
-                                                                <Avatar className="h-20 w-20 border-4 border-white dark:border-neutral-800 shadow-lg">
-                                                                    <AvatarImage src={user.avatar} alt={user.name} />
-                                                                    <AvatarFallback className="text-xl font-bold">{user.name.charAt(0)}</AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-700 shadow-lg">
-                                                                    {getRankIcon(user.rank)}
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="font-bold text-lg text-neutral-900 dark:text-white mb-1">{user.name}</h3>
-                                                                <div className="flex items-center justify-center gap-2">
-                                                                    <Badge className={cn(
-                                                                        "font-semibold",
-                                                                        user.rank === 1 ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white" :
-                                                                            user.rank === 2 ? "bg-neutral-500 text-white" :
-                                                                                "bg-gradient-to-r from-amber-700 to-orange-700 text-white"
-                                                                    )}>
-                                                                        {user.score} points
-                                                                    </Badge>
-                                                                    {getChangeIndicator(user.change)}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </motion.div>
-                                        ))
-                                        }
-                                    </div>
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5, delay: 0.3 }}
-                                        className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xl"
-                                    >
-                                        <div className="space-y-2">
+                                Object.entries(leaderboardData).map(([category, data]) => (
+                                    <TabsContent key={category} value={category} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             {
-                                            data.slice(3).map((user, index) => (
-                                                <div
-                                                    key={user.id}
-                                                    className="group flex items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/50 p-4 transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01]"
-                                                >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-                                                            {getRankIcon(user.rank)}
-                                                        </div>
-                                                        <Avatar className="h-10 w-10 border-2 border-white dark:border-neutral-800">
-                                                            <AvatarImage src={user.avatar} alt={user.name} />
-                                                            <AvatarFallback className="font-semibold">{user.name.charAt(0)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <span className="font-semibold text-neutral-900 dark:text-white">{user.name}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <Badge variant="secondary" className="font-semibold">
-                                                            {user.score} pts
-                                                        </Badge>
-                                                        {getChangeIndicator(user.change)}
-                                                    </div>
-                                                </div>
-                                            ))
+                                                data.slice(0, 3).map((user, index) => (
+                                                    <motion.div
+                                                        key={user.id}
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                                                    >
+                                                        <Card
+                                                            className={cn(
+                                                                "relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]",
+                                                                user.rank === 1
+                                                                    ? "border-yellow-500 bg-gradient-to-br from-yellow-50/80 to-orange-50/80 dark:from-yellow-950/20 dark:to-orange-950/20"
+                                                                    : user.rank === 2
+                                                                        ? "border-neutral-400 bg-gradient-to-br from-neutral-50/80 to-gray-50/80 dark:from-neutral-900/40 dark:to-gray-900/40"
+                                                                        : "border-amber-700 bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-950/20 dark:to-orange-950/20"
+                                                            )}
+                                                        >
+                                                            {
+                                                                user.rank === 1 && (
+                                                                    <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500" />
+                                                                )
+                                                            }
+                                                            <CardContent className="p-6">
+                                                                <div className="flex flex-col items-center text-center space-y-4">
+                                                                    <div className="relative">
+                                                                        <Avatar className="h-20 w-20 border-4 border-white dark:border-neutral-800 shadow-lg">
+                                                                            <AvatarImage src={user.avatar} alt={user.name} />
+                                                                            <AvatarFallback className="text-xl font-bold">{user.name.charAt(0)}</AvatarFallback>
+                                                                        </Avatar>
+                                                                        <div className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-700 shadow-lg">
+                                                                            {getRankIcon(user.rank)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h3 className="font-bold text-lg text-neutral-900 dark:text-white mb-1">{user.name}</h3>
+                                                                        <div className="flex items-center justify-center gap-2">
+                                                                            <Badge className={cn(
+                                                                                "font-semibold",
+                                                                                user.rank === 1 ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white" :
+                                                                                    user.rank === 2 ? "bg-neutral-500 text-white" :
+                                                                                        "bg-gradient-to-r from-amber-700 to-orange-700 text-white"
+                                                                            )}>
+                                                                                {user.score} points
+                                                                            </Badge>
+                                                                            {getChangeIndicator(user.change)}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    </motion.div>
+                                                ))
                                             }
                                         </div>
-                                    </motion.div>
-                                </TabsContent>
-                            ))
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.5, delay: 0.3 }}
+                                            className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xl"
+                                        >
+                                            <div className="space-y-2">
+                                                {
+                                                    data.slice(3).map((user) => (
+                                                        <div
+                                                            key={user.id}
+                                                            className="group flex items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/50 p-4 transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01]"
+                                                        >
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                                                                    {getRankIcon(user.rank)}
+                                                                </div>
+                                                                <Avatar className="h-10 w-10 border-2 border-white dark:border-neutral-800">
+                                                                    <AvatarImage src={user.avatar} alt={user.name} />
+                                                                    <AvatarFallback className="font-semibold">{user.name.charAt(0)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <span className="font-semibold text-neutral-900 dark:text-white">{user.name}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <Badge variant="secondary" className="font-semibold">
+                                                                    {user.score} pts
+                                                                </Badge>
+                                                                {getChangeIndicator(user.change)}
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                }
+                                            </div>
+                                        </motion.div>
+                                    </TabsContent>
+                                ))
                             }
                         </Tabs>
                     </div>
@@ -298,31 +298,31 @@ export default function Leaderboard() {
                     <div className="max-w-7xl mx-auto px-6">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                             {
-                            [
-                                { icon: Users, label: "Active Users", value: "12.5K", color: "from-blue-500 to-cyan-500" },
-                                { icon: Trophy, label: "Total Points", value: "2.4M", color: "from-yellow-500 to-orange-500" },
-                                { icon: Flame, label: "Longest Streak", value: "365 days", color: "from-red-500 to-orange-500" },
-                                { icon: TrendingUp, label: "Growing", value: "+23%", color: "from-green-500 to-emerald-500" },
-                            ].map((stat, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className="flex flex-col items-center text-center group"
-                                >
-                                    <div className={cn("mb-3 p-3 rounded-xl bg-gradient-to-br", stat.color, "text-white shadow-lg group-hover:scale-110 transition-transform")}>
-                                        <stat.icon className="w-6 h-6" />
-                                    </div>
-                                    <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
-                                        {stat.value}
-                                    </div>
-                                    <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mt-1">
-                                        {stat.label}
-                                    </div>
-                                </motion.div>
-                            ))
+                                [
+                                    { icon: Users, label: "Active Users", value: "12.5K", color: "from-blue-500 to-cyan-500" },
+                                    { icon: Trophy, label: "Total Points", value: "2.4M", color: "from-yellow-500 to-orange-500" },
+                                    { icon: Flame, label: "Longest Streak", value: "365 days", color: "from-red-500 to-orange-500" },
+                                    { icon: TrendingUp, label: "Growing", value: "+23%", color: "from-green-500 to-emerald-500" },
+                                ].map((stat, index) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: index * 0.1 }}
+                                        className="flex flex-col items-center text-center group"
+                                    >
+                                        <div className={cn("mb-3 p-3 rounded-xl bg-gradient-to-br", stat.color, "text-white shadow-lg group-hover:scale-110 transition-transform")}>
+                                            <stat.icon className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+                                            {stat.value}
+                                        </div>
+                                        <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mt-1">
+                                            {stat.label}
+                                        </div>
+                                    </motion.div>
+                                ))
                             }
                         </div>
                     </div>

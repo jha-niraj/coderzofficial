@@ -155,7 +155,7 @@ export default function AIVideoMockPage() {
                         className="text-center mb-12"
                     >
                         <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4">
-                            What's Coming
+                            What&apos;s Coming
                         </h2>
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
                             Advanced features to make your video mock interviews incredibly effective
@@ -201,7 +201,7 @@ export default function AIVideoMockPage() {
                             Preview: Upcoming Interviews
                         </h2>
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto text-center mb-12">
-                            Here's a sneak peek at the types of video mock interviews we're preparing
+                            Here&apos;s a sneak peek at the types of video mock interviews we&apos;re preparing
                         </p>
                     </motion.div>
 

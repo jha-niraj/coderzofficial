@@ -15,7 +15,7 @@ import {
 import { X, Plus, Loader, CalendarIcon } from "lucide-react"
 import { useUserStore } from "@/app/store/useUserStore"
 import { UserSkill, UserCertification } from "@/types/user"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner"
 import { Calendar } from "@/components/ui/calendar"
 import {
     Popover, PopoverContent, PopoverTrigger

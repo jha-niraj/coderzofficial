@@ -17,7 +17,7 @@ import { Textarea } from "@repo/ui/components/ui/textarea";
 import {
     Collapsible, CollapsibleTrigger
 } from "@repo/ui/components/ui/collapsible";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import { LucideIcon } from "lucide-react";
 import { ConceptStepType } from "@repo/prisma/client";
 import {

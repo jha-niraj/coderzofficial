@@ -10,7 +10,7 @@ import {
 	Link as LinkIcon, Mail, Check, Copy
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 import Link from "next/link";
 
 interface ProfileHeaderProps {

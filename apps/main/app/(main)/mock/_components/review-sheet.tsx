@@ -176,7 +176,7 @@ export function ReviewSheet({ isOpen, onClose, sessionId, existingRating }: Revi
                                         <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-lg">
                                             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
                                             <p className="text-sm text-amber-700 dark:text-amber-400">
-                                                We're sorry to hear that. Help us improve by selecting any issues you encountered:
+                                                We&apos;re sorry to hear that. Help us improve by selecting any issues you encountered:
                                             </p>
                                         </div>
                                     </motion.div>

@@ -4,16 +4,16 @@ import { useCallback, useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
-import { 
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
-import { 
-    Briefcase, Plus, ArrowLeft, Search, Globe, Lock 
+import {
+    Briefcase, Plus, ArrowLeft, Search, Globe, Lock
 } from "lucide-react"
 import Link from "next/link"
 import { getUserInterviewPlans } from "@/actions/(main)/ai/jobinterview.action"
-import { 
-    InterviewPlanCard, type BaseInterviewPlan 
+import {
+    InterviewPlanCard, type BaseInterviewPlan
 } from "../_components/interviewplancard"
 
 interface PaginationInfo {
@@ -23,6 +23,26 @@ interface PaginationInfo {
     hasNext: boolean
     hasPrev: boolean
     limit: number
+}
+
+interface InterviewPlanResponse {
+    id: string
+    position: string
+    description: string | null
+    cost: number
+    originalCost: number | null
+    technicalCount: number
+    behavioralCount: number
+    codingCount: number
+    includeAnswers: boolean
+    includePractice: boolean
+    purchaseCount: number
+    viewCount: number
+    rating: number | null
+    tags: string[]
+    slug: string
+    createdAt: Date
+    creator: string
 }
 
 export default function MyPlansPage() {
@@ -38,7 +58,6 @@ export default function MyPlansPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [search, setSearch] = useState("")
     const [visibility, setVisibility] = useState<"all" | "public" | "private">("all")
-    const [currentPage, setCurrentPage] = useState(1)
 
     const fetchPlans = useCallback(async (page = 1, searchQuery = search, visibilityFilter = visibility) => {
         setIsLoading(true)
@@ -50,12 +69,12 @@ export default function MyPlansPage() {
                 visibility: visibilityFilter
             })
             if (response.success && response.data) {
-                setPlans(response.data.plans.map((plan: any) => ({
+                setPlans(response.data.plans.map((plan: InterviewPlanResponse) => ({
                     id: plan.id,
                     position: plan.position,
-                    description: plan.description,
+                    description: plan.description ?? undefined,
                     cost: plan.cost,
-                    originalCost: plan.originalCost,
+                    originalCost: plan.originalCost ?? undefined,
                     technicalCount: plan.technicalCount,
                     behavioralCount: plan.behavioralCount,
                     codingCount: plan.codingCount,
@@ -63,14 +82,13 @@ export default function MyPlansPage() {
                     includePractice: plan.includePractice,
                     purchaseCount: plan.purchaseCount,
                     viewCount: plan.viewCount,
-                    rating: plan.rating,
+                    rating: plan.rating ?? undefined,
                     tags: plan.tags,
                     slug: plan.slug,
                     createdAt: plan.createdAt.toString(),
                     creator: plan.creator
                 })))
                 setPagination(response.data.pagination)
-                setCurrentPage(page)
             }
         } catch (error) {
             console.error("Error fetching user plans:", error)
@@ -149,7 +167,7 @@ export default function MyPlansPage() {
                             </SelectContent>
                         </Select>
                         <div className="flex justify-end items-center">
-                            <Link 
+                            <Link
                                 href="/ai/jobinterviewassistant/publicgenerations"
                                 className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 text-sm font-medium transition-colors"
                             >
@@ -181,8 +199,8 @@ export default function MyPlansPage() {
                                 {search || visibility !== "all" ? "No plans found" : "No plans yet"}
                             </h3>
                             <p className="text-slate-600 dark:text-slate-400 mb-8">
-                                {search || visibility !== "all" 
-                                    ? "Try adjusting your search or filter settings." 
+                                {search || visibility !== "all"
+                                    ? "Try adjusting your search or filter settings."
                                     : "Start by generating your first interview plan."}
                             </p>
                             <Button
@@ -224,17 +242,17 @@ export default function MyPlansPage() {
                                 >
                                     Previous
                                 </Button>
-                                
+
                                 <div className="flex items-center gap-2">
                                     {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                                        .filter(page => 
-                                            page === 1 || 
-                                            page === pagination.totalPages || 
+                                        .filter(page =>
+                                            page === 1 ||
+                                            page === pagination.totalPages ||
                                             Math.abs(page - pagination.currentPage) <= 2
                                         )
-                                        .map((page, index, array) => (
+                                        .map((page, idx, array) => (
                                             <div key={page} className="flex items-center">
-                                                {index > 0 && array[index - 1] !== page - 1 && (
+                                                {idx > 0 && array[idx - 1] !== page - 1 && (
                                                     <span className="px-2 text-muted-foreground">...</span>
                                                 )}
                                                 <Button
@@ -250,7 +268,7 @@ export default function MyPlansPage() {
                                         ))
                                     }
                                 </div>
-                                
+
                                 <Button
                                     variant="outline"
                                     onClick={() => handlePageChange(pagination.currentPage + 1)}

@@ -9,8 +9,8 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from '@repo/ui/components/ui/card'
 import {
-    Phone, Sparkles, Target, TrendingUp, CheckCircle, ArrowLeft, Star, Users, 
-    Trophy, Calendar, Clock, Award, Shield, MapPin, Briefcase, ChevronLeft, ChevronRight
+    Phone, Target, ArrowLeft, Star, Users, Trophy, Calendar, Clock, 
+    Award, Shield, Briefcase
 } from 'lucide-react'
 import { 
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle 
@@ -352,7 +352,7 @@ export default function ConnectMentorsPage() {
                             Why Choose Our Mentors?
                         </h2>
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
-                            Get the guidance you need to succeed from those who've been there
+                            Get the guidance you need to succeed from those who&apos;ve been there
                         </p>
                     </motion.div>
 

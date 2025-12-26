@@ -121,7 +121,7 @@ export default function DailyStandupSheet({
                 toast.error(result.error || 'Failed to configure standup')
             }
         } catch (error) {
-            toast.error('Something went wrong')
+            toast.error('Something went wrong: ' + error)
         } finally {
             setIsCreating(false)
         }
@@ -225,7 +225,7 @@ export default function DailyStandupSheet({
                                 📝 Standup submissions will be available here soon!
                             </h4>
                             <p className="text-sm text-blue-800 dark:text-blue-200">
-                                The submission interface is being built. You'll be able to submit your daily standups directly from here.
+                                The submission interface is being built. You&apos;ll be able to submit your daily standups directly from here.
                             </p>
                         </div>
                     </div>
@@ -246,7 +246,7 @@ export default function DailyStandupSheet({
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                    <span>Plan what you'll work on today</span>
+                                    <span>Plan what you&apos;ll work on today</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -339,7 +339,7 @@ export default function DailyStandupSheet({
                                 {selectedDays.length} days × 5 credits/day = {weeklyCredits} credits/week
                             </p>
                             <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
-                                💡 You'll need to renew each week to continue
+                                💡 You&apos;ll need to renew each week to continue
                             </p>
                         </div>
 

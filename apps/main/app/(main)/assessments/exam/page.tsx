@@ -7,21 +7,20 @@ import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
-import { 
-    Tabs, TabsContent, TabsList, TabsTrigger 
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
 } from '@repo/ui/components/ui/tabs'
-import { 
-    Card, CardContent 
+import {
+    Card, CardContent
 } from '@repo/ui/components/ui/card'
-import { 
-    Alert, AlertDescription 
+import {
+    Alert, AlertDescription
 } from '@repo/ui/components/ui/alert'
 import {
-    ArrowLeft, Award, Clock, Code, FileQuestion, Loader2, Heart, AlertTriangle, 
+    ArrowLeft, Award, Clock, Code, FileQuestion, Loader2, Heart, AlertTriangle,
     Mic, Sparkles, Plus, Target, Medal, Play, Eye
 } from 'lucide-react'
 import { cn } from '@repo/ui/lib/utils'
-import toast from '@repo/ui/components/ui/sonner'
 import {
     AssessmentLanguage, AssessmentMode, QuestionDifficulty
 } from '@repo/prisma/client'
@@ -108,9 +107,9 @@ const statusColors = {
 }
 
 function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `\${mins.toString().padStart(2, '0')}:\${secs.toString().padStart(2, '0')}`
+    const displayMins = Math.floor(seconds / 60)
+    const displaySecs = seconds % 60
+    return `\${displayMins.toString().padStart(2, '0')}:\${displaySecs.toString().padStart(2, '0')}`
 }
 
 function ExamContent() {
@@ -165,7 +164,7 @@ function ExamContent() {
             router.push(`/assessments/exam/set/\${examSetId}`)
         } else {
             // Start a new AI-generated exam
-            const params = new URLSearchParams({
+            const _params = new URLSearchParams({
                 language: selectedLanguage,
                 difficulty: selectedDifficulty,
                 mode: selectedMode,
@@ -222,21 +221,21 @@ function ExamContent() {
                                 <ScrollArea className="max-h-[200px]">
                                     <div className="space-y-1">
                                         {
-                                        Object.entries(LANGUAGES).map(([key, lang]) => (
-                                            <button
-                                                key={key}
-                                                onClick={() => setSelectedLanguage(key as AssessmentLanguage)}
-                                                className={cn(
-                                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all text-sm",
-                                                    selectedLanguage === key
-                                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
-                                                        : "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
-                                                )}
-                                            >
-                                                <span>{lang.icon}</span>
-                                                <span className="font-medium">{lang.label}</span>
-                                            </button>
-                                        ))
+                                            Object.entries(LANGUAGES).map(([key, lang]) => (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => setSelectedLanguage(key as AssessmentLanguage)}
+                                                    className={cn(
+                                                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all text-sm",
+                                                        selectedLanguage === key
+                                                            ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
+                                                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
+                                                    )}
+                                                >
+                                                    <span>{lang.icon}</span>
+                                                    <span className="font-medium">{lang.label}</span>
+                                                </button>
+                                            ))
                                         }
                                     </div>
                                 </ScrollArea>
@@ -248,32 +247,32 @@ function ExamContent() {
                                 </h3>
                                 <div className="space-y-2">
                                     {
-                                    Object.entries(DIFFICULTIES).map(([key, config]) => (
-                                        <button
-                                            key={key}
-                                            onClick={() => setSelectedDifficulty(key as QuestionDifficulty)}
-                                            className={cn(
-                                                "w-full flex items-center justify-between p-3 rounded-lg border transition-all",
-                                                selectedDifficulty === key
-                                                    ? "border-2"
-                                                    : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
-                                            )}
-                                            style={{
-                                                borderColor: selectedDifficulty === key ? config.color : undefined,
-                                                backgroundColor: selectedDifficulty === key ? `\${config.color}15` : undefined
-                                            }}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <span className="font-medium" style={{ color: config.color }}>
-                                                    {config.label}
-                                                </span>
-                                            </div>
-                                            <div className="text-xs text-neutral-500 text-right">
-                                                <div>{config.questions} Qs</div>
-                                                <div>{formatTime(config.timeLimit)}</div>
-                                            </div>
-                                        </button>
-                                    ))
+                                        Object.entries(DIFFICULTIES).map(([key, config]) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => setSelectedDifficulty(key as QuestionDifficulty)}
+                                                className={cn(
+                                                    "w-full flex items-center justify-between p-3 rounded-lg border transition-all",
+                                                    selectedDifficulty === key
+                                                        ? "border-2"
+                                                        : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
+                                                )}
+                                                style={{
+                                                    borderColor: selectedDifficulty === key ? config.color : undefined,
+                                                    backgroundColor: selectedDifficulty === key ? `\${config.color}15` : undefined
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-medium" style={{ color: config.color }}>
+                                                        {config.label}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-neutral-500 text-right">
+                                                    <div>{config.questions} Qs</div>
+                                                    <div>{formatTime(config.timeLimit)}</div>
+                                                </div>
+                                            </button>
+                                        ))
                                     }
                                 </div>
                             </div>
@@ -284,21 +283,21 @@ function ExamContent() {
                                 </h3>
                                 <div className="grid grid-cols-2 gap-2">
                                     {
-                                    Object.entries(MODES).map(([key, mode]) => (
-                                        <button
-                                            key={key}
-                                            onClick={() => setSelectedMode(key as AssessmentMode)}
-                                            className={cn(
-                                                "flex flex-col items-center gap-1 p-3 rounded-lg border transition-all",
-                                                selectedMode === key
-                                                    ? "bg-amber-600 border-amber-600 text-white"
-                                                    : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-amber-400"
-                                            )}
-                                        >
-                                            {mode.icon}
-                                            <span className="text-xs font-medium">{mode.label}</span>
-                                        </button>
-                                    ))
+                                        Object.entries(MODES).map(([key, mode]) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => setSelectedMode(key as AssessmentMode)}
+                                                className={cn(
+                                                    "flex flex-col items-center gap-1 p-3 rounded-lg border transition-all",
+                                                    selectedMode === key
+                                                        ? "bg-amber-600 border-amber-600 text-white"
+                                                        : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-amber-400"
+                                                )}
+                                            >
+                                                {mode.icon}
+                                                <span className="text-xs font-medium">{mode.label}</span>
+                                            </button>
+                                        ))
                                     }
                                 </div>
                             </div>
@@ -314,11 +313,11 @@ function ExamContent() {
                                         <Sparkles className="w-4 h-4" />
                                         My Exam Sets
                                         {
-                                        filteredUserSets.length > 0 && (
-                                            <Badge variant="secondary" className="ml-1">
-                                                {filteredUserSets.length}
-                                            </Badge>
-                                        )
+                                            filteredUserSets.length > 0 && (
+                                                <Badge variant="secondary" className="ml-1">
+                                                    {filteredUserSets.length}
+                                                </Badge>
+                                            )
                                         }
                                     </TabsTrigger>
                                 </TabsList>
@@ -397,97 +396,97 @@ function ExamContent() {
                                         </Button>
                                     </div>
                                     {
-                                    isLoadingUserSets ? (
-                                        <div className="flex items-center justify-center py-12">
-                                            <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
-                                        </div>
-                                    ) : filteredUserSets.length === 0 ? (
-                                        <div className="text-center py-12 bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800">
-                                            <Award className="w-12 h-12 mx-auto text-neutral-400 mb-4" />
-                                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                                                No Exam Sets Yet
-                                            </h3>
-                                            <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-                                                Create custom AI-generated exam sets for {languageConfig.label}.
-                                            </p>
-                                            <Button onClick={() => setIsCreateSheetOpen(true)}>
-                                                <Plus className="w-4 h-4 mr-2" />
-                                                Create Exam Set
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            {
-                                            filteredUserSets.map((set, index) => (
-                                                <motion.div
-                                                    key={set.id}
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: index * 0.05 }}
-                                                >
-                                                    <Card
-                                                        className={cn(
-                                                            "cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-all",
-                                                            set.status !== 'ACTIVE' && "opacity-70"
-                                                        )}
-                                                        onClick={() => set.status === 'ACTIVE' && handleStartExam(set.id)}
-                                                    >
-                                                        <CardContent className="p-4">
-                                                            <div className="flex items-start justify-between mb-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-xl">
-                                                                        {LANGUAGES[set.language]?.icon || '📝'}
-                                                                    </span>
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className={statusColors[set.status as keyof typeof statusColors]}
-                                                                    >
-                                                                        {set.status === 'ACTIVE' ? 'Ready' : set.status}
-                                                                    </Badge>
-                                                                </div>
-                                                                {
-                                                                set.isPublic && (
-                                                                    <Badge variant="secondary" className="text-xs">
-                                                                        Public
-                                                                    </Badge>
-                                                                )
-                                                                }
-                                                            </div>
-                                                            <h4 className="font-semibold text-neutral-900 dark:text-white mb-1 line-clamp-1">
-                                                                {set.title}
-                                                            </h4>
-                                                            <p className="text-sm text-neutral-500 mb-3 line-clamp-2">
-                                                                {set.description || 'No description'}
-                                                            </p>
-                                                            <div className="flex items-center justify-between text-xs text-neutral-500">
-                                                                <div className="flex items-center gap-3">
-                                                                    <span className="flex items-center gap-1">
-                                                                        <FileQuestion className="w-3 h-3" />
-                                                                        {set.questionCount} questions
-                                                                    </span>
-                                                                    <span className="flex items-center gap-1">
-                                                                        <Clock className="w-3 h-3" />
-                                                                        {formatTime(set.timeLimit)}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="flex items-center gap-1">
-                                                                        <Eye className="w-3 h-3" />
-                                                                        {set.views}
-                                                                    </span>
-                                                                    <span className="flex items-center gap-1">
-                                                                        <Heart className="w-3 h-3" />
-                                                                        {set._count?.likedBy || 0}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                </motion.div>
-                                            ))
-                                            }
-                                        </div>
-                                    )
+                                        isLoadingUserSets ? (
+                                            <div className="flex items-center justify-center py-12">
+                                                <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
+                                            </div>
+                                        ) : filteredUserSets.length === 0 ? (
+                                            <div className="text-center py-12 bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                                                <Award className="w-12 h-12 mx-auto text-neutral-400 mb-4" />
+                                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                                                    No Exam Sets Yet
+                                                </h3>
+                                                <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+                                                    Create custom AI-generated exam sets for {languageConfig.label}.
+                                                </p>
+                                                <Button onClick={() => setIsCreateSheetOpen(true)}>
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Create Exam Set
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                                {
+                                                    filteredUserSets.map((set, index) => (
+                                                        <motion.div
+                                                            key={set.id}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: index * 0.05 }}
+                                                        >
+                                                            <Card
+                                                                className={cn(
+                                                                    "cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-all",
+                                                                    set.status !== 'ACTIVE' && "opacity-70"
+                                                                )}
+                                                                onClick={() => set.status === 'ACTIVE' && handleStartExam(set.id)}
+                                                            >
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-start justify-between mb-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-xl">
+                                                                                {LANGUAGES[set.language]?.icon || '📝'}
+                                                                            </span>
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className={statusColors[set.status as keyof typeof statusColors]}
+                                                                            >
+                                                                                {set.status === 'ACTIVE' ? 'Ready' : set.status}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        {
+                                                                            set.isPublic && (
+                                                                                <Badge variant="secondary" className="text-xs">
+                                                                                    Public
+                                                                                </Badge>
+                                                                            )
+                                                                        }
+                                                                    </div>
+                                                                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-1 line-clamp-1">
+                                                                        {set.title}
+                                                                    </h4>
+                                                                    <p className="text-sm text-neutral-500 mb-3 line-clamp-2">
+                                                                        {set.description || 'No description'}
+                                                                    </p>
+                                                                    <div className="flex items-center justify-between text-xs text-neutral-500">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className="flex items-center gap-1">
+                                                                                <FileQuestion className="w-3 h-3" />
+                                                                                {set.questionCount} questions
+                                                                            </span>
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Clock className="w-3 h-3" />
+                                                                                {formatTime(set.timeLimit)}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Eye className="w-3 h-3" />
+                                                                                {set.views}
+                                                                            </span>
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Heart className="w-3 h-3" />
+                                                                                {set._count?.likedBy || 0}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        </motion.div>
+                                                    ))
+                                                }
+                                            </div>
+                                        )
                                     }
                                 </TabsContent>
                             </Tabs>

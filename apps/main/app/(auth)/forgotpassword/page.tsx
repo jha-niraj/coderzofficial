@@ -4,11 +4,11 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import axios from "axios";
-import { useState } from "react";
+import React, { useState } from "react";
 import toast from "@repo/ui/components/ui/sonner";
 import { useRouter } from "next/navigation";
-import { 
-    ArrowLeft, KeyRound, Loader2, Mail 
+import {
+    ArrowLeft, KeyRound, Loader2, Mail
 } from "lucide-react";
 import Link from "next/link";
 
@@ -17,7 +17,7 @@ export default function ForgotPassword() {
     const [sending, setIsSending] = useState<boolean>(false);
     const router = useRouter();
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return toast.error("Please enter your email");
 
@@ -31,8 +31,8 @@ export default function ForgotPassword() {
             } else {
                 toast.error('Error sending reset code');
             }
-        } catch (err: any) {
-            console.error("Error sending password reset email:", err);
+        } catch (error) {
+            console.error("Error sending password reset email:", error);
             toast.error('Failed to send reset email. Please try again.');
         } finally {
             setIsSending(false);
@@ -55,7 +55,7 @@ export default function ForgotPassword() {
                             Forgot Password?
                         </h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
-                            No worries, we'll send you reset instructions.
+                            No worries, we&apos;ll send you reset instructions.
                         </p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-6">

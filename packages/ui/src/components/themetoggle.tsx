@@ -75,3 +75,5 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         </div>
     )
 }
+
+export default useTheme;

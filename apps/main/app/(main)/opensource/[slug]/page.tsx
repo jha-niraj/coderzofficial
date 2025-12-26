@@ -213,7 +213,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                 toast.error(result.error || 'Failed to claim issue')
             }
         } catch (error) {
-            toast.error('Failed to claim issue')
+            toast.error('Failed to claim issue: ' + error)
         } finally {
             setClaimingIssue(null)
         }
@@ -235,7 +235,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                         <AlertCircle className="w-12 h-12 mx-auto mb-4 text-neutral-400" />
                         <h2 className="text-xl font-bold mb-2">Project Not Found</h2>
                         <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-                            This project doesn't exist or has been removed.
+                            This project doesn&apos;t exist or has been removed.
                         </p>
                         <Link href="/opensource">
                             <Button>Browse Projects</Button>

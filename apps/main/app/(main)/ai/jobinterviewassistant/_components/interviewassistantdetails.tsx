@@ -2,29 +2,29 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { 
-    Card, CardContent, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { 
-    Accordion, AccordionContent, AccordionItem, AccordionTrigger 
+import {
+    Accordion, AccordionContent, AccordionItem, AccordionTrigger
 } from "@repo/ui/components/ui/accordion"
-import { 
-    Tabs, TabsContent, TabsList, TabsTrigger 
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
-    Code, MessageSquare, ArrowLeft, Calendar, Globe, Briefcase, Copy, Check, 
-    ChevronRight, Target, Clock, Lightbulb, FileText, Users, Brain, Sparkles, 
-    Award, TrendingUp, BarChart3, Send, Loader2, CheckCircle, Mic, Type, Square, 
+    Code, MessageSquare, ArrowLeft, Calendar, Globe, Briefcase, Copy, Check,
+    ChevronRight, Target, Clock, Lightbulb, FileText, Users, Brain, Sparkles,
+    Award, TrendingUp, BarChart3, Send, Loader2, CheckCircle, Mic, Type, Square,
     Lock, ArrowRight, X, Workflow
 } from "lucide-react"
 import Link from "next/link"
-import { 
-    getGenerationBySlug, evaluateCode, generateQuestionAnswer, getQuestionAnswer, 
-    transcribeVoiceToText, evaluateUserQuestionResponse, getUserQuestionResponse, 
-    getAllUserQuestionResponses 
+import {
+    getGenerationBySlug, evaluateCode, generateQuestionAnswer, getQuestionAnswer,
+    transcribeVoiceToText, evaluateUserQuestionResponse,
+    getAllUserQuestionResponses
 } from "@/actions/(main)/ai/jobinterview.action"
 import { format } from "date-fns"
 import toast from '@repo/ui/components/ui/sonner'
@@ -36,7 +36,7 @@ interface Generation {
     createdAt: string
     jobDescription: string
     companyUrl: string
-    companyInfo: any
+    companyInfo: unknown
     generatedContent: {
         technicalQuestions: Array<{
             question: string
@@ -66,6 +66,24 @@ interface Generation {
     searchHash: string | null
     updatedAt: string
     userId: string
+}
+
+interface Feedback {
+    score?: number
+    feedback?: string
+    strengths?: string[]
+    improvements?: string[]
+    comparedToExpert?: {
+        similarities?: string[]
+        missingPoints?: string[]
+    }
+}
+
+interface UserResponse {
+    score?: number
+    userAnswer?: string
+    answerMethod?: string
+    [key: string]: any
 }
 
 interface GenerationResponse {
@@ -235,7 +253,6 @@ function QuestionAnswering({
     questionType,
     questionIndex,
     interviewId,
-    expertAnswer,
     existingResponse,
     onResponseSaved,
     includePractice,
@@ -246,7 +263,7 @@ function QuestionAnswering({
     const [isRecording, setIsRecording] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showFeedback, setShowFeedback] = useState(false)
-    const [feedback, setFeedback] = useState<any>(null)
+    const [feedback, setFeedback] = useState<Feedback | null>(null)
 
     useEffect(() => {
         if (existingResponse) {
@@ -322,7 +339,7 @@ function QuestionAnswering({
     }
 
     const hasPracticed = !!existingResponse
-    const shouldShowExpertAnswer = includeAnswers && (!includePractice || hasPracticed)
+    // const shouldShowExpertAnswer = includeAnswers && (!includePractice || hasPracticed)
 
     return (
         <div className="space-y-6">
@@ -504,14 +521,14 @@ function QuestionAnswering({
                                 )
                             }
                             <div className="space-y-6">
-                                {feedback.strengths?.length > 0 && (
+                                {feedback?.strengths?.length > 0 && (
                                     <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-700 rounded-lg p-4 shadow-sm">
                                         <h4 className="text-green-800 dark:text-green-300 font-semibold text-base flex items-center gap-2 mb-3">
                                             <TrendingUp className="h-5 w-5 text-green-600" />
                                             Strengths
                                         </h4>
                                         <ul className="space-y-2">
-                                            {feedback.strengths.map((strength: string, index: number) => (
+                                            {feedback?.strengths?.map((strength: string, index: number) => (
                                                 <li key={index} className="flex items-start gap-3">
                                                     <CheckCircle className="h-4 w-4 mt-1 text-green-600 flex-shrink-0" />
                                                     <span className="text-sm text-slate-800 dark:text-slate-300">{strength}</span>
@@ -520,14 +537,14 @@ function QuestionAnswering({
                                         </ul>
                                     </div>
                                 )}
-                                {feedback.improvements?.length > 0 && (
+                                {feedback?.improvements?.length > 0 && (
                                     <div className="bg-blue-50 dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 shadow-sm">
                                         <h4 className="text-blue-800 dark:text-blue-300 font-semibold text-base flex items-center gap-2 mb-3">
                                             <Target className="h-5 w-5 text-blue-600" />
                                             Areas for Improvement
                                         </h4>
                                         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {feedback.improvements.map((improvement: string, index: number) => (
+                                            {feedback?.improvements?.map((improvement: string, index: number) => (
                                                 <li key={index} className="flex items-start gap-3">
                                                     <ArrowRight className="h-4 w-4 mt-1 text-blue-600 flex-shrink-0" />
                                                     <span className="text-sm text-left text-slate-800 dark:text-slate-300">{improvement}</span>
@@ -542,15 +559,14 @@ function QuestionAnswering({
                                             <Users className="h-5 w-5 text-purple-600" />
                                             Comparison with Expert Answer
                                         </h4>
-
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                            {feedback.comparedToExpert.similarities?.length > 0 && (
+                                            {feedback?.comparedToExpert?.similarities?.length > 0 && (
                                                 <div>
                                                     <h5 className="text-sm text-left font-medium text-green-800 dark:text-green-300 mb-2">
                                                         ✅ Similarities
                                                     </h5>
                                                     <ul className="space-y-2">
-                                                        {feedback.comparedToExpert.similarities.map((similarity: string, index: number) => (
+                                                        {feedback?.comparedToExpert?.similarities?.map((similarity: string, index: number) => (
                                                             <li key={index} className="flex items-start gap-3">
                                                                 <CheckCircle className="h-3 w-3 mt-1 text-green-600 flex-shrink-0" />
                                                                 <span className="text-sm text-left text-slate-700 dark:text-slate-300">{similarity}</span>
@@ -559,7 +575,7 @@ function QuestionAnswering({
                                                     </ul>
                                                 </div>
                                             )}
-                                            {feedback.comparedToExpert.missingPoints?.length > 0 && (
+                                            {feedback?.comparedToExpert?.missingPoints?.length > 0 && (
                                                 <div>
                                                     <h5 className="text-sm text-left font-medium text-red-800 dark:text-red-300 mb-2">
                                                         ❌ Missing Key Points
@@ -627,7 +643,7 @@ function formatAnswer(content: string | string[]) {
             <ul className="space-y-2 mt-3">
                 {
                     lines.map((line, index) => {
-                        const cleanLine = line.replace(/^[•\-\d\.]+\s*/, '').trim()
+                        const cleanLine = line.replace(/^[•\-\d.]+\s*/, '').trim()
                         if (cleanLine) {
                             return (
                                 <li key={index} className="flex items-start gap-2">
@@ -646,64 +662,13 @@ function formatAnswer(content: string | string[]) {
     return <p className="text-gray-700 dark:text-gray-300 mt-3 leading-relaxed">{content}</p>
 }
 
-interface AnswerButtonProps {
-    questionText: string
-    questionType: 'coding'
-    interviewId: string
-    onAnswerGenerated: (answer: any) => void
-    existingAnswer?: any
-}
-
-function AnswerButton({ questionText, questionType, interviewId, onAnswerGenerated, existingAnswer }: AnswerButtonProps) {
-    const [isGenerating, setIsGenerating] = useState(false)
-
-    const handleGenerateAnswer = async () => {
-        setIsGenerating(true)
-        try {
-            const result = await generateQuestionAnswer(questionText, questionType, interviewId)
-            if (result.success) {
-                onAnswerGenerated(result.data)
-                toast.success("Solution generated successfully!")
-            } else {
-                toast.error(result.error || "Failed to generate solution")
-            }
-        } catch (error) {
-            toast.error("Failed to generate solution")
-        } finally {
-            setIsGenerating(false)
-        }
-    }
-
-    if (existingAnswer) {
-        return null
-    }
-
-    return (
-        <Button
-            onClick={handleGenerateAnswer}
-            disabled={isGenerating}
-            size="sm"
-            className="gap-2"
-        >
-            {
-                isGenerating ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                    <Sparkles className="h-3 w-3" />
-                )
-            }
-            {isGenerating ? "Generating..." : "Generate Solution"}
-        </Button>
-    )
-}
-
 export default function InterviewAssistantDetails({ slug }: { slug: string }) {
     const [generation, setGeneration] = useState<Generation | null>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState("technical")
-    const [codeEvaluations, setCodeEvaluations] = useState<Record<string, any>>({})
-    const [codingSolutions, setCodingSolutions] = useState<Record<string, any>>({})
-    const [userResponses, setUserResponses] = useState<Record<string, any>>({})
+    // const [codeEvaluations, setCodeEvaluations] = useState<Record<string, any>>({})
+    // const [codingSolutions, setCodingSolutions] = useState<Record<string, any>>({})
+    const [userResponses, setUserResponses] = useState<Record<string, UserResponse>>({})
 
     useEffect(() => {
         const fetchGeneration = async () => {
@@ -746,13 +711,13 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
             })
         )
 
-        results.forEach((result) => {
-            if (result.status === 'fulfilled' && result.value) {
-                solutions[result.value.questionText] = result.value.solution
-            }
-        })
+        // results.forEach((result) => {
+        //     if (result.status === 'fulfilled' && result.value) {
+        //         solutions[result.value.questionText] = result.value.solution
+        //     }
+        // })
 
-        setCodingSolutions(solutions)
+        // setCodingSolutions(solutions)
     }
 
     const loadExistingUserResponses = async (interviewId: string) => {
@@ -766,19 +731,19 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
                 })
                 setUserResponses(responsesMap)
             }
-        } catch (error) {
+        } catch {
             console.log('No existing user responses found')
         }
     }
 
-    const handleSolutionGenerated = (questionText: string, solution: any) => {
-        setCodingSolutions(prev => ({
-            ...prev,
-            [questionText]: solution
-        }))
-    }
+    // const handleSolutionGenerated = (questionText: string, solution: any) => {
+    //     setCodingSolutions(prev => ({
+    //         ...prev,
+    //         [questionText]: solution
+    //     }))
+    // }
 
-    const handleResponseSaved = (questionType: string, questionIndex: number, response: any) => {
+    const handleResponseSaved = (questionType: string, questionIndex: number, response: UserResponse) => {
         const key = `${questionType}-${questionIndex}`
         setUserResponses(prev => ({
             ...prev,
@@ -792,15 +757,15 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
         try {
             const response = await evaluateCode(questionText, code, language, generation.id)
             if (response.success && response.data) {
-                setCodeEvaluations(prev => ({
-                    ...prev,
-                    [questionText]: response.data
-                }))
+                // setCodeEvaluations(prev => ({
+                //     ...prev,
+                //     [questionText]: response.data
+                // }))
                 toast.success("Code evaluated successfully!")
             } else {
                 toast.error(response.error || "Failed to evaluate code")
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to evaluate code")
         }
     }

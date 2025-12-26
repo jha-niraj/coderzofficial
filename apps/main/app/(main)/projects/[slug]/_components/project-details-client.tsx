@@ -717,7 +717,7 @@ export default function ProjectDetailsClient({
                                 <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                                     <CardHeader>
                                         <CardTitle>Core Features</CardTitle>
-                                        <CardDescription>Main features you'll implement</CardDescription>
+                                        <CardDescription>Main features you&apos;ll implement</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <ul className="space-y-2">

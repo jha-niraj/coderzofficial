@@ -3,15 +3,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+    Card, CardContent, CardHeader, CardTitle 
 } from '@repo/ui/components/ui/card'
 import {
-    Building2, Sparkles, Target, TrendingUp, CheckCircle,
-    ArrowLeft, Plus, Star, Users, Trophy, ArrowRight, Search
+    Building2, Target, TrendingUp, Plus, Star, Users, Trophy, Search,
+    ArrowLeft
 } from 'lucide-react'
 import { 
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle 
@@ -533,10 +532,9 @@ export default function CompanywiseMockPage() {
                                 Base: 10 credits + {parseInt(questionsCount) * 2} credits for {questionsCount} questions
                             </p>
                         </div>
-
                         <div className="space-y-3">
                             <Label>Visibility</Label>
-                            <RadioGroup value={visibility} onValueChange={(value: any) => setVisibility(value)}>
+                            <RadioGroup value={visibility} onValueChange={(value) => setVisibility(value)}>
                                 <div className="flex items-center space-x-2 p-3 border border-neutral-200 dark:border-neutral-800 rounded-lg">
                                     <RadioGroupItem value="public" id="public-company" />
                                     <Label htmlFor="public-company" className="flex-1">

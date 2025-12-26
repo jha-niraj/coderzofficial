@@ -4,7 +4,7 @@ import type React from "react"
 import { useEffect, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    Loader2, FileText, Sparkles, Users, Zap, ChevronRight, Upload, Clock, 
+    Loader2, FileText, Sparkles, Users, Zap, ChevronRight, Upload, Clock,
     Calendar, ArrowRight, ChevronDown, Target, Brain, Code, MessageSquare,
     Shield, CheckCircle, Globe, ChevronUp, FileQuestion, Cpu
 } from "lucide-react"
@@ -14,8 +14,8 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import { Label } from "@repo/ui/components/ui/label"
 import toast from '@repo/ui/components/ui/sonner'
 import { useUserStore } from "@/app/store/useUserStore"
-import { 
-    getRecentGenerations, getPublicInterviewPlans, purchaseInterviewPlan 
+import {
+    getRecentGenerations, getPublicInterviewPlans, purchaseInterviewPlan
 } from "@/actions/(main)/ai/jobinterview.action"
 import { GenerationSheet } from "./_components/generation-sheet"
 import { InterviewPlanCard, type BaseInterviewPlan } from "./_components/interviewplancard"
@@ -32,7 +32,7 @@ interface Generation {
     createdAt: string
     jobDescription: string
     companyUrl: string
-    companyInfo: any
+    companyInfo: Record<string, unknown> | null
     generatedContent: {
         technicalQuestions: Array<{
             question: string
@@ -159,7 +159,7 @@ export default function JobInterviewAssistant() {
             } else {
                 toast.error(response.error || 'Failed to purchase plan')
             }
-        } catch (error) {
+        } catch {
             toast.error('An error occurred while purchasing the plan')
         } finally {
             setPurchasingId(null)

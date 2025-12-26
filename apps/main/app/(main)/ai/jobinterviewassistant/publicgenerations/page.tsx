@@ -2,21 +2,41 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Input } from "@repo/ui/components/ui/input"
-import { 
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import { Button } from "@repo/ui/components/ui/button"
 import { ArrowLeft, Search } from "lucide-react"
 import Link from "next/link"
-import { 
-    getPublicInterviewPlans, purchaseInterviewPlan 
+import {
+    getPublicInterviewPlans, purchaseInterviewPlan
 } from "@/actions/(main)/ai/jobinterview.action"
-import { 
-    InterviewPlanCard, type BaseInterviewPlan 
+import {
+    InterviewPlanCard, type BaseInterviewPlan
 } from "../_components/interviewplancard"
 import { useSession } from '@repo/auth/client';
 import { useRouter } from "next/navigation"
 import toast from '@repo/ui/components/ui/sonner'
+
+interface InterviewPlanResponse {
+    id: string
+    position: string
+    description: string | null
+    cost: number
+    originalCost: number | null
+    technicalCount: number
+    behavioralCount: number
+    codingCount: number
+    includeAnswers: boolean
+    includePractice: boolean
+    purchaseCount: number
+    viewCount: number
+    rating: number | null
+    tags: string[]
+    slug: string
+    createdAt: Date
+    creator: string
+}
 
 export default function PublicGenerationsPage() {
     const [plans, setPlans] = useState<BaseInterviewPlan[]>([])
@@ -33,12 +53,12 @@ export default function PublicGenerationsPage() {
             try {
                 const response = await getPublicInterviewPlans(100) // Get more plans to allow better filtering
                 if (response.success && response.data) {
-                    setPlans(response.data.map((plan: any) => ({
+                    setPlans(response.data.map((plan: InterviewPlanResponse) => ({
                         id: plan.id,
                         position: plan.position,
-                        description: plan.description,
+                        description: plan.description ?? undefined,
                         cost: plan.cost,
-                        originalCost: plan.originalCost,
+                        originalCost: plan.originalCost ?? undefined,
                         technicalCount: plan.technicalCount,
                         behavioralCount: plan.behavioralCount,
                         codingCount: plan.codingCount,
@@ -46,7 +66,7 @@ export default function PublicGenerationsPage() {
                         includePractice: plan.includePractice,
                         purchaseCount: plan.purchaseCount,
                         viewCount: plan.viewCount,
-                        rating: plan.rating,
+                        rating: plan.rating ?? undefined,
                         tags: plan.tags,
                         slug: plan.slug,
                         createdAt: plan.createdAt.toString(),
@@ -62,11 +82,11 @@ export default function PublicGenerationsPage() {
                 setLoading(false)
             }
         }
-        
+
         fetchPlans()
     }, [])
 
-    const positions = useMemo(() => {
+    const filteredPositions = useMemo(() => {
         const s = new Set<string>(["All"])
         plans.forEach((p) => s.add(p.position))
         return Array.from(s)
@@ -76,14 +96,14 @@ export default function PublicGenerationsPage() {
         const ql = q.trim().toLowerCase()
         return plans.filter((p) => {
             const matchQ = !ql || p.position.toLowerCase().includes(ql) ||
-                         (p.description && p.description.toLowerCase().includes(ql)) ||
-                         (p.tags && p.tags.some(tag => tag.toLowerCase().includes(ql)))
-            const matchAnswers = includeAnswers === "all" || 
-                               (includeAnswers === "yes" && p.includeAnswers) ||
-                               (includeAnswers === "no" && !p.includeAnswers)
-            const matchPractice = includePractice === "all" || 
-                                (includePractice === "yes" && p.includePractice) ||
-                                (includePractice === "no" && !p.includePractice)
+                (p.description && p.description.toLowerCase().includes(ql)) ||
+                (p.tags && p.tags.some(tag => tag.toLowerCase().includes(ql)))
+            const matchAnswers = includeAnswers === "all" ||
+                (includeAnswers === "yes" && p.includeAnswers) ||
+                (includeAnswers === "no" && !p.includeAnswers)
+            const matchPractice = includePractice === "all" ||
+                (includePractice === "yes" && p.includePractice) ||
+                (includePractice === "no" && !p.includePractice)
             return matchQ && matchAnswers && matchPractice
         })
     }, [plans, q, includeAnswers, includePractice])
@@ -97,14 +117,14 @@ export default function PublicGenerationsPage() {
         }
 
         setPurchasing(plan.id)
-        
+
         try {
             const response = await purchaseInterviewPlan(plan.id)
             if (response.success && response.data) {
                 toast("Purchase successful!", {
                     description: `You've purchased the interview plan for ${plan.position}. Redirecting...`,
                 })
-                
+
                 // Redirect to the purchased plan
                 setTimeout(() => {
                     router.push(`/ai/jobinterviewassistant/${response.data.slug}`)
@@ -149,7 +169,7 @@ export default function PublicGenerationsPage() {
                                 className="pl-10"
                             />
                         </div>
-                        <Select value={includeAnswers} onValueChange={(v: any) => setIncludeAnswers(v)}>
+                        <Select value={includeAnswers} onValueChange={(v: "all" | "yes" | "no") => setIncludeAnswers(v)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="With Answers" />
                             </SelectTrigger>
@@ -159,7 +179,7 @@ export default function PublicGenerationsPage() {
                                 <SelectItem value="no">Questions Only</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Select value={includePractice} onValueChange={(v: any) => setIncludePractice(v)}>
+                        <Select value={includePractice} onValueChange={(v: "all" | "yes" | "no") => setIncludePractice(v)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Practice Mode" />
                             </SelectTrigger>
@@ -172,7 +192,7 @@ export default function PublicGenerationsPage() {
                     </div>
                 </div>
             </section>
-            
+
             <section>
                 <div className="mx-auto max-w-7xl px-4 py-10">
                     {loading ? (
@@ -207,7 +227,7 @@ export default function PublicGenerationsPage() {
                                     {filtered.length} plan{filtered.length !== 1 ? 's' : ''} found
                                 </h2>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filtered.map((plan) => (
                                     <InterviewPlanCard

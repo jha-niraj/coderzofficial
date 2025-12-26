@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    ArrowRight, Sparkles, Users, Zap, Trophy, Briefcase, GitPullRequest, 
+    ArrowRight, Sparkles, Users, Zap, Trophy, Briefcase, GitPullRequest,
     LayoutTemplate, BrainCircuit, ChevronRight, Lock, Clock, CheckCircle2,
     ScanSearch, FileText, ShieldCheck, TestTube2
 } from "lucide-react"
@@ -142,12 +142,12 @@ export default function AiToolsPage() {
     return (
         <SmoothScroll>
             <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
-                
+
                 {/* --- Hero Section --- */}
                 <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden border-b border-neutral-100 dark:border-neutral-800">
                     <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-neutral-950 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
                     <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-blue-500/10 opacity-50 blur-[100px] dark:bg-blue-500/20"></div>
-                    
+
                     <div className="max-w-7xl mx-auto px-6 relative z-10">
                         <motion.div
                             className="flex flex-col items-center text-center space-y-8"
@@ -162,10 +162,10 @@ export default function AiToolsPage() {
                             >
                                 <Badge variant="outline" className="px-4 py-1.5 rounded-full border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium text-sm backdrop-blur-sm">
                                     <Sparkles className="w-3.5 h-3.5 mr-2 text-blue-500" />
-                                    The Coder'z Intelligence Engine
+                                    The Coder&apos;z Intelligence Engine
                                 </Badge>
                             </motion.div>
-                            
+
                             <motion.h1
                                 className="text-5xl md:text-7xl font-bold tracking-tight text-neutral-950 dark:text-white max-w-4xl"
                                 initial={{ opacity: 0, y: 20 }}
@@ -175,16 +175,16 @@ export default function AiToolsPage() {
                                 Tools specifically engineered <br className="hidden md:block" />
                                 <span className="text-neutral-400 dark:text-neutral-500">for the modern developer.</span>
                             </motion.h1>
-                            
+
                             <motion.p
                                 className="text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed font-light"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                We don't build generic wrappers. We build specialized agents that help you architect systems, contribute to open source, and land high-impact roles.
+                                We don&apos;t build generic wrappers. We build specialized agents that help you architect systems, contribute to open source, and land high-impact roles.
                             </motion.p>
-                            
+
                             <motion.div
                                 className="flex flex-wrap items-center justify-center gap-4 pt-4"
                                 initial={{ opacity: 0, y: 20 }}
@@ -264,76 +264,76 @@ export default function AiToolsPage() {
                                     {tools
                                         .filter(t => activeTab === 'all' || t.category === activeTab)
                                         .map((tool, index) => (
-                                        <motion.div
-                                            key={tool.id}
-                                            layout
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                                            onClick={() => handleToolClick(tool)}
-                                            className="cursor-pointer"
-                                        >
-                                            <div className="group relative h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-neutral-900/5 dark:hover:shadow-black/50 transition-all duration-500">
-                                                {/* Hover Gradient Line */}
-                                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neutral-200 via-neutral-500 to-neutral-200 dark:from-neutral-800 dark:via-neutral-500 dark:to-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                                
-                                                <div className="p-8">
-                                                    <div className="flex items-start justify-between mb-6">
-                                                        <div className="w-14 h-14 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 flex items-center justify-center text-neutral-900 dark:text-white group-hover:bg-neutral-100 dark:group-hover:bg-neutral-700 transition-colors">
-                                                            <tool.icon className="w-7 h-7" />
-                                                        </div>
-                                                        <div className="flex flex-col items-end gap-2">
-                                                            <Badge variant="secondary" className={`
+                                            <motion.div
+                                                key={tool.id}
+                                                layout
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ duration: 0.3, delay: index * 0.1 }}
+                                                onClick={() => handleToolClick(tool)}
+                                                className="cursor-pointer"
+                                            >
+                                                <div className="group relative h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-neutral-900/5 dark:hover:shadow-black/50 transition-all duration-500">
+                                                    {/* Hover Gradient Line */}
+                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neutral-200 via-neutral-500 to-neutral-200 dark:from-neutral-800 dark:via-neutral-500 dark:to-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                                    <div className="p-8">
+                                                        <div className="flex items-start justify-between mb-6">
+                                                            <div className="w-14 h-14 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 flex items-center justify-center text-neutral-900 dark:text-white group-hover:bg-neutral-100 dark:group-hover:bg-neutral-700 transition-colors">
+                                                                <tool.icon className="w-7 h-7" />
+                                                            </div>
+                                                            <div className="flex flex-col items-end gap-2">
+                                                                <Badge variant="secondary" className={`
                                                                 font-medium px-3 py-1 
                                                                 ${tool.status === 'Live' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'}
                                                             `}>
-                                                                {tool.status}
-                                                            </Badge>
-                                                            {tool.status === 'Live' && (
-                                                                <span className="text-xs text-neutral-400 font-medium">{tool.credits} Credits</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="mb-6">
-                                                        <div className="text-xs font-bold text-neutral-400 dark:text-neutral-500 mb-2 uppercase tracking-wider">
-                                                            {tool.category.replace("-", " ")}
-                                                        </div>
-                                                        <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
-                                                            {tool.name}
-                                                        </h3>
-                                                        <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed text-base">
-                                                            {tool.description}
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="space-y-3 mb-8">
-                                                        {tool.features.map((feature, idx) => (
-                                                            <div key={idx} className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-300">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-600" />
-                                                                {feature}
+                                                                    {tool.status}
+                                                                </Badge>
+                                                                {tool.status === 'Live' && (
+                                                                    <span className="text-xs text-neutral-400 font-medium">{tool.credits} Credits</span>
+                                                                )}
                                                             </div>
-                                                        ))}
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between pt-6 border-t border-neutral-100 dark:border-neutral-800">
-                                                        <div className="text-sm font-medium text-neutral-400 dark:text-neutral-500 flex items-center gap-2">
-                                                            {tool.access === 'waitlist' ? (
-                                                                <><Lock className="w-3.5 h-3.5" /> Private Beta</>
-                                                            ) : (
-                                                                <><Users className="w-3.5 h-3.5" /> Public Access</>
-                                                            )}
                                                         </div>
-                                                        <div className="flex items-center text-sm font-bold text-neutral-900 dark:text-white group-hover:translate-x-1 transition-transform">
-                                                            {tool.status === 'Live' ? 'Launch' : 'Notify Me'} 
-                                                            <ChevronRight className="ml-1 w-4 h-4" />
+
+                                                        <div className="mb-6">
+                                                            <div className="text-xs font-bold text-neutral-400 dark:text-neutral-500 mb-2 uppercase tracking-wider">
+                                                                {tool.category.replace("-", " ")}
+                                                            </div>
+                                                            <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
+                                                                {tool.name}
+                                                            </h3>
+                                                            <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed text-base">
+                                                                {tool.description}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="space-y-3 mb-8">
+                                                            {tool.features.map((feature, idx) => (
+                                                                <div key={idx} className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-300">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-600" />
+                                                                    {feature}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        <div className="flex items-center justify-between pt-6 border-t border-neutral-100 dark:border-neutral-800">
+                                                            <div className="text-sm font-medium text-neutral-400 dark:text-neutral-500 flex items-center gap-2">
+                                                                {tool.access === 'waitlist' ? (
+                                                                    <><Lock className="w-3.5 h-3.5" /> Private Beta</>
+                                                                ) : (
+                                                                    <><Users className="w-3.5 h-3.5" /> Public Access</>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center text-sm font-bold text-neutral-900 dark:text-white group-hover:translate-x-1 transition-transform">
+                                                                {tool.status === 'Live' ? 'Launch' : 'Notify Me'}
+                                                                <ChevronRight className="ml-1 w-4 h-4" />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                            </motion.div>
+                                        ))}
                                 </AnimatePresence>
                             </div>
                         </Tabs>
@@ -343,7 +343,7 @@ export default function AiToolsPage() {
                 {/* --- Bottom CTA Section --- */}
                 <section className="py-24 relative overflow-hidden bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800">
                     <div className="absolute inset-0 bg-neutral-50 dark:bg-neutral-900/20"></div>
-                     {/* Subtle orb for footer */}
+                    {/* Subtle orb for footer */}
                     <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-neutral-200/50 dark:bg-neutral-800/30 rounded-full blur-[100px] pointer-events-none" />
 
                     <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
@@ -354,7 +354,7 @@ export default function AiToolsPage() {
                             className="space-y-8"
                         >
                             <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight">
-                                One subscription. <br/> Infinite possibilities.
+                                One subscription. <br /> Infinite possibilities.
                             </h2>
                             <p className="text-xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto font-light">
                                 Access the entire suite of engineering intelligence tools with a single plan. No hidden fees.
@@ -391,7 +391,7 @@ export default function AiToolsPage() {
                                 Private Beta
                             </DialogTitle>
                         </DialogHeader>
-                        
+
                         <div className="py-6">
                             <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4 border border-neutral-100 dark:border-neutral-800 mb-4">
                                 <div className="flex items-center gap-3 mb-2">
@@ -404,7 +404,7 @@ export default function AiToolsPage() {
                                     {selectedTool?.description}
                                 </p>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <div className="flex items-start gap-3">
                                     <Clock className="w-5 h-5 text-neutral-400 mt-0.5" />
@@ -417,7 +417,7 @@ export default function AiToolsPage() {
                         </div>
 
                         <div className="flex gap-3">
-                             <Button onClick={() => setDialogOpen(false)} variant="outline" className="flex-1 rounded-full border-neutral-200 dark:border-neutral-800">
+                            <Button onClick={() => setDialogOpen(false)} variant="outline" className="flex-1 rounded-full border-neutral-200 dark:border-neutral-800">
                                 Close
                             </Button>
                             <Button className="flex-1 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900">
