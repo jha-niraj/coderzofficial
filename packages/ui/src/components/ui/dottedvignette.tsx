@@ -1,6 +1,4 @@
 import React, { useMemo } from 'react';
-import { useState } from "react";
-import { cn } from "@repo/ui/lib/utils";
 
 interface DottedBackgroundProps {
     // Style props

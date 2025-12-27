@@ -31,7 +31,7 @@ FadeIn.displayName = "FadeIn"
 export const fadeIn = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-  }
+}
 
 export const SlideIn = forwardRef<HTMLDivElement, MotionDivProps>(({ children, className, ...props }, ref) => {
     return (
@@ -115,4 +115,4 @@ export const staggerItemRight = {
 export const tabAnimation = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-  }
+}
