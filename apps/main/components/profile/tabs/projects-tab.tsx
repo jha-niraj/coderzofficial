@@ -280,7 +280,7 @@ export function ProjectsTab({
                                 const progress = getProgress(project.id);
                                 const status = progress?.status || "NotStarted";
                                 const config = statusConfig[status] || statusConfig.NotStarted;
-                                const StatusIcon = config.icon;
+                                const StatusIcon = config!.icon;
                                 const isPinned = pinnedProjectIds.has(project.id);
 
                                 if (viewMode === "list") {
@@ -297,11 +297,11 @@ export function ProjectsTab({
                                                         <div
                                                             className={cn(
                                                                 "p-2 rounded-lg flex-shrink-0",
-                                                                config.color.split(" ")[1]
+                                                                config?.color.split(" ")[1]
                                                             )}
                                                         >
                                                             <StatusIcon
-                                                                className={cn("w-5 h-5", config.color.split(" ")[0])}
+                                                                className={cn("w-5 h-5", config?.color.split(" ")[0])}
                                                             />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
@@ -394,11 +394,11 @@ export function ProjectsTab({
                                                     <div
                                                         className={cn(
                                                             "p-2 rounded-lg",
-                                                            config.color.split(" ")[1]
+                                                            config?.color.split(" ")[1]
                                                         )}
                                                     >
                                                         <StatusIcon
-                                                            className={cn("w-5 h-5", config.color.split(" ")[0])}
+                                                            className={cn("w-5 h-5", config?.color.split(" ")[0])}
                                                         />
                                                     </div>
                                                     <div className="flex items-center gap-1">

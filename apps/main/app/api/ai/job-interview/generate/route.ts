@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
 	console.log('🚀 [API] /api/ai/job-interview/generate - Starting direct generation');
-	
+
 	try {
 		const session = await auth();
 		console.log('🔐 [API] Authentication check:', { userId: session?.user?.id });
@@ -22,16 +22,16 @@ export async function POST(req: NextRequest) {
 
 		const body = await req.json();
 		console.log('📥 [API] Request body received:', body);
-		
-	const {
-		position,
-		jobDescription,
-		companyUrl,
-		includeAnswers = false,
-		includePractice = false,
-		makePublic = false,
-		counts = { technical: 8, behavioral: 8, coding: 3 }
-	} = body;
+
+		const {
+			position,
+			jobDescription,
+			companyUrl,
+			includeAnswers = false,
+			includePractice = false,
+			makePublic = false,
+			counts = { technical: 8, behavioral: 8, coding: 3 }
+		} = body;
 
 		// Validate required fields
 		if (!position || !jobDescription) {
@@ -42,15 +42,15 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-	console.log('📋 [API] Generation parameters:', {
-		position,
-		jobDescriptionLength: jobDescription.length,
-		companyUrl: !!companyUrl,
-		includeAnswers,
-		includePractice,
-		makePublic,
-		counts
-	});
+		console.log('📋 [API] Generation parameters:', {
+			position,
+			jobDescriptionLength: jobDescription.length,
+			companyUrl: !!companyUrl,
+			includeAnswers,
+			includePractice,
+			makePublic,
+			counts
+		});
 
 		// Call the action directly
 		console.log('🤖 [API] Calling generateJobInterviewQuestions directly...');
@@ -78,9 +78,9 @@ export async function POST(req: NextRequest) {
 		} else {
 			console.log('❌ [API] Generation failed:', result.error);
 			return NextResponse.json(
-				{ 
+				{
 					success: false,
-					error: result.error || 'Failed to generate interview questions' 
+					error: result.error || 'Failed to generate interview questions'
 				},
 				{ status: 400 }
 			);
@@ -89,9 +89,9 @@ export async function POST(req: NextRequest) {
 	} catch (error) {
 		console.error('❌ [API] Error in generation:', error);
 		return NextResponse.json(
-			{ 
+			{
 				success: false,
-				error: error instanceof Error ? error.message : 'Internal server error' 
+				error: error instanceof Error ? error.message : 'Internal server error'
 			},
 			{ status: 500 }
 		);

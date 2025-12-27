@@ -4,20 +4,20 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-	ArrowLeft, Clock, Trophy, Users, Heart, Play, Lock, CheckCircle2, 
+	ArrowLeft, Clock, Trophy, Users, Heart, Play, Lock, CheckCircle2,
 	Code2, MessageSquare, Shuffle, Eye, Loader2, Share2, Award
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { 
-	Card, CardContent, CardHeader, CardTitle 
+import {
+	Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card";
-import { 
-	Avatar, AvatarFallback, AvatarImage 
+import {
+	Avatar, AvatarFallback, AvatarImage
 } from "@repo/ui/components/ui/avatar";
 import { Separator } from "@repo/ui/components/ui/separator";
-import { 
-	getExamSetDetails, toggleExamSetLike, startExamSetAttempt 
+import {
+	getExamSetDetails, toggleExamSetLike, startExamSetAttempt
 } from "@/actions/(main)/assessments/user-sets.action";
 import toast from "@repo/ui/components/ui/sonner";
 import type { ExamSetDetails } from "@/types/assessment";
@@ -116,7 +116,7 @@ export default function ExamSetDetailsPage() {
 			<div className="min-h-screen flex flex-col items-center justify-center gap-4">
 				<Lock className="h-16 w-16 text-muted-foreground" />
 				<h1 className="text-2xl font-bold">Exam Set Not Found</h1>
-				<p className="text-muted-foreground">This exam set doesn't exist or you don't have access.</p>
+				<p className="text-muted-foreground">This exam set doesn&apos;t exist or you don&apos;t have access.</p>
 				<Button onClick={() => router.push("/assessments/community/exam")}>
 					Browse Exam Sets
 				</Button>
@@ -129,7 +129,6 @@ export default function ExamSetDetailsPage() {
 	return (
 		<div className="min-h-screen bg-background py-8">
 			<div className="container max-w-5xl mx-auto px-4">
-				{/* Back Button */}
 				<Button
 					variant="ghost"
 					className="mb-6"
@@ -138,11 +137,8 @@ export default function ExamSetDetailsPage() {
 					<ArrowLeft className="h-4 w-4 mr-2" />
 					Back
 				</Button>
-
 				<div className="grid lg:grid-cols-3 gap-8">
-					{/* Main Content */}
 					<div className="lg:col-span-2 space-y-6">
-						{/* Header */}
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
@@ -163,14 +159,14 @@ export default function ExamSetDetailsPage() {
 										</Badge>
 									</div>
 									<h1 className="text-3xl font-bold mb-2">{examSet.title}</h1>
-									{examSet.description && (
-										<p className="text-muted-foreground">{examSet.description}</p>
-									)}
+									{
+										examSet.description && (
+											<p className="text-muted-foreground">{examSet.description}</p>
+										)
+									}
 								</div>
 							</div>
 						</motion.div>
-
-						{/* Stats */}
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
@@ -181,12 +177,14 @@ export default function ExamSetDetailsPage() {
 								<CheckCircle2 className="h-5 w-5" />
 								<span>{examSet.questions?.length || examSet._count?.questions || 0} Questions</span>
 							</div>
-							{examSet.timeLimit && (
-								<div className="flex items-center gap-2 text-muted-foreground">
-									<Clock className="h-5 w-5" />
-									<span>{Math.floor(examSet.timeLimit / 60)} mins</span>
-								</div>
-							)}
+							{
+								examSet.timeLimit && (
+									<div className="flex items-center gap-2 text-muted-foreground">
+										<Clock className="h-5 w-5" />
+										<span>{Math.floor(examSet.timeLimit / 60)} mins</span>
+									</div>
+								)
+							}
 							<div className="flex items-center gap-2 text-muted-foreground">
 								<Users className="h-5 w-5" />
 								<span>{examSet._count?.attempts || 0} Attempts</span>
@@ -196,8 +194,6 @@ export default function ExamSetDetailsPage() {
 								<span>{examSet.views || 0} Views</span>
 							</div>
 						</motion.div>
-
-						{/* Topic Info */}
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
@@ -214,45 +210,48 @@ export default function ExamSetDetailsPage() {
 									</div>
 								</CardContent>
 							</Card>
-						</motion.div>						{/* Questions Preview */}
-						{examSet.questions && examSet.questions.length > 0 && (
-							<motion.div
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{ delay: 0.3 }}
-							>
-								<Card>
-									<CardHeader>
-										<CardTitle className="text-lg">Questions Overview</CardTitle>
-									</CardHeader>
-									<CardContent>
-										<div className="space-y-3">
-											{examSet.questions.slice(0, 5).map((q, index) => (
-												<div
-													key={q.id}
-													className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
-												>
-													<span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-medium">
-														{index + 1}
-													</span>
-													<p className="text-sm line-clamp-2">{q.question}</p>
-												</div>
-											))}
-											{examSet.questions.length > 5 && (
-												<p className="text-sm text-muted-foreground text-center pt-2">
-													+{examSet.questions.length - 5} more questions
-												</p>
-											)}
-										</div>
-									</CardContent>
-								</Card>
-							</motion.div>
-						)}
+						</motion.div>
+						{
+							examSet.questions && examSet.questions.length > 0 && (
+								<motion.div
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ delay: 0.3 }}
+								>
+									<Card>
+										<CardHeader>
+											<CardTitle className="text-lg">Questions Overview</CardTitle>
+										</CardHeader>
+										<CardContent>
+											<div className="space-y-3">
+												{
+													examSet.questions.slice(0, 5).map((q, index) => (
+														<div
+															key={q.id}
+															className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+														>
+															<span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center font-medium">
+																{index + 1}
+															</span>
+															<p className="text-sm line-clamp-2">{q.question}</p>
+														</div>
+													))
+												}
+												{
+													examSet.questions.length > 5 && (
+														<p className="text-sm text-muted-foreground text-center pt-2">
+															+{examSet.questions.length - 5} more questions
+														</p>
+													)
+												}
+											</div>
+										</CardContent>
+									</Card>
+								</motion.div>
+							)
+						}
 					</div>
-
-					{/* Sidebar */}
 					<div className="space-y-6">
-						{/* Creator Card */}
 						<motion.div
 							initial={{ opacity: 0, x: 20 }}
 							animate={{ opacity: 1, x: 0 }}
@@ -280,8 +279,6 @@ export default function ExamSetDetailsPage() {
 								</CardContent>
 							</Card>
 						</motion.div>
-
-						{/* Action Card */}
 						<motion.div
 							initial={{ opacity: 0, x: 20 }}
 							animate={{ opacity: 1, x: 0 }}
@@ -307,14 +304,15 @@ export default function ExamSetDetailsPage() {
 										onClick={handleStartExam}
 										disabled={starting}
 									>
-										{starting ? (
-											<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-										) : (
-											<Play className="h-4 w-4 mr-2" />
-										)}
+										{
+											starting ? (
+												<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+											) : (
+												<Play className="h-4 w-4 mr-2" />
+											)
+										}
 										Start Exam
 									</Button>
-
 									<div className="flex gap-2">
 										<Button
 											variant="outline"
@@ -336,8 +334,6 @@ export default function ExamSetDetailsPage() {
 								</CardContent>
 							</Card>
 						</motion.div>
-
-						{/* Exam Warning */}
 						<motion.div
 							initial={{ opacity: 0, x: 20 }}
 							animate={{ opacity: 1, x: 0 }}
@@ -351,7 +347,7 @@ export default function ExamSetDetailsPage() {
 											<p className="font-medium text-orange-500">Exam Mode</p>
 											<p className="text-sm text-muted-foreground mt-1">
 												This is an exam set with intermediate to advanced difficulty.
-												Make sure you're prepared before starting.
+												Make sure you&apos;re prepared before starting.
 											</p>
 										</div>
 									</div>

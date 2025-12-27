@@ -14,13 +14,14 @@ import {
 import { Progress } from '@repo/ui/components/ui/progress'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
-    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+    DialogFooter
 } from '@repo/ui/components/ui/dialog'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
 import { updateTaskStatus } from '@/actions/(main)/projects/project.action'
-import { 
-    checkTaskDetailExists, generateTaskDetail, getTaskDetail 
+import {
+    checkTaskDetailExists, generateTaskDetail, getTaskDetail
 } from '@/actions/(main)/projects/task-details.action'
 
 // ============================================================================
@@ -167,9 +168,9 @@ function TaskItem({
             const result = await checkTaskDetailExists(task.id)
             if (result.success && result.data?.hasAccess) {
                 const detailResult = await getTaskDetail(task.id)
-                    if (detailResult.success && detailResult.data) {
-                        setTaskDetail(detailResult.data)
-                        setHasDetailAccess(true)
+                if (detailResult.success && detailResult.data) {
+                    setTaskDetail(detailResult.data)
+                    setHasDetailAccess(true)
                 }
             }
         } catch (error) {
@@ -209,53 +210,55 @@ function TaskItem({
     }
 
     return (
-                <motion.div
+        <motion.div
             layout
             initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.03 }}
             className={cn(
                 'rounded-xl border-2 overflow-hidden transition-all duration-200',
                 statusStyles[task.status]
             )}
         >
-            {/* Task Header */}
             <div className="p-4">
                 <div className="flex items-start gap-3">
-                    {/* Status Icon */}
                     <div className="pt-0.5">
-                        {task.status === 'TO_DO' ? (
-                            <button
-                                onClick={handleStartTask}
-                                disabled={isUpdating}
-                                className="w-6 h-6 rounded-full border-2 border-neutral-300 dark:border-neutral-600 hover:border-blue-500 dark:hover:border-blue-400 flex items-center justify-center transition-colors group"
-                            >
-                                {isUpdating ? (
-                                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                                ) : (
-                                    <Play className="w-3 h-3 text-neutral-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                )}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleStatusToggle}
-                                disabled={isUpdating}
-                                className="relative"
-                >
-                                {isUpdating ? (
-                                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                                ) : task.status === 'COMPLETED' ? (
-                                    <CheckCircle2 className="w-6 h-6 text-green-500 fill-green-500" />
-                                ) : (
-                                    <div className="w-6 h-6 rounded-full border-2 border-blue-500 bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                    </div>
-                                )}
-                            </button>
-                        )}
-                                    </div>
-
-                    {/* Task Content */}
+                        {
+                            task.status === 'TO_DO' ? (
+                                <button
+                                    onClick={handleStartTask}
+                                    disabled={isUpdating}
+                                    className="w-6 h-6 rounded-full border-2 border-neutral-300 dark:border-neutral-600 hover:border-blue-500 dark:hover:border-blue-400 flex items-center justify-center transition-colors group"
+                                >
+                                    {
+                                        isUpdating ? (
+                                            <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                        ) : (
+                                            <Play className="w-3 h-3 text-neutral-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        )
+                                    }
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleStatusToggle}
+                                    disabled={isUpdating}
+                                    className="relative"
+                                >
+                                    {
+                                        isUpdating ? (
+                                            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                                        ) : task.status === 'COMPLETED' ? (
+                                            <CheckCircle2 className="w-6 h-6 text-green-500 fill-green-500" />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full border-2 border-blue-500 bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                                                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                            </div>
+                                        )
+                                    }
+                                </button>
+                            )
+                        }
+                    </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
@@ -266,11 +269,13 @@ function TaskItem({
                                     <Badge className={cn('text-[10px] px-1.5 py-0 border', difficultyColors[task.difficulty as keyof typeof difficultyColors] || difficultyColors.INTERMEDIATE)}>
                                         {task.difficulty}
                                     </Badge>
-                                    {task.status === 'IN_PROGRESS' && (
-                                        <Badge className="text-[10px] px-1.5 py-0 bg-blue-500 text-white animate-pulse">
-                                            IN PROGRESS
-                                        </Badge>
-                                    )}
+                                    {
+                                        task.status === 'IN_PROGRESS' && (
+                                            <Badge className="text-[10px] px-1.5 py-0 bg-blue-500 text-white animate-pulse">
+                                                IN PROGRESS
+                                            </Badge>
+                                        )
+                                    }
                                 </div>
                                 <h4 className={cn(
                                     'font-semibold text-base',
@@ -280,268 +285,301 @@ function TaskItem({
                                 )}>
                                     {task.title}
                                 </h4>
-                                    </div>
-
-                            {/* Expand Button */}
+                            </div>
                             <button
                                 onClick={handleToggleExpand}
                                 className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                             >
-                                {isExpanded ? (
-                                    <ChevronDown className="w-5 h-5 text-neutral-400" />
-                                ) : (
-                                    <ChevronRight className="w-5 h-5 text-neutral-400" />
-                                )}
+                                {
+                                    isExpanded ? (
+                                        <ChevronDown className="w-5 h-5 text-neutral-400" />
+                                    ) : (
+                                        <ChevronRight className="w-5 h-5 text-neutral-400" />
+                                    )
+                                }
                             </button>
-                                    </div>
-
-                        {/* Badges */}
-                        {task.badges && task.badges.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                                {task.badges.slice(0, 3).map((badge, idx) => (
-                                    <Badge key={idx} variant="outline" className="text-[10px]">
-                                        {badge}
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Tags */}
-                        {task.tags && task.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                                {task.tags.slice(0, 4).map((tag, idx) => (
-                                    <span
-                                        key={idx}
-                                        className="text-[11px] px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
+                        </div>
+                        {
+                            task.badges && task.badges.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {
+                                        task.badges.slice(0, 3).map((badge, idx) => (
+                                            <Badge key={idx} variant="outline" className="text-[10px]">
+                                                {badge}
+                                            </Badge>
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
+                        {
+                            task.tags && task.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {
+                                        task.tags.slice(0, 4).map((tag, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="text-[11px] px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-neutral-600 dark:text-neutral-400"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
                     </div>
                 </div>
             </div>
 
-            {/* Expanded Content */}
-            {isExpanded && (
-                <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                >
-                    <div className="px-4 pb-4 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-                        {/* AI Detailed Roadmap Section */}
-                        {task.status !== 'TO_DO' && (
-                            <div className="mb-4">
-                                <div className="flex items-center justify-between mb-2">
+            {
+                isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-4 pb-4 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                            {
+                                task.status !== 'TO_DO' && (
+                                    <div className="mb-4">
+                                        <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4 text-purple-500" />
-                                        <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                                                <Sparkles className="w-4 h-4 text-purple-500" />
+                                                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
                                                     Detailed Roadmap
-                                        </span>
+                                                </span>
                                             </div>
-                                            {!hasDetailAccess && !isCheckingDetail && (
-                                                <Button
-                                            size="sm"
-                                            variant="outline"
-                                                    onClick={() => setShowDetailDialog(true)}
-                                            className="h-7 text-xs gap-1"
-                                                >
-                                            <Sparkles className="w-3 h-3" />
-                                            Unlock (1 credit)
-                                                </Button>
-                                            )}
-                                        </div>
-                                        
-                                        {isCheckingDetail && (
-                                    <div className="flex items-center gap-2 text-sm text-neutral-500">
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                        Loading...
-                                            </div>
-                                        )}
-                                        
-                                        {hasDetailAccess && taskDetail && (
-                                    <div className="space-y-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-                                                <div>
-                                            <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-2">
-                                                Sub-tasks Breakdown:
-                                            </p>
-                                            <div className="space-y-2">
-                                                {taskDetail.subTasks.map((sub, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="flex items-start gap-2 text-xs bg-white dark:bg-neutral-900 p-2 rounded-lg"
+                                            {
+                                                !hasDetailAccess && !isCheckingDetail && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => setShowDetailDialog(true)}
+                                                        className="h-7 text-xs gap-1"
                                                     >
-                                                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[10px] font-bold">
-                                                            {idx + 1}
-                                                                    </span>
-                                                                            <div>
-                                                            <p className="font-medium text-neutral-900 dark:text-white">{sub.title}</p>
-                                                            <p className="text-neutral-600 dark:text-neutral-400">{sub.description}</p>
-                                                            {sub.command && (
-                                                                <code className="block mt-1 bg-neutral-900 text-green-400 px-2 py-1 rounded text-[10px] font-mono">
-                                                                    {sub.command}
-                                                                                </code>
-                                                            )}
-                                                        </div>
-                                                                            </div>
-                                                                                ))}
-                                            </div>
-                                                                        </div>
-                                                                        
-                                        {(taskDetail.commonErrors.length > 0 || taskDetail.errorsToWatchout.length > 0) && (
-                                            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
-                                                <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-1 flex items-center gap-1">
-                                                    <AlertCircle className="w-3 h-3" />
-                                                    Watch Out For:
-                                                </p>
-                                                                                <ul className="space-y-1">
-                                                    {[...taskDetail.commonErrors, ...taskDetail.errorsToWatchout].slice(0, 3).map((err, idx) => (
-                                                        <li key={idx} className="text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-1">
-                                                            <span>⚠️</span>
-                                                            <span>{err}</span>
-                                                                                        </li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                )}
-
-                                {!hasDetailAccess && !isCheckingDetail && (
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded-lg">
-                                        💡 Get AI-powered sub-tasks breakdown, approach tips, and common errors to avoid.
-                                    </p>
-                                )}
-                                                                </div>
-                        )}
-
-                        {/* Implementation Steps */}
-                        {task.description && task.description.length > 0 && (
-                            <div className="mb-4">
-                                <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
-                                    <Target className="w-4 h-4" />
-                                    Implementation Steps
-                                </h5>
-                                <ol className="space-y-1.5">
-                                    {task.description.map((step, idx) => (
-                                        <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs font-medium">
-                                                {idx + 1}
-                                            </span>
-                                            <span>{step}</span>
-                                                                            </li>
-                                                                        ))}
-                                </ol>
-                            </div>
-                        )}
-
-                        {/* Terminal Command */}
-                        {task.terminalCommand && (
-                            <div className="mb-4">
-                                <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
-                                    <Zap className="w-4 h-4" />
-                                    Terminal Command
-                                </h5>
-                                <code className="block bg-neutral-900 text-green-400 p-3 rounded-lg text-sm font-mono overflow-x-auto">
-                                    {task.terminalCommand}
-                                </code>
-                                                                </div>
-                                                            )}
-                                                            
-                        {/* Success Criteria */}
-                        {task.criteria && task.criteria.length > 0 && (
-                            <div className="mb-4">
-                                <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
-                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                    Success Criteria
-                                </h5>
-                                                                    <ul className="space-y-1">
-                                    {task.criteria.map((criterion, idx) => (
-                                        <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                            <span>{criterion}</span>
-                                                                            </li>
-                                                                        ))}
-                                                                    </ul>
-                                                                </div>
-                                                            )}
-                                                            
-                        {/* Hints */}
-                        {task.hints && task.hints.length > 0 && (
-                            <div className="mb-4">
-                                <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
-                                    <Info className="w-4 h-4 text-blue-600" />
-                                    Hints
-                                </h5>
-                                <div className="space-y-1">
-                                    {task.hints.map((hint, idx) => (
-                                        <p key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
-                                            💡 {hint}
-                                                                                </p>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                    {/* Action Buttons */}
-                        <div className="flex gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-                            {task.status === 'TO_DO' && (
-                                            <Button
-                                    onClick={handleStartTask}
-                                                disabled={isUpdating}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                                            >
-                                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                                    Start Task
-                                            </Button>
-                                        )}
-                            {task.status === 'IN_PROGRESS' && (
-                                            <>
-                                                <Button
-                                        onClick={handleStatusToggle}
-                                                    disabled={isUpdating}
-                                        className="flex-1 bg-green-600 hover:bg-green-700"
-                                                >
-                                        {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                                        Mark Complete
-                                                </Button>
-                                                <Button
-                                        onClick={async () => {
-                                            setIsUpdating(true)
-                                            const result = await updateTaskStatus(task.id, 'TO_DO')
-                                            if (result.success) {
-                                                toast.info('Task moved back to To Do')
-                                                onStatusChange()
+                                                        <Sparkles className="w-3 h-3" />
+                                                        Unlock (1 credit)
+                                                    </Button>
+                                                )
                                             }
-                                            setIsUpdating(false)
-                                        }}
-                                                    disabled={isUpdating}
-                                                    variant="outline"
-                                                >
-                                        <RotateCcw className="w-4 h-4" />
-                                                </Button>
-                                            </>
-                                        )}
-                            {task.status === 'COMPLETED' && (
+                                        </div>
+
+                                        {
+                                            isCheckingDetail && (
+                                                <div className="flex items-center gap-2 text-sm text-neutral-500">
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Loading...
+                                                </div>
+                                            )
+                                        }
+
+                                        {
+                                            hasDetailAccess && taskDetail && (
+                                                <div className="space-y-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                                                            Sub-tasks Breakdown:
+                                                        </p>
+                                                        <div className="space-y-2">
+                                                            {
+                                                                taskDetail.subTasks.map((sub, idx) => (
+                                                                    <div
+                                                                        key={idx}
+                                                                        className="flex items-start gap-2 text-xs bg-white dark:bg-neutral-900 p-2 rounded-lg"
+                                                                    >
+                                                                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[10px] font-bold">
+                                                                            {idx + 1}
+                                                                        </span>
+                                                                        <div>
+                                                                            <p className="font-medium text-neutral-900 dark:text-white">{sub.title}</p>
+                                                                            <p className="text-neutral-600 dark:text-neutral-400">{sub.description}</p>
+                                                                            {
+                                                                                sub.command && (
+                                                                                    <code className="block mt-1 bg-neutral-900 text-green-400 px-2 py-1 rounded text-[10px] font-mono">
+                                                                                        {sub.command}
+                                                                                    </code>
+                                                                                )
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    {
+                                                        (taskDetail.commonErrors.length > 0 || taskDetail.errorsToWatchout.length > 0) && (
+                                                            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
+                                                                <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-1 flex items-center gap-1">
+                                                                    <AlertCircle className="w-3 h-3" />
+                                                                    Watch Out For:
+                                                                </p>
+                                                                <ul className="space-y-1">
+                                                                    {
+                                                                        [...taskDetail.commonErrors, ...taskDetail.errorsToWatchout].slice(0, 3).map((err, idx) => (
+                                                                            <li key={idx} className="text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-1">
+                                                                                <span>⚠️</span>
+                                                                                <span>{err}</span>
+                                                                            </li>
+                                                                        ))
+                                                                    }
+                                                                </ul>
+                                                            </div>
+                                                        )
+                                                    }
+                                                </div>
+                                            )
+                                        }
+
+                                        {
+                                            !hasDetailAccess && !isCheckingDetail && (
+                                                <p className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded-lg">
+                                                    💡 Get AI-powered sub-tasks breakdown, approach tips, and common errors to avoid.
+                                                </p>
+                                            )
+                                        }
+                                    </div>
+                                )
+                            }
+
+                            {
+                                task.description && task.description.length > 0 && (
+                                    <div className="mb-4">
+                                        <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
+                                            <Target className="w-4 h-4" />
+                                            Implementation Steps
+                                        </h5>
+                                        <ol className="space-y-1.5">
+                                            {
+                                                task.description.map((step, idx) => (
+                                                    <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                                                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs font-medium">
+                                                            {idx + 1}
+                                                        </span>
+                                                        <span>{step}</span>
+                                                    </li>
+                                                ))
+                                            }
+                                        </ol>
+                                    </div>
+                                )
+                            }
+
+                            {
+                                task.terminalCommand && (
+                                    <div className="mb-4">
+                                        <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
+                                            <Zap className="w-4 h-4" />
+                                            Terminal Command
+                                        </h5>
+                                        <code className="block bg-neutral-900 text-green-400 p-3 rounded-lg text-sm font-mono overflow-x-auto">
+                                            {task.terminalCommand}
+                                        </code>
+                                    </div>
+                                )
+                            }
+
+                            {
+                                task.criteria && task.criteria.length > 0 && (
+                                    <div className="mb-4">
+                                        <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                            Success Criteria
+                                        </h5>
+                                        <ul className="space-y-1">
+                                            {
+                                                task.criteria.map((criterion, idx) => (
+                                                    <li key={idx} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                                                        <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                        <span>{criterion}</span>
+                                                    </li>
+                                                ))
+                                            }
+                                        </ul>
+                                    </div>
+                                )
+                            }
+
+                            {
+                                task.hints && task.hints.length > 0 && (
+                                    <div className="mb-4">
+                                        <h5 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 flex items-center gap-2">
+                                            <Info className="w-4 h-4 text-blue-600" />
+                                            Hints
+                                        </h5>
+                                        <div className="space-y-1">
+                                            {
+                                                task.hints.map((hint, idx) => (
+                                                    <p key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
+                                                        💡 {hint}
+                                                    </p>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                )
+                            }
+                            <div className="flex gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                                {
+                                    task.status === 'TO_DO' && (
+                                        <Button
+                                            onClick={handleStartTask}
+                                            disabled={isUpdating}
+                                            className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                                            Start Task
+                                        </Button>
+                                    )
+                                }
+                                {
+                                    task.status === 'IN_PROGRESS' && (
+                                        <>
                                             <Button
-                                    onClick={handleStatusToggle}
+                                                onClick={handleStatusToggle}
+                                                disabled={isUpdating}
+                                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                            >
+                                                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                                Mark Complete
+                                            </Button>
+                                            <Button
+                                                onClick={async () => {
+                                                    setIsUpdating(true)
+                                                    const result = await updateTaskStatus(task.id, 'TO_DO')
+                                                    if (result.success) {
+                                                        toast.info('Task moved back to To Do')
+                                                        onStatusChange()
+                                                    }
+                                                    setIsUpdating(false)
+                                                }}
                                                 disabled={isUpdating}
                                                 variant="outline"
-                                    className="flex-1"
                                             >
-                                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
-                                                Reopen Task
+                                                <RotateCcw className="w-4 h-4" />
                                             </Button>
-                                        )}
-                                    </div>
-                                </div>
-                </motion.div>
-                        )}
-
-            {/* Generate Detail Dialog */}
+                                        </>
+                                    )
+                                }
+                                {
+                                    task.status === 'COMPLETED' && (
+                                        <Button
+                                            onClick={handleStatusToggle}
+                                            disabled={isUpdating}
+                                            variant="outline"
+                                            className="flex-1"
+                                        >
+                                            {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                                            Reopen Task
+                                        </Button>
+                                    )
+                                }
+                            </div>
+                        </div>
+                    </motion.div>
+                )
+            }
             <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -571,8 +609,8 @@ function TaskItem({
                             </ul>
                         </div>
                         <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/10 rounded-lg p-2 border border-amber-200 dark:border-amber-800">
-                                <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                                    Cost: 1 Credit
+                            <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                Cost: 1 Credit
                             </span>
                         </div>
                     </div>
@@ -585,17 +623,19 @@ function TaskItem({
                             disabled={isGeneratingDetail}
                             className="bg-purple-600 hover:bg-purple-700"
                         >
-                            {isGeneratingDetail ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    Generating...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-4 h-4 mr-2" />
-                                    Unlock
-                                </>
-                            )}
+                            {
+                                isGeneratingDetail ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4 mr-2" />
+                                        Unlock
+                                    </>
+                                )
+                            }
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -636,7 +676,6 @@ export default function TasksPageClient({ project, tasks, userProgress }: TasksP
     return (
         <div className="relative min-h-screen w-full bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900">
             <div className="max-w-4xl mx-auto py-6 px-4">
-                {/* Back Button */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -650,8 +689,6 @@ export default function TasksPageClient({ project, tasks, userProgress }: TasksP
                         Back to Project
                     </Link>
                 </motion.div>
-
-                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -665,8 +702,6 @@ export default function TasksPageClient({ project, tasks, userProgress }: TasksP
                         Track your progress and complete tasks one by one
                     </p>
                 </motion.div>
-
-                {/* Progress Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -691,8 +726,6 @@ export default function TasksPageClient({ project, tasks, userProgress }: TasksP
                                 </div>
                             </div>
                             <Progress value={progressPercentage} className="h-3 mb-4" />
-
-                            {/* Stats */}
                             <div className="grid grid-cols-3 gap-4 text-center">
                                 <div className="bg-white/50 dark:bg-neutral-900/50 rounded-xl p-3">
                                     <div className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -713,8 +746,6 @@ export default function TasksPageClient({ project, tasks, userProgress }: TasksP
                                     <div className="text-xs text-green-600 dark:text-green-400">Completed</div>
                                 </div>
                             </div>
-
-                            {/* Milestone hints */}
                             <div className="flex justify-between mt-4 text-xs text-neutral-500 dark:text-neutral-400">
                                 <span className={progressPercentage >= 0 ? 'text-green-600 font-medium' : ''}>Start</span>
                                 <span className={progressPercentage >= 50 ? 'text-green-600 font-medium' : ''}>
@@ -730,8 +761,6 @@ export default function TasksPageClient({ project, tasks, userProgress }: TasksP
                         </CardContent>
                     </Card>
                 </motion.div>
-
-                {/* Filter Tabs */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -739,64 +768,66 @@ export default function TasksPageClient({ project, tasks, userProgress }: TasksP
                     className="mb-6"
                 >
                     <div className="flex gap-2 overflow-x-auto pb-2">
-                        {(['ALL', 'IN_PROGRESS', 'TO_DO', 'COMPLETED'] as const).map((status) => {
-                            const count = status === 'ALL'
-                                ? allTasks.length
-                                : allTasks.filter(t => t.status === status).length
-                            const labels = {
-                                ALL: 'All Tasks',
-                                TO_DO: 'To Do',
-                                IN_PROGRESS: 'In Progress',
-                                COMPLETED: 'Completed',
-                            }
-                            const colors = {
-                                ALL: '',
-                                TO_DO: '',
-                                IN_PROGRESS: 'border-blue-300 dark:border-blue-700',
-                                COMPLETED: 'border-green-300 dark:border-green-700',
-                            }
-                            return (
-                                <button
-                                    key={status}
-                                    onClick={() => setFilter(status)}
-                                    className={cn(
-                                        'px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap border-2',
-                                        filter === status
-                                            ? 'bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white'
-                                            : `bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 ${colors[status] || 'border-neutral-200 dark:border-neutral-800'}`
-                                    )}
-                                >
-                                    {labels[status]} ({count})
-                                </button>
-                            )
-                        })}
+                        {
+                            (['ALL', 'IN_PROGRESS', 'TO_DO', 'COMPLETED'] as const).map((status) => {
+                                const count = status === 'ALL'
+                                    ? allTasks.length
+                                    : allTasks.filter(t => t.status === status).length
+                                const labels = {
+                                    ALL: 'All Tasks',
+                                    TO_DO: 'To Do',
+                                    IN_PROGRESS: 'In Progress',
+                                    COMPLETED: 'Completed',
+                                }
+                                const colors = {
+                                    ALL: '',
+                                    TO_DO: '',
+                                    IN_PROGRESS: 'border-blue-300 dark:border-blue-700',
+                                    COMPLETED: 'border-green-300 dark:border-green-700',
+                                }
+                                return (
+                                    <button
+                                        key={status}
+                                        onClick={() => setFilter(status)}
+                                        className={cn(
+                                            'px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap border-2',
+                                            filter === status
+                                                ? 'bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white'
+                                                : `bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 ${colors[status] || 'border-neutral-200 dark:border-neutral-800'}`
+                                        )}
+                                    >
+                                        {labels[status]} ({count})
+                                    </button>
+                                )
+                            })
+                        }
                     </div>
                 </motion.div>
-
-                {/* Tasks List */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                     className="space-y-3"
                 >
-                    {filteredTasks.length === 0 ? (
-                        <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                            <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                            <p>No tasks in this category</p>
-                        </div>
-                    ) : (
-                        filteredTasks.map((task, index) => (
-                            <TaskItem
-                                key={task.id}
-                                task={task}
-                                index={index}
-                                total={filteredTasks.length}
-                                projectSlug={project.slug}
-                                onStatusChange={handleTaskUpdate}
-                            />
-                        ))
-                    )}
+                    {
+                        filteredTasks.length === 0 ? (
+                            <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+                                <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                                <p>No tasks in this category</p>
+                            </div>
+                        ) : (
+                            filteredTasks.map((task, index) => (
+                                <TaskItem
+                                    key={task.id}
+                                    task={task}
+                                    index={index}
+                                    total={filteredTasks.length}
+                                    projectSlug={project.slug}
+                                    onStatusChange={handleTaskUpdate}
+                                />
+                            ))
+                        )
+                    }
                 </motion.div>
             </div>
         </div>

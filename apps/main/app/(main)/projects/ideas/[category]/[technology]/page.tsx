@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import {
-    ArrowLeft, Sparkles, Play, Filter, Search, Heart, Eye, TrendingUp, 
+    ArrowLeft, Sparkles, Play, Filter, Search, Heart, Eye, TrendingUp,
     CheckCircle2, Code2, Layers, Terminal
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -102,20 +102,15 @@ export default function TechnologyProjectsPage() {
 
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
-            {/* Background Grid Pattern */}
             <div className="fixed inset-0 z-0 h-full w-full bg-white dark:bg-neutral-950 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
 
             <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
-
-                {/* Navigation */}
                 <Link href="/projects/ideas">
                     <Button variant="ghost" className="mb-12 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to Categories
                     </Button>
                 </Link>
-
-                {/* Hero Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -130,15 +125,12 @@ export default function TechnologyProjectsPage() {
                                 {projects.length} Projects Available
                             </Badge>
                         </div>
-
                         <h1 className="text-4xl md:text-6xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">
                             Build with {technology.name}
                         </h1>
-
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed max-w-xl">
                             {technology.description} Start building real-world applications to master the ecosystem and boost your portfolio.
                         </p>
-
                         <div className="flex flex-col sm:flex-row gap-4">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -163,49 +155,51 @@ export default function TechnologyProjectsPage() {
                             </Select>
                         </div>
                     </div>
-
-                    {/* Learning Outcomes Boost */}
                     <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl p-8 border border-neutral-100 dark:border-neutral-800">
                         <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-amber-500" />
                             What you'll master
                         </h3>
                         <div className="grid sm:grid-cols-2 gap-4">
-                            {technology.learningOutcomes?.map((outcome, idx) => (
-                                <div key={idx} className="flex items-start gap-3">
-                                    <CheckCircle2 className="w-5 h-5 text-neutral-900 dark:text-white flex-shrink-0 mt-0.5" />
-                                    <span className="text-sm text-neutral-600 dark:text-neutral-400">{outcome}</span>
-                                </div>
-                            )) || (
+                            {
+                                technology.learningOutcomes?.map((outcome, idx) => (
+                                    <div key={idx} className="flex items-start gap-3">
+                                        <CheckCircle2 className="w-5 h-5 text-neutral-900 dark:text-white flex-shrink-0 mt-0.5" />
+                                        <span className="text-sm text-neutral-600 dark:text-neutral-400">{outcome}</span>
+                                    </div>
+                                )) || (
                                     <p className="text-sm text-neutral-500">Master core concepts and advanced patterns.</p>
-                                )}
+                                )
+                            }
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Top Projects Section */}
-                {!loading && topProjects.length > 0 && (
-                    <div className="mb-20">
-                        <div className="flex items-center gap-2 mb-8">
-                            <TrendingUp className="w-5 h-5 text-neutral-900 dark:text-white" />
-                            <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                Popular Choices
-                            </h2>
+                {
+                    !loading && topProjects.length > 0 && (
+                        <div className="mb-20">
+                            <div className="flex items-center gap-2 mb-8">
+                                <TrendingUp className="w-5 h-5 text-neutral-900 dark:text-white" />
+                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                    Popular Choices
+                                </h2>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {
+                                    topProjects.map((project, index) => (
+                                        <ProjectCard
+                                            key={project.id}
+                                            project={project}
+                                            index={index}
+                                            isTopProject={true}
+                                        />
+                                    ))
+                                }
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {topProjects.map((project, index) => (
-                                <ProjectCard
-                                    key={project.id}
-                                    project={project}
-                                    index={index}
-                                    isTopProject={true}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
+                    )
+                }
 
-                {/* All Projects Grid */}
                 <div className="mb-8 flex items-center gap-2">
                     <Layers className="w-5 h-5 text-neutral-900 dark:text-white" />
                     <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -213,43 +207,49 @@ export default function TechnologyProjectsPage() {
                     </h2>
                 </div>
 
-                {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-100 dark:border-neutral-800 h-[300px] animate-pulse">
-                                <div className="flex justify-between mb-6">
-                                    <div className="h-6 w-20 bg-neutral-100 dark:bg-neutral-800 rounded-full" />
-                                    <div className="h-6 w-12 bg-neutral-100 dark:bg-neutral-800 rounded-full" />
-                                </div>
-                                <div className="h-8 w-3/4 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
-                                <div className="space-y-2 mb-8">
-                                    <div className="h-4 w-full bg-neutral-100 dark:bg-neutral-800 rounded" />
-                                    <div className="h-4 w-5/6 bg-neutral-100 dark:bg-neutral-800 rounded" />
-                                </div>
-                                <div className="flex gap-4 mt-auto">
-                                    <div className="h-10 w-full bg-neutral-100 dark:bg-neutral-800 rounded-lg" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : filteredProjects.length === 0 ? (
-                    <div className="text-center py-20 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50/50 dark:bg-neutral-900/50">
-                        <Search className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-neutral-900 dark:text-white">No projects found</h3>
-                        <p className="text-neutral-500 dark:text-neutral-400">Try adjusting your search or filters.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredProjects.map((project, index) => (
-                            <ProjectCard
-                                key={project.id}
-                                project={project}
-                                index={index}
-                                isTopProject={false}
-                            />
-                        ))}
-                    </div>
-                )}
+                {
+                    loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {
+                                [1, 2, 3, 4, 5, 6].map((i) => (
+                                    <div key={i} className="bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-100 dark:border-neutral-800 h-[300px] animate-pulse">
+                                        <div className="flex justify-between mb-6">
+                                            <div className="h-6 w-20 bg-neutral-100 dark:bg-neutral-800 rounded-full" />
+                                            <div className="h-6 w-12 bg-neutral-100 dark:bg-neutral-800 rounded-full" />
+                                        </div>
+                                        <div className="h-8 w-3/4 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
+                                        <div className="space-y-2 mb-8">
+                                            <div className="h-4 w-full bg-neutral-100 dark:bg-neutral-800 rounded" />
+                                            <div className="h-4 w-5/6 bg-neutral-100 dark:bg-neutral-800 rounded" />
+                                        </div>
+                                        <div className="flex gap-4 mt-auto">
+                                            <div className="h-10 w-full bg-neutral-100 dark:bg-neutral-800 rounded-lg" />
+                                        </div>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    ) : filteredProjects.length === 0 ? (
+                        <div className="text-center py-20 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50/50 dark:bg-neutral-900/50">
+                            <Search className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">No projects found</h3>
+                            <p className="text-neutral-500 dark:text-neutral-400">Try adjusting your search or filters.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {
+                                filteredProjects.map((project, index) => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                        index={index}
+                                        isTopProject={false}
+                                    />
+                                ))
+                            }
+                        </div>
+                    )
+                }
             </div>
         </div>
     )
@@ -331,20 +331,20 @@ function ProjectCard({ project, index, isTopProject }: any) {
             `}
         >
             <div>
-                {/* Header Row */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex gap-2">
                         <Badge className={`${getDifficultyStyle(project.difficulty)} border px-2.5 py-0.5 rounded-md font-medium`}>
                             {project.difficulty}
                         </Badge>
-                        {isTopProject && (
-                            <Badge className="bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-0 px-2.5 py-0.5 rounded-md">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Hot
-                            </Badge>
-                        )}
+                        {
+                            isTopProject && (
+                                <Badge className="bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-0 px-2.5 py-0.5 rounded-md">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Hot
+                                </Badge>
+                            )
+                        }
                     </div>
-
                     <div className="flex items-center gap-3 text-sm text-neutral-400 dark:text-neutral-500">
                         <div className="flex items-center gap-1.5" title="Views">
                             <Eye className="w-3.5 h-3.5" />
@@ -361,30 +361,27 @@ function ProjectCard({ project, index, isTopProject }: any) {
                         </button>
                     </div>
                 </div>
-
-                {/* Content */}
                 <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3 line-clamp-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {project.projectTitle}
                 </h3>
-
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6 line-clamp-3 leading-relaxed">
                     {project.projectDescription}
                 </p>
-
-                {/* Technologies */}
                 <div className="flex flex-wrap gap-2 mb-8">
-                    {project.technologies.slice(0, 3).map((tech: string) => (
-                        <div key={tech} className="px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                            {tech}
-                        </div>
-                    ))}
-                    {project.technologies.length > 3 && (
-                        <span className="px-2 py-1 text-xs text-neutral-400">+{project.technologies.length - 3} more</span>
-                    )}
+                    {
+                        project.technologies.slice(0, 3).map((tech: string) => (
+                            <div key={tech} className="px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                                {tech}
+                            </div>
+                        ))
+                    }
+                    {
+                        project.technologies.length > 3 && (
+                            <span className="px-2 py-1 text-xs text-neutral-400">+{project.technologies.length - 3} more</span>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Actions */}
             <div className="grid grid-cols-2 gap-3 mt-auto">
                 <Button
                     onClick={handleBuildOwn}

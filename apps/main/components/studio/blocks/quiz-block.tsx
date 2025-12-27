@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-	FileQuestion, CheckCircle, XCircle, ChevronRight, RotateCcw, Trophy, Clock
+	FileQuestion, CheckCircle, XCircle, ChevronRight, RotateCcw, Trophy
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Progress } from "@repo/ui/components/ui/progress";

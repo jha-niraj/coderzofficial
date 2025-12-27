@@ -73,14 +73,14 @@ export default function ShareCredits({ transfers, currentCredits }: ShareCredits
             toast.success(`Sent ${shareData.amount} credits to @${shareData.username}`);
             setIsOpen(false);
             setShareData({ username: "", amount: 10, reason: "" });
-        } catch (error) {
+        } catch {
             toast.error("Failed to send credits");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const formatTimeAgo = (date: Date) => {
+    const _formatTimeAgo = (date: Date) => {
         const now = new Date();
         const diff = now.getTime() - new Date(date).getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -216,9 +216,9 @@ export default function ShareCredits({ transfers, currentCredits }: ShareCredits
                             <div className="space-y-2">
                                 {
                                     transfers.map((transfer) => {
-                                        const isSent =
+                                        const _isSent =
                                             transfer.sender.id !== transfer.receiver.id;
-                                        const isReceived = true; // Determine based on current user
+                                        const _isReceived = true; // Determine based on current user
 
                                         return (
                                             <motion.div

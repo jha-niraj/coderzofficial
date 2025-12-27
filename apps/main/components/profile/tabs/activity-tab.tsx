@@ -8,7 +8,8 @@ import {
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Activity, Calendar, Flame, TrendingUp, Clock, Award, BookOpen, Code,
-    MessageSquare, Star
+    MessageSquare, Star,
+    Icon
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import {
@@ -58,8 +59,8 @@ function generateContributionData(
 
     // Count activities per day
     activities.forEach((activity) => {
-        const date = new Date(activity.createdAt).toISOString().split("T")[0];
-        contributions.set(date, (contributions.get(date) || 0) + 1);
+        const date = new Date(activity.createdAt).toISOString().split("T")[0] ?? "";
+        if (date) contributions.set(date, (contributions.get(date) || 0) + 1);
     });
 
     return contributions;
@@ -74,7 +75,7 @@ function getContributionColor(count: number): string {
     return "bg-green-500 dark:bg-green-500";
 }
 
-export function ActivityTab({ user, isOwnProfile }: ActivityTabProps) {
+export function ActivityTab({ user, isOwnProfile: _isOwnProfile }: ActivityTabProps) {
     const activities = useMemo(() => {
         return user.recentActivity || [];
     }, [user.recentActivity]);
@@ -101,7 +102,7 @@ export function ActivityTab({ user, isOwnProfile }: ActivityTabProps) {
                 const dateStr = date.toISOString().split("T")[0];
                 weekData.push({
                     date,
-                    count: contributionData.get(dateStr) || 0,
+                    count: contributionData.get(dateStr!) || 0,
                 });
             }
             result.push(weekData);
@@ -214,8 +215,8 @@ export function ActivityTab({ user, isOwnProfile }: ActivityTabProps) {
                                     <div className="flex gap-1 text-xs text-muted-foreground ml-8 mb-1">
                                         {
                                             weeks.map((week, weekIndex) => {
-                                                const firstDay = week[0].date;
-                                                if (firstDay.getDate() <= 7) {
+                                                const firstDay = week[0]?.date;
+                                                if (firstDay && firstDay.getDate() <= 7) {
                                                     return (
                                                         <span
                                                             key={weekIndex}
@@ -317,7 +318,7 @@ export function ActivityTab({ user, isOwnProfile }: ActivityTabProps) {
                                                 const config =
                                                     activityConfig[activity.activityType || "DEFAULT"] ||
                                                     activityConfig.DEFAULT;
-                                                const Icon = config.icon;
+                                                const IconComponent = config?.icon || Activity;
 
                                                 return (
                                                     <motion.div
@@ -330,10 +331,10 @@ export function ActivityTab({ user, isOwnProfile }: ActivityTabProps) {
                                                         <div
                                                             className={cn(
                                                                 "absolute left-2 w-5 h-5 rounded-full bg-background border-2 border-border flex items-center justify-center",
-                                                                config.color
+                                                                config?.color
                                                             )}
                                                         >
-                                                            <Icon className={cn("w-3 h-3", config.color)} />
+                                                            <IconComponent className={cn("w-3 h-3", config?.color)} />
                                                         </div>
                                                         <div className="flex-1 pb-4 border-b last:border-0">
                                                             <div className="flex items-start justify-between gap-2">
@@ -344,7 +345,7 @@ export function ActivityTab({ user, isOwnProfile }: ActivityTabProps) {
                                                                     </p>
                                                                     <div className="flex items-center gap-2 mt-1">
                                                                         <Badge variant="secondary" className="text-xs">
-                                                                            {config.label}
+                                                                            {config?.label}
                                                                         </Badge>
                                                                     </div>
                                                                 </div>

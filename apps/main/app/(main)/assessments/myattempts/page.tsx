@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-	History, Trophy, Clock, CheckCircle2, XCircle, Calendar, BookOpen, Award,
-	TrendingUp, BarChart3, Loader2, ChevronRight, Filter
+	History, Trophy, Clock, CheckCircle2, Calendar, BookOpen, Award,
+	TrendingUp, BarChart3, Loader2, ChevronRight
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
-	Card, CardContent, CardDescription, CardHeader, CardTitle
+	Card, CardContent,
 } from "@repo/ui/components/ui/card";
 import {
 	Tabs, TabsContent, TabsList, TabsTrigger

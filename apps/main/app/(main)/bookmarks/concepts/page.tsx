@@ -42,7 +42,6 @@ export default function ConceptBookmarksPage() {
 
     return (
         <div className="min-h-screen">
-            {/* Header */}
             <section className="border-b border-neutral-200 dark:border-neutral-800 bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-neutral-950">
                 <div className="max-w-6xl mx-auto px-4 py-12">
                     <motion.div
@@ -65,111 +64,114 @@ export default function ConceptBookmarksPage() {
                     </motion.div>
                 </div>
             </section>
-
-            {/* Content */}
             <div className="max-w-6xl mx-auto px-4 py-8 pb-24 lg:pb-8">
-                {isLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
-                    </div>
-                ) : concepts.length === 0 ? (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-20"
-                    >
-                        <Lightbulb className="h-16 w-16 mx-auto text-neutral-300 dark:text-neutral-700 mb-4" />
-                        <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                            No concept bookmarks
-                        </h3>
-                        <p className="text-neutral-500 mb-6">
-                            Save concepts to revisit them later
-                        </p>
-                        <Button asChild>
-                            <Link href="/concepts">
-                                Explore Concepts
-                                <ChevronRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </motion.div>
-                ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <AnimatePresence>
-                            {concepts.map((concept, index) => (
-                                <motion.div
-                                    key={concept.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                >
-                                    <Link href={`/concepts/${concept.slug}`}>
-                                        <div className="group rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:shadow-lg">
-                                            {/* Cover */}
-                                            <div className="relative h-36 bg-gradient-to-br from-blue-500/20 to-purple-500/20">
-                                                {concept.thumbnail && (
-                                                    <Image
-                                                        src={concept.thumbnail}
-                                                        alt={concept.title}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                )}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                                                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className={cn(
-                                                            "text-xs rounded-full",
-                                                            difficultyColors[concept.difficulty as keyof typeof difficultyColors]
-                                                        )}
-                                                    >
-                                                        {concept.difficulty}
-                                                    </Badge>
-                                                    <div className="text-xs text-white/80 flex items-center gap-1">
-                                                        <Clock className="h-3.5 w-3.5" />
-                                                        {formatDistanceToNow(new Date(concept.savedAt), { addSuffix: true })}
+                {
+                    isLoading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+                        </div>
+                    ) : concepts.length === 0 ? (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-center py-20"
+                        >
+                            <Lightbulb className="h-16 w-16 mx-auto text-neutral-300 dark:text-neutral-700 mb-4" />
+                            <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
+                                No concept bookmarks
+                            </h3>
+                            <p className="text-neutral-500 mb-6">
+                                Save concepts to revisit them later
+                            </p>
+                            <Button asChild>
+                                <Link href="/concepts">
+                                    Explore Concepts
+                                    <ChevronRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </motion.div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <AnimatePresence>
+                                {
+                                    concepts.map((concept, index) => (
+                                        <motion.div
+                                            key={concept.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                        >
+                                            <Link href={`/concepts/${concept.slug}`}>
+                                                <div className="group rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:shadow-lg">
+                                                    <div className="relative h-36 bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                                                        {
+                                                            concept.thumbnail && (
+                                                                <Image
+                                                                    src={concept.thumbnail}
+                                                                    alt={concept.title}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            )
+                                                        }
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                                                        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className={cn(
+                                                                    "text-xs rounded-full",
+                                                                    difficultyColors[concept.difficulty as keyof typeof difficultyColors]
+                                                                )}
+                                                            >
+                                                                {concept.difficulty}
+                                                            </Badge>
+                                                            <div className="text-xs text-white/80 flex items-center gap-1">
+                                                                <Clock className="h-3.5 w-3.5" />
+                                                                {formatDistanceToNow(new Date(concept.savedAt), { addSuffix: true })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-5">
+                                                        <Badge variant="outline" className="text-xs rounded-full mb-2">
+                                                            {concept.category?.replace(/_/g, " ")}
+                                                        </Badge>
+
+                                                        <h3 className="font-semibold text-neutral-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                                                            {concept.title}
+                                                        </h3>
+
+                                                        {
+                                                            concept.description && (
+                                                                <p className="text-sm text-neutral-500 line-clamp-2 mb-3">
+                                                                    {concept.description}
+                                                                </p>
+                                                            )
+                                                        }
+
+                                                        <div className="flex items-center gap-4 text-xs text-neutral-500">
+                                                            <span className="flex items-center gap-1">
+                                                                <BookOpen className="h-3.5 w-3.5" />
+                                                                {concept.stepCount} steps
+                                                            </span>
+                                                            <span className="flex items-center gap-1">
+                                                                <Clock className="h-3.5 w-3.5" />
+                                                                {concept.estimatedTime} min
+                                                            </span>
+                                                            <span className="flex items-center gap-1">
+                                                                <Heart className="h-3.5 w-3.5" />
+                                                                {concept.likeCount}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="p-5">
-                                                <Badge variant="outline" className="text-xs rounded-full mb-2">
-                                                    {concept.category?.replace(/_/g, " ")}
-                                                </Badge>
-
-                                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
-                                                    {concept.title}
-                                                </h3>
-
-                                                {concept.description && (
-                                                    <p className="text-sm text-neutral-500 line-clamp-2 mb-3">
-                                                        {concept.description}
-                                                    </p>
-                                                )}
-
-                                                <div className="flex items-center gap-4 text-xs text-neutral-500">
-                                                    <span className="flex items-center gap-1">
-                                                        <BookOpen className="h-3.5 w-3.5" />
-                                                        {concept.stepCount} steps
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="h-3.5 w-3.5" />
-                                                        {concept.estimatedTime} min
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Heart className="h-3.5 w-3.5" />
-                                                        {concept.likeCount}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
-                )}
+                                            </Link>
+                                        </motion.div>
+                                    ))
+                                }
+                            </AnimatePresence>
+                        </div>
+                    )
+                }
             </div>
         </div>
     );

@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import { 
-    FeedbackCategory, FeedbackStatus 
+import {
+    FeedbackCategory, FeedbackStatus
 } from '@repo/prisma/client';
 import toast from '@repo/ui/components/ui/sonner';
-import { 
-    getFeedbackByStatus, submitFeedback, upvoteFeedback, updateFeedbackStatus, 
-    assignReward 
+import {
+    getFeedbackByStatus, submitFeedback, upvoteFeedback, updateFeedbackStatus,
+    assignReward
 } from '@/actions/(main)/user/feedback.action';
 
 interface FeedbackItem {
@@ -131,7 +131,7 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
                 set((state) => ({
                     feedbackByStatus: {
                         ...state.feedbackByStatus,
-                        [oldStatusKey]: state.feedbackByStatus[oldStatusKey].filter(
+                        [oldStatusKey]: (state?.feedbackByStatus?.[oldStatusKey] ?? []).filter(
                             (item) => item.id !== id
                         ),
                     },

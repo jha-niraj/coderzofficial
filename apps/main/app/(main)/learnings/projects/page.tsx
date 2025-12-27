@@ -5,14 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import {
-    FolderKanban, ChevronRight, Loader2, Users, ListTodo,
-    Calendar, ExternalLink, Filter
+    FolderKanban, ChevronRight, Loader2, Users, ListTodo
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@repo/ui/components/ui/select";
 import { getProjectLearnings } from "@/actions/(main)/learnings/learnings.action";
 import { cn } from "@repo/ui/lib/utils";
 
@@ -178,7 +174,7 @@ export default function ProjectLearningsPage() {
                                                             project.techStack?.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1 mt-3">
                                                                     {
-                                                                        project.techStack.slice(0, 3).map((tech: any) => (
+                                                                        project.techStack.slice(0, 3).map((tech: { id: string; name: string }) => (
                                                                             <Badge
                                                                                 key={tech.id}
                                                                                 variant="secondary"

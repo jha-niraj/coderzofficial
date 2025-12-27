@@ -73,7 +73,7 @@ export default function WeeklyGoals({ goals, progress }: WeeklyGoalsProps) {
             } else {
                 toast.error(result.error || "Failed to add goal");
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to add goal");
         } finally {
             setIsSubmitting(false);
@@ -86,7 +86,7 @@ export default function WeeklyGoals({ goals, progress }: WeeklyGoalsProps) {
             if (!result.success) {
                 toast.error(result.error || "Failed to update goal");
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to update goal");
         }
     };
@@ -223,8 +223,8 @@ export default function WeeklyGoals({ goals, progress }: WeeklyGoalsProps) {
                                         exit={{ opacity: 0, x: 20 }}
                                         transition={{ delay: index * 0.1 }}
                                         className={`p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${goal.completed
-                                                ? "bg-green-500/5 border-green-500/20"
-                                                : "bg-muted/30 border-border"
+                                            ? "bg-green-500/5 border-green-500/20"
+                                            : "bg-muted/30 border-border"
                                             }`}
                                         onClick={() => handleToggleGoal(goal.id)}
                                     >
@@ -245,8 +245,8 @@ export default function WeeklyGoals({ goals, progress }: WeeklyGoalsProps) {
                                                     </span>
                                                     <p
                                                         className={`font-medium truncate ${goal.completed
-                                                                ? "line-through text-muted-foreground"
-                                                                : ""
+                                                            ? "line-through text-muted-foreground"
+                                                            : ""
                                                             }`}
                                                     >
                                                         {goal.title}

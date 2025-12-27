@@ -1,13 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { 
-    Lock, ArrowLeft, Brain, Sparkles 
+import {
+    Lock, ArrowLeft, Brain, Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
 
@@ -22,7 +22,7 @@ interface ProgressGateProps {
 export function ProgressGate({ type, currentProgress, requiredProgress, projectSlug, projectTitle }: ProgressGateProps) {
     const Icon = type === 'quiz' ? Brain : Sparkles
     const title = type === 'quiz' ? 'Quiz Assessment' : 'AI Mock Interview'
-    const description = type === 'quiz' 
+    const description = type === 'quiz'
         ? 'Test your knowledge with an AI-generated quiz'
         : 'Practice with an AI-powered mock interview'
 
@@ -42,7 +42,6 @@ export function ProgressGate({ type, currentProgress, requiredProgress, projectS
                         Back to Project
                     </Link>
                 </motion.div>
-
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -80,7 +79,6 @@ export function ProgressGate({ type, currentProgress, requiredProgress, projectS
                                     </span>
                                 </div>
                             </div>
-
                             <div className="text-center space-y-2">
                                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                                     Complete <span className="font-semibold text-neutral-900 dark:text-white">{requiredProgress}% of {projectTitle}</span> to unlock this feature.

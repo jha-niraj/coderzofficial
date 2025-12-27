@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
-	Mic, Sparkles, Clock, MessageSquare, Brain, Target
+	Mic, Clock, MessageSquare, Brain, Target
 } from "lucide-react";
 
 export default function StudioMockBlock() {

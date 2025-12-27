@@ -296,7 +296,8 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
     }, []);
 
     const isQuestionAnswered = useCallback((questionId: string) => {
-        return userAnswers[questionId || ""] && userAnswers[questionId || ""].length > 0;
+        const answers = userAnswers[questionId || ""];
+        return answers && answers.length > 0;
     }, [userAnswers]);
 
     const formatTime = (seconds: number) => {

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import {
-    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogDescription, DialogHeader, 
+    DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import {
     Sparkles, CheckCircle2, Brain, Rocket

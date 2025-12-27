@@ -21,9 +21,17 @@ import {
 	companies, publicInterviews
 } from "@/app/(main)/interview/_components/mockdata"
 
+interface PublicInterview {
+	id: string
+	companyId: string
+	userName: string
+	userSchool: string
+	feedback: string
+	createdAt: string
+}
+
 export default function LandingPage() {
 	const [isScrolled, setIsScrolled] = useState(false)
-	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 	const { theme, setTheme } = useTheme()
 	const [mounted, setMounted] = useState(false)
 	const [searchQuery, setSearchQuery] = useState("")
@@ -32,7 +40,7 @@ export default function LandingPage() {
 	const [showRequestDialog, setShowRequestDialog] = useState(false)
 	const [requestFormData, setRequestFormData] = useState({ name: "", url: "", description: "" })
 	const [showPracticeDialog, setShowPracticeDialog] = useState(false)
-	const [selectedPublicInterview, setSelectedPublicInterview] = useState<any>(null)
+	const [selectedPublicInterview, setSelectedPublicInterview] = useState<PublicInterview | null>(null)
 
 	const companyList = companies.map((c) => c.name)
 
@@ -43,7 +51,7 @@ export default function LandingPage() {
 		setShowCompanyDialog(true)
 	}
 
-	const handlePracticeClick = (interview: any) => {
+	const handlePracticeClick = (interview: PublicInterview) => {
 		setSelectedPublicInterview(interview)
 		setShowPracticeDialog(true)
 	}

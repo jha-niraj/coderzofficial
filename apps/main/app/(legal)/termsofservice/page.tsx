@@ -59,7 +59,7 @@ export default function TermsOfService() {
                             <section id="acceptance">
                                 <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">1. Acceptance of Terms</h2>
                                 <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    By accessing or using The Coder'z platform ("Service"), including our projects, certifications, AI tools, and assessment engines, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service.
+                                    By accessing or using The Coder&apos;z platform (&quot;Service&quot;), including our projects, certifications, AI tools, and assessment engines, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service.
                                 </p>
                             </section>
                             <section id="eligibility">
@@ -79,7 +79,7 @@ export default function TermsOfService() {
                                 <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">3. Credits, Payments & Virtual Items</h2>
                                 <div className="space-y-4 text-neutral-600 dark:text-neutral-400 leading-relaxed">
                                     <p>
-                                        The Coder'z utilizes a credit-based system ("Compute Credits") for accessing premium AI features and assessments.
+                                        The Coder&apos;z utilizes a credit-based system (&quot;Compute Credits&quot;) for accessing premium AI features and assessments.
                                     </p>
                                     <div className="bg-neutral-50 dark:bg-neutral-900 p-6 rounded-xl border border-neutral-200 dark:border-neutral-800">
                                         <h4 className="font-bold text-neutral-900 dark:text-white mb-2">Key Policies:</h4>
@@ -94,7 +94,7 @@ export default function TermsOfService() {
                             <section id="content">
                                 <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">4. User Content & Projects</h2>
                                 <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-                                    You retain ownership of any code, projects, or content ("User Content") you submit to the platform. However, by submitting User Content to public repositories or community showcases, you grant The Coder'z a worldwide, non-exclusive license to use, reproduce, and display such content for promotional or educational purposes.
+                                    You retain ownership of any code, projects, or content (&quot;User Content&quot;) you submit to the platform. However, by submitting User Content to public repositories or community showcases, you grant The Coder&apos;z a worldwide, non-exclusive license to use, reproduce, and display such content for promotional or educational purposes.
                                 </p>
                             </section>
                             <section id="conduct">
@@ -104,7 +104,7 @@ export default function TermsOfService() {
                                 </p>
                                 <ul className="list-disc pl-5 space-y-2 text-neutral-600 dark:text-neutral-400">
                                     <li>Reverse engineering the AI models or assessment algorithms.</li>
-                                    <li>Using bots or scripts to "farm" XP or Credits.</li>
+                                    <li>Using bots or scripts to &quot;farm&quot; XP or Credits.</li>
                                     <li>Harassing, bullying, or intimidating other community members.</li>
                                     <li>Posting content that infringes on intellectual property rights.</li>
                                 </ul>
@@ -118,7 +118,7 @@ export default function TermsOfService() {
                             <section id="disclaimers">
                                 <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">7. Disclaimers & Limitation of Liability</h2>
                                 <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    The Service is provided on an "AS IS" and "AS AVAILABLE" basis. The Coder'z makes no warranties, expressed or implied, regarding the accuracy of AI-generated code reviews or the likelihood of employment resulting from our certifications.
+                                    The Service is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. The Coder&apos;z makes no warranties, expressed or implied, regarding the accuracy of AI-generated code reviews or the likelihood of employment resulting from our certifications.
                                 </p>
                             </section>
                             <div className="pt-10 border-t border-neutral-200 dark:border-neutral-800">

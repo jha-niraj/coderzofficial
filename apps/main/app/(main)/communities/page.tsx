@@ -4,7 +4,7 @@ import { authOptions } from '@repo/auth'
 import { redirect } from 'next/navigation'
 import { CommunityHubClient } from './_components/community-hub-client'
 import {
-    getUserCommunities, getPublicCommunities, getFeaturedCommunities
+    getUserCommunities, getFeaturedCommunities
 } from '@/actions/(main)/community/community.action'
 import { getGlobalFeed } from '@/actions/(main)/community/post.action'
 import { Loader2 } from 'lucide-react'

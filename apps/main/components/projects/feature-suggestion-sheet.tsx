@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Button } from "@repo/ui/components/ui/button"
 import {
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, 
+    SheetTrigger
 } from "@repo/ui/components/ui/sheet"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
@@ -15,7 +16,9 @@ import { Badge } from "@repo/ui/components/ui/badge"
 import { 
     Lightbulb, X, Loader2 
 } from "lucide-react"
-import { createFeatureSuggestion } from "@/actions/(main)/projects/feature-suggestions.action"
+import { 
+    createFeatureSuggestion 
+} from "@/actions/(main)/projects/feature-suggestions.action"
 import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
 

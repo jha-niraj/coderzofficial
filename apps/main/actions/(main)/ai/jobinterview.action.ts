@@ -10,7 +10,7 @@ import { trackActivity } from '@/actions/(main)/user/activity.action';
 import { ActivityType } from '@repo/prisma/client';
 // Import ElevenLabs speech utility
 import {
-	transcribeWithElevenLabs, quickTranscribeWithElevenLabs,
+	quickTranscribeWithElevenLabs,
 	detailedTranscribeWithElevenLabs, isElevenLabsConfigured
 } from '@/lib/elevenlabs-speech';
 // Import organized prompts
@@ -74,7 +74,7 @@ interface CodingQuestion {
 	questionType?: 'DSA' | 'Development';
 }
 
-interface InterviewQuestions extends Record<string, any> {
+export interface InterviewQuestions extends Record<string, any> {
 	technicalQuestions: TechnicalQuestion[];
 	behavioralQuestions: BehavioralQuestion[];
 	codingQuestions: CodingQuestion[];

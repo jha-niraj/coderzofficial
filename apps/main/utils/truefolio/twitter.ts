@@ -39,7 +39,7 @@ export async function validateTwitterProfile(url: string): Promise<string | null
 
 		// Twitter URLs are usually in format: twitter.com/username or x.com/username
 		if (pathParts.length >= 1) {
-			username = pathParts[0];
+			username = pathParts[0] ?? null;
 		}
 
 		if (!username) {
@@ -66,7 +66,7 @@ export async function validateTwitterProfile(url: string): Promise<string | null
 export async function fetchTwitterData(username: string): Promise<Record<string, any>> {
 	try {
 		console.log('Fetching Twitter data for username:', username);
-		
+
 		// Enhanced mock data structure with realistic developer profile
 		const mockData = {
 			username,
@@ -145,12 +145,12 @@ export async function fetchTwitterData(username: string): Promise<Record<string,
 // Helper functions for generating realistic mock data
 function getRandomJoinDate(): string {
 	const years = ['2019', '2020', '2021', '2022', '2023'];
-	const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-					'July', 'August', 'September', 'October', 'November', 'December'];
-	
-	const year = years[Math.floor(Math.random() * years.length)];
-	const month = months[Math.floor(Math.random() * months.length)];
-	
+	const months = ['January', 'February', 'March', 'April', 'May', 'June',
+		'July', 'August', 'September', 'October', 'November', 'December'];
+
+	const year = years[Math.floor(Math.random() * years.length)] ?? '2023';
+	const month = months[Math.floor(Math.random() * months.length)] ?? 'January';
+
 	return `${month} ${year}`;
 }
 
@@ -161,32 +161,35 @@ function generateTechHashtags(): string[] {
 		"#docker", "#kubernetes", "#devops", "#opensource", "#tech", "#software",
 		"#webdevelopment", "#api", "#database", "#cloud", "#ai", "#machinelearning"
 	];
-	
+
 	// Return 5-8 random hashtags
 	const count = Math.floor(Math.random() * 4) + 5;
-	const selected = [];
-	const used = new Set();
-	
+	const selected: string[] = [];
+	const used = new Set<number>();
+
 	while (selected.length < count && selected.length < hashtags.length) {
 		const index = Math.floor(Math.random() * hashtags.length);
 		if (!used.has(index)) {
 			used.add(index);
-			selected.push(hashtags[index]);
+			const hashtag = hashtags[index];
+			if (hashtag) {
+				selected.push(hashtag);
+			}
 		}
 	}
-	
+
 	return selected;
 }
 
 function getRandomTimeSlot(): string {
 	const times = [
 		"9:00 AM - 11:00 AM",
-		"12:00 PM - 2:00 PM", 
+		"12:00 PM - 2:00 PM",
 		"3:00 PM - 5:00 PM",
 		"7:00 PM - 9:00 PM"
 	];
-	
-	return times[Math.floor(Math.random() * times.length)];
+
+	return times[Math.floor(Math.random() * times.length)] ?? "9:00 AM - 11:00 AM";
 }
 
 function generateRecentTweets(username: string): TwitterTweet[] {
@@ -202,15 +205,15 @@ function generateRecentTweets(username: string): TwitterTweet[] {
 		"Learning Rust in my spare time. The memory safety features are fascinating compared to other systems languages #rust #learning",
 		"Deployed a new microservice to production today. Kubernetes makes scaling so much easier! #kubernetes #microservices #devops"
 	];
-	
+
 	const count = Math.floor(Math.random() * 5) + 3; // 3-8 tweets
 	const tweets: TwitterTweet[] = [];
-	
+
 	for (let i = 0; i < count; i++) {
-		const template = tweetTemplates[Math.floor(Math.random() * tweetTemplates.length)];
+		const template = tweetTemplates[Math.floor(Math.random() * tweetTemplates.length)] ?? tweetTemplates[0] ?? "Just shipped a new feature! #coding";
 		const date = new Date();
 		date.setDate(date.getDate() - Math.floor(Math.random() * 30)); // Random date within last 30 days
-		
+
 		tweets.push({
 			id: Math.random().toString(36).substr(2, 9),
 			text: template,
@@ -220,6 +223,6 @@ function generateRecentTweets(username: string): TwitterTweet[] {
 			replies: Math.floor(Math.random() * 30) + 1
 		});
 	}
-	
+
 	return tweets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 } 

@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-    Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Loader2, CheckCircle2, 
-    AlertCircle, ArrowLeft, Brain, Sparkles, Coins, Clock, Trophy, Star, 
+import {
+    Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Loader2, CheckCircle2,
+    AlertCircle, ArrowLeft, Brain, Sparkles, Coins, Clock, Trophy, Star,
     TrendingUp, Target, MessageSquare
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { Separator } from '@repo/ui/components/ui/separator'
@@ -23,10 +23,8 @@ import {
 import { Orb, AgentState } from '@/components/main/orb'
 import toast from '@repo/ui/components/ui/sonner'
 import {
-    generateProjectMockKnowledgeBase,
-    createProjectMockSession,
-    updateProjectMockSessionStatus,
-    processProjectMockCompletion,
+    generateProjectMockKnowledgeBase, createProjectMockSession,
+    updateProjectMockSessionStatus, processProjectMockCompletion, 
     getProjectMockAttempts
 } from '@/actions/(main)/projects/projectv2-mock.action'
 
@@ -51,15 +49,15 @@ interface AIMockInterviewClientProps {
 
 type Stage = 'payment' | 'ready' | 'interview' | 'processing' | 'results'
 
-export default function AIMockInterviewClient({ 
-    project, 
-    userCredits, 
+export default function AIMockInterviewClient({
+    project,
+    userCredits,
     hasKnowledgeBase,
     knowledgeBase,
-    previousAttempts: initialAttempts 
+    previousAttempts: initialAttempts
 }: AIMockInterviewClientProps) {
     const router = useRouter()
-    
+
     const [stage, setStage] = useState<Stage>(hasKnowledgeBase ? 'ready' : 'payment')
     const [generating, setGenerating] = useState(false)
     const [mockKnowledgeBase, setMockKnowledgeBase] = useState(knowledgeBase)
@@ -67,7 +65,7 @@ export default function AIMockInterviewClient({
     const [agentId, setAgentId] = useState<string | null>(null)
     const [variables, setVariables] = useState<any>(null)
     const [attempts, setAttempts] = useState(initialAttempts)
-    
+
     // Interview state
     const [isMicMuted, setIsMicMuted] = useState(false)
     const [volume, setVolume] = useState(0.8)
@@ -75,10 +73,10 @@ export default function AIMockInterviewClient({
     const [hasStarted, setHasStarted] = useState(false)
     const [showProcessingDialog, setShowProcessingDialog] = useState(false)
     const [processingStatus, setProcessingStatus] = useState<'processing' | 'success' | 'error'>('processing')
-    
+
     // Results
     const [feedback, setFeedback] = useState<any>(null)
-    
+
     const conversationIdRef = useRef<string | null>(null)
 
     const handleConversationEnd = useCallback(async () => {
@@ -89,14 +87,14 @@ export default function AIMockInterviewClient({
 
         try {
             const result = await processProjectMockCompletion(sessionId, conversationIdRef.current)
-            
+
             if (!result.success) {
                 throw new Error(result.error)
             }
 
             setProcessingStatus('success')
             setFeedback(result.analysis)
-            
+
             // Refresh attempts
             const attemptsResult = await getProjectMockAttempts(project.slug)
             if (attemptsResult.success) {
@@ -157,7 +155,7 @@ export default function AIMockInterviewClient({
 
         setGenerating(true)
         const result = await generateProjectMockKnowledgeBase(project.slug)
-        
+
         if (result.success && result.mockData) {
             setMockKnowledgeBase(result.mockData.knowledgeBase)
             setStage('ready')
@@ -171,7 +169,7 @@ export default function AIMockInterviewClient({
     const handleStartInterview = async () => {
         try {
             const result = await createProjectMockSession(project.slug)
-            
+
             if (!result.success || !result.sessionId) {
                 toast.error(result.error || 'Failed to create session')
                 return
@@ -242,7 +240,6 @@ export default function AIMockInterviewClient({
         conversation.setVolume({ volume: newVolume })
     }
 
-    // Payment Stage
     if (stage === 'payment') {
         return (
             <div className="min-h-screen bg-white dark:bg-neutral-950 py-12 px-6">
@@ -297,7 +294,6 @@ export default function AIMockInterviewClient({
                                         <div className="text-sm text-neutral-600 dark:text-neutral-400">Feedback</div>
                                     </div>
                                 </div>
-
                                 <div className="space-y-3">
                                     <p className="font-semibold text-neutral-900 dark:text-white">What you&apos;ll get:</p>
                                     <ul className="space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
@@ -319,7 +315,6 @@ export default function AIMockInterviewClient({
                                         </li>
                                     </ul>
                                 </div>
-
                                 <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -334,75 +329,81 @@ export default function AIMockInterviewClient({
                                             <p className="text-2xl font-bold text-neutral-900 dark:text-white">30 Credits</p>
                                         </div>
                                     </div>
-
-                                    {userCredits < 30 && (
-                                        <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                                            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                                            <div className="flex-1">
-                                                <p className="text-sm font-medium text-red-900 dark:text-red-200">
-                                                    Insufficient Credits
-                                                </p>
-                                                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                                    You need {30 - userCredits} more credits
-                                                </p>
+                                    {
+                                        userCredits < 30 && (
+                                            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-red-900 dark:text-red-200">
+                                                        Insufficient Credits
+                                                    </p>
+                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                        You need {30 - userCredits} more credits
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-
+                                        )
+                                    }
                                     <Button
                                         onClick={handleGenerateKnowledgeBase}
                                         disabled={generating || userCredits < 30}
                                         className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-90 rounded-xl"
                                         size="lg"
                                     >
-                                        {generating ? (
-                                            <>
-                                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                                Generating Interview...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles className="w-5 h-5 mr-2" />
-                                                Generate Mock Interview for 30 Credits
-                                            </>
-                                        )}
+                                        {
+                                            generating ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                                    Generating Interview...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="w-5 h-5 mr-2" />
+                                                    Generate Mock Interview for 30 Credits
+                                                </>
+                                            )
+                                        }
                                     </Button>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {attempts.length > 0 && (
-                            <Card className="bg-white dark:bg-neutral-900 shadow-2xl rounded-xl border border-neutral-200 dark:border-neutral-800">
-                                <CardHeader>
-                                    <CardTitle className="text-base">Previous Attempts</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-2">
-                                        {attempts.map((attempt) => (
-                                            <div
-                                                key={attempt.id}
-                                                className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                                                    <div>
-                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                            Score: {attempt.score || '--'}%
-                                                        </p>
-                                                        <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                                                            Duration: {attempt.duration ? `${Math.floor(attempt.duration / 60)}:${(attempt.duration % 60).toString().padStart(2, '0')}` : '--'}
+                        {
+                            attempts.length > 0 && (
+                                <Card className="bg-white dark:bg-neutral-900 shadow-2xl rounded-xl border border-neutral-200 dark:border-neutral-800">
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Previous Attempts</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-2">
+                                            {
+                                                attempts.map((attempt) => (
+                                                    <div
+                                                        key={attempt.id}
+                                                        className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                                                            <div>
+                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                    Score: {attempt.score || '--'}%
+                                                                </p>
+                                                                <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                                                                    Duration: {attempt.duration ? `${Math.floor(attempt.duration / 60)}:${(attempt.duration % 60).toString().padStart(2, '0')}` : '--'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                                            {attempt.completedAt ? new Date(attempt.completedAt).toLocaleDateString() : '-'}
                                                         </p>
                                                     </div>
-                                                </div>
-                                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                                    {attempt.completedAt ? new Date(attempt.completedAt).toLocaleDateString() : '-'}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                                                ))
+                                            }
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        }
                     </motion.div>
                 </div>
             </div>
@@ -421,7 +422,6 @@ export default function AIMockInterviewClient({
                         <ArrowLeft className="w-4 h-4" />
                         Back to Project
                     </Link>
-
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -438,7 +438,6 @@ export default function AIMockInterviewClient({
                                 {project.title}
                             </p>
                         </div>
-
                         <Card className="bg-neutral-50 dark:bg-neutral-900 border-0 max-w-md mx-auto">
                             <CardContent className="p-6 space-y-4">
                                 <div className="flex items-center gap-4">
@@ -455,7 +454,6 @@ export default function AIMockInterviewClient({
                                 </div>
                             </CardContent>
                         </Card>
-
                         <div className="flex flex-col items-center gap-4">
                             <Button
                                 onClick={handleStartInterview}
@@ -488,7 +486,6 @@ export default function AIMockInterviewClient({
                         <Badge className="text-sm">{project.difficulty}</Badge>
                     </div>
                 </div>
-
                 <div className="flex-1 flex flex-col items-center justify-center px-4">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -504,127 +501,139 @@ export default function AIMockInterviewClient({
                                 colors={['#6366f1', '#8b5cf6']}
                             />
                         </div>
-
                         <div className="text-center mb-8">
                             <AnimatePresence mode="wait">
-                                {!hasStarted && (
-                                    <motion.div
-                                        key="ready"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                    >
-                                        <h2 className="text-3xl font-bold mb-2">Ready to Begin?</h2>
-                                        <p className="text-neutral-600 dark:text-neutral-400">
-                                            Click the button below to start your mock interview
-                                        </p>
-                                    </motion.div>
-                                )}
-                                {hasStarted && agentState === 'thinking' && (
-                                    <motion.div
-                                        key="thinking"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                    >
-                                        <h2 className="text-2xl font-bold mb-2">Connecting...</h2>
-                                        <p className="text-neutral-600 dark:text-neutral-400">
-                                            Setting up your interview session
-                                        </p>
-                                    </motion.div>
-                                )}
-                                {agentState === 'listening' && (
-                                    <motion.div
-                                        key="listening"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                    >
-                                        <h2 className="text-2xl font-bold mb-2">Listening...</h2>
-                                        <p className="text-neutral-600 dark:text-neutral-400">Your turn to speak</p>
-                                    </motion.div>
-                                )}
-                                {agentState === 'talking' && (
-                                    <motion.div
-                                        key="talking"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                    >
-                                        <h2 className="text-2xl font-bold mb-2">Interviewer Speaking...</h2>
-                                        <p className="text-neutral-600 dark:text-neutral-400">
-                                            Listen carefully to the question
-                                        </p>
-                                    </motion.div>
-                                )}
+                                {
+                                    !hasStarted && (
+                                        <motion.div
+                                            key="ready"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                        >
+                                            <h2 className="text-3xl font-bold mb-2">Ready to Begin?</h2>
+                                            <p className="text-neutral-600 dark:text-neutral-400">
+                                                Click the button below to start your mock interview
+                                            </p>
+                                        </motion.div>
+                                    )
+                                }
+                                {
+                                    hasStarted && agentState === 'thinking' && (
+                                        <motion.div
+                                            key="thinking"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                        >
+                                            <h2 className="text-2xl font-bold mb-2">Connecting...</h2>
+                                            <p className="text-neutral-600 dark:text-neutral-400">
+                                                Setting up your interview session
+                                            </p>
+                                        </motion.div>
+                                    )
+                                }
+                                {
+                                    agentState === 'listening' && (
+                                        <motion.div
+                                            key="listening"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                        >
+                                            <h2 className="text-2xl font-bold mb-2">Listening...</h2>
+                                            <p className="text-neutral-600 dark:text-neutral-400">Your turn to speak</p>
+                                        </motion.div>
+                                    )
+                                }
+                                {
+                                    agentState === 'talking' && (
+                                        <motion.div
+                                            key="talking"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                        >
+                                            <h2 className="text-2xl font-bold mb-2">Interviewer Speaking...</h2>
+                                            <p className="text-neutral-600 dark:text-neutral-400">
+                                                Listen carefully to the question
+                                            </p>
+                                        </motion.div>
+
+                                    )}
                             </AnimatePresence>
                         </div>
-
                         <div className="flex items-center justify-center gap-4">
-                            {!hasStarted ? (
-                                <Button
-                                    size="lg"
-                                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white px-8 py-6 text-lg"
-                                    onClick={startConversation}
-                                >
-                                    <Phone className="w-5 h-5 mr-2" />
-                                    Start Interview
-                                </Button>
-                            ) : (
-                                <>
+                            {
+                                !hasStarted ? (
                                     <Button
                                         size="lg"
-                                        variant={isMicMuted ? 'destructive' : 'outline'}
-                                        onClick={toggleMic}
-                                        className="rounded-full w-14 h-14"
+                                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white px-8 py-6 text-lg"
+                                        onClick={startConversation}
                                     >
-                                        {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                                        <Phone className="w-5 h-5 mr-2" />
+                                        Start Interview
                                     </Button>
-                                    <Button
-                                        size="lg"
-                                        variant="destructive"
-                                        onClick={endInterview}
-                                        className="rounded-full w-16 h-16"
-                                    >
-                                        <PhoneOff className="w-6 h-6" />
-                                    </Button>
-                                    <Button
-                                        size="lg"
-                                        variant={volume === 0 ? 'destructive' : 'outline'}
-                                        onClick={toggleVolume}
-                                        className="rounded-full w-14 h-14"
-                                    >
-                                        {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                                    </Button>
-                                </>
-                            )}
+                                ) : (
+                                    <>
+                                        <Button
+                                            size="lg"
+                                            variant={isMicMuted ? 'destructive' : 'outline'}
+                                            onClick={toggleMic}
+                                            className="rounded-full w-14 h-14"
+                                        >
+                                            {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                                        </Button>
+                                        <Button
+                                            size="lg"
+                                            variant="destructive"
+                                            onClick={endInterview}
+                                            className="rounded-full w-16 h-16"
+                                        >
+                                            <PhoneOff className="w-6 h-6" />
+                                        </Button>
+                                        <Button
+                                            size="lg"
+                                            variant={volume === 0 ? 'destructive' : 'outline'}
+                                            onClick={toggleVolume}
+                                            className="rounded-full w-14 h-14"
+                                        >
+                                            {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                                        </Button>
+                                    </>
+                                )
+                            }
                         </div>
                     </motion.div>
                 </div>
-
-                {/* Processing Dialog */}
-                <Dialog open={showProcessingDialog} onOpenChange={() => {}}>
+                <Dialog open={showProcessingDialog} onOpenChange={() => { }}>
                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
-                                {processingStatus === 'processing' && (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
-                                        Processing Your Interview
-                                    </>
-                                )}
-                                {processingStatus === 'success' && (
-                                    <>
-                                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                        Interview Completed!
-                                    </>
-                                )}
-                                {processingStatus === 'error' && (
-                                    <>
-                                        <AlertCircle className="w-5 h-5 text-red-600" />
-                                        Processing Error
-                                    </>
-                                )}
+                                {
+                                    processingStatus === 'processing' && (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+                                            Processing Your Interview
+                                        </>
+                                    )
+                                }
+                                {
+                                    processingStatus === 'success' && (
+                                        <>
+                                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                            Interview Completed!
+                                        </>
+                                    )
+                                }
+                                {
+                                    processingStatus === 'error' && (
+                                        <>
+                                            <AlertCircle className="w-5 h-5 text-red-600" />
+                                            Processing Error
+                                        </>
+                                    )
+                                }
                             </DialogTitle>
                             <DialogDescription>
                                 {processingStatus === 'processing' && 'Please wait while we analyze your performance...'}
@@ -653,7 +662,6 @@ export default function AIMockInterviewClient({
                         <h1 className="text-4xl font-bold mb-2">Interview Results</h1>
                         <p className="text-neutral-600 dark:text-neutral-400">{project.title}</p>
                     </div>
-
                     <div className="grid md:grid-cols-3 gap-6 mb-8">
                         <Card>
                             <CardHeader>
@@ -691,7 +699,6 @@ export default function AIMockInterviewClient({
                             </CardContent>
                         </Card>
                     </div>
-
                     <Card className="mb-8">
                         <CardHeader>
                             <CardTitle>Performance Breakdown</CardTitle>
@@ -741,7 +748,6 @@ export default function AIMockInterviewClient({
                             </div>
                         </CardContent>
                     </Card>
-
                     <div className="grid md:grid-cols-2 gap-6 mb-8">
                         <Card>
                             <CardHeader>
@@ -752,12 +758,14 @@ export default function AIMockInterviewClient({
                             </CardHeader>
                             <CardContent>
                                 <ul className="space-y-2">
-                                    {feedback.strengths?.map((strength: string, idx: number) => (
-                                        <li key={idx} className="flex items-start gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
-                                            <span className="text-sm">{strength}</span>
-                                        </li>
-                                    ))}
+                                    {
+                                        feedback.strengths?.map((strength: string, idx: number) => (
+                                            <li key={idx} className="flex items-start gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
+                                                <span className="text-sm">{strength}</span>
+                                            </li>
+                                        ))
+                                    }
                                 </ul>
                             </CardContent>
                         </Card>
@@ -770,17 +778,18 @@ export default function AIMockInterviewClient({
                             </CardHeader>
                             <CardContent>
                                 <ul className="space-y-2">
-                                    {feedback.improvements?.map((improvement: string, idx: number) => (
-                                        <li key={idx} className="flex items-start gap-2">
-                                            <AlertCircle className="w-4 h-4 text-amber-600 mt-1 flex-shrink-0" />
-                                            <span className="text-sm">{improvement}</span>
-                                        </li>
-                                    ))}
+                                    {
+                                        feedback.improvements?.map((improvement: string, idx: number) => (
+                                            <li key={idx} className="flex items-start gap-2">
+                                                <AlertCircle className="w-4 h-4 text-amber-600 mt-1 flex-shrink-0" />
+                                                <span className="text-sm">{improvement}</span>
+                                            </li>
+                                        ))
+                                    }
                                 </ul>
                             </CardContent>
                         </Card>
                     </div>
-
                     <Card className="mb-8">
                         <CardHeader>
                             <CardTitle>Detailed Feedback</CardTitle>
@@ -791,7 +800,6 @@ export default function AIMockInterviewClient({
                             </p>
                         </CardContent>
                     </Card>
-
                     <div className="flex flex-wrap gap-4 justify-center">
                         <Button asChild>
                             <Link href={`/projects/${project.slug}`}>

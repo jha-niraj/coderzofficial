@@ -16,7 +16,7 @@ import { X, Plus, Loader, CalendarIcon } from "lucide-react"
 import { useUserStore } from "@/app/store/useUserStore"
 import { UserSkill, UserCertification } from "@/types/user"
 import toast from "@repo/ui/components/ui/sonner"
-import { Calendar } from "@/components/ui/calendar"
+import { Calendar } from "@repo/ui/components/ui/calendar"
 import {
     Popover, PopoverContent, PopoverTrigger
 } from "@repo/ui/components/ui/popover"
@@ -55,9 +55,9 @@ export const SkillsAndCertificationsSheet = ({
         setSkills(skills.filter((_, i) => i !== index))
     }
 
-    const handleSkillChange = (index: number, field: "name" | "level", value: any) => {
+    const handleSkillChange = (index: number, field: "name" | "level", value: string | number) => {
         const updatedSkills = [...skills]
-        updatedSkills[index] = { ...updatedSkills[index], [field]: value }
+        updatedSkills[index] = { ...updatedSkills[index], [field]: value } as UserSkill
         setSkills(updatedSkills)
     }
 
@@ -72,19 +72,19 @@ export const SkillsAndCertificationsSheet = ({
         setCertifications(certifications.filter((_, i) => i !== index))
     }
 
-    const handleCertificationChange = (index: number, field: "name" | "issuer" | "issueDate" | "link", value: any) => {
+    const handleCertificationChange = (index: number, field: "name" | "issuer" | "issueDate" | "link", value: string) => {
         const updatedCertifications = [...certifications]
 
         if (field === "issueDate") {
             updatedCertifications[index] = {
                 ...updatedCertifications[index],
                 issuedDate: new Date(value)
-            }
+            } as UserCertification
         } else {
             updatedCertifications[index] = {
                 ...updatedCertifications[index],
                 [field]: value
-            }
+            } as UserCertification
         }
 
         setCertifications(updatedCertifications)

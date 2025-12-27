@@ -11,7 +11,7 @@
         "check-types": "next typegen && tsc --noEmit"
     },
     "dependencies": {
-        "@repo/prisma/client": "6.14.0",
+        "@prisma/client": "6.14.0",
         "@repo/prisma": "workspace:*",
         "@repo/ui": "workspace:*",
         "@repo/auth": "workspace:*",

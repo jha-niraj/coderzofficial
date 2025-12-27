@@ -7,7 +7,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@repo/ui/components/ui/select";
 import { Play, Send, Copy, Check, Loader2 } from "lucide-react";
-import { useTheme } from "next-themes";
+import useTheme from "@repo/ui/components/themetoggle";
 import toast from "@repo/ui/components/ui/sonner";
 
 interface CodeEditorProps {

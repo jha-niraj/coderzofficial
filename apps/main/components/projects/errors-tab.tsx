@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    AlertTriangle, ThumbsUp, AlertCircle, Plus, ChevronDown, Code2, CheckCircle2, 
-    Loader2, Bug, Shield, Zap, Database, Globe, Settings, Layers
+    AlertTriangle, ThumbsUp, AlertCircle, Plus, ChevronDown, Code2, 
+    CheckCircle2, Loader2, Bug, Shield, Zap, Database, Globe, Settings, 
+    Layers
 } from 'lucide-react'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Button } from '@repo/ui/components/ui/button'
@@ -15,8 +16,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import {
-    Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
-    SheetTrigger
+    Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, 
+    SheetTitle, SheetTrigger
 } from '@repo/ui/components/ui/sheet'
 import {
     Card, CardContent

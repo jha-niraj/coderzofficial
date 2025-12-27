@@ -3,12 +3,14 @@
 import { motion } from "framer-motion"
 import {
 	ArrowRight, Sparkles, Users, FolderKanban, Zap, Trophy, Rocket,
-	Lightbulb, Shield, Heart, TrendingUp, Calendar, Clock, Plus, ChevronRight
+	Lightbulb, Shield, Heart, TrendingUp, Calendar, Clock, Plus, 
+	ChevronRight
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
-	Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
+	Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, 
+	SheetTrigger
 } from "@repo/ui/components/ui/sheet"
 import { Input } from "@repo/ui/components/ui/input"
 import { Textarea } from "@repo/ui/components/ui/textarea"

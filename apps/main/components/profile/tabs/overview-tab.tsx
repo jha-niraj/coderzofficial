@@ -250,7 +250,7 @@ export function OverviewTab({
 														key={activity.id}
 														className="flex items-start gap-3 text-sm"
 													>
-														<span className="text-lg flex-shrink-0">{config.icon}</span>
+														<span className="text-lg flex-shrink-0">{config!.icon}</span>
 														<div className="flex-1 min-w-0">
 															<p className="text-foreground line-clamp-1">
 																{activity.description || activity.activityType}

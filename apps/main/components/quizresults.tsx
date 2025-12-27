@@ -20,7 +20,9 @@ import {
     Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, Legend
 } from "recharts";
-import { ChartContainer, ChartTooltipContent } from "@repo/ui/components/ui/chart";
+import { 
+    ChartContainer, ChartTooltipContent 
+} from "@repo/ui/components/ui/chart";
 import { Progress } from "@repo/ui/components/ui/progress";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -82,7 +84,8 @@ export default function QuizResults({ quizId, questions, userAnswers, quizTitle,
         let isCorrect = false;
 
         if (question.type === "single") {
-            isCorrect = userSelectedIds.length === 1 && correctOptionIds.includes(userSelectedIds[0]);
+            const firstSelection = userSelectedIds[0];
+            isCorrect = userSelectedIds.length === 1 && firstSelection !== undefined && correctOptionIds.includes(firstSelection);
         } else {
             const allCorrectSelected = correctOptionIds.every((id) => userSelectedIds.includes(id));
             const noIncorrectSelected = userSelectedIds.every((id) => correctOptionIds.includes(id));
@@ -117,8 +120,8 @@ export default function QuizResults({ quizId, questions, userAnswers, quizTitle,
         };
     });
 
-    const selectedQuestion = questions[selectedQuestionIndex];
-    const selectedResult = results[selectedQuestionIndex];
+    const selectedQuestion = questions[selectedQuestionIndex] ?? null;
+    const selectedResult = results[selectedQuestionIndex] ?? null;
 
     const handleExport = () => {
         alert("Exporting results as PDF (placeholder)");
@@ -164,27 +167,31 @@ export default function QuizResults({ quizId, questions, userAnswers, quizTitle,
                             <Separator className="my-4" />
                             <div className="space-y-2">
                                 {
-                                    questions.map((question, index) => (
-                                        <Button
-                                            key={question.id}
-                                            variant="outline"
-                                            size="sm"
-                                            className={`w-full justify-start text-left h-auto py-2 relative ${selectedQuestionIndex === index ? "bg-blue-100 border-blue-500" : ""
-                                                } ${results[index].isCorrect ? "border-green-400 text-green-700" : "border-red-400 text-red-700"}`}
-                                            onClick={() => setSelectedQuestionIndex(index)}
-                                            aria-label={`Question ${index + 1}: ${results[index].isCorrect ? "Correct" : "Incorrect"}`}
-                                        >
-                                            <span className="truncate">
-                                                {index + 1}. {question.text.substring(0, 20)}
-                                                {question.text.length > 20 ? "..." : ""}
-                                            </span>
-                                            {
-                                                flaggedQuestions.includes(question.id) && (
-                                                    <Flag className="h-4 w-4 absolute top-2 right-2 text-red-500" />
-                                                )
-                                            }
-                                        </Button>
-                                    ))
+                                    questions.map((question, index) => {
+                                        const result = results[index];
+                                        if (!result) return null;
+                                        return (
+                                            <Button
+                                                key={question.id}
+                                                variant="outline"
+                                                size="sm"
+                                                className={`w-full justify-start text-left h-auto py-2 relative ${selectedQuestionIndex === index ? "bg-blue-100 border-blue-500" : ""
+                                                    } ${result.isCorrect ? "border-green-400 text-green-700" : "border-red-400 text-red-700"}`}
+                                                onClick={() => setSelectedQuestionIndex(index)}
+                                                aria-label={`Question ${index + 1}: ${result.isCorrect ? "Correct" : "Incorrect"}`}
+                                            >
+                                                <span className="truncate">
+                                                    {index + 1}. {question.text.substring(0, 20)}
+                                                    {question.text.length > 20 ? "..." : ""}
+                                                </span>
+                                                {
+                                                    flaggedQuestions.includes(question.id) && (
+                                                        <Flag className="h-4 w-4 absolute top-2 right-2 text-red-500" />
+                                                    )
+                                                }
+                                            </Button>
+                                        );
+                                    })
                                 }
                             </div>
                         </div>
@@ -334,10 +341,10 @@ export default function QuizResults({ quizId, questions, userAnswers, quizTitle,
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {
-                                                    questions.map((_, index) => (
+                                                    questions.map((q, index) => (
                                                         <SelectItem key={index} value={index.toString()}>
                                                             Question {index + 1}
-                                                            {flaggedQuestions.includes(questions[index].id) && " (Flagged)"}
+                                                            {flaggedQuestions.includes(q.id) && " (Flagged)"}
                                                         </SelectItem>
                                                     ))
                                                 }
@@ -348,65 +355,71 @@ export default function QuizResults({ quizId, questions, userAnswers, quizTitle,
                                         </span>
                                     </div>
                                 </div>
-                                <motion.div
-                                    key={selectedQuestionIndex}
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="space-y-6"
-                                >
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <span
-                                            className={`flex items-center justify-center w-10 h-10 rounded-full ${selectedResult.isCorrect ? "bg-green-500" : "bg-red-500"
-                                                } text-white font-medium text-sm`}
+                                {
+                                    selectedQuestion && selectedResult ? (
+                                        <motion.div
+                                            key={selectedQuestionIndex}
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="space-y-6"
                                         >
-                                            {selectedQuestionIndex + 1}
-                                        </span>
-                                        <h3 className="text-xl font-semibold text-gray-800">{selectedQuestion.text}</h3>
-                                        {
-                                            flaggedQuestions.includes(selectedQuestion.id) && (
-                                                <Flag className="h-5 w-5 text-red-500" />
-                                            )
-                                        }
-                                    </div>
-                                    <div className="space-y-3">
-                                        {
-                                            selectedQuestion.options.map((option) => {
-                                                const isSelected = selectedResult.userSelectedIds.includes(option.id);
-                                                const isCorrect = option.isCorrect;
-
-                                                let className = "p-4 rounded-lg border ";
-
-                                                if (isSelected && isCorrect) {
-                                                    className += "bg-green-100 border-green-400";
-                                                } else if (isSelected && !isCorrect) {
-                                                    className += "bg-red-100 border-red-400";
-                                                } else if (!isSelected && isCorrect) {
-                                                    className += "bg-green-50 border-green-300";
-                                                } else {
-                                                    className += "bg-gray-50 border-gray-300";
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <span
+                                                    className={`flex items-center justify-center w-10 h-10 rounded-full ${selectedResult.isCorrect ? "bg-green-500" : "bg-red-500"
+                                                        } text-white font-medium text-sm`}
+                                                >
+                                                    {selectedQuestionIndex + 1}
+                                                </span>
+                                                <h3 className="text-xl font-semibold text-gray-800">{selectedQuestion.text}</h3>
+                                                {
+                                                    flaggedQuestions.includes(selectedQuestion.id) && (
+                                                        <Flag className="h-5 w-5 text-red-500" />
+                                                    )
                                                 }
-
-                                                return (
-                                                    <div key={option.id} className={className}>
-                                                        <div className="flex items-start">
-                                                            <div className="flex-1 text-gray-800">{option.text}</div>
-                                                            {isCorrect && <Check className="h-5 w-5 text-green-500 ml-3 flex-shrink-0" />}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        }
-                                    </div>
-                                    {
-                                        selectedQuestion.explanation && (
-                                            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                                <h4 className="font-semibold text-blue-800 mb-2">Explanation:</h4>
-                                                <p className="text-gray-700">{selectedQuestion.explanation}</p>
                                             </div>
-                                        )
-                                    }
-                                </motion.div>
+                                            <div className="space-y-3">
+                                                {
+                                                    selectedQuestion.options.map((option) => {
+                                                        const isSelected = selectedResult.userSelectedIds.includes(option.id);
+                                                        const isCorrect = option.isCorrect;
+
+                                                        let className = "p-4 rounded-lg border ";
+
+                                                        if (isSelected && isCorrect) {
+                                                            className += "bg-green-100 border-green-400";
+                                                        } else if (isSelected && !isCorrect) {
+                                                            className += "bg-red-100 border-red-400";
+                                                        } else if (!isSelected && isCorrect) {
+                                                            className += "bg-green-50 border-green-300";
+                                                        } else {
+                                                            className += "bg-gray-50 border-gray-300";
+                                                        }
+
+                                                        return (
+                                                            <div key={option.id} className={className}>
+                                                                <div className="flex items-start">
+                                                                    <div className="flex-1 text-gray-800">{option.text}</div>
+                                                                    {isCorrect && <Check className="h-5 w-5 text-green-500 ml-3 flex-shrink-0" />}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                                }
+                                            </div>
+                                            {
+                                                selectedQuestion.explanation && (
+                                                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                                        <h4 className="font-semibold text-blue-800 mb-2">Explanation:</h4>
+                                                        <p className="text-gray-700">{selectedQuestion.explanation}</p>
+                                                    </div>
+                                                )
+                                            }
+                                        </motion.div>
+                                    ) : (
+                                        <div className="text-gray-500">No question selected</div>
+                                    )
+                                }
                             </TabsContent>
                         </Tabs>
                     </CardContent>

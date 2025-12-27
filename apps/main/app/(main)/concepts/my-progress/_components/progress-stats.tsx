@@ -56,7 +56,7 @@ export function ProgressStats({ stats }: ProgressStatsProps) {
 	return (
 		<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
 			{
-				statCards.map((stat, index) => (
+				statCards.map((stat) => (
 					<motion.div
 						key={stat.label}
 						initial={{ opacity: 0, y: 20 }}

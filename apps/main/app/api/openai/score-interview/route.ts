@@ -89,7 +89,7 @@ Format your response as JSON:
 		} catch (parseError) {
 			// If JSON parsing fails, extract score and feedback manually
 			const scoreMatch = responseContent.match(/score['"]\s*:\s*(\d+)/i);
-			const score = scoreMatch ? parseInt(scoreMatch[1]) : 75;
+			const score = scoreMatch ? parseInt(scoreMatch[1] || '75') : 75;
 
 			result = {
 				score,

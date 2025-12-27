@@ -5,20 +5,20 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import {
-    ArrowLeft, Heart, Share2, Eye, Calendar, User, CheckCircle2, XCircle, Clock,
-    Code2, Layers, Tag, TrendingUp, MessageSquare, ExternalLink, Sparkles
+    ArrowLeft, Heart, Share2, Eye, CheckCircle2, Clock, Code2, Layers,
+    Tag, TrendingUp, MessageSquare, ExternalLink, Sparkles
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Card, CardContent, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Separator } from '@repo/ui/components/ui/separator'
-import { 
-    Avatar, AvatarFallback, AvatarImage 
+import {
+    Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar'
-import { 
-    getProjectIdeaById, toggleProjectUpvote, checkUserUpvote 
+import {
+    getProjectIdeaById, toggleProjectUpvote, checkUserUpvote
 } from '@/actions/(main)/projects/project-ideas.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { getCategoryById, getTechnologyById } from '../../../data/categories'
@@ -134,7 +134,6 @@ export default function ProjectIdeaDetailPage() {
             <div className="fixed inset-0 z-0 h-full w-full bg-white dark:bg-neutral-950 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
 
             <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
-
                 <div>
                     <Link href={`/projects/ideas/${categoryId}/${technologyId}`}>
                         <Button variant="ghost" className="mb-8 hover:bg-neutral-100 dark:hover:bg-neutral-800">
@@ -142,8 +141,6 @@ export default function ProjectIdeaDetailPage() {
                             Back to {technology.name} Projects
                         </Button>
                     </Link>
-
-                    {/* Project Header */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -168,15 +165,12 @@ export default function ProjectIdeaDetailPage() {
                                 </button>
                             </div>
                         </div>
-
                         <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-6">
                             {project.projectTitle}
                         </h1>
-
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed mb-8">
                             {project.projectDescription}
                         </p>
-
                         <div className="flex flex-wrap gap-3">
                             <Button
                                 onClick={handleBuildProject}
@@ -192,8 +186,6 @@ export default function ProjectIdeaDetailPage() {
                             </Button>
                         </div>
                     </motion.div>
-
-                    {/* Project Details */}
                     <div className="grid md:grid-cols-3 gap-8">
                         <div className="md:col-span-2 space-y-8"></div>                      {/* Technologies */}
                         <Card>
@@ -205,65 +197,68 @@ export default function ProjectIdeaDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-wrap gap-2">
-                                    {project.technologies?.map((tech: string) => (
-                                        <Badge key={tech} variant="secondary" className="px-3 py-1">
-                                            {tech}
-                                        </Badge>
-                                    ))}
+                                    {
+                                        project.technologies?.map((tech: string) => (
+                                            <Badge key={tech} variant="secondary" className="px-3 py-1">
+                                                {tech}
+                                            </Badge>
+                                        ))
+                                    }
                                 </div>
                             </CardContent>
                         </Card>
-
-                        {/* Features */}
-                        {project.features && project.features.length > 0 && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <CheckCircle2 className="w-5 h-5" />
-                                        Key Features
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-3">
-                                        {project.features.map((feature: string, index: number) => (
-                                            <li key={index} className="flex items-start gap-3">
-                                                <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                                <span className="text-neutral-700 dark:text-neutral-300">{feature}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Learning Outcomes */}
-                        {project.learningOutcomes && project.learningOutcomes.length > 0 && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5" />
-                                        What You'll Learn
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-3">
-                                        {project.learningOutcomes.map((outcome: string, index: number) => (
-                                            <li key={index} className="flex items-start gap-3">
-                                                <div className="w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                    <span className="text-xs font-bold text-neutral-600 dark:text-neutral-400">{index + 1}</span>
-                                                </div>
-                                                <span className="text-neutral-700 dark:text-neutral-300">{outcome}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        )}
+                        {
+                            project.features && project.features.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <CheckCircle2 className="w-5 h-5" />
+                                            Key Features
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-3">
+                                            {
+                                                project.features.map((feature: string, index: number) => (
+                                                    <li key={index} className="flex items-start gap-3">
+                                                        <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                                                        <span className="text-neutral-700 dark:text-neutral-300">{feature}</span>
+                                                    </li>
+                                                ))
+                                            }
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            )
+                        }
+                        {
+                            project.learningOutcomes && project.learningOutcomes.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Sparkles className="w-5 h-5" />
+                                            What You'll Learn
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-3">
+                                            {
+                                                project.learningOutcomes.map((outcome: string, index: number) => (
+                                                    <li key={index} className="flex items-start gap-3">
+                                                        <div className="w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                            <span className="text-xs font-bold text-neutral-600 dark:text-neutral-400">{index + 1}</span>
+                                                        </div>
+                                                        <span className="text-neutral-700 dark:text-neutral-300">{outcome}</span>
+                                                    </li>
+                                                ))
+                                            }
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            )
+                        }
                     </div>
-
-                    {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Project Info */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg">Project Info</CardTitle>
@@ -285,45 +280,47 @@ export default function ProjectIdeaDetailPage() {
                                         {project.difficulty}
                                     </Badge>
                                 </div>
-                                {project.estimatedTime && (
-                                    <>
-                                        <Separator />
-                                        <div>
-                                            <div className="text-sm text-neutral-500 mb-1">Estimated Time</div>
-                                            <div className="flex items-center gap-2 text-neutral-900 dark:text-white">
-                                                <Clock className="w-4 h-4" />
-                                                <span className="font-medium">{project.estimatedTime}</span>
+                                {
+                                    project.estimatedTime && (
+                                        <>
+                                            <Separator />
+                                            <div>
+                                                <div className="text-sm text-neutral-500 mb-1">Estimated Time</div>
+                                                <div className="flex items-center gap-2 text-neutral-900 dark:text-white">
+                                                    <Clock className="w-4 h-4" />
+                                                    <span className="font-medium">{project.estimatedTime}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </>
-                                )}
+                                        </>
+                                    )
+                                }
                             </CardContent>
                         </Card>
-
-                        {/* Author Info */}
-                        {project.author && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">Submitted By</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar>
-                                            <AvatarImage src={project.author.image} />
-                                            <AvatarFallback>{project.author.name?.[0] || 'U'}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <div className="font-medium text-neutral-900 dark:text-white">
-                                                {project.author.name || 'Anonymous'}
-                                            </div>
-                                            <div className="text-sm text-neutral-500">
-                                                {new Date(project.createdAt).toLocaleDateString()}
+                        {
+                            project.author && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">Submitted By</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar>
+                                                <AvatarImage src={project.author.image} />
+                                                <AvatarFallback>{project.author.name?.[0] || 'U'}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <div className="font-medium text-neutral-900 dark:text-white">
+                                                    {project.author.name || 'Anonymous'}
+                                                </div>
+                                                <div className="text-sm text-neutral-500">
+                                                    {new Date(project.createdAt).toLocaleDateString()}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                                    </CardContent>
+                                </Card>
+                            )
+                        }
                     </div>
                 </div>
             </div>

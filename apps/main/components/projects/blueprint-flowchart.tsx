@@ -2,13 +2,14 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import {
-    ReactFlow, Node, Edge, Controls, Background, BackgroundVariant, useNodesState,
-    useEdgesState, Position, MarkerType, Handle
+    ReactFlow, Node, Edge, Controls, Background, BackgroundVariant, 
+    useNodesState, useEdgesState, Position, MarkerType, Handle
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ChevronDown, ChevronUp, Layers, Code2, Brain, Trophy, CheckCircle2, Sparkles, Play
+    ChevronDown, ChevronUp, Layers, Code2, Brain, Trophy, CheckCircle2, 
+    Sparkles, Play
 } from 'lucide-react'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { cn } from '@repo/ui/lib/utils'

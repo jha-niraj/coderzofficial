@@ -158,8 +158,8 @@ export function AIChat() {
                         <Zap className="h-4 w-4 fill-black dark:fill-white" />
                     </h2>
                 </div>
-                <ScrollArea className="flex-1 p-6" viewportRef={scrollRef}>
-                    <div className="space-y-6">
+                <ScrollArea className="flex-1 p-6">
+                    <div ref={scrollRef} className="space-y-6">
                         {
                             messages.length === 1 && (
                                 <div className="mb-6 space-y-3">

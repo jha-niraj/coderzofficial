@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader } from '@repo/ui/components/ui/card'
 import { Skeleton } from '@repo/ui/components/ui/skeleton'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Button } from '@repo/ui/components/ui/button'
-import { 
-    Github, ExternalLink, Trophy, Star, Calendar 
+import {
+    Github, ExternalLink, Trophy, Star, Calendar
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'

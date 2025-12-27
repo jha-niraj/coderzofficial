@@ -1051,3 +1051,14 @@ model Newsletter {
     @@index([email])
     @@index([subscribedAt])
 }
+
+model Message {
+    id        String   @id @default(cuid())
+    name      String
+    email     String
+    subject   String
+    message   String?
+    createdAt DateTime @default(now())
+
+    @@map("contact_submissions")
+}

@@ -3,14 +3,15 @@
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ChevronDown, ChevronRight, CheckCircle2, Play, Sparkles, Loader2, RotateCcw,
-    AlertCircle, Info, Target
+    ChevronDown, ChevronRight, CheckCircle2, Play, Sparkles, Loader2, 
+    RotateCcw, AlertCircle, Info, Target
 } from 'lucide-react'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Button } from '@repo/ui/components/ui/button'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
+    DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'

@@ -1,4 +1,6 @@
-import { PutObjectCommand, S3Client, PutObjectCommandInput } from '@aws-sdk/client-s3';
+import { 
+    PutObjectCommand, S3Client, PutObjectCommandInput 
+} from '@aws-sdk/client-s3';
 
 interface EnvVars {
     S3_REGION: string;

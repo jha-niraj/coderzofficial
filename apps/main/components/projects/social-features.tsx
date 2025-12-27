@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import {
-	Share2, Bookmark, BookmarkCheck, Heart, MessageCircle, UserPlus, UserCheck,
-	Twitter, Facebook, Linkedin, Copy, Check, Flag, Eye
+	Share2, Bookmark, BookmarkCheck, Heart, MessageCircle, UserPlus, 
+	UserCheck, Twitter, Facebook, Linkedin, Copy, Check, Flag, Eye
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"

@@ -1,7 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react'
+import { 
+    AlertCircle, ArrowLeft, RefreshCw 
+} from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
 import { 

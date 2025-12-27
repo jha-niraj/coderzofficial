@@ -10,8 +10,8 @@ import {
     Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar'
 import {
-    Youtube, FileText, BookOpen, GraduationCap, MessageCircle, Wrench, Palette,
-    Sparkles, Github, ExternalLink, ThumbsUp, Eye, Trash2, Shield
+    Youtube, FileText, BookOpen, GraduationCap, MessageCircle, Wrench, 
+    Palette, Sparkles, Github, ExternalLink, ThumbsUp, Eye, Trash2, Shield
 } from 'lucide-react'
 import {
     getProjectResources, toggleResourceHelpful, deleteProjectResource,

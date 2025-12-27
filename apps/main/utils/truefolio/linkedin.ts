@@ -45,7 +45,7 @@ export async function validateLinkedInProfile(url: string): Promise<string | nul
 
 		// LinkedIn URLs are usually in format: linkedin.com/in/username
 		if (pathParts.length >= 2 && pathParts[0] === 'in') {
-			username = pathParts[1];
+			username = pathParts[1] ?? null;
 		}
 
 		if (!username) {
@@ -67,7 +67,7 @@ export async function validateLinkedInProfile(url: string): Promise<string | nul
 export async function fetchLinkedInData(username: string): Promise<Record<string, any>> {
 	try {
 		console.log('Fetching LinkedIn data for username:', username);
-		
+
 		// Enhanced mock data structure with realistic profile information
 		const mockData = {
 			username,
@@ -129,7 +129,7 @@ export async function fetchLinkedInData(username: string): Promise<Record<string
 				}
 			],
 			skills: [
-				"JavaScript", "TypeScript", "React", "Node.js", "Python", "AWS", 
+				"JavaScript", "TypeScript", "React", "Node.js", "Python", "AWS",
 				"Docker", "PostgreSQL", "MongoDB", "GraphQL", "Redux", "Express.js",
 				"Git", "CI/CD", "System Design", "Agile", "Team Leadership", "Mentoring"
 			],

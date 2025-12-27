@@ -65,7 +65,7 @@ export default function AboutUs() {
                             <span className="text-neutral-400 dark:text-neutral-600">operating system</span> for students.
                         </h1>
                         <p className="text-xl text-neutral-600 dark:text-neutral-400 leading-relaxed font-light">
-                            The Coder'z is not just an ed-tech platform. It is an engineering ecosystem designed to bridge the gap between academic theory and production-grade software development.
+                            The Coder&apos;z is not just an ed-tech platform. It is an engineering ecosystem designed to bridge the gap between academic theory and production-grade software development.
                         </p>
                     </motion.div>
                 </div>

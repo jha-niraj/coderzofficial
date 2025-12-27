@@ -36,7 +36,7 @@ export default function Referrals({ stats }: ReferralsProps) {
 
     // Generate referral code (in production, this should come from backend)
     const referralCode = "CODER-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const referralLink = `https://thecoderz.com/signup?ref=${referralCode}`;
+    const _referralLink = `https://thecoderz.com/signup?ref=${referralCode}`;
 
     const copyToClipboard = async (text: string) => {
         try {
@@ -44,7 +44,7 @@ export default function Referrals({ stats }: ReferralsProps) {
             setCopied(true);
             toast.success("Copied to clipboard!");
             setTimeout(() => setCopied(false), 2000);
-        } catch (error) {
+        } catch {
             toast.error("Failed to copy");
         }
     };

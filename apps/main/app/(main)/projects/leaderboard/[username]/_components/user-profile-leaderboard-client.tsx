@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import {
-    ArrowLeft, Trophy, Calendar, Target, CheckCircle2, Clock, Sparkles, TrendingUp
+    ArrowLeft, Trophy, Calendar, Target, CheckCircle2, Clock, Sparkles, 
+    TrendingUp
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import {

@@ -97,28 +97,46 @@ export async function transcribeWithElevenLabs(
 		// Make the API call
 		const response = await client.speechToText.convert(transcriptionOptions);
 
+		// Define the expected response shape since SDK types may vary
+		interface ElevenLabsApiResponse {
+			text?: string;
+			languageCode?: string;
+			languageProbability?: number;
+			words?: Array<{
+				text?: string;
+				start?: number;
+				end?: number;
+				type?: string;
+				speakerId?: string;
+				logprob?: number;
+			}>;
+		}
+
+		// Cast to our expected response type
+		const extendedResponse = response as unknown as ElevenLabsApiResponse;
+
 		const endTime = Date.now();
 		const processingTime = ((endTime - startTime) / 1000).toFixed(2);
 
 		console.log(`✅ ElevenLabs transcription completed in ${processingTime}s`);
 		console.log('Response details:', {
-			languageCode: response.languageCode,
-			languageProbability: response.languageProbability,
-			text_length: response.text?.length || 0,
-			words_count: response.words?.length || 0
+			languageCode: extendedResponse.languageCode,
+			languageProbability: extendedResponse.languageProbability,
+			text_length: extendedResponse.text?.length || 0,
+			words_count: extendedResponse.words?.length || 0
 		});
 
-		if (!response.text || response.text.trim().length === 0) {
+		if (!extendedResponse.text || extendedResponse.text.trim().length === 0) {
 			throw new Error('No transcript text received from ElevenLabs');
 		}
 
 		return {
 			success: true,
 			data: {
-				transcript: response.text.trim(),
-				language_code: response.languageCode || 'en',
-				language_probability: response.languageProbability || 0,
-				words: response.words?.map(word => ({
+				transcript: extendedResponse.text.trim(),
+				language_code: extendedResponse.languageCode || 'en',
+				language_probability: extendedResponse.languageProbability || 0,
+				words: extendedResponse.words?.map(word => ({
 					text: word.text || '',
 					start: word.start || 0,
 					end: word.end || 0,

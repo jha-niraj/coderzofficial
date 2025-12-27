@@ -1,6 +1,6 @@
 // Chat Feature Configuration System
 
-export type ChatFeatureType = 
+export type ChatFeatureType =
     | 'JOBINTERVIEWASSISTANT'
     | 'QUIZ'
     | 'STUDYPLAN'
@@ -122,14 +122,14 @@ export const CHAT_FEATURES: Record<ChatFeatureType, ChatFeatureConfig> = {
 
 // Quick access arrays for UI components
 export const ACTIVE_FEATURES = Object.entries(CHAT_FEATURES)
-    .filter(([_, config]) => config.isActive)
+    .filter(([, config]) => config.isActive)
     .map(([type, config]) => ({ type: type as ChatFeatureType, ...config }));
 
 export const FEATURES_BY_CATEGORY = ACTIVE_FEATURES.reduce((acc, feature) => {
     if (!acc[feature.category]) {
         acc[feature.category] = [];
     }
-    acc[feature.category].push(feature);
+    acc[feature.category]!.push(feature);
     return acc;
 }, {} as Record<string, typeof ACTIVE_FEATURES>);
 
@@ -146,7 +146,7 @@ export const FEATURE_PATTERNS: Record<ChatFeatureType, RegExp> = {
 // Cost calculation helpers
 export function calculateFeatureCost(
     featureType: ChatFeatureType,
-    options: Record<string, any> = {}
+    options: Record<string, unknown> = {}
 ): { total: number; breakdown: Array<{ item: string; cost: number }> } {
     const config = CHAT_FEATURES[featureType];
     const base = config.baseCredits;
@@ -168,14 +168,15 @@ export function calculateFeatureCost(
             }
             break;
 
-        case 'QUIZ':
-            const questionCount = options.questions || 10;
+        case 'QUIZ': {
+            const questionCount = (options.questions as number) || 10;
             if (questionCount > 10) {
                 const extraCost = Math.ceil((questionCount - 10) / 5);
                 breakdown.push({ item: `Extra Questions (${questionCount - 10})`, cost: extraCost });
                 total += extraCost;
             }
             break;
+        }
 
         case 'BUGHUNT':
             if (options.visibility === 'private') {

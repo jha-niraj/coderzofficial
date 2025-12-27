@@ -36,7 +36,7 @@ export default function BlogsIndexPage() {
 							<span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Knowledge Base</span>
 						</div>
 						<h1 className="mt-5 text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-neutral-50 dark:to-neutral-400">
-							The Coder'z Blogs
+							The Coder&apos;z Blogs
 						</h1>
 						<p className="mt-4 text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
 							Deep dives into platform architecture, integrations, and best practices.

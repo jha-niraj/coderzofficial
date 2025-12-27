@@ -108,8 +108,8 @@ function CopyButton({ text, className = "" }: CopyButtonProps) {
             setCopied(true)
             toast.success("Copied to clipboard!")
             setTimeout(() => setCopied(false), 2000)
-        } catch (_err) {
-            toast.error("Failed to copy")
+        } catch (err) {
+            toast.error("Failed to copy: " + err);
         }
     }
 
@@ -702,7 +702,7 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
                     toast.error(response.error || "Failed to fetch generation")
                 }
             } catch (error) {
-                toast.error("Failed to fetch generation")
+                toast.error("Failed to fetch generation: " + error)
             } finally {
                 setLoading(false)
             }
@@ -714,9 +714,7 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
     const loadExistingCodingSolutions = async (generation: Generation) => {
         const codingQuestions = generation.generatedContent.codingQuestions.map(q => ({ text: q.question, type: 'coding' }))
 
-        const _solutions: Record<string, UserResponse> = {}
-
-        const _results = await Promise.allSettled(
+        await Promise.allSettled(
             codingQuestions.map(async (question) => {
                 try {
                     const result = await getQuestionAnswer(question.text, generation.id)
@@ -724,7 +722,8 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
                         return { questionText: question.text, solution: result.data }
                     }
                     return null
-                } catch (_err) {
+                } catch (err) {
+                    toast.error("Failed to fetch solution: " + err)
                     console.log('No existing solution for:', question.text)
                     return null
                 }

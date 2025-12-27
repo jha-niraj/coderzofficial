@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
-    Search, Filter, Users, TrendingUp, Sparkles, Plus, ChevronDown, Loader2,
-    Grid, List, CheckCircle2
+    Search, Users, Plus, Loader2,
+    Grid, List
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
@@ -15,8 +15,7 @@ import {
 } from '@repo/ui/components/ui/select'
 import { CommunityCard } from '@/components/community/community-card'
 import {
-    getPublicCommunities, joinCommunity, leaveCommunity, getUserCommunities,
-    getCommunityCategories
+    getPublicCommunities, joinCommunity, leaveCommunity, getUserCommunities
 } from '@/actions/(main)/community/community.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
@@ -206,7 +205,7 @@ export default function DiscoverPage() {
                             </Select>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                            <Select value={sortBy} onValueChange={(v: 'memberCount' | 'postCount' | 'createdAt') => setSortBy(v)}>
                                 <SelectTrigger className="w-40 h-9 rounded-lg border-neutral-200 dark:border-neutral-700">
                                     <SelectValue placeholder="Sort by" />
                                 </SelectTrigger>
@@ -317,7 +316,7 @@ export default function DiscoverPage() {
                         viewport={{ once: true }}
                     >
                         <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-4">
-                            Can't find what you're looking for?
+                            Can&apos;t find what you&apos;re looking for?
                         </h2>
                         <p className="text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
                             Create your own community and bring together people who share your passion.

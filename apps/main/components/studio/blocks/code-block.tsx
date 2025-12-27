@@ -13,6 +13,7 @@ import {
 import { cn } from "@repo/ui/lib/utils";
 import { saveCodeBlock } from "@/actions/(main)/studios/studio.action";
 import toast from "@repo/ui/components/ui/sonner";
+import useTheme from "@repo/ui/components/themetoggle";
 
 // Dynamically import Monaco to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -65,6 +66,7 @@ export default function StudioCodeBlock({
 	const [output, setOutput] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const { theme } = useTheme();
 
 	// Auto-save with debounce
 	const handleCodeChange = useCallback(

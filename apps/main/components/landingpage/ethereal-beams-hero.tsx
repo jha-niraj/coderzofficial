@@ -6,7 +6,7 @@ import * as THREE from "three"
 import { Canvas, useFrame } from "@react-three/fiber"
 import { PerspectiveCamera } from "@react-three/drei"
 import { degToRad } from "three/src/math/MathUtils.js"
-import { 
+import {
     Terminal, Cpu, Network, ShieldCheck, Zap
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
@@ -130,11 +130,11 @@ function extendMaterial<T extends THREE.Material = THREE.Material>(
         envMap?: THREE.Texture
         envMapIntensity?: number
     }
-    if (defaults.color) uniforms.diffuse.value = defaults.color
-    if ("roughness" in defaults) uniforms.roughness.value = (defaults as any).roughness
-    if ("metalness" in defaults) uniforms.metalness.value = (defaults as any).metalness
-    if ("envMap" in defaults) uniforms.envMap.value = (defaults as any).envMap
-    if ("envMapIntensity" in defaults) uniforms.envMapIntensity.value = (defaults as any).envMapIntensity
+    if (defaults.color && uniforms.diffuse) uniforms.diffuse.value = defaults.color
+    if ("roughness" in defaults && uniforms.roughness) uniforms.roughness.value = (defaults as any).roughness
+    if ("metalness" in defaults && uniforms.metalness) uniforms.metalness.value = (defaults as any).metalness
+    if ("envMap" in defaults && uniforms.envMap) uniforms.envMap.value = (defaults as any).envMap
+    if ("envMapIntensity" in defaults && uniforms.envMapIntensity) uniforms.envMapIntensity.value = (defaults as any).envMapIntensity
     Object.entries(cfg.uniforms ?? {}).forEach(([key, u]) => {
         uniforms[key] = u !== null && typeof u === "object" && "value" in (u as any)
             ? (u as THREE.IUniform<unknown>)
@@ -217,7 +217,9 @@ const MergedPlanes = ({
     const mesh = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>>(null!)
     const geometry = useMemo(() => createStackedPlanesBufferGeometry(count, width, height, 0, 100), [count, width, height])
     useFrame((_, delta) => {
-        mesh.current.material.uniforms.time.value += 0.1 * delta
+        if (mesh.current?.material?.uniforms?.time) {
+            mesh.current.material.uniforms.time.value += 0.1 * delta
+        }
     })
     return <mesh ref={mesh} geometry={geometry} material={material} />
 }

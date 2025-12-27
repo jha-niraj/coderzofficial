@@ -17,7 +17,9 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { getAllPublicProjects } from "@/actions/(main)/projects/project.action"
-import { ProjectCard, ProjectCardSkeleton } from "@/components/projects/project-card"
+import { 
+	ProjectCard, ProjectCardSkeleton 
+} from "@/components/projects/project-card"
 import SmoothScroll from "@/components/smoothscroll"
 import { ProjectV2Basic } from "@/types/project"
 
@@ -277,7 +279,6 @@ export default function AllProjectsPage() {
 													{
 														[...Array(totalPages)].map((_, index) => {
 															const pageNumber = index + 1
-															// Show first page, last page, current page, and pages around current
 															if (
 																pageNumber === 1 ||
 																pageNumber === totalPages ||

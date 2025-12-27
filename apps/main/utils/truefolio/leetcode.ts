@@ -111,7 +111,7 @@ export async function fetchLeetCodeDataViaAPI(username: string): Promise<Record<
 
 		const totalSubmissions = submitStats.reduce((sum: number, stat: any) => sum + stat.submissions, 0);
 		const acceptanceRate = totalSubmissions > 0 ?
-		 	((totalSolved / totalSubmissions) * 100).toFixed(1) + '%' : '0%';
+			((totalSolved / totalSubmissions) * 100).toFixed(1) + '%' : '0%';
 
 		const stats = {
 			totalSolved,
@@ -181,9 +181,9 @@ export async function validateLeetCodeProfile(url: string): Promise<string | nul
 
 		if (pathParts.length > 0) {
 			if (pathParts[0] === 'u') {
-				username = pathParts[1];
+				username = pathParts[1] ?? null;
 			} else {
-				username = pathParts[0];
+				username = pathParts[0] ?? null;
 			}
 		}
 

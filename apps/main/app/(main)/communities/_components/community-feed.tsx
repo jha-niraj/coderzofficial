@@ -104,7 +104,7 @@ export function CommunityFeed({ user, featuredCommunities = [], communityId, com
                 setCursor(result.nextCursor)
                 setHasMore(!!result.nextCursor)
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to load posts')
         } finally {
             setIsLoading(false)
