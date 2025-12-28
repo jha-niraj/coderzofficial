@@ -2,30 +2,21 @@
 	"$schema": "https://turborepo.com/schema.json",
 	"ui": "tui",
 	"globalEnv": [
-		".env",
-		"DATABASE_URL",
-		"DIRECT_URL",
 		"NODE_ENV",
-		"JWT_SECRET",
-		"NEXTAUTH_URL",
-		"RAZORPAY_KEY_SECRET",
-		"RESEND_API_KEY",
-		"TRUEFOOL_API_KEY",
-		"INTER_PLATFORM_SECRET",
-		"TRUEFOOL_DOMAIN",
-		"ELEVENLABS_AI_KEY",
-		"GITHUB_NIRAJ_JHA_TOKEN",
-		"WORKER_SECRET",
-		"OPENAI_API_KEY"
+		"DATABASE_URL",
+		"DIRECT_URL"
 	],
 	"tasks": {
 		"generate": {
 			"cache": false,
 			"inputs": [
-				"prisma/schema.prisma"
+				"schema/**"
 			],
 			"outputs": [
 				"../../node_modules/.prisma/client/**"
+			],
+			"env": [
+				"DATABASE_URL"
 			]
 		},
 		"build": {
@@ -37,25 +28,117 @@
 				"DATABASE_URL",
 				"DIRECT_URL",
 				"NODE_ENV",
-				"JWT_SECRET",
 				"NEXTAUTH_URL",
-				"RAZORPAY_KEY_SECRET",
+				"NEXTAUTH_SECRET",
+				"NEXT_PUBLIC_BASE_URL",
+				"GOOGLE_CLIENT_ID",
+				"GOOGLE_SECRET_ID",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_SECRET_ID",
 				"RESEND_API_KEY",
-				"TRUEFOOL_API_KEY",
+				"RAZORPAY_KEY_SECRET",
+				"NEXT_PUBLIC_RAZORPAY_KEY_ID",
+				"DODO_PAYMENTS_API_KEY",
+				"S3_ACCESS_KEY",
+				"S3_SECRET_KEY",
+				"S3_REGION",
+				"S3_BUCKET_NAME",
+				"SUPABASE_ACCESS_KEY_ID",
+				"SUPABASE_SECRET_ACCESS_KEY",
+				"SUPABASE_REGION",
+				"SUPABASE_STORAGE_ENDPOINT",
+				"SUPABASE_S3_BUCKET_NAME",
+				"OPENAI_API_KEY",
+				"STUDY_PLAN_ASSISTANT_ID",
+				"AI_PROJECT_GENERATOR_ASSISTANT_ID",
+				"ANTHROPIC_API_KEY",
+				"SARVAM_API_KEY",
+				"EXA_API_KEY",
+				"CLOUDINARY_CLOUD_NAME",
+				"CLOUDINARY_API_KEY",
+				"CLOUDINARY_API_SECRET",
 				"INTER_PLATFORM_SECRET",
+				"TRUEFOOL_API_KEY",
 				"TRUEFOOL_DOMAIN",
 				"ELEVENLABS_AI_KEY",
+				"NEXT_PUBLIC_ELEVENLABS_AGENT_ID",
+				"NEXT_PUBLIC_ELEVENLABS_MOCKVOICE",
+				"NEXT_PUBLIC_ELEVENLABS_GENERAL_MOCK",
+				"CRON_SECRET",
+				"JWT_SECRET",
+				"LEARN_PLATFORM_URL",
 				"GITHUB_NIRAJ_JHA_TOKEN",
+				"WORKER_API_URL",
+				"NEXT_PUBLIC_WORKER_URL",
 				"WORKER_SECRET",
-				"OPENAI_API_KEY"
+				"FALAI_API_KEY",
+				"G_ANALYTICS_ID"
 			],
 			"inputs": [
 				"$TURBO_DEFAULT$",
-				".env*"
+				".env",
+				".env.local",
+				".env.production",
+				".env.development"
 			],
 			"outputs": [
 				".next/**",
-				"!.next/cache/**"
+				"!.next/cache/**",
+				"dist/**"
+			]
+		},
+		"dev": {
+			"cache": false,
+			"persistent": true,
+			"env": [
+				"DATABASE_URL",
+				"DIRECT_URL",
+				"NODE_ENV",
+				"NEXTAUTH_URL",
+				"NEXTAUTH_SECRET",
+				"NEXT_PUBLIC_BASE_URL",
+				"GOOGLE_CLIENT_ID",
+				"GOOGLE_SECRET_ID",
+				"GITHUB_CLIENT_ID",
+				"GITHUB_SECRET_ID",
+				"RESEND_API_KEY",
+				"RAZORPAY_KEY_SECRET",
+				"NEXT_PUBLIC_RAZORPAY_KEY_ID",
+				"DODO_PAYMENTS_API_KEY",
+				"S3_ACCESS_KEY",
+				"S3_SECRET_KEY",
+				"S3_REGION",
+				"S3_BUCKET_NAME",
+				"SUPABASE_ACCESS_KEY_ID",
+				"SUPABASE_SECRET_ACCESS_KEY",
+				"SUPABASE_REGION",
+				"SUPABASE_STORAGE_ENDPOINT",
+				"SUPABASE_S3_BUCKET_NAME",
+				"OPENAI_API_KEY",
+				"STUDY_PLAN_ASSISTANT_ID",
+				"AI_PROJECT_GENERATOR_ASSISTANT_ID",
+				"ANTHROPIC_API_KEY",
+				"SARVAM_API_KEY",
+				"EXA_API_KEY",
+				"CLOUDINARY_CLOUD_NAME",
+				"CLOUDINARY_API_KEY",
+				"CLOUDINARY_API_SECRET",
+				"INTER_PLATFORM_SECRET",
+				"TRUEFOOL_API_KEY",
+				"TRUEFOOL_DOMAIN",
+				"ELEVENLABS_AI_KEY",
+				"NEXT_PUBLIC_ELEVENLABS_AGENT_ID",
+				"NEXT_PUBLIC_ELEVENLABS_MOCKVOICE",
+				"NEXT_PUBLIC_ELEVENLABS_GENERAL_MOCK",
+				"CRON_SECRET",
+				"JWT_SECRET",
+				"LEARN_PLATFORM_URL",
+				"GITHUB_NIRAJ_JHA_TOKEN",
+				"WORKER_API_URL",
+				"NEXT_PUBLIC_WORKER_URL",
+				"WORKER_SECRET",
+				"FALAI_API_KEY",
+				"G_ANALYTICS_ID"
 			]
 		},
 		"lint": {
@@ -67,10 +150,6 @@
 			"dependsOn": [
 				"^check-types"
 			]
-		},
-		"dev": {
-			"cache": false,
-			"persistent": true
 		}
 	}
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { SessionProvider } from "@repo/auth"
+import { SessionProvider } from "@repo/auth/client"
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
@@ -10,4 +10,3 @@ export function Providers({ children }: { children: React.ReactNode }) {
         </SessionProvider>
     )
 }
-
