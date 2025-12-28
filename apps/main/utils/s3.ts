@@ -1,5 +1,5 @@
-import { 
-    PutObjectCommand, S3Client, PutObjectCommandInput 
+import {
+    PutObjectCommand, S3Client, PutObjectCommandInput
 } from '@aws-sdk/client-s3';
 
 interface EnvVars {
@@ -46,8 +46,8 @@ export async function uploadFile(
 
         const command = new PutObjectCommand(commandInput);
         await s3Client.send(command);
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('S3 upload error:', error);
-        throw new Error(`Failed to upload to S3: ${error.message}`);
+        throw new Error(`Failed to upload to S3: ${error instanceof Error ? error.message : String(error)}`);
     }
 }

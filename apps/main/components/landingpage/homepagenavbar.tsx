@@ -18,7 +18,7 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const pathname = usePathname();
-    const toggleMobileMenu = () => setIsMobileMenuOpen(c => !c);
+    const _toggleMobileMenu = () => setIsMobileMenuOpen(c => !c);
 
 
     useEffect(() => {

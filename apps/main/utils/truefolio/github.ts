@@ -18,6 +18,14 @@ interface GithubProfile {
 	avatar_url: string;
 }
 
+// Type for repo from GitHub API
+interface GithubApiRepo {
+	name: string;
+	description: string;
+	html_url: string;
+}
+
+// Type for processed repo data
 interface GithubRepo {
 	name: string;
 	description: string;
@@ -27,6 +35,20 @@ interface GithubRepo {
 	techStack: string[];
 }
 
+// Type for the summary
+interface GithubSummary {
+	totalRepos: number;
+	totalCommits: number;
+	primaryLanguages: Record<string, number>;
+}
+
+// Return type for fetchGithubData
+interface GithubData {
+	profile: GithubProfile;
+	repositories: GithubRepo[];
+	summary: GithubSummary;
+}
+
 export async function validateGithubProfile(url: string): Promise<string | null> {
 	try {
 		const username = url.split('github.com/').pop()?.split('/')[0];
@@ -34,12 +56,12 @@ export async function validateGithubProfile(url: string): Promise<string | null>
 
 		const response = await axios.get(`${BASE_URL}/users/${username}`, { headers });
 		return response.status === 200 ? username : null;
-	} catch (error) {
+	} catch {
 		return null;
 	}
 }
 
-export async function fetchGithubData(username: string): Promise<Record<string, any>> {
+export async function fetchGithubData(username: string): Promise<GithubData> {
 	try {
 		// Fetch user profile
 		const profileRes = await axios.get(`${BASE_URL}/users/${username}`, { headers });
@@ -59,7 +81,7 @@ export async function fetchGithubData(username: string): Promise<Record<string, 
 		const repos = reposRes.data;
 
 		const detailedRepos = await Promise.all(
-			repos.map(async (repo: any) => {
+			repos.map(async (repo: GithubApiRepo) => {
 				try {
 					const [commitsRes, languagesRes] = await Promise.all([
 						axios.get(`${BASE_URL}/repos/${username}/${repo.name}/commits`, { headers }),

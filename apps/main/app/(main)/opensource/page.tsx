@@ -39,13 +39,13 @@ const typeColors: Record<string, { bg: string; text: string; border: string }> =
     EXCLUSIVE: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800' },
 }
 
-const difficultyColors: Record<string, string> = {
-    GOOD_FIRST_ISSUE: 'bg-green-500',
-    EASY: 'bg-emerald-500',
-    MEDIUM: 'bg-yellow-500',
-    HARD: 'bg-red-500',
-    EXPERT: 'bg-purple-500',
-}
+// const difficultyColors: Record<string, string> = {
+//     GOOD_FIRST_ISSUE: 'bg-green-500',
+//     EASY: 'bg-emerald-500',
+//     MEDIUM: 'bg-yellow-500',
+//     HARD: 'bg-red-500',
+//     EXPERT: 'bg-purple-500',
+// }
 
 interface Project {
     id: string
@@ -137,16 +137,16 @@ export default function OpenSourcePage() {
     }, [fetchProjects])
 
     // Helper to get lesson count per module
-    function getLessonCount(moduleId: string): number {
-        const counts: Record<string, number> = {
-            'git-basics': 6,
-            'github-essentials': 5,
-            'first-contribution': 5,
-            'code-review': 5,
-            'advanced-git': 5,
-        }
-        return counts[moduleId] || 5
-    }
+    // function getLessonCount(moduleId: string): number {
+    //     const counts: Record<string, number> = {
+    //         'git-basics': 6,
+    //         'github-essentials': 5,
+    //         'first-contribution': 5,
+    //         'code-review': 5,
+    //         'advanced-git': 5,
+    //     }
+    //     return counts[moduleId] || 5
+    // }
 
     const stats = [
         { icon: <Users className="w-5 h-5" />, value: '500+', label: 'Contributors' },

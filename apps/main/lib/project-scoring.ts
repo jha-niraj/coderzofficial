@@ -37,7 +37,7 @@ const DIFFICULTY_WEIGHTS = {
     ADVANCED: 4
 } as const
 
-const TOTAL_POINTS = 100
+// const TOTAL_POINTS = 100
 const TASKS_ALLOCATION = 50
 const QUIZ_ALLOCATION = 25
 const MOCK_ALLOCATION = 25

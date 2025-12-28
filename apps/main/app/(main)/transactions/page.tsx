@@ -39,7 +39,7 @@ interface CreditTransferOut {
 }
 
 export default function TransactionsPage() {
-	const { data: session, status } = useSession()
+	const { status } = useSession()
 	const [transactions, setTransactions] = useState<CreditTransaction[]>([])
 	const [transfers, setTransfers] = useState<CreditTransferOut[]>([])
 	const [isLoading, setIsLoading] = useState(true)
@@ -123,6 +123,7 @@ export default function TransactionsPage() {
 		try {
 			return format(new Date(dateString), "MMM dd, yyyy 'at' hh:mm a")
 		} catch (error) {
+			console.log("Error occurred while formatting date: " + error);
 			return "Invalid date"
 		}
 	}

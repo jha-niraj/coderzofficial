@@ -52,7 +52,7 @@ export default function StudioQuizBlock({ quiz, topic }: StudioQuizBlockProps) {
 	const question = questions[currentQuestion];
 	const progress = ((currentQuestion + 1) / questions.length) * 100;
 	const hasAnswered = selectedAnswers[question?.id || ""] !== undefined;
-	const isCorrect = hasAnswered && selectedAnswers[question?.id || ""] === question?.correctAnswer;
+	// const isCorrect = hasAnswered && selectedAnswers[question?.id || ""] === question?.correctAnswer;
 
 	const handleSelectAnswer = (answerIndex: number) => {
 		if (hasAnswered) return;

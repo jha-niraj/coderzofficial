@@ -1,4 +1,5 @@
-interface LeetCodeUserStats {
+// LeetCode user stats (used for documentation)
+interface _LeetCodeUserStats {
 	totalSolved: number;
 	totalQuestions: number;
 	easySolved: number;
@@ -8,7 +9,8 @@ interface LeetCodeUserStats {
 	ranking: number;
 }
 
-interface LeetCodeSubmission {
+// LeetCode submission (used for documentation)
+interface _LeetCodeSubmission {
 	title: string;
 	titleSlug: string;
 	timestamp: string;
@@ -16,7 +18,32 @@ interface LeetCodeSubmission {
 	lang: string;
 }
 
-export async function fetchLeetCodeDataViaAPI(username: string): Promise<Record<string, any>> {
+// Type for submit stats from API
+interface SubmitStat {
+	difficulty: string;
+	count: number;
+	submissions: number;
+}
+
+// Return type for fetchLeetCodeData
+interface LeetCodeData {
+	username: string;
+	stats: Record<string, number | string>;
+	submissions: Array<{
+		title: string;
+		difficulty: string;
+		status: string;
+		language: string;
+		timestamp: string;
+	}>;
+	metrics: {
+		problemsSolvedPercentage: string;
+		difficultyDistribution: Record<string, string>;
+	};
+	profile: Record<string, unknown>;
+}
+
+export async function fetchLeetCodeDataViaAPI(username: string): Promise<LeetCodeData> {
 	try {
 		// GraphQL query for user profile
 		const userProfileQuery = `
@@ -104,12 +131,12 @@ export async function fetchLeetCodeDataViaAPI(username: string): Promise<Record<
 		const submitStats = user.submitStats.acSubmissionNum;
 
 		// Calculate stats
-		const totalSolved = submitStats.reduce((sum: number, stat: any) => sum + stat.count, 0);
-		const easySolved = submitStats.find((stat: any) => stat.difficulty === 'Easy')?.count || 0;
-		const mediumSolved = submitStats.find((stat: any) => stat.difficulty === 'Medium')?.count || 0;
-		const hardSolved = submitStats.find((stat: any) => stat.difficulty === 'Hard')?.count || 0;
+		const totalSolved = submitStats.reduce((sum: number, stat: SubmitStat) => sum + stat.count, 0);
+		const easySolved = submitStats.find((stat: SubmitStat) => stat.difficulty === 'Easy')?.count || 0;
+		const mediumSolved = submitStats.find((stat: SubmitStat) => stat.difficulty === 'Medium')?.count || 0;
+		const hardSolved = submitStats.find((stat: SubmitStat) => stat.difficulty === 'Hard')?.count || 0;
 
-		const totalSubmissions = submitStats.reduce((sum: number, stat: any) => sum + stat.submissions, 0);
+		const totalSubmissions = submitStats.reduce((sum: number, stat: SubmitStat) => sum + stat.submissions, 0);
 		const acceptanceRate = totalSubmissions > 0 ?
 			((totalSolved / totalSubmissions) * 100).toFixed(1) + '%' : '0%';
 
@@ -126,7 +153,13 @@ export async function fetchLeetCodeDataViaAPI(username: string): Promise<Record<
 		};
 
 		// Process submissions
-		const submissions = submissionsData?.data?.recentSubmissionList?.map((sub: any) => ({
+		interface RecentSubmission {
+			title: string;
+			statusDisplay: string;
+			lang: string;
+			timestamp: string;
+		}
+		const submissions = submissionsData?.data?.recentSubmissionList?.map((sub: RecentSubmission) => ({
 			title: sub.title,
 			difficulty: '', // Not provided in recent submissions API
 			status: sub.statusDisplay,
@@ -203,7 +236,7 @@ export async function validateLeetCodeProfile(url: string): Promise<string | nul
 }
 
 // Main function that tries API first, falls back to scraping
-export async function fetchLeetCodeData(username: string): Promise<Record<string, any>> {
+export async function fetchLeetCodeData(username: string): Promise<LeetCodeData> {
 	try {
 		// Try API approach first
 		console.log('Attempting to fetch data via GraphQL API...');

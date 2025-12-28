@@ -5,7 +5,8 @@
 // Add stealth plugin to avoid detection - will be done dynamically
 // puppeteer.use(StealthPlugin());
 
-interface LinkedInProfile {
+// LinkedIn profile structure (unused but documented for reference)
+interface _LinkedInProfile {
 	name: string;
 	headline: string;
 	location: string;
@@ -64,7 +65,21 @@ export async function validateLinkedInProfile(url: string): Promise<string | nul
 	}
 }
 
-export async function fetchLinkedInData(username: string): Promise<Record<string, any>> {
+// Return type for LinkedIn data
+interface LinkedInData {
+	username: string;
+	profile: Record<string, unknown>;
+	experience: Array<Record<string, string>>;
+	education: Array<Record<string, string>>;
+	skills: string[];
+	metrics: Record<string, unknown>;
+	activity: Record<string, unknown>;
+	certifications: string[];
+	languages: Array<{ name: string; proficiency: string }>;
+	projects: Array<Record<string, unknown>>;
+}
+
+export async function fetchLinkedInData(username: string): Promise<LinkedInData> {
 	try {
 		console.log('Fetching LinkedIn data for username:', username);
 

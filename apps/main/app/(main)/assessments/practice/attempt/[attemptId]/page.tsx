@@ -26,32 +26,35 @@ import {
     getPracticeAttemptResults
 } from "@/actions/(main)/assessments/user-sets.action";
 import {
-    AssessmentMode, AssessmentQuestionType, QuestionDifficulty
+    AssessmentMode, QuestionDifficulty
 } from "@repo/prisma/client";
+import { PracticeAttemptDetails, PracticeSetQuestion } from "@/types/assessment";
 
-interface AttemptQuestion {
+// Type for the API response data structure (matches what getPracticeAttemptResults returns)
+interface AttemptApiData {
     id: string;
-    question: string;
-    type: AssessmentQuestionType;
-    options: unknown;
-    codeSnippet: string | null;
-    starterCode: string | null;
-    orderIndex: number;
-    points: number;
-}
-
-interface AttemptData {
-    id: string;
+    userId: string;
+    practiceSetId: string;
     mode: AssessmentMode;
     totalQuestions: number;
-    timeLimit: number | null;
+    answeredCount: number;
+    correctCount: number;
+    score: number | null;
+    status: 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED';
+    startedAt: Date;
+    completedAt: Date | null;
+    creditsEarned: number;
     practiceSet: {
         id: string;
         title: string;
         language: string;
         difficulty: QuestionDifficulty;
+        timeLimit: number | null;
+        questions: PracticeSetQuestion[];
+        topic?: { name: string } | null;
+        subModule?: { name: string } | null;
     };
-    questions: AttemptQuestion[];
+    answers: unknown[];
 }
 
 export default function PracticeAttemptPage({
@@ -62,7 +65,7 @@ export default function PracticeAttemptPage({
     const { attemptId } = use(params);
     const router = useRouter();
 
-    const [attemptData, setAttemptData] = useState<AttemptData | null>(null);
+    const [attemptData, setAttemptData] = useState<PracticeAttemptDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [isCompleting, setIsCompleting] = useState(false);
     const [showExitDialog, setShowExitDialog] = useState(false);
@@ -73,21 +76,36 @@ export default function PracticeAttemptPage({
             try {
                 const result = await getPracticeAttemptResults(attemptId);
                 if (result.success && result.data) {
-                    // Transform the data
-                    const data = result.data as any;
-                    setAttemptData({
-                        id: data.id,
-                        mode: data.mode,
-                        totalQuestions: data.totalQuestions,
-                        timeLimit: data.practiceSet?.timeLimit || null,
+                    // Transform the data from API response to PracticeAttemptDetails
+                    const apiData = result.data as unknown as AttemptApiData;
+
+                    const transformedData: PracticeAttemptDetails = {
+                        id: apiData.id,
+                        userId: apiData.userId,
+                        practiceSetId: apiData.practiceSetId,
+                        mode: apiData.mode,
+                        totalQuestions: apiData.totalQuestions,
+                        answeredCount: apiData.answeredCount,
+                        correctCount: apiData.correctCount,
+                        score: apiData.score,
+                        status: apiData.status,
+                        startedAt: apiData.startedAt,
+                        completedAt: apiData.completedAt,
+                        creditsEarned: apiData.creditsEarned,
                         practiceSet: {
-                            id: data.practiceSet.id,
-                            title: data.practiceSet.title,
-                            language: data.practiceSet.language,
-                            difficulty: data.practiceSet.difficulty,
+                            id: apiData.practiceSet.id,
+                            title: apiData.practiceSet.title,
+                            language: apiData.practiceSet.language,
+                            difficulty: apiData.practiceSet.difficulty,
+                            timeLimit: apiData.practiceSet.timeLimit,
+                            questions: apiData.practiceSet.questions || [],
+                            topic: apiData.practiceSet.topic,
+                            subModule: apiData.practiceSet.subModule,
                         },
-                        questions: data.practiceSet.questions || [],
-                    });
+                        answers: [],
+                    };
+
+                    setAttemptData(transformedData);
                 } else {
                     toast.error(result.error || "Failed to load attempt");
                     router.push("/assessments/practice");
@@ -106,7 +124,7 @@ export default function PracticeAttemptPage({
 
     // Submit quiz answer handler
     const handleSubmitQuizAnswer = useCallback(
-        async (questionId: string, answer: string, timeTaken: number) => {
+        async (questionId: string, answer: string) => {
             const result = await submitPracticeSetAnswer(
                 attemptId,
                 questionId,
@@ -126,7 +144,7 @@ export default function PracticeAttemptPage({
 
     // Submit code answer handler
     const handleSubmitCodeAnswer = useCallback(
-        async (questionId: string, code: string, timeTaken: number) => {
+        async (questionId: string, code: string) => {
             const result = await submitPracticeSetAnswer(
                 attemptId,
                 questionId,
@@ -154,7 +172,7 @@ export default function PracticeAttemptPage({
 
     // Submit mock answer handler
     const handleSubmitMockAnswer = useCallback(
-        async (questionId: string, answer: string, timeTaken: number) => {
+        async (questionId: string, answer: string) => {
             const result = await submitPracticeSetAnswer(
                 attemptId,
                 questionId,
@@ -182,7 +200,7 @@ export default function PracticeAttemptPage({
 
     // Complete practice handler
     const handleComplete = useCallback(
-        async (answers: any[]) => {
+        async () => {
             setIsCompleting(true);
             try {
                 const result = await completePracticeSetAttempt(attemptId);
@@ -216,7 +234,7 @@ export default function PracticeAttemptPage({
     // Transform questions based on mode
     const getQuizQuestions = (): QuizQuestion[] => {
         if (!attemptData) return [];
-        return attemptData.questions.map((q) => ({
+        return attemptData.practiceSet.questions.map((q) => ({
             id: q.id,
             question: q.question,
             type: q.type,
@@ -229,7 +247,7 @@ export default function PracticeAttemptPage({
 
     const getCodeQuestions = (): CodeQuestion[] => {
         if (!attemptData) return [];
-        return attemptData.questions.map((q) => ({
+        return attemptData.practiceSet.questions.map((q) => ({
             id: q.id,
             question: q.question,
             type: q.type,
@@ -243,7 +261,7 @@ export default function PracticeAttemptPage({
 
     const getMockQuestions = (): MockQuestion[] => {
         if (!attemptData) return [];
-        return attemptData.questions.map((q) => ({
+        return attemptData.practiceSet.questions.map((q) => ({
             id: q.id,
             question: q.question,
             type: q.type,
@@ -255,7 +273,7 @@ export default function PracticeAttemptPage({
 
     const getMixedQuestions = (): MixedQuestion[] => {
         if (!attemptData) return [];
-        return attemptData.questions.map((q) => ({
+        return attemptData.practiceSet.questions.map((q) => ({
             id: q.id,
             question: q.question,
             type: q.type,
@@ -321,8 +339,8 @@ export default function PracticeAttemptPage({
                         onSubmitAnswer={handleSubmitQuizAnswer}
                         onComplete={handleComplete}
                         onExit={handleExit}
-                        showTimer={!!attemptData.timeLimit}
-                        timeLimit={attemptData.timeLimit || undefined}
+                        showTimer={!!attemptData?.practiceSet?.timeLimit}
+                        timeLimit={attemptData?.practiceSet?.timeLimit || undefined}
                         allowHints={true}
                         showProgress={true}
                         immediateResults={true}
@@ -336,8 +354,8 @@ export default function PracticeAttemptPage({
                         onSubmitCode={handleSubmitCodeAnswer}
                         onComplete={handleComplete}
                         onExit={handleExit}
-                        showTimer={!!attemptData.timeLimit}
-                        timeLimit={attemptData.timeLimit || undefined}
+                        showTimer={!!attemptData?.practiceSet?.timeLimit}
+                        timeLimit={attemptData?.practiceSet?.timeLimit || undefined}
                         allowHints={true}
                         showProgress={true}
                         context="practice"
@@ -350,8 +368,8 @@ export default function PracticeAttemptPage({
                         onSubmitAnswer={handleSubmitMockAnswer}
                         onComplete={handleComplete}
                         onExit={handleExit}
-                        showTimer={!!attemptData.timeLimit}
-                        timeLimit={attemptData.timeLimit || undefined}
+                        showTimer={!!attemptData?.practiceSet?.timeLimit}
+                        timeLimit={attemptData?.practiceSet?.timeLimit || undefined}
                         allowHints={true}
                         showProgress={true}
                         context="practice"
@@ -366,8 +384,8 @@ export default function PracticeAttemptPage({
                         onSubmitMockAnswer={handleSubmitMockAnswer}
                         onComplete={handleComplete}
                         onExit={handleExit}
-                        showTimer={!!attemptData.timeLimit}
-                        timeLimit={attemptData.timeLimit || undefined}
+                        showTimer={!!attemptData?.practiceSet?.timeLimit}
+                        timeLimit={attemptData?.practiceSet?.timeLimit || undefined}
                         allowHints={true}
                         showProgress={true}
                         context="practice"
@@ -400,7 +418,7 @@ export default function PracticeAttemptPage({
                             </p>
                         </div>
                         {
-                            attemptData.timeLimit && (
+                            attemptData?.practiceSet?.timeLimit && (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Clock className="w-4 h-4" />
                                     <span>Timed</span>

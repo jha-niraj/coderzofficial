@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useSession, signOut } from '@repo/auth/client';
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
@@ -21,8 +20,8 @@ import {
     Popover, PopoverContent, PopoverTrigger
 } from '@repo/ui/components/ui/popover'
 import {
-    Loader2, CheckCircle2, XCircle, Upload, ArrowRight, ArrowLeft, Sparkles, 
-    Code, Briefcase, Target, TrendingUp, LogOut, ChevronsUpDown, Check, 
+    Loader2, CheckCircle2, XCircle, Upload, ArrowRight, ArrowLeft, Sparkles,
+    Code, Briefcase, Target, TrendingUp, LogOut, ChevronsUpDown, Check,
     AlertCircle, Plus, X as XIcon
 } from 'lucide-react'
 import { useDebounce } from '@/hooks/use-debounce'
@@ -78,7 +77,7 @@ const NOTICE_PERIODS = [
 ]
 
 export default function OnboardingPage() {
-    const router = useRouter()
+    // const _router = useRouter() // Removed unused
     const { update, data: session } = useSession()
     const [currentStep, setCurrentStep] = useState(0)
     const [loading, setLoading] = useState(false)
@@ -184,15 +183,15 @@ export default function OnboardingPage() {
                 toast.error('Please upload a PDF, DOC, or DOCX file')
                 return
             }
-            
+
             setResumeFile(file)
-            
+
             // Extract text from resume (dynamic import to avoid SSR issues)
             setExtractingResume(true)
             try {
                 const { extractTextFromResume } = await import('@/lib/resume-extractor.client')
                 const result = await extractTextFromResume(file)
-                
+
                 if (result.success && result.text) {
                     setResumeText(result.text)
                     toast.success('Resume text extracted successfully!')

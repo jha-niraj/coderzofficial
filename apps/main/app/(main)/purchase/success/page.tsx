@@ -9,16 +9,15 @@ import {
 
 } from '@repo/ui/components/ui/card'
 import {
-	CheckCircle2, Download, Home, Receipt, Sparkles, CreditCard, ArrowRight
+	CheckCircle2, Download, Home, Receipt, Sparkles, CreditCard, 
+	ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
 import { Spotlight } from '@repo/ui/components/ui/spotlight'
-import { useSession } from '@repo/auth/client';
 
 export default function PaymentSuccessPage() {
 	const searchParams = useSearchParams()
 	const router = useRouter()
-	const { data: session } = useSession()
 	const [paymentData, setPaymentData] = useState<{
 		paymentId?: string
 		credits?: number

@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unknown-property */
 "use client"
 
 import type React from "react"
@@ -10,7 +11,7 @@ import {
     Terminal, Cpu, Network, ShieldCheck, Zap
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
-import { Badge } from "@repo/ui/components/ui/badge"
+// Badge is available but not currently used
 import { useSession } from '@repo/auth/client';
 import { useRouter } from "next/navigation"
 

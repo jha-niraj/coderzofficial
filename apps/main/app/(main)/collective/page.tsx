@@ -8,11 +8,12 @@ import {
 	Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs"
 import {
-	Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
+	Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, 
+	SheetTrigger
 } from "@repo/ui/components/ui/sheet"
 import {
-	Plus, Users, Trophy, Clock, Vote, HelpCircle, Sparkles, Target,
-	Award, Zap, CheckCircle, ChevronRight, ArrowRight, Flame
+	Plus, Users, Trophy, Vote, HelpCircle, Sparkles, Target, Award, 
+	Zap, CheckCircle, ArrowRight, Flame
 } from "lucide-react"
 import Link from "next/link"
 import SmoothScroll from "@/components/smoothscroll"
@@ -123,8 +124,8 @@ export default function CollectivePage() {
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ delay: 0.3 }}
 							>
-								Don't just learn. <br className="hidden md:block" />
-								<span className="text-neutral-400 dark:text-neutral-500">Decide what's next.</span>
+								Don&apos;t just learn. <br className="hidden md:block" />
+								<span className="text-neutral-400 dark:text-neutral-500">Decide what&apos;s next.</span>
 							</motion.h1>
 							<motion.p
 								className="text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed font-light"

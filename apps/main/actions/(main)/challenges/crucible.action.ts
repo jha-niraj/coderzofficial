@@ -77,7 +77,7 @@ export async function getCrucibleEventBySlug(slug: string) {
 
         // Get user participation if logged in
         let participation = null
-        let problemProgress: Record<string, any> = {}
+        const problemProgress: Record<string, any> = {}
 
         if (session?.user?.id) {
             participation = await prisma.crucibleParticipation.findUnique({

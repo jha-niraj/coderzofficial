@@ -87,6 +87,7 @@ Format your response as JSON:
 		try {
 			result = JSON.parse(responseContent);
 		} catch (parseError) {
+			console.log("Error occurred while parseing: " + parseError);
 			// If JSON parsing fails, extract score and feedback manually
 			const scoreMatch = responseContent.match(/score['"]\s*:\s*(\d+)/i);
 			const score = scoreMatch ? parseInt(scoreMatch[1] || '75') : 75;

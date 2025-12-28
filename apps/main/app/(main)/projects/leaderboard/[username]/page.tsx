@@ -108,12 +108,12 @@ export default async function UserProfileLeaderboardPage({
                             <CardTitle>User Not Found</CardTitle>
                         </div>
                         <CardDescription>
-                            The user profile you're looking for doesn't exist.
+                            The user profile you&apos;re looking for doesn&apos;t exist.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <p className="text-sm text-muted-foreground">
-                            We couldn't find a user with the username <strong className="text-foreground">@{username}</strong>
+                            We couldn&apos;t find a user with the username <strong className="text-foreground">@{username}</strong>
                         </p>
                         <div className="bg-neutral-100 dark:bg-neutral-900 rounded-lg p-3 text-sm">
                             <p className="text-muted-foreground">

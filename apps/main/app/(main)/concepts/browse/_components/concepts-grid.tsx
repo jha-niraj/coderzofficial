@@ -79,10 +79,7 @@ function formatCount(count: number): string {
 export default function ConceptsGrid({
     concepts,
     pagination,
-    search,
-    category,
-    difficulty,
-    sortBy,
+    search
 }: ConceptsGridProps) {
     const router = useRouter();
     const searchParams = useSearchParams();

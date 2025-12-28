@@ -110,6 +110,7 @@ export default function ProductsPage() {
 				toast.error(result.error || "Failed to submit product idea")
 			}
 		} catch (error) {
+			console.log("Error occurred while submitting: " + error);
 			toast.error("An error occurred while submitting")
 		} finally {
 			setIsSubmitting(false)

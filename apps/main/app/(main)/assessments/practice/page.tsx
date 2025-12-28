@@ -158,7 +158,7 @@ function PracticeContent() {
 		router.push(`/assessments/practice/session?\${params.toString()}`)
 	}
 
-	const handleStartUserSet = (setId: string) => {
+	const handleStartUserSet = () => {
 		router.push(`/assessments/practice/set/\${setId}`)
 	}
 
@@ -475,7 +475,7 @@ function PracticeContent() {
 																	"cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-all",
 																	set.status !== 'ACTIVE' && "opacity-70"
 																)}
-																onClick={() => set.status === 'ACTIVE' && handleStartUserSet(set.id)}
+																onClick={() => set.status === 'ACTIVE' && handleStartUserSet()}
 															>
 																<CardContent className="p-4">
 																	<div className="flex items-start justify-between mb-2">

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import {
-    Hammer, Flame, ChevronRight, Zap, Users, Trophy, Clock, Star, Lock,
-    CheckCircle2, Play, Sparkles, Code2, Brain, Target, TrendingUp, ArrowRight
+    Hammer, Flame, Zap, Users, Trophy, Clock, CheckCircle2, Sparkles, 
+    Code2, Brain, Target, TrendingUp, ArrowRight
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -13,7 +13,9 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Progress } from '@repo/ui/components/ui/progress'
-import { seedSampleChallenges } from '@/actions/(main)/challenges/seed-challenges.action'
+import { 
+    seedSampleChallenges 
+} from '@/actions/(main)/challenges/seed-challenges.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 
@@ -497,7 +499,7 @@ export function ChallengesHubClient({
                             Ready to Level Up?
                         </h2>
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
-                            Choose your path and start your journey. Whether you want to build real projects or solve algorithmic puzzles, we've got you covered.
+                            Choose your path and start your journey. Whether you want to build real projects or solve algorithmic puzzles, we&apos;ve got you covered.
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             {

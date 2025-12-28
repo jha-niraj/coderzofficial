@@ -31,12 +31,12 @@ const difficultyColors = {
 	EXPERT: "text-red-500",
 };
 
-const getScoreColor = (score: number) => {
-	if (score >= 80) return "text-green-500";
-	if (score >= 60) return "text-yellow-500";
-	if (score >= 40) return "text-orange-500";
-	return "text-red-500";
-};
+// const getScoreColor = (score: number) => {
+// 	if (score >= 80) return "text-green-500";
+// 	if (score >= 60) return "text-yellow-500";
+// 	if (score >= 40) return "text-orange-500";
+// 	return "text-red-500";
+// };
 
 const getScoreBadgeVariant = (score: number) => {
 	if (score >= 80) return "bg-green-500/10 text-green-500 border-green-500/20";

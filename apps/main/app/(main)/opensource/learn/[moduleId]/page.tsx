@@ -3,7 +3,6 @@
 import { useState, useEffect, use } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, ArrowRight, BookOpen, Copy, Terminal, Check, AlertCircle,
     Loader2, CheckCircle, Clock
@@ -53,7 +52,7 @@ interface Module {
 
 export default function ModulePage({ params }: { params: Promise<{ moduleId: string }> }) {
     const { moduleId } = use(params)
-    const router = useRouter()
+    // const router = useRouter()
     const { user } = useUserStore()
     const [module, setModule] = useState<Module | null>(null)
     const [loading, setLoading] = useState(true)
@@ -127,6 +126,7 @@ export default function ModulePage({ params }: { params: Promise<{ moduleId: str
                 toast.error(result.error || 'Failed to complete lesson')
             }
         } catch (error) {
+            console.log("Failed to complete lesson: " + error);
             toast.error('Failed to complete lesson')
         } finally {
             setCompleting(false)
@@ -299,7 +299,7 @@ export default function ModulePage({ params }: { params: Promise<{ moduleId: str
                                                     <ReactMarkdown
                                                         remarkPlugins={[remarkGfm]}
                                                         components={{
-                                                            code({ node, className, children, ...props }) {
+                                                            code({ className, children, ...props }) {
                                                                 const match = /language-(\w+)/.exec(className || '')
                                                                 const codeString = String(children).replace(/\n$/, '')
 

@@ -105,7 +105,7 @@ export default function AllProjectsPage() {
 		)
 	)
 
-	const sortedProjects = filteredProjects
+	// const sortedProjects = filteredProjects
 
 	return (
 		<SmoothScroll>

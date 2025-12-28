@@ -4,9 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 import {
-	Type, Heading1, Heading2, Heading3, List, ListOrdered, Code, Image as ImageIcon, 
-	Video, FileQuestion, Layers, Quote, Minus, CheckSquare, Mic, Plus, GripVertical, 
-	Trash2, Sparkles
+	Type, Heading1, Heading2, Heading3, List, ListOrdered, Code, 
+	Image as ImageIcon, Video, FileQuestion, Layers, Quote, Minus, 
+	CheckSquare, Mic, Plus, GripVertical, Trash2, Sparkles
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { cn } from "@repo/ui/lib/utils";
@@ -255,6 +255,7 @@ export default function StudioBlockEditor({
 				}
 			}
 		} catch (error) {
+			console.log("Error occurred while generating content: " + error);
 			toast.error("Failed to generate content");
 		}
 

@@ -1,12 +1,10 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { Plus, Minus, Send } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import {
     Avatar, AvatarFallback, AvatarImage
 } from "@repo/ui/components/ui/avatar"
-import { Badge } from "@repo/ui/components/ui/badge"
 
 interface UserCardProps {
     user: {

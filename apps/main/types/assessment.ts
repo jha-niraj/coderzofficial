@@ -49,7 +49,7 @@ export interface PracticeSetFilters {
     limit?: number
 }
 
-export interface ExamSetFilters extends PracticeSetFilters { }
+export type ExamSetFilters = PracticeSetFilters
 
 // ==================== QUESTION TYPES ====================
 
@@ -416,4 +416,39 @@ export const MODE_CONFIG: Record<AssessmentMode, { label: string; description: s
         label: 'Mixed',
         description: 'Combination of all question types'
     },
+}
+// Answer with question included
+export interface PracticeAttemptAnswerWithQuestion extends PracticeAttemptAnswer {
+    question: PracticeSetQuestion
+}
+
+export interface ExamAttemptAnswerWithQuestion extends ExamAttemptAnswer {
+    question: ExamSetQuestion
+}
+
+// Full attempt details for taking/resume assessment
+export interface PracticeAttemptDetails {
+    id: string
+    userId: string
+    practiceSetId: string
+    mode: AssessmentMode
+    totalQuestions: number
+    answeredCount: number
+    correctCount: number
+    score: number | null
+    status: 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED'
+    startedAt: Date
+    completedAt: Date | null
+    creditsEarned: number
+    practiceSet: {
+        id: string
+        title: string
+        language: string // AssessmentLanguage
+        difficulty: QuestionDifficulty
+        timeLimit: number | null
+        questions: PracticeSetQuestion[]
+        topic?: { name: string } | null
+        subModule?: { name: string } | null
+    }
+    answers: PracticeAttemptAnswerWithQuestion[]
 }

@@ -30,7 +30,7 @@ export interface UserInfo {
     referralCount?: number
     createdAt?: Date
     updatedAt?: Date
-    
+
     // Social links
     socials?: {
         instagram?: string
@@ -49,23 +49,23 @@ export interface UserInfo {
         github?: string
         youtube?: string
     }
-    
+
     // Arrays of interests
     interests?: string[]
-    
+
     // Skills and certifications
     Skill?: UserSkill[]
     skills?: UserSkill[]
     certifications?: UserCertification[]
-    
+
     // Learning related
     courses?: UserCourse[]
     learningPaths?: UserLearningPath[]
-    
+
     // Open source contributions
     openSourceContributions?: OpenSourceContribution[]
     openSourceRankings?: OpenSourceRanking[]
-    
+
     // Other fields
     followers?: number
     following?: number
@@ -73,7 +73,7 @@ export interface UserInfo {
     eventsParticipated?: number
     creatorStatus?: "VERIFIED" | "PENDING" | "NONE"
     organizationVerified?: boolean
-    
+
     // Recent activity and achievements
     recentActivity?: RecentActivity[]
     achievements?: Achievement[]
@@ -355,3 +355,6 @@ export interface Task {
 
 // Re-export assessment types
 export * from './assessment'
+
+// Re-export common types
+export * from './common'

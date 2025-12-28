@@ -1,12 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import {
     ArrowLeft, Sparkles, Play, Filter, Search, Heart, Eye, TrendingUp,
-    CheckCircle2, Code2, Layers, Terminal
+    CheckCircle2, Code2, Layers
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
@@ -158,7 +158,7 @@ export default function TechnologyProjectsPage() {
                     <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl p-8 border border-neutral-100 dark:border-neutral-800">
                         <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-amber-500" />
-                            What you'll master
+                            What you&apos;ll master
                         </h3>
                         <div className="grid sm:grid-cols-2 gap-4">
                             {

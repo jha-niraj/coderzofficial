@@ -20,7 +20,7 @@ interface EnrollmentDialogProps {
 	onOpenChange: (open: boolean) => void;
 	projectId: string;
 	projectTitle: string;
-	projectSlug: string;
+	projectSlug?: string;
 	tasksCount: number;
 	userCredits: number;
 }
@@ -32,7 +32,6 @@ export function EnrollmentDialog({
 	onOpenChange,
 	projectId,
 	projectTitle,
-	projectSlug,
 	tasksCount,
 	userCredits,
 }: EnrollmentDialogProps) {

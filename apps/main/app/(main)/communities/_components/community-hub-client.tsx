@@ -16,7 +16,9 @@ import { CommunityCard } from '@/components/community/community-card'
 import { PostCard } from '@/components/community/post-card'
 import { PostComposer } from '@/components/community/post-composer'
 import { MagicSheet } from '@/components/community/magic-sheet'
-import { getGlobalFeed, getFollowingFeed } from '@/actions/(main)/community/post.action'
+import { 
+    getGlobalFeed, getFollowingFeed 
+} from '@/actions/(main)/community/post.action'
 import {
     joinCommunity, leaveCommunity
 } from '@/actions/(main)/community/community.action'
@@ -273,7 +275,7 @@ export function CommunityHubClient({
                                     Your Feed
                                 </h1>
                                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                    Posts from communities you've joined
+                                    Posts from communities you&apos;ve joined
                                 </p>
                             </div>
                             <Button
@@ -408,7 +410,7 @@ export function CommunityHubClient({
                                         {
                                             !nextCursor && posts.length > 0 && (
                                                 <p className="text-center text-sm text-neutral-400 py-8">
-                                                    You've reached the end
+                                                    You&apos;ve reached the end
                                                 </p>
                                             )
                                         }
@@ -479,7 +481,7 @@ export function CommunityHubClient({
                                         {
                                             !followingCursor && followingPosts.length > 0 && (
                                                 <p className="text-center text-sm text-neutral-400 py-8">
-                                                    You've reached the end
+                                                    You&apos;ve reached the end
                                                 </p>
                                             )
                                         }
@@ -498,7 +500,7 @@ export function CommunityHubClient({
                             </div>
                             <div className="space-y-3">
                                 {
-                                    ['#react', '#nextjs', '#typescript', '#dsa', '#interview'].map((tag, index) => (
+                                    ['#react', '#nextjs', '#typescript', '#dsa', '#interview'].map((tag) => (
                                         <Link
                                             key={tag}
                                             href={`/community/search?q=${tag}`}

@@ -4,11 +4,10 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ArrowLeft, Plus, Trash2, Save, Eye, Check,
-    Code2, FileText, BarChart3, HelpCircle, Zap, Lightbulb, Layers,
-    Sparkles, Loader2, Image as ImageIcon, ClipboardList, GripVertical,
-    Terminal, Monitor, Smartphone, Database, Globe, Cpu, Shield, Box,
-    FilePlus2, X, FileEdit, Upload, Wand2
+    ArrowLeft, Plus, Trash2, Save, Eye, Check, Code2, FileText, 
+    BarChart3, HelpCircle, Zap, Lightbulb, Layers, Sparkles, 
+    Loader2, Terminal, Smartphone, Database, Globe, Cpu, Shield, 
+    Box, FilePlus2, X, FileEdit, Upload, Wand2
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
@@ -117,23 +116,17 @@ export default function ConceptCreateForm() {
     ]);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
 
-    // Safely derive the active step (with fallback for type safety)
     const activeStep = steps[activeStepIndex] ?? steps[0]!;
 
-    // Toggle for "Context" (Primary Content) box
     const [showContextBox, setShowContextBox] = useState(false);
 
-    // Visualization state
     const [visMode, setVisMode] = useState<"upload" | "generate">("upload");
     const [imagePrompt, setImagePrompt] = useState("");
 
-    // Effect: When changing steps, check if content exists to determine visibility
     useEffect(() => {
         const currentContent = activeStep?.content || "";
         setShowContextBox(currentContent.length > 0);
-    }, [activeStepIndex, steps]);
-
-    // --- Actions ---
+    }, [activeStepIndex, steps, activeStep?.content]);
 
     const addTag = () => {
         if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -196,7 +189,6 @@ export default function ConceptCreateForm() {
         setGeneratingFor(type);
 
         setTimeout(() => {
-            const step = activeStep;
             if (type === 'quiz') {
                 updateStep(activeStepIndex, {
                     quizQuestion: "What happens to the execution context when an asynchronous function is called?",

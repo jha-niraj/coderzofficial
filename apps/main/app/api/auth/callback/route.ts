@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams
-        const token = searchParams.get('token')
+        // const token = searchParams.get('token')
         const state = searchParams.get('state')
         const error = searchParams.get('error')
 

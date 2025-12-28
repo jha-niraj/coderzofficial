@@ -198,7 +198,7 @@ export default async function VotingPage({ params }: VotingPageProps) {
 						</Card>
 						<Card>
 							<CardHeader>
-								<CardTitle>What's Next?</CardTitle>
+								<CardTitle>What&apos;s Next?</CardTitle>
 							</CardHeader>
 							<CardContent>
 								<div className="space-y-3 text-sm">

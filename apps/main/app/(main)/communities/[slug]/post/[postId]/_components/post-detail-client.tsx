@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -633,8 +633,8 @@ interface CommentCardProps {
             replies: number
         }
     }
-    postId: string
-    currentUserId: string
+    postId?: string
+    currentUserId?: string
     isPostAuthor: boolean
     replyingTo: string | null
     setReplyingTo: (id: string | null) => void
@@ -647,8 +647,6 @@ interface CommentCardProps {
 
 function CommentCard({
     comment,
-    postId,
-    currentUserId,
     isPostAuthor,
     replyingTo,
     setReplyingTo,

@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@repo/ui/components/ui/button';
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card';
 
 function ErrorContent() {
@@ -117,7 +117,7 @@ function ErrorContent() {
                         <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
                             {displayError.action}
                         </p>
-                        
+
                         <div className="flex flex-col space-y-3">
                             <Button asChild className="w-full">
                                 <Link href="/signin">
@@ -125,7 +125,7 @@ function ErrorContent() {
                                     Return to Sign In
                                 </Link>
                             </Button>
-                            
+
                             <Button variant="outline" asChild className="w-full">
                                 <Link href="/register">
                                     Create New Account
@@ -134,21 +134,23 @@ function ErrorContent() {
                         </div>
 
                         {/* Optional: Display raw error for debugging */}
-                        {process.env.NODE_ENV === 'development' && error && (
-                            <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-800 rounded-md">
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                                    Debug: {error}
-                                </p>
-                            </div>
-                        )}
+                        {
+                            process.env.NODE_ENV === 'development' && error && (
+                                <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-800 rounded-md">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                                        Debug: {error}
+                                    </p>
+                                </div>
+                            )
+                        }
                     </CardContent>
                 </Card>
 
                 <div className="mt-6 text-center">
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Need help?{' '}
-                        <Link 
-                            href="/contact" 
+                        <Link
+                            href="/contact"
                             className="text-primary hover:underline font-medium"
                         >
                             Contact Support

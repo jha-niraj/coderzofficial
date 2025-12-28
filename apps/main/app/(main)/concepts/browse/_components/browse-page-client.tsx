@@ -12,8 +12,12 @@ import {
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@repo/ui/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import {
+    Card, CardContent, CardFooter
+} from "@repo/ui/components/ui/card";
+import {
+    Avatar, AvatarFallback, AvatarImage
+} from "@repo/ui/components/ui/avatar";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select";
@@ -60,7 +64,7 @@ interface Pagination {
 
 interface BrowsePageClientProps {
     initialConcepts: Concept[];
-    categories: Category[];
+    categories?: Category[];
     pagination: Pagination;
     initialSearch?: string;
     initialCategory?: ConceptCategory;
@@ -103,7 +107,6 @@ function formatCount(count: number): string {
 
 export default function BrowsePageClient({
     initialConcepts,
-    categories,
     pagination,
     initialSearch,
     initialCategory,
@@ -119,7 +122,6 @@ export default function BrowsePageClient({
     const [difficulty, setDifficulty] = useState(initialDifficulty || "All");
     const [sortBy, setSortBy] = useState(initialSortBy);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-    const [isLoading, setIsLoading] = useState(false);
 
     const updateFilters = useCallback((updates: Record<string, string | undefined>) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -275,11 +277,7 @@ export default function BrowsePageClient({
             </div>
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {
-                    isLoading ? (
-                        <div className="flex items-center justify-center py-20">
-                            <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
-                        </div>
-                    ) : concepts.length === 0 ? (
+                    concepts.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

@@ -189,7 +189,7 @@ export default function StudioAIPanel({ studioId, initialMessages }: StudioAIPan
 														<div className="prose prose-sm dark:prose-invert max-w-none">
 															<ReactMarkdown
 																components={{
-																	code({ node, className, children, ...props }) {
+																	code({ className, children, ...props }) {
 																		const match = /language-(\w+)/.exec(className || "");
 																		const inline = !match;
 																		return inline ? (

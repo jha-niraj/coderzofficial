@@ -1,5 +1,6 @@
-import { 
-    Html, Body, Head, Heading, Hr, Container, Preview, Section, Text, Button 
+/* eslint-disable react/prop-types */
+import {
+    Html, Body, Head, Heading, Hr, Container, Preview, Section, Text, Button
 } from '@react-email/components';
 
 interface CreditRejectionEmailProps {

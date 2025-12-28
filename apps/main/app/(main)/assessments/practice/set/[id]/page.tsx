@@ -4,17 +4,16 @@ import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-    ArrowLeft, BookOpen, CheckCircle, Clock, Code, FileQuestion,
-    Globe, Heart, Loader2, Lock, Mic, Play, Sparkles, Target,
-    Trophy, Users, Zap, Share2, Eye
+    ArrowLeft, BookOpen, CheckCircle, Code, FileQuestion, Globe,
+    Heart, Loader2, Lock, Mic, Play, Share2, Sparkles
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
-import { 
-    Card, CardContent, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Avatar, AvatarFallback, AvatarImage 
+import {
+    Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar'
 import { Separator } from '@repo/ui/components/ui/separator'
 import { cn } from '@repo/ui/lib/utils'
@@ -65,7 +64,7 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
     const { user } = useUserStore()
     const [practiceSet, setPracticeSet] = useState<PracticeSetDetails | null>(null)
     const [loading, setLoading] = useState(true)
-    const [starting, setStarting] = useState(false)
+    // const [starting, setStarting] = useState(false)
     const [liked, setLiked] = useState(false)
     const [likesCount, setLikesCount] = useState(0)
 
@@ -89,28 +88,29 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
         fetchDetails()
     }, [id])
 
-    const handleStartPractice = async () => {
-        if (!user) {
-            toast.error('Please sign in to start')
-            router.push('/login')
-            return
-        }
+    // const handleStartPractice = async () => {
+    //     if (!user) {
+    //         toast.error('Please sign in to start')
+    //         router.push('/login')
+    //         return
+    //     }
 
-        setStarting(true)
-        try {
-            const result = await startPracticeSetAttempt(id)
-            if (result.success && result.attemptId) {
-                toast.success('Practice started!')
-                router.push(`/assessments/practice/attempt/${result.attemptId}`)
-            } else {
-                toast.error(result.error || 'Failed to start practice')
-            }
-        } catch (error) {
-            toast.error('Something went wrong')
-        } finally {
-            setStarting(false)
-        }
-    }
+    //     setStarting(true)
+    //     try {
+    //         const result = await startPracticeSetAttempt(id)
+    //         if (result.success && result.attemptId) {
+    //             toast.success('Practice started!')
+    //             router.push(`/assessments/practice/attempt/${result.attemptId}`)
+    //         } else {
+    //             toast.error(result.error || 'Failed to start practice')
+    //         }
+    //     } catch (error) {
+    //         console.log("Error occurred while starting practice: " + error);
+    //         toast.error('Something went wrong')
+    //     } finally {
+    //         setStarting(false)
+    //     }
+    // }
 
     const handleLike = async () => {
         if (!user) {
@@ -125,6 +125,7 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
                 setLikesCount(prev => result.liked ? prev + 1 : prev - 1)
             }
         } catch (error) {
+            console.log("Error occurred while liking set " + error);
             toast.error('Failed to toggle like')
         }
     }
@@ -154,7 +155,7 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
                         <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                         <h2 className="text-xl font-semibold mb-2">Practice set not found</h2>
                         <p className="text-muted-foreground mb-4">
-                            This practice set may have been deleted or doesn't exist
+                            This practice set may have been deleted or doesn&apos;t exist
                         </p>
                         <Link href="/assessments">
                             <Button>Back to Assessments</Button>
@@ -397,7 +398,7 @@ export default function PracticeSetDetailsPage({ params }: { params: Promise<{ i
                     </Card>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-sm">What's Included</CardTitle>
+                            <CardTitle className="text-sm">What&apos;s Included</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex items-center gap-3 text-sm">

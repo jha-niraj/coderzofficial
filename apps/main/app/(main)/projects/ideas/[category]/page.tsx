@@ -27,7 +27,7 @@ export default function CategoryPage() {
                         Category Not Found
                     </h1>
                     <p className="text-neutral-500 dark:text-neutral-400 mb-6">
-                        The category you are looking for doesn't exist or has been moved.
+                        The category you are looking for doesn&apos;t exist or has been moved.
                     </p>
                     <Button onClick={() => router.push('/projects/ideas')} variant="default">
                         <ArrowLeft className="w-4 h-4 mr-2" />

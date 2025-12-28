@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import {
     ArrowLeft, Heart, Share2, Eye, CheckCircle2, Clock, Code2, Layers,
-    Tag, TrendingUp, MessageSquare, ExternalLink, Sparkles
+    Sparkles
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -237,7 +237,7 @@ export default function ProjectIdeaDetailPage() {
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
                                             <Sparkles className="w-5 h-5" />
-                                            What You'll Learn
+                                            What You&apos;ll Learn
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>

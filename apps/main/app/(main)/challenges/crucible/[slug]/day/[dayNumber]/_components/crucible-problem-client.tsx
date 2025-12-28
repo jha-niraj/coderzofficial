@@ -77,11 +77,20 @@ interface Submission {
 
 interface CrucibleProblemClientProps {
     problem: CrucibleProblem
-    event: { id: string; name: string; slug: string; themeColor: string }
+    event: { 
+        id: string; 
+        name: string; 
+        slug: string; 
+        themeColor: string 
+    }
     userInput: UserInput | null
     submissions: Submission[]
     isSolved: boolean
-    user: { id: string; name: string | null; image: string | null }
+    user?: { 
+        id: string; 
+        name: string | null; 
+        image: string | null 
+    }
 }
 
 export function CrucibleProblemClient({
@@ -90,7 +99,6 @@ export function CrucibleProblemClient({
     userInput,
     submissions,
     isSolved,
-    user
 }: CrucibleProblemClientProps) {
     const router = useRouter()
     const [activeTab, setActiveTab] = useState<'story' | 'problem' | 'learn'>('story')
@@ -443,7 +451,7 @@ export function CrucibleProblemClient({
                                                 <span className="font-semibold">Solved!</span>
                                             </div>
                                             <p className="text-sm text-emerald-600 dark:text-emerald-300">
-                                                Great job! You've solved this problem.
+                                                Great job! You&apos;ve solved this problem.
                                             </p>
                                         </div>
                                     ) : (

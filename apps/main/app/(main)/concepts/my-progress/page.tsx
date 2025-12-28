@@ -15,7 +15,6 @@ export const metadata: Metadata = {
 
 async function getProgressData(userId: string) {
 	const [progress, completedCount, _totalTimeSpent, streakData] = await Promise.all([
-		// Get all user progress
 		prisma.conceptProgress.findMany({
 			where: { userId },
 			include: {

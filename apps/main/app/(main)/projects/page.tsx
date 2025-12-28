@@ -53,28 +53,28 @@ const stats = [
 	{ label: "Success Rate", value: "94", icon: Trophy, suffix: "%" },
 ]
 
-const benefits = [
-	{
-		icon: Shield,
-		title: "Production-Ready Skills",
-		description: "Build projects that employers actually want to see"
-	},
-	{
-		icon: Timer,
-		title: "Learn 10x Faster",
-		description: "Hands-on learning beats passive tutorials every time"
-	},
-	{
-		icon: Github,
-		title: "Portfolio Projects",
-		description: "Create a GitHub portfolio that stands out from the crowd"
-	},
-	{
-		icon: Lightbulb,
-		title: "Real Problem Solving",
-		description: "Tackle challenges you'll face in actual development jobs"
-	}
-]
+// const benefits = [
+// 	{
+// 		icon: Shield,
+// 		title: "Production-Ready Skills",
+// 		description: "Build projects that employers actually want to see"
+// 	},
+// 	{
+// 		icon: Timer,
+// 		title: "Learn 10x Faster",
+// 		description: "Hands-on learning beats passive tutorials every time"
+// 	},
+// 	{
+// 		icon: Github,
+// 		title: "Portfolio Projects",
+// 		description: "Create a GitHub portfolio that stands out from the crowd"
+// 	},
+// 	{
+// 		icon: Lightbulb,
+// 		title: "Real Problem Solving",
+// 		description: "Tackle challenges you'll face in actual development jobs"
+// 	}
+// ]
 
 export default function ProjectsHomePage() {
 	const scrollToProjects = () => {

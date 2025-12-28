@@ -1,7 +1,6 @@
 // ===============================================
 // PROJECTS V2 - MAIN PROJECT MODEL AND RELATED ENTITIES
 // ===============================================
-
 enum ProjectV2Visibility {
     PRIVATE
     PUBLIC
@@ -54,6 +53,37 @@ enum SuggestionSource {
     CREATOR
     ENROLLED_USER
     VISITOR
+}
+
+enum ProjectErrorSeverity {
+    HIGH
+    MEDIUM
+    LOW
+}
+
+enum ProjectErrorCategory {
+    SETUP
+    CONFIGURATION
+    DATABASE
+    API
+    UI
+    STATE
+    DEPLOYMENT
+    SECURITY
+    PERFORMANCE
+    OTHER
+}
+
+enum ProjectErrorStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum ProjectIdeaStatus {
+    PENDING
+    APPROVED
+    REJECTED
 }
 
 model ProjectV2 {
@@ -632,12 +662,6 @@ model ProjectV2StandupEntry {
     @@index([status])
 }
 
-enum ProjectIdeaStatus {
-    PENDING
-    APPROVED
-    REJECTED
-}
-
 // Project Ideas submitted by users or seeded
 model ProjectIdea {
     id                         String   @id @default(cuid())
@@ -706,31 +730,6 @@ model ProjectIdeaUpvote {
 // ========================================
 // PROJECT ERRORS & MISTAKES
 // ========================================
-
-enum ProjectErrorSeverity {
-    HIGH
-    MEDIUM
-    LOW
-}
-
-enum ProjectErrorCategory {
-    SETUP
-    CONFIGURATION
-    DATABASE
-    API
-    UI
-    STATE
-    DEPLOYMENT
-    SECURITY
-    PERFORMANCE
-    OTHER
-}
-
-enum ProjectErrorStatus {
-    PENDING
-    APPROVED
-    REJECTED
-}
 
 // Common errors and mistakes for projects
 model ProjectV2Error {

@@ -14,12 +14,12 @@ import {
 } from '@repo/ui/components/ui/dialog'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
-	Receipt, Zap, Gift, AlertTriangle, ShieldCheck, Clock, Activity, Terminal, 
-	Server, CheckCircle2, Loader2, Wallet
+	Receipt, Zap, Gift, AlertTriangle, ShieldCheck, Clock, Activity, 
+	Terminal, Server, CheckCircle2, Loader2, Wallet
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from '@repo/ui/components/ui/sonner'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { paymentConfig, calculatePrice } from '@/lib/payment-config'
 import { 
 	computeUsageForCredits, creditUsageConfig, formatCountRange 

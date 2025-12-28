@@ -395,7 +395,7 @@ export async function getProfileCompletion() {
 
         // Calculate completion percentage based on 6 key items shown in dialog
         let completed = 0;
-        let total = 6;
+        const total = 6;
 
         const defaultImage = "https://tse4.mm.bing.net/th?id=OIP.-BS8Y2nH1k93GJiitUVBCAHaHa&pid=Api&P=0";
 

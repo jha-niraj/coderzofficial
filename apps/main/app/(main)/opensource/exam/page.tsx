@@ -333,7 +333,7 @@ const EXAM_CONFIG = {
 
 export default function CertificationExamPage() {
     const router = useRouter();
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const [examState, setExamState] = useState<"intro" | "in-progress" | "completed">("intro");
     const [questions, setQuestions] = useState<ExamQuestion[]>([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);

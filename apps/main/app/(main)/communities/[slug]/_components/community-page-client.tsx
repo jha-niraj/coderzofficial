@@ -5,9 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import {
-    Users, MessageSquare, FileText, Calendar, Trophy, Settings, Bell, BellOff, Share2,
-    MoreHorizontal, CheckCircle2, Lock, Globe, UserPlus, LogOut, Loader2, ChevronDown,
-    RefreshCw, HelpCircle, Code2, Plus
+    Users, MessageSquare, FileText, Calendar, Trophy, Settings, Bell, 
+    Share2, CheckCircle2, Lock, Globe, UserPlus, LogOut, Loader2, ChevronDown,
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'

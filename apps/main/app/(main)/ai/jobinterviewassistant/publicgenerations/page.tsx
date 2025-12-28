@@ -86,11 +86,11 @@ export default function PublicGenerationsPage() {
         fetchPlans()
     }, [])
 
-    const _filteredPositions = useMemo(() => {
-        const s = new Set<string>(["All"])
-        plans.forEach((p) => s.add(p.position))
-        return Array.from(s)
-    }, [plans])
+    // const _filteredPositions = useMemo(() => {
+    //     const s = new Set<string>(["All"])
+    //     plans.forEach((p) => s.add(p.position))
+    //     return Array.from(s)
+    // }, [plans])
 
     const filtered = useMemo(() => {
         const ql = q.trim().toLowerCase()

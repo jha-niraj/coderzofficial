@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    ArrowRight, Check, Coins, AlertCircle, X, Loader2
+    ArrowRight, Check, Coins, X
 } from "lucide-react"
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle

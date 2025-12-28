@@ -278,7 +278,7 @@ export function StepSubmissionDialog({
 							<li>• Ensure your submission is complete and accurate</li>
 							<li>• Provide detailed explanations where requested</li>
 							<li>• Your submission will be reviewed by our team</li>
-							<li>• You'll receive feedback and XP upon approval</li>
+							<li>• You&apos;ll receive feedback and XP upon approval</li>
 						</ul>
 					</div>
 					<div className="flex justify-end gap-3">

@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Loader2, CheckCircle2,
-    AlertCircle, ArrowLeft, Brain, Sparkles, Coins, Clock, Trophy, Star,
-    TrendingUp, Target, MessageSquare
+    AlertCircle, ArrowLeft, Brain, Sparkles, Coins, Clock, Trophy, TrendingUp, 
+    Target, MessageSquare
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -56,7 +55,7 @@ export default function AIMockInterviewClient({
     knowledgeBase,
     previousAttempts: initialAttempts
 }: AIMockInterviewClientProps) {
-    const router = useRouter()
+    // const router = useRouter()
 
     const [stage, setStage] = useState<Stage>(hasKnowledgeBase ? 'ready' : 'payment')
     const [generating, setGenerating] = useState(false)

@@ -21,7 +21,9 @@ import {
     getWorkerToken
 } from '@/actions/(main)/workers/projectsworker.action'
 import { ProjectCard } from '@/components/projects/project-card'
-import { GenerationProgressDialog } from '@/components/projects/generation-progress-dialog'
+import { 
+    GenerationProgressDialog 
+} from '@/components/projects/generation-progress-dialog'
 import { z } from 'zod'
 import { cn } from '@repo/ui/lib/utils'
 import { ProjectV2Basic } from '@/types/project'
@@ -76,7 +78,6 @@ export default function GenerateProjectPage() {
     const [searchingProjects, setSearchingProjects] = useState(false)
     const [similarProjects, setSimilarProjects] = useState<ProjectV2Basic[]>([])
     const [hasSearched, setHasSearched] = useState(false)
-    const [jobId, setJobId] = useState<string | null>(null)
     const [progressPercent, setProgressPercent] = useState(0)
     const [jobStatus, setJobStatus] = useState<string>('waiting')
     
@@ -236,7 +237,6 @@ export default function GenerateProjectPage() {
                 return
             }
 
-            setJobId(jobResult.jobId)
             setProgressPercent(0)
             setJobStatus('waiting')
 
@@ -311,6 +311,7 @@ export default function GenerateProjectPage() {
                     setLoading(false)
                 }
             } catch (error) {
+                console.log("Error occurred while polling: " + error);
                 if (pollCount >= maxPolls) {
                     clearInterval(pollInterval)
                     toast.error('Failed to connect to worker.')

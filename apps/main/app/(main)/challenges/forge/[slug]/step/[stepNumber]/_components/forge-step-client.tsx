@@ -1,14 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import {
-    ArrowLeft, ArrowRight, BookOpen, Send, CheckCircle2, XCircle, Lightbulb,
-    Play, Code2, HelpCircle, Zap, ChevronRight, ChevronLeft, X, ExternalLink,
-    PlayCircle
+    ArrowLeft, BookOpen, Send, CheckCircle2, XCircle, Lightbulb, Code2, 
+    HelpCircle, Zap, ChevronRight, ChevronLeft, ExternalLink, PlayCircle
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -16,13 +15,11 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Input } from '@repo/ui/components/ui/input'
-import { Textarea } from '@repo/ui/components/ui/textarea'
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from '@repo/ui/components/ui/tabs'
 import {
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
-    SheetTrigger
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from '@repo/ui/components/ui/sheet'
 import {
     Accordion, AccordionContent, AccordionItem, AccordionTrigger
@@ -84,13 +81,16 @@ interface Submission {
 interface ForgeStepClientProps {
     step: ForgeStep
     submissions: Submission[]
-    user: { id: string; name: string | null; image: string | null }
+    user?: { 
+        id: string; 
+        name: string | null; 
+        image: string | null 
+    }
 }
 
 export function ForgeStepClient({
     step,
     submissions,
-    user
 }: ForgeStepClientProps) {
     const router = useRouter()
     const [activeTab, setActiveTab] = useState<'story' | 'mission' | 'learn' | 'submit'>('story')
@@ -362,7 +362,7 @@ export function ForgeStepClient({
                                                         <span className="font-semibold">Completed!</span>
                                                     </div>
                                                     <p className="text-sm text-emerald-600 dark:text-emerald-300">
-                                                        You've successfully completed this step. +{latestSubmission.xpEarned} XP earned!
+                                                        You&apos;ve successfully completed this step. +{latestSubmission.xpEarned} XP earned!
                                                     </p>
                                                 </div>
                                             ) : (

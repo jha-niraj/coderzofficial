@@ -57,6 +57,7 @@ export function PublicProfileClient({
                 toast.error(result.error || "Failed to update follow status");
             }
         } catch (error) {
+            console.log("Failed to update follow status: " + error);
             toast.error("Failed to update follow status");
         } finally {
             setIsFollowLoading(false);
@@ -111,7 +112,7 @@ export function PublicProfileClient({
                     <SkillsTab
                         {...tabContentProps}
                         onEndorseSkill={async (skillId) => {
-                            toast.info("Endorsement feature coming soon!");
+                            toast.info("Endorsement feature coming soon for skillid: " + skillId);
                         }}
                         onAddSkill={
                             isOwnProfile

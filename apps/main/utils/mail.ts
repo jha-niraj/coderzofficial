@@ -1,5 +1,4 @@
 import { Resend } from "resend";
-import { NextResponse } from "next/server";
 
 type EmailType = "WELCOME" | "VERIFY" | "VERIFY_OTP" | "RESET_PASSWORD" | "RESET_PASSWORD_OTP" | "CONFORMATION_MAIL";
 
@@ -188,7 +187,7 @@ const welcomeEmailTemplate = (name: string) => `
 </html>
 `;
 
-const verifyEmailTemplate = (verifyLink: string, token: string) => `
+const verifyEmailTemplate = (verifyLink: string, _token: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -890,11 +889,18 @@ const resetPasswordOTPTemplate = (name: string, otp: string) => `
 </html>
 `;
 
+interface EmailOptions {
+    from: string;
+    to: string;
+    subject: string;
+    html: string;
+}
+
 export const sendEmail = async ({ name, email, emailType, token, otp }: SendEmailProps) => {
     console.log("Sending email:", { name, email, emailType, token });
 
     try {
-        let emailOptions: any;
+        let emailOptions: EmailOptions;
 
         switch (emailType) {
             case "WELCOME":
@@ -905,7 +911,7 @@ export const sendEmail = async ({ name, email, emailType, token, otp }: SendEmai
                     html: welcomeEmailTemplate(name || "Developer")
                 };
                 break;
-            case "RESET_PASSWORD":
+            case "RESET_PASSWORD": {
                 if (!token) {
                     throw new Error("No token found for password reset");
                 }
@@ -917,7 +923,8 @@ export const sendEmail = async ({ name, email, emailType, token, otp }: SendEmai
                     html: resetPasswordTemplate(resetLink)
                 };
                 break;
-            case "VERIFY":
+            }
+            case "VERIFY": {
                 if (!token) {
                     throw new Error("No token found for email verification");
                 }
@@ -929,6 +936,7 @@ export const sendEmail = async ({ name, email, emailType, token, otp }: SendEmai
                     html: verifyEmailTemplate(verifyLink, token)
                 };
                 break;
+            }
             case "CONFORMATION_MAIL":
                 emailOptions = {
                     from: "The Coder'z <noreply@coderzai.xyz>",
@@ -966,7 +974,7 @@ export const sendEmail = async ({ name, email, emailType, token, otp }: SendEmai
         const result = await getResend().emails.send(emailOptions);
         console.log("Email sent successfully:", result);
         return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Email sending failed:", error);
         throw error;
     }

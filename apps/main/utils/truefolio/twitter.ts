@@ -5,7 +5,8 @@
 // Add stealth plugin to avoid detection - will be done dynamically
 // puppeteer.use(StealthPlugin());
 
-interface TwitterProfile {
+// Twitter profile structure (unused but documented for reference)
+interface _TwitterProfile {
 	name: string;
 	username: string;
 	bio: string;
@@ -63,7 +64,19 @@ export async function validateTwitterProfile(url: string): Promise<string | null
 	}
 }
 
-export async function fetchTwitterData(username: string): Promise<Record<string, any>> {
+// Return type for Twitter data
+interface TwitterData {
+	username: string;
+	profile: Record<string, unknown>;
+	metrics: Record<string, unknown>;
+	activity: Record<string, unknown>;
+	recentTweets: TwitterTweet[];
+	engagement: Record<string, unknown>;
+	content: Record<string, unknown>;
+	networking: Record<string, unknown>;
+}
+
+export async function fetchTwitterData(username: string): Promise<TwitterData> {
 	try {
 		console.log('Fetching Twitter data for username:', username);
 
@@ -192,7 +205,7 @@ function getRandomTimeSlot(): string {
 	return times[Math.floor(Math.random() * times.length)] ?? "9:00 AM - 11:00 AM";
 }
 
-function generateRecentTweets(username: string): TwitterTweet[] {
+function generateRecentTweets(_username: string): TwitterTweet[] {
 	const tweetTemplates = [
 		"Just shipped a new feature using React Server Components! The performance improvements are incredible 🚀 #react #webdev",
 		"Working on some interesting TypeScript patterns for better code organization. Thread below 🧵 #typescript #coding",

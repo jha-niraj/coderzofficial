@@ -770,24 +770,24 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
         }))
     }
 
-    const _handleCodeSubmit = async (code: string, language: string, questionText: string) => {
-        if (!generation) return
+    // const _handleCodeSubmit = async (code: string, language: string, questionText: string) => {
+    //     if (!generation) return
 
-        try {
-            const response = await evaluateCode(questionText, code, language, generation.id)
-            if (response.success && response.data) {
-                // setCodeEvaluations(prev => ({
-                //     ...prev,
-                //     [questionText]: response.data
-                // }))
-                toast.success("Code evaluated successfully!")
-            } else {
-                toast.error(response.error || "Failed to evaluate code")
-            }
-        } catch {
-            toast.error("Failed to evaluate code")
-        }
-    }
+    //     try {
+    //         const response = await evaluateCode(questionText, code, language, generation.id)
+    //         if (response.success && response.data) {
+    //             // setCodeEvaluations(prev => ({
+    //             //     ...prev,
+    //             //     [questionText]: response.data
+    //             // }))
+    //             toast.success("Code evaluated successfully!")
+    //         } else {
+    //             toast.error(response.error || "Failed to evaluate code")
+    //         }
+    //     } catch {
+    //         toast.error("Failed to evaluate code")
+    //     }
+    // }
 
     const getDifficultyColor = (difficulty: string) => {
         switch (difficulty) {

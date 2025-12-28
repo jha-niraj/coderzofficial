@@ -40,6 +40,13 @@ enum StudioVisibility {
     COMMUNITY
 }
 
+enum StudioMediaType {
+    IMAGE
+    VIDEO
+    DIAGRAM
+    UPLOAD
+}
+
 model Studio {
     id          String  @id @default(cuid())
     title       String
@@ -195,13 +202,6 @@ model StudioCodeBlock {
 
     @@index([studioId])
     @@index([blockId])
-}
-
-enum StudioMediaType {
-    IMAGE
-    VIDEO
-    DIAGRAM
-    UPLOAD
 }
 
 model StudioMediaBlock {

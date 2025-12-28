@@ -84,7 +84,7 @@ export async function getTopicsByLanguage(language: AssessmentLanguage) {
         });
 
         // Get user progress if logged in
-        let userProgress: Record<string, { completed: number; accuracy: number }> = {};
+        const userProgress: Record<string, { completed: number; accuracy: number }> = {};
 
         if (userId) {
             const attempts = await prisma.practiceAttempt.findMany({

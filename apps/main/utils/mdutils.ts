@@ -1,4 +1,4 @@
-import path from 'path';
+// Path not used here - using dynamic imports for markdown files
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';

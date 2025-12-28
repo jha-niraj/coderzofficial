@@ -2,13 +2,10 @@ import { prisma } from "@repo/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import { RequestBody } from "@/types";
-import { Resend } from "resend";
 import { 
     createSignupActivity, generateReferralCode, processReferral 
 } from "@/utils/referral";
 import { sendEmail } from "@/utils/mail";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
     console.log('=== API REGISTRATION START ===');

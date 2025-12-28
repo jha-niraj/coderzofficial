@@ -29,11 +29,12 @@ import { Badge } from "@repo/ui/components/ui/badge";
 
 // import { Scene } from "@/components/ui/herosectioncanvas";
 
-const fadeInUp = {
+// Animation variants - can be used for future animations
+const _fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8 } }
 };
-const staggerContainer = {
+const _staggerContainer = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
@@ -42,7 +43,7 @@ const staggerContainer = {
         }
     }
 };
-const floating = {
+const _floating = {
     y: [0, -10, 0],
     transition: {
         duration: 3,
@@ -51,10 +52,10 @@ const floating = {
     }
 };
 export default function LandingPage() {
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const [visibleSection, setVisibleSection] = useState("")
-    const [showBackToTop, setShowBackToTop] = useState(false)
-    const router = useRouter();
+    const [_mobileMenuOpen, _setMobileMenuOpen] = useState(false)
+    const [_visibleSection, setVisibleSection] = useState("")
+    const [_showBackToTop, setShowBackToTop] = useState(false)
+    const _router = useRouter();
 
 
     const heroRef = useRef<HTMLElement | null>(null)
@@ -140,7 +141,7 @@ export default function LandingPage() {
                                 From Prompt to <span className="text-neutral-400 dark:text-neutral-600">Production.</span>
                             </h2>
                             <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed font-light">
-                                Don't just watch tutorials. Generate full-stack project scaffolds, follow execution plans, and deploy real software to your portfolio.
+                                Don&apos;t just watch tutorials. Generate full-stack project scaffolds, follow execution plans, and deploy real software to your portfolio.
                             </p>
                         </motion.div>
                         <motion.div
@@ -271,6 +272,7 @@ export default function LandingPage() {
                     <FaqsAccrodian />
                 </section>
                 <Footer />
+                {/* eslint-disable-next-line react/no-unknown-property */}
                 <style jsx global>{`
                         @keyframes wave {
                         0% { transform: translateX(-100%); }

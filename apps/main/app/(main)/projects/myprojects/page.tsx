@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import {
-	Card, CardContent, CardHeader
+	Card, CardContent
 } from "@repo/ui/components/ui/card"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -101,22 +101,21 @@ export default function MyProjectsPage() {
 		window.scrollTo({ top: 0, behavior: 'smooth' })
 	}
 
-	console.log(projects);
+	// const handleDeleteProject = async (projectId: string) => {
+	// 	try {
+	// 		const result = await deleteProject(projectId)
 
-	const handleDeleteProject = async (projectId: string) => {
-		try {
-			const result = await deleteProject(projectId)
-
-			if (result.success) {
-				setProjects(prev => prev.filter((p: UserProjectWithProgress) => p.id !== projectId))
-				toast.success('Project deleted successfully')
-			} else {
-				toast.error(result.error || 'Failed to delete project')
-			}
-		} catch (error) {
-			toast.error('Something went wrong. Please try again.')
-		}
-	}
+	// 		if (result.success) {
+	// 			setProjects(prev => prev.filter((p: UserProjectWithProgress) => p.id !== projectId))
+	// 			toast.success('Project deleted successfully')
+	// 		} else {
+	// 			toast.error(result.error || 'Failed to delete project')
+	// 		}
+	// 	} catch (error) {
+	// 		console.log("Error occurred while deleting project: " + error);
+	// 		toast.error('Something went wrong. Please try again.')
+	// 	}
+	// }
 
 	const filteredProjects = projects.filter(project => {
 		const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -151,7 +150,7 @@ export default function MyProjectsPage() {
 								Projects
 							</Link>
 							<ArrowRight className="w-4 h-4" />
-							<span>My Projects</span>
+							<span>My Projects - { totalProjects }</span>
 						</div>
 						<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 							<div>

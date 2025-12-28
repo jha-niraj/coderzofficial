@@ -17,7 +17,7 @@ import { getTrendingPosts } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
 
 interface TrendingPageClientProps {
-    user: {
+    user?: {
         id: string
         name: string | null
         image: string | null
@@ -70,7 +70,6 @@ interface TrendingPageClientProps {
 }
 
 export function TrendingPageClient({
-    user,
     trendingPosts: initialPosts,
     userCommunities
 }: TrendingPageClientProps) {

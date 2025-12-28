@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { notFound, redirect } from 'next/navigation'
 import { auth } from '@repo/auth'
 import prisma from '@repo/prisma'
 import { ProjectLeaderboardClient } from './_components/project-leaderboard-client'
@@ -69,7 +68,7 @@ export default async function ProjectLeaderboardPage({
                             <CardTitle>Project Not Found</CardTitle>
                         </div>
                         <CardDescription>
-                            The project you're looking for doesn't exist or may have been removed.
+                            The project you&apos;re looking for doesn&apos;t exist or may have been removed.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -79,7 +78,7 @@ export default async function ProjectLeaderboardPage({
                         <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 ml-2">
                             <li>The project URL is incorrect</li>
                             <li>The project has been deleted</li>
-                            <li>You don't have access to this project</li>
+                            <li>You don&apos;t have access to this project</li>
                         </ul>
                         <div className="pt-4">
                             <Link href="/projects">
@@ -108,7 +107,7 @@ export default async function ProjectLeaderboardPage({
                             <CardTitle>Private Project</CardTitle>
                         </div>
                         <CardDescription>
-                            This project's leaderboard is not publicly available.
+                            This project&apos;s leaderboard is not publicly available.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">

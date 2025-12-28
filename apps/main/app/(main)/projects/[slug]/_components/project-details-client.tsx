@@ -32,8 +32,12 @@ import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import toast from '@repo/ui/components/ui/sonner'
-import { startProject, submitProject } from '@/actions/(main)/projects/project.action'
-import { ProjectDetailsClientProps, ProjectV2Page } from '@/types/project'
+import {
+    startProject, submitProject
+} from '@/actions/(main)/projects/project.action'
+import {
+    ProjectDetailsClientProps, ProjectV2Page
+} from '@/types/project'
 import { FeatureSuggestionSheet } from '@/components/projects/feature-suggestion-sheet'
 import { FeatureSuggestionsList } from '@/components/projects/feature-suggestions-list'
 import { getFeatureSuggestions } from '@/actions/(main)/projects/feature-suggestions.action'
@@ -46,11 +50,7 @@ import TaskListProgress, { TaskItem } from '@/components/projects/task-list-prog
 import ErrorsTab from '@/components/projects/errors-tab'
 import { cn } from '@repo/ui/lib/utils'
 
-// ============================================================================
-// Milestone Component
-// ============================================================================
-
-function MilestoneTracker({ progressPercentage, includeAssessment }: { progressPercentage: number, includeAssessment: boolean }) {
+function MilestoneTracker({ progressPercentage }: { progressPercentage: number, includeAssessment?: boolean }) {
     const milestones = [
         { threshold: 0, label: 'Start', icon: Play, unlocked: true },
         { threshold: 50, label: 'Quiz Available', icon: Brain, unlocked: progressPercentage >= 50 },
@@ -281,6 +281,7 @@ export default function ProjectDetailsClient({
                 toast.error(result.error || 'Failed to start project')
             }
         } catch (error) {
+            console.log("Error occurred while starting project: " + error);
             toast.error('Something went wrong')
         } finally {
             setStarting(false)
@@ -310,6 +311,7 @@ export default function ProjectDetailsClient({
                 toast.error(result.error || 'Failed to submit project')
             }
         } catch (error) {
+            console.log("Error occurred while submitting project: " + error);
             toast.error('Failed to submit project')
         } finally {
             setSubmitting(false)
@@ -329,6 +331,7 @@ export default function ProjectDetailsClient({
             toast.success('Link copied to clipboard!')
             setTimeout(() => setCopied(false), 2000)
         } catch (error) {
+            console.log("Error occurred while copying link: " + error);
             toast.error('Failed to copy link')
         }
     }
@@ -563,7 +566,7 @@ export default function ProjectDetailsClient({
                                 }))}
                                 projectTitle={project.title}
                                 progressPercentage={progressPercentage}
-                                onTaskClick={(taskId) => {
+                                onTaskClick={() => {
                                     setActiveTab('tasks')
                                 }}
                             />

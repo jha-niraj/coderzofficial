@@ -1674,6 +1674,9 @@ export async function getPracticeAttemptResults(attemptId: string) {
                     include: {
                         topic: { select: { name: true } },
                         subModule: { select: { name: true } },
+                        questions: {
+                            orderBy: { orderIndex: "asc" },
+                        },
                     },
                 },
                 answers: {
@@ -1695,7 +1698,10 @@ export async function getPracticeAttemptResults(attemptId: string) {
             return { success: false, error: "Not authorized" };
         }
 
-        return { success: true, data: attempt };
+        return { 
+            success: true, 
+            data: attempt 
+        };
     } catch (error) {
         console.error("Error fetching attempt results:", error);
         return { success: false, error: "Failed to fetch results" };

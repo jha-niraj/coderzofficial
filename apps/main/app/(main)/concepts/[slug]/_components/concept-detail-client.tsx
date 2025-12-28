@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
     ChevronLeft, ChevronRight, Heart, Bookmark, Share2, MessageSquare,
-    ArrowLeft, CheckCircle2, Sparkles, Code2, BarChart3, Eye
+    ArrowLeft, CheckCircle2, Sparkles, Eye
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -135,7 +135,7 @@ export default function ConceptDetailClient({
     const totalSteps = concept.steps.length;
     const currentStep = concept.steps[currentStepIndex];
     const progressPercent = totalSteps > 0 ? (completedSteps.length / totalSteps) * 100 : 0;
-    const isCompleted = completedSteps.length >= totalSteps;
+    // const isCompleted = completedSteps.length >= totalSteps;
 
     const goToStep = useCallback((stepIndex: number) => {
         setCurrentStepIndex(stepIndex);

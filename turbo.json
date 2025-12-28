@@ -4,7 +4,15 @@
 	"globalEnv": [
 		"NODE_ENV",
 		"DATABASE_URL",
-		"DIRECT_URL"
+		"DIRECT_URL",
+		"JWT_SECRET",
+		"NEXTAUTH_URL",
+		"RAZORPAY_KEY_SECRET",
+		"RESEND_API_KEY",
+		"TRUEFOOL_API_KEY",
+		"INTER_PLATFORM_SECRET",
+		"TRUEFOOL_DOMAIN",
+		"WORKER_SECRET"
 	],
 	"tasks": {
 		"generate": {
@@ -72,7 +80,14 @@
 				"NEXT_PUBLIC_WORKER_URL",
 				"WORKER_SECRET",
 				"FALAI_API_KEY",
-				"G_ANALYTICS_ID"
+				"G_ANALYTICS_ID",
+				"GITHUB_TOKEN",
+				"NODE_ENV",
+				"JWT_SECRET",
+				"NEXTAUTH_URL",
+				"NEXTAUTH_SECRET",
+				"NEXT_PUBLIC_BASE_URL",
+				"RAZORPAY_KEY_SECRET"
 			],
 			"inputs": [
 				"$TURBO_DEFAULT$",

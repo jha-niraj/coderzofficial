@@ -5,7 +5,6 @@ import {
     ProjectV2Visibility,
     ProjectV2Difficulty,
     UserProjectV2Status,
-    TaskKanbanStatus,
     QuizV2Difficulty,
 } from "@repo/prisma/client";
 
@@ -284,7 +283,7 @@ export interface ApiResponse<T> {
     error?: string
 }
 
-export interface ProjectApiResponse extends ApiResponse<ProjectV2Full> { }
-export interface TasksApiResponse extends ApiResponse<TasksPageData> { }
-export interface QuizApiResponse extends ApiResponse<Quiz> { }
-export interface QuizAttemptApiResponse extends ApiResponse<QuizResult> { }
+export type ProjectApiResponse = ApiResponse<ProjectV2Full>
+export type TasksApiResponse = ApiResponse<TasksPageData>
+export type QuizApiResponse = ApiResponse<Quiz>
+export type QuizAttemptApiResponse = ApiResponse<QuizResult>

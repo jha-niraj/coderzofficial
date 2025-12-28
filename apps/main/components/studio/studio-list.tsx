@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-	Plus, FileText, BookOpen, Code, Image as ImageIcon, MoreVertical, Trash2,
+	Plus, FileText, BookOpen, Code, MoreVertical, Trash2,
 	Edit, Globe, Lock, Clock, Sparkles, Users
 } from "lucide-react";
 import { format } from "date-fns";
@@ -32,7 +32,7 @@ import {
 } from "@/actions/(main)/studios/studio.action";
 import toast from "@repo/ui/components/ui/sonner";
 import type {
-	StudioListItem, StudioCategory, StudioVisibility
+	StudioListItem, StudioCategory
 } from "@/types/studio";
 import { STUDIO_CATEGORIES, getCategoryColor } from "@/types/studio";
 

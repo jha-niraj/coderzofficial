@@ -75,7 +75,7 @@ export async function getForgeTrackBySlug(slug: string) {
 
         // Get user enrollment if logged in
         let enrollment = null
-        let stepProgress: Record<string, any> = {}
+        const stepProgress: Record<string, any> = {}
 
         if (session?.user?.id) {
             enrollment = await prisma.forgeEnrollment.findUnique({

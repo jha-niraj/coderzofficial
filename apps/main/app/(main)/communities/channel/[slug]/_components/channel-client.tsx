@@ -252,7 +252,7 @@ export function ChannelPageClient({
                                     {
                                         !nextCursor && posts.length > 0 && (
                                             <p className="text-center text-sm text-neutral-400 py-8">
-                                                You've reached the end
+                                                You&apos;ve reached the end
                                             </p>
                                         )
                                     }

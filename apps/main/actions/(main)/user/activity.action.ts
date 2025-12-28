@@ -289,7 +289,7 @@ export async function getUserStreak(): Promise<{ success: boolean; data?: Streak
         if (todayActivity) {
             // Start counting from today
             currentStreak = 1;
-            let checkDate = new Date(todayLocal);
+            const checkDate = new Date(todayLocal);
             checkDate.setDate(checkDate.getDate() - 1);
             
             // Count consecutive days backwards
@@ -304,7 +304,7 @@ export async function getUserStreak(): Promise<{ success: boolean; data?: Streak
         } else if (yesterdayActivity) {
             // Start counting from yesterday
             currentStreak = 1;
-            let checkDate = new Date(yesterday);
+            const checkDate = new Date(yesterday);
             checkDate.setDate(checkDate.getDate() - 1);
             
             // Count consecutive days backwards

@@ -46,7 +46,7 @@ const NoUserFound = ({ query }: { query: string }) => (
 
 export default function CreditTransferPage() {
     const router = useRouter()
-    const { user, fetchUser, handleCreditTransfer, isLoading: storeLoading } = useUserStore()
+    const { user, fetchUser, handleCreditTransfer } = useUserStore()
     const [searchQuery, setSearchQuery] = useState("")
     const [searchResults, setSearchResults] = useState<any[]>([])
     const [isSearching, setIsSearching] = useState(false)

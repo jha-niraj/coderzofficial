@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-    ArrowLeft, ArrowRight, CheckCircle2, XCircle, Trophy, Clock, Coins, Target,
+    ArrowLeft, ArrowRight, CheckCircle2, XCircle, Clock, Coins, Target,
     BarChart3, RefreshCw, Home, Share2, Loader2, AlertCircle, PartyPopper
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";

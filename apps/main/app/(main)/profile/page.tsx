@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
     const router = useRouter();
-    const { user, isLoading: storeLoading, error: storeError, fetchUser } = useUserStore();
+    const { isLoading: storeLoading, error: storeError, fetchUser } = useUserStore();
     const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
     const [profileData, setProfileData] = useState<any>(null);
     const [stats, setStats] = useState<any>(null);

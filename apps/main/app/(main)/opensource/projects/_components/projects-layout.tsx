@@ -21,7 +21,6 @@ import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger
 } from "@repo/ui/components/ui/sheet"
 import { cn } from '@repo/ui/lib/utils'
-import { useUserStore } from '@/app/store/useUserStore'
 import { getProjects, DIFFICULTY_LEVELS } from '@/actions/(main)/opensource'
 import { OSIssueDifficulty } from '@repo/prisma/client'
 
@@ -31,13 +30,13 @@ const typeColors: Record<string, { bg: string; text: string; border: string }> =
     EXCLUSIVE: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800' },
 }
 
-const difficultyColors: Record<string, string> = {
-    GOOD_FIRST_ISSUE: 'bg-green-500',
-    EASY: 'bg-emerald-500',
-    MEDIUM: 'bg-yellow-500',
-    HARD: 'bg-red-500',
-    EXPERT: 'bg-purple-500',
-}
+// const difficultyColors: Record<string, string> = {
+//     GOOD_FIRST_ISSUE: 'bg-green-500',
+//     EASY: 'bg-emerald-500',
+//     MEDIUM: 'bg-yellow-500',
+//     HARD: 'bg-red-500',
+//     EXPERT: 'bg-purple-500',
+// }
 
 interface Project {
     id: string
@@ -76,9 +75,8 @@ const TECHNOLOGIES = [
     'TailwindCSS', 'PostgreSQL', 'MongoDB', 'Redis', 'Docker', 'Kubernetes'
 ]
 
-export default function ProjectsLayout({ children, type }: { children?: React.ReactNode, type: 'FREE' | 'PAID' | 'EXCLUSIVE' }) {
+export default function ProjectsLayout({ type }: { type: 'FREE' | 'PAID' | 'EXCLUSIVE' }) {
     const pathname = usePathname()
-    const { user } = useUserStore()
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')

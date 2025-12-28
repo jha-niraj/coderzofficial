@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { signIn, useSession } from "@repo/auth"
+import { signIn, useSession } from "@repo/auth/client"
 import { toast } from "@repo/ui/components/ui/sonner"
 import {
     Shield, Loader2, Mail, Lock, KeyRound, Eye, EyeOff

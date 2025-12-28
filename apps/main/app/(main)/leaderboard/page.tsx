@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    Trophy, Medal, Award, Flame, Code, Users, Gift, ChevronUp, ChevronDown,
-    TrendingUp
+    Trophy, Medal, Award, Flame, Code, Users, Gift, ChevronUp, 
+    ChevronDown, TrendingUp
 } from "lucide-react"
 import {
     Tabs, TabsContent, TabsList, TabsTrigger

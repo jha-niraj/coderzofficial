@@ -1,7 +1,9 @@
 "use server"
 
 import prisma from '@repo/prisma';
-import { Prisma, CreditType, Currency } from '@repo/prisma/client';
+import { 
+	CreditType, Currency, Prisma, PrismaValue
+} from '@repo/prisma/client';
 import { auth } from '@repo/auth';
 import Exa from "exa-js";
 import crypto from 'crypto';
@@ -135,7 +137,7 @@ function cleanAndParseJSON(jsonString: string): any {
 		console.log('Direct parsing failed, attempting to clean JSON...');
 
 		// Remove any markdown code block markers and clean whitespace
-		let cleaned = jsonString
+		const cleaned = jsonString
 			.replace(/```json\s*/g, '')
 			.replace(/```\s*/g, '')
 			.replace(/^\s+|\s+$/g, '')
@@ -231,7 +233,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 
 		try {
 			// Remove markdown code block markers, extra text, and whitespace
-			let cleaned = jsonString
+			const cleaned = jsonString
 				.replace(/```json\s*/gi, '') // Remove opening json code blocks
 				.replace(/```\s*/g, '') // Remove closing code blocks
 				.replace(/^[^{]*/, '') // Remove any text before first {
@@ -256,7 +258,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 					console.log('JSON extraction failed, attempting to fix common issues...');
 
 					// Fix common JSON issues - more aggressive cleaning
-					let fixedJson = extractedJson
+					const fixedJson = extractedJson
 						.replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
 						.replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Quote unquoted keys  
 						.replace(/:\s*'([^']*)'/g, ':"$1"') // Replace single quotes with double quotes
@@ -619,7 +621,7 @@ export async function generateJobInterviewQuestions(
 					codingCount: counts.coding,
 					searchHash: generateSearchHash(position, jobDescription, companyUrl),
 					companyInfo: !companyInfo ?
-						Prisma.JsonNull :
+						PrismaValue.JsonNull :
 						companyInfo,
 					generatedContent: questions,
 					slug,
@@ -2451,8 +2453,8 @@ export async function purchaseInterviewPlan(planId: string) {
 					position: publicPlan.position,
 					jobDescription: publicPlan.jobDescription,
 					companyUrl: publicPlan.companyUrl,
-					companyInfo: publicPlan.companyInfo || Prisma.JsonNull,
-					generatedContent: publicPlan.generatedContent || Prisma.JsonNull,
+					companyInfo: publicPlan.companyInfo || PrismaValue.JsonNull,
+					generatedContent: publicPlan.generatedContent || PrismaValue.JsonNull,
 					includeAnswers: publicPlan.includeAnswers,
 					includePractice: publicPlan.includePractice,
 					technicalCount: publicPlan.technicalCount,

@@ -87,7 +87,7 @@ export async function getReferrals(page: number = 1, limit: number = 10, status:
         const skip = (page - 1) * limit;
 
         // Build where clause based on status filter
-        let whereClause: any = { referrerId: userId };
+        const whereClause: any = { referrerId: userId };
         
         if (status === "successful") {
             whereClause.referredUser = { onboardingCompleted: true };

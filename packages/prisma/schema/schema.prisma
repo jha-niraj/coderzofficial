@@ -267,19 +267,6 @@ enum GoalType {
     CUSTOM
 }
 
-// BugHunt Academy Enums
-enum BugHuntTrack {
-    DSA
-    DEVELOPMENT
-}
-
-enum BugHuntDifficulty {
-    ROOKIE
-    INVESTIGATOR
-    HUNTER
-    MASTER
-}
-
 enum ChallengeVisibility {
     PUBLIC
     PRIVATE

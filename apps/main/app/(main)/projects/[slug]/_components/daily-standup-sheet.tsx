@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
 import {
     Calendar, Clock, Loader2, CheckCircle2, AlertCircle, Trophy, X
 } from 'lucide-react'
@@ -10,7 +9,6 @@ import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from '@repo/ui/components/ui/sheet'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Textarea } from '@repo/ui/components/ui/textarea'
 import toast from '@repo/ui/components/ui/sonner'
 import {
     checkStandupConfig, createStandupConfig
