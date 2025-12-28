@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useSession, signOut } from "@repo/auth"
+import { useSession, signOut } from "@repo/auth/client"
 import { cn } from "@repo/ui/lib/utils"
 import {
     User, LogOut, ChevronLeft, ChevronRight, ChevronDown, Shield
@@ -17,8 +17,8 @@ import Image from "next/image"
 import {
     adminNavigation, type NavigationItem
 } from "@/lib/navigation"
-import { 
-    Sheet, SheetContent 
+import {
+    Sheet, SheetContent
 } from "@repo/ui/components/ui/sheet"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@repo/ui/components/themetoggle"
