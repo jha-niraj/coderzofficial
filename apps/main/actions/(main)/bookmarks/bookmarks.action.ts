@@ -133,11 +133,22 @@ export async function getBookmarksSummary() {
         ]);
 
         // Build combined recent saves
-        const recentSaves: any[] = [];
+        type BookmarkType = 'concept' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
+        const recentSaves: Array<{
+            type: BookmarkType;
+            id: string;
+            title: string | null;
+            slug?: string;
+            category?: string;
+            thumbnail?: string | null;
+            communityName?: string;
+            communitySlug?: string;
+            savedAt: Date;
+        }> = [];
 
         conceptBookmarks.forEach(b => {
             recentSaves.push({
-                type: "concept",
+                type: "concept" as const,
                 id: b.concept.id,
                 title: b.concept.title,
                 slug: b.concept.slug,
@@ -149,7 +160,7 @@ export async function getBookmarksSummary() {
 
         projectBookmarks.forEach(b => {
             recentSaves.push({
-                type: "project",
+                type: "project" as const,
                 id: b.project.id,
                 title: b.project.name,
                 category: b.project.category,
@@ -159,7 +170,7 @@ export async function getBookmarksSummary() {
 
         projectV2Bookmarks.forEach(b => {
             recentSaves.push({
-                type: "projectV2",
+                type: "projectV2" as const,
                 id: b.project.id,
                 title: b.project.title,
                 slug: b.project.slug,
@@ -169,10 +180,10 @@ export async function getBookmarksSummary() {
 
         communityPostBookmarks.forEach(b => {
             recentSaves.push({
-                type: "community",
+                type: "community" as const,
                 id: b.post.id,
                 title: b.post.title || b.post.content?.substring(0, 50) + "...",
-                slug: b.post.slug,
+                slug: b.post.slug ?? undefined,
                 communityName: b.post.community?.name,
                 communitySlug: b.post.community?.slug,
                 savedAt: b.createdAt,
@@ -181,7 +192,7 @@ export async function getBookmarksSummary() {
 
         mockInterviewBookmarks.forEach(b => {
             recentSaves.push({
-                type: "mock",
+                type: "mock" as const,
                 id: b.session.id,
                 title: b.session.mock.title || b.session.mock.description,
                 savedAt: b.createdAt,
@@ -222,13 +233,13 @@ export async function getBookmarksSummary() {
                             id: b.project.id,
                             title: b.project.name,
                             category: b.project.category,
-                            type: "v1",
+                            type: "v1" as const,
                             savedAt: b.createdAt,
                         })), ...projectV2Bookmarks.slice(0, 2).map(b => ({
                             id: b.project.id,
                             title: b.project.title,
                             slug: b.project.slug,
-                            type: "v2",
+                            type: "v2" as const,
                             savedAt: b.createdAt,
                         }))],
                     },

@@ -26,16 +26,20 @@ interface TechStack {
 
 interface BookmarkProject {
     id: string;
-    slug: string;
+    slug?: string;
     title: string;
     description?: string;
     coverImage?: string;
     category?: string;
-    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-    memberCount: number;
+    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | string;
+    memberCount?: number;
     taskCount: number;
     techStack?: TechStack[];
     savedAt: string | Date;
+    type?: string;
+    folder?: string | null;
+    notes?: string | null;
+    estimatedTime?: string | null;
 }
 
 export default function ProjectBookmarksPage() {
@@ -120,7 +124,7 @@ export default function ProjectBookmarksPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                         >
-                                            <Link href={`/projects/${project.slug}`}>
+                                            <Link href={`/projects/${project.slug || project.id}`}>
                                                 <div className="group rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:shadow-lg">
                                                     <div className="relative h-40 bg-gradient-to-br from-orange-500/20 to-red-500/20">
                                                         {
@@ -178,7 +182,7 @@ export default function ProjectBookmarksPage() {
                                                         <div className="flex items-center gap-4 text-xs text-neutral-500">
                                                             <span className="flex items-center gap-1">
                                                                 <Users className="h-3.5 w-3.5" />
-                                                                {project.memberCount} members
+                                                                {project.memberCount ?? 0} members
                                                             </span>
                                                             <span className="flex items-center gap-1">
                                                                 <ListTodo className="h-3.5 w-3.5" />
@@ -187,7 +191,7 @@ export default function ProjectBookmarksPage() {
                                                         </div>
 
                                                         {
-                                                            project.techStack?.length > 0 && (
+                                                            project.techStack && project.techStack?.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1 mt-3">
                                                                     {
                                                                         project.techStack.slice(0, 3).map((tech) => (

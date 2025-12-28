@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+
 import {
     ArrowLeft, Trophy, Share2, Users, TrendingUp, Check
 } from 'lucide-react'
@@ -63,9 +63,7 @@ export function ProjectLeaderboardClient({
     currentPage,
     autoOpenUsername,
     autoOpenSheet,
-    currentUserId: _currentUserId
 }: ProjectLeaderboardClientProps) {
-    const _router = useRouter()
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
     const [pagination, setPagination] = useState<LeaderboardPagination | null>(null)
     const [loading, setLoading] = useState(true)

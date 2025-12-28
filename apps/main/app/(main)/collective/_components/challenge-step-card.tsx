@@ -12,7 +12,7 @@ import {
 import { StepSubmissionDialog } from "./step-submission-dialog";
 
 interface StepData {
-	questions?: Array<{ question: string; type: string; options?: string[] }>;
+	questions?: Array<{ question: string; type: 'multiple_choice' | 'text' | 'checkbox'; options?: string[] }>;
 }
 
 interface ChallengeStepCardProps {
@@ -22,10 +22,10 @@ interface ChallengeStepCardProps {
 		title: string;
 		description: string;
 		type: string;
-		quizData?: StepData | null;
-		mockData?: { instructions?: string } | null;
-		codingData?: { problem?: string } | null;
-		projectData?: { requirements?: string } | null;
+		quizData?: StepData | unknown;
+		mockData?: { instructions?: string } | unknown;
+		codingData?: { problem?: string } | unknown;
+		projectData?: { requirements?: string } | unknown;
 	};
 	stepNumber: number;
 	isUnlocked: boolean;
@@ -134,37 +134,37 @@ export function ChallengeStepCard({
 				</CardDescription>
 
 				{/* Step Requirements */}
-				{step.type === "QUIZ" && step.quizData && (
+				{step.type === "QUIZ" && step.quizData !== null && step.quizData !== undefined && typeof step.quizData === 'object' && !Array.isArray(step.quizData) ? (
 					<div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
 						<p className="text-sm text-blue-800">
-							📝 Complete the quiz with {step.quizData.questions?.length || 0} questions
+							📝 Complete the quiz with {(step.quizData as StepData).questions?.length || 0} questions
 						</p>
 					</div>
-				)}
+				) : null}
 
-				{step.type === "MOCK" && step.mockData && (
+				{step.type === "MOCK" && step.mockData !== null && step.mockData !== undefined && typeof step.mockData === 'object' && !Array.isArray(step.mockData) ? (
 					<div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
 						<p className="text-sm text-purple-800">
 							🎤 Participate in a mock interview session
 						</p>
 					</div>
-				)}
+				) : null}
 
-				{step.type === "CODING" && step.codingData && (
+				{step.type === "CODING" && step.codingData !== null && step.codingData !== undefined && typeof step.codingData === 'object' && !Array.isArray(step.codingData) ? (
 					<div className="bg-green-50 border border-green-200 rounded-lg p-3">
 						<p className="text-sm text-green-800">
 							💻 Submit your code solution
 						</p>
 					</div>
-				)}
+				) : null}
 
-				{step.type === "PROJECT" && step.projectData && (
+				{step.type === "PROJECT" && step.projectData !== null && step.projectData !== undefined && typeof step.projectData === 'object' && !Array.isArray(step.projectData) ? (
 					<div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
 						<p className="text-sm text-orange-800">
 							🚀 Build and deploy your project, then submit the URL
 						</p>
 					</div>
-				)}
+				) : null}
 
 				{/* Submission Feedback */}
 				{submission?.feedback && (

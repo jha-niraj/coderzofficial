@@ -44,12 +44,19 @@ interface DiscoverCommunity {
     name: string
     slug: string
     description: string
+    shortDescription?: string | null
     coverImage?: string | null
     logo?: string | null
     category: string
+    themeColor: string
+    isVerified: boolean
     memberCount: number
     postCount: number
     createdAt: Date
+    _count?: {
+        members: number
+        posts: number
+    }
 }
 
 export default function DiscoverPage() {

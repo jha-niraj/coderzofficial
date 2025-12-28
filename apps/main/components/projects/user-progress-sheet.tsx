@@ -27,6 +27,40 @@ interface UserProgressSheetProps {
     username: string
 }
 
+interface TaskItem {
+    id: string
+    title: string
+    description: string[]
+    difficulty: string
+    completedAt?: Date | null
+}
+
+interface UserProgressData {
+    user: {
+        name: string | null
+        username: string | null
+        image: string | null
+    }
+    project: {
+        title: string
+    }
+    progress: {
+        totalScore: number
+        progressPercentage: number
+        tasksCompleted: number
+        totalTasks: number
+        tasksScore: number
+        quizScore: number
+        mockScore: number
+        startedAt: Date | null
+    }
+    tasks: {
+        completed: TaskItem[]
+        inProgress: TaskItem[]
+        todo: TaskItem[]
+    }
+}
+
 export function UserProgressSheet({
     open,
     onOpenChange,
@@ -34,7 +68,7 @@ export function UserProgressSheet({
     username
 }: UserProgressSheetProps) {
     const [loading, setLoading] = useState(true)
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<UserProgressData | null>(null)
     const [error, setError] = useState<string | null>(null)
 
     const fetchProgress = useCallback(async () => {
@@ -182,7 +216,7 @@ export function UserProgressSheet({
                                             </h3>
                                             <div className="space-y-2">
                                                 {
-                                                    data.tasks.completed.map((task: any) => (
+                                                    data.tasks.completed.map((task: TaskItem) => (
                                                         <motion.div
                                                             key={task.id}
                                                             initial={{ opacity: 0, y: 10 }}
@@ -222,7 +256,7 @@ export function UserProgressSheet({
                                             </h3>
                                             <div className="space-y-2">
                                                 {
-                                                    data.tasks.inProgress.map((task: any) => (
+                                                    data.tasks.inProgress.map((task: TaskItem) => (
                                                         <Card key={task.id} className="border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/50 dark:bg-yellow-950/20">
                                                             <CardContent className="p-4">
                                                                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -251,7 +285,7 @@ export function UserProgressSheet({
                                             </h3>
                                             <div className="space-y-2">
                                                 {
-                                                    data.tasks.todo.map((task: any) => (
+                                                    data.tasks.todo.map((task: TaskItem) => (
                                                         <Card key={task.id} className="bg-neutral-50 dark:bg-neutral-900/50 p-2">
                                                             <CardContent className="p-4">
                                                                 <div className="flex items-start justify-between gap-2 mb-2">

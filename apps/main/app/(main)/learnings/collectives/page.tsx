@@ -15,6 +15,7 @@ import {
 } from "@repo/ui/components/ui/avatar";
 import { getCommunityLearnings } from "@/actions/(main)/learnings/learnings.action";
 import { cn } from "@repo/ui/lib/utils";
+import { CommunityRole } from "@repo/prisma/client";
 
 const roleStyles = {
     ADMIN: { icon: Crown, color: "text-amber-500", label: "Admin" },
@@ -28,8 +29,8 @@ interface CommunityMembership {
     name: string;
     description: string;
     banner?: string;
-    icon?: string;
-    role: 'ADMIN' | 'MODERATOR' | 'MEMBER';
+    icon?: string | null;
+    role: CommunityRole;
     memberCount: number;
     postCount: number;
     joinedAt: string | Date;
@@ -136,7 +137,7 @@ export default function CollectivesLearningsPage() {
                                                         <div className="p-5 pt-0 relative">
                                                             <div className="relative -mt-8 mb-3">
                                                                 <Avatar className="h-16 w-16 border-4 border-white dark:border-neutral-900">
-                                                                    <AvatarImage src={community.icon} />
+                                                                    <AvatarImage src={community.icon!} />
                                                                     <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-500 text-white text-xl font-bold">
                                                                         {community.name.charAt(0)}
                                                                     </AvatarFallback>

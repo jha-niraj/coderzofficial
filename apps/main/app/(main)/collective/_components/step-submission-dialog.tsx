@@ -30,10 +30,10 @@ interface StepSubmissionDialogProps {
 		title: string;
 		description: string;
 		type: string;
-		quizData?: { questions?: QuizQuestion[] } | null;
-		mockData?: { instructions?: string } | null;
-		codingData?: { problem?: string } | null;
-		projectData?: { requirements?: string } | null;
+		quizData?: { questions?: QuizQuestion[] } | unknown;
+		mockData?: { instructions?: string } | unknown;
+		codingData?: { problem?: string } | unknown;
+		projectData?: { requirements?: string } | unknown;
 	};
 	challengeId: string;
 	open: boolean;
@@ -100,12 +100,13 @@ export function StepSubmissionDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<form action={handleSubmit} className="space-y-6">
-					{
-						step.type === "QUIZ" && step.quizData?.questions && (
+					{(() => {
+						const quizData = step.quizData as { questions?: QuizQuestion[] } | null | undefined;
+						return step.type === "QUIZ" && quizData?.questions && (
 							<div className="space-y-4">
 								<h3 className="font-medium">Quiz Questions</h3>
 								{
-									step.quizData.questions.map((question, index) => (
+									quizData.questions.map((question, index) => (
 										<div key={index} className="space-y-3 p-4 border rounded-lg">
 											<h4 className="font-medium">
 												{index + 1}. {question.question}
@@ -114,7 +115,7 @@ export function StepSubmissionDialog({
 											{
 												question.type === "multiple_choice" && (
 													<RadioGroup
-														value={quizAnswers[index] || ""}
+														value={(quizAnswers[index] as string) || ""}
 														onValueChange={(value) =>
 															setQuizAnswers(prev => ({ ...prev, [index]: value }))
 														}
@@ -135,7 +136,7 @@ export function StepSubmissionDialog({
 												question.type === "text" && (
 													<Textarea
 														placeholder="Enter your answer..."
-														value={quizAnswers[index] || ""}
+														value={(quizAnswers[index] as string) || ""}
 														onChange={(e) =>
 															setQuizAnswers(prev => ({ ...prev, [index]: e.target.value }))
 														}
@@ -152,9 +153,9 @@ export function StepSubmissionDialog({
 																<div key={optIndex} className="flex items-center space-x-2">
 																	<Checkbox
 																		id={`q${index}_${optIndex}`}
-																		checked={(quizAnswers[index] || []).includes(option)}
+																		checked={((quizAnswers[index] as string[]) || []).includes(option)}
 																		onCheckedChange={(checked) => {
-																			const current = quizAnswers[index] || [];
+																			const current = (quizAnswers[index] as string[]) || [];
 																			const updated = checked
 																				? [...current, option]
 																				: current.filter((item: string) => item !== option);
@@ -172,8 +173,8 @@ export function StepSubmissionDialog({
 									))
 								}
 							</div>
-						)
-					}
+						);
+					})()}
 
 					{
 						step.type === "MOCK" && (
@@ -181,7 +182,7 @@ export function StepSubmissionDialog({
 								<div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
 									<h3 className="font-medium text-purple-900 mb-2">Mock Interview Instructions</h3>
 									<p className="text-sm text-purple-800">
-										{step.mockData?.instructions || "Complete the mock interview and provide a summary of your experience."}
+										{(step.mockData as { instructions?: string } | null)?.instructions || "Complete the mock interview and provide a summary of your experience."}
 									</p>
 								</div>
 								<div className="space-y-2">
@@ -205,7 +206,7 @@ export function StepSubmissionDialog({
 								<div className="bg-green-50 border border-green-200 rounded-lg p-4">
 									<h3 className="font-medium text-green-900 mb-2">Coding Challenge</h3>
 									<p className="text-sm text-green-800">
-										{step.codingData?.problem || "Complete the coding challenge and submit your solution."}
+										{(step.codingData as { problem?: string } | null)?.problem || "Complete the coding challenge and submit your solution."}
 									</p>
 								</div>
 								<div className="space-y-2">
@@ -229,7 +230,7 @@ export function StepSubmissionDialog({
 								<div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
 									<h3 className="font-medium text-orange-900 mb-2">Project Requirements</h3>
 									<p className="text-sm text-orange-800">
-										{step.projectData?.requirements || "Build and deploy your project, then submit the URL for review."}
+										{(step.projectData as { requirements?: string } | null)?.requirements || "Build and deploy your project, then submit the URL for review."}
 									</p>
 								</div>
 								<div className="space-y-2">

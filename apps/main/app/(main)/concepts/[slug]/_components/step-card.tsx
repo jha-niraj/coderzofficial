@@ -59,17 +59,17 @@ interface ConceptStep {
     content: string;
     language?: string | null;
     visualizationType?: string | null;
-    visualizationData?: string | null;
-    comparisonItems?: string | null;
+    visualizationData?: unknown;
+    comparisonItems?: unknown;
     quizQuestion?: string | null;
-    quizOptions?: string | null;
+    quizOptions?: unknown;
     quizExplanation?: string | null;
     challengeDescription?: string | null;
     challengeStarterCode?: string | null;
     challengeSolution?: string | null;
-    challengeHints?: string[];
-    challengeTestCases?: string | null;
-    tips?: string[];
+    challengeHints?: unknown;
+    challengeTestCases?: unknown;
+    tips?: unknown;
     codeBlocks: CodeBlock[];
 }
 
@@ -339,7 +339,7 @@ export default function StepCard({
                                 </Button>
 
                                 {
-                                    step.challengeHints && step.challengeHints.length > 0 && (
+                                    Array.isArray(step.challengeHints) && step.challengeHints.length > 0 && (
                                         <Collapsible open={showHints} onOpenChange={setShowHints}>
                                             <CollapsibleTrigger asChild>
                                                 <Button variant="outline">
@@ -379,14 +379,14 @@ export default function StepCard({
                             </div>
 
                             {
-                                showHints && step.challengeHints && (
+                                showHints && Array.isArray(step.challengeHints) && (
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         className="space-y-2"
                                     >
                                         {
-                                            step.challengeHints.map((hint, index) => (
+                                            (step.challengeHints as string[]).map((hint, index) => (
                                                 <div
                                                     key={index}
                                                     className="p-3 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-sm flex items-start gap-2"
@@ -421,59 +421,63 @@ export default function StepCard({
                 }
 
                 {
-                    step.type === "COMPARISON" && step.comparisonItems && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {
-                                ((typeof step.comparisonItems === 'string' ? JSON.parse(step.comparisonItems) : step.comparisonItems) as ComparisonItem[]).map((item, index) => (
-                                    <Card key={index}>
-                                        <CardHeader className="pb-3">
-                                            <CardTitle className="text-base">{item.title}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-3">
-                                            <p className="text-sm text-muted-foreground">{item.content}</p>
-                                            {
-                                                item.pros && (
-                                                    <div>
-                                                        <p className="text-xs font-medium text-green-600 mb-1">Pros:</p>
-                                                        <ul className="text-xs text-muted-foreground space-y-1">
-                                                            {
-                                                                item.pros.map((pro: string, i: number) => (
-                                                                    <li key={i} className="flex items-start gap-1">
-                                                                        <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5" />
-                                                                        {pro}
-                                                                    </li>
-                                                                ))
-                                                            }
-                                                        </ul>
-                                                    </div>
-                                                )
-                                            }
-                                            {
-                                                item.cons && (
-                                                    <div>
-                                                        <p className="text-xs font-medium text-red-600 mb-1">Cons:</p>
-                                                        <ul className="text-xs text-muted-foreground space-y-1">
-                                                            {
-                                                                item.cons.map((con: string, i: number) => (
-                                                                    <li key={i} className="flex items-start gap-1">
-                                                                        <span className="text-red-500">•</span>
-                                                                        {con}
-                                                                    </li>
-                                                                ))
-                                                            }
-                                                        </ul>
-                                                    </div>
-                                                )
-                                            }
-                                        </CardContent>
-                                    </Card>
-                                ))
-                            }
-                        </div>
-                    )
+                    step.type === "COMPARISON" && (() => {
+                        const items = (typeof step.comparisonItems === 'string' ? JSON.parse(step.comparisonItems) : step.comparisonItems) as ComparisonItem[] | null;
+                        if (!items || !Array.isArray(items)) return null;
+                        return (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {
+                                    items.map((item, index) => (
+                                        <Card key={index}>
+                                            <CardHeader className="pb-3">
+                                                <CardTitle className="text-base">{item.title}</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-3">
+                                                <p className="text-sm text-muted-foreground">{item.content}</p>
+                                                {
+                                                    item.pros && (
+                                                        <div>
+                                                            <p className="text-xs font-medium text-green-600 mb-1">Pros:</p>
+                                                            <ul className="text-xs text-muted-foreground space-y-1">
+                                                                {
+                                                                    item.pros.map((pro: string, i: number) => (
+                                                                        <li key={i} className="flex items-start gap-1">
+                                                                            <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5" />
+                                                                            {pro}
+                                                                        </li>
+                                                                    ))
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    )
+                                                }
+                                                {
+                                                    item.cons && (
+                                                        <div>
+                                                            <p className="text-xs font-medium text-red-600 mb-1">Cons:</p>
+                                                            <ul className="text-xs text-muted-foreground space-y-1">
+                                                                {
+                                                                    item.cons.map((con: string, i: number) => (
+                                                                        <li key={i} className="flex items-start gap-1">
+                                                                            <span className="text-red-500">•</span>
+                                                                            {con}
+                                                                        </li>
+                                                                    ))
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    )
+                                                }
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                }
+                            </div>
+                        );
+                    })()
                 }
                 {
-                    step.tips && step.tips.length > 0 && (
+                    Array.isArray(step.tips) && step.tips.length > 0 && (
                         <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900">
                             <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
                                 <Lightbulb className="w-4 h-4" />
@@ -481,7 +485,7 @@ export default function StepCard({
                             </h4>
                             <ul className="space-y-2">
                                 {
-                                    step.tips.map((tip, index) => (
+                                    (step.tips as string[]).map((tip, index) => (
                                         <li key={index} className="text-sm text-blue-600 dark:text-blue-300 flex items-start gap-2">
                                             <span className="text-blue-400">•</span>
                                             {tip}

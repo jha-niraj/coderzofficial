@@ -97,7 +97,7 @@ export function EditProfileModal({
             // Update profile settings (tagline, theme)
             const profileResult = await updateProfileSettings({
                 tagline: formData.tagline,
-                theme: formData.theme as any,
+                theme: formData.theme as "OCEAN_BLUE" | "SUNSET_ORANGE" | "FOREST_GREEN" | "PURPLE_DREAM" | "DARK_MODE",
             });
 
             if (!profileResult.success) {

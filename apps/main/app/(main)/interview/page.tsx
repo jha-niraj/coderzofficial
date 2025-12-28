@@ -27,7 +27,7 @@ interface PublicInterview {
 	userName: string
 	userSchool: string
 	feedback: string
-	createdAt: string
+	createdAt: Date
 }
 
 export default function LandingPage() {

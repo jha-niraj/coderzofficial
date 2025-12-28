@@ -34,13 +34,13 @@ interface LearningModule {
     id: string
     conceptName: string
     explanation: string
-    codeExamples?: string | null
+    codeExamples?: unknown
     videoUrl?: string | null
     videoDuration?: number | null
     interactiveCode?: string | null
     interactiveSolution?: string | null
     quizQuestion?: string | null
-    quizOptions?: string | null
+    quizOptions?: unknown
     quizAnswer?: number | null
 }
 
@@ -56,8 +56,8 @@ interface CrucibleProblem {
     answerType: string
     difficulty: number
     xpReward: number
-    hints?: string | null
-    concepts: string[]
+    hints?: unknown
+    concepts: unknown
     learningModules: LearningModule[]
 }
 
@@ -653,7 +653,7 @@ export function CrucibleProblemClient({
                                         )
                                     }
                                     {
-                                        selectedModule.codeExamples && (
+                                        typeof selectedModule.codeExamples === 'string' && selectedModule.codeExamples && (
                                             <div>
                                                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                                                     <span className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-xs font-bold text-rose-600">3</span>
@@ -661,7 +661,7 @@ export function CrucibleProblemClient({
                                                 </h4>
                                                 <div className="space-y-3">
                                                     {
-                                                        Object.entries(JSON.parse(selectedModule.codeExamples as string) as Record<string, string>).map(([lang, code]) => (
+                                                        Object.entries(JSON.parse(selectedModule.codeExamples) as Record<string, string>).map(([lang, code]) => (
                                                             <div key={lang}>
                                                                 <p className="text-xs text-neutral-500 uppercase mb-1">{lang}</p>
                                                                 <pre className="p-4 bg-neutral-900 dark:bg-neutral-950 text-neutral-100 rounded-lg overflow-x-auto text-sm">
@@ -675,7 +675,7 @@ export function CrucibleProblemClient({
                                         )
                                     }
                                     {
-                                        selectedModule.quizQuestion && selectedModule.quizOptions && (
+                                        selectedModule.quizQuestion && typeof selectedModule.quizOptions === 'string' && selectedModule.quizOptions && (
                                             <div>
                                                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                                                     <span className="w-6 h-6 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-xs font-bold text-rose-600">4</span>
@@ -685,7 +685,7 @@ export function CrucibleProblemClient({
                                                     <p className="font-medium">{selectedModule.quizQuestion}</p>
                                                     <div className="space-y-2">
                                                         {
-                                                            (JSON.parse(selectedModule.quizOptions as string) as string[]).map((option, idx) => {
+                                                            (JSON.parse(selectedModule.quizOptions) as string[]).map((option, idx) => {
                                                                 const isSelected = quizAnswers[selectedModule.id] === idx
                                                                 const isCorrect = selectedModule.quizAnswer === idx
                                                                 const showResult = quizAnswers[selectedModule.id] !== undefined

@@ -34,6 +34,8 @@ const statusStyles = {
 
 interface MockSession {
     id: string;
+    title: string;
+    description: string;
     status: 'COMPLETED' | 'IN_PROGRESS' | 'ABANDONED';
     jobRole?: string;
     jobDescription?: string;

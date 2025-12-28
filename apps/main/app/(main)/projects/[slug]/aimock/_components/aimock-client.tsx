@@ -74,7 +74,7 @@ export default function AIMockInterviewClient({
 
     const [stage, setStage] = useState<Stage>(hasKnowledgeBase ? 'ready' : 'payment')
     const [generating, setGenerating] = useState(false)
-    const [_mockKnowledgeBase, setMockKnowledgeBase] = useState(knowledgeBase)
+    const [, setMockKnowledgeBase] = useState(knowledgeBase)
     const [sessionId, setSessionId] = useState<string | null>(null)
     const [agentId, setAgentId] = useState<string | null>(null)
     const [variables, setVariables] = useState<MockVariables | null>(null)

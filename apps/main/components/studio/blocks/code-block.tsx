@@ -49,7 +49,7 @@ interface StudioCodeBlockProps {
 		problemTitle?: string;
 		problemDescription?: string;
 	};
-	onChange?: (data: any) => void;
+	onChange?: (data: { language: string; code: string }) => void;
 }
 
 export default function StudioCodeBlock({
@@ -133,8 +133,9 @@ export default function StudioCodeBlock({
 			} else {
 				setOutput(`⚠️ Code execution for ${LANGUAGES.find(l => l.value === language)?.label} is not supported in the browser.\n\nTo run this code, please use your local development environment.`);
 			}
-		} catch (error: any) {
-			setOutput(`❌ Error: ${error.message}`);
+		} catch (error: unknown) {
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+			setOutput(`❌ Error: ${errorMessage}`);
 		}
 
 		setIsRunning(false);

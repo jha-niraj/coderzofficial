@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    AlertTriangle, ThumbsUp, AlertCircle, Plus, ChevronDown, Code2, 
-    CheckCircle2, Loader2, Bug, Shield, Zap, Database, Globe, Settings, 
+    AlertTriangle, ThumbsUp, AlertCircle, Plus, ChevronDown, Code2,
+    CheckCircle2, Loader2, Bug, Shield, Zap, Database, Globe, Settings,
     Layers
 } from 'lucide-react'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -16,7 +16,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import {
-    Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, 
+    Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader,
     SheetTitle, SheetTrigger
 } from '@repo/ui/components/ui/sheet'
 import {
@@ -288,7 +288,7 @@ function SubmitErrorSheet({
                 description: form.description,
                 solution: form.solution,
                 severity: form.severity,
-                category: form.category as any,
+                category: form.category as 'SETUP' | 'CONFIGURATION' | 'DATABASE' | 'API' | 'UI' | 'STATE' | 'DEPLOYMENT' | 'SECURITY' | 'PERFORMANCE' | 'OTHER',
                 errorCode: form.errorCode || undefined,
                 fixedCode: form.fixedCode || undefined,
                 tags: form.tags ? form.tags.split(',').map(t => t.trim()) : undefined,
@@ -365,7 +365,7 @@ function SubmitErrorSheet({
                         </div>
                         <div className="space-y-2">
                             <Label>Frequency</Label>
-                            <Select value={form.severity} onValueChange={(v: any) => setForm({ ...form, severity: v })}>
+                            <Select value={form.severity} onValueChange={(v: 'HIGH' | 'MEDIUM' | 'LOW') => setForm({ ...form, severity: v })}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -462,7 +462,7 @@ function SubmitErrorSheet({
 export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTabProps) {
     const [errors, setErrors] = useState<ProjectError[]>([])
     const [loading, setLoading] = useState(true)
-    const [stats, setStats] = useState<any>(null)
+    const [stats, setStats] = useState<{ totalErrors: number; bySeverity?: { HIGH?: number; MEDIUM?: number; LOW?: number } } | null>(null)
     const [filter, setFilter] = useState({
         category: 'ALL',
         severity: 'ALL',
@@ -594,7 +594,7 @@ export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTa
                         <SelectItem value="LOW">Rare</SelectItem>
                     </SelectContent>
                 </Select>
-                <Select value={filter.sortBy} onValueChange={(v: any) => setFilter(prev => ({ ...prev, sortBy: v }))}>
+                <Select value={filter.sortBy} onValueChange={(v: 'helpful' | 'recent' | 'encountered') => setFilter(prev => ({ ...prev, sortBy: v }))}>
                     <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Sort" />
                     </SelectTrigger>

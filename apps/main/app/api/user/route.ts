@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@repo/auth';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const PUT = async (_req: NextRequest) => {
     const session = await auth();
 

@@ -20,7 +20,7 @@ import { formatDistanceToNow } from "date-fns";
 interface BookmarkItem {
     id: string;
     title: string | null;
-    slug?: string;
+    slug?: string | null;
     communitySlug?: string;
     communityName?: string;
     category?: string;
@@ -297,7 +297,7 @@ export default function BookmarksPage() {
                 </div>
             </section>
             {
-                data?.recentSaves?.length > 0 && (
+                data?.recentSaves && data?.recentSaves?.length > 0 && (
                     <section className="max-w-6xl mx-auto px-4 pb-24 lg:pb-12">
                         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-6">
                             Recently Saved

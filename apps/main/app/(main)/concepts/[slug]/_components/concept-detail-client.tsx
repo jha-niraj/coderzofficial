@@ -35,17 +35,17 @@ interface ConceptStep {
     content: string;
     language?: string | null;
     visualizationType?: string | null;
-    visualizationData?: string | null;
-    comparisonItems?: string | null;
+    visualizationData?: unknown;
+    comparisonItems?: unknown;
     quizQuestion?: string | null;
-    quizOptions?: string | null;
+    quizOptions?: unknown;
     quizExplanation?: string | null;
     challengeDescription?: string | null;
     challengeStarterCode?: string | null;
     challengeSolution?: string | null;
-    challengeHints?: string[];
-    challengeTestCases?: string | null;
-    tips?: string[];
+    challengeHints?: unknown;
+    challengeTestCases?: unknown;
+    tips?: unknown;
     codeBlocks: {
         id: string;
         order: number;

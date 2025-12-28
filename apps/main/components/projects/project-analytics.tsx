@@ -577,7 +577,7 @@ function DifficultyDistributionChart({
 	)
 }
 
-function WeeklyTrendsChart({ weeklyStats }: { weeklyStats: any[] }) {
+function WeeklyTrendsChart({ weeklyStats }: { weeklyStats: { week: string; views: number; started: number; completed: number }[] }) {
 	return (
 		<Card>
 			<CardHeader>
@@ -620,7 +620,7 @@ function WeeklyTrendsChart({ weeklyStats }: { weeklyStats: any[] }) {
 	)
 }
 
-function TopPerformersLeaderboard({ performers }: { performers: any[] }) {
+function TopPerformersLeaderboard({ performers }: { performers: { username: string; avatar: string; xp: number; completionTime: number }[] }) {
 	return (
 		<Card>
 			<CardHeader>

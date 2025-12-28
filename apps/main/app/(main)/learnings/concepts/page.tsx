@@ -36,12 +36,12 @@ interface ConceptProgress {
     title: string;
     category: string;
     difficulty: string;
-    thumbnail?: string;
+    thumbnail?: string | null;
     isCompleted: boolean;
     currentStep: number;
     totalSteps: number;
     progressPercent: number;
-    estimatedTime: number;
+    estimatedTime: number | null;
 }
 
 export default function ConceptLearningsPage() {

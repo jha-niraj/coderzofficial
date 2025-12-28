@@ -50,9 +50,29 @@ interface CommunityPost {
     likesCount?: number
     commentsCount?: number
     type: string
+    tags: string[]
+    isPinned: boolean
+    isLocked: boolean
+    isAnswered?: boolean
+    likeCount: number
+    commentCount: number
+    viewCount: number
     isLiked?: boolean
-    channel?: unknown
+    channel?: {
+        id: string
+        name: string
+        slug: string
+        icon?: string | null
+    } | null
     officialChannel?: string | null
+    community?: {
+        id: string
+        name: string
+        slug: string
+        logo?: string | null
+    } | null
+    attachments?: unknown
+    codeBlocks?: unknown
     [key: string]: unknown
 }
 
@@ -62,14 +82,24 @@ interface CommunityResource {
     description?: string | null
     url?: string | null
     type: string
+    uploader?: { name: string | null } | null
+    downloadCount?: number
 }
 
 interface CommunityMember {
     id: string
-    name: string | null
-    username: string | null
-    image: string | null
+    name?: string | null
+    username?: string | null
+    image?: string | null
     role: string
+    joinedAt: Date
+    user: {
+        id: string
+        name: string | null
+        username: string | null
+        image: string | null
+        bio?: string | null
+    }
 }
 
 interface CommunityPageClientProps {
@@ -546,7 +576,7 @@ export function CommunityPageClient({
                                         members.map((member) => (
                                             <Link
                                                 key={member.id}
-                                                href={`/profile/${member.user.username || member.user.id}`}
+                                                href={`/profile/${member.username || member.id}`}
                                             >
                                                 <motion.div
                                                     initial={{ opacity: 0 }}
@@ -555,15 +585,15 @@ export function CommunityPageClient({
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="w-12 h-12">
-                                                            <AvatarImage src={member.user.image ?? undefined} />
+                                                            <AvatarImage src={member.image ?? undefined} />
                                                             <AvatarFallback>
-                                                                {member.user.name?.charAt(0) || 'U'}
+                                                                {member.name?.charAt(0) || 'U'}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="font-medium text-neutral-900 dark:text-white truncate">
-                                                                    {member.user.name || member.user.username}
+                                                                    {member.name || member.username}
                                                                 </span>
                                                                 {
                                                                     ['OWNER', 'ADMIN'].includes(member.role) && (

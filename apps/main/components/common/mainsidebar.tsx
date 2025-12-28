@@ -1215,7 +1215,7 @@ const SidebarContent = ({ routes, isCollapsed, onClose }: Omit<SidebarContentPro
                                                 </div>
                                                 <div className="space-y-3">
                                                     {
-                                                        levelInfo.recentLevelUps.map((levelUp: any, index: number) => (
+                                                        levelInfo.recentLevelUps.map((levelUp: { levelInfo: { icon: string; title: string }; achievedAt: string | Date; xpEarned: number; creditsEarned: number }, index: number) => (
                                                             <div key={index} className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                                                                 <span className="text-xl">{levelUp.levelInfo.icon}</span>
                                                                 <div className="flex-1">

@@ -10,7 +10,7 @@ import {
     Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar'
 import {
-    Youtube, FileText, BookOpen, GraduationCap, MessageCircle, Wrench, 
+    Youtube, FileText, BookOpen, GraduationCap, MessageCircle, Wrench,
     Palette, Sparkles, Github, ExternalLink, ThumbsUp, Eye, Trash2, Shield
 } from 'lucide-react'
 import {
@@ -35,7 +35,7 @@ const RESOURCE_TYPES = [
     { value: 'GITHUB_REPO', label: 'GitHub', icon: Github },
 ]
 
-const RESOURCE_ICONS: Record<ResourceType, any> = {
+const RESOURCE_ICONS: Record<ResourceType, React.ComponentType<{ className?: string }>> = {
     YOUTUBE_VIDEO: Youtube,
     VIDEO: FileText,
     DOCUMENTATION: BookOpen,
@@ -69,9 +69,28 @@ interface ResourcesListProps {
     isCreator?: boolean
 }
 
+interface ResourceItem {
+    id: string
+    type: ResourceType
+    title: string
+    description?: string
+    link: string
+    isOfficial: boolean
+    helpfulCount: number
+    views: number
+    userId: string
+    markedHelpfulBy: string[]
+    createdAt: Date
+    user: {
+        name: string | null
+        username: string | null
+        image: string | null
+    }
+}
+
 export default function ResourcesList({ projectId, currentUserId, isCreator }: ResourcesListProps) {
-    const [resources, setResources] = useState<any[]>([])
-    const [filteredResources, setFilteredResources] = useState<any[]>([])
+    const [resources, setResources] = useState<ResourceItem[]>([])
+    const [filteredResources, setFilteredResources] = useState<ResourceItem[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedType, setSelectedType] = useState<string>('ALL')
     const [markedHelpful, setMarkedHelpful] = useState<Record<string, boolean>>({})
@@ -86,7 +105,7 @@ export default function ResourcesList({ projectId, currentUserId, isCreator }: R
             // Check which ones current user marked as helpful
             if (currentUserId) {
                 const marked: Record<string, boolean> = {}
-                result.resources.forEach((r: any) => {
+                result.resources.forEach((r: ResourceItem) => {
                     marked[r.id] = r.markedHelpfulBy.includes(currentUserId)
                 })
                 setMarkedHelpful(marked)
@@ -138,7 +157,7 @@ export default function ResourcesList({ projectId, currentUserId, isCreator }: R
         }
     }
 
-    const handleResourceClick = async (resource: any) => {
+    const handleResourceClick = async (resource: ResourceItem) => {
         await incrementResourceView(resource.id)
         window.open(resource.link, '_blank', 'noopener,noreferrer')
     }
