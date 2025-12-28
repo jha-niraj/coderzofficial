@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@repo/ui/components/ui/button";
-import { 
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select";
 import { Play, Send, Copy, Check, Loader2 } from "lucide-react";
 import useTheme from "@repo/ui/components/themetoggle";
@@ -144,7 +144,7 @@ export default function CodeEditor({
         forceCode || initialCode || getDefaultCode(language, questionType)
     );
     const [copied, setCopied] = useState(false);
-    const editorRef = useRef<any>(null);
+    const editorRef = useRef<unknown>(null);
 
     // Update code when forceCode changes
     useEffect(() => {
@@ -165,19 +165,23 @@ export default function CodeEditor({
         setCurrentLanguage(language);
     }, [language]);
 
-    const handleEditorDidMount = (editor: any) => {
+    const handleEditorDidMount = (editor: unknown) => {
         editorRef.current = editor;
+        const monacoEditor = editor as {
+            onContextMenu: (callback: (e: { event: { preventDefault: () => void } }) => void) => void
+            onKeyDown: (callback: (e: { ctrlKey: boolean; metaKey: boolean; code: string; preventDefault: () => void }) => void) => void
+        };
 
         // Disable right-click context menu if not allowed
         if (!allowRightClick) {
-            editor.onContextMenu((e: any) => {
+            monacoEditor.onContextMenu((e) => {
                 e.event.preventDefault();
             });
         }
 
         // Disable copy/paste if not allowed
         if (!allowCopyPaste) {
-            editor.onKeyDown((e: any) => {
+            monacoEditor.onKeyDown((e) => {
                 const isCopyPaste =
                     (e.ctrlKey || e.metaKey) &&
                     (e.code === "KeyC" || e.code === "KeyV" || e.code === "KeyX");

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import {
-    Users, MessageSquare, FileText, Calendar, Trophy, Settings, Bell, 
+    Users, MessageSquare, FileText, Calendar, Trophy, Settings, Bell,
     Share2, CheckCircle2, Lock, Globe, UserPlus, LogOut, Loader2, ChevronDown,
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -17,7 +17,7 @@ import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from '@repo/ui/components/ui/tabs'
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, 
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@repo/ui/components/ui/dropdown-menu'
 import { PostCard } from '@/components/community/post-card'
@@ -29,6 +29,48 @@ import { joinCommunity, leaveCommunity } from '@/actions/(main)/community/commun
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 import { useInView } from 'react-intersection-observer'
+
+interface PostAuthor {
+    id: string
+    name: string | null
+    username: string | null
+    image: string | null
+}
+
+interface CommunityPost {
+    id: string
+    title?: string | null
+    content: string
+    createdAt: Date
+    author: PostAuthor
+    _count?: {
+        likes: number
+        comments: number
+    }
+    likesCount?: number
+    commentsCount?: number
+    type: string
+    isLiked?: boolean
+    channel?: unknown
+    officialChannel?: string | null
+    [key: string]: unknown
+}
+
+interface CommunityResource {
+    id: string
+    title: string
+    description?: string | null
+    url?: string | null
+    type: string
+}
+
+interface CommunityMember {
+    id: string
+    name: string | null
+    username: string | null
+    image: string | null
+    role: string
+}
 
 interface CommunityPageClientProps {
     community: {
@@ -71,9 +113,9 @@ interface CommunityPageClientProps {
         name: string | null
         image: string | null
     } | null
-    initialPosts: any[]
-    initialResources: any[]
-    members: any[]
+    initialPosts: CommunityPost[]
+    initialResources: CommunityResource[]
+    members: CommunityMember[]
     topContributors: Array<{
         id: string
         name: string | null
@@ -581,7 +623,7 @@ export function CommunityPageClient({
                     />
                 </div>
             </div>
-            <MagicSheet communityId={community.id} communitySlug={community.slug} />
+            <MagicSheet />
         </div>
     )
 }

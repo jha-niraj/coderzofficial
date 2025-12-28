@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
             }
         })
 
-        if(!user) {
+        if (!user) {
             return NextResponse.json({ message: "Invalid token" }, { status: 501 });
         }
 
@@ -28,16 +28,16 @@ export async function POST(request: NextRequest) {
                 emailVerified: true,
                 verifyToken: null,
                 verifyTokenExpiry: null
-            } 
+            }
         })
 
-        if(!verifyResponse) {
+        if (!verifyResponse) {
             return NextResponse.json({ message: "Email verification failed" }, { status: 501 });
         }
-        
-        await sendEmail({ name: user?.name!, email: user.email, emailType: "WELCOME" });
-        
-        return NextResponse.json({ 
+
+        await sendEmail({ name: user.name ?? '', email: user.email, emailType: "WELCOME" });
+
+        return NextResponse.json({
             message: "Email verification successful",
             user: {
                 id: user.id,
@@ -45,8 +45,9 @@ export async function POST(request: NextRequest) {
                 name: user.name
             }
         }, { status: 200 });
-    } catch (err: any) {
-        console.log("Error while verifying user: " + err.message);
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Unknown error');
+        console.log("Error while verifying user: " + error.message);
         return NextResponse.json({ message: "Error while verifying user!!!" }, { status: 501 });
     }
 }

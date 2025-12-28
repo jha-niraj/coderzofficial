@@ -20,7 +20,7 @@ import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
 import { useUserStore } from '@/app/store/useUserStore'
 import {
-    getPracticeSetDetails, togglePracticeSetLike, startPracticeSetAttempt
+    getPracticeSetDetails, togglePracticeSetLike
 } from '@/actions/(main)/assessments/user-sets.action'
 import { AssessmentMode, QuestionDifficulty } from '@repo/prisma/client'
 import { formatDistanceToNow } from 'date-fns'

@@ -62,7 +62,7 @@ const statusColors = {
     SUBMITTED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
 }
 
-export function ProjectCard({ project, showProgress = false, variant = 'default' }: ProjectCardProps) {
+export function ProjectCard({ project, showProgress = false }: ProjectCardProps) {
     const description = project.shortDescription || project.description
     const truncatedDescription = description?.length > 120 ? description.substring(0, 120) + '...' : description
 

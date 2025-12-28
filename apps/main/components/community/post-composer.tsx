@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    MessageCircle, HelpCircle, FileText, Image as ImageIcon, Code2, X, Loader2, Plus,
-    Hash, Link as LinkIcon, Send
+    MessageCircle, HelpCircle, FileText, Image as ImageIcon, Code2, X, 
+    Loader2, Plus, Hash, Link as LinkIcon, Send
 } from 'lucide-react'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
@@ -24,7 +24,7 @@ import toast from '@repo/ui/components/ui/sonner'
 
 interface PostComposerProps {
     communityId: string
-    communitySlug: string
+    communitySlug?: string
     channels?: Array<{
         id: string
         name: string
@@ -50,7 +50,6 @@ const POST_TYPES = [
 
 export function PostComposer({
     communityId,
-    communitySlug,
     channels = [],
     user,
     onPostCreated,

@@ -1,9 +1,10 @@
-import { 
-    Html, Body, Head, Heading, Hr, Container, Preview, Section, Text 
+/* eslint-disable react/prop-types */
+import {
+    Html, Body, Head, Heading, Hr, Container, Preview, Section, Text
 } from '@react-email/components';
 
 interface WelcomeEmailProps {
-    username: string;
+    username?: string;
 }
 
 export const WelcomeEmail: React.FC<WelcomeEmailProps> = ({
@@ -12,7 +13,7 @@ export const WelcomeEmail: React.FC<WelcomeEmailProps> = ({
     return (
         <Html>
             <Head />
-            <Preview>Welcome to Our Platform</Preview>
+            <Preview>Welcome to The Coderz!</Preview>
             <Body style={{ backgroundColor: '#ffffff' }}>
                 <Container>
                     <Section>

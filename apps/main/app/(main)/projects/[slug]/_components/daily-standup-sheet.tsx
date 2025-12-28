@@ -34,6 +34,15 @@ const DAYS = [
     { value: 6, label: 'Sat', full: 'Saturday' },
 ]
 
+interface StandupConfig {
+    daysPerWeek: number;
+    standupTime: string;
+    durationMinutes: number;
+    selectedDays: number[];
+    completedStandups?: number;
+    totalStandups?: number;
+}
+
 export default function DailyStandupSheet({
     isOpen,
     onClose,
@@ -44,7 +53,7 @@ export default function DailyStandupSheet({
 }: DailyStandupSheetProps) {
     const [isChecking, setIsChecking] = useState(true)
     const [hasConfig, setHasConfig] = useState(false)
-    const [config, setConfig] = useState<any>(null)
+    const [config, setConfig] = useState<StandupConfig | null>(null)
 
     // Configuration state
     const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]) // Mon-Fri default

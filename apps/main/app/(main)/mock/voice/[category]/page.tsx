@@ -20,6 +20,17 @@ import { getAllPublicMocks } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../_constants/mock-categories'
 import { MockCategory } from '@repo/prisma/client'
 
+interface MockData {
+    id: string
+    title: string
+    description?: string
+    category: MockCategory
+    expertLevel: string
+    duration: number
+    creditsRequired: number
+    popularity?: number
+}
+
 export default function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
     const resolvedParams = use(params)
     const { user, credits } = useUserStore()
@@ -27,10 +38,10 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
     const [sortBy, setSortBy] = useState<'popularity' | 'duration' | 'credits'>('popularity')
     const [createSheetOpen, setCreateSheetOpen] = useState(false)
     const [purchaseSheetOpen, setPurchaseSheetOpen] = useState(false)
-    const [selectedMock, setSelectedMock] = useState<any>(null)
+    const [selectedMock, setSelectedMock] = useState<MockData | null>(null)
 
     // Data states
-    const [mocks, setMocks] = useState<any[]>([])
+    const [mocks, setMocks] = useState<MockData[]>([])
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
@@ -172,7 +183,7 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
                         <div className="flex-1">
                             <Select
                                 value={sortBy}
-                                onValueChange={(value: any) => setSortBy(value)}
+                                onValueChange={(value: 'popularity' | 'duration' | 'credits') => setSortBy(value)}
                             >
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Sort By" />

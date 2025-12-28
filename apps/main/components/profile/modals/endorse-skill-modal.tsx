@@ -103,6 +103,7 @@ export function EndorseSkillModal({
             setMessage("");
             setSelectedLevel("INTERMEDIATE");
         } catch (error) {
+            console.log("Error occurred while endorsing skill: " + error);
             toast.error("Failed to endorse skill");
         } finally {
             setIsSubmitting(false);
@@ -288,7 +289,7 @@ export function EndorseSkillModal({
                                                     {
                                                         endorsement.message && (
                                                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                                                "{endorsement.message}"
+                                                                &quot;{endorsement.message}&quot;
                                                             </p>
                                                         )
                                                     }

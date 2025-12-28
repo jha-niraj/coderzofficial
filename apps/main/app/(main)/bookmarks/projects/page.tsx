@@ -19,8 +19,27 @@ const difficultyColors = {
     ADVANCED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
+interface TechStack {
+    id: string;
+    name: string;
+}
+
+interface BookmarkProject {
+    id: string;
+    slug: string;
+    title: string;
+    description?: string;
+    coverImage?: string;
+    category?: string;
+    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+    memberCount: number;
+    taskCount: number;
+    techStack?: TechStack[];
+    savedAt: string | Date;
+}
+
 export default function ProjectBookmarksPage() {
-    const [projects, setProjects] = useState<any[]>([]);
+    const [projects, setProjects] = useState<BookmarkProject[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -171,7 +190,7 @@ export default function ProjectBookmarksPage() {
                                                             project.techStack?.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1 mt-3">
                                                                     {
-                                                                        project.techStack.slice(0, 3).map((tech: any) => (
+                                                                        project.techStack.slice(0, 3).map((tech) => (
                                                                             <Badge
                                                                                 key={tech.id}
                                                                                 variant="secondary"

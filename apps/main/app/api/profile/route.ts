@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         }
 
         return NextResponse.json({ data: user }, { status: 200 });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.log("Error while fetching user data" + err);
         return NextResponse.json({ msg: "Error while fetching user data" }, { status: 501 });
     }

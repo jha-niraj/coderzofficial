@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
 
         // Send verification email
         try {
-            await sendEmail({ 
-                name: user.name || "", 
-                email: user.email, 
-                emailType: "VERIFY", 
-                token: verifyToken 
+            await sendEmail({
+                name: user.name || "",
+                email: user.email,
+                emailType: "VERIFY",
+                token: verifyToken
             });
         } catch (emailError) {
             console.error("Failed to send verification email:", emailError);
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ message: "Verification email sent successfully" }, { status: 200 });
-    } catch (error: any) {
-        console.error("Resend verification error:", error);
+    } catch (err: unknown) {
+        console.error("Resend verification error:", err);
         return NextResponse.json({ message: "Internal server error" }, { status: 500 });
     }
 } 

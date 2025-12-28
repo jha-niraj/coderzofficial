@@ -62,7 +62,7 @@ const categoryIcons: Record<string, string> = {
 }
 
 export function MockInterviewCard({ mock, onStart, onSchedule, variant = 'default', showAdminBadge }: MockInterviewCardProps) {
-    const [_isHovered, setIsHovered] = useState(false)
+    const [, setIsHovered] = useState(false)
 
     const hasCategory = !!mock.category
     const isUserGenerated = 'isPublic' in mock && !mock.byAdmin

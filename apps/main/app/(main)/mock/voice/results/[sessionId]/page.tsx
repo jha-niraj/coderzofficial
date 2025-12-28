@@ -20,6 +20,30 @@ import { getSessionDetails } from '@/actions/(main)/mockvoice/session.action'
 import { generateAIFeedback } from '@/actions/(main)/mockvoice/conversation.action'
 import { ReviewSheet } from '../../../_components/review-sheet'
 
+interface SessionData {
+    id: string
+    duration: number
+    createdAt: Date
+    status: string
+    mock: {
+        title: string
+        description: string
+        level: string
+    }
+    userRating?: number
+    aiAnalysis?: AIFeedback
+}
+
+interface AIFeedback {
+    overallScore: number
+    communication: { score: number; feedback: string }
+    technical: { score: number; feedback: string }
+    problemSolving: { score: number; feedback: string }
+    strengths: string[]
+    improvements: string[]
+    detailedFeedback: string
+}
+
 export default function ResultsPage({
     params
 }: {
@@ -28,8 +52,8 @@ export default function ResultsPage({
     const resolvedParams = use(params)
     const router = useRouter()
 
-    const [sessionData, setSessionData] = useState<any>(null)
-    const [feedback, setFeedback] = useState<any>(null)
+    const [sessionData, setSessionData] = useState<SessionData | null>(null)
+    const [feedback, setFeedback] = useState<AIFeedback | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false)
     const [reviewSheetOpen, setReviewSheetOpen] = useState(false)

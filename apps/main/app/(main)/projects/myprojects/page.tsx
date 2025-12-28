@@ -20,7 +20,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
 import toast from "@repo/ui/components/ui/sonner";
 import Link from "next/link"
-import { getUserProjects, deleteProject } from "@/actions/(main)/projects/project.action"
+import { getUserProjects } from "@/actions/(main)/projects/project.action"
 import { ProjectCard, ProjectCardSkeleton } from "@/components/projects/project-card"
 import SmoothScroll from "@/components/smoothscroll"
 import { ProjectV2Basic, ProjectV2Progress } from "@/types/project"
@@ -150,7 +150,7 @@ export default function MyProjectsPage() {
 								Projects
 							</Link>
 							<ArrowRight className="w-4 h-4" />
-							<span>My Projects - { totalProjects }</span>
+							<span>My Projects - {totalProjects}</span>
 						</div>
 						<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 							<div>

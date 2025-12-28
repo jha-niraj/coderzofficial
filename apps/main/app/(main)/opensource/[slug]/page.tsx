@@ -426,7 +426,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ slug: 
                                                                 <div className="flex items-center gap-3 flex-wrap">
                                                                     <Badge className={cn(diffColors?.bg, diffColors?.text, "text-xs")}>
                                                                         <div className={cn("w-1.5 h-1.5 rounded-full mr-1.5", diffColors?.dot)} />
-                                                                        {DIFFICULTY_LEVELS.find(d => d.value === issue.difficulty)?.label.replace(/[🌱🟢🟡🔴⚫]\s?/, '') || issue.difficulty}
+                                                                        {DIFFICULTY_LEVELS.find(d => d.value === issue.difficulty)?.label.split(' ').pop() || issue.difficulty}
                                                                     </Badge>
                                                                     <Badge className={cn(statColors?.bg, statColors?.text, "text-xs")}>
                                                                         {issue.status.replace('_', ' ')}

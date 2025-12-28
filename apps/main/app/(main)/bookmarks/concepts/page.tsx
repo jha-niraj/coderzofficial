@@ -19,8 +19,22 @@ const difficultyColors = {
     ADVANCED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
+interface BookmarkConcept {
+    id: string;
+    slug: string;
+    title: string;
+    description?: string | null;
+    thumbnail?: string | null;
+    category?: string | null;
+    difficulty: string;
+    stepCount: number;
+    estimatedTime: number | null;
+    likeCount: number;
+    savedAt: string | Date;
+}
+
 export default function ConceptBookmarksPage() {
-    const [concepts, setConcepts] = useState<any[]>([]);
+    const [concepts, setConcepts] = useState<BookmarkConcept[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -29,7 +43,7 @@ export default function ConceptBookmarksPage() {
             try {
                 const result = await getConceptBookmarks();
                 if (result.success && result.data) {
-                    setConcepts(result.data);
+                    setConcepts(result.data as unknown as BookmarkConcept[]);
                 }
             } catch (error) {
                 console.error("Error loading concept bookmarks:", error);

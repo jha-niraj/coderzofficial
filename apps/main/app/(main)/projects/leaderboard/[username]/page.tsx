@@ -2,8 +2,8 @@ import { Suspense } from 'react'
 import { auth } from '@repo/auth'
 import prisma from '@repo/prisma'
 import { UserProfileLeaderboardClient } from './_components/user-profile-leaderboard-client'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
 import { UserX, ArrowLeft, Users } from 'lucide-react'
@@ -142,9 +142,9 @@ export default async function UserProfileLeaderboardPage({
 
     // Calculate stats
     const totalProjects = userProfile.UserProjectV2Progress.length
-    const completedProjects = userProfile.UserProjectV2Progress.filter((p: any) => p.status === 'COMPLETED').length
-    const inProgressProjects = userProfile.UserProjectV2Progress.filter((p: any) => p.status === 'IN_PROGRESS').length
-    const totalTasksCompleted = userProfile.UserProjectV2Progress.reduce((sum: number, p: any) => sum + p.tasksCompleted, 0)
+    const completedProjects = userProfile.UserProjectV2Progress.filter((p: { status: string }) => p.status === 'COMPLETED').length
+    const inProgressProjects = userProfile.UserProjectV2Progress.filter((p: { status: string }) => p.status === 'IN_PROGRESS').length
+    const totalTasksCompleted = userProfile.UserProjectV2Progress.reduce((sum: number, p: { tasksCompleted: number }) => sum + p.tasksCompleted, 0)
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">

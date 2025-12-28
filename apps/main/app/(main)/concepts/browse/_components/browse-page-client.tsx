@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import {
-    Search, Lightbulb, Grid, List, Loader2, BookOpen, Clock, Eye, Heart,
+    Search, Lightbulb, Grid, List, BookOpen, Clock, Eye, Heart,
     ChevronLeft, ChevronRight, Plus
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";

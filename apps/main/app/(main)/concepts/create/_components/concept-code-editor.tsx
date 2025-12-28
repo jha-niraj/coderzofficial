@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@repo/ui/components/ui/button";
-import { 
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select";
 import { Copy, Check, Loader2 } from "lucide-react";
 import useTheme from '@repo/ui/components/themeprovider';
@@ -85,7 +85,7 @@ export default function ConceptCodeEditor({
     const [currentLanguage, setCurrentLanguage] = useState(language);
     const [currentCode, setCurrentCode] = useState(code || "");
     const [copied, setCopied] = useState(false);
-    const editorRef = useRef<any>(null);
+    const editorRef = useRef<unknown>(null);
 
     // Update code when prop changes
     useEffect(() => {
@@ -99,7 +99,7 @@ export default function ConceptCodeEditor({
         setCurrentLanguage(language);
     }, [language]);
 
-    const handleEditorDidMount = (editor: any) => {
+    const handleEditorDidMount = (editor: unknown) => {
         editorRef.current = editor;
     };
 

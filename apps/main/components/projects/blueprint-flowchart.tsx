@@ -2,13 +2,13 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import {
-    ReactFlow, Node, Edge, Controls, Background, BackgroundVariant, 
+    ReactFlow, Node, Edge, Controls, Background, BackgroundVariant,
     useNodesState, useEdgesState, Position, MarkerType, Handle
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ChevronDown, ChevronUp, Layers, Code2, Brain, Trophy, CheckCircle2, 
+    ChevronDown, ChevronUp, Layers, Code2, Brain, Trophy, CheckCircle2,
     Sparkles, Play
 } from 'lucide-react'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -345,8 +345,8 @@ export default function BlueprintFlowchart({
         return { initialNodes: nodes, initialEdges: edges }
     }, [tasks, projectTitle, progressPercentage])
 
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+    const [nodes, , onNodesChange] = useNodesState(initialNodes)
+    const [edges, , onEdgesChange] = useEdgesState(initialEdges)
 
     const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
         if (node.type === 'task' && onTaskClick) {
@@ -359,7 +359,7 @@ export default function BlueprintFlowchart({
         const tasksPerRow = 4
         const rows = Math.ceil(tasks?.length ?? 0 / tasksPerRow)
         return Math.max(500, 250 + rows * 250)
-    }, [tasks?.length ?? 0])
+    }, [tasks?.length])
 
     return (
         <div className="w-full bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">

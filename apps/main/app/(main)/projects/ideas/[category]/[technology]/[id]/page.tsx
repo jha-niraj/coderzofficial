@@ -23,6 +23,25 @@ import {
 import toast from '@repo/ui/components/ui/sonner'
 import { getCategoryById, getTechnologyById } from '../../../data/categories'
 
+interface ProjectIdea {
+    id: string
+    projectTitle: string
+    projectDescription: string
+    difficulty: string
+    generationType: string
+    technologies?: string[]
+    features?: string[]
+    learningOutcomes?: string[]
+    estimatedTime?: string
+    views?: number
+    upvotes?: number
+    createdAt: Date
+    author?: {
+        name: string | null
+        image: string | null
+    }
+}
+
 export default function ProjectIdeaDetailPage() {
     const params = useParams()
     const router = useRouter()
@@ -30,7 +49,7 @@ export default function ProjectIdeaDetailPage() {
     const technologyId = params.technology as string
     const projectId = params.id as string
 
-    const [project, setProject] = useState<any>(null)
+    const [project, setProject] = useState<ProjectIdea | null>(null)
     const [loading, setLoading] = useState(true)
     const [upvoted, setUpvoted] = useState(false)
     const [upvoteCount, setUpvoteCount] = useState(0)

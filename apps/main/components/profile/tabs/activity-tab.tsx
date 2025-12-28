@@ -8,8 +8,7 @@ import {
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Activity, Calendar, Flame, TrendingUp, Clock, Award, BookOpen, Code,
-    MessageSquare, Star,
-    Icon
+    MessageSquare, Star
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import {
@@ -31,7 +30,7 @@ interface ActivityTabProps {
             activitiesCount: number;
         }>;
     };
-    isOwnProfile: boolean;
+    isOwnProfile?: boolean;
 }
 
 // Activity type config
@@ -75,7 +74,7 @@ function getContributionColor(count: number): string {
     return "bg-green-500 dark:bg-green-500";
 }
 
-export function ActivityTab({ user, isOwnProfile: _isOwnProfile }: ActivityTabProps) {
+export function ActivityTab({ user }: ActivityTabProps) {
     const activities = useMemo(() => {
         return user.recentActivity || [];
     }, [user.recentActivity]);

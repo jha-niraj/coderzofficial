@@ -3,13 +3,13 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
+import {
     Search, ArrowRight, Sparkles, History, UserX, Loader2
 } from "lucide-react"
 import { Input } from "@repo/ui/components/ui/input"
 import { Button } from "@repo/ui/components/ui/button"
-import { 
-    Card, CardContent 
+import {
+    Card, CardContent
 } from "@repo/ui/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useUserStore } from "@/app/store/useUserStore"
@@ -44,17 +44,33 @@ const NoUserFound = ({ query }: { query: string }) => (
     </motion.div>
 )
 
+interface SearchResult {
+    id: string | null
+    username: string | null
+    name: string | null
+    avatar: string | null
+    credits?: number | null
+}
+
+interface TransferHistoryEntry {
+    type: 'sent' | 'received'
+    amount: number
+    createdAt: Date
+    recipientName?: string | null
+    senderName?: string | null
+}
+
 export default function CreditTransferPage() {
     const router = useRouter()
     const { user, fetchUser, handleCreditTransfer } = useUserStore()
     const [searchQuery, setSearchQuery] = useState("")
-    const [searchResults, setSearchResults] = useState<any[]>([])
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([])
     const [isSearching, setIsSearching] = useState(false)
-    const [selectedUser, setSelectedUser] = useState<any>(null)
+    const [selectedUser, setSelectedUser] = useState<SearchResult | null>(null)
     const [creditAmount, setCreditAmount] = useState(20)
     const [showDialog, setShowDialog] = useState(false)
     const [noResults, setNoResults] = useState(false)
-    const [transferHistory, setTransferHistory] = useState<any[]>([])
+    const [transferHistory, setTransferHistory] = useState<TransferHistoryEntry[]>([])
     const [hasSearched, setHasSearched] = useState(false)
 
     useEffect(() => {
@@ -66,7 +82,7 @@ export default function CreditTransferPage() {
             if (!user?.id) return
             try {
                 const history = await getTransferHistory(user.id)
-                setTransferHistory(history)
+                setTransferHistory(history as TransferHistoryEntry[])
             } catch (err) {
                 console.error("Failed to load history", err)
             }
@@ -186,46 +202,46 @@ export default function CreditTransferPage() {
                         </div>
                         <AnimatePresence>
                             {
-                            hasSearched && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="max-w-4xl mx-auto mt-8"
-                                >
-                                    {
-                                    isSearching ? (
-                                        <LoadingSpinner />
-                                    ) : noResults ? (
-                                        <NoUserFound query={searchQuery} />
-                                    ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {
-                                            searchResults.map((result, index) => (
-                                                <motion.div
-                                                    key={result.id}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: index * 0.1 }}
-                                                >
-                                                    <UserCard
-                                                        user={result}
-                                                        creditAmount={creditAmount}
-                                                        onCreditChange={handleCreditChange}
-                                                        currentUserCredits={user?.credits || 0}
-                                                        onTransfer={() => {
-                                                            setSelectedUser(result)
-                                                            setShowDialog(true)
-                                                        }}
-                                                    />
-                                                </motion.div>
-                                            ))
-                                            }
-                                        </div>
-                                    )
-                                    }
-                                </motion.div>
-                            )
+                                hasSearched && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="max-w-4xl mx-auto mt-8"
+                                    >
+                                        {
+                                            isSearching ? (
+                                                <LoadingSpinner />
+                                            ) : noResults ? (
+                                                <NoUserFound query={searchQuery} />
+                                            ) : (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {
+                                                        searchResults.map((result, index) => (
+                                                            <motion.div
+                                                                key={result.id}
+                                                                initial={{ opacity: 0, y: 20 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ delay: index * 0.1 }}
+                                                            >
+                                                                <UserCard
+                                                                    user={result}
+                                                                    creditAmount={creditAmount}
+                                                                    onCreditChange={handleCreditChange}
+                                                                    currentUserCredits={user?.credits || 0}
+                                                                    onTransfer={() => {
+                                                                        setSelectedUser(result)
+                                                                        setShowDialog(true)
+                                                                    }}
+                                                                />
+                                                            </motion.div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            )
+                                        }
+                                    </motion.div>
+                                )
                             }
                         </AnimatePresence>
                     </div>
@@ -248,71 +264,71 @@ export default function CreditTransferPage() {
                     <Card className="border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 overflow-hidden">
                         <CardContent className="p-0">
                             {
-                            transferHistory.length === 0 ? (
-                                <div className="p-12 text-center">
-                                    <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <History className="w-8 h-8 text-neutral-400" />
-                                    </div>
-                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">No transactions yet</h3>
-                                    <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-                                        Transfers you send or receive will appear here.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                                    {
-                                    transferHistory.map((transfer, index) => (
-                                        <div key={index} className="p-4 sm:p-6 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                            <div className="flex items-start gap-4">
-                                                <div className={`mt-1 p-2 rounded-lg ${transfer.type === "sent"
-                                                    ? "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400"
-                                                    : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
-                                                    }`}>
-                                                    {transfer.type === "sent" ? <ArrowRight className="w-4 h-4 -rotate-45" /> : <ArrowRight className="w-4 h-4 rotate-135" />}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                        {
-                                                        transfer.type === "sent"
-                                                            ? `Sent to ${transfer.recipientName || "Unknown User"}`
-                                                            : `Received from ${transfer.senderName || "Unknown User"}`
-                                                        }
-                                                    </p>
-                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                                                        {
-                                                        new Date(transfer.createdAt).toLocaleDateString(undefined, {
-                                                            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                                        })
-                                                        }
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className={`font-mono font-medium ${transfer.type === "sent"
-                                                ? "text-neutral-900 dark:text-neutral-200"
-                                                : "text-emerald-600 dark:text-emerald-400"
-                                                }`}>
-                                                {transfer.type === "sent" ? "-" : "+"}{transfer.amount} Credits
-                                            </div>
+                                transferHistory.length === 0 ? (
+                                    <div className="p-12 text-center">
+                                        <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <History className="w-8 h-8 text-neutral-400" />
                                         </div>
-                                    ))
-                                    }
-                                </div>
-                            )
+                                        <h3 className="text-lg font-medium text-neutral-900 dark:text-white">No transactions yet</h3>
+                                        <p className="text-neutral-500 dark:text-neutral-400 mt-1">
+                                            Transfers you send or receive will appear here.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                                        {
+                                            transferHistory.map((transfer, index) => (
+                                                <div key={index} className="p-4 sm:p-6 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className={`mt-1 p-2 rounded-lg ${transfer.type === "sent"
+                                                            ? "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400"
+                                                            : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+                                                            }`}>
+                                                            {transfer.type === "sent" ? <ArrowRight className="w-4 h-4 -rotate-45" /> : <ArrowRight className="w-4 h-4 rotate-135" />}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                {
+                                                                    transfer.type === "sent"
+                                                                        ? `Sent to ${transfer.recipientName || "Unknown User"}`
+                                                                        : `Received from ${transfer.senderName || "Unknown User"}`
+                                                                }
+                                                            </p>
+                                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                                                {
+                                                                    new Date(transfer.createdAt).toLocaleDateString(undefined, {
+                                                                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                                    })
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`font-mono font-medium ${transfer.type === "sent"
+                                                        ? "text-neutral-900 dark:text-neutral-200"
+                                                        : "text-emerald-600 dark:text-emerald-400"
+                                                        }`}>
+                                                        {transfer.type === "sent" ? "-" : "+"}{transfer.amount} Credits
+                                                    </div>
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                )
                             }
                         </CardContent>
                     </Card>
                 </section>
                 {
-                showDialog && selectedUser && user && (
-                    <TransferDialog
-                        open={showDialog}
-                        onClose={() => setShowDialog(false)}
-                        sender={{ name: user.name || "You", image: user.image || "/placeholder.svg" }}
-                        recipient={{ name: selectedUser.name || selectedUser.username, image: selectedUser.avatar || "/placeholder.svg" }}
-                        creditAmount={creditAmount}
-                        onTransfer={() => handleCreditTransfer(selectedUser.id, creditAmount)}
-                    />
-                )
+                    showDialog && selectedUser && user && (
+                        <TransferDialog
+                            open={showDialog}
+                            onClose={() => setShowDialog(false)}
+                            sender={{ name: user.name || "You", image: user.image || "/placeholder.svg" }}
+                            recipient={{ name: selectedUser.name || selectedUser.username || 'Unknown', image: selectedUser.avatar || "/placeholder.svg" }}
+                            creditAmount={creditAmount}
+                            onTransfer={() => handleCreditTransfer(selectedUser.id!, creditAmount)}
+                        />
+                    )
                 }
             </div>
         </SmoothScroll>

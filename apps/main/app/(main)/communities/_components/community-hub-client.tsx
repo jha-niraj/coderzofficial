@@ -16,14 +16,17 @@ import { CommunityCard } from '@/components/community/community-card'
 import { PostCard } from '@/components/community/post-card'
 import { PostComposer } from '@/components/community/post-composer'
 import { MagicSheet } from '@/components/community/magic-sheet'
-import { 
-    getGlobalFeed, getFollowingFeed 
+import {
+    getGlobalFeed, getFollowingFeed
 } from '@/actions/(main)/community/post.action'
 import {
     joinCommunity, leaveCommunity
 } from '@/actions/(main)/community/community.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { useInView } from 'react-intersection-observer'
+
+// Type for PostCard to avoid 'as any' casts
+type PostCardPost = Parameters<typeof PostCard>[0]['post']
 
 interface CommunityHubClientProps {
     user: {
@@ -387,7 +390,7 @@ export function CommunityHubClient({
                                                                 transition={{ delay: index * 0.05 }}
                                                             >
                                                                 <PostCard
-                                                                    post={post as any}
+                                                                    post={post as unknown as PostCardPost}
                                                                     showCommunity
                                                                 />
                                                             </motion.div>
@@ -453,7 +456,7 @@ export function CommunityHubClient({
                                                                 transition={{ delay: index * 0.05 }}
                                                             >
                                                                 <PostCard
-                                                                    post={post as any}
+                                                                    post={post as unknown as PostCardPost}
                                                                     showCommunity
                                                                 />
                                                             </motion.div>

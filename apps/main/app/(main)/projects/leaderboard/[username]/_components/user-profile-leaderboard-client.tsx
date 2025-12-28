@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import {
-    ArrowLeft, Trophy, Calendar, Target, CheckCircle2, Clock, Sparkles, 
+    ArrowLeft, Trophy, Calendar, Target, CheckCircle2, Clock, Sparkles,
     TrendingUp
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -17,8 +17,58 @@ import {
 } from '@repo/ui/components/ui/avatar'
 import { Progress } from '@repo/ui/components/ui/progress'
 
+interface Project {
+    id: string
+    slug: string
+    title: string
+    shortDescription: string | null
+    difficulty: string
+    estimatedHours: number | null
+    technologies: string[]
+    visibility: string
+}
+
+interface ProjectProgress {
+    id: string
+    status: string
+    progressPercentage: number
+    tasksCompleted: number
+    totalTasks: number
+    startedAt: Date | null
+    completedAt: Date | null
+    updatedAt: Date
+    project: Project
+}
+
+interface TaskProgressEntry {
+    id: string
+    completedAt: Date | null
+    task: {
+        id: string
+        title: string
+        projectId: string
+        project: {
+            slug: string
+            title: string
+        }
+    }
+}
+
+interface UserProfile {
+    id: string
+    name: string | null
+    username: string | null
+    email: string
+    image: string | null
+    bio: string | null
+    credits: number
+    createdAt: Date
+    UserProjectV2Progress: ProjectProgress[]
+    UserTaskV2Status: TaskProgressEntry[]
+}
+
 interface UserProfileLeaderboardClientProps {
-    userProfile: any
+    userProfile: UserProfile
     stats: {
         totalProjects: number
         completedProjects: number
@@ -35,8 +85,8 @@ export function UserProfileLeaderboardClient({
 }: UserProfileLeaderboardClientProps) {
     const isOwnProfile = currentUserId === userProfile.id
 
-    const completedProjects = userProfile.UserProjectV2Progress.filter((p: any) => p.status === 'COMPLETED')
-    const inProgressProjects = userProfile.UserProjectV2Progress.filter((p: any) => p.status === 'IN_PROGRESS')
+    const completedProjects = userProfile.UserProjectV2Progress.filter((p) => p.status === 'COMPLETED')
+    const inProgressProjects = userProfile.UserProjectV2Progress.filter((p) => p.status === 'IN_PROGRESS')
     const recentTasks = userProfile.UserTaskV2Status
 
     const difficultyColors = {
@@ -163,7 +213,7 @@ export function UserProfileLeaderboardClient({
                                 ) : (
                                     <div className="space-y-3">
                                         {
-                                            recentTasks.map((taskProgress: any) => (
+                                            recentTasks.map((taskProgress) => (
                                                 <div key={taskProgress.id} className="flex items-start gap-3 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
                                                     <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                                                     <div className="flex-1 min-w-0">
@@ -196,7 +246,7 @@ export function UserProfileLeaderboardClient({
                                 ) : (
                                     <div className="space-y-4">
                                         {
-                                            inProgressProjects.map((progress: any) => (
+                                            inProgressProjects.map((progress) => (
                                                 <div key={progress.id} className="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
                                                     <div className="flex items-start justify-between mb-2">
                                                         <div className="flex-1">
@@ -240,7 +290,7 @@ export function UserProfileLeaderboardClient({
                             <CardContent className="px-0 pb-0">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {
-                                        completedProjects.map((progress: any) => (
+                                        completedProjects.map((progress) => (
                                             <Card key={progress.id} className="p-4">
                                                 <div className="flex items-start justify-between mb-2">
                                                     <div className="flex-1">

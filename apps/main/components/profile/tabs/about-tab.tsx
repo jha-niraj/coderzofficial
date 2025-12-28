@@ -10,7 +10,6 @@ import {
 	User, Mail, Phone, MapPin, Calendar, Globe, Briefcase, GraduationCap, Target, 
 	Heart, Building, Edit2, ExternalLink, Github, Linkedin, Twitter, Instagram, Youtube
 } from "lucide-react";
-import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 
 interface AboutTabProps {

@@ -50,7 +50,7 @@ export default function ChatSidebar() {
     const loadConversations = async () => {
         const { conversations: convs } = await getConversations()
         const { count } = await getTotalUnreadCount()
-        setConversations(convs as any)
+        setConversations(convs as unknown as Conversation[])
         setTotalUnread(count)
         setLoading(false)
     }

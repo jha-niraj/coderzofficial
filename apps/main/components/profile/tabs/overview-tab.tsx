@@ -8,12 +8,10 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Progress } from "@repo/ui/components/ui/progress";
 import {
-	FolderKanban, ExternalLink, GitBranch, Star, Clock, ArrowRight, Plus,
-	Pin, Activity, BookOpen, Trophy, TrendingUp
+	FolderKanban, Star, ArrowRight, Plus, Pin, Activity, Trophy, 
+	TrendingUp
 } from "lucide-react";
-import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
-import Image from "next/image";
 
 interface OverviewTabProps {
 	user: {

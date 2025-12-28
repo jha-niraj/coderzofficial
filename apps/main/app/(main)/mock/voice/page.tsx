@@ -51,21 +51,44 @@ const features = [
     },
 ]
 
+interface MockData {
+    id: string
+    title: string
+    description: string
+    category?: string
+    level: string
+    duration: number
+    creditsRequired: number
+    questionsCount?: number
+    isPublic?: boolean
+    byAdmin?: boolean
+    isFeatured?: boolean
+    createdBy?: {
+        username?: string
+        name?: string
+        image?: string
+    }
+    popularity?: number
+    totalSessions?: number
+    averageRating?: number
+    tags?: string[]
+}
+
 export default function VoiceMockInterviewPage() {
     const { credits } = useUserStore()
     const [createSheetOpen, setCreateSheetOpen] = useState(false)
     const [purchaseSheetOpen, setPurchaseSheetOpen] = useState(false)
-    const [selectedMock, setSelectedMock] = useState<any>(null)
+    const [selectedMock, setSelectedMock] = useState<MockData | null>(null)
 
     // Tab-based state
     const [activeCategory, setActiveCategory] = useState<string>('ALL')
-    const [categoryMocks, setCategoryMocks] = useState<any[]>([])
+    const [categoryMocks, setCategoryMocks] = useState<MockData[]>([])
     const [loadingCategory, setLoadingCategory] = useState(true)
 
     // Featured and community mocks
-    const [featuredMocks, setFeaturedMocks] = useState<any[]>([])
-    const [communityMocks, setCommunityMocks] = useState<any[]>([])
-    const [loadingFeatured, setLoadingFeatured] = useState(true)
+    const [featuredMocks, setFeaturedMocks] = useState<MockData[]>([])
+    const [communityMocks, setCommunityMocks] = useState<MockData[]>([])
+    const [, setLoadingFeatured] = useState(true)
     const [loadingCommunity, setLoadingCommunity] = useState(true)
 
     // Load featured mocks
@@ -108,7 +131,7 @@ export default function VoiceMockInterviewPage() {
     const loadCategoryMocks = useCallback(async (category: string) => {
         setLoadingCategory(true)
         try {
-            const result = await getAdminMocksByCategory(category as any, 6)
+            const result = await getAdminMocksByCategory(category, 6)
             if (result.success) {
                 setCategoryMocks(result.mocks || [])
             }

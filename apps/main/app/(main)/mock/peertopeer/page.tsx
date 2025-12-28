@@ -483,7 +483,7 @@ export default function PeerToPeerMockPage() {
                     <div className="space-y-6 py-6">
                         <div className="space-y-3">
                             <Label>Session Type</Label>
-                            <RadioGroup value={sessionType} onValueChange={(value: any) => setSessionType(value)}>
+                            <RadioGroup value={sessionType} onValueChange={(value: 'private' | 'public') => setSessionType(value)}>
                                 <div className="flex items-center space-x-2 p-3 border border-neutral-200 dark:border-neutral-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900">
                                     <RadioGroupItem value="public" id="public" />
                                     <Label htmlFor="public" className="flex-1 cursor-pointer">

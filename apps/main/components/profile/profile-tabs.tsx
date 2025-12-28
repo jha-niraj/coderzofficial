@@ -18,7 +18,7 @@ export type ProfileTab =
 interface ProfileTabsProps {
 	activeTab: ProfileTab;
 	onTabChange: (tab: ProfileTab) => void;
-	isOwnProfile: boolean;
+	isOwnProfile?: boolean;
 }
 
 const tabs: {
@@ -68,7 +68,6 @@ const tabs: {
 export function ProfileTabs({
 	activeTab,
 	onTabChange,
-	isOwnProfile,
 }: ProfileTabsProps) {
 	const [hoveredTab, setHoveredTab] = useState<ProfileTab | null>(null);
 
@@ -149,8 +148,7 @@ export function ProfileTabsDropdown({
 	activeTab,
 	onTabChange,
 }: ProfileTabsProps) {
-	const activeTabData = tabs.find((t) => t.id === activeTab);
-	const Icon = activeTabData?.icon;
+
 
 	return (
 		<div className="sm:hidden">

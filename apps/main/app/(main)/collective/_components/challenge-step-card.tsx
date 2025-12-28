@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import { StepSubmissionDialog } from "./step-submission-dialog";
 
+interface StepData {
+	questions?: Array<{ question: string; type: string; options?: string[] }>;
+}
+
 interface ChallengeStepCardProps {
 	step: {
 		id: string;
@@ -18,10 +22,10 @@ interface ChallengeStepCardProps {
 		title: string;
 		description: string;
 		type: string;
-		quizData?: any;
-		mockData?: any;
-		codingData?: any;
-		projectData?: any;
+		quizData?: StepData | null;
+		mockData?: { instructions?: string } | null;
+		codingData?: { problem?: string } | null;
+		projectData?: { requirements?: string } | null;
 	};
 	stepNumber: number;
 	isUnlocked: boolean;
@@ -76,15 +80,15 @@ export function ChallengeStepCard({
 
 	return (
 		<Card className={`transition-all duration-200 ${isCompleted ? "border-green-500 bg-green-50" :
-				isUnlocked ? "border-blue-500 hover:shadow-md" :
-					"border-gray-200 opacity-60"
+			isUnlocked ? "border-blue-500 hover:shadow-md" :
+				"border-gray-200 opacity-60"
 			}`}>
 			<CardHeader className="pb-3">
 				<div className="flex items-start justify-between">
 					<div className="flex items-center gap-3">
 						<div className={`p-2 rounded-full ${isCompleted ? "bg-green-500 text-white" :
-								isUnlocked ? "bg-blue-500 text-white" :
-									"bg-gray-300 text-gray-500"
+							isUnlocked ? "bg-blue-500 text-white" :
+								"bg-gray-300 text-gray-500"
 							}`}>
 							{isCompleted ? (
 								<CheckCircle className="w-5 h-5" />
@@ -165,8 +169,8 @@ export function ChallengeStepCard({
 				{/* Submission Feedback */}
 				{submission?.feedback && (
 					<div className={`border rounded-lg p-3 ${submission.status === "APPROVED" ? "bg-green-50 border-green-200" :
-							submission.status === "REJECTED" ? "bg-red-50 border-red-200" :
-								"bg-yellow-50 border-yellow-200"
+						submission.status === "REJECTED" ? "bg-red-50 border-red-200" :
+							"bg-yellow-50 border-yellow-200"
 						}`}>
 						<h4 className="font-medium text-sm mb-1">Feedback:</h4>
 						<p className="text-sm">{submission.feedback}</p>

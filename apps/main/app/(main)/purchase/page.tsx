@@ -14,23 +14,48 @@ import {
 } from '@repo/ui/components/ui/dialog'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
-	Receipt, Zap, Gift, AlertTriangle, ShieldCheck, Clock, Activity, 
+	Receipt, Zap, Gift, AlertTriangle, ShieldCheck, Clock, Activity,
 	Terminal, Server, CheckCircle2, Loader2, Wallet
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from '@repo/ui/components/ui/sonner'
 import { motion } from 'framer-motion'
 import { paymentConfig, calculatePrice } from '@/lib/payment-config'
-import { 
-	computeUsageForCredits, creditUsageConfig, formatCountRange 
+import {
+	computeUsageForCredits, creditUsageConfig, formatCountRange
 } from '@/lib/credit-usage'
 import { submitCreditRequest } from '../../../actions/(main)/user/dashboard.action'
 import { BentoPricing } from '@/components/main/bentopricing'
 
 // Load Razorpay types
+interface RazorpayResponse {
+	razorpay_payment_id: string
+	razorpay_order_id: string
+	razorpay_signature: string
+}
+
+interface RazorpayOptions {
+	key: string | undefined
+	amount: number
+	currency: string
+	name: string
+	description: string
+	image: string
+	order_id: string
+	handler: (response: RazorpayResponse) => void
+	prefill: { name: string; email: string }
+	theme: { color: string }
+	modal: { ondismiss: () => void }
+}
+
+interface RazorpayInstance {
+	open: () => void
+	on: (event: string, callback: () => void) => void
+}
+
 declare global {
 	interface Window {
-		Razorpay: any;
+		Razorpay: new (options: RazorpayOptions) => RazorpayInstance
 	}
 }
 
@@ -88,7 +113,7 @@ export default function PurchasePage() {
 
 			const amountInSmallestUnit = currency === 'INR' ? Math.round(price * 100) : Math.round(price * 100);
 
-			const options = {
+			const options: RazorpayOptions = {
 				key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
 				amount: amountInSmallestUnit,
 				currency: currency,
@@ -96,7 +121,7 @@ export default function PurchasePage() {
 				description: `Provision ${credits} Compute Credits`,
 				image: '/titlelogo.jpeg',
 				order_id: data.orderId,
-				handler: async function (response: any) {
+				handler: async function (response: RazorpayResponse) {
 					try {
 						document.body.classList.remove('rzp-open')
 						setIsProcessingDialogOpen(true)
@@ -119,8 +144,9 @@ export default function PurchasePage() {
 						} else {
 							throw new Error(verifyData.message || 'Payment verification failed')
 						}
-					} catch (error: any) {
-						toast.error(error.message || 'Verification failed')
+					} catch (err: unknown) {
+						const error = err instanceof Error ? err : new Error('Verification failed')
+						toast.error(error.message)
 						setIsProcessingDialogOpen(false)
 						setIsProcessing(false)
 					}
@@ -146,7 +172,8 @@ export default function PurchasePage() {
 			await new Promise(requestAnimationFrame)
 			document.body.classList.add('rzp-open')
 			rzp.open()
-		} catch (error: any) {
+		} catch (err: unknown) {
+			const error = err instanceof Error ? err : new Error('Payment failed')
 			toast.error(error.message)
 			setIsProcessingDialogOpen(false)
 			setIsProcessing(false)

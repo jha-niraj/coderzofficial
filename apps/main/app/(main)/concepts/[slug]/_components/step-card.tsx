@@ -11,8 +11,8 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card";
-import { 
-    RadioGroup, RadioGroupItem 
+import {
+    RadioGroup, RadioGroupItem
 } from "@repo/ui/components/ui/radio-group";
 import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
@@ -38,6 +38,19 @@ interface CodeBlock {
     isRunnable: boolean;
 }
 
+interface QuizOption {
+    id: number;
+    text: string;
+    isCorrect: boolean;
+}
+
+interface ComparisonItem {
+    title: string;
+    content: string;
+    pros?: string[];
+    cons?: string[];
+}
+
 interface ConceptStep {
     id: string;
     order: number;
@@ -46,16 +59,16 @@ interface ConceptStep {
     content: string;
     language?: string | null;
     visualizationType?: string | null;
-    visualizationData?: any;
-    comparisonItems?: any;
+    visualizationData?: string | null;
+    comparisonItems?: string | null;
     quizQuestion?: string | null;
-    quizOptions?: any;
+    quizOptions?: string | null;
     quizExplanation?: string | null;
     challengeDescription?: string | null;
     challengeStarterCode?: string | null;
     challengeSolution?: string | null;
     challengeHints?: string[];
-    challengeTestCases?: any;
+    challengeTestCases?: string | null;
     tips?: string[];
     codeBlocks: CodeBlock[];
 }
@@ -112,7 +125,7 @@ export default function StepCard({
     const handleQuizSubmit = async () => {
         if (selectedQuizOption === null) return;
 
-        const options = step.quizOptions as { id: number; text: string; isCorrect: boolean }[];
+        const options = (typeof step.quizOptions === 'string' ? JSON.parse(step.quizOptions) : step.quizOptions) as QuizOption[];
         const isCorrect = options[selectedQuizOption]?.isCorrect || false;
 
         setQuizSubmitted(true);
@@ -241,7 +254,7 @@ export default function StepCard({
                                 disabled={quizSubmitted && quizCorrect}
                             >
                                 {
-                                    (step.quizOptions as any[])?.map((option: any, index: number) => (
+                                    ((typeof step.quizOptions === 'string' ? JSON.parse(step.quizOptions) : step.quizOptions) as QuizOption[])?.map((option, index) => (
                                         <div
                                             key={option.id || index}
                                             className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${quizSubmitted
@@ -411,7 +424,7 @@ export default function StepCard({
                     step.type === "COMPARISON" && step.comparisonItems && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {
-                                (step.comparisonItems as any[]).map((item: any, index: number) => (
+                                ((typeof step.comparisonItems === 'string' ? JSON.parse(step.comparisonItems) : step.comparisonItems) as ComparisonItem[]).map((item, index) => (
                                     <Card key={index}>
                                         <CardHeader className="pb-3">
                                             <CardTitle className="text-base">{item.title}</CardTitle>

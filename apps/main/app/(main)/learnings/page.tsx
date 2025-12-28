@@ -51,8 +51,30 @@ const moduleConfig = {
     },
 };
 
+interface ActivityItem {
+    type: 'concept' | 'project' | 'mock';
+    title: string;
+    action: 'completed' | 'learning' | 'working';
+    progress?: number;
+    date: string | Date;
+}
+
+interface LearningsSummary {
+    totalItemsInProgress: number;
+    totalCompleted: number;
+    currentStreak: number;
+    totalLearningTime: number;
+    modules: {
+        projects?: { inProgress: number; completed: number; recent?: { title: string }[] };
+        concepts?: { learning: number; completed: number; recent?: { title: string; progress: number }[] };
+        mock?: { sessions: number; avgScore: number };
+        collectives?: { memberships: number };
+    };
+    recentActivity: ActivityItem[];
+}
+
 export default function LearningsPage() {
-    const [summary, setSummary] = useState<any>(null);
+    const [summary, setSummary] = useState<LearningsSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -291,7 +313,7 @@ export default function LearningsPage() {
                         summary?.recentActivity?.length > 0 ? (
                             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                                 {
-                                    summary.recentActivity.map((activity: any, index: number) => (
+                                    summary.recentActivity.map((activity, index) => (
                                         <div
                                             key={index}
                                             className="flex items-center gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"

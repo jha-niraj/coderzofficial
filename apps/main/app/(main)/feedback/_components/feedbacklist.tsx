@@ -23,31 +23,7 @@ import { FeedbackStatus, FeedbackCategory, Role } from "@repo/prisma/client"
 import Image from "next/image"
 import { useFeedbackStore } from "@/app/store/feedbackStore"
 
-const _getCategoryColor = (category: string) => {
-    switch (category) {
-        case "BUG":
-            return "destructive"
-        case "FEATURE":
-            return "default"
-        case "UI":
-            return "secondary"
-        default:
-            return "outline"
-    }
-}
-const _getStatusColor = (status: string) => {
-    switch (status) {
-        case "PENDING":
-        case "UNDER_REVIEW":
-            return "secondary"
-        case "PLANNED":
-            return "default"
-        case "COMPLETED":
-            return "default"
-        default:
-            return "outline"
-    }
-}
+
 
 interface FeedbackItem {
     id: string;
@@ -78,7 +54,7 @@ interface FeedbackListProps {
     setFeedbackSheetStatus: () => void;
 }
 
-export default function FeedbackList({ status, onStatusChange, setFeedbackSheetStatus: _setFeedbackSheetStatus }: FeedbackListProps) {
+export default function FeedbackList({ status, onStatusChange }: FeedbackListProps) {
     const { data: session } = useSession();
     const { feedbackByStatus, loading, fetchFeedback } = useFeedbackStore();
     const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null)

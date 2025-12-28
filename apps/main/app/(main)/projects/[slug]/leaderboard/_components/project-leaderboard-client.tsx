@@ -10,8 +10,8 @@ import {
 import { Button } from '@repo/ui/components/ui/button'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Avatar, AvatarFallback, AvatarImage 
+import {
+    Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
@@ -25,8 +25,33 @@ import {
 } from '@/lib/project-scoring'
 import { UserProgressSheet } from '@/components/projects/user-progress-sheet'
 
+interface LeaderboardEntry {
+    id: string
+    rank: number
+    score: number
+    progressPercent: number
+    tasksCompleted: number
+    totalTasks: number
+    user: {
+        name: string | null
+        username: string
+        image: string | null
+    }
+}
+
+interface LeaderboardPagination {
+    total: number
+    totalPages: number
+    currentPage: number
+}
+
 interface ProjectLeaderboardClientProps {
-    project: any
+    project: {
+        slug: string
+        title: string
+        totalStarted: number
+        totalCompleted: number
+    }
     currentPage: number
     autoOpenUsername?: string
     autoOpenSheet?: boolean
@@ -38,11 +63,11 @@ export function ProjectLeaderboardClient({
     currentPage,
     autoOpenUsername,
     autoOpenSheet,
-    currentUserId
+    currentUserId: _currentUserId
 }: ProjectLeaderboardClientProps) {
-    const router = useRouter()
-    const [leaderboard, setLeaderboard] = useState<any[]>([])
-    const [pagination, setPagination] = useState<any>(null)
+    const _router = useRouter()
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+    const [pagination, setPagination] = useState<LeaderboardPagination | null>(null)
     const [loading, setLoading] = useState(true)
     const [selectedUser, setSelectedUser] = useState<string | null>(null)
     const [sheetOpen, setSheetOpen] = useState(false)

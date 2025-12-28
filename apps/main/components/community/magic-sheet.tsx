@@ -8,14 +8,15 @@ import {
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import {
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
+    SheetTrigger
 } from '@repo/ui/components/ui/sheet'
 import { cn } from '@repo/ui/lib/utils'
 
-interface MagicSheetProps {
-    communityId?: string
-    communitySlug?: string
-}
+// interface MagicSheetProps {
+//     communityId?: string
+//     communitySlug?: string
+// }
 
 const QUICK_ACTIONS = [
     {
@@ -47,7 +48,7 @@ const QUICK_ACTIONS = [
     }
 ]
 
-export function MagicSheet({ communityId, communitySlug }: MagicSheetProps) {
+export function MagicSheet() {
     const [isOpen, setIsOpen] = useState(false)
 
     return (
@@ -161,7 +162,7 @@ export function MagicSheet({ communityId, communitySlug }: MagicSheetProps) {
 }
 
 // Mini version that shows inline quick actions
-export function QuickActionsBar({ communityId }: { communityId?: string }) {
+export function QuickActionsBar() {
     return (
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {

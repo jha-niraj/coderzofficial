@@ -35,16 +35,16 @@ interface ConceptStep {
     content: string;
     language?: string | null;
     visualizationType?: string | null;
-    visualizationData?: any;
-    comparisonItems?: any;
+    visualizationData?: string | null;
+    comparisonItems?: string | null;
     quizQuestion?: string | null;
-    quizOptions?: any;
+    quizOptions?: string | null;
     quizExplanation?: string | null;
     challengeDescription?: string | null;
     challengeStarterCode?: string | null;
     challengeSolution?: string | null;
     challengeHints?: string[];
-    challengeTestCases?: any;
+    challengeTestCases?: string | null;
     tips?: string[];
     codeBlocks: {
         id: string;

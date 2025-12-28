@@ -18,7 +18,6 @@ import StudioSection from "@/components/landingpage/studio-section";
 import AssessmentsSection from "@/components/landingpage/assessments-section";
 import CreditsSection from "@/components/landingpage/credits-section";
 import { Button } from "@repo/ui/components/ui/button";
-import { useRouter } from "next/navigation";
 import Footer from "@/components/landingpage/footer";
 
 import { PublicProjectsGrid } from "@/app/(main)/projects/_components/public-projects-grid";
@@ -29,33 +28,13 @@ import { Badge } from "@repo/ui/components/ui/badge";
 
 // import { Scene } from "@/components/ui/herosectioncanvas";
 
-// Animation variants - can be used for future animations
-const _fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8 } }
-};
-const _staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.2
-        }
-    }
-};
-const _floating = {
-    y: [0, -10, 0],
-    transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut"
-    }
-};
+// Animation variants kept for potential future use
+// const fadeInUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8 } } };
+// const staggerContainer = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.2 } } };
+// const floating = { y: [0, -10, 0], transition: { duration: 3, repeat: Infinity, ease: "easeInOut" } };
 export default function LandingPage() {
-    const [_mobileMenuOpen, _setMobileMenuOpen] = useState(false)
-    const [_visibleSection, setVisibleSection] = useState("")
-    const [_showBackToTop, setShowBackToTop] = useState(false)
-    const _router = useRouter();
+    const [, setVisibleSection] = useState("")
+    const [, setShowBackToTop] = useState(false)
 
 
     const heroRef = useRef<HTMLElement | null>(null)

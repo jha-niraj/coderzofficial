@@ -231,7 +231,7 @@ export function ChannelPageClient({
                                                     transition={{ delay: index * 0.05 }}
                                                 >
                                                     <PostCard
-                                                        post={post as any}
+                                                        post={post as unknown as Parameters<typeof PostCard>[0]['post']}
                                                         showCommunity
                                                     />
                                                 </motion.div>

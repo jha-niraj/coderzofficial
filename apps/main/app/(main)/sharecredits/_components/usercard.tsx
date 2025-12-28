@@ -8,10 +8,10 @@ import {
 
 interface UserCardProps {
     user: {
-        id: string
-        username: string
-        name: string
-        avatar: string
+        id: string | null
+        username: string | null
+        name: string | null
+        avatar: string | null
     }
     creditAmount: number
     onCreditChange: (amount: number) => void

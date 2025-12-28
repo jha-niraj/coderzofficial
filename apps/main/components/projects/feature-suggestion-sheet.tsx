@@ -24,12 +24,12 @@ import Image from "next/image"
 
 interface FeatureSuggestionSheetProps {
     projectId: string
-    projectSlug: string
+    projectSlug?: string
     isCreator?: boolean
     isEnrolled?: boolean
 }
 
-export function FeatureSuggestionSheet({ projectId, projectSlug, isCreator = false, isEnrolled = false }: FeatureSuggestionSheetProps) {
+export function FeatureSuggestionSheet({ projectId, isCreator = false, isEnrolled = false }: FeatureSuggestionSheetProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [title, setTitle] = useState("")
@@ -98,6 +98,7 @@ export function FeatureSuggestionSheet({ projectId, projectSlug, isCreator = fal
                 toast.error(result.message)
             }
         } catch (error) {
+            console.log("Error occurred while submitting suggesstion: " + error);
             toast.error("Failed to submit suggestion")
         } finally {
             setLoading(false)

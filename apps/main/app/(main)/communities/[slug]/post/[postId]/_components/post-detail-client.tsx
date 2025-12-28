@@ -26,6 +26,27 @@ import {
 import { toggleFollow } from '@/actions/(main)/community/follow.action'
 import toast from '@repo/ui/components/ui/sonner'
 
+interface CommentAuthor {
+    id: string
+    name: string | null
+    username: string | null
+    image: string | null
+}
+
+interface Comment {
+    id: string
+    content: string
+    isAccepted: boolean
+    likeCount: number
+    createdAt: Date
+    author: CommentAuthor
+    replies?: Comment[]
+    _count?: {
+        likes: number
+        replies: number
+    }
+}
+
 interface PostDetailClientProps {
     user: {
         id: string
@@ -64,36 +85,7 @@ interface PostDetailClientProps {
             slug: string
             icon?: string | null
         } | null
-        comments?: Array<{
-            id: string
-            content: string
-            isAccepted: boolean
-            likeCount: number
-            createdAt: Date
-            author: {
-                id: string
-                name: string | null
-                username: string | null
-                image: string | null
-            }
-            replies?: Array<{
-                id: string
-                content: string
-                likeCount: number
-                createdAt: Date
-                author: {
-                    id: string
-                    name: string | null
-                    username: string | null
-                    image: string | null
-                }
-                _count?: { likes: number }
-            }>
-            _count?: {
-                likes: number
-                replies: number
-            }
-        }>
+        comments?: Comment[]
         _count?: {
             likes: number
             comments: number
@@ -177,7 +169,7 @@ export function PostDetailClient({
         try {
             const result = await createComment(post.id, newComment.trim())
             if (result.success && result.data) {
-                setComments(prev => [result.data as any, ...prev])
+                setComments(prev => [result.data as unknown as Comment, ...prev])
                 setNewComment('')
                 toast.success('Comment added!')
             } else {
@@ -199,7 +191,7 @@ export function PostDetailClient({
             if (result.success && result.data) {
                 setComments(prev => prev.map(c =>
                     c.id === commentId
-                        ? { ...c, replies: [...(c.replies || []), result.data as any] }
+                        ? { ...c, replies: [...(c.replies || []), result.data as unknown as Comment] }
                         : c
                 ))
                 setReplyContent('')
@@ -603,36 +595,7 @@ export function PostDetailClient({
 
 // Comment Card Component
 interface CommentCardProps {
-    comment: {
-        id: string
-        content: string
-        isAccepted: boolean
-        likeCount: number
-        createdAt: Date
-        author: {
-            id: string
-            name: string | null
-            username: string | null
-            image: string | null
-        }
-        replies?: Array<{
-            id: string
-            content: string
-            likeCount: number
-            createdAt: Date
-            author: {
-                id: string
-                name: string | null
-                username: string | null
-                image: string | null
-            }
-            _count?: { likes: number }
-        }>
-        _count?: {
-            likes: number
-            replies: number
-        }
-    }
+    comment: Comment
     postId?: string
     currentUserId?: string
     isPostAuthor: boolean

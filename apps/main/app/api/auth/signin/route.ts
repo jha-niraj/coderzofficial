@@ -36,7 +36,14 @@ export async function GET(request: NextRequest) {
     }
 }
 
-async function createJWTForUser(user: any) {
+interface SSOUser {
+    id: string
+    email: string | null | undefined
+    name: string | null | undefined
+    image?: string | null
+}
+
+async function createJWTForUser(user: SSOUser) {
     const { SignJWT } = await import('jose')
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'ZDgHApfCZD33Dk4aPAVzhlMkRynpGk9hf8bceQE4jGc=')
 

@@ -17,13 +17,15 @@ import {
 	AlertDialogDescription, AlertDialogHeader, AlertDialogTitle
 } from "@repo/ui/components/ui/alert-dialog"
 import {
-	publicInterviews, companies
+	publicInterviews, companies, PublicInterviewData
 } from "@/app/(main)/interview/_components/mockdata"
 import type { Company, Role } from "@/types/interview"
 
+
+
 export default function PublicInterviewsPage() {
 	const [searchQuery, setSearchQuery] = useState("")
-	const [selectedInterview, setSelectedInterview] = useState<any>(null)
+	const [selectedInterview, setSelectedInterview] = useState<PublicInterviewData | null>(null)
 	const [showPracticeDialog, setShowPracticeDialog] = useState(false)
 
 	const filteredInterviews = useMemo(() => {
@@ -53,7 +55,7 @@ export default function PublicInterviewsPage() {
 		return company?.roles.find((r: Role) => r.id === roleId)?.name || "Unknown Role"
 	}
 
-	const handlePracticeClick = (interview: any) => {
+	const handlePracticeClick = (interview: PublicInterviewData) => {
 		setSelectedInterview(interview)
 		setShowPracticeDialog(true)
 	}

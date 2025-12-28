@@ -125,7 +125,7 @@ export function MixedMode({
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<MixedAnswer[]>([]);
     const [totalTime, setTotalTime] = useState(0);
-    const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+    const [, setQuestionStartTime] = useState(Date.now());
 
     const currentQuestion = questions[currentIndex];
     const progress = ((currentIndex + 1) / questions.length) * 100;
@@ -236,7 +236,8 @@ export function MixedMode({
         }
     };
 
-    const handlePrevious = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _handlePrevious = () => {
         if (currentIndex > 0 && context === "practice") {
             setCurrentIndex((prev) => prev - 1);
         }

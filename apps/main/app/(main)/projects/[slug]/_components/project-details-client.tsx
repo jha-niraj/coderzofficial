@@ -203,7 +203,11 @@ export default function ProjectDetailsClient({
 }: ProjectDetailsClientProps & {
     currentUserId: string | null
     userCredits?: number
-    currentUser?: any
+    currentUser?: {
+        id: string;
+        username?: string | null;
+        name?: string | null;
+    }
 }) {
     const router = useRouter()
     const [starting, setStarting] = useState(false)
@@ -216,7 +220,7 @@ export default function ProjectDetailsClient({
         liveUrl: '',
         notes: ''
     })
-    const [suggestions, setSuggestions] = useState<any[]>([])
+    const [suggestions, setSuggestions] = useState<unknown[]>([])
     const [loadingSuggestions, setLoadingSuggestions] = useState(false)
     const [copied, setCopied] = useState(false)
     const [standupSheetOpen, setStandupSheetOpen] = useState(false)
@@ -233,11 +237,14 @@ export default function ProjectDetailsClient({
     const tasksWithStatus: TaskItem[] = useMemo(() => {
         if (!project.tasks) return []
 
-        // Cast to any to access taskStatuses which may exist on the actual data
+        // Cast to access taskStatuses which may exist on the actual data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const progressData = userProgress as any
         const taskStatuses = progressData?.taskStatuses || []
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return project.tasks.map((task: any, index: number) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const statusEntry = taskStatuses.find((s: any) => s.taskId === task.id)
             return {
                 id: task.id,

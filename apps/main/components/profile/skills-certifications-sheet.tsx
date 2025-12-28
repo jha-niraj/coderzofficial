@@ -97,7 +97,7 @@ export const SkillsAndCertificationsSheet = ({
         try {
             const preparedSkills = skills.map(skill => {
                 if (!skill.id || skill.id.startsWith('temp-')) {
-                    const { id, ...skillWithoutId } = skill;
+                    const { ...skillWithoutId } = skill;
                     return skillWithoutId;
                 }
                 return skill;
@@ -105,7 +105,7 @@ export const SkillsAndCertificationsSheet = ({
 
             const preparedCertifications = certifications.map(cert => {
                 if (!cert.id || cert.id.startsWith('temp-')) {
-                    const { id, ...certWithoutId } = cert;
+                    const { ...certWithoutId } = cert;
                     return certWithoutId;
                 }
                 return cert;

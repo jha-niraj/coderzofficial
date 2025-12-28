@@ -55,7 +55,6 @@ export default function Quiz({ quizId, questions, quizTitle, onSubmit, timeLimit
     const [isLoading, setIsLoading] = useState(true);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const startTimeRef = useRef<number>(Date.now());

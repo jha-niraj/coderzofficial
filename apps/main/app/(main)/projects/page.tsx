@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion"
 import {
-	ArrowRight, Sparkles, Star, Users, Brain, Zap, Trophy, CheckCircle2, 
-	Rocket, Github, Target, Lightbulb, Award, Timer, Shield, Briefcase
+	ArrowRight, Sparkles, Star, Users, Brain, Zap, Trophy, CheckCircle2,
+	Rocket, Target, Lightbulb, Award, Briefcase
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"

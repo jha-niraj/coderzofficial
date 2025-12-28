@@ -367,7 +367,7 @@ export default function CreateCommunityPage() {
                 description: formData.description,
                 shortDescription: formData.shortDescription,
                 category: formData.category,
-                visibility: formData.visibility as any,
+                visibility: formData.visibility as "PUBLIC" | "RESTRICTED" | "PRIVATE",
                 enabledSections: formData.enabledSections,
                 rules: formData.rules,
                 tags: formData.tags,

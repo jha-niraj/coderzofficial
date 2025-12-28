@@ -22,7 +22,24 @@ import {
 import toast from '@repo/ui/components/ui/sonner'
 
 // Mock mentor data
-const generateMentors = () => {
+interface Mentor {
+    id: string
+    name: string
+    avatar: string
+    company: string
+    role: string
+    specialty: string
+    experience: number
+    rating: string
+    sessionsCompleted: number
+    pricePerSession: number
+    availability: {
+        [key: string]: number[]
+    }
+    bio: string
+}
+
+const generateMentors = (): Mentor[] => {
     const companies = ['Google', 'Amazon', 'Microsoft', 'Meta', 'Apple', 'Netflix', 'Uber', 'Airbnb']
     const roles = ['Senior Engineer', 'Staff Engineer', 'Engineering Manager', 'Tech Lead', 'Principal Engineer']
     const specialties = ['System Design', 'Frontend', 'Backend', 'Full Stack', 'Mobile', 'Data Engineering']
@@ -90,7 +107,7 @@ const ITEMS_PER_PAGE = 20
 
 export default function ConnectMentorsPage() {
     const [currentPage, setCurrentPage] = useState(1)
-    const [selectedMentor, setSelectedMentor] = useState<any>(null)
+    const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null)
     const [sheetOpen, setSheetOpen] = useState(false)
     const [selectedDay, setSelectedDay] = useState<string | null>(null)
     const [selectedTime, setSelectedTime] = useState<number | null>(null)
@@ -100,7 +117,7 @@ export default function ConnectMentorsPage() {
     const endIndex = startIndex + ITEMS_PER_PAGE
     const currentMentors = mentors.slice(startIndex, endIndex)
 
-    const handleViewDetails = (mentor: any) => {
+    const handleViewDetails = (mentor: Mentor) => {
         setSelectedMentor(mentor)
         setSelectedDay(null)
         setSelectedTime(null)
@@ -451,10 +468,10 @@ export default function ConnectMentorsPage() {
                                                             onClick={() => handleDayClick(day)}
                                                             disabled={!isAvailable}
                                                             className={`p-2 rounded-lg text-xs font-medium transition-all ${isSelected
-                                                                    ? 'bg-green-500 text-white'
-                                                                    : isAvailable
-                                                                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
-                                                                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed'
+                                                                ? 'bg-green-500 text-white'
+                                                                : isAvailable
+                                                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                                                                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed'
                                                                 }`}
                                                         >
                                                             {day.slice(0, 3)}
@@ -495,10 +512,10 @@ export default function ConnectMentorsPage() {
                                                                     onClick={() => handleTimeClick(hour)}
                                                                     disabled={!isAvailable}
                                                                     className={`p-2 rounded-lg text-sm font-medium transition-all ${isSelected
-                                                                            ? 'bg-green-500 text-white'
-                                                                            : isAvailable
-                                                                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
-                                                                                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed'
+                                                                        ? 'bg-green-500 text-white'
+                                                                        : isAvailable
+                                                                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                                                                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed'
                                                                         }`}
                                                                 >
                                                                     {hour}:00

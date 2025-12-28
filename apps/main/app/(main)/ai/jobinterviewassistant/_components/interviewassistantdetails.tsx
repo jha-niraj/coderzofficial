@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import {
-    getGenerationBySlug, evaluateCode, getQuestionAnswer,
+    getGenerationBySlug, getQuestionAnswer,
     transcribeVoiceToText, evaluateUserQuestionResponse,
     getAllUserQuestionResponses
 } from "@/actions/(main)/ai/jobinterview.action"

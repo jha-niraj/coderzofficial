@@ -22,8 +22,21 @@ const roleStyles = {
     MEMBER: { icon: User, color: "text-neutral-500", label: "Member" },
 };
 
+interface CommunityMembership {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    banner?: string;
+    icon?: string;
+    role: 'ADMIN' | 'MODERATOR' | 'MEMBER';
+    memberCount: number;
+    postCount: number;
+    joinedAt: string | Date;
+}
+
 export default function CollectivesLearningsPage() {
-    const [communities, setCommunities] = useState<any[]>([]);
+    const [communities, setCommunities] = useState<CommunityMembership[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {

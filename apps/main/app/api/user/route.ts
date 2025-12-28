@@ -2,14 +2,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@repo/auth';
 
-export const PUT = async (req: NextRequest) => {
+export const PUT = async (_req: NextRequest) => {
     const session = await auth();
 
     if (!session) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, email, interestedIn, interestedInTime, tagline, bio, image } = await req.json();
+    // Request body parsing commented out since updateUser is not implemented\n    await req.json(); // Consume the body to avoid memory leaks
     // console.log(interestedInTime);
     try {
         if (session?.user?.email) {

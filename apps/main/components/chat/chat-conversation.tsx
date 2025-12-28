@@ -37,6 +37,13 @@ type Message = {
     }
 }
 
+type OtherUser = {
+    id: string
+    name: string | null
+    username: string | null
+    image: string | null
+}
+
 export default function ChatConversation({ conversationId }: { conversationId: string }) {
     const { data: session } = useSession()
     const [messages, setMessages] = useState<Message[]>([])
@@ -44,7 +51,7 @@ export default function ChatConversation({ conversationId }: { conversationId: s
     const [sending, setSending] = useState(false)
     const [loading, setLoading] = useState(true)
     const [uploading, setUploading] = useState(false)
-    const [otherUser, setOtherUser] = useState<any>(null)
+    const [otherUser, setOtherUser] = useState<OtherUser | null>(null)
     const scrollRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -59,7 +66,7 @@ export default function ChatConversation({ conversationId }: { conversationId: s
     const loadMessages = useCallback(async (silent = false) => {
         if (!silent) setLoading(true)
         const { messages: msgs } = await getMessages(conversationId, 50)
-        setMessages(msgs as any)
+        setMessages(msgs as unknown as Message[])
         if (!silent) setLoading(false)
 
         // Scroll to bottom after loading
@@ -97,7 +104,7 @@ export default function ChatConversation({ conversationId }: { conversationId: s
         const result = await sendMessage(conversationId, content, "TEXT")
 
         if (result.success && result.message) {
-            setMessages(prev => [...prev, result.message as any])
+            setMessages(prev => [...prev, result.message as unknown as Message])
             scrollToBottom()
         } else {
             toast.error(result.error || "Failed to send message")
@@ -135,7 +142,7 @@ export default function ChatConversation({ conversationId }: { conversationId: s
                 const result = await sendMessage(conversationId, "Sent an image", "IMAGE", uploadResult.url)
 
                 if (result.success && result.message) {
-                    setMessages(prev => [...prev, result.message as any])
+                    setMessages(prev => [...prev, result.message as unknown as Message])
                     scrollToBottom()
                     toast.success("Image sent successfully")
                 } else {

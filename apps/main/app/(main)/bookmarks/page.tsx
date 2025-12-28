@@ -17,6 +17,42 @@ import { getBookmarksSummary } from "@/actions/(main)/bookmarks/bookmarks.action
 import { cn } from "@repo/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
+interface BookmarkItem {
+    id: string;
+    title: string | null;
+    slug?: string;
+    communitySlug?: string;
+    communityName?: string;
+    category?: string;
+    difficulty?: string;
+    thumbnail?: string | null;
+    type?: 'concept' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
+    savedAt: string | Date;
+}
+
+interface BookmarkModuleData {
+    count: number;
+    recent: BookmarkItem[];
+}
+
+interface BookmarksSummaryData {
+    total: number;
+    totalBookmarks: number;
+    concepts: number;
+    projects: number;
+    community: number;
+    mock: number;
+    studio: number;
+    byModule: {
+        concepts: BookmarkModuleData;
+        projects: BookmarkModuleData;
+        community: BookmarkModuleData;
+        mock: BookmarkModuleData;
+        collectives: BookmarkModuleData;
+    };
+    recentSaves: BookmarkItem[];
+}
+
 interface ModuleCard {
     id: string;
     label: string;
@@ -25,11 +61,11 @@ interface ModuleCard {
     color: string;
     bgColor: string;
     count: number;
-    recent: any[];
+    recent: BookmarkItem[];
 }
 
 export default function BookmarksPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<BookmarksSummaryData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -232,7 +268,7 @@ export default function BookmarksPage() {
                                                         module.recent.length > 0 && (
                                                             <div className="space-y-2">
                                                                 {
-                                                                    module.recent.slice(0, 2).map((item: any) => (
+                                                                    module.recent.slice(0, 2).map((item) => (
                                                                         <div
                                                                             key={item.id}
                                                                             className="flex items-center gap-2 text-sm"
@@ -269,7 +305,7 @@ export default function BookmarksPage() {
                         <div className="space-y-3">
                             <AnimatePresence>
                                 {
-                                    data.recentSaves.map((item: any, index: number) => (
+                                    data.recentSaves.map((item, index) => (
                                         <motion.div
                                             key={`${item.type}-${item.id}`}
                                             initial={{ opacity: 0, x: -20 }}

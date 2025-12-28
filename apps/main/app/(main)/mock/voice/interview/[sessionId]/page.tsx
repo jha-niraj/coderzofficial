@@ -6,8 +6,8 @@ import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { 
-    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle 
+import {
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import { Orb, AgentState } from '@/components/main/orb'
 import {
@@ -29,11 +29,23 @@ interface SessionVariables {
     resume_content?: string | null
 }
 
+interface SessionData {
+    id: string
+    userId: string
+    agentId: string
+    variables: SessionVariables
+    mock: {
+        title: string
+        description: string
+        level: string
+    }
+}
+
 export default function MockInterviewPage({ params }: { params: Promise<{ sessionId: string }> }) {
     const resolvedParams = use(params)
     const router = useRouter()
 
-    const [sessionData, setSessionData] = useState<any>(null)
+    const [sessionData, setSessionData] = useState<SessionData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isMicMuted, setIsMicMuted] = useState(false)
     const [volume, setVolume] = useState(0.8)

@@ -9,7 +9,7 @@ interface LenisProps {
 }
 
 function SmoothScroll({ children }: LenisProps) {
-	const lenis = useLenis(({ scroll }) => {
+	const lenis = useLenis(() => {
 		// You can add scroll event handling here if needed
 	})
 
@@ -95,7 +95,7 @@ function SmoothScroll({ children }: LenisProps) {
 				smoothWheel: true,
 				wheelMultiplier: 1.2,
 				autoResize: true,
-				// @ts-expect-error
+				// @ts-expect-error smoothTouch is a valid lenis option but not in the type definitions
 				smoothTouch: false,
 			}}
 		>

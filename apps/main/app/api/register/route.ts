@@ -2,8 +2,8 @@ import { prisma } from "@repo/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import { RequestBody } from "@/types";
-import { 
-    createSignupActivity, generateReferralCode, processReferral 
+import {
+    createSignupActivity, generateReferralCode, processReferral
 } from "@/utils/referral";
 import { sendEmail } from "@/utils/mail";
 
@@ -68,11 +68,11 @@ export async function POST(request: NextRequest) {
         // Send verification email
         console.log('Sending verification email...');
         try {
-            await sendEmail({ 
-                name: user.name || "", 
-                email: user.email, 
-                emailType: "VERIFY_OTP", 
-                otp: verifyOTP 
+            await sendEmail({
+                name: user.name || "",
+                email: user.email,
+                emailType: "VERIFY_OTP",
+                otp: verifyOTP
             });
             console.log('✅ Verification email sent successfully');
         } catch (emailError) {
@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
             },
             { status: 200 }
         );
-    } catch (error: any) {
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Unknown error')
         console.error("❌ Registration API error:", error);
         console.error("❌ Error stack:", error.stack);
         return NextResponse.json(

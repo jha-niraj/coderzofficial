@@ -589,7 +589,7 @@ function WeeklyTrendsChart({ weeklyStats }: { weeklyStats: any[] }) {
 			<CardContent>
 				<div className="space-y-4">
 					{
-						weeklyStats.slice(-4).map((week, index) => (
+						weeklyStats.slice(-4).map((week) => (
 							<div key={week.week} className="space-y-2">
 								<div className="flex justify-between text-sm">
 									<span className="font-medium">{week.week}</span>

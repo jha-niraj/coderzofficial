@@ -280,7 +280,27 @@ export const companies: Company[] = [
 	},
 ]
 
-export const publicInterviews: any[] = [
+export interface PublicInterviewData {
+	id: string;
+	companyId: string;
+	roleId: string;
+	userId: string;
+	userName: string;
+	userSchool: string;
+	scores: {
+		round1: number;
+		round2: number;
+		round3: number;
+		round4: number;
+		round5: number;
+	};
+	overallScore: number;
+	feedback: string;
+	createdAt: Date;
+	isPublic: boolean;
+}
+
+export const publicInterviews: PublicInterviewData[] = [
 	{
 		id: "pub1",
 		companyId: "google",

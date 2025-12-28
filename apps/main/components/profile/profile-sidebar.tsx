@@ -8,8 +8,8 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Progress } from "@repo/ui/components/ui/progress";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
-	Github, Linkedin, Twitter, Globe, Trophy, Zap, Share2, BookOpen, Target,
-	ArrowRight
+	Github, Linkedin, Twitter, Globe, Trophy, Zap, Share2, BookOpen, 
+	Target, ArrowRight
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
@@ -42,7 +42,7 @@ interface ProfileSidebarProps {
 			profileViews: number;
 		} | null;
 	};
-	stats: {
+	stats?: {
 		projectsCount: number;
 		skillsCount: number;
 		followersCount: number;
@@ -62,7 +62,7 @@ const socialIcons: Record<string, React.ComponentType<{ className?: string }>> =
 	website: Globe,
 };
 
-export function ProfileSidebar({ user, stats, isOwnProfile }: ProfileSidebarProps) {
+export function ProfileSidebar({ user, isOwnProfile }: ProfileSidebarProps) {
 	const completionScore = user.userProfile?.completionScore || 0;
 	const topSkills = user.skills?.slice(0, 6) || [];
 	const recentAchievements = user.achievements?.slice(0, 3) || [];

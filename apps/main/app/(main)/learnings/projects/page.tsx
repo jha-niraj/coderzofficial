@@ -12,8 +12,26 @@ import { Button } from "@repo/ui/components/ui/button";
 import { getProjectLearnings } from "@/actions/(main)/learnings/learnings.action";
 import { cn } from "@repo/ui/lib/utils";
 
+interface TechStackItem {
+    id: string;
+    name: string;
+}
+
+interface ProjectProgress {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    coverImage?: string;
+    status: 'InProgress' | 'Completed' | 'Planning';
+    memberCount: number;
+    taskCount: number;
+    techStack?: TechStackItem[];
+}
+
+
 export default function ProjectLearningsPage() {
-    const [projects, setProjects] = useState<any[]>([]);
+    const [projects, setProjects] = useState<ProjectProgress[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState("all");
 

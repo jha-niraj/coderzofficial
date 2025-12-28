@@ -25,10 +25,24 @@ import { useUserStore } from '@/app/store/useUserStore'
 import { getAllPublicMocks } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../_constants/mock-categories'
 import { cn } from '@repo/ui/lib/utils'
-
+interface MockData {
+    id: string
+    title: string
+    description?: string
+    category: string
+    level: string
+    duration: number
+    author?: {
+        name: string
+        image?: string
+    }
+    createdAt: Date
+    creditsRequired: number
+    byAdmin?: boolean
+}
 export default function PublicMocksPage() {
     const { credits } = useUserStore()
-    const [mocks, setMocks] = useState<any[]>([])
+    const [mocks, setMocks] = useState<MockData[]>([])
     const [loading, setLoading] = useState(true)
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
@@ -42,7 +56,7 @@ export default function PublicMocksPage() {
     // Sheets
     const [createSheetOpen, setCreateSheetOpen] = useState(false)
     const [purchaseSheetOpen, setPurchaseSheetOpen] = useState(false)
-    const [selectedMock, setSelectedMock] = useState<any>(null)
+    const [selectedMock, setSelectedMock] = useState<MockData | null>(null)
 
     const loadMocks = useCallback(async () => {
         setLoading(true)

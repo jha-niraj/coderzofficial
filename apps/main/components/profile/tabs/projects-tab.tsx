@@ -8,7 +8,7 @@ import {
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
-    FolderKanban, ExternalLink, Filter, Grid3X3, List, Pin, Clock,
+    FolderKanban, ExternalLink, Grid3X3, List, Pin, Clock,
     CheckCircle2, PlayCircle, Circle, Github, Search
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";

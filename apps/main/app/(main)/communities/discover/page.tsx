@@ -39,8 +39,21 @@ const CATEGORIES = [
     'Other'
 ]
 
+interface DiscoverCommunity {
+    id: string
+    name: string
+    slug: string
+    description: string
+    coverImage?: string | null
+    logo?: string | null
+    category: string
+    memberCount: number
+    postCount: number
+    createdAt: Date
+}
+
 export default function DiscoverPage() {
-    const [communities, setCommunities] = useState<any[]>([])
+    const [communities, setCommunities] = useState<DiscoverCommunity[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [category, setCategory] = useState('All')

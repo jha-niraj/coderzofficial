@@ -22,7 +22,7 @@ interface ShareProfileModalProps {
 	onClose: () => void;
 	username: string;
 	name: string | null;
-	image: string | null;
+	image?: string | null;
 }
 
 export function ShareProfileModal({
@@ -30,7 +30,6 @@ export function ShareProfileModal({
 	onClose,
 	username,
 	name,
-	image,
 }: ShareProfileModalProps) {
 	const [copied, setCopied] = useState<string | null>(null);
 

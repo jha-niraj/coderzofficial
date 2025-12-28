@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, SkillsTab, 
+    ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, SkillsTab,
     ProjectsTab, ActivityTab, ResumeTab, AboutTab, ShareProfileModal,
     type ProfileTab
 } from "@/components/profile";
@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import toast from "@repo/ui/components/ui/sonner";
 
 interface PublicProfileClientProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user: any;
     isOwnProfile: boolean;
     isFollowing: boolean;
@@ -46,7 +47,7 @@ export function PublicProfileClient({
 
     const handleFollow = async () => {
         if (isFollowLoading) return;
-        
+
         setIsFollowLoading(true);
         try {
             const result = await toggleFollow(user.id);

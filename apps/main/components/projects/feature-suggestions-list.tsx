@@ -15,8 +15,7 @@ import {
     Lightbulb, Eye, Plus, CheckCircle, ListTodo, Crown, Users2, User
 } from "lucide-react"
 import {
-    addSuggestionToTasks, updateSuggestionStatus, adoptSuggestionToMyTasks,
-    adoptVisitorSuggestionToTasks
+    adoptSuggestionToMyTasks, adoptVisitorSuggestionToTasks
 } from "@/actions/(main)/projects/feature-suggestions.action"
 import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
@@ -59,29 +58,28 @@ export function FeatureSuggestionsList({
     projectSlug,
     isCreator,
     isEnrolled,
-    currentUserId,
 }: FeatureSuggestionsListProps) {
     const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null)
     const [loading, setLoading] = useState<string | null>(null)
 
-    const handleAddToTasks = async (suggestionId: string) => {
-        setLoading(suggestionId)
-        try {
-            const result = await addSuggestionToTasks(suggestionId, projectSlug)
-            if (result.success) {
-                toast.success(result.message)
-                setSelectedSuggestion(null)
-                window.location.reload() // Refresh to show updated data
-            } else {
-                toast.error(result.message)
-            }
-        } catch (error) {
-            console.log("Error occurred while adding task: " + error);
-            toast.error("Failed to add to tasks")
-        } finally {
-            setLoading(null)
-        }
-    }
+    // const handleAddToTasks = async (suggestionId: string) => {
+    //     setLoading(suggestionId)
+    //     try {
+    //         const result = await addSuggestionToTasks(suggestionId, projectSlug)
+    //         if (result.success) {
+    //             toast.success(result.message)
+    //             setSelectedSuggestion(null)
+    //             window.location.reload() // Refresh to show updated data
+    //         } else {
+    //             toast.error(result.message)
+    //         }
+    //     } catch (error) {
+    //         console.log("Error occurred while adding task: " + error);
+    //         toast.error("Failed to add to tasks")
+    //     } finally {
+    //         setLoading(null)
+    //     }
+    // }
 
     const handleAdoptToMyTasks = async (suggestionId: string) => {
         setLoading(suggestionId)
@@ -121,23 +119,23 @@ export function FeatureSuggestionsList({
         }
     }
 
-    const handleUpdateStatus = async (suggestionId: string, status: string) => {
-        setLoading(suggestionId)
-        try {
-            const result = await updateSuggestionStatus(suggestionId, status)
-            if (result.success) {
-                toast.success(result.message)
-                window.location.reload()
-            } else {
-                toast.error(result.message)
-            }
-        } catch (error) {
-            console.log("Error occurred while updating task: " + error);
-            toast.error("Failed to update status")
-        } finally {
-            setLoading(null)
-        }
-    }
+    // const handleUpdateStatus = async (suggestionId: string, status: string) => {
+    //     setLoading(suggestionId)
+    //     try {
+    //         const result = await updateSuggestionStatus(suggestionId, status)
+    //         if (result.success) {
+    //             toast.success(result.message)
+    //             window.location.reload()
+    //         } else {
+    //             toast.error(result.message)
+    //         }
+    //     } catch (error) {
+    //         console.log("Error occurred while updating task: " + error);
+    //         toast.error("Failed to update status")
+    //     } finally {
+    //         setLoading(null)
+    //     }
+    // }
 
     const getSuggestionSourceBadge = (source: string) => {
         switch (source) {

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import {
-    ArrowLeft, BookOpen, Send, CheckCircle2, XCircle, Lightbulb, Code2, 
+    ArrowLeft, BookOpen, Send, CheckCircle2, XCircle, Lightbulb, Code2,
     HelpCircle, Zap, ChevronRight, ChevronLeft, ExternalLink, PlayCircle
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -34,16 +34,16 @@ interface LearningModule {
     id: string
     conceptName: string
     quickExplanation: string
-    codeExamples?: any
+    codeExamples?: string | null
     videoUrl?: string | null
     videoDuration?: number | null
     interactiveCode?: string | null
     interactiveSolution?: string | null
     interactiveHint?: string | null
     quizQuestion?: string | null
-    quizOptions?: any
+    quizOptions?: string | null
     quizAnswer?: number | null
-    externalLinks?: any
+    externalLinks?: string | null
 }
 
 interface ForgeStep {
@@ -56,7 +56,7 @@ interface ForgeStep {
     deliverableType: string
     expectedAnswer?: string | null
     xpReward: number
-    hints?: any
+    hints?: string | null
     track: {
         id: string
         name: string
@@ -81,10 +81,10 @@ interface Submission {
 interface ForgeStepClientProps {
     step: ForgeStep
     submissions: Submission[]
-    user?: { 
-        id: string; 
-        name: string | null; 
-        image: string | null 
+    user?: {
+        id: string;
+        name: string | null;
+        image: string | null
     }
 }
 
@@ -207,7 +207,7 @@ export function ForgeStepClient({
             <main className="max-w-5xl mx-auto px-4 py-8">
                 <div className="grid lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2">
-                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'story' | 'mission' | 'learn' | 'submit')}>
                             <TabsList className="grid grid-cols-4 mb-6">
                                 <TabsTrigger value="story" className="gap-1">
                                     <BookOpen className="w-4 h-4" />
@@ -465,7 +465,7 @@ export function ForgeStepClient({
                                     <CardContent>
                                         <Accordion type="single" collapsible>
                                             {
-                                                hints.map((hint: any, index: number) => (
+                                                hints.map((hint: { text: string; xpCost: number }, index: number) => (
                                                     <AccordionItem key={index} value={`hint-${index}`}>
                                                         <AccordionTrigger className="hover:no-underline">
                                                             <div className="flex items-center gap-2">

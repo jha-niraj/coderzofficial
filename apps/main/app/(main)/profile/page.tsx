@@ -19,12 +19,46 @@ import {
 } from "@/actions/(main)/user/profile.action";
 import { useRouter } from "next/navigation";
 
+interface ProfileStats {
+    projectsCount: number;
+    skillsCount: number;
+    followersCount: number;
+    followingCount: number;
+    xp: number;
+    level: number;
+    credits: number;
+    achievementsCount: number;
+}
+
+interface ProfileData {
+    id: string;
+    name?: string | null;
+    username?: string | null;
+    email?: string | null;
+    image?: string | null;
+    bio?: string | null;
+    totalXp?: number;
+    currentXp?: number;
+    currentLevel?: number;
+    credits?: number;
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    projects?: any[];
+    skills?: any[];
+    achievements?: any[];
+    _count?: {
+        followers: number;
+        following: number;
+    };
+    [key: string]: any;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
 export default function ProfilePage() {
     const router = useRouter();
     const { isLoading: storeLoading, error: storeError, fetchUser } = useUserStore();
     const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
-    const [profileData, setProfileData] = useState<any>(null);
-    const [stats, setStats] = useState<any>(null);
+    const [profileData, setProfileData] = useState<ProfileData | null>(null);
+    const [stats, setStats] = useState<ProfileStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +80,7 @@ export default function ProfilePage() {
                 return;
             }
 
-            setProfileData(profileResult.user);
+            setProfileData(profileResult.user || null);
 
             if (profileResult.user?.id) {
                 const statsResult = await getUserProfileStats(profileResult.user.id);

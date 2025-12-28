@@ -4,8 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 import {
-	Type, Heading1, Heading2, Heading3, List, ListOrdered, Code, 
-	Image as ImageIcon, Video, FileQuestion, Layers, Quote, Minus, 
+	Type, Heading1, Heading2, Heading3, List, ListOrdered, Code,
+	Image as ImageIcon, Video, FileQuestion, Layers, Quote, Minus,
 	CheckSquare, Mic, Plus, GripVertical, Trash2, Sparkles
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
@@ -295,28 +295,32 @@ export default function StudioBlockEditor({
 		}
 
 		switch (block.type) {
-			case "quiz":
+			case "quiz": {
 				const quiz = quizzes.find((q) => q.id === block.data?.quizId);
 				return <StudioQuizBlock quiz={quiz} topic={block.data?.topic} />;
+			}
 
-			case "flashcard":
+			case "flashcard": {
 				const deck = flashcardDecks.find((d) => d.id === block.data?.deckId);
 				return <StudioFlashcardBlock deck={deck} topic={block.data?.topic} />;
+			}
 
-			case "code":
+			case "code": {
 				const codeBlock = codeBlocks.find((c) => c.blockId === block.id);
 				return (
 					<StudioCodeBlock
 						studioId={studioId}
 						blockId={block.id}
 						initialData={codeBlock || block.data}
-						onChange={(data: any) => updateBlock(block.id, { data })}
+						onChange={(data: { language: string; code: string }) => updateBlock(block.id, { data })}
 					/>
 				);
+			}
 
-			case "image":
+			case "image": {
 				const media = mediaBlocks.find((m) => m.blockId === block.id);
 				return <StudioImageBlock media={media} data={block.data as { url: string; prompt: string } | undefined} />;
+			}
 
 			case "video":
 				return <StudioVideoBlock />;

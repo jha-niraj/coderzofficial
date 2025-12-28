@@ -34,13 +34,13 @@ interface LearningModule {
     id: string
     conceptName: string
     explanation: string
-    codeExamples?: any
+    codeExamples?: string | null
     videoUrl?: string | null
     videoDuration?: number | null
     interactiveCode?: string | null
     interactiveSolution?: string | null
     quizQuestion?: string | null
-    quizOptions?: any
+    quizOptions?: string | null
     quizAnswer?: number | null
 }
 
@@ -56,9 +56,14 @@ interface CrucibleProblem {
     answerType: string
     difficulty: number
     xpReward: number
-    hints?: any
+    hints?: string | null
     concepts: string[]
     learningModules: LearningModule[]
+}
+
+interface HintItem {
+    text: string;
+    xpCost: number;
 }
 
 interface UserInput {
@@ -77,19 +82,19 @@ interface Submission {
 
 interface CrucibleProblemClientProps {
     problem: CrucibleProblem
-    event: { 
-        id: string; 
-        name: string; 
-        slug: string; 
-        themeColor: string 
+    event: {
+        id: string;
+        name: string;
+        slug: string;
+        themeColor: string
     }
     userInput: UserInput | null
     submissions: Submission[]
     isSolved: boolean
-    user?: { 
-        id: string; 
-        name: string | null; 
-        image: string | null 
+    user?: {
+        id: string;
+        name: string | null;
+        image: string | null
     }
 }
 
@@ -252,7 +257,7 @@ export function CrucibleProblemClient({
             <main className="max-w-5xl mx-auto px-4 py-8">
                 <div className="grid lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2">
-                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'story' | 'problem' | 'learn')}>
                             <TabsList className="grid grid-cols-3 mb-6">
                                 <TabsTrigger value="story" className="gap-1">
                                     <BookOpen className="w-4 h-4" />
@@ -535,7 +540,7 @@ export function CrucibleProblemClient({
                                     <CardContent>
                                         <Accordion type="single" collapsible>
                                             {
-                                                hints.map((hint: any, index: number) => (
+                                                hints.map((hint: HintItem, index: number) => (
                                                     <AccordionItem key={index} value={`hint-${index}`}>
                                                         <AccordionTrigger className="hover:no-underline text-sm">
                                                             <div className="flex items-center gap-2">

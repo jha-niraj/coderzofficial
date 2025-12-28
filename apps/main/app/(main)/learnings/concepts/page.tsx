@@ -30,8 +30,22 @@ const categoryColors: Record<string, string> = {
     DSA: "from-teal-500 to-cyan-500",
 };
 
+interface ConceptProgress {
+    id: string;
+    slug: string;
+    title: string;
+    category: string;
+    difficulty: string;
+    thumbnail?: string;
+    isCompleted: boolean;
+    currentStep: number;
+    totalSteps: number;
+    progressPercent: number;
+    estimatedTime: number;
+}
+
 export default function ConceptLearningsPage() {
-    const [concepts, setConcepts] = useState<any[]>([]);
+    const [concepts, setConcepts] = useState<ConceptProgress[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState("all");
 

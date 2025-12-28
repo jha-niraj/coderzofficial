@@ -32,8 +32,19 @@ const statusStyles = {
     },
 };
 
+interface MockSession {
+    id: string;
+    status: 'COMPLETED' | 'IN_PROGRESS' | 'ABANDONED';
+    jobRole?: string;
+    jobDescription?: string;
+    experienceLevel: string;
+    techStack?: string[];
+    overallScore: number | null;
+    createdAt: string | Date;
+}
+
 export default function MockLearningsPage() {
-    const [sessions, setSessions] = useState<any[]>([]);
+    const [sessions, setSessions] = useState<MockSession[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {

@@ -13,8 +13,33 @@ import {
 import { getCommunityBookmarks } from "@/actions/(main)/bookmarks/bookmarks.action";
 import { formatDistanceToNow } from "date-fns";
 
+interface BookmarkPost {
+    id: string;
+    title?: string | null;
+    content?: string | null;
+    slug?: string | null;
+    likeCount?: number;
+    commentCount?: number;
+    savedAt?: string | Date;
+    notes?: string | null;
+    community?: {
+        id?: string;
+        slug: string;
+        name: string;
+        logo?: string | null;
+        icon?: string;
+    } | null;
+    author?: {
+        id?: string;
+        name?: string | null;
+        username?: string | null;
+        image?: string | null;
+    };
+    [key: string]: unknown;
+}
+
 export default function CommunityBookmarksPage() {
-    const [posts, setPosts] = useState<any[]>([]);
+    const [posts, setPosts] = useState<BookmarkPost[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -95,23 +120,23 @@ export default function CommunityBookmarksPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                         >
-                                            <Link href={`/communities/${post.community.slug}/post/${post.id}`}>
+                                            <Link href={`/communities/${post?.community?.slug}/post/${post.id}`}>
                                                 <div className="group rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:shadow-lg">
                                                     <div className="flex items-start gap-4">
                                                         <Avatar className="h-12 w-12 shrink-0">
-                                                            <AvatarImage src={post.community.icon} />
+                                                            <AvatarImage src={post?.community?.icon} />
                                                             <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold">
-                                                                {post.community.name.charAt(0)}
+                                                                {post?.community?.name.charAt(0)}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-2">
                                                                 <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                    {post.community.name}
+                                                                    {post?.community?.name}
                                                                 </span>
                                                                 <span className="text-neutral-300">•</span>
                                                                 <span className="text-sm text-neutral-500">
-                                                                    by {post.author.name || post.author.username}
+                                                                    by {post?.author?.name || post?.author?.username}
                                                                 </span>
                                                             </div>
 
@@ -142,7 +167,7 @@ export default function CommunityBookmarksPage() {
                                                                 </span>
                                                                 <span className="flex items-center gap-1">
                                                                     <Clock className="h-3.5 w-3.5" />
-                                                                    Saved {formatDistanceToNow(new Date(post.savedAt), { addSuffix: true })}
+                                                                    Saved {formatDistanceToNow(new Date(post.savedAt ?? new Date()), { addSuffix: true })}
                                                                 </span>
                                                             </div>
                                                         </div>

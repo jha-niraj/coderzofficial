@@ -38,7 +38,13 @@ export function EnrollmentDialog({
 	const router = useRouter();
 	const [step, setStep] = useState<EnrollmentStep>("confirm");
 	const [error, setError] = useState<string>("");
-	const [enrollmentData, setEnrollmentData] = useState<any>(null);
+	interface EnrollmentData {
+		projectTitle: string;
+		tasksCount: number;
+		creditsSpent: number;
+	}
+
+	const [enrollmentData, setEnrollmentData] = useState<EnrollmentData | null>(null);
 
 	const enrollmentCost = 13;
 	const canAfford = userCredits >= enrollmentCost;
@@ -70,8 +76,9 @@ export function EnrollmentDialog({
 				setStep("error");
 				toast.error(result.error || "Failed to enroll");
 			}
-		} catch (err: any) {
-			setError(err.message || "An unexpected error occurred");
+		} catch (err: unknown) {
+			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+			setError(errorMessage);
 			setStep("error");
 			toast.error("An unexpected error occurred");
 		}

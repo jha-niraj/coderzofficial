@@ -30,7 +30,7 @@ export default function RoleDetailPage() {
 	const role = company?.roles.find((r) => r.id === roleId) as Role | undefined
 
 	const [showPublicPrivateDialog, setShowPublicPrivateDialog] = useState(false)
-	const [_selectedType, setSelectedType] = useState<"public" | "private" | null>(null)
+	const [, setSelectedType] = useState<"public" | "private" | null>(null)
 
 	if (!company || !role) {
 		return (

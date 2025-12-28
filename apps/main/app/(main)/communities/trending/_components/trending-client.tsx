@@ -198,15 +198,15 @@ export function TrendingPageClient({
                                                     {
                                                         index < 3 && (
                                                             <div className={`absolute -left-3 top-4 z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
-                                                                    index === 1 ? 'bg-gradient-to-br from-neutral-300 to-neutral-500' :
-                                                                        'bg-gradient-to-br from-amber-600 to-amber-800'
+                                                                index === 1 ? 'bg-gradient-to-br from-neutral-300 to-neutral-500' :
+                                                                    'bg-gradient-to-br from-amber-600 to-amber-800'
                                                                 }`}>
                                                                 {index + 1}
                                                             </div>
                                                         )
                                                     }
                                                     <PostCard
-                                                        post={post as any}
+                                                        post={post}
                                                         showCommunity
                                                     />
                                                 </motion.div>

@@ -80,16 +80,7 @@ export default function ShareCredits({ transfers, currentCredits }: ShareCredits
         }
     };
 
-    const _formatTimeAgo = (date: Date) => {
-        const now = new Date();
-        const diff = now.getTime() - new Date(date).getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const days = Math.floor(hours / 24);
-
-        if (days > 0) return `${days}d ago`;
-        if (hours > 0) return `${hours}h ago`;
-        return "Just now";
-    };
+    // Note: formatTimeAgo utility moved to shared utils if needed in future
 
     return (
         <Card className="border-primary/10">
@@ -216,9 +207,6 @@ export default function ShareCredits({ transfers, currentCredits }: ShareCredits
                             <div className="space-y-2">
                                 {
                                     transfers.map((transfer) => {
-                                        const _isSent =
-                                            transfer.sender.id !== transfer.receiver.id;
-                                        const _isReceived = true; // Determine based on current user
 
                                         return (
                                             <motion.div

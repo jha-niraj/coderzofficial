@@ -86,10 +86,11 @@ export default function PracticeResultsPage({
             try {
                 const response = await getPracticeAttemptResults(attemptId);
                 if (response.success && response.data) {
-                    setResult(response.data as unknown as AttemptResult);
+                    const data = response.data as unknown as AttemptResult;
+                    setResult(data);
 
                     // Show celebration for good scores
-                    if ((response.data as any).score >= 70) {
+                    if (data.score >= 70) {
                         setShowCelebration(true);
                         setTimeout(() => setShowCelebration(false), 5000);
                     }

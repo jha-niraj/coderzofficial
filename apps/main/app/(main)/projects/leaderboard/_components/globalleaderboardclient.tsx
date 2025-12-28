@@ -21,6 +21,27 @@ import {
     formatScore, getScoreColor, getRankBadgeColor, getRankSuffix
 } from '@/lib/project-scoring'
 
+interface GlobalLeaderboardEntry {
+    id: string
+    rank: number
+    userId: string
+    totalScore: number
+    averageScore: number
+    projectsStarted: number
+    projectsCompleted: number
+    user: {
+        name: string | null
+        username: string
+        image: string | null
+    }
+}
+
+interface LeaderboardPagination {
+    total: number
+    totalPages: number
+    currentPage: number
+}
+
 interface GlobalLeaderboardClientProps {
     currentPage: number
     currentUserId?: string
@@ -30,8 +51,8 @@ export function GlobalLeaderboardClient({
     currentPage,
     currentUserId
 }: GlobalLeaderboardClientProps) {
-    const [leaderboard, setLeaderboard] = useState<any[]>([])
-    const [pagination, setPagination] = useState<any>(null)
+    const [leaderboard, setLeaderboard] = useState<GlobalLeaderboardEntry[]>([])
+    const [pagination, setPagination] = useState<LeaderboardPagination | null>(null)
     const [loading, setLoading] = useState(true)
 
     const fetchLeaderboard = useCallback(async () => {
@@ -93,7 +114,7 @@ export function GlobalLeaderboardClient({
                                     <div className="flex flex-col items-center">
                                         <Trophy className="w-14 h-14 text-gray-400 mb-3 drop-shadow-lg" />
                                         <Avatar className="h-24 w-24 mb-3 ring-4 ring-gray-400 shadow-xl">
-                                            <AvatarImage src={top3[1].user.image} />
+                                            <AvatarImage src={top3[1].user.image!} />
                                             <AvatarFallback>{top3[1].user.name?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <Badge className="mb-2 bg-gray-400 hover:bg-gray-500 text-white text-base px-4 py-1">
@@ -129,7 +150,7 @@ export function GlobalLeaderboardClient({
                                             <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full"></div>
                                         </div>
                                         <Avatar className="h-32 w-32 mb-4 ring-4 ring-yellow-500 shadow-2xl">
-                                            <AvatarImage src={top3[0].user.image} />
+                                            <AvatarImage src={top3[0].user.image!} />
                                             <AvatarFallback>{top3[0].user.name?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <Badge className="mb-2 bg-yellow-500 hover:bg-yellow-600 text-white text-lg px-5 py-1.5">
@@ -163,7 +184,7 @@ export function GlobalLeaderboardClient({
                                     <div className="flex flex-col items-center">
                                         <Trophy className="w-14 h-14 text-amber-600 mb-3 drop-shadow-lg" />
                                         <Avatar className="h-24 w-24 mb-3 ring-4 ring-amber-600 shadow-xl">
-                                            <AvatarImage src={top3[2].user.image} />
+                                            <AvatarImage src={top3[2].user.image!} />
                                             <AvatarFallback>{top3[2].user.name?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <Badge className="mb-2 bg-amber-600 hover:bg-amber-700 text-white text-base px-4 py-1">
@@ -217,7 +238,7 @@ export function GlobalLeaderboardClient({
                                                 {getRankSuffix(entry.rank)}
                                             </Badge>
                                             <Avatar className="h-12 w-12">
-                                                <AvatarImage src={entry.user.image} />
+                                                <AvatarImage src={entry.user.image!} />
                                                 <AvatarFallback>{entry.user.name?.[0] || 'U'}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1">

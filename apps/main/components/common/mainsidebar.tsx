@@ -280,14 +280,14 @@ interface SidebarContentProps {
     onClose?: () => void;
 }
 
-const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarContentProps) => {
+const SidebarContent = ({ routes, isCollapsed, onClose }: Omit<SidebarContentProps, 'onNavigate'>) => {
     const { data: session, status } = useSession();
     const pathname = usePathname();
     const router = useRouter();
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [notifications] = useState<Notification[]>([]);
+    const [unreadCount] = useState(0);
     const [referDialogOpen, setReferDialogOpen] = useState(false);
     const [referralLink, setReferralLink] = useState("");
     const profileTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -304,12 +304,10 @@ const SidebarContent = ({ routes, isCollapsed, onNavigate, onClose }: SidebarCon
     const [xpToConvert, setXpToConvert] = useState(0);
     const conversionRate = 10;
     const creditsGained = Math.floor(xpToConvert / conversionRate);
-    const [maxConvertibleXp, setMaxConvertibleXp] = useState(currentXp);
+    const [maxConvertibleXp] = useState(currentXp);
     const [tradeDialogOpen, setTradeDialogOpen] = useState(false);
     const [levelDialogOpen, setLevelDialogOpen] = useState(false);
     const [converting, setConverting] = useState(false);
-    const [levelInfo, setLevelInfo] = useState<any>(null);
-    const [levelInfoLoading, setLevelInfoLoading] = useState(false);
 
     useEffect(() => {
         if (status === "authenticated") {
@@ -1366,8 +1364,8 @@ const Sidebar = ({ routes = [], className = "" }: SidebarProps) => {
 
     // Otherwise, provide our own context
     return (
-        <SidebarContext.Provider value={{ 
-            isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, 
+        <SidebarContext.Provider value={{
+            isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen,
             isAISidebarOpen: false, setIsAISidebarOpen: () => { }
         }}>
             {sidebarContent}
@@ -1383,7 +1381,7 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
 
     return (
         <SidebarContext.Provider value={{
-            isCollapsed, setIsCollapsed, isMobileOpen, 
+            isCollapsed, setIsCollapsed, isMobileOpen,
             setIsMobileOpen, isAISidebarOpen, setIsAISidebarOpen
         }}>
             {children}

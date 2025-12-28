@@ -312,6 +312,7 @@ function SubmitErrorSheet({
                 toast.error(result.error || 'Failed to submit error')
             }
         } catch (error) {
+            console.log("Error occurred while submit: " + error);
             toast.error('Something went wrong')
         } finally {
             setLoading(false)

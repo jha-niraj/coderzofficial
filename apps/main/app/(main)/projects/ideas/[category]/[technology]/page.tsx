@@ -20,14 +20,28 @@ import {
 } from '@/actions/(main)/projects/project-ideas.action'
 import toast from '@repo/ui/components/ui/sonner'
 
+interface ProjectIdea {
+    id: string
+    projectTitle: string
+    projectDescription: string
+    technologies: string[]
+    difficulty: string
+    generationType: string
+    upvotes: number
+    views: number
+    createdAt?: string
+}
+
 export default function TechnologyProjectsPage() {
     const params = useParams()
     const router = useRouter()
     const categoryId = params.category as string
     const technologyId = params.technology as string
 
-    const [projects, setProjects] = useState<any[]>([])
-    const [topProjects, setTopProjects] = useState<any[]>([])
+
+
+    const [projects, setProjects] = useState<ProjectIdea[]>([])
+    const [topProjects, setTopProjects] = useState<ProjectIdea[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [difficultyFilter, setDifficultyFilter] = useState<string>('all')
@@ -256,7 +270,13 @@ export default function TechnologyProjectsPage() {
 }
 
 // --- Project Card Component ---
-function ProjectCard({ project, index, isTopProject }: any) {
+interface ProjectCardProps {
+    project: ProjectIdea
+    index: number
+    isTopProject: boolean
+}
+
+function ProjectCard({ project, index, isTopProject }: ProjectCardProps) {
     const router = useRouter()
     const [upvoted, setUpvoted] = useState(false)
     const [upvoteCount, setUpvoteCount] = useState(project.upvotes || 0)

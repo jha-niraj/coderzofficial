@@ -6,7 +6,7 @@ import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Loader2, CheckCircle2,
-    AlertCircle, ArrowLeft, Brain, Sparkles, Coins, Clock, Trophy, TrendingUp, 
+    AlertCircle, ArrowLeft, Brain, Sparkles, Coins, Clock, Trophy, TrendingUp,
     Target, MessageSquare
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -23,7 +23,7 @@ import { Orb, AgentState } from '@/components/main/orb'
 import toast from '@repo/ui/components/ui/sonner'
 import {
     generateProjectMockKnowledgeBase, createProjectMockSession,
-    updateProjectMockSessionStatus, processProjectMockCompletion, 
+    updateProjectMockSessionStatus, processProjectMockCompletion,
     getProjectMockAttempts
 } from '@/actions/(main)/projects/projectv2-mock.action'
 
@@ -48,6 +48,21 @@ interface AIMockInterviewClientProps {
 
 type Stage = 'payment' | 'ready' | 'interview' | 'processing' | 'results'
 
+interface MockVariables {
+    knowledge_base: string
+    username: string
+}
+
+interface MockFeedback {
+    overallScore: number
+    communication?: { score: number; feedback: string }
+    technical?: { score: number; feedback: string }
+    problemSolving?: { score: number; feedback: string }
+    strengths?: string[]
+    improvements?: string[]
+    detailedFeedback?: string
+}
+
 export default function AIMockInterviewClient({
     project,
     userCredits,
@@ -59,10 +74,10 @@ export default function AIMockInterviewClient({
 
     const [stage, setStage] = useState<Stage>(hasKnowledgeBase ? 'ready' : 'payment')
     const [generating, setGenerating] = useState(false)
-    const [mockKnowledgeBase, setMockKnowledgeBase] = useState(knowledgeBase)
+    const [_mockKnowledgeBase, setMockKnowledgeBase] = useState(knowledgeBase)
     const [sessionId, setSessionId] = useState<string | null>(null)
     const [agentId, setAgentId] = useState<string | null>(null)
-    const [variables, setVariables] = useState<any>(null)
+    const [variables, setVariables] = useState<MockVariables | null>(null)
     const [attempts, setAttempts] = useState(initialAttempts)
 
     // Interview state
@@ -74,7 +89,7 @@ export default function AIMockInterviewClient({
     const [processingStatus, setProcessingStatus] = useState<'processing' | 'success' | 'error'>('processing')
 
     // Results
-    const [feedback, setFeedback] = useState<any>(null)
+    const [feedback, setFeedback] = useState<MockFeedback | null>(null)
 
     const conversationIdRef = useRef<string | null>(null)
 

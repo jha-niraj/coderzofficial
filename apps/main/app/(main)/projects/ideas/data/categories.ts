@@ -1,13 +1,13 @@
 import {
     Palette, Globe, Smartphone, Server, Link2, Brain, Database, Shield, Settings,
-    Gamepad2, Cloud, MoreHorizontal
+    Gamepad2, Cloud, MoreHorizontal, LucideIcon
 } from 'lucide-react'
 
 export interface Category {
     id: string
     name: string
     description: string
-    icon: any
+    icon: LucideIcon
     color: string
     technologies: Technology[]
 }

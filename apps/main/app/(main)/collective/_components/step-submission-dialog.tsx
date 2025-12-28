@@ -18,16 +18,22 @@ import {
 import { submitStep } from "@/actions/(main)/collective/challenge.actions";
 import toast from '@repo/ui/components/ui/sonner'
 
+interface QuizQuestion {
+	question: string;
+	type: 'multiple_choice' | 'text' | 'checkbox';
+	options?: string[];
+}
+
 interface StepSubmissionDialogProps {
 	step: {
 		id: string;
 		title: string;
 		description: string;
 		type: string;
-		quizData?: any;
-		mockData?: any;
-		codingData?: any;
-		projectData?: any;
+		quizData?: { questions?: QuizQuestion[] } | null;
+		mockData?: { instructions?: string } | null;
+		codingData?: { problem?: string } | null;
+		projectData?: { requirements?: string } | null;
 	};
 	challengeId: string;
 	open: boolean;
@@ -37,7 +43,7 @@ interface StepSubmissionDialogProps {
 		status: string;
 		content?: string | null;
 		projectUrl?: string | null;
-		quizAnswers?: any;
+		quizAnswers?: Record<string, string | string[]> | null;
 	} | null;
 }
 
@@ -49,7 +55,7 @@ export function StepSubmissionDialog({
 	existingSubmission
 }: StepSubmissionDialogProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [quizAnswers, setQuizAnswers] = useState<Record<string, any>>({});
+	const [quizAnswers, setQuizAnswers] = useState<Record<string, string | string[]>>({});
 
 	const handleSubmit = async (formData: FormData) => {
 		setIsSubmitting(true);
@@ -99,7 +105,7 @@ export function StepSubmissionDialog({
 							<div className="space-y-4">
 								<h3 className="font-medium">Quiz Questions</h3>
 								{
-									step.quizData.questions.map((question: any, index: number) => (
+									step.quizData.questions.map((question, index) => (
 										<div key={index} className="space-y-3 p-4 border rounded-lg">
 											<h4 className="font-medium">
 												{index + 1}. {question.question}
