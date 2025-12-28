@@ -1,9 +1,10 @@
 "use server"
 
-import { Currency, prisma } from "@repo/prisma/client"
+import { Currency } from "@repo/prisma/client"
 import { revalidatePath } from "next/cache"
 import { checkAdminAccess } from "./admin.action"
 import { Resend } from "resend";
+import { prisma } from "@repo/prisma"
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
