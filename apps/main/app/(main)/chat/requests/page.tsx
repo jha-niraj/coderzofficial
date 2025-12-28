@@ -7,6 +7,9 @@ import {
 import RequestCard from "@/components/chat/request-card"
 import { UserPlus, Send } from "lucide-react"
 
+// Force dynamic rendering to prevent static prerendering errors
+export const dynamic = 'force-dynamic'
+
 export default async function RequestsPage() {
     const { requests: receivedRequests } = await getFollowRequests()
     const { requests: sentRequests } = await getSentFollowRequests()

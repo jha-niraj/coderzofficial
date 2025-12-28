@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-    Target, Rocket, Globe, Cpu, Terminal, Layers, ShieldCheck, Code2, GitMerge, 
+    Target, Rocket, Globe, Cpu, Terminal, Layers, ShieldCheck, Code2, GitMerge,
     Zap
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
@@ -20,7 +20,7 @@ import CreditsSection from "@/components/landingpage/credits-section";
 import { Button } from "@repo/ui/components/ui/button";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/landingpage/footer";
-import { useSession } from '@repo/auth/client';
+
 import { PublicProjectsGrid } from "@/app/(main)/projects/_components/public-projects-grid";
 import PricingSection from "@/components/landingpage/pricing-section";
 import AIToolsSection from "@/components/landingpage/aitoolssection";
@@ -55,7 +55,7 @@ export default function LandingPage() {
     const [visibleSection, setVisibleSection] = useState("")
     const [showBackToTop, setShowBackToTop] = useState(false)
     const router = useRouter();
-    const { data: session } = useSession();
+
 
     const heroRef = useRef<HTMLElement | null>(null)
     const featuresRef = useRef<HTMLElement | null>(null)

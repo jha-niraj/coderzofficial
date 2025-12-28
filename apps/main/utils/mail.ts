@@ -4,14 +4,25 @@ import { NextResponse } from "next/server";
 type EmailType = "WELCOME" | "VERIFY" | "VERIFY_OTP" | "RESET_PASSWORD" | "RESET_PASSWORD_OTP" | "CONFORMATION_MAIL";
 
 interface SendEmailProps {
-	name?: string;
-	email: string;
-	emailType: EmailType;
-	token?: string | null;
-	otp?: string;
+    name?: string;
+    email: string;
+    emailType: EmailType;
+    token?: string | null;
+    otp?: string;
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to avoid "Missing API key" error during build
+let resendInstance: Resend | null = null;
+
+function getResend(): Resend {
+    if (!resendInstance) {
+        if (!process.env.RESEND_API_KEY) {
+            throw new Error("RESEND_API_KEY environment variable is not set");
+        }
+        resendInstance = new Resend(process.env.RESEND_API_KEY);
+    }
+    return resendInstance;
+}
 
 const welcomeEmailTemplate = (name: string) => `
 <!DOCTYPE html>
@@ -880,83 +891,83 @@ const resetPasswordOTPTemplate = (name: string, otp: string) => `
 `;
 
 export const sendEmail = async ({ name, email, emailType, token, otp }: SendEmailProps) => {
-	console.log("Sending email:", { name, email, emailType, token });
+    console.log("Sending email:", { name, email, emailType, token });
 
-	try {
-		let emailOptions: any;
+    try {
+        let emailOptions: any;
 
-		switch (emailType) {
-			case "WELCOME":
-				emailOptions = {
-					from: "The Coder'z <noreply@coderzai.xyz>",
-					to: email,
-					subject: "Welcome to CoderzLab! 🚀",
-					html: welcomeEmailTemplate(name || "Developer")
-				};
-				break;
-			case "RESET_PASSWORD":
-				if (!token) {
-					throw new Error("No token found for password reset");
-				}
-				const resetLink = `${process.env.NEXTAUTH_URL}/resetpassword?token=${token}`;
-				emailOptions = {
-					from: "The Coder'z <noreply@coderzai.xyz>",
-					to: email,
-					subject: "Reset Your Password - CoderzLab",
-					html: resetPasswordTemplate(resetLink)
-				};
-				break;
-			case "VERIFY":
-				if (!token) {
-					throw new Error("No token found for email verification");
-				}
-				const verifyLink = `${process.env.NEXTAUTH_URL}/verify?token=${token}`;
-				emailOptions = {
-					from: "The Coder'z <noreply@coderzai.xyz>",
-					to: email,
-					subject: "Verify Your Email - CoderzLab",
-					html: verifyEmailTemplate(verifyLink, token)
-				};
-				break;
-			case "CONFORMATION_MAIL":
-				emailOptions = {
-					from: "The Coder'z <noreply@coderzai.xyz>",
-					to: email,
-					subject: "Password Reset Confirmation - CoderzLab",
-					html: confirmationEmailTemplate()
-				};
-				break;
-			case "VERIFY_OTP":
-				if (!otp) {
-					throw new Error("No OTP found for email verification");
-				}
-				emailOptions = {
-					from: "The Coder'z <noreply@coderzai.xyz>",
-					to: email,
-					subject: "Verify Your Email - TheCoderz",
-					html: verifyOTPTemplate(name || "Developer", otp)
-				};
-				break;
-			case "RESET_PASSWORD_OTP":
-				if (!otp) {
-					throw new Error("No OTP found for password reset");
-				}
-				emailOptions = {
-					from: "The Coder'z <noreply@coderzai.xyz>",
-					to: email,
-					subject: "Reset Your Password - TheCoderz",
-					html: resetPasswordOTPTemplate(name || "Developer", otp)
-				};
-				break;
-			default:
-				throw new Error("Invalid email type");
-		}
+        switch (emailType) {
+            case "WELCOME":
+                emailOptions = {
+                    from: "The Coder'z <noreply@coderzai.xyz>",
+                    to: email,
+                    subject: "Welcome to CoderzLab! 🚀",
+                    html: welcomeEmailTemplate(name || "Developer")
+                };
+                break;
+            case "RESET_PASSWORD":
+                if (!token) {
+                    throw new Error("No token found for password reset");
+                }
+                const resetLink = `${process.env.NEXTAUTH_URL}/resetpassword?token=${token}`;
+                emailOptions = {
+                    from: "The Coder'z <noreply@coderzai.xyz>",
+                    to: email,
+                    subject: "Reset Your Password - CoderzLab",
+                    html: resetPasswordTemplate(resetLink)
+                };
+                break;
+            case "VERIFY":
+                if (!token) {
+                    throw new Error("No token found for email verification");
+                }
+                const verifyLink = `${process.env.NEXTAUTH_URL}/verify?token=${token}`;
+                emailOptions = {
+                    from: "The Coder'z <noreply@coderzai.xyz>",
+                    to: email,
+                    subject: "Verify Your Email - CoderzLab",
+                    html: verifyEmailTemplate(verifyLink, token)
+                };
+                break;
+            case "CONFORMATION_MAIL":
+                emailOptions = {
+                    from: "The Coder'z <noreply@coderzai.xyz>",
+                    to: email,
+                    subject: "Password Reset Confirmation - CoderzLab",
+                    html: confirmationEmailTemplate()
+                };
+                break;
+            case "VERIFY_OTP":
+                if (!otp) {
+                    throw new Error("No OTP found for email verification");
+                }
+                emailOptions = {
+                    from: "The Coder'z <noreply@coderzai.xyz>",
+                    to: email,
+                    subject: "Verify Your Email - TheCoderz",
+                    html: verifyOTPTemplate(name || "Developer", otp)
+                };
+                break;
+            case "RESET_PASSWORD_OTP":
+                if (!otp) {
+                    throw new Error("No OTP found for password reset");
+                }
+                emailOptions = {
+                    from: "The Coder'z <noreply@coderzai.xyz>",
+                    to: email,
+                    subject: "Reset Your Password - TheCoderz",
+                    html: resetPasswordOTPTemplate(name || "Developer", otp)
+                };
+                break;
+            default:
+                throw new Error("Invalid email type");
+        }
 
-		const result = await resend.emails.send(emailOptions);
-		console.log("Email sent successfully:", result);
-		return result;
-	} catch (error: any) {
-		console.error("Email sending failed:", error);
-		throw error;
-	}
+        const result = await getResend().emails.send(emailOptions);
+        console.log("Email sent successfully:", result);
+        return result;
+    } catch (error: any) {
+        console.error("Email sending failed:", error);
+        throw error;
+    }
 };

@@ -2,6 +2,9 @@ import { getChatSettings } from "@/actions/(chat)/settings.action"
 import ChatSettingsForm from "@/components/chat/chat-settings-form"
 import { Settings2 } from "lucide-react"
 
+// Force dynamic rendering to prevent static prerendering errors
+export const dynamic = 'force-dynamic'
+
 export default async function SettingsPage() {
     const { settings } = await getChatSettings()
 
