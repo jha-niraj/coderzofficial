@@ -1,6 +1,6 @@
 "use server"
 
-import { Currency, prisma } from "@repo/prisma"
+import { Currency, prisma } from "@repo/prisma/client"
 import { revalidatePath } from "next/cache"
 import { checkAdminAccess } from "./admin.action"
 import { Resend } from "resend";
