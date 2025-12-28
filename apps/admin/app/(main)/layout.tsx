@@ -1,12 +1,11 @@
 "use client"
 
-import { 
-    SidebarProvider, useSidebar 
+import {
+    SidebarProvider, useSidebar
 } from "@/components/navigation/sidebarprovider"
 import { AdminSidebar } from "@/components/navigation/sidebar"
 import { cn } from "@repo/ui/lib/utils"
-import { useSession } from "@repo/auth"
-import { useRouter } from "next/navigation"
+import { useSession } from "@repo/auth/client"import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { Loader2 } from "lucide-react"
 

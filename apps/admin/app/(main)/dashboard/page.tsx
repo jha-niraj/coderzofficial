@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "@repo/auth"
+import { useSession } from "@repo/auth/client"
 import {
     Users, CreditCard, FolderKanban, Mic, TrendingUp, TrendingDown,
     Activity, Clock, ArrowRight, AlertCircle, CheckCircle, Bell
