@@ -73,6 +73,90 @@ interface LearningsSummary {
     recentActivity: ActivityItem[];
 }
 
+// Type definitions for module data
+type ProjectsModuleData = { inProgress: number; completed: number; recent?: { title: string }[] };
+type ConceptsModuleData = { learning: number; completed: number; recent?: { title: string; progress: number }[] };
+type MockModuleData = { sessions: number; avgScore: number };
+type CollectivesModuleData = { memberships: number };
+
+function renderModuleContent(
+    key: string,
+    moduleData: ProjectsModuleData | ConceptsModuleData | MockModuleData | CollectivesModuleData | undefined
+): React.ReactNode {
+    if (!moduleData) return null;
+
+    if (key === "projects" && 'inProgress' in moduleData) {
+        const data = moduleData as ProjectsModuleData;
+        return (
+            <div className="space-y-2">
+                <div className="flex items-center gap-4 text-sm text-neutral-500">
+                    <span>{data.inProgress} in progress</span>
+                    <span>{data.completed} completed</span>
+                </div>
+                {data.recent?.[0] && (
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Recent: {data.recent[0].title}
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    if (key === "concepts" && 'learning' in moduleData) {
+        const data = moduleData as ConceptsModuleData;
+        return (
+            <div className="space-y-2">
+                <div className="flex items-center gap-4 text-sm text-neutral-500">
+                    <span>{data.learning} learning</span>
+                    <span>{data.completed} completed</span>
+                </div>
+                {data.recent?.[0] && (
+                    <div className="mt-3">
+                        <div className="flex items-center justify-between text-xs text-neutral-500 mb-1">
+                            <span>{data.recent[0].title}</span>
+                            <span>{data.recent[0].progress}%</span>
+                        </div>
+                        <Progress value={data.recent[0].progress} className="h-1.5" />
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    if (key === "mock" && 'sessions' in moduleData) {
+        const data = moduleData as MockModuleData;
+        return (
+            <div className="space-y-2">
+                <div className="flex items-center gap-4 text-sm text-neutral-500">
+                    <span>{data.sessions} sessions</span>
+                    <span>Avg: {data.avgScore}%</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (key === "collectives" && 'memberships' in moduleData) {
+        const data = moduleData as CollectivesModuleData;
+        return (
+            <div className="space-y-2">
+                <div className="flex items-center gap-4 text-sm text-neutral-500">
+                    <span>{data.memberships} communities</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (key === "studio") {
+        return (
+            <p className="text-sm text-neutral-500">
+                Coming soon
+            </p>
+        );
+    }
+
+    return null;
+}
+
 export default function LearningsPage() {
     const [summary, setSummary] = useState<LearningsSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -221,70 +305,7 @@ export default function LearningsPage() {
                                                 {config.label}
                                             </h3>
 
-                                            {
-                                                key === "projects" && moduleData && (
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-4 text-sm text-neutral-500">
-                                                            <span>{moduleData.inProgress} in progress</span>
-                                                            <span>{moduleData.completed} completed</span>
-                                                        </div>
-                                                        {
-                                                            moduleData.recent?.[0] && (
-                                                                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                                                    Recent: {moduleData.recent[0].title}
-                                                                </p>
-                                                            )
-                                                        }
-                                                    </div>
-                                                )
-                                            }
-                                            {
-                                                key === "concepts" && moduleData && (
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-4 text-sm text-neutral-500">
-                                                            <span>{moduleData.learning} learning</span>
-                                                            <span>{moduleData.completed} completed</span>
-                                                        </div>
-                                                        {
-                                                            moduleData.recent?.[0] && (
-                                                                <div className="mt-3">
-                                                                    <div className="flex items-center justify-between text-xs text-neutral-500 mb-1">
-                                                                        <span>{moduleData.recent[0].title}</span>
-                                                                        <span>{moduleData.recent[0].progress}%</span>
-                                                                    </div>
-                                                                    <Progress value={moduleData.recent[0].progress} className="h-1.5" />
-                                                                </div>
-                                                            )
-                                                        }
-                                                    </div>
-                                                )
-                                            }
-                                            {
-                                                key === "mock" && moduleData && (
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-4 text-sm text-neutral-500">
-                                                            <span>{moduleData.sessions} sessions</span>
-                                                            <span>Avg: {moduleData.avgScore}%</span>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }
-                                            {
-                                                key === "collectives" && moduleData && (
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-4 text-sm text-neutral-500">
-                                                            <span>{moduleData.memberships} communities</span>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }
-                                            {
-                                                key === "studio" && (
-                                                    <p className="text-sm text-neutral-500">
-                                                        Coming soon
-                                                    </p>
-                                                )
-                                            }
+                                            {renderModuleContent(key, moduleData)}
                                         </div>
                                     </Link>
                                 </motion.div>
@@ -310,7 +331,7 @@ export default function LearningsPage() {
                     className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden"
                 >
                     {
-                        summary?.recentActivity?.length > 0 ? (
+                        summary && summary?.recentActivity?.length > 0 ? (
                             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                                 {
                                     summary.recentActivity.map((activity, index) => (

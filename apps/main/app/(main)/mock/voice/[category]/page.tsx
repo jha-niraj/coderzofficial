@@ -23,12 +23,25 @@ import { MockCategory } from '@repo/prisma/client'
 interface MockData {
     id: string
     title: string
-    description?: string
-    category: MockCategory
-    expertLevel: string
+    description: string
+    category: string
+    level: string
     duration: number
     creditsRequired: number
     popularity?: number
+    isPublic?: boolean
+    byAdmin?: boolean
+    isFeatured?: boolean
+    questionsCount?: number
+    createdBy?: {
+        id?: string | null
+        username?: string | null
+        name?: string | null
+        image?: string | null
+    } | null
+    totalSessions?: number
+    averageRating?: number | null
+    tags?: string[]
 }
 
 export default function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
@@ -62,7 +75,26 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
             })
 
             if (result.success && result.mocks) {
-                setMocks(result.mocks)
+                // Transform the data to match MockData interface
+                const transformedMocks: MockData[] = result.mocks.map(mock => ({
+                    id: mock.id,
+                    title: mock.title,
+                    description: mock.description,
+                    category: mock.category,
+                    level: mock.level,
+                    duration: mock.duration,
+                    creditsRequired: mock.creditsRequired,
+                    popularity: mock.popularity,
+                    isPublic: mock.isPublic,
+                    byAdmin: mock.byAdmin,
+                    isFeatured: mock.isFeatured,
+                    questionsCount: mock.questionsCount,
+                    totalSessions: mock.totalSessions,
+                    averageRating: mock.averageRating,
+                    tags: mock.tags,
+                    createdBy: mock.createdBy
+                }))
+                setMocks(transformedMocks)
                 setTotalPages(result.totalPages || 1)
             }
         } catch (error) {

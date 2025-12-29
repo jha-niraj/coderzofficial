@@ -17,7 +17,7 @@ interface AboutTabProps {
 		id: string;
 		name: string | null;
 		username: string | null;
-		email: string;
+		email: string | null;
 		phone: string | null;
 		bio: string | null;
 		location: string | null;

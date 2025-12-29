@@ -32,23 +32,111 @@ interface ProfileStats {
 
 interface ProfileData {
     id: string;
-    name?: string | null;
-    username?: string | null;
-    email?: string | null;
-    image?: string | null;
-    bio?: string | null;
-    totalXp?: number;
-    currentXp?: number;
-    currentLevel?: number;
+    name: string | null;
+    username: string | null;
+    email: string | null;
+    image: string | null;
+    bio: string | null;
+    totalXp: number;
+    currentXp: number;
+    currentLevel: number;
     credits?: number;
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    projects?: any[];
-    skills?: any[];
-    achievements?: any[];
+    location: string | null;
+    company: string | null;
+    occupation: string | null;
+    website: string | null;
+    createdAt: Date;
+
+    recentActivity: Array<{
+        id: string;
+        activityType: string | null;
+        description: string | null;
+        createdAt: Date;
+    }>;
+    achievements: Array<{
+        id: string;
+        title: string;
+        description: string;
+        createdAt: Date;
+    }>;
+    projects: Array<{
+        id: string;
+        name: string;
+        description: string;
+        category: string;
+        difficulty: string;
+        tags: string[];
+        tier: string;
+        estimatedTime: string;
+    }>;
+    skills: Array<{
+        id: string;
+        name: string;
+        level: string;
+        category: string;
+        endorsements?: Array<{
+            id: string;
+            endorserId: string;
+            message?: string | null;
+        }>;
+    }>;
+    resume: string | null;
+    hasResume: boolean;
+    phone: string | null;
+    university: string | null;
+    semester: string | null;
+    gender: string | null;
+    yearofbirth: string | null;
+    interests: string[];
+    careerGoals: string[];
+    targetCompanies: string[];
+    expectedSalary: string | null;
+    noticePeriod: string | null;
+    workExperience: string | null;
+    experiences: Array<{
+        id: string;
+        companyName: string;
+        companyLogo: string | null;
+        roleTitle: string;
+        description: string | null;
+        startDate: Date;
+        endDate: Date | null;
+        isCurrentlyWorking: boolean;
+        companyWebsite: string | null;
+    }>;
+    certifications: Array<{
+        id: string;
+        name: string;
+        issuer: string;
+        issuedDate: Date;
+        link: string;
+    }>;
+    socialLinks?: Array<{
+        id: string;
+        platform: string;
+        url: string;
+    }>;
+    userProfile?: {
+        showEmail: boolean;
+        pinnedProjects: Array<{
+            id: string;
+            order: number;
+            projectId: string;
+            project: {
+                id: string;
+                name: string;
+                description: string;
+                category: string;
+                difficulty: string;
+                tags: string[];
+            };
+        }>;
+    } | null;
     _count?: {
         followers: number;
         following: number;
     };
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     [key: string]: any;
     /* eslint-enable @typescript-eslint/no-explicit-any */
 }
@@ -84,7 +172,7 @@ export default function ProfilePage() {
 
             if (profileResult.user?.id) {
                 const statsResult = await getUserProfileStats(profileResult.user.id);
-                if (statsResult.success) {
+                if (statsResult.success && statsResult.stats) {
                     setStats(statsResult.stats);
                 }
             }

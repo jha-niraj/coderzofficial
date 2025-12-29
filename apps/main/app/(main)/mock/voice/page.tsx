@@ -20,6 +20,7 @@ import {
 } from '@/actions/(main)/mockvoice/voice.action'
 import { MOCK_CATEGORIES } from './_constants/mock-categories'
 import { cn } from '@repo/ui/lib/utils'
+import { MockCategory } from '@repo/prisma/client'
 
 const stats = [
     { icon: <Users className="w-5 h-5" />, value: '15K+', label: 'Completed', icon2: Trophy },
@@ -64,13 +65,14 @@ interface MockData {
     byAdmin?: boolean
     isFeatured?: boolean
     createdBy?: {
-        username?: string
-        name?: string
-        image?: string
-    }
+        id: string | null
+        username: string | null
+        name: string | null
+        image: string | null
+    } | null
     popularity?: number
     totalSessions?: number
-    averageRating?: number
+    averageRating?: number | null
     tags?: string[]
 }
 
@@ -131,7 +133,7 @@ export default function VoiceMockInterviewPage() {
     const loadCategoryMocks = useCallback(async (category: string) => {
         setLoadingCategory(true)
         try {
-            const result = await getAdminMocksByCategory(category, 6)
+            const result = await getAdminMocksByCategory(category as MockCategory | 'ALL', 6)
             if (result.success) {
                 setCategoryMocks(result.mocks || [])
             }

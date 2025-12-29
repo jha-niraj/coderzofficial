@@ -36,13 +36,16 @@ interface MockSession {
     id: string;
     title: string;
     description: string;
-    status: 'COMPLETED' | 'IN_PROGRESS' | 'ABANDONED';
+    status: 'COMPLETED' | 'IN_PROGRESS' | 'ABANDONED' | string;
     jobRole?: string;
     jobDescription?: string;
-    experienceLevel: string;
+    experienceLevel?: string;
     techStack?: string[];
-    overallScore: number | null;
+    overallScore?: number | null;
+    userRating?: number | null;
+    duration?: number | null;
     createdAt: string | Date;
+    completedAt?: Date | null;
 }
 
 export default function MockLearningsPage() {
@@ -179,9 +182,11 @@ export default function MockLearningsPage() {
                                                                         <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                                                                             {session.jobRole || "Mock Interview"}
                                                                         </h3>
-                                                                        <Badge variant="secondary" className="text-xs rounded-full">
-                                                                            {session.experienceLevel}
-                                                                        </Badge>
+                                                                        {session.experienceLevel && (
+                                                                            <Badge variant="secondary" className="text-xs rounded-full">
+                                                                                {session.experienceLevel}
+                                                                            </Badge>
+                                                                        )}
                                                                     </div>
 
                                                                     {
@@ -220,7 +225,7 @@ export default function MockLearningsPage() {
                                                             </div>
 
                                                             {
-                                                                session.overallScore !== null && (
+                                                                typeof session.overallScore === 'number' && (
                                                                     <div className="text-center shrink-0">
                                                                         <div className={cn(
                                                                             "text-3xl font-bold",

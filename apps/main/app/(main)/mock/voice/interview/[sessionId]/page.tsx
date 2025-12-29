@@ -32,13 +32,15 @@ interface SessionVariables {
 interface SessionData {
     id: string
     userId: string
-    agentId: string
-    variables: SessionVariables
+    agentId: string | null
+    variables: SessionVariables | null
     mock: {
         title: string
         description: string
         level: string
-    }
+        category: string
+        duration: number | null
+    } | null
 }
 
 export default function MockInterviewPage({ params }: { params: Promise<{ sessionId: string }> }) {
@@ -97,7 +99,23 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                     return
                 }
 
-                setSessionData(result.session)
+                // Transform session data to match our interface
+                const session = result.session
+                const transformedSession: SessionData = {
+                    id: session.id,
+                    userId: session.userId,
+                    agentId: session.agentId,
+                    variables: session.variables as SessionVariables | null,
+                    mock: session.mock ? {
+                        title: session.mock.title,
+                        description: session.mock.description,
+                        level: session.mock.level,
+                        category: session.mock.category,
+                        duration: session.mock.duration
+                    } : null
+                }
+
+                setSessionData(transformedSession)
             } catch (error) {
                 console.error('Error loading session:', error)
                 toast.error('Failed to load session')
@@ -125,7 +143,10 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
     }, [])
 
     const startInterview = async () => {
-        if (!sessionData) return
+        if (!sessionData || !sessionData.agentId || !sessionData.variables) {
+            toast.error('Session data is incomplete')
+            return
+        }
 
         try {
             setHasStarted(true)
@@ -135,7 +156,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             await updateSessionStatus(resolvedParams.sessionId, 'IN_PROGRESS')
 
             // Start ElevenLabs conversation
-            const variables = sessionData.variables as SessionVariables
+            const variables = sessionData.variables
 
             const conversationId = await conversation.startSession({
                 agentId: sessionData.agentId,
@@ -144,7 +165,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                 overrides: {
                     agent: {
                         prompt: {
-                            prompt: sessionData.variables.knowledge_base
+                            prompt: variables.knowledge_base
                         },
                         firstMessage: `Hello ${variables.username}! Thank you for joining this mock interview session. I'm excited to work with you today on preparing for your ${variables.position} interview.\n\nWe'll be spending the next few minutes going through questions that you might encounter in a real interview. Feel free to take your time with your responses, and don't hesitate to think aloud - that's actually what most interviewers want to see!\n\nAre you ready to begin?`
                     }

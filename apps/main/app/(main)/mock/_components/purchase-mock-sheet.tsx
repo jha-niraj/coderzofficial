@@ -10,7 +10,7 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Separator } from '@repo/ui/components/ui/separator'
 import {
-    Sparkles, Clock, Brain, CheckCircle, Calendar, Play, AlertCircle, 
+    Sparkles, Clock, Brain, CheckCircle, Calendar, Play, AlertCircle,
     Trophy, Target, Zap
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
@@ -22,7 +22,7 @@ interface MockData {
     id: string
     title: string
     description: string
-    category: string
+    category?: string
     level: string
     duration: number
     creditsRequired: number
@@ -112,7 +112,7 @@ export function PurchaseMockSheet({ isOpen, onClose, mock, userCredits }: Purcha
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="text-4xl">{categoryIcons[mock.category]}</span>
+                                <span className="text-4xl">{mock.category ? categoryIcons[mock.category] : '📋'}</span>
                                 <Badge className={levelColors[mock.level]}>
                                     {mock.level}
                                 </Badge>

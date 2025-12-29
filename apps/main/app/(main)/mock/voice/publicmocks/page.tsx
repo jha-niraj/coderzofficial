@@ -28,17 +28,26 @@ import { cn } from '@repo/ui/lib/utils'
 interface MockData {
     id: string
     title: string
-    description?: string
-    category: string
+    description: string
+    category?: string
     level: string
     duration: number
-    author?: {
-        name: string
-        image?: string
-    }
-    createdAt: Date
     creditsRequired: number
+    questionsCount?: number
+    isPublic?: boolean
     byAdmin?: boolean
+    isFeatured?: boolean
+    createdBy?: {
+        id?: string | null
+        username?: string | null
+        name?: string | null
+        image?: string | null
+    } | null
+    popularity?: number
+    totalSessions?: number
+    averageRating?: number | null
+    tags?: string[]
+    createdAt?: Date
 }
 export default function PublicMocksPage() {
     const { credits } = useUserStore()

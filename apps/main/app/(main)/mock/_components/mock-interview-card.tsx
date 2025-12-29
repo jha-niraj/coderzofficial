@@ -32,13 +32,14 @@ interface MockData {
     byAdmin?: boolean
     isFeatured?: boolean
     createdBy?: {
-        username?: string
-        name?: string
-        image?: string
-    }
+        id?: string | null
+        username?: string | null
+        name?: string | null
+        image?: string | null
+    } | null
     popularity?: number
     totalSessions?: number
-    averageRating?: number
+    averageRating?: number | null
     tags?: string[]
 }
 

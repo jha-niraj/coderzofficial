@@ -22,16 +22,16 @@ import { ReviewSheet } from '../../../_components/review-sheet'
 
 interface SessionData {
     id: string
-    duration: number
+    duration: number | null
     createdAt: Date
     status: string
     mock: {
         title: string
         description: string
         level: string
-    }
-    userRating?: number
-    aiAnalysis?: AIFeedback
+    } | null
+    userRating?: number | null
+    aiAnalysis?: AIFeedback | null
 }
 
 interface AIFeedback {
@@ -69,11 +69,27 @@ export default function ResultsPage({
                     return
                 }
 
-                setSessionData(result.session)
+                // Transform session data to match our interface
+                const session = result.session
+                const transformedSession: SessionData = {
+                    id: session.id,
+                    duration: session.duration,
+                    createdAt: session.createdAt,
+                    status: session.status,
+                    mock: session.mock ? {
+                        title: session.mock.title,
+                        description: session.mock.description,
+                        level: session.mock.level,
+                    } : null,
+                    userRating: session.userRating,
+                    aiAnalysis: session.aiAnalysis as AIFeedback | null
+                }
+
+                setSessionData(transformedSession)
 
                 // Check if AI analysis already exists
-                if (result.session.aiAnalysis) {
-                    setFeedback(result.session.aiAnalysis)
+                if (transformedSession.aiAnalysis) {
+                    setFeedback(transformedSession.aiAnalysis)
                 } else {
                     // Generate AI feedback
                     setIsGeneratingFeedback(true)

@@ -163,7 +163,7 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
 
         // Build recent activity
         const recentActivity: any[] = [];
-        
+
         conceptProgress.slice(0, 3).forEach(p => {
             recentActivity.push({
                 type: "concept",
@@ -382,16 +382,27 @@ export async function getMockLearnings() {
 
         return {
             success: true,
-            data: sessions.map(s => ({
-                id: s.id,
-                title: s.mock?.title || "Mock Interview",
-                description: s.mock?.description || "General",
-                status: s.status,
-                userRating: s.userRating,
-                duration: s.duration,
-                createdAt: s.createdAt,
-                completedAt: s.completedAt,
-            })),
+            data: sessions.map(s => {
+                const variables = s.variables as Record<string, unknown> | null;
+                const aiAnalysis = s.aiAnalysis as Record<string, unknown> | null;
+
+                return {
+                    id: s.id,
+                    title: s.mock?.title || "Mock Interview",
+                    description: s.mock?.description || "General",
+                    status: s.status,
+                    userRating: s.userRating,
+                    duration: s.duration,
+                    createdAt: s.createdAt,
+                    completedAt: s.completedAt,
+                    // Additional fields needed by the UI
+                    jobRole: (variables?.position as string) || undefined,
+                    jobDescription: (variables?.description as string) || undefined,
+                    experienceLevel: (variables?.level as string) || "INTERMEDIATE",
+                    techStack: Array.isArray(variables?.techStack) ? (variables.techStack as string[]) : undefined,
+                    overallScore: typeof aiAnalysis?.overallScore === 'number' ? aiAnalysis.overallScore : null,
+                };
+            }),
         };
     } catch (error) {
         console.error("Error fetching mock learnings:", error);

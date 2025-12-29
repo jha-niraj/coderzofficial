@@ -48,9 +48,9 @@ const generateMentors = (): Mentor[] => {
         id: `mentor-${i + 1}`,
         name: `Mentor ${i + 1}`,
         avatar: `👤`,
-        company: companies[i % companies.length],
-        role: roles[i % roles.length],
-        specialty: specialties[i % specialties.length],
+        company: companies[i % companies.length] || 'Google',
+        role: roles[i % roles.length] || 'Senior Engineer',
+        specialty: specialties[i % specialties.length] || 'System Design',
         experience: Math.floor(Math.random() * 10) + 5,
         rating: (4 + Math.random()).toFixed(1),
         sessionsCompleted: Math.floor(Math.random() * 200) + 50,
@@ -149,8 +149,8 @@ export default function ConnectMentorsPage() {
             toast.error('Please select a day and time')
             return
         }
-        const credits = selectedMentor.pricePerSession
-        toast.success(`Session booked with ${selectedMentor.name}! ${credits} credits deducted.`)
+        const credits = selectedMentor?.pricePerSession
+        toast.success(`Session booked with ${selectedMentor?.name}! ${credits} credits deducted.`)
         setSheetOpen(false)
     }
 

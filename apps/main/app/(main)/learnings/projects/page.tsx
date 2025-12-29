@@ -22,11 +22,14 @@ interface ProjectProgress {
     slug: string;
     title: string;
     description: string;
-    coverImage?: string;
-    status: 'InProgress' | 'Completed' | 'Planning';
-    memberCount: number;
+    coverImage?: string | null;
+    category?: string;
+    difficulty?: string;
+    status: string;
+    memberCount?: number;
     taskCount: number;
     techStack?: TechStackItem[];
+    joinedAt?: Date | null;
 }
 
 
@@ -179,17 +182,21 @@ export default function ProjectLearningsPage() {
                                                             {project.description}
                                                         </p>
                                                         <div className="flex items-center gap-4 text-xs text-neutral-500">
-                                                            <span className="flex items-center gap-1">
-                                                                <Users className="h-3.5 w-3.5" />
-                                                                {project.memberCount} members
-                                                            </span>
+                                                            {
+                                                            typeof project.memberCount === 'number' && (
+                                                                <span className="flex items-center gap-1">
+                                                                    <Users className="h-3.5 w-3.5" />
+                                                                    {project.memberCount} members
+                                                                </span>
+                                                            )
+                                                            }
                                                             <span className="flex items-center gap-1">
                                                                 <ListTodo className="h-3.5 w-3.5" />
                                                                 {project.taskCount} tasks
                                                             </span>
                                                         </div>
                                                         {
-                                                            project.techStack?.length > 0 && (
+                                                            project?.techStack && project?.techStack?.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1 mt-3">
                                                                     {
                                                                         project.techStack.slice(0, 3).map((tech: { id: string; name: string }) => (
