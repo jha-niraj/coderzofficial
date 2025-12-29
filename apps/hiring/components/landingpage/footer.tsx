@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import {
-    Twitter, Linkedin, Github, Building2
+    Twitter, Linkedin, Github, Layers
 } from "lucide-react";
 
 export default function Footer() {
@@ -11,16 +11,21 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto px-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
                     <div className="col-span-1 md:col-span-1">
-                        <Link href="/" className="flex items-center gap-2 mb-6">
-                            <div className="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white flex items-center justify-center">
-                                <Building2 className="w-4 h-4 text-white dark:text-black" />
+                        <Link href="/" className="flex items-center gap-3 mb-6 group">
+                            <div className="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white flex items-center justify-center transition-transform group-hover:scale-105">
+                                <Layers className="w-4 h-4 text-white dark:text-black" />
                             </div>
-                            <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
-                                Coder&apos;z
-                            </span>
+                            <div className="flex flex-col">
+                                <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white leading-none">
+                                    FLOWSYNC
+                                </span>
+                                <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest mt-1">
+                                    Powered by Coder&apos;z
+                                </span>
+                            </div>
                         </Link>
                         <p className="text-xs text-neutral-500 leading-relaxed max-w-xs">
-                            Engineering Intelligence Platform V2.0.<br />
+                            Technical Talent Intelligence Engine V2.0.<br />
                             Optimizing the global talent supply chain.
                         </p>
                     </div>
@@ -34,9 +39,9 @@ export default function Footer() {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-mono text-[10px] uppercase tracking-widest text-neutral-900 dark:text-white mb-6">Company</h4>
+                            <h4 className="font-mono text-[10px] uppercase tracking-widest text-neutral-900 dark:text-white mb-6">Ecosystem</h4>
                             <ul className="space-y-4 text-sm text-neutral-500">
-                                <li><Link href="#" className="hover:text-neutral-900 dark:hover:text-white transition-colors">About</Link></li>
+                                <li><Link href="https://coderzai.xyz" target="_blank" className="hover:text-neutral-900 dark:hover:text-white transition-colors">Coder&apos;z Main</Link></li>
                                 <li><Link href="#" className="hover:text-neutral-900 dark:hover:text-white transition-colors">Security</Link></li>
                                 <li><Link href="#" className="hover:text-neutral-900 dark:hover:text-white transition-colors">Terms of Service</Link></li>
                             </ul>
@@ -51,9 +56,9 @@ export default function Footer() {
                         </div>
                     </div>
                 </div>
-                <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
+                <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-[10px] text-neutral-500 font-mono">
-                        © 2025 BuildrHQ Inc.
+                        © {new Date().getFullYear()} BuildrHQ Inc. - FlowSync Division
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />

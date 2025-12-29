@@ -7,7 +7,7 @@ import {
     Sheet, SheetContent
 } from "@repo/ui/components/ui/sheet";
 import {
-    Menu, Building2, ArrowRight
+    Menu, Layers, ArrowRight
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@repo/ui/components/themetoggle";
@@ -26,13 +26,18 @@ export default function Navbar() {
                 "border border-neutral-200 dark:border-neutral-800",
                 "shadow-sm"
             )}>
-                <Link href="/" className="flex items-center space-x-2 pl-2">
-                    <div className="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white flex items-center justify-center">
-                        <Building2 className="w-4 h-4 text-white dark:text-black" />
+                <Link href="/" className="flex items-center gap-3 pl-2 group">
+                    <div className="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white flex items-center justify-center transition-transform group-hover:scale-105">
+                        <Layers className="w-4 h-4 text-white dark:text-black" />
                     </div>
-                    <span className="text-sm font-bold tracking-tight text-neutral-900 dark:text-white hidden sm:block">
-                        BuildrHQ <span className="text-neutral-500 font-mono font-normal">HIRING</span>
-                    </span>
+                    <div className="flex flex-col justify-center h-8">
+                        <span className="text-base font-bold tracking-tight text-neutral-900 dark:text-white leading-none">
+                            FlowSync
+                        </span>
+                        <span className="text-[9px] font-mono uppercase tracking-widest text-neutral-500 leading-none mt-0.5 group-hover:text-neutral-900 dark:group-hover:text-neutral-300 transition-colors">
+                            by BuildrHQ
+                        </span>
+                    </div>
                 </Link>
                 <div className="hidden md:flex items-center space-x-8">
                     <Link href="/" className={navLinkClass}>Overview</Link>
@@ -43,7 +48,7 @@ export default function Navbar() {
                     <ThemeToggle />
                     <Link href="/register">
                         <Button className="cursor-pointer rounded-full h-9 px-4 text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black transition-transform hover:scale-105">
-                            Initialize
+                            Initialize Flow
                             <ArrowRight className="ml-1.5 h-3 w-3" />
                         </Button>
                     </Link>
