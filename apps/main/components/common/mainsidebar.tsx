@@ -281,7 +281,46 @@ interface SidebarContentProps {
     onNavigate: (path: string) => void;
     onClose?: () => void;
 }
+interface LevelConfig {
+    level: number;
+    title: string;
+    xpRequired: number;
+    xpReward: number;
+    creditsReward: number;
+    description: string;
+    icon: string;
+    color: string;
+}
 
+interface LevelCalculation {
+    currentLevel: number;
+    progressInCurrentLevel: number;
+    xpNeededForNextLevel: number;
+    progressPercentage: number;
+    nextLevelXp: number;
+    currentLevelXp: number;
+}
+
+interface LevelUpHistory {
+    levelInfo: {
+        icon: string | null;
+        title: string;
+    };
+    achievedAt: string | Date;
+    xpEarned: number;
+    creditsEarned: number;
+}
+
+interface UserLevelData {
+    currentXp: number;
+    totalXp: number;
+    currentLevel: number;
+    credits: number;
+    levelInfo: LevelCalculation;
+    currentLevelConfig?: LevelConfig;
+    nextLevelConfig?: LevelConfig;
+    recentLevelUps: LevelUpHistory[];
+}
 const SidebarContent = ({ routes, isCollapsed, onClose }: Omit<SidebarContentProps, 'onNavigate'>) => {
     const { data: session, status } = useSession();
     const pathname = usePathname();
@@ -312,7 +351,7 @@ const SidebarContent = ({ routes, isCollapsed, onClose }: Omit<SidebarContentPro
     const [converting, setConverting] = useState(false);
 
     // Level Info State
-    const [levelInfo, setLevelInfo] = useState<any>(null);
+    const [levelInfo, setLevelInfo] = useState<UserLevelData | null>(null);
     const [levelInfoLoading, setLevelInfoLoading] = useState(false);
 
     useEffect(() => {
@@ -1240,7 +1279,7 @@ const SidebarContent = ({ routes, isCollapsed, onClose }: Omit<SidebarContentPro
                                                 </div>
                                                 <div className="space-y-3">
                                                     {
-                                                        levelInfo.recentLevelUps.map((levelUp: { levelInfo: { icon: string; title: string }; achievedAt: string | Date; xpEarned: number; creditsEarned: number }, index: number) => (
+                                                        levelInfo.recentLevelUps.map((levelUp: LevelUpHistory, index: number) => (
                                                             <div key={index} className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                                                                 <span className="text-xl">{levelUp.levelInfo.icon}</span>
                                                                 <div className="flex-1">
