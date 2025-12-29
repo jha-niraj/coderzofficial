@@ -30,14 +30,14 @@ export default function UserCard({
 
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                     <Avatar className="h-14 w-14 border-2 border-neutral-100 dark:border-neutral-800 shadow-sm">
-                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarImage src={user.avatar || undefined} alt={user.name || 'User'} />
                         <AvatarFallback className="bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700 font-bold">
-                            {user.name.charAt(0)}
+                            {user.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                     </Avatar>
                     <div className="text-left">
-                        <h3 className="font-bold text-neutral-900 dark:text-white text-lg">{user.name}</h3>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">@{user.username}</p>
+                        <h3 className="font-bold text-neutral-900 dark:text-white text-lg">{user.name || 'Unknown User'}</h3>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">@{user.username || 'unknown'}</p>
                     </div>
                 </div>
                 <div className="flex flex-col items-center sm:items-end gap-3 w-full sm:w-auto">
@@ -68,8 +68,8 @@ export default function UserCard({
                         onClick={onTransfer}
                         disabled={!canAfford}
                         className={`w-full sm:w-auto gap-2 font-medium shadow-md transition-all ${canAfford
-                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                                : "bg-neutral-200 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed"
+                            ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                            : "bg-neutral-200 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed"
                             }`}
                     >
                         {

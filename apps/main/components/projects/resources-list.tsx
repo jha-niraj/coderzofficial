@@ -73,7 +73,7 @@ interface ResourceItem {
     id: string
     type: ResourceType
     title: string
-    description?: string
+    description?: string | null
     link: string
     isOfficial: boolean
     helpfulCount: number
@@ -282,7 +282,7 @@ export default function ResourcesList({ projectId, currentUserId, isCreator }: R
                                                 <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
                                                     <div className="flex items-center gap-1">
                                                         <Avatar className="h-6 w-6">
-                                                            <AvatarImage src={resource.user.image} />
+                                                            <AvatarImage src={resource.user.image || undefined} />
                                                             <AvatarFallback>{resource.user.name?.[0]}</AvatarFallback>
                                                         </Avatar>
                                                         <span>{resource.user.username || resource.user.name}</span>

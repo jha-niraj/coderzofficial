@@ -324,7 +324,7 @@ export default function ProjectIdeaDetailPage() {
                                     <CardContent>
                                         <div className="flex items-center gap-3">
                                             <Avatar>
-                                                <AvatarImage src={project.author.image} />
+                                                <AvatarImage src={project.author.image || ''} />
                                                 <AvatarFallback>{project.author.name?.[0] || 'U'}</AvatarFallback>
                                             </Avatar>
                                             <div>

@@ -21,20 +21,7 @@ import {
     formatScore, getScoreColor, getRankBadgeColor, getRankSuffix
 } from '@/lib/project-scoring'
 
-interface GlobalLeaderboardEntry {
-    id: string
-    rank: number
-    userId: string
-    totalScore: number
-    averageScore: number
-    projectsStarted: number
-    projectsCompleted: number
-    user: {
-        name: string | null
-        username: string
-        image: string | null
-    }
-}
+import { GlobalLeaderboardEntry } from '@/types/projectv2'
 
 interface LeaderboardPagination {
     total: number

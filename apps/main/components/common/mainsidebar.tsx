@@ -9,10 +9,10 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    LogOut, User, Bell, BellOff, Sparkles, Brain, Briefcase, Users, Video, MessageSquare,
-    Cable, Share2, MessageCircleCodeIcon, Trophy, FolderKanban, User2, Building2, ChevronLeft,
-    ChevronRight, ChevronDown, Award, Coins, Crown, Menu, Loader, TrendingUp, Zap, Notebook,
-    Users2
+    LogOut, User, Bell, BellOff, Sparkles, Brain, Briefcase, Users,
+    Video, MessageSquare, Cable, Share2, MessageCircleCodeIcon, Trophy,
+    FolderKanban, User2, Building2, ChevronLeft, ChevronRight, ChevronDown,
+    Award, Coins, Crown, Menu, Loader, TrendingUp, Zap, Notebook, Users2
 } from "lucide-react";
 import {
     TooltipProvider, Tooltip, TooltipTrigger, TooltipContent
@@ -37,6 +37,8 @@ import { Label } from "@repo/ui/components/ui/label";
 import { convertXpToCredits } from "@/actions/(main)/subscription/credits.action";
 import { Progress } from "@repo/ui/components/ui/progress";
 import { getUserReferralCode } from "@/actions/(main)/user/user.action";
+import { getUserLevelInfo } from "@/actions/(main)/user/level.action";
+
 
 // Context for sidebar state
 interface SidebarContextType {
@@ -308,6 +310,29 @@ const SidebarContent = ({ routes, isCollapsed, onClose }: Omit<SidebarContentPro
     const [tradeDialogOpen, setTradeDialogOpen] = useState(false);
     const [levelDialogOpen, setLevelDialogOpen] = useState(false);
     const [converting, setConverting] = useState(false);
+
+    // Level Info State
+    const [levelInfo, setLevelInfo] = useState<any>(null);
+    const [levelInfoLoading, setLevelInfoLoading] = useState(false);
+
+    useEffect(() => {
+        if (levelDialogOpen && status === "authenticated") {
+            const fetchLevelInfo = async () => {
+                setLevelInfoLoading(true);
+                try {
+                    const response = await getUserLevelInfo();
+                    if (response.success && response.data) {
+                        setLevelInfo(response.data);
+                    }
+                } catch (error) {
+                    console.error("Error fetching level info:", error);
+                } finally {
+                    setLevelInfoLoading(false);
+                }
+            };
+            fetchLevelInfo();
+        }
+    }, [levelDialogOpen, status]);
 
     useEffect(() => {
         if (status === "authenticated") {
@@ -1320,7 +1345,7 @@ const Sidebar = ({ routes = [], className = "" }: SidebarProps) => {
                         <SidebarContent
                             routes={routes}
                             isCollapsed={false}
-                            onNavigate={() => { }}
+
                             onClose={() => setIsMobileOpen(false)}
                         />
                     </div>
@@ -1351,7 +1376,7 @@ const Sidebar = ({ routes = [], className = "" }: SidebarProps) => {
                 <SidebarContent
                     routes={routes}
                     isCollapsed={isCollapsed}
-                    onNavigate={() => { }}
+
                 />
             </motion.div>
         </TooltipProvider>

@@ -27,38 +27,13 @@ interface UserProgressSheetProps {
     username: string
 }
 
-interface TaskItem {
-    id: string
-    title: string
-    description: string[]
-    difficulty: string
-    completedAt?: Date | null
-}
+import { UserProjectProgressDetail, TaskDetail } from '@/types/projectv2'
 
-interface UserProgressData {
-    user: {
-        name: string | null
-        username: string | null
-        image: string | null
-    }
-    project: {
-        title: string
-    }
-    progress: {
-        totalScore: number
-        progressPercentage: number
-        tasksCompleted: number
-        totalTasks: number
-        tasksScore: number
-        quizScore: number
-        mockScore: number
-        startedAt: Date | null
-    }
-    tasks: {
-        completed: TaskItem[]
-        inProgress: TaskItem[]
-        todo: TaskItem[]
-    }
+interface UserProgressSheetProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    projectSlug: string
+    username: string
 }
 
 export function UserProgressSheet({
@@ -68,7 +43,7 @@ export function UserProgressSheet({
     username
 }: UserProgressSheetProps) {
     const [loading, setLoading] = useState(true)
-    const [data, setData] = useState<UserProgressData | null>(null)
+    const [data, setData] = useState<UserProjectProgressDetail | null>(null)
     const [error, setError] = useState<string | null>(null)
 
     const fetchProgress = useCallback(async () => {
@@ -77,7 +52,7 @@ export function UserProgressSheet({
 
         const result = await getUserProjectProgress(projectSlug, username)
 
-        if (result.success) {
+        if (result.success && result.data) {
             setData(result.data)
         } else {
             setError(result.message || 'Failed to load progress')
@@ -118,7 +93,7 @@ export function UserProgressSheet({
                             <SheetHeader>
                                 <SheetTitle className="flex items-center gap-3">
                                     <Avatar className="h-12 w-12">
-                                        <AvatarImage src={data.user.image} />
+                                        <AvatarImage src={data.user.image! || ''} />
                                         <AvatarFallback>
                                             {data.user.name?.[0] || data.user.username?.[0] || 'U'}
                                         </AvatarFallback>
@@ -216,7 +191,7 @@ export function UserProgressSheet({
                                             </h3>
                                             <div className="space-y-2">
                                                 {
-                                                    data.tasks.completed.map((task: TaskItem) => (
+                                                    data.tasks.completed.map((task: TaskDetail) => (
                                                         <motion.div
                                                             key={task.id}
                                                             initial={{ opacity: 0, y: 10 }}
@@ -256,7 +231,7 @@ export function UserProgressSheet({
                                             </h3>
                                             <div className="space-y-2">
                                                 {
-                                                    data.tasks.inProgress.map((task: TaskItem) => (
+                                                    data.tasks.inProgress.map((task: TaskDetail) => (
                                                         <Card key={task.id} className="border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/50 dark:bg-yellow-950/20">
                                                             <CardContent className="p-4">
                                                                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -285,7 +260,7 @@ export function UserProgressSheet({
                                             </h3>
                                             <div className="space-y-2">
                                                 {
-                                                    data.tasks.todo.map((task: TaskItem) => (
+                                                    data.tasks.todo.map((task: TaskDetail) => (
                                                         <Card key={task.id} className="bg-neutral-50 dark:bg-neutral-900/50 p-2">
                                                             <CardContent className="p-4">
                                                                 <div className="flex items-start justify-between gap-2 mb-2">

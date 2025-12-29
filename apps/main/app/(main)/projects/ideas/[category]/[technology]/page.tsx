@@ -38,8 +38,6 @@ export default function TechnologyProjectsPage() {
     const categoryId = params.category as string
     const technologyId = params.technology as string
 
-
-
     const [projects, setProjects] = useState<ProjectIdea[]>([])
     const [topProjects, setTopProjects] = useState<ProjectIdea[]>([])
     const [loading, setLoading] = useState(true)
@@ -66,12 +64,18 @@ export default function TechnologyProjectsPage() {
 
                 const result = await getProjectIdeasByTechnology(techName)
                 if (result.success && result.data) {
-                    setProjects(result.data)
+                    setProjects(result.data.map(project => ({
+                        ...project,
+                        createdAt: project.createdAt.toISOString()
+                    })))
                 }
 
                 const topResult = await getTopUpvotedProjects(techName, 3)
                 if (topResult.success && topResult.data) {
-                    setTopProjects(topResult.data)
+                    setTopProjects(topResult.data.map(project => ({
+                        ...project,
+                        createdAt: project.createdAt.toISOString()
+                    })))
                 }
             } catch (error) {
                 console.error('Failed to fetch projects:', error)
