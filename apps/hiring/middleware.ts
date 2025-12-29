@@ -30,8 +30,7 @@ const publicRoutes = [
     '/terms',
     '/about',
     '/pricing',
-    '/contact',
-    '/onboarding',
+    '/contactus'
 ]
 
 // API routes that should be excluded from auth checks

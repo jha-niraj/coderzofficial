@@ -42,7 +42,7 @@ export default function Navbar() {
                 <div className="hidden md:flex items-center space-x-8">
                     <Link href="/" className={navLinkClass}>Overview</Link>
                     <Link href="#features" className={navLinkClass}>System</Link>
-                    <Link href="#pricing" className={navLinkClass}>Pricing</Link>
+                    <Link href="/pricing" className={navLinkClass}>Pricing</Link>
                 </div>
                 <div className="flex items-center space-x-2">
                     <ThemeToggle />

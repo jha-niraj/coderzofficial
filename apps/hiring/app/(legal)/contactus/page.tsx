@@ -14,8 +14,6 @@ import {
 } from "@repo/ui/components/ui/select"
 import Link from "next/link"
 import { useState } from "react"
-import Navbar from "@/components/landingpage/navbar"
-import Footer from "@/components/landingpage/footer"
 
 export default function ContactPage() {
     const [loading, setLoading] = useState(false)
@@ -33,13 +31,8 @@ export default function ContactPage() {
 
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
-            <Navbar />
-
-            {/* Hero Section */}
             <section className="pt-32 pb-16 px-6 relative overflow-hidden">
-                {/* Background Grid */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:60px_60px] opacity-50" />
-
                 <div className="max-w-7xl mx-auto relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -57,15 +50,12 @@ export default function ContactPage() {
                             Whether you have questions about our platform, need a demo, or want to discuss enterprise solutions — we&apos;re here to help.
                         </p>
                     </motion.div>
-
-                    {/* Quick Action Cards */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                         className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20"
                     >
-                        {/* Schedule Demo */}
                         <Link href="https://cal.com/coderzai" target="_blank">
                             <div className="group bg-gradient-to-br from-neutral-900 to-neutral-800 dark:from-white dark:to-neutral-100 rounded-2xl p-8 text-white dark:text-black hover:scale-105 transition-transform cursor-pointer">
                                 <div className="w-14 h-14 rounded-xl bg-white/10 dark:bg-black/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -80,8 +70,6 @@ export default function ContactPage() {
                                 </div>
                             </div>
                         </Link>
-
-                        {/* Sales */}
                         <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
                             <div className="w-14 h-14 rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6">
                                 <Building2 className="w-7 h-7 text-neutral-600 dark:text-neutral-400" />
@@ -94,8 +82,6 @@ export default function ContactPage() {
                                 sales@coderzai.xyz <ArrowRight className="w-4 h-4" />
                             </a>
                         </div>
-
-                        {/* Support */}
                         <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
                             <div className="w-14 h-14 rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6">
                                 <MessageCircle className="w-7 h-7 text-neutral-600 dark:text-neutral-400" />
@@ -111,12 +97,9 @@ export default function ContactPage() {
                     </motion.div>
                 </div>
             </section>
-
-            {/* Contact Form Section */}
             <section className="py-20 px-6 bg-neutral-50 dark:bg-neutral-900/50">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                        {/* Form */}
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -129,99 +112,99 @@ export default function ContactPage() {
                                 Fill out the form below and we&apos;ll get back to you within 24 hours.
                             </p>
 
-                            {submitted ? (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-8 text-center"
-                                >
-                                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mx-auto mb-4">
-                                        <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
-                                        Message Sent!
-                                    </h3>
-                                    <p className="text-neutral-500">
-                                        Thanks for reaching out. We&apos;ll respond shortly.
-                                    </p>
-                                </motion.div>
-                            ) : (
-                                <form onSubmit={handleSubmit} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
-                                            <Input
-                                                id="firstName"
-                                                placeholder="John"
-                                                className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
-                                            <Input
-                                                id="lastName"
-                                                placeholder="Doe"
-                                                className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="email" className="text-sm font-medium">Work Email</Label>
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            placeholder="john@company.com"
-                                            className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="company" className="text-sm font-medium">Company Name</Label>
-                                        <Input
-                                            id="company"
-                                            placeholder="Acme Inc."
-                                            className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="subject" className="text-sm font-medium">Subject</Label>
-                                        <Select>
-                                            <SelectTrigger className="mt-2 rounded-xl bg-white dark:bg-neutral-950">
-                                                <SelectValue placeholder="How can we help?" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="demo">Request a Demo</SelectItem>
-                                                <SelectItem value="sales">Sales Inquiry</SelectItem>
-                                                <SelectItem value="support">Technical Support</SelectItem>
-                                                <SelectItem value="partnership">Partnership</SelectItem>
-                                                <SelectItem value="other">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="message" className="text-sm font-medium">Message</Label>
-                                        <Textarea
-                                            id="message"
-                                            placeholder="Tell us about your needs..."
-                                            className="mt-2 rounded-xl bg-white dark:bg-neutral-950 min-h-[150px]"
-                                            required
-                                        />
-                                    </div>
-                                    <Button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-full rounded-xl h-12 bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold"
+                            {
+                                submitted ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-8 text-center"
                                     >
-                                        {loading ? "Sending..." : "Send Message"}
-                                        <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Button>
-                                </form>
-                            )}
+                                        <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mx-auto mb-4">
+                                            <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+                                            Message Sent!
+                                        </h3>
+                                        <p className="text-neutral-500">
+                                            Thanks for reaching out. We&apos;ll respond shortly.
+                                        </p>
+                                    </motion.div>
+                                ) : (
+                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+                                                <Input
+                                                    id="firstName"
+                                                    placeholder="John"
+                                                    className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+                                                <Input
+                                                    id="lastName"
+                                                    placeholder="Doe"
+                                                    className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="email" className="text-sm font-medium">Work Email</Label>
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                placeholder="john@company.com"
+                                                className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="company" className="text-sm font-medium">Company Name</Label>
+                                            <Input
+                                                id="company"
+                                                placeholder="Acme Inc."
+                                                className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="subject" className="text-sm font-medium">Subject</Label>
+                                            <Select>
+                                                <SelectTrigger className="mt-2 rounded-xl bg-white dark:bg-neutral-950">
+                                                    <SelectValue placeholder="How can we help?" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="demo">Request a Demo</SelectItem>
+                                                    <SelectItem value="sales">Sales Inquiry</SelectItem>
+                                                    <SelectItem value="support">Technical Support</SelectItem>
+                                                    <SelectItem value="partnership">Partnership</SelectItem>
+                                                    <SelectItem value="other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="message" className="text-sm font-medium">Message</Label>
+                                            <Textarea
+                                                id="message"
+                                                placeholder="Tell us about your needs..."
+                                                className="mt-2 rounded-xl bg-white dark:bg-neutral-950 min-h-[150px]"
+                                                required
+                                            />
+                                        </div>
+                                        <Button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full rounded-xl h-12 bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold"
+                                        >
+                                            {loading ? "Sending..." : "Send Message"}
+                                            <ArrowRight className="w-4 h-4 ml-2" />
+                                        </Button>
+                                    </form>
+                                )
+                            }
                         </motion.div>
-
-                        {/* Contact Info */}
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -234,9 +217,7 @@ export default function ContactPage() {
                             <p className="text-neutral-500 mb-12">
                                 Prefer to reach out directly? Here&apos;s how you can contact us.
                             </p>
-
                             <div className="space-y-8">
-                                {/* Email */}
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
                                         <Mail className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -248,8 +229,6 @@ export default function ContactPage() {
                                         </a>
                                     </div>
                                 </div>
-
-                                {/* Phone */}
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
                                         <Phone className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -259,8 +238,6 @@ export default function ContactPage() {
                                         <p className="text-neutral-500">+91 98765 43210</p>
                                     </div>
                                 </div>
-
-                                {/* Address */}
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
                                         <MapPin className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -274,8 +251,6 @@ export default function ContactPage() {
                                         </p>
                                     </div>
                                 </div>
-
-                                {/* Hours */}
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
                                         <Clock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -289,8 +264,6 @@ export default function ContactPage() {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Map Placeholder */}
                             <div className="mt-12 h-64 rounded-2xl bg-neutral-200 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center">
                                 <p className="text-neutral-500 text-sm">Map Integration</p>
                             </div>
@@ -298,8 +271,6 @@ export default function ContactPage() {
                     </div>
                 </div>
             </section>
-
-            <Footer />
         </div>
     )
 }

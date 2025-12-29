@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { signIn } from '@repo/auth/client';
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2 
+import {
+    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { Input } from "@repo/ui/components/ui/input";
@@ -97,12 +97,9 @@ function SignUpForm() {
 
     return (
         <div className="min-h-screen flex bg-white dark:bg-neutral-950">
-            {/* Grid Background */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-            {/* Left Section - Decorative */}
             <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center bg-neutral-950 overflow-hidden">
-                {/* Subtle Grid */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
 
                 <div className="relative z-10 px-12 max-w-lg">
@@ -117,7 +114,6 @@ function SignUpForm() {
                             </div>
                             <span className="text-2xl font-bold text-white">Coder&apos;z Hiring</span>
                         </div>
-
                         <h1 className="text-4xl font-bold text-white tracking-tight mb-4">
                             Deploy Your Hiring <br />
                             <span className="text-neutral-500">Infrastructure.</span>
@@ -125,8 +121,6 @@ function SignUpForm() {
                         <p className="text-neutral-400 text-lg mb-8">
                             Initialize your workspace and gain access to pre-vetted engineering resources.
                         </p>
-
-                        {/* Quote */}
                         <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-900/50">
                             <p className="text-neutral-300 italic">
                                 &quot;Reduced our hiring cycle from 6 weeks to 2 weeks. The candidate vetting is exceptional.&quot;
@@ -138,8 +132,6 @@ function SignUpForm() {
                     </motion.div>
                 </div>
             </div>
-
-            {/* Right Section - Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -147,7 +139,6 @@ function SignUpForm() {
                     transition={{ duration: 0.5 }}
                     className="w-full max-w-md"
                 >
-                    {/* Mobile Logo */}
                     <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
                         <div className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-white flex items-center justify-center">
                             <Building2 className="h-5 w-5 text-white dark:text-black" />
@@ -156,7 +147,6 @@ function SignUpForm() {
                             CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
                         </span>
                     </div>
-
                     <div className="text-center mb-8">
                         <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
                             New Registration
@@ -165,22 +155,20 @@ function SignUpForm() {
                             Initialize Company Workspace
                         </h2>
                     </div>
-
-                    {/* Error Message */}
                     <AnimatePresence>
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
-                            >
-                                <p className="text-neutral-600 dark:text-neutral-400 text-sm text-center">{error}</p>
-                            </motion.div>
-                        )}
+                        {
+                            error && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
+                                >
+                                    <p className="text-neutral-600 dark:text-neutral-400 text-sm text-center">{error}</p>
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
-
-                    {/* Google Sign Up */}
                     <Button
                         type="button"
                         variant="outline"
@@ -188,16 +176,17 @@ function SignUpForm() {
                         onClick={handleGoogleSignUp}
                         disabled={isGoogleLoading}
                     >
-                        {isGoogleLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                            <>
-                                <FcGoogle className="h-5 w-5 mr-2" />
-                                Continue with Google
-                            </>
-                        )}
+                        {
+                            isGoogleLoading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <FcGoogle className="h-5 w-5 mr-2" />
+                                    Continue with Google
+                                </>
+                            )
+                        }
                     </Button>
-
                     <div className="relative mb-6">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-neutral-200 dark:border-neutral-800" />
@@ -208,9 +197,7 @@ function SignUpForm() {
                             </span>
                         </div>
                     </div>
-
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Company Name Field */}
                         <div className="space-y-2">
                             <Label htmlFor="companyName" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                                 Company Name
@@ -225,8 +212,6 @@ function SignUpForm() {
                                 className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                             />
                         </div>
-
-                        {/* Name Field */}
                         <div className="space-y-2">
                             <Label htmlFor="name" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                                 Your Full Name
@@ -241,8 +226,6 @@ function SignUpForm() {
                                 className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                             />
                         </div>
-
-                        {/* Email Field */}
                         <div className="space-y-2">
                             <Label htmlFor="email" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                                 Work Email
@@ -257,8 +240,6 @@ function SignUpForm() {
                                 className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                             />
                         </div>
-
-                        {/* Password Field */}
                         <div className="space-y-2">
                             <Label htmlFor="password" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                                 Password
@@ -281,47 +262,49 @@ function SignUpForm() {
                                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </button>
                             </div>
-
-                            {/* Password Requirements */}
-                            {password && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    className="mt-3 p-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
-                                >
-                                    <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2">
-                                        Security Requirements
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                        {[
-                                            { check: hasMinLength, label: "8+ chars" },
-                                            { check: hasCapital, label: "Uppercase" },
-                                            { check: hasNumber, label: "Number" },
-                                            { check: hasSpecial, label: "Special char" },
-                                        ].map((req, i) => (
-                                            <div key={i} className="flex items-center gap-2">
-                                                {req.check ? (
-                                                    <Check className="h-3 w-3 text-neutral-900 dark:text-white" />
-                                                ) : (
-                                                    <X className="h-3 w-3 text-neutral-400" />
-                                                )}
-                                                <span className={req.check ? "text-neutral-900 dark:text-white" : "text-neutral-400"}>
-                                                    {req.label}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            )}
+                            {
+                                password && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        className="mt-3 p-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
+                                    >
+                                        <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2">
+                                            Security Requirements
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {
+                                                [
+                                                    { check: hasMinLength, label: "8+ chars" },
+                                                    { check: hasCapital, label: "Uppercase" },
+                                                    { check: hasNumber, label: "Number" },
+                                                    { check: hasSpecial, label: "Special char" },
+                                                ].map((req, i) => (
+                                                    <div key={i} className="flex items-center gap-2">
+                                                        {
+                                                            req.check ? (
+                                                                <Check className="h-3 w-3 text-neutral-900 dark:text-white" />
+                                                            ) : (
+                                                                <X className="h-3 w-3 text-neutral-400" />
+                                                            )
+                                                        }
+                                                        <span className={req.check ? "text-neutral-900 dark:text-white" : "text-neutral-400"}>
+                                                            {req.label}
+                                                        </span>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </motion.div>
+                                )
+                            }
                         </div>
-
-                        {/* Terms Checkbox */}
                         <div className="flex items-start gap-3 pt-2">
                             <Checkbox
                                 id="terms"
                                 checked={agreedToTerms}
                                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                                className="mt-0.5 border-neutral-300 dark:border-neutral-700 data-[state=checked]:bg-neutral-900 dark:data-[state=checked]:bg-white data-[state=checked]:border-neutral-900 dark:data-[state=checked]:border-white"
+                                className="cursor-pointer mt-0.5 border-neutral-300 dark:border-neutral-700 data-[state=checked]:bg-neutral-900 dark:data-[state=checked]:bg-white data-[state=checked]:border-neutral-900 dark:data-[state=checked]:border-white"
                             />
                             <Label
                                 htmlFor="terms"
@@ -337,28 +320,26 @@ function SignUpForm() {
                                 </Link>
                             </Label>
                         </div>
-
-                        {/* Submit Button */}
                         <Button
                             type="submit"
                             disabled={isLoading || !agreedToTerms}
                             className="w-full h-12 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold mt-6"
                         >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Initializing...
-                                </>
-                            ) : (
-                                <>
-                                    Create Workspace
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </>
-                            )}
+                            {
+                                isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Initializing...
+                                    </>
+                                ) : (
+                                    <>
+                                        Create Workspace
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </>
+                                )
+                            }
                         </Button>
                     </form>
-
-                    {/* Sign In Link */}
                     <p className="mt-6 text-center text-neutral-500">
                         Already have access?{" "}
                         <Link

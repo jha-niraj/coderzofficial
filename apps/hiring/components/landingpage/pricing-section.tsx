@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { 
-    Check 
+import {
+    Check
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Switch } from "@repo/ui/components/ui/switch"
@@ -50,65 +50,63 @@ export default function PricingSection() {
                     <h2 className="text-3xl md:text-4xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-8">
                         Transparent Compute Costs
                     </h2>
-
-                    {/* Minimal Toggle */}
                     <div className="flex items-center gap-3 p-1 pr-4 pl-4 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
                         <span className={cn("text-xs font-bold", currency === "INR" ? "text-neutral-900 dark:text-white" : "text-neutral-400")}>INR</span>
                         <Switch checked={currency === "USD"} onCheckedChange={(c) => setCurrency(c ? "USD" : "INR")} />
                         <span className={cn("text-xs font-bold", currency === "USD" ? "text-neutral-900 dark:text-white" : "text-neutral-400")}>USD</span>
                     </div>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {plans.map((plan, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
-                            className={cn(
-                                "relative p-8 rounded-3xl flex flex-col h-full border transition-all duration-300",
-                                plan.highlight
-                                    ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-black shadow-2xl"
-                                    : "bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800"
-                            )}
-                        >
-                            <div className="mb-8">
-                                <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
-                                <p className={cn("text-sm", plan.highlight ? "text-neutral-400 dark:text-neutral-500" : "text-neutral-500")}>
-                                    {plan.desc}
-                                </p>
-                            </div>
-
-                            <div className="mb-8">
-                                <span className="text-4xl font-bold tracking-tighter">
-                                    {currency === "INR" ? plan.price.INR : plan.price.USD}
-                                </span>
-                                {plan.price.INR !== "Custom" && <span className="text-sm opacity-60">/mo</span>}
-                            </div>
-
-                            <ul className="space-y-4 mb-8 flex-1">
-                                {plan.features.map((feat, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-sm font-medium">
-                                        <Check className={cn("w-4 h-4", plan.highlight ? "text-white dark:text-black" : "text-neutral-900 dark:text-white")} />
-                                        {feat}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Button
+                    {
+                        plans.map((plan, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1 }}
                                 className={cn(
-                                    "w-full rounded-full font-bold h-12",
+                                    "relative p-8 rounded-3xl flex flex-col h-full border transition-all duration-300",
                                     plan.highlight
-                                        ? "bg-white text-black hover:bg-neutral-200 dark:bg-black dark:text-white dark:hover:bg-neutral-800"
-                                        : "bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                                        ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-black shadow-2xl"
+                                        : "bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800"
                                 )}
                             >
-                                {plan.cta}
-                            </Button>
-                        </motion.div>
-                    ))}
+                                <div className="mb-8">
+                                    <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
+                                    <p className={cn("text-sm", plan.highlight ? "text-neutral-400 dark:text-neutral-500" : "text-neutral-500")}>
+                                        {plan.desc}
+                                    </p>
+                                </div>
+                                <div className="mb-8">
+                                    <span className="text-4xl font-bold tracking-tighter">
+                                        {currency === "INR" ? plan.price.INR : plan.price.USD}
+                                    </span>
+                                    {plan.price.INR !== "Custom" && <span className="text-sm opacity-60">/mo</span>}
+                                </div>
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    {
+                                        plan.features.map((feat, i) => (
+                                            <li key={i} className="flex items-center gap-3 text-sm font-medium">
+                                                <Check className={cn("w-4 h-4", plan.highlight ? "text-white dark:text-black" : "text-neutral-900 dark:text-white")} />
+                                                {feat}
+                                            </li>
+                                        ))
+                                    }
+                                </ul>
+                                <Button
+                                    className={cn(
+                                        "cursor-pointer w-full rounded-full font-bold h-12",
+                                        plan.highlight
+                                            ? "bg-white text-black hover:bg-neutral-200 dark:bg-black dark:text-white dark:hover:bg-neutral-800"
+                                            : "bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                                    )}
+                                >
+                                    {plan.cta}
+                                </Button>
+                            </motion.div>
+                        ))
+                    }
                 </div>
             </div>
         </section>

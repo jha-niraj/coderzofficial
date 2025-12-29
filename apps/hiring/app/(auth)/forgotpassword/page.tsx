@@ -7,7 +7,9 @@ import axios from "axios";
 import React, { useState } from "react";
 import toast from "@repo/ui/components/ui/sonner";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, KeyRound, Loader2, Mail, Building2, ArrowRight } from "lucide-react";
+import {
+    ArrowLeft, KeyRound, Loader2, Mail, Building2, ArrowRight
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@repo/ui/lib/utils";
@@ -41,7 +43,6 @@ export default function ForgotPassword() {
 
     return (
         <div className="min-h-screen w-full bg-white dark:bg-neutral-950 flex flex-col items-center justify-center relative p-4">
-            {/* Grid Background */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
 
             <motion.div
@@ -49,7 +50,6 @@ export default function ForgotPassword() {
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-md relative z-10"
             >
-                {/* Logo */}
                 <div className="flex justify-center mb-8">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-white flex items-center justify-center">
@@ -60,8 +60,6 @@ export default function ForgotPassword() {
                         </span>
                     </Link>
                 </div>
-
-                {/* Card */}
                 <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8">
                     <div className="text-center mb-8">
                         <div className="w-12 h-12 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl flex items-center justify-center mx-auto mb-4">
@@ -77,7 +75,6 @@ export default function ForgotPassword() {
                             Enter your email to receive a recovery code.
                         </p>
                     </div>
-
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
                             <Label className="text-xs font-mono uppercase tracking-wider text-neutral-500" htmlFor="email">
@@ -99,26 +96,26 @@ export default function ForgotPassword() {
                                 />
                             </div>
                         </div>
-
                         <Button
                             className="w-full h-12 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold"
                             type="submit"
                             disabled={sending}
                         >
-                            {sending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Sending...
-                                </>
-                            ) : (
-                                <>
-                                    Send Recovery Code
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </>
-                            )}
+                            {
+                                sending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        Send Recovery Code
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </>
+                                )
+                            }
                         </Button>
                     </form>
-
                     <div className="mt-6 text-center">
                         <Link
                             href="/signin"

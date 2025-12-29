@@ -1,7 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Star } from "lucide-react"
+import { 
+    Star 
+} from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 
 const testimonials = [
@@ -25,35 +27,36 @@ export default function TestimonialsSection() {
                         System Efficiency Reports
                     </h2>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {testimonials.map((t, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: i * 0.1 }}
-                            className={cn(
-                                "p-8 rounded-2xl bg-neutral-50 dark:bg-neutral-900",
-                                "border border-neutral-200 dark:border-neutral-800",
-                                "hover:border-neutral-400 dark:hover:border-neutral-700 transition-colors"
-                            )}
-                        >
-                            <div className="flex gap-1 mb-6 text-neutral-900 dark:text-white">
-                                {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
-                            </div>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
-                                &ldquo;{t.content}&rdquo;
-                            </p>
-                            <div>
-                                <div className="font-bold text-neutral-900 dark:text-white text-sm">{t.name}</div>
-                                <div className="text-xs font-mono text-neutral-500 uppercase mt-1">
-                                    {t.role} {"//"} {t.company}
+                    {
+                        testimonials.map((t, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                className={cn(
+                                    "p-8 rounded-2xl bg-neutral-50 dark:bg-neutral-900",
+                                    "border border-neutral-200 dark:border-neutral-800",
+                                    "hover:border-neutral-400 dark:hover:border-neutral-700 transition-colors"
+                                )}
+                            >
+                                <div className="flex gap-1 mb-6 text-neutral-900 dark:text-white">
+                                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
                                 </div>
-                            </div>
-                        </motion.div>
-                    ))}
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
+                                    &ldquo;{t.content}&rdquo;
+                                </p>
+                                <div>
+                                    <div className="font-bold text-neutral-900 dark:text-white text-sm">{t.name}</div>
+                                    <div className="text-xs font-mono text-neutral-500 uppercase mt-1">
+                                        {t.role} {"//"} {t.company}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))
+                    }
                 </div>
             </div>
         </section>

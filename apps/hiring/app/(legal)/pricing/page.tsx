@@ -11,15 +11,11 @@ import { Badge } from "@repo/ui/components/ui/badge"
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs"
-import Navbar from "@/components/landingpage/navbar"
-import Footer from "@/components/landingpage/footer"
 
 // Currency Configuration
 const currencies = {
-    USD: { symbol: "$", rate: 1, label: "USD" },
-    EUR: { symbol: "€", rate: 0.85, label: "EUR" },
-    GBP: { symbol: "£", rate: 0.73, label: "GBP" },
     INR: { symbol: "₹", rate: 83.21, label: "INR" },
+    USD: { symbol: "$", rate: 1, label: "USD" }
 }
 
 type CurrencyKey = keyof typeof currencies
@@ -262,10 +258,7 @@ export default function PricingPage() {
 
     return (
         <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-            <Navbar />
-
             <main className="pt-32 pb-20">
-                {/* Header */}
                 <div className="max-w-7xl mx-auto px-6 mb-16 relative">
                     <div className="flex flex-col md:flex-row justify-between items-end gap-8">
                         <div>
@@ -280,136 +273,139 @@ export default function PricingPage() {
                                 Select your service domain and currency to view our standardized rate card.
                             </p>
                         </div>
-
-                        {/* Currency Selector */}
                         <div className="bg-white dark:bg-neutral-900 p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 flex gap-1 shadow-sm">
-                            {(Object.keys(currencies) as CurrencyKey[]).map((cur) => (
-                                <button
-                                    key={cur}
-                                    onClick={() => setCurrency(cur)}
-                                    className={`cursor-pointer px-4 py-2 rounded-lg text-xs font-bold font-mono transition-all ${currency === cur
-                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-black shadow-md"
-                                        : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                        }`}
-                                >
-                                    {cur}
-                                </button>
-                            ))}
+                            {
+                                (Object.keys(currencies) as CurrencyKey[]).map((cur) => (
+                                    <button
+                                        key={cur}
+                                        onClick={() => setCurrency(cur)}
+                                        className={`cursor-pointer px-4 py-2 rounded-lg text-xs font-bold font-mono transition-all ${currency === cur
+                                            ? "bg-neutral-900 dark:bg-white text-white dark:text-black shadow-md"
+                                            : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                            }`}
+                                    >
+                                        {cur}
+                                    </button>
+                                ))
+                            }
                         </div>
                     </div>
                 </div>
-
-                {/* Pricing Tabs */}
                 <div className="max-w-7xl mx-auto px-6">
                     <Tabs defaultValue="starter" value={activeTab} onValueChange={setActiveTab} className="space-y-12">
                         <div className="overflow-x-auto pb-4 scrollbar-hide">
                             <TabsList className="inline-flex h-auto p-1 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl">
-                                {Object.entries(pricingData).map(([key, data]) => (
-                                    <TabsTrigger
-                                        key={key}
-                                        value={key}
-                                        className="px-6 py-3 cursor-pointer rounded-xl text-sm font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all flex items-center gap-2"
-                                    >
-                                        <data.icon className="w-4 h-4" />
-                                        {data.title}
-                                    </TabsTrigger>
-                                ))}
+                                {
+                                    Object.entries(pricingData).map(([key, data]) => (
+                                        <TabsTrigger
+                                            key={key}
+                                            value={key}
+                                            className="px-6 py-3 cursor-pointer rounded-xl text-sm font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm transition-all flex items-center gap-2"
+                                        >
+                                            <data.icon className="w-4 h-4" />
+                                            {data.title}
+                                        </TabsTrigger>
+                                    ))
+                                }
                             </TabsList>
                         </div>
-
                         <AnimatePresence mode="wait">
-                            {Object.entries(pricingData).map(([key, data]) => (
-                                <TabsContent key={key} value={key} className="mt-0 outline-none">
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="grid md:grid-cols-3 gap-8"
-                                    >
-                                        {data.tiers.map((tier, index) => (
-                                            <motion.div
-                                                key={index}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: index * 0.1 }}
-                                                className={`relative p-8 rounded-3xl border flex flex-col ${tier.popular
-                                                    ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white shadow-2xl scale-105 z-10"
-                                                    : "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
-                                                    }`}
-                                            >
-                                                {tier.popular && (
-                                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg tracking-wider">
-                                                        MOST POPULAR
-                                                    </div>
-                                                )}
-
-                                                <div className="mb-8">
-                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${tier.popular
-                                                        ? "bg-white/20 dark:bg-black/10"
-                                                        : "bg-neutral-100 dark:bg-neutral-800"
-                                                        }`}>
-                                                        <tier.icon className="w-6 h-6" />
-                                                    </div>
-                                                    <h3 className="text-xl font-bold mb-2">{tier.name}</h3>
-                                                    <p className={`text-sm leading-relaxed ${tier.popular
-                                                        ? "text-neutral-300 dark:text-neutral-600"
-                                                        : "text-neutral-500"
-                                                        }`}>
-                                                        {tier.description}
-                                                    </p>
-                                                </div>
-
-                                                <div className="mb-8">
-                                                    <div className="flex items-baseline gap-1">
-                                                        <span className="text-4xl font-bold tracking-tight">
-                                                            {formatPrice(tier.basePrice)}
-                                                        </span>
-                                                    </div>
-                                                    <span className={`text-sm ${tier.popular
-                                                        ? "text-neutral-400 dark:text-neutral-500"
-                                                        : "text-neutral-500"
-                                                        }`}>
-                                                        {tier.suffix}
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex-1 space-y-4 mb-8">
-                                                    {tier.features.map((feature, i) => (
-                                                        <div key={i} className="flex items-start gap-3 text-sm">
-                                                            <Check className={`w-5 h-5 shrink-0 ${tier.popular
-                                                                ? "text-green-400 dark:text-green-600"
-                                                                : "text-green-600 dark:text-green-400"
-                                                                }`} />
-                                                            <span>{feature}</span>
+                            {
+                                Object.entries(pricingData).map(([key, data]) => (
+                                    <TabsContent key={key} value={key} className="mt-0 outline-none">
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="grid md:grid-cols-3 gap-8"
+                                        >
+                                            {
+                                                data.tiers.map((tier, index) => (
+                                                    <motion.div
+                                                        key={index}
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: index * 0.1 }}
+                                                        className={`relative p-8 rounded-3xl border flex flex-col ${tier.popular
+                                                            ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white shadow-2xl scale-105 z-10"
+                                                            : "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+                                                            }`}
+                                                    >
+                                                        {
+                                                            tier.popular && (
+                                                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg tracking-wider">
+                                                                    MOST POPULAR
+                                                                </div>
+                                                            )
+                                                        }
+                                                        <div className="mb-8">
+                                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${tier.popular
+                                                                ? "bg-white/20 dark:bg-black/10"
+                                                                : "bg-neutral-100 dark:bg-neutral-800"
+                                                                }`}>
+                                                                <tier.icon className="w-6 h-6" />
+                                                            </div>
+                                                            <h3 className="text-xl font-bold mb-2">{tier.name}</h3>
+                                                            <p className={`text-sm leading-relaxed ${tier.popular
+                                                                ? "text-neutral-300 dark:text-neutral-600"
+                                                                : "text-neutral-500"
+                                                                }`}>
+                                                                {tier.description}
+                                                            </p>
                                                         </div>
-                                                    ))}
-                                                    {tier.missing.map((feature, i) => (
-                                                        <div key={i} className="flex items-start gap-3 text-sm opacity-50">
-                                                            <X className="w-5 h-5 shrink-0" />
-                                                            <span>{feature}</span>
+                                                        <div className="mb-8">
+                                                            <div className="flex items-baseline gap-1">
+                                                                <span className="text-4xl font-bold tracking-tight">
+                                                                    {formatPrice(tier.basePrice)}
+                                                                </span>
+                                                            </div>
+                                                            <span className={`text-sm ${tier.popular
+                                                                ? "text-neutral-400 dark:text-neutral-500"
+                                                                : "text-neutral-500"
+                                                                }`}>
+                                                                {tier.suffix}
+                                                            </span>
                                                         </div>
-                                                    ))}
-                                                </div>
-
-                                                <Link href="/contactus" className="w-full mt-auto">
-                                                    <button className={`cursor-pointer w-full py-4 rounded-xl font-bold transition-all ${tier.popular
-                                                        ? "bg-white dark:bg-black text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                                                        : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200"
-                                                        }`}>
-                                                        Select {tier.name}
-                                                    </button>
-                                                </Link>
-                                            </motion.div>
-                                        ))}
-                                    </motion.div>
-                                </TabsContent>
-                            ))}
+                                                        <div className="flex-1 space-y-4 mb-8">
+                                                            {
+                                                                tier.features.map((feature, i) => (
+                                                                    <div key={i} className="flex items-start gap-3 text-sm">
+                                                                        <Check className={`w-5 h-5 shrink-0 ${tier.popular
+                                                                            ? "text-green-400 dark:text-green-600"
+                                                                            : "text-green-600 dark:text-green-400"
+                                                                            }`} />
+                                                                        <span>{feature}</span>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                            {
+                                                                tier.missing.map((feature, i) => (
+                                                                    <div key={i} className="flex items-start gap-3 text-sm opacity-50">
+                                                                        <X className="w-5 h-5 shrink-0" />
+                                                                        <span>{feature}</span>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                        <Link href="/contactus" className="w-full mt-auto">
+                                                            <button className={`cursor-pointer w-full py-4 rounded-xl font-bold transition-all ${tier.popular
+                                                                ? "bg-white dark:bg-black text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                                                                : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200"
+                                                                }`}>
+                                                                Select {tier.name}
+                                                            </button>
+                                                        </Link>
+                                                    </motion.div>
+                                                ))
+                                            }
+                                        </motion.div>
+                                    </TabsContent>
+                                ))
+                            }
                         </AnimatePresence>
                     </Tabs>
                 </div>
-
-                {/* Custom CTA */}
                 <div className="max-w-7xl mx-auto px-6 mt-24">
                     <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-8 md:p-12 text-center">
                         <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
@@ -428,8 +424,6 @@ export default function PricingPage() {
                     </div>
                 </div>
             </main>
-
-            <Footer />
         </div>
     )
 }

@@ -1,17 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FileText, Building2 } from "lucide-react";
+import {
+    FileText, Building2
+} from "lucide-react";
 import Link from "next/link";
 
 export default function TermsPage() {
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
-            {/* Grid Background */}
             <div className="fixed inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
 
             <div className="relative z-10 max-w-4xl mx-auto px-6 py-20">
-                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -25,11 +25,9 @@ export default function TermsPage() {
                             CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
                         </span>
                     </Link>
-
                     <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <FileText className="w-8 h-8 text-neutral-900 dark:text-white" />
                     </div>
-
                     <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
                         Legal Document
                     </span>
@@ -40,8 +38,6 @@ export default function TermsPage() {
                         Last updated: December 29, 2025
                     </p>
                 </motion.div>
-
-                {/* Content */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -59,7 +55,6 @@ export default function TermsPage() {
                                 If you disagree with any part of the terms, you may not access the service.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">02</span>
@@ -77,7 +72,6 @@ export default function TermsPage() {
                                 <li>Analytics and reporting</li>
                             </ul>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">03</span>
@@ -89,7 +83,6 @@ export default function TermsPage() {
                                 and for all activities under your account.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">04</span>
@@ -104,7 +97,6 @@ export default function TermsPage() {
                                 <li>Harass, abuse, or harm other users</li>
                             </ul>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">05</span>
@@ -115,7 +107,6 @@ export default function TermsPage() {
                                 unless otherwise specified. We reserve the right to modify pricing with 30 days notice.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">06</span>
@@ -127,7 +118,6 @@ export default function TermsPage() {
                                 candidates at no additional cost.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">07</span>
@@ -139,7 +129,6 @@ export default function TermsPage() {
                                 and other intellectual property laws.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">08</span>
@@ -150,7 +139,6 @@ export default function TermsPage() {
                                 consequential, or punitive damages resulting from your use of the service.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">09</span>
@@ -161,7 +149,6 @@ export default function TermsPage() {
                                 Upon termination, your right to use the platform will cease immediately.
                             </p>
                         </section>
-
                         <section>
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">10</span>
@@ -176,8 +163,6 @@ export default function TermsPage() {
                         </section>
                     </div>
                 </motion.div>
-
-                {/* Back Link */}
                 <div className="text-center mt-8">
                     <Link
                         href="/"

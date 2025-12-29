@@ -1,11 +1,15 @@
 'use client';
 
-import { FormEvent, useState, useRef, useEffect, JSX } from 'react';
+import {
+    FormEvent, useState, useRef, useEffect, JSX
+} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import { Button } from "@repo/ui/components/ui/button";
-import { RefreshCw, CheckCircle2, Lock, Loader2, Building2, ArrowRight } from "lucide-react";
+import {
+    RefreshCw, CheckCircle2, Lock, Loader2, Building2, ArrowRight
+} from "lucide-react";
 import toast from '@repo/ui/components/ui/sonner';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -144,7 +148,6 @@ const ResetPassword = (): JSX.Element | null => {
 
     return (
         <div className="min-h-screen w-full bg-white dark:bg-neutral-950 flex flex-col items-center justify-center relative p-4">
-            {/* Grid Background */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
 
             <motion.div
@@ -152,19 +155,16 @@ const ResetPassword = (): JSX.Element | null => {
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-md relative z-10"
             >
-                {/* Logo */}
                 <div className="flex justify-center mb-8">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-white flex items-center justify-center">
                             <Building2 className="w-5 h-5 text-white dark:text-black" />
                         </div>
                         <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
-                            CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
+                            BuildrHQ <span className="text-neutral-500 font-mono font-normal">HIRING</span>
                         </span>
                     </Link>
                 </div>
-
-                {/* Card */}
                 <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8">
                     <div className="text-center mb-8">
                         <div className="w-12 h-12 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl flex items-center justify-center mx-auto mb-4">
@@ -178,33 +178,33 @@ const ResetPassword = (): JSX.Element | null => {
                             Code sent to <span className="font-mono text-neutral-900 dark:text-white">{email}</span>
                         </p>
                     </div>
-
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
                             <Label className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                                 Verification Code
                             </Label>
                             <div className="flex justify-between gap-2">
-                                {otp.map((digit, index) => (
-                                    <Input
-                                        key={index}
-                                        ref={inputRefs[index]}
-                                        type="text"
-                                        maxLength={1}
-                                        value={digit}
-                                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                                        onKeyDown={(e) => handleKeyDown(index, e)}
-                                        onPaste={index === 0 ? handlePaste : undefined}
-                                        className={cn(
-                                            "w-12 h-12 text-center text-xl font-bold p-0 rounded-xl",
-                                            "bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800",
-                                            "focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
-                                        )}
-                                    />
-                                ))}
+                                {
+                                    otp.map((digit, index) => (
+                                        <Input
+                                            key={index}
+                                            ref={inputRefs[index]}
+                                            type="text"
+                                            maxLength={1}
+                                            value={digit}
+                                            onChange={(e) => handleOtpChange(index, e.target.value)}
+                                            onKeyDown={(e) => handleKeyDown(index, e)}
+                                            onPaste={index === 0 ? handlePaste : undefined}
+                                            className={cn(
+                                                "w-12 h-12 text-center text-xl font-bold p-0 rounded-xl",
+                                                "bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800",
+                                                "focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
+                                            )}
+                                        />
+                                    ))
+                                }
                             </div>
                         </div>
-
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label className="text-xs font-mono uppercase tracking-wider text-neutral-500" htmlFor="password">
@@ -233,22 +233,22 @@ const ResetPassword = (): JSX.Element | null => {
                                 />
                             </div>
                         </div>
-
                         <Button
                             type="submit"
                             className="w-full h-12 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold"
                             disabled={isLoading || otp.join("").length !== 6}
                         >
-                            {isLoading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <>
-                                    Reset Password
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </>
-                            )}
+                            {
+                                isLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        Reset Password
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </>
+                                )
+                            }
                         </Button>
-
                         <div className="text-center">
                             <Button
                                 type="button"

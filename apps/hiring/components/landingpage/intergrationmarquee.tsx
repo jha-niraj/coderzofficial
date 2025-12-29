@@ -10,7 +10,6 @@ export default function IntegrationMarquee() {
                     Seamless Integration Protocol
                 </p>
             </div>
-
             <div className="relative flex overflow-x-hidden group">
                 <div className="animate-marquee whitespace-nowrap flex items-center">
                     {

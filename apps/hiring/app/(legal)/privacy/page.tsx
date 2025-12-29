@@ -1,17 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Building2 } from "lucide-react";
+import { 
+    Shield, Building2 
+} from "lucide-react";
 import Link from "next/link";
 
 export default function PrivacyPage() {
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
-            {/* Grid Background */}
             <div className="fixed inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
 
             <div className="relative z-10 max-w-4xl mx-auto px-6 py-20">
-                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -25,11 +25,9 @@ export default function PrivacyPage() {
                             CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
                         </span>
                     </Link>
-
                     <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <Shield className="w-8 h-8 text-neutral-900 dark:text-white" />
                     </div>
-
                     <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
                         Legal Document
                     </span>
@@ -40,8 +38,6 @@ export default function PrivacyPage() {
                         Last updated: December 29, 2025
                     </p>
                 </motion.div>
-
-                {/* Content */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -60,7 +56,6 @@ export default function PrivacyPage() {
                                 when you use our hiring platform services.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">02</span>
@@ -82,7 +77,6 @@ export default function PrivacyPage() {
                                 </ul>
                             </div>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">03</span>
@@ -97,7 +91,6 @@ export default function PrivacyPage() {
                                 <li>Ensure platform security and prevent fraud</li>
                             </ul>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">04</span>
@@ -112,7 +105,6 @@ export default function PrivacyPage() {
                                 <li>Business partners with your explicit consent</li>
                             </ul>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">05</span>
@@ -123,7 +115,6 @@ export default function PrivacyPage() {
                                 access controls, and regular security audits to protect your data.
                             </p>
                         </section>
-
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">06</span>
@@ -136,7 +127,6 @@ export default function PrivacyPage() {
                                 <li>Opt-out of marketing communications</li>
                             </ul>
                         </section>
-
                         <section>
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">07</span>
@@ -151,8 +141,6 @@ export default function PrivacyPage() {
                         </section>
                     </div>
                 </motion.div>
-
-                {/* Back Link */}
                 <div className="text-center mt-8">
                     <Link
                         href="/"
