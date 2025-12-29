@@ -33,9 +33,9 @@ interface LeaderboardEntry {
     tasksCompleted: number
     totalTasks: number
     user: {
-        name: string | null
-        username: string
-        image: string | null
+        name?: string | null
+        username?: string | null
+        image?: string | null
     }
 }
 
@@ -77,7 +77,11 @@ export function ProjectLeaderboardClient({
 
         if (result.success && result.data) {
             setLeaderboard(result.data.leaderboard)
-            setPagination(result.data.pagination)
+            setPagination({
+                total: result.data.pagination.total,
+                totalPages: result.data.pagination.totalPages,
+                currentPage: currentPage
+            })
         }
 
         setLoading(false)
@@ -190,12 +194,12 @@ export function ProjectLeaderboardClient({
                                     <div className="flex flex-col items-center">
                                         <Trophy className="w-12 h-12 text-gray-400 mb-2" />
                                         <Avatar className="h-20 w-20 mb-3 ring-4 ring-gray-400">
-                                            <AvatarImage src={top3[1].user.image} />
+                                            <AvatarImage src={top3[1].user.image!} />
                                             <AvatarFallback>{top3[1].user.name?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <Badge className="mb-2 bg-gray-400 hover:bg-gray-500">2nd</Badge>
                                         <p className="font-semibold text-center">{top3[1].user.name}</p>
-                                        <p className="text-sm text-muted-foreground">@{top3[1].user.username}</p>
+                                        <p className="text-sm text-muted-foreground">@{top3[1].user.username || 'user'}</p>
                                         <p className={`text-2xl font-bold mt-2 ${getScoreColor(top3[1].score)}`}>
                                             {formatScore(top3[1].score)}
                                         </p>
@@ -203,7 +207,7 @@ export function ProjectLeaderboardClient({
                                             variant="outline"
                                             size="sm"
                                             className="mt-3"
-                                            onClick={() => handleViewProgress(top3[1].user.username)}
+                                            onClick={() => handleViewProgress(top3[1]?.user?.username || '')}
                                         >
                                             View Progress
                                         </Button>
@@ -215,12 +219,12 @@ export function ProjectLeaderboardClient({
                                     <div className="flex flex-col items-center -mt-8">
                                         <Trophy className="w-16 h-16 text-yellow-500 mb-2 animate-pulse" />
                                         <Avatar className="h-28 w-28 mb-3 ring-4 ring-yellow-500">
-                                            <AvatarImage src={top3[0].user.image} />
+                                            <AvatarImage src={top3[0].user.image!} />
                                             <AvatarFallback>{top3[0].user.name?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <Badge className="mb-2 bg-yellow-500 hover:bg-yellow-600">1st</Badge>
                                         <p className="font-bold text-lg text-center">{top3[0].user.name}</p>
-                                        <p className="text-sm text-muted-foreground">@{top3[0].user.username}</p>
+                                        <p className="text-sm text-muted-foreground">@{top3[0].user.username || 'user'}</p>
                                         <p className={`text-3xl font-bold mt-2 ${getScoreColor(top3[0].score)}`}>
                                             {formatScore(top3[0].score)}
                                         </p>
@@ -228,7 +232,7 @@ export function ProjectLeaderboardClient({
                                             variant="outline"
                                             size="sm"
                                             className="mt-3"
-                                            onClick={() => handleViewProgress(top3[0].user.username)}
+                                            onClick={() => handleViewProgress(top3[0]?.user?.username || '')}
                                         >
                                             View Progress
                                         </Button>
@@ -240,12 +244,12 @@ export function ProjectLeaderboardClient({
                                     <div className="flex flex-col items-center">
                                         <Trophy className="w-12 h-12 text-amber-600 mb-2" />
                                         <Avatar className="h-20 w-20 mb-3 ring-4 ring-amber-600">
-                                            <AvatarImage src={top3[2].user.image} />
+                                            <AvatarImage src={top3[2].user.image!} />
                                             <AvatarFallback>{top3[2].user.name?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <Badge className="mb-2 bg-amber-600 hover:bg-amber-700">3rd</Badge>
                                         <p className="font-semibold text-center">{top3[2].user.name}</p>
-                                        <p className="text-sm text-muted-foreground">@{top3[2].user.username}</p>
+                                        <p className="text-sm text-muted-foreground">@{top3[2].user.username || 'user'}</p>
                                         <p className={`text-2xl font-bold mt-2 ${getScoreColor(top3[2].score)}`}>
                                             {formatScore(top3[2].score)}
                                         </p>
@@ -253,7 +257,7 @@ export function ProjectLeaderboardClient({
                                             variant="outline"
                                             size="sm"
                                             className="mt-3"
-                                            onClick={() => handleViewProgress(top3[2].user.username)}
+                                            onClick={() => handleViewProgress(top3[2]?.user?.username || '')}
                                         >
                                             View Progress
                                         </Button>
@@ -282,12 +286,12 @@ export function ProjectLeaderboardClient({
                                                 {getRankSuffix(entry.rank)}
                                             </Badge>
                                             <Avatar className="h-12 w-12">
-                                                <AvatarImage src={entry.user.image} />
+                                                <AvatarImage src={entry.user.image!} />
                                                 <AvatarFallback>{entry.user.name?.[0] || 'U'}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1">
                                                 <p className="font-semibold">{entry.user.name}</p>
-                                                <p className="text-sm text-muted-foreground">@{entry.user.username}</p>
+                                                <p className="text-sm text-muted-foreground">@{entry.user.username || 'user'}</p>
                                             </div>
                                             <div className="text-right hidden md:block">
                                                 <p className={`text-2xl font-bold ${getScoreColor(entry.score)}`}>
@@ -305,14 +309,14 @@ export function ProjectLeaderboardClient({
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => handleViewProgress(entry.user.username)}
+                                                    onClick={() => handleViewProgress(entry.user.username || '')}
                                                 >
                                                     View
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => handleShare(entry.user.username)}
+                                                    onClick={() => handleShare(entry.user.username || '')}
                                                 >
                                                     {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                                                 </Button>

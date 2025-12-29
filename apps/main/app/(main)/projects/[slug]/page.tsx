@@ -14,14 +14,15 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     }
 
     const project = result.data
-    
+
     // Get user credits and data if authenticated
     let userCredits = 0
     let currentUser = null
     if (session?.user?.id) {
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { 
+            select: {
+                id: true,
                 credits: true,
                 username: true,
                 name: true,
@@ -32,5 +33,5 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
         currentUser = user
     }
 
-    return <ProjectDetailsClient project={project} currentUserId={session?.user?.id || null} userCredits={userCredits} currentUser={currentUser} />
+    return <ProjectDetailsClient project={project} currentUserId={session?.user?.id || null} userCredits={userCredits} currentUser={currentUser || undefined} />
 }

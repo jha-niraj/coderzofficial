@@ -118,6 +118,12 @@ interface ProfileData {
     }>;
     userProfile?: {
         showEmail: boolean;
+        coverImage: string | null;
+        coverGradient: string | null;
+        tagline: string | null;
+        theme: string;
+        profileViews: number;
+        completionScore: number;
         pinnedProjects: Array<{
             id: string;
             order: number;

@@ -173,6 +173,13 @@ export interface QuizResult {
 
 export interface ProjectDetailsClientProps {
     project: ProjectV2Full
+    currentUserId?: string | null
+    userCredits?: number
+    currentUser?: {
+        id: string
+        username?: string | null
+        name?: string | null
+    }
 }
 
 export interface TasksPageClientProps {

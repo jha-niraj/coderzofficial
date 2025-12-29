@@ -111,8 +111,8 @@ export function UserProfileLeaderboardClient({
                 <Card className="mb-8 p-6">
                     <div className="flex items-start gap-6">
                         <Avatar className="w-24 h-24">
-                            <AvatarImage src={userProfile.image} alt={userProfile.name} />
-                            <AvatarFallback className="text-2xl">{userProfile.name?.[0]}</AvatarFallback>
+                            <AvatarImage src={userProfile.image!} alt={userProfile.name!} />
+                            <AvatarFallback className="text-2xl">{userProfile.name![0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                             <div className="flex items-start justify-between">
@@ -221,7 +221,7 @@ export function UserProfileLeaderboardClient({
                                                         <p className="text-xs text-muted-foreground">{taskProgress.task.project.title}</p>
                                                     </div>
                                                     <span className="text-xs text-muted-foreground flex-shrink-0">
-                                                        {format(new Date(taskProgress.completedAt), 'MMM d')}
+                                                        {format(new Date(taskProgress?.completedAt || ''), 'MMM d')}
                                                     </span>
                                                 </div>
                                             ))

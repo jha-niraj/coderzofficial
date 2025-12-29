@@ -19,31 +19,7 @@ import {
 } from "@/actions/(main)/projects/feature-suggestions.action"
 import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
-
-interface Suggestion {
-    id: string
-    title: string
-    description: string
-    type: string
-    tags: string[]
-    imageUrl: string | null
-    status: string
-    addedToTasks: boolean
-    suggestedBy: "CREATOR" | "ENROLLED_USER" | "VISITOR"
-    addedByUsers: string[]
-    adoptedByCurrentUser: boolean
-    createdAt: Date
-    user: {
-        id: string
-        name: string | null
-        username: string | null
-        image: string | null
-    }
-    task: {
-        id: string
-        title: string
-    } | null
-}
+import { Suggestion } from "@/app/(main)/projects/[slug]/_components/project-details-client"
 
 interface FeatureSuggestionsListProps {
     suggestions: Suggestion[]

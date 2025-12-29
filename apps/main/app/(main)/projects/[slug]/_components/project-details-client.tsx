@@ -195,20 +195,37 @@ function QuickActions({
 // ============================================================================
 // Main Component
 // ============================================================================
+
+export interface Suggestion {
+    id: string
+    title: string
+    description: string
+    type: string
+    tags: string[]
+    imageUrl?: string | null
+    status: string
+    addedToTasks: boolean
+    suggestedBy: "CREATOR" | "ENROLLED_USER" | "VISITOR"
+    addedByUsers: string[]
+    adoptedByCurrentUser?: boolean | null
+    createdAt: Date
+    user: {
+        id: string
+        name?: string | null
+        username?: string | null
+        image?: string | null
+    }
+    task?: {
+        id: string
+        title: string
+    } | null
+}
 export default function ProjectDetailsClient({
     project,
     currentUserId,
     userCredits = 0,
     currentUser
-}: ProjectDetailsClientProps & {
-    currentUserId: string | null
-    userCredits?: number
-    currentUser?: {
-        id: string;
-        username?: string | null;
-        name?: string | null;
-    }
-}) {
+}: ProjectDetailsClientProps) {
     const router = useRouter()
     const [starting, setStarting] = useState(false)
     const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
@@ -220,7 +237,7 @@ export default function ProjectDetailsClient({
         liveUrl: '',
         notes: ''
     })
-    const [suggestions, setSuggestions] = useState<unknown[]>([])
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([])
     const [loadingSuggestions, setLoadingSuggestions] = useState(false)
     const [copied, setCopied] = useState(false)
     const [standupSheetOpen, setStandupSheetOpen] = useState(false)

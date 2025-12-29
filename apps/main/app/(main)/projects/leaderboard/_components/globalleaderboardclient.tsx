@@ -61,7 +61,11 @@ export function GlobalLeaderboardClient({
 
         if (result.success && result.data) {
             setLeaderboard(result.data.leaderboard)
-            setPagination(result.data.pagination)
+            setPagination({
+                total: result.data.pagination.total,
+                totalPages: result.data.pagination.totalPages,
+                currentPage: currentPage
+            })
         }
     }, [currentPage]);
 
