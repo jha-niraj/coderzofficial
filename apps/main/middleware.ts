@@ -16,7 +16,6 @@ const publicRoutes = [
 	'/signin',
 	'/register',
 	'/verify',
-	'/waitingpage',
 	'/forgotpassword',
 	'/resetpassword',
 	'/error',

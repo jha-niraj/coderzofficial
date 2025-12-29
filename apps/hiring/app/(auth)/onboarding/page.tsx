@@ -12,7 +12,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, 
+    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
     DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import {
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
+import { completeOnboarding } from '@/actions/auth/onboarding.action'
 
 const COMPANY_SIZES = [
     "1-10 employees",
@@ -106,15 +107,19 @@ export default function OnboardingPage() {
 
         setLoading(true)
         try {
-            // Determine if user is HEAD based on role selection
-            // const selectedRole = ROLE_OPTIONS.find(r => r.value === userRole)
-            // const isHead = selectedRole?.isHead || false
+            const result = await completeOnboarding({
+                companyName,
+                website: companyWebsite || undefined,
+                industry: industry || undefined,
+                companySize: companySize || undefined,
+                description: description || undefined,
+                userRole,
+                hiringGoals: hiringRoles,
+            })
 
-            // Complete onboarding API call would go here
-            // await completeCompanyOnboarding({
-            //     companyName, companyWebsite, industry, companySize, description,
-            //     userRole, isHead, hiringRoles, teamMembers, location
-            // })
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to complete onboarding')
+            }
 
             toast.success('Workspace initialized successfully! 🚀')
             await update()

@@ -1,3 +1,6 @@
+import Footer from "@/components/landingpage/footer";
+import Navbar from "@/components/landingpage/navbar";
+
 export default function LegalLayout({
     children,
 }: Readonly<{
@@ -5,7 +8,9 @@ export default function LegalLayout({
 }>) {
     return (
         <>
+            <Navbar />
             {children}
+            <Footer />
         </>
     );
 }

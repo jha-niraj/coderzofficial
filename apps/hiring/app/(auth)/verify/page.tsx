@@ -14,6 +14,7 @@ import axios from "axios"
 import Link from "next/link"
 import { cn } from "@repo/ui/lib/utils"
 import { Label } from "@repo/ui/components/ui/label"
+import { signIn } from "@repo/auth/client"
 
 function VerifyContent() {
     const [isLoading, setIsLoading] = useState(false)
@@ -105,8 +106,21 @@ function VerifyContent() {
             if (response.data.success) {
                 setIsVerified(true)
                 toast.success("Email verified successfully!")
-                // Redirect to signin after verification
-                setTimeout(() => router.push('/signin?verified=true'), 1500)
+
+                // Auto-signin using the "verified" password flow
+                const result = await signIn('credentials', {
+                    email,
+                    password: 'verified',
+                    redirect: false,
+                })
+
+                if (result?.ok) {
+                    // Redirect to onboarding after successful auto-signin
+                    setTimeout(() => router.push('/onboarding'), 1000)
+                } else {
+                    // Fallback to signin page if auto-signin fails
+                    setTimeout(() => router.push('/signin?verified=true'), 1500)
+                }
             } else {
                 toast.error(response.data.error || "Invalid code")
                 setCode(["", "", "", "", "", ""])
