@@ -3,6 +3,7 @@ import "@repo/ui/styles/globals.css";
 import { ThemeProvider } from "@repo/ui/components/themeprovider";
 import { Geist, Space_Grotesk, Geist_Mono } from "next/font/google";
 import { Toaster as SonnerToaster } from "@repo/ui/components/ui/sonner";
+import { Providers } from "./providers/providers";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -21,40 +22,40 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "The Coder'z",
-		template: "%s | The Coder'z"
+		default: "Coder'z Hiring | Find Pre-Vetted Engineers",
+		template: "%s | Coder'z Hiring"
 	},
-	description: "The Engineering Intelligence Platform for Computer Science Students",
-	keywords: ["Learn", "Build Projects", "Computer Science", "Programming", "Coding", "Developer", "Tech Community", "Coding Resources", "Tech Articles", "Coding Tutorials"],
+	description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills through real projects and AI-powered assessments.",
+	keywords: ["Hiring", "Recruitment", "Tech Hiring", "Software Engineers", "Developer Hiring", "Pre-vetted Candidates", "Coding Assessments", "Technical Interviews"],
 	authors: [{ name: "Niraj Jha" }],
 	creator: "Shunya Tech",
 	publisher: "Shunya Tech",
-	metadataBase: new URL("https://www.coderzai.xyz"),
+	metadataBase: new URL("https://hiring.coderzai.xyz"),
 	alternates: {
 		canonical: "/",
 	},
 	openGraph: {
 		type: "website",
 		locale: "en_US",
-		url: "https://www.coderzai.xyz",
-		siteName: "The Coder'z",
-		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
+		url: "https://hiring.coderzai.xyz",
+		siteName: "Coder'z Hiring",
+		title: "Coder'z Hiring - Find Pre-Vetted Engineers with Verified Skills",
+		description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills through real projects and AI-powered assessments.",
 		images: [
 			{
 				url: "/mainlogo.jpeg",
 				width: 1024,
 				height: 1024,
-				alt: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
+				alt: "Coder'z Hiring - Find Pre-Vetted Engineers",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
+		title: "Coder'z Hiring - Find Pre-Vetted Engineers with Verified Skills",
+		description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills.",
 		images: ["/mainlogo.jpeg"],
-		creator: "@thecoderz",
+		creator: "@thecoderzlab",
 	},
 	icons: {
 		icon: [
@@ -93,15 +94,17 @@ export default function RootLayout({
 			<body className={`
 				${spaceGrotesk.className} ${geistSans.variable} ${geistMono.variable} antialiased 
 			`}>
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="system"
-					enableSystem
-					disableTransitionOnChange
-				>
-					{children}
-					<SonnerToaster position="top-center" closeButton richColors />
-				</ThemeProvider>
+				<Providers>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="system"
+						enableSystem
+						disableTransitionOnChange
+					>
+						{children}
+						<SonnerToaster position="top-center" closeButton richColors />
+					</ThemeProvider>
+				</Providers>
 			</body>
 		</html>
 	);

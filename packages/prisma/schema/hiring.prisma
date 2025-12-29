@@ -1,0 +1,204 @@
+// ============================================
+// HIRING PLATFORM SCHEMA
+// Models for Company/HR side of the platform
+// ============================================
+
+// Role type for recruiters within a company
+// HEAD: Full admin access (CEO, CTO, Co-founder, VP Engineering, HR Head)
+// RECRUITER: Standard recruiter access (can post jobs, review candidates)
+enum CompanyMemberRole {
+    HEAD // Leadership/Admin role - full control over company workspace
+    RECRUITER // Standard recruiter role - can manage jobs and candidates
+}
+
+// Job Title for the user in the company (for display purposes)
+enum CompanyMemberJobTitle {
+    CEO
+    CTO
+    COFOUNDER
+    VP_ENGINEERING
+    HR_HEAD
+    HR_MANAGER
+    RECRUITER
+    HIRING_MANAGER
+    OTHER
+}
+
+// Companies that post jobs
+model Company {
+    id           String  @id @default(cuid())
+    name         String
+    slug         String  @unique
+    logoUrl      String?
+    website      String?
+    description  String? @db.Text
+    industry     String?
+    companySize  String? // "1-10", "11-50", "51-200", "201-500", "500+"
+    foundedYear  Int?
+    headquarters String?
+    socialLinks  Json? // { linkedin, twitter, github }
+
+    // Location fields
+    address String?
+    city    String?
+    state   String?
+    country String?
+    pincode String?
+
+    // Verification (for platform trust)
+    verificationStatus CompanyVerificationStatus @default(PENDING)
+    verifiedAt         DateTime?
+    verifiedBy         String? // Admin user ID who verified
+
+    // Invite code for company workspace
+    inviteCode String? @unique
+
+    // The User who created/registered the company
+    createdByUserId String? // Links to User.id from main schema
+
+    // Relations
+    members            CompanyMember[]
+    jobs               Job[]
+    companyInvitations CompanyInvitation[]
+    memberInvitations  MemberInvitation[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([verificationStatus])
+    @@index([createdByUserId])
+}
+
+enum CompanyVerificationStatus {
+    PENDING
+    VERIFIED
+    REJECTED
+}
+
+// Company Members - connects Users to Companies with roles
+// This replaces the old "Recruiter" model with a clearer structure
+model CompanyMember {
+    id        String @id @default(cuid())
+    userId    String // Links to User.id from main schema (SSO)
+    companyId String
+
+    // Role & Title
+    role           CompanyMemberRole     @default(RECRUITER)
+    jobTitle       CompanyMemberJobTitle @default(OTHER)
+    jobTitleCustom String? // If jobTitle is OTHER, use this
+
+    // Profile info (can differ from User profile)
+    displayName String?
+    email       String
+    phone       String?
+
+    // Permissions (JSON array for flexibility)
+    // Default permissions: ["view_jobs", "post_jobs", "view_applications", "review_candidates"]
+    // HEAD gets all: ["view_jobs", "post_jobs", "view_applications", "review_candidates", "manage_members", "manage_company", "manage_billing"]
+    permissions Json @default("[\"view_jobs\", \"post_jobs\", \"view_applications\", \"review_candidates\"]")
+
+    // Invite tracking
+    inviteStatus MemberInviteStatus @default(ACCEPTED) // ACCEPTED if self-registered
+    invitedById  String? // CompanyMember ID who invited this user
+    invitedAt    DateTime?
+    acceptedAt   DateTime?
+
+    // Activity
+    isActive     Boolean   @default(true)
+    lastActiveAt DateTime?
+
+    // Relations
+    company              Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    postedJobs           Job[]            @relation("PostedBy")
+    reviewedApplications JobApplication[] @relation("ReviewedBy")
+
+    // Self-referential for invite tracking
+    invitedMembers CompanyMember[] @relation("InvitedBy")
+    invitedBy      CompanyMember?  @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+
+    // Sent invitations
+    sentInvitations MemberInvitation[] @relation("SentInvitations")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // A user can only be a member of a company once
+    @@unique([userId, companyId])
+    @@index([userId])
+    @@index([companyId])
+    @@index([email])
+    @@index([role])
+}
+
+enum MemberInviteStatus {
+    PENDING
+    ACCEPTED
+    REVOKED
+    EXPIRED
+}
+
+// Invitations for new members to join a company
+model MemberInvitation {
+    id        String  @id @default(cuid())
+    companyId String
+    email     String
+    name      String?
+
+    // Assigned role for when they join
+    role     CompanyMemberRole     @default(RECRUITER)
+    jobTitle CompanyMemberJobTitle @default(RECRUITER)
+
+    // Invite details
+    inviteCode  String             @unique
+    invitedById String // CompanyMember who sent the invite
+    status      MemberInviteStatus @default(PENDING)
+    message     String?            @db.Text // Optional invite message
+
+    // Timestamps
+    expiresAt  DateTime?
+    acceptedAt DateTime?
+    createdAt  DateTime  @default(now())
+
+    // Relations
+    company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    invitedBy CompanyMember @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+
+    // After acceptance, link to the created member
+    resultingMemberId String?
+
+    @@index([email])
+    @@index([inviteCode])
+    @@index([status])
+    @@index([companyId])
+}
+
+// Company invitations for new companies (invite-only system for platform access)
+model CompanyInvitation {
+    id          String                  @id @default(cuid())
+    email       String
+    companyName String?
+    invitedBy   String? // Platform admin user ID
+    inviteCode  String                  @unique
+    status      CompanyInvitationStatus @default(PENDING)
+    acceptedAt  DateTime?
+    expiresAt   DateTime?
+    metadata    Json?
+
+    // Used after accepted
+    companyId String?
+    company   Company? @relation(fields: [companyId], references: [id])
+
+    createdAt DateTime @default(now())
+
+    @@index([email])
+    @@index([inviteCode])
+    @@index([status])
+}
+
+enum CompanyInvitationStatus {
+    PENDING
+    ACCEPTED
+    EXPIRED
+    REVOKED
+}

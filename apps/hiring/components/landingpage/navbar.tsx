@@ -1,0 +1,83 @@
+"use client";
+
+import { Button } from "@repo/ui/components/ui/button";
+import Link from "next/link";
+import { useState } from "react";
+import {
+    Sheet, SheetContent
+} from "@repo/ui/components/ui/sheet";
+import {
+    Menu, Building2, ArrowRight
+} from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { ThemeToggle } from "@repo/ui/components/themetoggle";
+import { cn } from "@repo/ui/lib/utils";
+
+export default function Navbar() {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const navLinkClass = "text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors";
+
+    return (
+        <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
+            <nav className={cn(
+                "flex items-center justify-between w-full max-w-5xl h-14 px-4 pr-2 rounded-full",
+                "bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md",
+                "border border-neutral-200 dark:border-neutral-800",
+                "shadow-sm"
+            )}>
+                <Link href="/" className="flex items-center space-x-2 pl-2">
+                    <div className="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white flex items-center justify-center">
+                        <Building2 className="w-4 h-4 text-white dark:text-black" />
+                    </div>
+                    <span className="text-sm font-bold tracking-tight text-neutral-900 dark:text-white hidden sm:block">
+                        BuildrHQ <span className="text-neutral-500 font-mono font-normal">HIRING</span>
+                    </span>
+                </Link>
+                <div className="hidden md:flex items-center space-x-8">
+                    <Link href="/" className={navLinkClass}>Overview</Link>
+                    <Link href="#features" className={navLinkClass}>System</Link>
+                    <Link href="#pricing" className={navLinkClass}>Pricing</Link>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <ThemeToggle />
+                    <Link href="/register">
+                        <Button className="cursor-pointer rounded-full h-9 px-4 text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black transition-transform hover:scale-105">
+                            Initialize
+                            <ArrowRight className="ml-1.5 h-3 w-3" />
+                        </Button>
+                    </Link>
+                    <Button
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        variant="ghost"
+                        size="icon"
+                        className="cursor-pointer md:hidden rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                        <Menu className="h-4 w-4" />
+                    </Button>
+                </div>
+            </nav>
+            <AnimatePresence>
+                {
+                    isMobileMenuOpen && (
+                        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                            <SheetContent className="w-full sm:max-w-md bg-white dark:bg-neutral-950 border-l border-neutral-200 dark:border-neutral-800">
+                                <div className="flex flex-col gap-6 mt-8">
+                                    <Link href="/" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Overview</Link>
+                                    <Link href="#features" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>System</Link>
+                                    <Link href="#pricing" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Pricing</Link>
+                                    <hr className="border-neutral-200 dark:border-neutral-800" />
+                                    <Link href="/register">
+                                        <Button className="cursor-pointer w-full rounded-full h-12 text-base font-bold bg-neutral-900 text-white dark:bg-white dark:text-black">
+                                            Initialize Workspace
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                    )
+                }
+            </AnimatePresence>
+        </div>
+    );
+}
