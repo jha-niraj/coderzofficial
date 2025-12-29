@@ -1,7 +1,7 @@
 "use client"
 
-import { motion } from "framer-motion"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import {
     Trophy, Target, Timer, Code, BookOpen, Sparkles, Terminal
 } from "lucide-react"
@@ -33,17 +33,18 @@ const features = [
 
 export default function AssessmentsSection() {
     return (
-        <section className="py-24 relative bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800 overflow-hidden">
+        <section className="py-24 relative bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800">
             <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
 
             <div className="max-w-7xl mx-auto px-6 relative z-10">
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="max-w-2xl"
-                    >
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                    className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8"
+                >
+                    <div className="max-w-2xl">
                         <Badge variant="outline" className="px-4 py-1.5 rounded-full border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium text-sm mb-6">
                             <Sparkles className="w-3.5 h-3.5 mr-2 text-neutral-900 dark:text-white" />
                             Learn & Prove
@@ -54,26 +55,20 @@ export default function AssessmentsSection() {
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 font-light leading-relaxed">
                             Theory is optional. Practice is mandatory. Validate your skills with our rigorous assessment engine.
                         </p>
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="flex flex-col sm:flex-row gap-3"
-                    >
-                        <Link href="/learn">
-                            <Button size="lg" className="rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 h-12 px-6">
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Link href="/assessments/learn">
+                            <Button size="lg" className="cursor-pointer rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 h-12 px-6">
                                 Start Learning
                             </Button>
                         </Link>
-                        <Link href="/practice">
-                            <Button size="lg" variant="outline" className="rounded-full border-neutral-200 dark:border-neutral-800 h-12 px-6">
+                        <Link href="/assessments/practice">
+                            <Button size="lg" variant="outline" className="cursor-pointer rounded-full border-neutral-200 dark:border-neutral-800 h-12 px-6">
                                 Take Assessment
                             </Button>
                         </Link>
-                    </motion.div>
-                </div>
+                    </div>
+                </motion.div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {
@@ -101,7 +96,7 @@ export default function AssessmentsSection() {
                         initial={{ opacity: 0, x: 20 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
+                        transition={{ delay: 0.3 }}
                         className="relative"
                     >
                         <div className="rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-2xl shadow-neutral-200/50 dark:shadow-black/50">

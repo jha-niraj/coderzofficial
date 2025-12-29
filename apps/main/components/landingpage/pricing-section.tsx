@@ -11,11 +11,29 @@ import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
 import { BentoPricing } from "@/components/main/bentopricing"
 
+const securityFeatures = [
+    {
+        icon: Lock,
+        title: "Encrypted Transactions",
+        desc: "AES-256 encryption for all payment data."
+    },
+    {
+        icon: Infit,
+        title: "Perpetual Credits",
+        desc: "Credits never expire. Your balance is yours forever."
+    },
+    {
+        icon: Server,
+        title: "Instant Provisioning",
+        desc: "Compute resources allocated immediately upon payment."
+    }
+]
+
 export default function PricingSection() {
     const [currency, setCurrency] = useState<"INR" | "USD">("INR")
 
     return (
-        <section id="pricing" className="py-24 w-full bg-white dark:bg-neutral-950 relative overflow-hidden border-t border-neutral-100 dark:border-neutral-800">
+        <section id="pricing" className="py-24 w-full bg-white dark:bg-neutral-950 relative border-t border-neutral-100 dark:border-neutral-800">
             <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
 
             <div className="max-w-7xl mx-auto px-6">
@@ -23,6 +41,7 @@ export default function PricingSection() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
                     className="text-center max-w-3xl mx-auto mb-16"
                 >
                     <Badge variant="outline" className="px-4 py-1.5 rounded-full border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium text-sm mb-6">
@@ -58,44 +77,29 @@ export default function PricingSection() {
                 >
                     <BentoPricing currency={currency} showFreeCredits={true} />
                 </motion.div>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.4 }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16"
-                >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16">
                     {
-                        [
-                            {
-                                icon: Lock,
-                                title: "Encrypted Transactions",
-                                desc: "AES-256 encryption for all payment data."
-                            },
-                            {
-                                icon: Infit,
-                                title: "Perpetual Credits",
-                                desc: "Credits never expire. Your balance is yours forever."
-                            },
-                            {
-                                icon: Server,
-                                title: "Instant Provisioning",
-                                desc: "Compute resources allocated immediately upon payment."
-                            }
-                        ].map((feat, i) => (
-                            <div key={i} className="flex flex-col items-start p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
+                        securityFeatures.map((feat, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                className="flex flex-col items-start p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+                            >
                                 <feat.icon className="w-6 h-6 text-neutral-900 dark:text-white mb-4" />
                                 <h3 className="font-bold text-neutral-900 dark:text-white mb-2">{feat.title}</h3>
                                 <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">{feat.desc}</p>
-                            </div>
+                            </motion.div>
                         ))
                     }
-                </motion.div>
+                </div>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.5 }}
+                    transition={{ delay: 0.3 }}
                     className="bg-neutral-900 dark:bg-white border border-neutral-800 dark:border-neutral-200 rounded-2xl p-10 text-center shadow-2xl relative overflow-hidden"
                 >
                     <div className="relative z-10">

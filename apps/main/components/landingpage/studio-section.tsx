@@ -1,7 +1,7 @@
 "use client"
 
-import { motion } from "framer-motion"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -50,42 +50,31 @@ const studioFeatures = [
 
 export default function StudioSection() {
     return (
-        <section className="py-32 relative overflow-hidden bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800">
+        <section className="py-32 relative bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-neutral-100 dark:bg-neutral-900 rounded-[100%] blur-[80px] -z-10 opacity-60" />
 
             <div className="max-w-7xl mx-auto px-6 relative z-10">
-                <div className="text-center mb-20">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        className="inline-flex items-center justify-center p-1 rounded-full bg-neutral-100 dark:bg-neutral-800 mb-8 border border-neutral-200 dark:border-neutral-700"
-                    >
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center mb-20"
+                >
+                    <div className="inline-flex items-center justify-center p-1 rounded-full bg-neutral-100 dark:bg-neutral-800 mb-8 border border-neutral-200 dark:border-neutral-700">
                         <Badge variant="secondary" className="px-6 py-2 rounded-full bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800 font-medium text-sm shadow-sm">
                             <Sparkles className="w-3.5 h-3.5 mr-2 text-neutral-500" />
                             The Learning OS
                         </Badge>
-                    </motion.div>
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="text-5xl md:text-7xl font-bold mb-6 text-neutral-900 dark:text-white tracking-tighter"
-                    >
+                    </div>
+                    <h2 className="text-5xl md:text-7xl font-bold mb-6 text-neutral-900 dark:text-white tracking-tighter">
                         Your Personal <br />
                         <span className="text-neutral-400 dark:text-neutral-600">Learning Studio.</span>
-                    </motion.h2>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                        className="text-xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed font-light"
-                    >
+                    </h2>
+                    <p className="text-xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed font-light">
                         A unified workspace that combines note-taking, active recall, and AI assistance into a single, distraction-free environment.
-                    </motion.p>
-                </div>
+                    </p>
+                </motion.div>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="lg:col-span-7 grid grid-cols-2 gap-4">
                         {

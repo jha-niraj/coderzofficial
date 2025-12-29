@@ -1,9 +1,9 @@
 "use client"
 
+import { motion } from 'framer-motion'
 import {
     BrainCircuit, Code2, GraduationCap, BarChart3, GitMerge, FileCode, ArrowRight
 } from 'lucide-react'
-import { motion } from 'framer-motion';
 import { Button } from '@repo/ui/components/ui/button';
 import Link from 'next/link';
 
@@ -87,7 +87,7 @@ export default function FeaturesSection() {
                 </div>
                 <div className="mt-12 text-center">
                     <Link href="/explore">
-                        <Button variant="ghost" className="text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800">
+                        <Button variant="ghost" className="cursor-pointer text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800">
                             Explore Technical Resources <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
                     </Link>

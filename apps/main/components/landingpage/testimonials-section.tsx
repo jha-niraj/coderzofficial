@@ -1,71 +1,97 @@
 "use client";
 
-import React from "react";
+import { TestimonialsColumn } from "./testimonials-column";
 import { motion } from "framer-motion";
-import Image from "next/image";
-import { Quote } from "lucide-react";
 
 const testimonials = [
-    { text: "SyncOrbit revolutionized our sprint planning. Meeting times cut by 40%.", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80", name: "Sarah Chen", role: "PM @ TechFlow" },
-    { text: "Gamification features are genius. Engineering productivity is at an all-time high.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80", name: "M. Rodriguez", role: "CTO @ DevCorp" },
-    { text: "Finally, a tool that handles complex hierarchies without feeling clunky.", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80", name: "Dr. A. Patel", role: "Dir @ Creative" },
-    { text: "Migrated from Jira in less than a day. The import tool was flawless.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80", name: "Omar Raza", role: "Founder @ StartupX" },
-    { text: "The timeline view is actually usable. Dependencies are clear.", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80", name: "Zainab H.", role: "Program Manager" },
-    { text: "We needed a custom integration and built it via API in hours.", image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80", name: "Aliza Khan", role: "Tech Lead" },
+    {
+        text: "The Coder'z completely transformed my coding journey. The AI interview prep helped me land my first internship at a startup!",
+        image: "https://randomuser.me/api/portraits/men/1.jpg",
+        name: "Arjun Sharma",
+        role: "Computer Science Student",
+    },
+    {
+        text: "I went from struggling with DSA to confidently solving medium-level problems. The project-based learning approach is exactly what I needed.",
+        image: "https://randomuser.me/api/portraits/women/2.jpg",
+        name: "Priya Patel",
+        role: "Final Year BTech",
+    },
+    {
+        text: "The open source contribution track gave me real GitHub experience. I got 5 PRs merged in my first month - that's unreal!",
+        image: "https://randomuser.me/api/portraits/men/3.jpg",
+        name: "Rahul Verma",
+        role: "Self-taught Developer",
+    },
+    {
+        text: "As a bootcamp grad, I needed real projects for my portfolio. The AI-generated project scaffolds are game-changing.",
+        image: "https://randomuser.me/api/portraits/women/4.jpg",
+        name: "Sneha Gupta",
+        role: "Career Switcher",
+    },
+    {
+        text: "The mock interview feature is brutal but effective. I failed 10 times before I got good - now I have offers from 3 companies!",
+        image: "https://randomuser.me/api/portraits/men/5.jpg",
+        name: "Vikram Singh",
+        role: "MCA Graduate",
+    },
+    {
+        text: "Learning to code was intimidating until I found The Coder'z. The structured paths made everything click into place.",
+        image: "https://randomuser.me/api/portraits/women/6.jpg",
+        name: "Ananya Reddy",
+        role: "2nd Year Engineering",
+    },
+    {
+        text: "The system design agent helped me understand concepts that YouTube tutorials never could. Worth every credit spent!",
+        image: "https://randomuser.me/api/portraits/men/7.jpg",
+        name: "Karthik Menon",
+        role: "Software Engineer",
+    },
+    {
+        text: "Finally, a platform that doesn't just teach theory. I built and deployed 3 full-stack apps in 2 months.",
+        image: "https://randomuser.me/api/portraits/women/8.jpg",
+        name: "Ishita Jain",
+        role: "BCA Student",
+    },
+    {
+        text: "The skill assessments are rigorous but fair. My certification from here actually impressed my interviewers.",
+        image: "https://randomuser.me/api/portraits/men/9.jpg",
+        name: "Aditya Kumar",
+        role: "Fresher Developer",
+    },
 ];
 
 const firstColumn = testimonials.slice(0, 3);
 const secondColumn = testimonials.slice(3, 6);
-
-const TestimonialCard = ({ data }: { data: typeof testimonials[0] }) => (
-    <div className="p-6 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
-        <Quote className="w-4 h-4 text-neutral-300 mb-4" />
-        <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed mb-6 font-medium">
-            &quot;{data.text}&quot;
-        </p>
-        <div className="flex items-center gap-3 pt-4 border-t border-dashed border-neutral-100 dark:border-neutral-800">
-            <Image src={data.image} alt={data.name} width={32} height={32} className="h-8 w-8 rounded-full grayscale" />
-            <div className="flex flex-col">
-                <div className="font-mono text-xs font-bold text-neutral-900 dark:text-white uppercase">{data.name}</div>
-                <div className="font-mono text-[10px] text-neutral-500 uppercase">{data.role}</div>
-            </div>
-        </div>
-    </div>
-);
-
-const TestimonialsColumn = ({ testimonials, duration, className }: { testimonials: typeof firstColumn, duration: number, className?: string }) => (
-    <div className={className}>
-        <motion.div
-            animate={{ translateY: "-50%" }}
-            transition={{ duration: duration, repeat: Infinity, ease: "linear", repeatType: "loop" }}
-            className="flex flex-col gap-4 pb-4"
-        >
-            {
-                [...new Array(2)].map((_, i) => (
-                    <React.Fragment key={i}>
-                        {testimonials.map((t, index) => <TestimonialCard key={index} data={t} />)}
-                    </React.Fragment>
-                ))
-            }
-        </motion.div>
-    </div>
-);
+const thirdColumn = testimonials.slice(6, 9);
 
 const Testimonials = () => {
     return (
-        <section className="bg-white dark:bg-neutral-950 py-24 relative overflow-hidden border-t border-neutral-200 dark:border-neutral-800" id="testimonials">
-            <div className="container max-w-7xl mx-auto px-4 text-center mb-12">
-                <div className="inline-block px-2 py-1 mb-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-500">User_Transmissions</span>
+        <section className="bg-white dark:bg-neutral-950 py-24 relative border-t border-neutral-100 dark:border-neutral-800">
+            <div className="container max-w-7xl z-10 mx-auto px-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    viewport={{ once: true }}
+                    className="flex flex-col items-center justify-center max-w-2xl mx-auto text-center mb-12"
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 text-sm font-medium mb-6">
+                        Student Success Stories
+                    </div>
+
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white mb-4">
+                        Loved by <span className="text-neutral-400 dark:text-neutral-600">learners</span>
+                    </h2>
+                    <p className="text-lg text-neutral-600 dark:text-neutral-400">
+                        See how students are transforming their careers with our engineering intelligence suite.
+                    </p>
+                </motion.div>
+
+                <div className="flex justify-center gap-6 [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-[740px] overflow-hidden">
+                    <TestimonialsColumn testimonials={firstColumn} duration={15} />
+                    <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />
+                    <TestimonialsColumn testimonials={thirdColumn} className="hidden lg:block" duration={17} />
                 </div>
-                <h2 className="text-4xl font-bold tracking-tighter text-neutral-900 dark:text-white">
-                    Validated by <span className="text-neutral-400">Industry Leaders</span>
-                </h2>
-            </div>
-            <div className="relative flex justify-center gap-4 [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)] max-h-[600px] overflow-hidden max-w-5xl mx-auto">
-                <TestimonialsColumn testimonials={firstColumn} duration={20} className="w-full md:w-1/2 lg:w-1/3" />
-                <TestimonialsColumn testimonials={secondColumn} duration={25} className="hidden md:block w-full md:w-1/2 lg:w-1/3" />
-                <TestimonialsColumn testimonials={firstColumn} duration={22} className="hidden lg:block w-full lg:w-1/3" />
             </div>
         </section>
     );

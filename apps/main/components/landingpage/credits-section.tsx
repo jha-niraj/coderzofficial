@@ -1,20 +1,31 @@
 "use client"
 
-import { motion } from "framer-motion"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import {
     Zap, Wallet, ArrowRight, Check, Activity
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
 
+const benefits = [
+    { title: "No Expiration", desc: "Credits stay in your wallet forever." },
+    { title: "Earn via Merit", desc: "Gain credits by merging PRs and solving challenges." },
+    { title: "Transparent Usage", desc: "See exactly how much each AI query costs." }
+]
+
 export default function CreditsSection() {
     return (
         <section className="py-24 bg-neutral-50 dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="flex flex-col md:flex-row gap-12 lg:gap-24 items-start">
-
-                    <div className="flex-1 sticky top-24">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                        className="flex-1 sticky top-24"
+                    >
                         <Badge variant="outline" className="mb-6 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 px-4 py-1.5 rounded-full">
                             <Wallet className="w-3.5 h-3.5 mr-2" />
                             Flex Economy
@@ -28,12 +39,15 @@ export default function CreditsSection() {
                         </p>
                         <div className="space-y-6">
                             {
-                                [
-                                    { title: "No Expiration", desc: "Credits stay in your wallet forever." },
-                                    { title: "Earn via Merit", desc: "Gain credits by merging PRs and solving challenges." },
-                                    { title: "Transparent Usage", desc: "See exactly how much each AI query costs." }
-                                ].map((item, i) => (
-                                    <div key={i} className="flex gap-4">
+                                benefits.map((item, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: i * 0.1 }}
+                                        className="flex gap-4"
+                                    >
                                         <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0 mt-0.5">
                                             <Check className="w-3.5 h-3.5 text-neutral-900 dark:text-white" />
                                         </div>
@@ -41,22 +55,23 @@ export default function CreditsSection() {
                                             <h4 className="font-bold text-neutral-900 dark:text-white text-sm">{item.title}</h4>
                                             <p className="text-sm text-neutral-500">{item.desc}</p>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))
                             }
                         </div>
                         <div className="mt-10 pt-10 border-t border-neutral-200 dark:border-neutral-800">
-                            <Link href="/pricing">
-                                <Button size="lg" className="rounded-full h-12 px-8 bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900">
+                            <Link href="/purchase">
+                                <Button size="lg" className="cursor-pointer rounded-full h-12 px-8 bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900">
                                     Top Up Wallet <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
                         </div>
-                    </div>
+                    </motion.div>
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
                         className="flex-1 w-full max-w-md"
                     >
                         <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl shadow-neutral-200/50 dark:shadow-black/20 p-8">

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// FAQ data
 const faqData = [
     {
         id: "item-1",
@@ -24,7 +23,7 @@ const faqData = [
     {
         id: "item-3",
         question: "Do I get a certificate after completing a course?",
-        answer: "Currently, we do not offer certificates for completing individual lessons or resources. However, you can track your progress and gain skills that are highly valuable in the industry. We’re working on integrating certifications in the future."
+        answer: "Currently, we do not offer certificates for completing individual lessons or resources. However, you can track your progress and gain skills that are highly valuable in the industry. We're working on integrating certifications in the future."
     },
     {
         id: "item-4",
@@ -34,7 +33,7 @@ const faqData = [
     {
         id: "item-5",
         question: "Is there a way to practice coding on The Coder'z?",
-        answer: "Absolutely! Many of our lessons include coding exercises you can complete directly on the platform. We also provide project-based exercises to help you apply what you’ve learned to real-world scenarios."
+        answer: "Absolutely! Many of our lessons include coding exercises you can complete directly on the platform. We also provide project-based exercises to help you apply what you've learned to real-world scenarios."
     },
     {
         id: "item-6",
@@ -67,35 +66,33 @@ export default function FaqsAccrodian() {
 
             <div className="max-w-7xl mx-auto px-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
-                    <div className="lg:col-span-4">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                        className="lg:col-span-4"
+                    >
                         <div className="sticky top-24">
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5 }}
-                            >
-                                <Badge variant="outline" className="px-4 py-1.5 rounded-full border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium text-sm mb-6">
-                                    <HelpCircle className="w-3.5 h-3.5 mr-2" />
-                                    Knowledge Base
-                                </Badge>
-                                <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">
-                                    Common <br />
-                                    <span className="text-neutral-400 dark:text-neutral-600">Questions.</span>
-                                </h2>
-                                <p className="text-lg text-neutral-500 dark:text-neutral-400 mb-8 leading-relaxed">
-                                    Everything you need to know about the platform, certifications, and technical capabilities.
-                                </p>
-
-                                <Link href="mailto:thecoderzofficial@gmail.com">
-                                    <Button className="h-12 px-6 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 font-medium transition-all">
-                                        <MessageCircle className="w-4 h-4 mr-2" />
-                                        Talk to Support
-                                    </Button>
-                                </Link>
-                            </motion.div>
+                            <Badge variant="outline" className="px-4 py-1.5 rounded-full border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium text-sm mb-6">
+                                <HelpCircle className="w-3.5 h-3.5 mr-2" />
+                                Knowledge Base
+                            </Badge>
+                            <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">
+                                Common <br />
+                                <span className="text-neutral-400 dark:text-neutral-600">Questions.</span>
+                            </h2>
+                            <p className="text-lg text-neutral-500 dark:text-neutral-400 mb-8 leading-relaxed">
+                                Everything you need to know about the platform, certifications, and technical capabilities.
+                            </p>
+                            <Link href="mailto:thecoderzofficial@gmail.com">
+                                <Button className="cursor-pointer h-12 px-6 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 font-medium transition-all">
+                                    <MessageCircle className="w-4 h-4 mr-2" />
+                                    Talk to Support
+                                </Button>
+                            </Link>
                         </div>
-                    </div>
+                    </motion.div>
                     <div className="lg:col-span-8">
                         <div className="space-y-4">
                             {
@@ -105,12 +102,12 @@ export default function FaqsAccrodian() {
                                         initial={{ opacity: 0, y: 20 }}
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true }}
-                                        transition={{ duration: 0.4, delay: index * 0.05 }}
+                                        transition={{ delay: index * 0.05 }}
                                         className="group border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-xl overflow-hidden hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
                                     >
                                         <button
                                             onClick={() => setOpenIndex(openIndex === faq.id ? null : faq.id)}
-                                            className="flex items-start justify-between w-full p-6 text-left"
+                                            className="cursor-pointer flex items-start justify-between w-full p-6 text-left"
                                         >
                                             <span className="text-lg font-semibold text-neutral-900 dark:text-white pr-8">
                                                 {faq.question}

@@ -69,7 +69,7 @@ export function PublicProjectsGrid() {
                     No public projects have been deployed to the registry yet. Be the first to ship.
                 </p>
                 <Link href="/projects/generate">
-                    <Button className="rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900">
+                    <Button className="cursor-pointer rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900">
                         <Rocket className="mr-2 h-4 w-4" />
                         Initialize First Project
                     </Button>
