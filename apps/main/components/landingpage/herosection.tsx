@@ -131,6 +131,7 @@ export default function HeroSection() {
 
             <div className="absolute inset-x-0 bottom-0 h-24 z-20 pointer-events-none bg-gradient-to-t from-white to-transparent dark:from-black dark:to-transparent" />
 
+            {/* eslint-disable-next-line react/no-unknown-property */}
             <style jsx>{`
                 @keyframes pulse-slow {
                     0%, 100% { opacity: 0.4; transform: scale(1); }
