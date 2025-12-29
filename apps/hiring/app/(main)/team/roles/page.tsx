@@ -7,6 +7,7 @@ import {
     Check, X, AlertCircle, Loader2, ChevronDown, ChevronUp, Ban,
     UserCheck, Trash2, Send, Clock
 } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
@@ -15,16 +16,18 @@ import { Switch } from "@repo/ui/components/ui/switch"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@repo/ui/components/ui/select"
+import {
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
+} from "@repo/ui/components/ui/sheet"
 import { useSession } from "@repo/auth/client"
 import {
     getTeamMembers, updateTeamMember, deactivateTeamMember,
     reactivateTeamMember, inviteTeamMember, getPendingInvitations,
     revokeInvitation
-} from "@/actions/team"
-import { getCurrentMember } from "@/actions/profile/profile.action."
+} from "@/actions/team/team.action"
+import { getCurrentMember } from "@/actions/profile/profile.action"
 import type {
     TeamMember, Permission, CompanyMemberRole, CompanyMemberJobTitle,
-    DEFAULT_HEAD_PERMISSIONS, DEFAULT_RECRUITER_PERMISSIONS
 } from "@/types"
 
 // Job title display mapping
@@ -52,8 +55,16 @@ const JOB_TITLE_LABELS: Record<CompanyMemberJobTitle, string> = {
     OTHER: "Other",
 }
 
+// Permission definition type
+interface PermissionDefinition {
+    key: Permission;
+    label: string;
+    description: string;
+    category: string;
+}
+
 // Permission definitions for display
-const PERMISSION_DEFINITIONS: { key: Permission; label: string; description: string; category: string }[] = [
+const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     { key: "view_jobs", label: "View Jobs", description: "Can view all job postings", category: "Jobs" },
     { key: "post_jobs", label: "Post Jobs", description: "Can create new job postings", category: "Jobs" },
     { key: "edit_jobs", label: "Edit Jobs", description: "Can modify existing job postings", category: "Jobs" },
@@ -68,11 +79,16 @@ const PERMISSION_DEFINITIONS: { key: Permission; label: string; description: str
 ]
 
 // Group permissions by category
-const PERMISSION_GROUPS = PERMISSION_DEFINITIONS.reduce((acc, perm) => {
-    if (!acc[perm.category]) acc[perm.category] = []
-    acc[perm.category].push(perm)
-    return acc
-}, {} as Record<string, typeof PERMISSION_DEFINITIONS>)
+const PERMISSION_GROUPS: Record<string, PermissionDefinition[]> = PERMISSION_DEFINITIONS.reduce(
+    (acc, perm) => {
+        if (!acc[perm.category]) {
+            acc[perm.category] = []
+        }
+        acc[perm.category]?.push(perm)
+        return acc
+    },
+    {} as Record<string, PermissionDefinition[]>
+)
 
 interface PendingInvitation {
     id: string
@@ -101,8 +117,8 @@ export default function RolesPermissionsPage() {
     // Expanded member for editing
     const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null)
 
-    // Invite modal state
-    const [showInviteModal, setShowInviteModal] = useState(false)
+    // Invite sheet state
+    const [showInviteSheet, setShowInviteSheet] = useState(false)
     const [inviteForm, setInviteForm] = useState({
         email: "",
         name: "",
@@ -160,7 +176,6 @@ export default function RolesPermissionsPage() {
         setActionMessage(null)
 
         try {
-            // Set default permissions based on role
             const defaultPermissions: Permission[] = newRole === "HEAD"
                 ? ["view_jobs", "post_jobs", "edit_jobs", "delete_jobs", "view_applications", "review_candidates", "manage_assessments", "manage_members", "manage_company", "manage_billing", "view_analytics"]
                 : ["view_jobs", "post_jobs", "view_applications", "review_candidates"]
@@ -285,7 +300,7 @@ export default function RolesPermissionsPage() {
                         expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : null,
                     })))
                 }
-                setTimeout(() => setShowInviteModal(false), 1500)
+                setTimeout(() => setShowInviteSheet(false), 1500)
             } else {
                 setInviteMessage({ type: "error", text: result.error || "Failed to send invitation" })
             }
@@ -333,7 +348,7 @@ export default function RolesPermissionsPage() {
                         Access Restricted
                     </h2>
                     <p className="text-neutral-500 mb-6">
-                        Only team members with HEAD role can access the Roles & Permissions management page.
+                        Only team members with HEAD role can access the Roles &amp; Permissions management page.
                     </p>
                     <Link href="/team">
                         <Button className="rounded-xl cursor-pointer">
@@ -362,14 +377,14 @@ export default function RolesPermissionsPage() {
                 <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
                         <Shield className="w-7 h-7" />
-                        Roles & Permissions
+                        Roles &amp; Permissions
                     </h1>
                     <p className="text-neutral-500 mt-1">
                         Manage team member roles and access permissions
                     </p>
                 </div>
                 <Button
-                    onClick={() => setShowInviteModal(true)}
+                    onClick={() => setShowInviteSheet(true)}
                     className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
                 >
                     <UserPlus className="w-4 h-4 mr-2" />
@@ -398,7 +413,7 @@ export default function RolesPermissionsPage() {
                             {actionMessage.text}
                             <button
                                 onClick={() => setActionMessage(null)}
-                                className="cursor-pointer ml-auto cursor-pointer"
+                                className="ml-auto cursor-pointer"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -531,417 +546,396 @@ export default function RolesPermissionsPage() {
                     Team Members
                 </h2>
                 <div className="space-y-4">
-                    {
-                        members.map((member) => {
-                            const isExpanded = expandedMemberId === member.id
-                            const isSelf = member.id === currentMemberId
+                    {members.map((member) => {
+                        const isExpanded = expandedMemberId === member.id
+                        const isSelf = member.id === currentMemberId
 
-                            return (
-                                <motion.div
-                                    key={member.id}
-                                    layout
-                                    className={`bg-white dark:bg-neutral-950 border rounded-2xl overflow-hidden transition-colors ${!member.isActive
-                                        ? "border-red-200 dark:border-red-800/30 bg-red-50/50 dark:bg-red-900/10"
-                                        : "border-neutral-200 dark:border-neutral-800"
-                                        }`}
+                        return (
+                            <motion.div
+                                key={member.id}
+                                layout
+                                className={`bg-white dark:bg-neutral-950 border rounded-2xl overflow-hidden transition-colors ${!member.isActive
+                                    ? "border-red-200 dark:border-red-800/30 bg-red-50/50 dark:bg-red-900/10"
+                                    : "border-neutral-200 dark:border-neutral-800"
+                                    }`}
+                            >
+                                <div
+                                    className="p-4 flex items-center justify-between cursor-pointer"
+                                    onClick={() => setExpandedMemberId(isExpanded ? null : member.id)}
                                 >
-                                    <div
-                                        className="p-4 flex items-center justify-between cursor-pointer"
-                                        onClick={() => setExpandedMemberId(isExpanded ? null : member.id)}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="relative shrink-0">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${member.role === "HEAD"
-                                                    ? "bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30"
-                                                    : "bg-neutral-100 dark:bg-neutral-900"
-                                                    }`}>
-                                                    {
-                                                        member.user?.image ? (
-                                                            <img
-                                                                src={member.user.image}
-                                                                alt={member.displayName || member.email}
-                                                                className="w-full h-full object-cover rounded-xl"
-                                                            />
-                                                        ) : (
-                                                            <Users className={`w-5 h-5 ${member.role === "HEAD"
-                                                                ? "text-amber-600 dark:text-amber-400"
-                                                                : "text-neutral-400"
-                                                                }`} />
-                                                        )
-                                                    }
-                                                </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative shrink-0">
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${member.role === "HEAD"
+                                                ? "bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30"
+                                                : "bg-neutral-100 dark:bg-neutral-900"
+                                                }`}>
                                                 {
-                                                    member.role === "HEAD" && (
-                                                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                                                            <Crown className="w-2.5 h-2.5 text-white" />
-                                                        </div>
-                                                    )
-                                                }
-                                                {
-                                                    !member.isActive && (
-                                                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                                                            <Ban className="w-2.5 h-2.5 text-white" />
-                                                        </div>
+                                                    member.user?.image ? (
+                                                        <Image
+                                                            src={member.user.image}
+                                                            alt={member.displayName || member.email}
+                                                            width={48}
+                                                            height={48}
+                                                            className="w-full h-full object-cover rounded-xl"
+                                                        />
+                                                    ) : (
+                                                        <Users className={`w-5 h-5 ${member.role === "HEAD"
+                                                            ? "text-amber-600 dark:text-amber-400"
+                                                            : "text-neutral-400"
+                                                            }`} />
                                                     )
                                                 }
                                             </div>
-                                            <div className="min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="font-medium text-neutral-900 dark:text-white truncate">
-                                                        {member.displayName || member.email.split("@")[0]}
-                                                    </p>
-                                                    {isSelf && (
+                                            {
+                                                member.role === "HEAD" && (
+                                                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                                                        <Crown className="w-2.5 h-2.5 text-white" />
+                                                    </div>
+                                                )
+                                            }
+                                            {
+                                                !member.isActive && (
+                                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                                                        <Ban className="w-2.5 h-2.5 text-white" />
+                                                    </div>
+                                                )
+                                            }
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium text-neutral-900 dark:text-white truncate">
+                                                    {member.displayName || member.email.split("@")[0]}
+                                                </p>
+                                                {
+                                                    isSelf && (
                                                         <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
                                                             You
                                                         </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-sm text-neutral-500">
-                                                    <span>{member.email}</span>
-                                                    <span>•</span>
-                                                    <span>
-                                                        {member.jobTitle === "OTHER" && member.jobTitleCustom
-                                                            ? member.jobTitleCustom
-                                                            : JOB_TITLE_LABELS[member.jobTitle]}
-                                                    </span>
-                                                </div>
+                                                    )
+                                                }
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-neutral-500">
+                                                <span>{member.email}</span>
+                                                <span>•</span>
+                                                <span>
+                                                    {member.jobTitle === "OTHER" && member.jobTitleCustom
+                                                        ? member.jobTitleCustom
+                                                        : JOB_TITLE_LABELS[member.jobTitle]}
+                                                </span>
                                             </div>
                                         </div>
-
-                                        <div className="flex items-center gap-3">
-                                            <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${member.role === "HEAD"
-                                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                                                : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-                                                }`}>
-                                                <Shield className="w-3 h-3" />
-                                                {member.role}
-                                            </span>
-                                            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
-                                                {member.permissions.length} permissions
-                                            </span>
-                                            {
-                                                isExpanded ? (
-                                                    <ChevronUp className="w-5 h-5 text-neutral-400" />
-                                                ) : (
-                                                    <ChevronDown className="w-5 h-5 text-neutral-400" />
-                                                )
-                                            }
-                                        </div>
                                     </div>
-                                    <AnimatePresence>
+                                    <div className="flex items-center gap-3">
+                                        <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${member.role === "HEAD"
+                                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                                            }`}>
+                                            <Shield className="w-3 h-3" />
+                                            {member.role}
+                                        </span>
+                                        <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                                            {member.permissions.length} permissions
+                                        </span>
                                         {
-                                            isExpanded && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    className="border-t border-neutral-200 dark:border-neutral-800"
-                                                >
-                                                    <div className="p-4 space-y-6">
-                                                        <div className="flex flex-wrap gap-3">
-                                                            {
-                                                                !isSelf && (
-                                                                    <>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Label className="text-sm font-medium">Role:</Label>
-                                                                            <Select
-                                                                                value={member.role}
-                                                                                onValueChange={(value) => handleRoleChange(member.id, value as CompanyMemberRole)}
-                                                                                disabled={actionLoading === member.id}
-                                                                            >
-                                                                                <SelectTrigger className="w-32 rounded-lg cursor-pointer">
-                                                                                    <SelectValue />
-                                                                                </SelectTrigger>
-                                                                                <SelectContent>
-                                                                                    <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
-                                                                                    <SelectItem value="RECRUITER">RECRUITER</SelectItem>
-                                                                                </SelectContent>
-                                                                            </Select>
-                                                                        </div>
+                                            isExpanded ? (
+                                                <ChevronUp className="w-5 h-5 text-neutral-400" />
+                                            ) : (
+                                                <ChevronDown className="w-5 h-5 text-neutral-400" />
+                                            )
+                                        }
+                                    </div>
+                                </div>
+                                <AnimatePresence>
+                                    {
+                                        isExpanded && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="border-t border-neutral-200 dark:border-neutral-800"
+                                            >
+                                                <div className="p-4 space-y-6">
+                                                    <div className="flex flex-wrap gap-3">
+                                                        {
+                                                            !isSelf && (
+                                                                <>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Label className="text-sm font-medium">Role:</Label>
+                                                                        <Select
+                                                                            value={member.role}
+                                                                            onValueChange={(value) => handleRoleChange(member.id, value as CompanyMemberRole)}
+                                                                            disabled={actionLoading === member.id}
+                                                                        >
+                                                                            <SelectTrigger className="w-32 rounded-lg cursor-pointer">
+                                                                                <SelectValue />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
+                                                                                <SelectItem value="RECRUITER">RECRUITER</SelectItem>
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
 
-                                                                        {
-                                                                            member.isActive ? (
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    onClick={() => handleDeactivate(member.id)}
-                                                                                    disabled={actionLoading === member.id}
-                                                                                    className="rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
-                                                                                >
-                                                                                    {
-                                                                                        actionLoading === member.id ? (
-                                                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                                                        ) : (
-                                                                                            <Ban className="w-4 h-4 mr-2" />
-                                                                                        )
-                                                                                    }
-                                                                                    Deactivate
-                                                                                </Button>
-                                                                            ) : (
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    onClick={() => handleReactivate(member.id)}
-                                                                                    disabled={actionLoading === member.id}
-                                                                                    className="rounded-lg text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer"
-                                                                                >
-                                                                                    {
-                                                                                        actionLoading === member.id ? (
-                                                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                                                        ) : (
-                                                                                            <UserCheck className="w-4 h-4 mr-2" />
-                                                                                        )
-                                                                                    }
-                                                                                    Reactivate
-                                                                                </Button>
-                                                                            )
-                                                                        }
-                                                                    </>
+                                                                    {
+                                                                        member.isActive ? (
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                onClick={() => handleDeactivate(member.id)}
+                                                                                disabled={actionLoading === member.id}
+                                                                                className="rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
+                                                                            >
+                                                                                {
+                                                                                    actionLoading === member.id ? (
+                                                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                                                    ) : (
+                                                                                        <Ban className="w-4 h-4 mr-2" />
+                                                                                    )
+                                                                                }
+                                                                                Deactivate
+                                                                            </Button>
+                                                                        ) : (
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                onClick={() => handleReactivate(member.id)}
+                                                                                disabled={actionLoading === member.id}
+                                                                                className="rounded-lg text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer"
+                                                                            >
+                                                                                {
+                                                                                    actionLoading === member.id ? (
+                                                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                                                    ) : (
+                                                                                        <UserCheck className="w-4 h-4 mr-2" />
+                                                                                    )
+                                                                                }
+                                                                                Reactivate
+                                                                            </Button>
+                                                                        )
+                                                                    }
+                                                                </>
+                                                            )
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                                            <Settings className="w-4 h-4" />
+                                                            Permissions
+                                                        </h4>
+                                                        <div className="space-y-4">
+                                                            {
+                                                                Object.entries(PERMISSION_GROUPS).map(([category, permissions]) => (
+                                                                    <div key={category}>
+                                                                        <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">
+                                                                            {category}
+                                                                        </p>
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                                            {
+                                                                                permissions.map((perm) => {
+                                                                                    const hasPermission = member.permissions.includes(perm.key)
+                                                                                    const isAdminPermission = ["manage_members", "manage_company", "manage_billing"].includes(perm.key)
+
+                                                                                    return (
+                                                                                        <div
+                                                                                            key={perm.key}
+                                                                                            className={`p-3 rounded-lg border transition-colors ${hasPermission
+                                                                                                ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/30"
+                                                                                                : "bg-neutral-50 border-neutral-200 dark:bg-neutral-900/50 dark:border-neutral-800"
+                                                                                                } ${isAdminPermission ? "ring-1 ring-amber-200 dark:ring-amber-800/30" : ""}`}
+                                                                                        >
+                                                                                            <div className="flex items-center justify-between">
+                                                                                                <div className="min-w-0">
+                                                                                                    <div className="flex items-center gap-1.5">
+                                                                                                        <p className={`text-sm font-medium truncate ${hasPermission
+                                                                                                            ? "text-emerald-700 dark:text-emerald-300"
+                                                                                                            : "text-neutral-700 dark:text-neutral-300"
+                                                                                                            }`}>
+                                                                                                            {perm.label}
+                                                                                                        </p>
+                                                                                                        {
+                                                                                                            isAdminPermission && (
+                                                                                                                <Crown className="w-3 h-3 text-amber-500 shrink-0" />
+                                                                                                            )
+                                                                                                        }
+                                                                                                    </div>
+                                                                                                    <p className="text-xs text-neutral-500 truncate">
+                                                                                                        {perm.description}
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                                <Switch
+                                                                                                    checked={hasPermission}
+                                                                                                    onCheckedChange={() => handlePermissionToggle(member.id, perm.key, member.permissions)}
+                                                                                                    disabled={isSelf || actionLoading === member.id}
+                                                                                                    className="shrink-0 ml-2 cursor-pointer"
+                                                                                                />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )
+                                                                                })
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                                                            <div className="flex items-center gap-2 text-neutral-500">
+                                                                <Mail className="w-4 h-4" />
+                                                                <span className="truncate">{member.email}</span>
+                                                            </div>
+                                                            {
+                                                                member.phone && (
+                                                                    <div className="flex items-center gap-2 text-neutral-500">
+                                                                        <Phone className="w-4 h-4" />
+                                                                        <span>{member.phone}</span>
+                                                                    </div>
+                                                                )
+                                                            }
+                                                            <div className="flex items-center gap-2 text-neutral-500">
+                                                                <Calendar className="w-4 h-4" />
+                                                                <span>Joined {new Date(member.createdAt).toLocaleDateString()}</span>
+                                                            </div>
+                                                            {
+                                                                member.lastActiveAt && (
+                                                                    <div className="flex items-center gap-2 text-neutral-500">
+                                                                        <Clock className="w-4 h-4" />
+                                                                        <span>Active {new Date(member.lastActiveAt).toLocaleDateString()}</span>
+                                                                    </div>
                                                                 )
                                                             }
                                                         </div>
-                                                        <div>
-                                                            <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                                                                <Settings className="w-4 h-4" />
-                                                                Permissions
-                                                            </h4>
-                                                            <div className="space-y-4">
-                                                                {
-                                                                    Object.entries(PERMISSION_GROUPS).map(([category, permissions]) => (
-                                                                        <div key={category}>
-                                                                            <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">
-                                                                                {category}
-                                                                            </p>
-                                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                                                                {
-                                                                                    permissions.map((perm) => {
-                                                                                        const hasPermission = member.permissions.includes(perm.key)
-                                                                                        const isAdminPermission = ["manage_members", "manage_company", "manage_billing"].includes(perm.key)
-
-                                                                                        return (
-                                                                                            <div
-                                                                                                key={perm.key}
-                                                                                                className={`p-3 rounded-lg border transition-colors ${hasPermission
-                                                                                                    ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800/30"
-                                                                                                    : "bg-neutral-50 border-neutral-200 dark:bg-neutral-900/50 dark:border-neutral-800"
-                                                                                                    } ${isAdminPermission ? "ring-1 ring-amber-200 dark:ring-amber-800/30" : ""}`}
-                                                                                            >
-                                                                                                <div className="flex items-center justify-between">
-                                                                                                    <div className="min-w-0">
-                                                                                                        <div className="flex items-center gap-1.5">
-                                                                                                            <p className={`text-sm font-medium truncate ${hasPermission
-                                                                                                                ? "text-emerald-700 dark:text-emerald-300"
-                                                                                                                : "text-neutral-700 dark:text-neutral-300"
-                                                                                                                }`}>
-                                                                                                                {perm.label}
-                                                                                                            </p>
-                                                                                                            {
-                                                                                                                isAdminPermission && (
-                                                                                                                    <Crown className="w-3 h-3 text-amber-500 shrink-0" />
-                                                                                                                )
-                                                                                                            }
-                                                                                                        </div>
-                                                                                                        <p className="text-xs text-neutral-500 truncate">
-                                                                                                            {perm.description}
-                                                                                                        </p>
-                                                                                                    </div>
-                                                                                                    <Switch
-                                                                                                        checked={hasPermission}
-                                                                                                        onCheckedChange={() => handlePermissionToggle(member.id, perm.key, member.permissions)}
-                                                                                                        disabled={isSelf || actionLoading === member.id}
-                                                                                                        className="shrink-0 ml-2 cursor-pointer"
-                                                                                                    />
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        )
-                                                                                    })
-                                                                                }
-                                                                            </div>
-                                                                        </div>
-                                                                    ))
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                        <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                                                                <div className="flex items-center gap-2 text-neutral-500">
-                                                                    <Mail className="w-4 h-4" />
-                                                                    <span className="truncate">{member.email}</span>
-                                                                </div>
-                                                                {
-                                                                    member.phone && (
-                                                                        <div className="flex items-center gap-2 text-neutral-500">
-                                                                            <Phone className="w-4 h-4" />
-                                                                            <span>{member.phone}</span>
-                                                                        </div>
-                                                                    )
-                                                                }
-                                                                <div className="flex items-center gap-2 text-neutral-500">
-                                                                    <Calendar className="w-4 h-4" />
-                                                                    <span>Joined {new Date(member.createdAt).toLocaleDateString()}</span>
-                                                                </div>
-                                                                {
-                                                                    member.lastActiveAt && (
-                                                                        <div className="flex items-center gap-2 text-neutral-500">
-                                                                            <Clock className="w-4 h-4" />
-                                                                            <span>Active {new Date(member.lastActiveAt).toLocaleDateString()}</span>
-                                                                        </div>
-                                                                    )
-                                                                }
-                                                            </div>
-                                                        </div>
                                                     </div>
-                                                </motion.div>
-                                            )
-                                        }
-                                    </AnimatePresence>
-                                </motion.div>
-                            )
-                        })
+                                                </div>
+                                            </motion.div>
+                                        )
+                                    }
+                                </AnimatePresence>
+                            </motion.div>
+                        )
+                    })
                     }
                 </div>
             </motion.div>
-            <AnimatePresence>
-                {
-                    showInviteModal && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-                            onClick={() => setShowInviteModal(false)}
-                        >
-                            <motion.div
-                                initial={{ scale: 0.95, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.95, opacity: 0 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 w-full max-w-md"
+            <Sheet open={showInviteSheet} onOpenChange={setShowInviteSheet}>
+                <SheetContent side="right" className="w-full sm:max-w-md">
+                    <SheetHeader>
+                        <SheetTitle className="flex items-center gap-2">
+                            <UserPlus className="w-5 h-5" />
+                            Invite Team Member
+                        </SheetTitle>
+                        <SheetDescription>
+                            Send an invitation to add a new member to your team.
+                        </SheetDescription>
+                    </SheetHeader>
+                    <form onSubmit={handleInvite} className="space-y-6 mt-6">
+                        <div>
+                            <Label className="text-sm font-medium">Email Address *</Label>
+                            <Input
+                                type="email"
+                                value={inviteForm.email}
+                                onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
+                                placeholder="colleague@company.com"
+                                className="mt-2 rounded-xl"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <Label className="text-sm font-medium">Name (Optional)</Label>
+                            <Input
+                                value={inviteForm.name}
+                                onChange={(e) => setInviteForm(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="John Doe"
+                                className="mt-2 rounded-xl"
+                            />
+                        </div>
+                        <div>
+                            <Label className="text-sm font-medium">Role</Label>
+                            <Select
+                                value={inviteForm.role}
+                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, role: value as CompanyMemberRole }))}
                             >
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                                        <UserPlus className="w-5 h-5" />
-                                        Invite Team Member
-                                    </h3>
-                                    <button
-                                        onClick={() => setShowInviteModal(false)}
-                                        className="text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-                                <form onSubmit={handleInvite} className="space-y-4">
-                                    <div>
-                                        <Label className="text-sm font-medium">Email Address *</Label>
-                                        <Input
-                                            type="email"
-                                            value={inviteForm.email}
-                                            onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
-                                            placeholder="colleague@company.com"
-                                            className="mt-2 rounded-xl"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm font-medium">Name (Optional)</Label>
-                                        <Input
-                                            value={inviteForm.name}
-                                            onChange={(e) => setInviteForm(prev => ({ ...prev, name: e.target.value }))}
-                                            placeholder="John Doe"
-                                            className="mt-2 rounded-xl"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label className="text-sm font-medium">Role</Label>
-                                            <Select
-                                                value={inviteForm.role}
-                                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, role: value as CompanyMemberRole }))}
-                                            >
-                                                <SelectTrigger className="mt-2 rounded-xl cursor-pointer">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="RECRUITER">Recruiter</SelectItem>
-                                                    <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Job Title</Label>
-                                            <Select
-                                                value={inviteForm.jobTitle}
-                                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, jobTitle: value as CompanyMemberJobTitle }))}
-                                            >
-                                                <SelectTrigger className="mt-2 rounded-xl cursor-pointer">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {
-                                                        JOB_TITLE_OPTIONS.map((option) => (
-                                                            <SelectItem key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </SelectItem>
-                                                        ))
-                                                    }
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
+                                <SelectTrigger className="mt-2 rounded-xl cursor-pointer">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="RECRUITER">Recruiter</SelectItem>
+                                    <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label className="text-sm font-medium">Job Title</Label>
+                            <Select
+                                value={inviteForm.jobTitle}
+                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, jobTitle: value as CompanyMemberJobTitle }))}
+                            >
+                                <SelectTrigger className="mt-2 rounded-xl cursor-pointer">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
                                     {
-                                        inviteMessage && (
-                                            <div className={`p-3 rounded-xl flex items-center gap-2 text-sm ${inviteMessage.type === "success"
-                                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                                }`}>
-                                                {
-                                                    inviteMessage.type === "success" ? (
-                                                        <Check className="w-4 h-4" />
-                                                    ) : (
-                                                        <AlertCircle className="w-4 h-4" />
-                                                    )
-                                                }
-                                                {inviteMessage.text}
-                                            </div>
+                                        JOB_TITLE_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))
+                                    }
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {
+                            inviteMessage && (
+                                <div className={`p-3 rounded-xl flex items-center gap-2 text-sm ${inviteMessage.type === "success"
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                    }`}>
+                                    {
+                                        inviteMessage.type === "success" ? (
+                                            <Check className="w-4 h-4" />
+                                        ) : (
+                                            <AlertCircle className="w-4 h-4" />
                                         )
                                     }
+                                    {inviteMessage.text}
+                                </div>
+                            )
+                        }
 
-                                    <div className="flex gap-3 pt-2">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => setShowInviteModal(false)}
-                                            className="flex-1 rounded-xl cursor-pointer"
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            disabled={inviteLoading || !inviteForm.email}
-                                            className="flex-1 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
-                                        >
-                                            {
-                                                inviteLoading ? (
-                                                    <>
-                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                        Sending...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Send className="w-4 h-4 mr-2" />
-                                                        Send Invitation
-                                                    </>
-                                                )
-                                            }
-                                        </Button>
-                                    </div>
-                                </form>
-                            </motion.div>
-                        </motion.div>
-                    )
-                }
-            </AnimatePresence>
+                        <div className="flex gap-3 pt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowInviteSheet(false)}
+                                className="flex-1 rounded-xl cursor-pointer"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={inviteLoading || !inviteForm.email}
+                                className="flex-1 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                            >
+                                {
+                                    inviteLoading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Send Invitation
+                                        </>
+                                    )
+                                }
+                            </Button>
+                        </div>
+                    </form>
+                </SheetContent>
+            </Sheet>
         </div>
     )
 }

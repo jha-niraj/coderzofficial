@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import {
     User, Building2, Shield, Mail, Phone, Calendar, MapPin, Globe,
     Briefcase, Crown, Edit2, Save, X, Eye, EyeOff, Check, AlertCircle,
-    Loader2, Link as LinkIcon, Lock
+    Loader2, Link as LinkIcon, Lock, Key
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -13,11 +13,14 @@ import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from "@repo/ui/components/ui/tabs"
 import { useSession } from "@repo/auth/client"
 import {
     getUserProfile, getCompanyDetails, getCurrentMember,
     updateUserProfile, changePassword, updateCompanyDetails
-} from "@/actions/profile/profile.action."
+} from "@/actions/profile/profile.action"
 import type {
     UserProfile, CompanyDetails, CompanyMemberRole, CompanyMemberJobTitle,
     Permission, UpdateCompanyPayload,
@@ -161,7 +164,6 @@ export default function ProfilePage() {
             if (result.success) {
                 setProfileMessage({ type: "success", text: "Profile updated successfully" })
                 setEditingProfile(false)
-                // Update local state
                 if (userProfile) {
                     setUserProfile({
                         ...userProfile,
@@ -232,7 +234,6 @@ export default function ProfilePage() {
             if (result.success) {
                 setCompanyMessage({ type: "success", text: "Company details updated successfully" })
                 setEditingCompany(false)
-                // Update local state
                 if (companyDetails) {
                     setCompanyDetails({
                         ...companyDetails,
@@ -271,17 +272,17 @@ export default function ProfilePage() {
                     Manage your personal and company information
                 </p>
             </div>
-            <div className="max-w-4xl space-y-8">
+            <div className="max-w-4xl">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden"
+                    className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden mb-8"
                 >
-                    <div className="relative bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 p-6 pb-20">
+                    <div className="relative bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 h-32">
                         <div className="absolute inset-0 bg-black/10" />
                     </div>
                     <div className="relative px-6 pb-6 -mt-12">
-                        <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
                             <div className="relative shrink-0">
                                 <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 border-4 border-white dark:border-neutral-950 flex items-center justify-center overflow-hidden shadow-lg">
                                     {
@@ -306,11 +307,12 @@ export default function ProfilePage() {
                                     )
                                 }
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 pt-4 sm:pt-0">
                                 <h2 className="text-xl font-bold text-neutral-900 dark:text-white truncate">
                                     {memberDisplayName || userProfile?.name || "Unknown User"}
                                 </h2>
-                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                <p className="text-neutral-500 truncate">{userProfile?.email}</p>
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
                                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
                                         <Briefcase className="w-3 h-3" />
                                         {
@@ -330,35 +332,73 @@ export default function ProfilePage() {
                                     </span>
                                 </div>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingProfile(!editingProfile)}
-                                className="rounded-xl cursor-pointer shrink-0"
-                            >
-                                {
-                                    editingProfile ? (
-                                        <>
-                                            <X className="w-4 h-4 mr-2" /> Cancel
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
-                                        </>
-                                    )
-                                }
-                            </Button>
                         </div>
-                        <AnimatePresence mode="wait">
+                    </div>
+                </motion.div>
+                <Tabs defaultValue="personal" className="w-full">
+                    <TabsList className="w-full justify-start bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl mb-6 flex-wrap h-auto gap-1">
+                        <TabsTrigger
+                            value="personal"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm cursor-pointer"
+                        >
+                            <User className="w-4 h-4 mr-2" />
+                            Personal Info
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="company"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm cursor-pointer"
+                        >
+                            <Building2 className="w-4 h-4 mr-2" />
+                            Company
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="security"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm cursor-pointer"
+                        >
+                            <Key className="w-4 h-4 mr-2" />
+                            Security
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="permissions"
+                            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm cursor-pointer"
+                        >
+                            <Shield className="w-4 h-4 mr-2" />
+                            Permissions
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="personal">
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2">
+                                    <User className="w-5 h-5" />
+                                    Personal Information
+                                </h3>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingProfile(!editingProfile)}
+                                    className="rounded-xl cursor-pointer"
+                                >
+                                    {
+                                        editingProfile ? (
+                                            <>
+                                                <X className="w-4 h-4 mr-2" /> Cancel
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Edit2 className="w-4 h-4 mr-2" /> Edit
+                                            </>
+                                        )
+                                    }
+                                </Button>
+                            </div>
                             {
                                 editingProfile ? (
-                                    <motion.div
-                                        key="edit"
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="mt-6 space-y-4"
-                                    >
+                                    <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <Label className="text-sm font-medium">Full Name</Label>
@@ -398,7 +438,7 @@ export default function ProfilePage() {
                                                 />
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3 pt-2">
                                             <Button
                                                 onClick={handleProfileSave}
                                                 disabled={savingProfile}
@@ -434,15 +474,10 @@ export default function ProfilePage() {
                                                 )
                                             }
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ) : (
-                                    <motion.div
-                                        key="view"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4"
-                                    >
-                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
                                             <Mail className="w-5 h-5 text-neutral-400" />
                                             <div className="min-w-0">
                                                 <p className="text-xs text-neutral-500">Email</p>
@@ -451,7 +486,7 @@ export default function ProfilePage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
                                             <Phone className="w-5 h-5 text-neutral-400" />
                                             <div className="min-w-0">
                                                 <p className="text-xs text-neutral-500">Phone</p>
@@ -460,7 +495,16 @@ export default function ProfilePage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                            <User className="w-5 h-5 text-neutral-400" />
+                                            <div className="min-w-0">
+                                                <p className="text-xs text-neutral-500">Display Name</p>
+                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                    {memberDisplayName || userProfile?.name || "Not set"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
                                             <Calendar className="w-5 h-5 text-neutral-400" />
                                             <div className="min-w-0">
                                                 <p className="text-xs text-neutral-500">Member Since</p>
@@ -479,7 +523,7 @@ export default function ProfilePage() {
                                         </div>
                                         {
                                             userProfile?.bio && (
-                                                <div className="md:col-span-2 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                <div className="md:col-span-2 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
                                                     <p className="text-xs text-neutral-500 mb-1">Bio</p>
                                                     <p className="text-sm text-neutral-700 dark:text-neutral-300">
                                                         {userProfile.bio}
@@ -487,499 +531,505 @@ export default function ProfilePage() {
                                                 </div>
                                             )
                                         }
-                                    </motion.div>
+                                    </div>
                                 )
                             }
-                        </AnimatePresence>
-                    </div>
-                </motion.div>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
-                >
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2">
-                            <Building2 className="w-5 h-5" />
-                            Company Details
-                            {
-                                isHead && (
-                                    <span className="ml-2 text-xs font-normal text-amber-500 flex items-center gap-1">
-                                        <Crown className="w-3 h-3" /> Admin
-                                    </span>
-                                )
-                            }
-                        </h2>
-                        {
-                            isHead && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setEditingCompany(!editingCompany)}
-                                    className="rounded-xl cursor-pointer"
-                                >
+                        </motion.div>
+                    </TabsContent>
+                    <TabsContent value="company">
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2">
+                                    <Building2 className="w-5 h-5" />
+                                    Company Details
                                     {
-                                        editingCompany ? (
-                                            <>
-                                                <X className="w-4 h-4 mr-2" /> Cancel
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Edit2 className="w-4 h-4 mr-2" /> Edit
-                                            </>
+                                        isHead && (
+                                            <span className="ml-2 text-xs font-normal text-amber-500 flex items-center gap-1">
+                                                <Crown className="w-3 h-3" /> Admin
+                                            </span>
                                         )
                                     }
-                                </Button>
-                            )
-                        }
-                    </div>
-                    <AnimatePresence mode="wait">
-                        {
-                            editingCompany && isHead ? (
-                                <motion.div
-                                    key="edit-company"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="space-y-4"
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label className="text-sm font-medium">Company Name</Label>
-                                            <Input
-                                                value={companyForm.name || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, name: e.target.value }))}
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Website</Label>
-                                            <Input
-                                                value={companyForm.website || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, website: e.target.value }))}
-                                                placeholder="https://example.com"
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Industry</Label>
-                                            <Input
-                                                value={companyForm.industry || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, industry: e.target.value }))}
-                                                placeholder="Technology, Healthcare, etc."
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Company Size</Label>
-                                            <Input
-                                                value={companyForm.companySize || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, companySize: e.target.value }))}
-                                                placeholder="1-10, 11-50, etc."
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Headquarters</Label>
-                                            <Input
-                                                value={companyForm.headquarters || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, headquarters: e.target.value }))}
-                                                placeholder="San Francisco, CA"
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Address</Label>
-                                            <Input
-                                                value={companyForm.address || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, address: e.target.value }))}
-                                                placeholder="123 Main Street"
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">City</Label>
-                                            <Input
-                                                value={companyForm.city || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, city: e.target.value }))}
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">State</Label>
-                                            <Input
-                                                value={companyForm.state || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, state: e.target.value }))}
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Country</Label>
-                                            <Input
-                                                value={companyForm.country || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, country: e.target.value }))}
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="text-sm font-medium">Pincode</Label>
-                                            <Input
-                                                value={companyForm.pincode || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, pincode: e.target.value }))}
-                                                className="mt-2 rounded-xl"
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <Label className="text-sm font-medium">Description</Label>
-                                            <Textarea
-                                                value={companyForm.description || ""}
-                                                onChange={(e) => setCompanyForm(prev => ({ ...prev, description: e.target.value }))}
-                                                placeholder="Brief description of your company..."
-                                                className="mt-2 rounded-xl resize-none"
-                                                rows={3}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 pt-2">
+                                </h3>
+                                {
+                                    isHead && (
                                         <Button
-                                            onClick={handleCompanySave}
-                                            disabled={savingCompany}
-                                            className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setEditingCompany(!editingCompany)}
+                                            className="rounded-xl cursor-pointer"
                                         >
                                             {
-                                                savingCompany ? (
+                                                editingCompany ? (
                                                     <>
-                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                        Saving...
+                                                        <X className="w-4 h-4 mr-2" /> Cancel
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Save className="w-4 h-4 mr-2" />
-                                                        Save Company Details
+                                                        <Edit2 className="w-4 h-4 mr-2" /> Edit
                                                     </>
                                                 )
                                             }
                                         </Button>
-                                        {
-                                            companyMessage && (
-                                                <span className={`text-sm flex items-center gap-1 ${companyMessage.type === "success" ? "text-green-500" : "text-red-500"
-                                                    }`}>
-                                                    {
-                                                        companyMessage.type === "success" ? (
-                                                            <Check className="w-4 h-4" />
-                                                        ) : (
-                                                            <AlertCircle className="w-4 h-4" />
-                                                        )
-                                                    }
-                                                    {companyMessage.text}
-                                                </span>
-                                            )
-                                        }
-                                    </div>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="view-company"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                >
-                                    <div className="mb-6">
-                                        <h3 className="text-sm font-medium text-neutral-500 mb-3 flex items-center gap-2">
-                                            <Globe className="w-4 h-4" />
-                                            Public Information
-                                        </h3>
+                                    )
+                                }
+                            </div>
+
+                            {
+                                editingCompany && isHead ? (
+                                    <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                <Building2 className="w-5 h-5 text-neutral-400" />
-                                                <div className="min-w-0">
-                                                    <p className="text-xs text-neutral-500">Company Name</p>
-                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                        {companyDetails?.name || "Not set"}
-                                                    </p>
+                                            <div>
+                                                <Label className="text-sm font-medium">Company Name</Label>
+                                                <Input
+                                                    value={companyForm.name || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, name: e.target.value }))}
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Website</Label>
+                                                <Input
+                                                    value={companyForm.website || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, website: e.target.value }))}
+                                                    placeholder="https://example.com"
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Industry</Label>
+                                                <Input
+                                                    value={companyForm.industry || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, industry: e.target.value }))}
+                                                    placeholder="Technology, Healthcare, etc."
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Company Size</Label>
+                                                <Input
+                                                    value={companyForm.companySize || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, companySize: e.target.value }))}
+                                                    placeholder="1-10, 11-50, etc."
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Headquarters</Label>
+                                                <Input
+                                                    value={companyForm.headquarters || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, headquarters: e.target.value }))}
+                                                    placeholder="San Francisco, CA"
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Address</Label>
+                                                <Input
+                                                    value={companyForm.address || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, address: e.target.value }))}
+                                                    placeholder="123 Main Street"
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">City</Label>
+                                                <Input
+                                                    value={companyForm.city || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, city: e.target.value }))}
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">State</Label>
+                                                <Input
+                                                    value={companyForm.state || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, state: e.target.value }))}
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Country</Label>
+                                                <Input
+                                                    value={companyForm.country || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, country: e.target.value }))}
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Pincode</Label>
+                                                <Input
+                                                    value={companyForm.pincode || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, pincode: e.target.value }))}
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <Label className="text-sm font-medium">Description</Label>
+                                                <Textarea
+                                                    value={companyForm.description || ""}
+                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, description: e.target.value }))}
+                                                    placeholder="Brief description of your company..."
+                                                    className="mt-2 rounded-xl resize-none"
+                                                    rows={3}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 pt-2">
+                                            <Button
+                                                onClick={handleCompanySave}
+                                                disabled={savingCompany}
+                                                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                                            >
+                                                {
+                                                    savingCompany ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                            Saving...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Save className="w-4 h-4 mr-2" />
+                                                            Save Company Details
+                                                        </>
+                                                    )
+                                                }
+                                            </Button>
+                                            {
+                                                companyMessage && (
+                                                    <span className={`text-sm flex items-center gap-1 ${companyMessage.type === "success" ? "text-green-500" : "text-red-500"
+                                                        }`}>
+                                                        {
+                                                            companyMessage.type === "success" ? (
+                                                                <Check className="w-4 h-4" />
+                                                            ) : (
+                                                                <AlertCircle className="w-4 h-4" />
+                                                            )
+                                                        }
+                                                        {companyMessage.text}
+                                                    </span>
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div>
+                                            <h4 className="text-sm font-medium text-neutral-500 mb-3 flex items-center gap-2">
+                                                <Globe className="w-4 h-4" />
+                                                Public Information
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                    <Building2 className="w-5 h-5 text-neutral-400" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs text-neutral-500">Company Name</p>
+                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                            {companyDetails?.name || "Not set"}
+                                                        </p>
+                                                    </div>
                                                 </div>
+                                                {
+                                                    companyDetails?.website && (
+                                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                            <LinkIcon className="w-5 h-5 text-neutral-400" />
+                                                            <div className="min-w-0">
+                                                                <p className="text-xs text-neutral-500">Website</p>
+                                                                <Link
+                                                                    href={companyDetails.website}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-sm font-medium text-violet-600 dark:text-violet-400 hover:underline truncate block"
+                                                                >
+                                                                    {companyDetails.website}
+                                                                </Link>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                                {
+                                                    companyDetails?.industry && (
+                                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                            <Briefcase className="w-5 h-5 text-neutral-400" />
+                                                            <div className="min-w-0">
+                                                                <p className="text-xs text-neutral-500">Industry</p>
+                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                    {companyDetails.industry}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                                {
+                                                    companyDetails?.companySize && (
+                                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                            <User className="w-5 h-5 text-neutral-400" />
+                                                            <div className="min-w-0">
+                                                                <p className="text-xs text-neutral-500">Company Size</p>
+                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                    {companyDetails.companySize} employees
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
                                             </div>
                                             {
-                                                companyDetails?.website && (
-                                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                        <LinkIcon className="w-5 h-5 text-neutral-400" />
-                                                        <div className="min-w-0">
-                                                            <p className="text-xs text-neutral-500">Website</p>
-                                                            <Link
-                                                                href={companyDetails.website}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-sm font-medium text-violet-600 dark:text-violet-400 hover:underline truncate block"
-                                                            >
-                                                                {companyDetails.website}
-                                                            </Link>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }
-                                            {
-                                                companyDetails?.industry && (
-                                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                        <Briefcase className="w-5 h-5 text-neutral-400" />
-                                                        <div className="min-w-0">
-                                                            <p className="text-xs text-neutral-500">Industry</p>
-                                                            <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                {companyDetails.industry}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }
-                                            {
-                                                companyDetails?.companySize && (
-                                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                        <User className="w-5 h-5 text-neutral-400" />
-                                                        <div className="min-w-0">
-                                                            <p className="text-xs text-neutral-500">Company Size</p>
-                                                            <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                {companyDetails.companySize} employees
-                                                            </p>
-                                                        </div>
+                                                companyDetails?.description && (
+                                                    <div className="mt-4 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                        <p className="text-xs text-neutral-500 mb-1">About</p>
+                                                        <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                                                            {companyDetails.description}
+                                                        </p>
                                                     </div>
                                                 )
                                             }
                                         </div>
                                         {
-                                            companyDetails?.description && (
-                                                <div className="mt-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                    <p className="text-xs text-neutral-500 mb-1">About</p>
-                                                    <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                                                        {companyDetails.description}
-                                                    </p>
+                                            isHead && (
+                                                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                                    <h4 className="text-sm font-medium text-neutral-500 mb-3 flex items-center gap-2">
+                                                        <Lock className="w-4 h-4" />
+                                                        Private Information (HEAD Only)
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {
+                                                            companyDetails?.address && (
+                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
+                                                                    <MapPin className="w-5 h-5 text-amber-500" />
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">Address</p>
+                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                            {companyDetails.address}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            (companyDetails?.city || companyDetails?.state) && (
+                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
+                                                                    <MapPin className="w-5 h-5 text-amber-500" />
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">City, State</p>
+                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                            {[companyDetails?.city, companyDetails?.state].filter(Boolean).join(", ") || "Not set"}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            companyDetails?.country && (
+                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
+                                                                    <Globe className="w-5 h-5 text-amber-500" />
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">Country</p>
+                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                            {companyDetails.country}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            companyDetails?.pincode && (
+                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
+                                                                    <MapPin className="w-5 h-5 text-amber-500" />
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">Pincode</p>
+                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                                            {companyDetails.pincode}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                    </div>
+                                                    <div className="mt-4 grid grid-cols-2 gap-4">
+                                                        <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-100 dark:border-violet-800/30">
+                                                            <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                                                                {companyDetails?.memberCount || 0}
+                                                            </p>
+                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Team Members</p>
+                                                        </div>
+                                                        <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/30">
+                                                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                                                                {companyDetails?.jobCount || 0}
+                                                            </p>
+                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Active Jobs</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )
                                         }
                                     </div>
-                                    {
-                                        isHead && (
-                                            <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                                                <h3 className="text-sm font-medium text-neutral-500 mb-3 flex items-center gap-2">
-                                                    <Lock className="w-4 h-4" />
-                                                    Private Information (HEAD Only)
-                                                </h3>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {
-                                                        companyDetails?.address && (
-                                                            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                <MapPin className="w-5 h-5 text-amber-500" />
-                                                                <div className="min-w-0">
-                                                                    <p className="text-xs text-amber-600 dark:text-amber-400">Address</p>
-                                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                        {companyDetails.address}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    }
-                                                    {
-                                                        (companyDetails?.city || companyDetails?.state) && (
-                                                            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                <MapPin className="w-5 h-5 text-amber-500" />
-                                                                <div className="min-w-0">
-                                                                    <p className="text-xs text-amber-600 dark:text-amber-400">City, State</p>
-                                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                        {[companyDetails?.city, companyDetails?.state].filter(Boolean).join(", ") || "Not set"}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    }
-                                                    {
-                                                        companyDetails?.country && (
-                                                            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                <Globe className="w-5 h-5 text-amber-500" />
-                                                                <div className="min-w-0">
-                                                                    <p className="text-xs text-amber-600 dark:text-amber-400">Country</p>
-                                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                        {companyDetails.country}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    }
-                                                    {
-                                                        companyDetails?.pincode && (
-                                                            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                <MapPin className="w-5 h-5 text-amber-500" />
-                                                                <div className="min-w-0">
-                                                                    <p className="text-xs text-amber-600 dark:text-amber-400">Pincode</p>
-                                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                        {companyDetails.pincode}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    }
-                                                </div>
-                                                <div className="mt-4 grid grid-cols-2 gap-4">
-                                                    <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-100 dark:border-violet-800/30">
-                                                        <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                                                            {companyDetails?.memberCount || 0}
-                                                        </p>
-                                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Team Members</p>
-                                                    </div>
-                                                    <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/30">
-                                                        <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                                            {companyDetails?.jobCount || 0}
-                                                        </p>
-                                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Active Jobs</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    }
-                                </motion.div>
-                            )
-                        }
-                    </AnimatePresence>
-                </motion.div>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
-                >
-                    <h2 className="font-bold text-lg text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
-                        <Shield className="w-5 h-5" />
-                        Security
-                    </h2>
-                    <form onSubmit={handlePasswordChange} className="space-y-4">
-                        <p className="text-sm text-neutral-500">
-                            Change your password to keep your account secure
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="relative">
-                                <Label className="text-sm font-medium">Current Password</Label>
-                                <div className="relative mt-2">
-                                    <Input
-                                        type={showCurrentPassword ? "text" : "password"}
-                                        value={passwordForm.currentPassword}
-                                        onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                                        placeholder="••••••••"
-                                        className="rounded-xl pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                                    >
-                                        {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="relative">
-                                <Label className="text-sm font-medium">New Password</Label>
-                                <div className="relative mt-2">
-                                    <Input
-                                        type={showNewPassword ? "text" : "password"}
-                                        value={passwordForm.newPassword}
-                                        onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                                        placeholder="••••••••"
-                                        className="rounded-xl pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowNewPassword(!showNewPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                                    >
-                                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="relative">
-                                <Label className="text-sm font-medium">Confirm Password</Label>
-                                <div className="relative mt-2">
-                                    <Input
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        value={passwordForm.confirmPassword}
-                                        onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                                        placeholder="••••••••"
-                                        className="rounded-xl pr-10"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                                    >
-                                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 pt-2">
-                            <Button
-                                type="submit"
-                                disabled={savingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
-                                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
-                            >
-                                {
-                                    savingPassword ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Changing Password...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Lock className="w-4 h-4 mr-2" />
-                                            Change Password
-                                        </>
-                                    )
-                                }
-                            </Button>
-                            {
-                                passwordMessage && (
-                                    <span className={`text-sm flex items-center gap-1 ${passwordMessage.type === "success" ? "text-green-500" : "text-red-500"
-                                        }`}>
-                                        {
-                                            passwordMessage.type === "success" ? (
-                                                <Check className="w-4 h-4" />
-                                            ) : (
-                                                <AlertCircle className="w-4 h-4" />
-                                            )
-                                        }
-                                        {passwordMessage.text}
-                                    </span>
                                 )
                             }
-                        </div>
-                    </form>
-                </motion.div>
-                {
-                    memberPermissions.length > 0 && (
+                        </motion.div>
+                    </TabsContent>
+                    <TabsContent value="security">
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
                             className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
                         >
-                            <h2 className="font-bold text-lg text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
+                                <Key className="w-5 h-5" />
+                                Change Password
+                            </h3>
+                            <form onSubmit={handlePasswordChange} className="space-y-4">
+                                <p className="text-sm text-neutral-500">
+                                    Change your password to keep your account secure. Password must be at least 8 characters.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="relative">
+                                        <Label className="text-sm font-medium">Current Password</Label>
+                                        <div className="relative mt-2">
+                                            <Input
+                                                type={showCurrentPassword ? "text" : "password"}
+                                                value={passwordForm.currentPassword}
+                                                onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                                placeholder="••••••••"
+                                                className="rounded-xl pr-10"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                                            >
+                                                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="relative">
+                                        <Label className="text-sm font-medium">New Password</Label>
+                                        <div className="relative mt-2">
+                                            <Input
+                                                type={showNewPassword ? "text" : "password"}
+                                                value={passwordForm.newPassword}
+                                                onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                                                placeholder="••••••••"
+                                                className="rounded-xl pr-10"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                                            >
+                                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="relative">
+                                        <Label className="text-sm font-medium">Confirm Password</Label>
+                                        <div className="relative mt-2">
+                                            <Input
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                value={passwordForm.confirmPassword}
+                                                onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                                placeholder="••••••••"
+                                                className="rounded-xl pr-10"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                                            >
+                                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 pt-2">
+                                    <Button
+                                        type="submit"
+                                        disabled={savingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                                        className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                                    >
+                                        {
+                                            savingPassword ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Changing Password...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Lock className="w-4 h-4 mr-2" />
+                                                    Change Password
+                                                </>
+                                            )
+                                        }
+                                    </Button>
+                                    {
+                                        passwordMessage && (
+                                            <span className={`text-sm flex items-center gap-1 ${passwordMessage.type === "success" ? "text-green-500" : "text-red-500"
+                                                }`}>
+                                                {
+                                                    passwordMessage.type === "success" ? (
+                                                        <Check className="w-4 h-4" />
+                                                    ) : (
+                                                        <AlertCircle className="w-4 h-4" />
+                                                    )
+                                                }
+                                                {passwordMessage.text}
+                                            </span>
+                                        )
+                                    }
+                                </div>
+                            </form>
+                        </motion.div>
+                    </TabsContent>
+                    <TabsContent value="permissions">
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
+                        >
+                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <Shield className="w-5 h-5" />
                                 Your Permissions
-                            </h2>
-                            <p className="text-sm text-neutral-500 mb-4">
-                                These are the actions you can perform in this workspace
+                            </h3>
+                            <p className="text-sm text-neutral-500 mb-6">
+                                These are the actions you can perform in this workspace. Contact your admin to request additional permissions.
                             </p>
-                            <div className="flex flex-wrap gap-2">
-                                {
-                                    memberPermissions.map((permission) => (
-                                        <span
-                                            key={permission}
-                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                                        >
-                                            <Check className="w-3 h-3" />
-                                            {permission.replace(/_/g, " ")}
-                                        </span>
-                                    ))
-                                }
-                            </div>
+                            {
+                                memberPermissions.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {
+                                            memberPermissions.map((permission) => (
+                                                <span
+                                                    key={permission}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                                >
+                                                    <Check className="w-3 h-3" />
+                                                    {permission.replace(/_/g, " ")}
+                                                </span>
+                                            ))
+                                        }
+                                    </div>
+                                ) : (
+                                    <p className="text-neutral-500">No permissions assigned.</p>
+                                )
+                            }
+                            {
+                                isHead && (
+                                    <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                                        <Link href="/team/roles">
+                                            <Button className="rounded-xl cursor-pointer">
+                                                <Shield className="w-4 h-4 mr-2" />
+                                                Manage Team Permissions
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                )
+                            }
                         </motion.div>
-                    )
-                }
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     )

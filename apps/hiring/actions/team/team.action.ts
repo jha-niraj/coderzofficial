@@ -3,14 +3,9 @@
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
 import type {
-    Permission,
-    TeamMember,
-    UpdateTeamMemberPayload,
-    InviteTeamMemberPayload,
-    CompanyMemberRole,
-    CompanyMemberJobTitle,
-    MemberInviteStatus,
-} from "../../types";
+    Permission, TeamMember, UpdateTeamMemberPayload, InviteTeamMemberPayload, 
+    CompanyMemberRole, CompanyMemberJobTitle, MemberInviteStatus
+} from "@/types";
 
 // ============================================
 // TEAM MEMBER FETCHING ACTIONS
