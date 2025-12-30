@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@repo/prisma"
-import { checkAdminAccess } from "./admin.action"
+import { checkAdminAccess } from "../admin.action"
 
 interface AdminResponse<T = unknown> {
     success: boolean

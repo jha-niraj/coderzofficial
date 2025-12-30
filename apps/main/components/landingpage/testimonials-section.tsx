@@ -78,7 +78,6 @@ const Testimonials = () => {
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 text-sm font-medium mb-6">
                         Student Success Stories
                     </div>
-
                     <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white mb-4">
                         Loved by <span className="text-neutral-400 dark:text-neutral-600">learners</span>
                     </h2>
@@ -86,7 +85,6 @@ const Testimonials = () => {
                         See how students are transforming their careers with our engineering intelligence suite.
                     </p>
                 </motion.div>
-
                 <div className="flex justify-center gap-6 [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-[740px] overflow-hidden">
                     <TestimonialsColumn testimonials={firstColumn} duration={15} />
                     <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />

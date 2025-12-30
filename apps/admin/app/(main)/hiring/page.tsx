@@ -2,23 +2,23 @@
 
 import { useState, useEffect } from "react"
 import {
-    Building2, Users, Briefcase, UserCheck, FileText,
-    Activity, ArrowRight, CheckCircle, Clock, UserPlus, BarChart3
+    Building2, Users, Briefcase, UserCheck, FileText, Activity,
+    ArrowRight, CheckCircle, Clock, UserPlus, BarChart3
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { getHiringDashboardStats } from "@/actions/hiring/hiring.action"
 
 interface StatCardProps {
     title: string
     value: string
-    change?: number
     icon: React.ElementType
     href: string
     color: string
 }
 
-function StatCard({ title, value, change, icon: Icon, href, color }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, href, color }: StatCardProps) {
     return (
         <Link href={href}>
             <motion.div
@@ -29,16 +29,6 @@ function StatCard({ title, value, change, icon: Icon, href, color }: StatCardPro
                     <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", color)}>
                         <Icon className="w-5 h-5 text-white" />
                     </div>
-                    {change !== undefined && (
-                        <span className={cn(
-                            "text-xs font-medium px-2 py-0.5 rounded-full",
-                            change >= 0
-                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600"
-                                : "bg-red-50 dark:bg-red-900/20 text-red-600"
-                        )}>
-                            {change >= 0 ? "+" : ""}{change}%
-                        </span>
-                    )}
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
                 <p className="text-sm text-neutral-500 mt-1">{title}</p>
@@ -83,19 +73,23 @@ function ModuleCard({ title, description, icon: Icon, href, stats, badge }: Modu
                             <p className="text-xs text-neutral-500">{description}</p>
                         </div>
                     </div>
-                    {badge && (
-                        <span className={cn("text-xs font-medium px-2 py-1 rounded-full", badgeColors[badge.type])}>
-                            {badge.text}
-                        </span>
-                    )}
+                    {
+                        badge && (
+                            <span className={cn("text-xs font-medium px-2 py-1 rounded-full", badgeColors[badge.type])}>
+                                {badge.text}
+                            </span>
+                        )
+                    }
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-4">
-                    {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-2">
-                            <p className="text-lg font-bold text-neutral-900 dark:text-white">{stat.value}</p>
-                            <p className="text-[10px] text-neutral-500 uppercase tracking-wider">{stat.label}</p>
-                        </div>
-                    ))}
+                    {
+                        stats.map((stat, idx) => (
+                            <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-2">
+                                <p className="text-lg font-bold text-neutral-900 dark:text-white">{stat.value}</p>
+                                <p className="text-[10px] text-neutral-500 uppercase tracking-wider">{stat.label}</p>
+                            </div>
+                        ))
+                    }
                 </div>
                 <div className="mt-4 flex items-center text-sm text-emerald-600 dark:text-emerald-400">
                     <span>Manage</span>
@@ -106,26 +100,37 @@ function ModuleCard({ title, description, icon: Icon, href, stats, badge }: Modu
     )
 }
 
+interface DashboardStats {
+    totalCompanies: number
+    verifiedCompanies: number
+    pendingVerifications: number
+    rejectedVerifications: number
+    totalMembers: number
+    totalJobs: number
+    activeJobs: number
+    totalApplications: number
+    pendingInvitations: number
+}
+
 export default function HiringPlatformPage() {
     const [isLoading, setIsLoading] = useState(true)
+    const [stats, setStats] = useState<DashboardStats | null>(null)
 
     useEffect(() => {
-        // Simulate loading
-        const timer = setTimeout(() => setIsLoading(false), 500)
-        return () => clearTimeout(timer)
+        async function fetchStats() {
+            try {
+                const result = await getHiringDashboardStats()
+                if (result.success && result.data) {
+                    setStats(result.data)
+                }
+            } catch (error) {
+                console.error("Failed to fetch stats:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchStats()
     }, [])
-
-    // Mock stats - in production, these would come from server actions
-    const stats = {
-        totalCompanies: 150,
-        verifiedCompanies: 142,
-        pendingVerifications: 5,
-        totalMembers: 892,
-        totalJobs: 456,
-        activeJobs: 324,
-        totalCandidates: 2845,
-        totalApplications: 8921,
-    }
 
     if (isLoading) {
         return (
@@ -138,9 +143,20 @@ export default function HiringPlatformPage() {
         )
     }
 
+    // Use real stats or fallback to 0
+    const displayStats = stats || {
+        totalCompanies: 0,
+        verifiedCompanies: 0,
+        pendingVerifications: 0,
+        totalMembers: 0,
+        totalJobs: 0,
+        activeJobs: 0,
+        totalApplications: 0,
+        pendingInvitations: 0,
+    }
+
     return (
         <div className="p-6 lg:p-8 w-full mx-auto">
-            {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-3 h-8 rounded-full bg-emerald-500" />
@@ -153,62 +169,54 @@ export default function HiringPlatformPage() {
                         </p>
                     </div>
                 </div>
-
-                {/* Pending Verifications Alert */}
-                {stats.pendingVerifications > 0 && (
-                    <Link href="/hiring/companies/verification">
-                        <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                            <div className="flex items-center gap-3">
-                                <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                                <span className="font-medium text-amber-700 dark:text-amber-300">
-                                    {stats.pendingVerifications} company verifications pending
+                {
+                    displayStats.pendingVerifications > 0 && (
+                        <Link href="/hiring/companies/verification">
+                            <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                <div className="flex items-center gap-3">
+                                    <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                    <span className="font-medium text-amber-700 dark:text-amber-300">
+                                        {displayStats.pendingVerifications} company verifications pending
+                                    </span>
+                                </div>
+                                <span className="text-sm font-medium text-amber-600 dark:text-amber-400 underline">
+                                    Review now →
                                 </span>
                             </div>
-                            <span className="text-sm font-medium text-amber-600 dark:text-amber-400 underline">
-                                Review now →
-                            </span>
-                        </div>
-                    </Link>
-                )}
+                        </Link>
+                    )
+                }
             </div>
-
-            {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard
                     title="Total Companies"
-                    value={stats.totalCompanies.toLocaleString()}
-                    change={8}
+                    value={displayStats.totalCompanies.toLocaleString()}
                     icon={Building2}
                     href="/hiring/companies"
                     color="bg-emerald-500"
                 />
                 <StatCard
                     title="Active Jobs"
-                    value={stats.activeJobs.toLocaleString()}
-                    change={12}
+                    value={displayStats.activeJobs.toLocaleString()}
                     icon={Briefcase}
                     href="/hiring/jobs"
                     color="bg-blue-500"
                 />
                 <StatCard
-                    title="Candidates"
-                    value={stats.totalCandidates.toLocaleString()}
-                    change={15}
+                    title="Total Members"
+                    value={displayStats.totalMembers.toLocaleString()}
                     icon={UserCheck}
-                    href="/hiring/candidates"
+                    href="/hiring/members"
                     color="bg-violet-500"
                 />
                 <StatCard
                     title="Applications"
-                    value={stats.totalApplications.toLocaleString()}
-                    change={22}
+                    value={displayStats.totalApplications.toLocaleString()}
                     icon={FileText}
                     href="/hiring/applications"
                     color="bg-amber-500"
                 />
             </div>
-
-            {/* Modules Grid */}
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Platform Modules</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <ModuleCard
@@ -217,10 +225,10 @@ export default function HiringPlatformPage() {
                     icon={Building2}
                     href="/hiring/companies"
                     stats={[
-                        { label: "Total", value: stats.totalCompanies.toLocaleString() },
-                        { label: "Verified", value: stats.verifiedCompanies.toLocaleString() },
+                        { label: "Total", value: displayStats.totalCompanies.toLocaleString() },
+                        { label: "Verified", value: displayStats.verifiedCompanies.toLocaleString() },
                     ]}
-                    badge={stats.pendingVerifications > 0 ? { text: `${stats.pendingVerifications} pending`, type: "warning" } : undefined}
+                    badge={displayStats.pendingVerifications > 0 ? { text: `${displayStats.pendingVerifications} pending`, type: "warning" } : undefined}
                 />
                 <ModuleCard
                     title="Verification Queue"
@@ -228,8 +236,8 @@ export default function HiringPlatformPage() {
                     icon={CheckCircle}
                     href="/hiring/companies/verification"
                     stats={[
-                        { label: "Pending", value: stats.pendingVerifications.toLocaleString() },
-                        { label: "This Week", value: "8" },
+                        { label: "Pending", value: displayStats.pendingVerifications.toLocaleString() },
+                        { label: "Total Jobs", value: displayStats.totalJobs.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -238,8 +246,8 @@ export default function HiringPlatformPage() {
                     icon={Users}
                     href="/hiring/members"
                     stats={[
-                        { label: "Total", value: stats.totalMembers.toLocaleString() },
-                        { label: "Recruiters", value: "654" },
+                        { label: "Total", value: displayStats.totalMembers.toLocaleString() },
+                        { label: "Active Jobs", value: displayStats.activeJobs.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -248,18 +256,8 @@ export default function HiringPlatformPage() {
                     icon={Briefcase}
                     href="/hiring/jobs"
                     stats={[
-                        { label: "Total", value: stats.totalJobs.toLocaleString() },
-                        { label: "Active", value: stats.activeJobs.toLocaleString() },
-                    ]}
-                />
-                <ModuleCard
-                    title="Candidates"
-                    description="Candidate profiles"
-                    icon={UserCheck}
-                    href="/hiring/candidates"
-                    stats={[
-                        { label: "Total", value: stats.totalCandidates.toLocaleString() },
-                        { label: "Verified", value: "2,456" },
+                        { label: "Total", value: displayStats.totalJobs.toLocaleString() },
+                        { label: "Active", value: displayStats.activeJobs.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -268,8 +266,8 @@ export default function HiringPlatformPage() {
                     icon={FileText}
                     href="/hiring/applications"
                     stats={[
-                        { label: "Total", value: stats.totalApplications.toLocaleString() },
-                        { label: "This Month", value: "1,234" },
+                        { label: "Total", value: displayStats.totalApplications.toLocaleString() },
+                        { label: "Pending", value: displayStats.pendingInvitations.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -278,8 +276,8 @@ export default function HiringPlatformPage() {
                     icon={UserPlus}
                     href="/hiring/invitations"
                     stats={[
-                        { label: "Sent", value: "345" },
-                        { label: "Pending", value: "23" },
+                        { label: "Pending", value: displayStats.pendingInvitations.toLocaleString() },
+                        { label: "Companies", value: displayStats.totalCompanies.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -288,8 +286,8 @@ export default function HiringPlatformPage() {
                     icon={BarChart3}
                     href="/hiring/analytics"
                     stats={[
-                        { label: "Placements", value: "456" },
-                        { label: "Avg. Time", value: "12d" },
+                        { label: "Applications", value: displayStats.totalApplications.toLocaleString() },
+                        { label: "Jobs", value: displayStats.totalJobs.toLocaleString() },
                     ]}
                 />
             </div>

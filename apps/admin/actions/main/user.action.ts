@@ -2,7 +2,7 @@
 
 import { Currency } from "@repo/prisma/client"
 import { revalidatePath } from "next/cache"
-import { checkAdminAccess } from "./admin.action"
+import { checkAdminAccess } from "../admin.action"
 import { Resend } from "resend";
 import { prisma } from "@repo/prisma"
 

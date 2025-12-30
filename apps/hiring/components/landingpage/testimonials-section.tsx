@@ -1,64 +1,98 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { 
-    Star 
-} from "lucide-react"
-import { cn } from "@repo/ui/lib/utils"
+import { TestimonialsColumn } from "./testimonials-column";
 
 const testimonials = [
-    { name: "Priya Sharma", role: "VP Engineering", company: "TechCorp", content: "We stopped filtering resumes. We just look at the code quality reports now." },
-    { name: "Rahul Mehta", role: "CTO", company: "DevStream", content: "The Open Source Sandbox gave us the only signal that actually correlated with job performance." },
-    { name: "Ananya Patel", role: "Head of Talent", company: "FinGrid", content: "Automated assessments cut our engineering hours spent on hiring by 70%." },
-    { name: "David Kim", role: "Founder", company: "AI Labs", content: "Candidates prefer this. They hate whiteboard interviews. They love building real features." },
-    { name: "Sarah Jenkins", role: "Lead Dev", company: "CloudScale", content: "The ability to see commit history and architectural decisions is invaluable." },
-    { name: "Vikram Singh", role: "Engineering Mgr", company: "DataFlow", content: "We hired our best senior engineer through the Assignment Studio in 3 days." },
-]
+    {
+        text: "The Coder'z completely transformed my coding journey. The AI interview prep helped me land my first internship at a startup!",
+        image: "https://randomuser.me/api/portraits/men/1.jpg",
+        name: "Arjun Sharma",
+        role: "Computer Science Student",
+    },
+    {
+        text: "I went from struggling with DSA to confidently solving medium-level problems. The project-based learning approach is exactly what I needed.",
+        image: "https://randomuser.me/api/portraits/women/2.jpg",
+        name: "Priya Patel",
+        role: "Final Year BTech",
+    },
+    {
+        text: "The open source contribution track gave me real GitHub experience. I got 5 PRs merged in my first month - that's unreal!",
+        image: "https://randomuser.me/api/portraits/men/3.jpg",
+        name: "Rahul Verma",
+        role: "Self-taught Developer",
+    },
+    {
+        text: "As a bootcamp grad, I needed real projects for my portfolio. The AI-generated project scaffolds are game-changing.",
+        image: "https://randomuser.me/api/portraits/women/4.jpg",
+        name: "Sneha Gupta",
+        role: "Career Switcher",
+    },
+    {
+        text: "The mock interview feature is brutal but effective. I failed 10 times before I got good - now I have offers from 3 companies!",
+        image: "https://randomuser.me/api/portraits/men/5.jpg",
+        name: "Vikram Singh",
+        role: "MCA Graduate",
+    },
+    {
+        text: "Learning to code was intimidating until I found The Coder'z. The structured paths made everything click into place.",
+        image: "https://randomuser.me/api/portraits/women/6.jpg",
+        name: "Ananya Reddy",
+        role: "2nd Year Engineering",
+    },
+    {
+        text: "The system design agent helped me understand concepts that YouTube tutorials never could. Worth every credit spent!",
+        image: "https://randomuser.me/api/portraits/men/7.jpg",
+        name: "Karthik Menon",
+        role: "Software Engineer",
+    },
+    {
+        text: "Finally, a platform that doesn't just teach theory. I built and deployed 3 full-stack apps in 2 months.",
+        image: "https://randomuser.me/api/portraits/women/8.jpg",
+        name: "Ishita Jain",
+        role: "BCA Student",
+    },
+    {
+        text: "The skill assessments are rigorous but fair. My certification from here actually impressed my interviewers.",
+        image: "https://randomuser.me/api/portraits/men/9.jpg",
+        name: "Aditya Kumar",
+        role: "Fresher Developer",
+    },
+];
 
-export default function TestimonialsSection() {
+const firstColumn = testimonials.slice(0, 3);
+const secondColumn = testimonials.slice(3, 6);
+const thirdColumn = testimonials.slice(6, 9);
+
+const Testimonials = () => {
     return (
-        <section id="testimonials" className="py-32 bg-white dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800">
-            <div className="max-w-7xl mx-auto px-6">
-                <div className="mb-20">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
-                        Validation
-                    </span>
-                    <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-neutral-900 dark:text-white">
-                        System Efficiency Reports
+        <section className="bg-white dark:bg-neutral-950 py-24 relative border-t border-neutral-100 dark:border-neutral-800">
+            <div className="container max-w-7xl z-10 mx-auto px-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    viewport={{ once: true }}
+                    className="flex flex-col items-center justify-center max-w-2xl mx-auto text-center mb-12"
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 text-sm font-medium mb-6">
+                        Student Success Stories
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white mb-4">
+                        Loved by <span className="text-neutral-400 dark:text-neutral-600">learners</span>
                     </h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {
-                        testimonials.map((t, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className={cn(
-                                    "p-8 rounded-2xl bg-neutral-50 dark:bg-neutral-900",
-                                    "border border-neutral-200 dark:border-neutral-800",
-                                    "hover:border-neutral-400 dark:hover:border-neutral-700 transition-colors"
-                                )}
-                            >
-                                <div className="flex gap-1 mb-6 text-neutral-900 dark:text-white">
-                                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
-                                </div>
-                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
-                                    &ldquo;{t.content}&rdquo;
-                                </p>
-                                <div>
-                                    <div className="font-bold text-neutral-900 dark:text-white text-sm">{t.name}</div>
-                                    <div className="text-xs font-mono text-neutral-500 uppercase mt-1">
-                                        {t.role} {"//"} {t.company}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))
-                    }
+                    <p className="text-lg text-neutral-600 dark:text-neutral-400">
+                        See how students are transforming their careers with our engineering intelligence suite.
+                    </p>
+                </motion.div>
+                <div className="flex justify-center gap-6 [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-[740px] overflow-hidden">
+                    <TestimonialsColumn testimonials={firstColumn} duration={15} />
+                    <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />
+                    <TestimonialsColumn testimonials={thirdColumn} className="hidden lg:block" duration={17} />
                 </div>
             </div>
         </section>
-    )
-}
+    );
+};
+
+export default Testimonials;

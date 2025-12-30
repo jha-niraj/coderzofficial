@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import { cn } from "@repo/ui/lib/utils"
 import {
     getAllFeedback, updateFeedbackStatus, assignReward, deleteFeedback
-} from "@/actions/feedback.action"
+} from "@/actions/main/feedback.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { Select, SelectItem } from "@repo/ui/components/ui/select"
 import { Label } from "@repo/ui/components/ui/label"
@@ -56,7 +56,7 @@ export default function FeedbackPage() {
     const [showRewardDialog, setShowRewardDialog] = useState(false)
     const itemsPerPage = 20
 
-    const fetchFeedback = useCallback(async() => {
+    const fetchFeedback = useCallback(async () => {
         setIsLoading(true)
         try {
             const result = await getAllFeedback(
@@ -107,7 +107,7 @@ export default function FeedbackPage() {
         }
     }, [categoryFilter, statusFilter, currentPage])
 
-    const handleStatusChange = useCallback(async(feedbackId: string, newStatus: "UNDER_REVIEW" | "PLANNED" | "COMPLETED") => {
+    const handleStatusChange = useCallback(async (feedbackId: string, newStatus: "UNDER_REVIEW" | "PLANNED" | "COMPLETED") => {
         try {
             const result = await updateFeedbackStatus(feedbackId, newStatus)
             if (result.success) {
@@ -122,7 +122,7 @@ export default function FeedbackPage() {
         }
     }, [fetchFeedback]);
 
-    const handleAssignReward = useCallback(async(feedbackId: string, credits: number, xp: number) => {
+    const handleAssignReward = useCallback(async (feedbackId: string, credits: number, xp: number) => {
         try {
             const result = await assignReward(feedbackId, credits, xp)
             if (result.success) {
@@ -139,7 +139,7 @@ export default function FeedbackPage() {
         }
     }, [fetchFeedback]);
 
-    const handleDelete = useCallback(async(feedbackId: string) => {
+    const handleDelete = useCallback(async (feedbackId: string) => {
         if (!confirm("Are you sure you want to delete this feedback?")) return
 
         try {
@@ -389,60 +389,60 @@ export default function FeedbackPage() {
                         <SheetDescription>{selectedFeedback?.title}</SheetDescription>
                     </SheetHeader>
                     {
-                    selectedFeedback && (
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.currentTarget);
-                                const credits = Number(formData.get("credits"));
-                                const xp = Number(formData.get("xp"));
-                                handleAssignReward(selectedFeedback.id, credits, xp);
-                            }}
-                            className="space-y-4 mt-4"
-                        >
-                            <div>
-                                <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                                    Credits
-                                </Label>
-                                <Input
-                                    type="number"
-                                    name="credits"
-                                    required
-                                    min="0"
-                                    defaultValue="100"
-                                    className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                                />
-                            </div>
-                            <div>
-                                <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                                    XP (Optional)
-                                </Label>
-                                <Input
-                                    type="number"
-                                    name="xp"
-                                    min="0"
-                                    defaultValue="50"
-                                    className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                                />
-                            </div>
-                            <div className="flex items-center gap-3 pt-4">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="flex-1"
-                                    onClick={() => setShowRewardDialog(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    className="flex-1"
-                                >
-                                    Assign
-                                </Button>
-                            </div>
-                        </form>
-                    )
+                        selectedFeedback && (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    const credits = Number(formData.get("credits"));
+                                    const xp = Number(formData.get("xp"));
+                                    handleAssignReward(selectedFeedback.id, credits, xp);
+                                }}
+                                className="space-y-4 mt-4"
+                            >
+                                <div>
+                                    <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                        Credits
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        name="credits"
+                                        required
+                                        min="0"
+                                        defaultValue="100"
+                                        className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                        XP (Optional)
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        name="xp"
+                                        min="0"
+                                        defaultValue="50"
+                                        className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-3 pt-4">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="flex-1"
+                                        onClick={() => setShowRewardDialog(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        className="flex-1"
+                                    >
+                                        Assign
+                                    </Button>
+                                </div>
+                            </form>
+                        )
                     }
                 </SheetContent>
             </Sheet>

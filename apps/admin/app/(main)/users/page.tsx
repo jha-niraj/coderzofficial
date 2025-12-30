@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import {
     getAllUsers, bulkUpdateUsers, adminSendEmail
-} from "@/actions/user.action"
+} from "@/actions/main/user.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { Input } from "@repo/ui/components/ui/input"
 import { Select, SelectItem } from "@repo/ui/components/ui/select"

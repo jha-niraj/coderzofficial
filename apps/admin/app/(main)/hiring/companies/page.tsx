@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import {
-    Building2, Search, Filter, MoreHorizontal, Globe,
-    Activity, ArrowLeft, CheckCircle, Clock, Users, Briefcase, Download
+    Building2, Search, Filter, MoreHorizontal, Globe, Activity,
+    ArrowLeft, CheckCircle, Clock, Users, Briefcase, Download
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -77,7 +77,6 @@ export default function HiringCompaniesPage() {
 
     return (
         <div className="p-6 lg:p-8 w-full mx-auto">
-            {/* Header */}
             <div className="mb-8">
                 <Link href="/hiring" className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 mb-4">
                     <ArrowLeft className="w-4 h-4" />
@@ -109,8 +108,6 @@ export default function HiringCompaniesPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Filters */}
             <div className="flex items-center gap-4 mb-6">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -134,8 +131,6 @@ export default function HiringCompaniesPage() {
                     </SelectContent>
                 </Select>
             </div>
-
-            {/* Stats */}
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-neutral-500 text-sm mb-1">
@@ -172,8 +167,6 @@ export default function HiringCompaniesPage() {
                     </p>
                 </div>
             </div>
-
-            {/* Companies Table */}
             <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -189,57 +182,59 @@ export default function HiringCompaniesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {filteredCompanies.map((company) => (
-                                <motion.tr
-                                    key={company.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                                >
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                                                <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                            {
+                                filteredCompanies.map((company) => (
+                                    <motion.tr
+                                        key={company.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                                    >
+                                        <td className="px-4 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                                                    <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-neutral-900 dark:text-white">{company.name}</p>
+                                                    <a href={`https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-neutral-500 hover:underline flex items-center gap-1">
+                                                        <Globe className="w-3 h-3" />
+                                                        {company.website}
+                                                    </a>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-medium text-neutral-900 dark:text-white">{company.name}</p>
-                                                <a href={`https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-neutral-500 hover:underline flex items-center gap-1">
-                                                    <Globe className="w-3 h-3" />
-                                                    {company.website}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 text-neutral-900 dark:text-white">{company.industry}</td>
-                                    <td className="px-4 py-4 text-neutral-500">{company.size}</td>
-                                    <td className="px-4 py-4">
-                                        <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[company.verificationStatus])}>
-                                            {company.verificationStatus}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className="font-mono text-neutral-900 dark:text-white">{company.membersCount}</span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className="font-mono text-neutral-900 dark:text-white">{company.jobsCount}</span>
-                                    </td>
-                                    <td className="px-4 py-4 text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreHorizontal className="w-4 h-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                                <DropdownMenuItem>View Members</DropdownMenuItem>
-                                                <DropdownMenuItem>View Jobs</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-600">Suspend</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </td>
-                                </motion.tr>
-                            ))}
+                                        </td>
+                                        <td className="px-4 py-4 text-neutral-900 dark:text-white">{company.industry}</td>
+                                        <td className="px-4 py-4 text-neutral-500">{company.size}</td>
+                                        <td className="px-4 py-4">
+                                            <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[company.verificationStatus])}>
+                                                {company.verificationStatus}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <span className="font-mono text-neutral-900 dark:text-white">{company.membersCount}</span>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <span className="font-mono text-neutral-900 dark:text-white">{company.jobsCount}</span>
+                                        </td>
+                                        <td className="px-4 py-4 text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm">
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                                                    <DropdownMenuItem>View Members</DropdownMenuItem>
+                                                    <DropdownMenuItem>View Jobs</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-red-600">Suspend</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </td>
+                                    </motion.tr>
+                                ))
+                            }
                         </tbody>
                     </table>
                 </div>

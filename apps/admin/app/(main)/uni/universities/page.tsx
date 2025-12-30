@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import {
-    GraduationCap, Search, Filter, MoreHorizontal, Globe,
-    Activity, ArrowLeft, CheckCircle, Clock, Users, Building2, Download
+    GraduationCap, Search, Filter, MoreHorizontal, Globe, Activity,
+    ArrowLeft, CheckCircle, Clock, Users, Building2, Download
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -80,7 +80,6 @@ export default function UniUniversitiesPage() {
 
     return (
         <div className="p-6 lg:p-8 w-full mx-auto">
-            {/* Header */}
             <div className="mb-8">
                 <Link href="/uni" className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 mb-4">
                     <ArrowLeft className="w-4 h-4" />
@@ -112,8 +111,6 @@ export default function UniUniversitiesPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Filters */}
             <div className="flex items-center gap-4 mb-6">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -137,8 +134,6 @@ export default function UniUniversitiesPage() {
                     </SelectContent>
                 </Select>
             </div>
-
-            {/* Stats */}
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-neutral-500 text-sm mb-1">
@@ -175,8 +170,6 @@ export default function UniUniversitiesPage() {
                     </p>
                 </div>
             </div>
-
-            {/* Universities Table */}
             <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -192,57 +185,59 @@ export default function UniUniversitiesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {filteredUniversities.map((uni) => (
-                                <motion.tr
-                                    key={uni.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                                >
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
-                                                <GraduationCap className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                            {
+                                filteredUniversities.map((uni) => (
+                                    <motion.tr
+                                        key={uni.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                                    >
+                                        <td className="px-4 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+                                                    <GraduationCap className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-neutral-900 dark:text-white">{uni.name}</p>
+                                                    <a href={`https://${uni.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-neutral-500 hover:underline flex items-center gap-1">
+                                                        <Globe className="w-3 h-3" />
+                                                        {uni.website}
+                                                    </a>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-medium text-neutral-900 dark:text-white">{uni.name}</p>
-                                                <a href={`https://${uni.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-neutral-500 hover:underline flex items-center gap-1">
-                                                    <Globe className="w-3 h-3" />
-                                                    {uni.website}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 text-neutral-900 dark:text-white">{uni.universityType}</td>
-                                    <td className="px-4 py-4 text-neutral-500">{uni.city}, {uni.state}</td>
-                                    <td className="px-4 py-4">
-                                        <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[uni.verificationStatus])}>
-                                            {uni.verificationStatus}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className="font-mono text-neutral-900 dark:text-white">{uni.studentsCount.toLocaleString()}</span>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className="font-mono text-neutral-900 dark:text-white">{uni.facultyCount}</span>
-                                    </td>
-                                    <td className="px-4 py-4 text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreHorizontal className="w-4 h-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                                <DropdownMenuItem>View Departments</DropdownMenuItem>
-                                                <DropdownMenuItem>View Students</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-600">Suspend</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </td>
-                                </motion.tr>
-                            ))}
+                                        </td>
+                                        <td className="px-4 py-4 text-neutral-900 dark:text-white">{uni.universityType}</td>
+                                        <td className="px-4 py-4 text-neutral-500">{uni.city}, {uni.state}</td>
+                                        <td className="px-4 py-4">
+                                            <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[uni.verificationStatus])}>
+                                                {uni.verificationStatus}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <span className="font-mono text-neutral-900 dark:text-white">{uni.studentsCount.toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <span className="font-mono text-neutral-900 dark:text-white">{uni.facultyCount}</span>
+                                        </td>
+                                        <td className="px-4 py-4 text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm">
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                                                    <DropdownMenuItem>View Departments</DropdownMenuItem>
+                                                    <DropdownMenuItem>View Students</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-red-600">Suspend</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </td>
+                                    </motion.tr>
+                                ))
+                            }
                         </tbody>
                     </table>
                 </div>

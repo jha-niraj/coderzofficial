@@ -11,7 +11,7 @@ import {
     getAllTransactions,
     getCreditRequests,
     getCreditStats
-} from "@/actions/credit.action"
+} from "@/actions/main/credit.action"
 
 import type { CreditType, Currency } from "@repo/prisma/client"
 
@@ -100,7 +100,7 @@ export default function CreditsPage() {
         return matchesSearch && matchesType
     })
 
-    if(loading) {
+    if (loading) {
         return (
             <div className="p-6 lg:p-8 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
                 <div className="text-center">

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import {
     Search, CreditCard, Loader2, IndianRupee
 } from "lucide-react"
-import { getPayments } from "@/actions/credit.action"
+import { getPayments } from "@/actions/main/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 import { PaymentStatus } from "@repo/prisma/client"
@@ -31,7 +31,7 @@ export default function CreditPaymentsPage() {
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
 
-    const fetchPayments = useCallback(async() => {
+    const fetchPayments = useCallback(async () => {
         setLoading(true)
         try {
             const result = await getPayments({ status: statusFilter || 'all' }, { page, limit: 20 })

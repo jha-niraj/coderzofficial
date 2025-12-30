@@ -3,22 +3,23 @@
 import { useState, useEffect } from "react"
 import {
     GraduationCap, Users, Building2, BookOpen, UserCheck, Briefcase,
-    Activity, ArrowRight, CheckCircle, Clock, Coins, BarChart3, BookMarked
+    Activity, ArrowRight, CheckCircle, Clock, Coins, BarChart3, 
+    BookMarked
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { getUniversityDashboardStats } from "@/actions/uni/uni.action"
 
 interface StatCardProps {
     title: string
     value: string
-    change?: number
     icon: React.ElementType
     href: string
     color: string
 }
 
-function StatCard({ title, value, change, icon: Icon, href, color }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, href, color }: StatCardProps) {
     return (
         <Link href={href}>
             <motion.div
@@ -29,16 +30,6 @@ function StatCard({ title, value, change, icon: Icon, href, color }: StatCardPro
                     <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", color)}>
                         <Icon className="w-5 h-5 text-white" />
                     </div>
-                    {change !== undefined && (
-                        <span className={cn(
-                            "text-xs font-medium px-2 py-0.5 rounded-full",
-                            change >= 0
-                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600"
-                                : "bg-red-50 dark:bg-red-900/20 text-red-600"
-                        )}>
-                            {change >= 0 ? "+" : ""}{change}%
-                        </span>
-                    )}
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
                 <p className="text-sm text-neutral-500 mt-1">{title}</p>
@@ -83,19 +74,23 @@ function ModuleCard({ title, description, icon: Icon, href, stats, badge }: Modu
                             <p className="text-xs text-neutral-500">{description}</p>
                         </div>
                     </div>
-                    {badge && (
-                        <span className={cn("text-xs font-medium px-2 py-1 rounded-full", badgeColors[badge.type])}>
-                            {badge.text}
-                        </span>
-                    )}
+                    {
+                        badge && (
+                            <span className={cn("text-xs font-medium px-2 py-1 rounded-full", badgeColors[badge.type])}>
+                                {badge.text}
+                            </span>
+                        )
+                    }
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-4">
-                    {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-2">
-                            <p className="text-lg font-bold text-neutral-900 dark:text-white">{stat.value}</p>
-                            <p className="text-[10px] text-neutral-500 uppercase tracking-wider">{stat.label}</p>
-                        </div>
-                    ))}
+                    {
+                        stats.map((stat, idx) => (
+                            <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-2">
+                                <p className="text-lg font-bold text-neutral-900 dark:text-white">{stat.value}</p>
+                                <p className="text-[10px] text-neutral-500 uppercase tracking-wider">{stat.label}</p>
+                            </div>
+                        ))
+                    }
                 </div>
                 <div className="mt-4 flex items-center text-sm text-violet-600 dark:text-violet-400">
                     <span>Manage</span>
@@ -106,28 +101,38 @@ function ModuleCard({ title, description, icon: Icon, href, stats, badge }: Modu
     )
 }
 
+interface DashboardStats {
+    totalUniversities: number
+    verifiedUniversities: number
+    pendingVerifications: number
+    rejectedVerifications: number
+    totalDepartments: number
+    totalFaculty: number
+    totalStudents: number
+    verifiedStudents: number
+    totalClasses: number
+    totalCreditsAllocated: number
+}
+
 export default function UniversityPlatformPage() {
     const [isLoading, setIsLoading] = useState(true)
+    const [stats, setStats] = useState<DashboardStats | null>(null)
 
     useEffect(() => {
-        // Simulate loading
-        const timer = setTimeout(() => setIsLoading(false), 500)
-        return () => clearTimeout(timer)
+        async function fetchStats() {
+            try {
+                const result = await getUniversityDashboardStats()
+                if (result.success && result.data) {
+                    setStats(result.data)
+                }
+            } catch (error) {
+                console.error("Failed to fetch stats:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchStats()
     }, [])
-
-    // Mock stats - in production, these would come from server actions
-    const stats = {
-        totalUniversities: 25,
-        verifiedUniversities: 22,
-        pendingVerifications: 3,
-        totalDepartments: 156,
-        totalFaculty: 892,
-        totalStudents: 12450,
-        verifiedStudents: 11234,
-        totalClasses: 456,
-        totalAssignments: 3210,
-        totalCreditsUsed: 245000,
-    }
 
     if (isLoading) {
         return (
@@ -140,9 +145,22 @@ export default function UniversityPlatformPage() {
         )
     }
 
+    // Use real stats or fallback to 0
+    const displayStats = stats || {
+        totalUniversities: 0,
+        verifiedUniversities: 0,
+        pendingVerifications: 0,
+        rejectedVerifications: 0,
+        totalDepartments: 0,
+        totalFaculty: 0,
+        totalStudents: 0,
+        verifiedStudents: 0,
+        totalClasses: 0,
+        totalCreditsAllocated: 0,
+    }
+
     return (
         <div className="p-6 lg:p-8 w-full mx-auto">
-            {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-3 h-8 rounded-full bg-violet-500" />
@@ -155,62 +173,54 @@ export default function UniversityPlatformPage() {
                         </p>
                     </div>
                 </div>
-
-                {/* Pending Verifications Alert */}
-                {stats.pendingVerifications > 0 && (
-                    <Link href="/uni/universities/verification">
-                        <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                            <div className="flex items-center gap-3">
-                                <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                                <span className="font-medium text-amber-700 dark:text-amber-300">
-                                    {stats.pendingVerifications} university verifications pending
+                {
+                    displayStats.pendingVerifications > 0 && (
+                        <Link href="/uni/universities/verification">
+                            <div className="mt-4 flex items-center justify-between p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                <div className="flex items-center gap-3">
+                                    <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                    <span className="font-medium text-amber-700 dark:text-amber-300">
+                                        {displayStats.pendingVerifications} university verifications pending
+                                    </span>
+                                </div>
+                                <span className="text-sm font-medium text-amber-600 dark:text-amber-400 underline">
+                                    Review now →
                                 </span>
                             </div>
-                            <span className="text-sm font-medium text-amber-600 dark:text-amber-400 underline">
-                                Review now →
-                            </span>
-                        </div>
-                    </Link>
-                )}
+                        </Link>
+                    )
+                }
             </div>
-
-            {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard
                     title="Universities"
-                    value={stats.totalUniversities.toLocaleString()}
-                    change={15}
+                    value={displayStats.totalUniversities.toLocaleString()}
                     icon={GraduationCap}
                     href="/uni/universities"
                     color="bg-violet-500"
                 />
                 <StatCard
                     title="Students"
-                    value={stats.totalStudents.toLocaleString()}
-                    change={22}
+                    value={displayStats.totalStudents.toLocaleString()}
                     icon={Users}
                     href="/uni/students"
                     color="bg-blue-500"
                 />
                 <StatCard
                     title="Faculty"
-                    value={stats.totalFaculty.toLocaleString()}
-                    change={8}
+                    value={displayStats.totalFaculty.toLocaleString()}
                     icon={UserCheck}
                     href="/uni/faculty"
                     color="bg-emerald-500"
                 />
                 <StatCard
-                    title="Assignments"
-                    value={stats.totalAssignments.toLocaleString()}
-                    change={45}
+                    title="Classes"
+                    value={displayStats.totalClasses.toLocaleString()}
                     icon={BookMarked}
-                    href="/uni/assignments"
+                    href="/uni/classes"
                     color="bg-amber-500"
                 />
             </div>
-
-            {/* Modules Grid */}
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Platform Modules</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <ModuleCard
@@ -219,10 +229,10 @@ export default function UniversityPlatformPage() {
                     icon={GraduationCap}
                     href="/uni/universities"
                     stats={[
-                        { label: "Total", value: stats.totalUniversities.toLocaleString() },
-                        { label: "Verified", value: stats.verifiedUniversities.toLocaleString() },
+                        { label: "Total", value: displayStats.totalUniversities.toLocaleString() },
+                        { label: "Verified", value: displayStats.verifiedUniversities.toLocaleString() },
                     ]}
-                    badge={stats.pendingVerifications > 0 ? { text: `${stats.pendingVerifications} pending`, type: "warning" } : undefined}
+                    badge={displayStats.pendingVerifications > 0 ? { text: `${displayStats.pendingVerifications} pending`, type: "warning" } : undefined}
                 />
                 <ModuleCard
                     title="Verification Queue"
@@ -230,8 +240,8 @@ export default function UniversityPlatformPage() {
                     icon={CheckCircle}
                     href="/uni/universities/verification"
                     stats={[
-                        { label: "Pending", value: stats.pendingVerifications.toLocaleString() },
-                        { label: "This Week", value: "5" },
+                        { label: "Pending", value: displayStats.pendingVerifications.toLocaleString() },
+                        { label: "Rejected", value: displayStats.rejectedVerifications.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -240,8 +250,8 @@ export default function UniversityPlatformPage() {
                     icon={Building2}
                     href="/uni/departments"
                     stats={[
-                        { label: "Total", value: stats.totalDepartments.toLocaleString() },
-                        { label: "Active", value: "148" },
+                        { label: "Total", value: displayStats.totalDepartments.toLocaleString() },
+                        { label: "Universities", value: displayStats.totalUniversities.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -250,8 +260,8 @@ export default function UniversityPlatformPage() {
                     icon={UserCheck}
                     href="/uni/faculty"
                     stats={[
-                        { label: "Total", value: stats.totalFaculty.toLocaleString() },
-                        { label: "HODs", value: "156" },
+                        { label: "Total", value: displayStats.totalFaculty.toLocaleString() },
+                        { label: "Departments", value: displayStats.totalDepartments.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -260,8 +270,8 @@ export default function UniversityPlatformPage() {
                     icon={Users}
                     href="/uni/students"
                     stats={[
-                        { label: "Total", value: stats.totalStudents.toLocaleString() },
-                        { label: "Verified", value: stats.verifiedStudents.toLocaleString() },
+                        { label: "Total", value: displayStats.totalStudents.toLocaleString() },
+                        { label: "Verified", value: displayStats.verifiedStudents.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
@@ -270,29 +280,20 @@ export default function UniversityPlatformPage() {
                     icon={BookOpen}
                     href="/uni/classes"
                     stats={[
-                        { label: "Total", value: stats.totalClasses.toLocaleString() },
-                        { label: "Active", value: "324" },
-                    ]}
-                />
-                <ModuleCard
-                    title="Assignments"
-                    description="Assignment management"
-                    icon={BookMarked}
-                    href="/uni/assignments"
-                    stats={[
-                        { label: "Total", value: stats.totalAssignments.toLocaleString() },
-                        { label: "Active", value: "1,245" },
+                        { label: "Total", value: displayStats.totalClasses.toLocaleString() },
+                        { label: "Universities", value: displayStats.totalUniversities.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
                     title="Placements"
-                    description="Placement jobs"
+                    description="Placement jobs (Mock Data)"
                     icon={Briefcase}
                     href="/uni/placements"
                     stats={[
-                        { label: "Jobs", value: "234" },
-                        { label: "Placed", value: "1,456" },
+                        { label: "Jobs", value: "—" },
+                        { label: "Placed", value: "—" },
                     ]}
+                    badge={{ text: "Coming Soon", type: "info" }}
                 />
                 <ModuleCard
                     title="Credits"
@@ -300,19 +301,20 @@ export default function UniversityPlatformPage() {
                     icon={Coins}
                     href="/uni/credits"
                     stats={[
-                        { label: "Allocated", value: (stats.totalCreditsUsed / 1000).toFixed(0) + "K" },
-                        { label: "Used", value: "180K" },
+                        { label: "Allocated", value: displayStats.totalCreditsAllocated > 1000 ? `${(displayStats.totalCreditsAllocated / 1000).toFixed(0)}K` : displayStats.totalCreditsAllocated.toLocaleString() },
+                        { label: "Universities", value: displayStats.totalUniversities.toLocaleString() },
                     ]}
                 />
                 <ModuleCard
                     title="Analytics"
-                    description="University analytics"
+                    description="University analytics (Mock Data)"
                     icon={BarChart3}
                     href="/uni/analytics"
                     stats={[
-                        { label: "Completion", value: "78%" },
-                        { label: "Avg. Score", value: "82%" },
+                        { label: "Students", value: displayStats.totalStudents.toLocaleString() },
+                        { label: "Classes", value: displayStats.totalClasses.toLocaleString() },
                     ]}
+                    badge={{ text: "Coming Soon", type: "info" }}
                 />
             </div>
         </div>

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import {
     Search, Download, Loader2, DollarSign
 } from "lucide-react"
-import { getAllTransactions } from "@/actions/credit.action"
+import { getAllTransactions } from "@/actions/main/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 import { Input } from "@repo/ui/components/ui/input"

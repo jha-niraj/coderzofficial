@@ -6,7 +6,7 @@ import {
 } from "lucide-react"
 import {
     getCreditRequests, approveCreditRequest, rejectCreditRequest
-} from "@/actions/credit.action"
+} from "@/actions/main/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 import { Input } from "@repo/ui/components/ui/input"

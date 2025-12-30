@@ -3,7 +3,7 @@
 import { prisma } from "@repo/prisma"
 import { CreditType, Currency } from "@repo/prisma/client"
 import { revalidatePath } from "next/cache"
-import { checkAdminAccess } from "./admin.action"
+import { checkAdminAccess } from "../admin.action"
 
 interface AdminResponse<T = unknown> {
     success: boolean
@@ -31,11 +31,11 @@ export async function getAllTransactions(filters?: any, pagination?: any): Promi
                 where,
                 include: {
                     user: {
-                        select: { 
-                            id: true, 
-                            name: true, 
-                            email: true, 
-                            image: true 
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            image: true
                         },
                     },
                     payment: {
@@ -53,10 +53,10 @@ export async function getAllTransactions(filters?: any, pagination?: any): Promi
 
         return {
             success: true,
-            data: { 
-                transactions, 
-                total, 
-                pages: Math.ceil(total / limit) 
+            data: {
+                transactions,
+                total,
+                pages: Math.ceil(total / limit)
             },
         }
     } catch (error) {
@@ -85,11 +85,11 @@ export async function getCreditRequests(status?: string, pagination?: any): Prom
                 where,
                 include: {
                     user: {
-                        select: { 
-                            id: true, 
-                            name: true, 
-                            email: true, 
-                            image: true 
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            image: true
                         },
                     },
                 },
@@ -102,10 +102,10 @@ export async function getCreditRequests(status?: string, pagination?: any): Prom
 
         return {
             success: true,
-            data: { 
-                requests, 
+            data: {
+                requests,
                 total,
-                pages: Math.ceil(total / limit) 
+                pages: Math.ceil(total / limit)
             },
         }
     } catch (error) {
@@ -221,17 +221,17 @@ export async function getCreditTransfers(filters?: any, pagination?: any): Promi
             prisma.creditTransfer.findMany({
                 include: {
                     sender: {
-                        select: { 
-                            id: true, 
-                            name: true, 
-                            email: true 
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
                         },
                     },
                     receiver: {
-                        select: { 
-                            id: true, 
-                            name: true, 
-                            email: true 
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
                         },
                     },
                 },
@@ -334,10 +334,10 @@ export async function getPayments(filters?: any, pagination?: any): Promise<Admi
                 where,
                 include: {
                     user: {
-                        select: { 
-                            id: true, 
-                            name: true, 
-                            email: true 
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
                         },
                     },
                 },
@@ -350,10 +350,10 @@ export async function getPayments(filters?: any, pagination?: any): Promise<Admi
 
         return {
             success: true,
-            data: { 
-                payments, 
-                total, 
-                pages: Math.ceil(total / limit) 
+            data: {
+                payments,
+                total,
+                pages: Math.ceil(total / limit)
             },
         }
     } catch (error) {

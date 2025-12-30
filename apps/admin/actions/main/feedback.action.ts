@@ -2,7 +2,7 @@
 
 import { prisma } from "@repo/prisma"
 import { revalidatePath } from "next/cache"
-import { checkAdminAccess } from "./admin.action"
+import { checkAdminAccess } from "../admin.action"
 
 interface FeedbackFilters {
     search?: string
