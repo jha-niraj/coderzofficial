@@ -1,0 +1,638 @@
+// ============================================
+// UNIVERSITY PLATFORM SCHEMA
+// Models for University/College side of the platform
+// ============================================
+
+// ============================================
+// ENUMS - Role and Permission Definitions
+// ============================================
+
+// Role type for members within a university
+enum UniversityMemberRole {
+    HEAD // Full admin access (Registrar, Chancellor, Principal)
+    DEPARTMENT_HEAD // Manages a department
+    PLACEMENT_OFFICER // Manages job partnerships & placements
+    FINANCE_OFFICER // Handles credits, billing, budget allocation
+    FACULTY // Professor/Teacher - creates assignments
+    TEACHING_ASSISTANT // Supports faculty, limited grading
+}
+
+// Job Title for university members (for display purposes)
+enum UniversityMemberJobTitle {
+    CHANCELLOR
+    PRINCIPAL
+    REGISTRAR
+    DEAN
+    HOD
+    PROFESSOR
+    ASSOCIATE_PROFESSOR
+    ASSISTANT_PROFESSOR
+    LECTURER
+    PLACEMENT_COORDINATOR
+    PLACEMENT_OFFICER
+    FINANCE_MANAGER
+    ACCOUNTS_OFFICER
+    TEACHING_ASSISTANT
+    LAB_INSTRUCTOR
+    OTHER
+}
+
+// University verification status by platform admin
+enum UniversityVerificationStatus {
+    PENDING
+    UNDER_REVIEW
+    VERIFIED
+    REJECTED
+    SUSPENDED
+}
+
+// Status for university member invitations
+enum UniversityMemberInviteStatus {
+    PENDING
+    ACCEPTED
+    REVOKED
+    EXPIRED
+}
+
+// Status for student verification with university
+enum StudentVerificationStatus {
+    PENDING
+    UNDER_REVIEW
+    VERIFIED
+    REJECTED
+    EXPIRED
+}
+
+// Assignment types that faculty can create
+enum UniversityAssignmentType {
+    QUIZ // Using /assessments engine
+    CODING // Using /studio engine
+    PROJECT // Custom project with rubric
+    MOCK_INTERVIEW // Using /mock engine
+    SPACE_TOPIC // Using /spaces engine
+    CUSTOM // Custom assignment with files/links
+}
+
+// Assignment status lifecycle
+enum UniversityAssignmentStatus {
+    DRAFT
+    PUBLISHED
+    CLOSED
+    ARCHIVED
+}
+
+// Submission grading status
+enum SubmissionGradingStatus {
+    NOT_SUBMITTED
+    SUBMITTED
+    UNDER_REVIEW
+    GRADED
+    RESUBMISSION_REQUESTED
+}
+
+// Semester naming convention
+enum SemesterType {
+    SEMESTER_1
+    SEMESTER_2
+    SEMESTER_3
+    SEMESTER_4
+    SEMESTER_5
+    SEMESTER_6
+    SEMESTER_7
+    SEMESTER_8
+}
+
+// Job visibility for university-tagged jobs
+enum UniversityJobVisibility {
+    PUBLIC // Visible on main /jobs as well
+    UNIVERSITY_ONLY // Only for this university's students
+    FILTERED // Specific year/department filters apply
+}
+
+// ============================================
+// CORE MODELS
+// ============================================
+
+// University - Main institution model
+model University {
+    id          String  @id @default(cuid())
+    name        String
+    slug        String  @unique
+    logoUrl     String?
+    bannerUrl   String?
+    website     String?
+    description String? @db.Text
+
+    // Contact Information
+    email String?
+    phone String?
+
+    // University Classification
+    universityType  String? // "Public", "Private", "Deemed", "Autonomous"
+    affiliatedTo    String? // Affiliation/Parent university
+    accreditation   String? // NAAC, NBA, etc.
+    establishedYear Int?
+
+    // Email Domain for verification (e.g., @iitd.ac.in)
+    emailDomain String @unique
+
+    // Location Details
+    address String?
+    city    String?
+    state   String?
+    country String  @default("India")
+    pincode String?
+
+    // Verification (for platform trust)
+    verificationStatus UniversityVerificationStatus @default(PENDING)
+    verifiedAt         DateTime?
+    verifiedBy         String? // Platform admin user ID
+    rejectionReason    String?                      @db.Text
+
+    // Credit System
+    totalCreditsAllocated Int       @default(0)
+    totalCreditsUsed      Int       @default(0)
+    creditExpiryDate      DateTime?
+
+    // Invite Codes
+    memberInviteCode  String? @unique // For inviting faculty/staff
+    studentInviteCode String? @unique // Optional: secondary verification
+
+    // The User who registered the university (HEAD)
+    createdByUserId String? // Links to User.id from main schema
+
+    // Relations
+    members            UniversityMember[]
+    departments        Department[]
+    classes            UniversityClass[]
+    studentLinks       StudentUniversityLink[]
+    companyLinks       CompanyUniversityLink[]
+    universityJobs     UniversityJob[]
+    creditTransactions UniversityCreditTransaction[]
+    invitations        UniversityInvitation[]
+    memberInvitations  UniversityMemberInvitation[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([emailDomain])
+    @@index([verificationStatus])
+    @@index([createdByUserId])
+}
+
+// Department within a university
+model Department {
+    id           String  @id @default(cuid())
+    universityId String
+    name         String // "Computer Science", "Electronics", etc.
+    code         String? // "CS", "ECE", etc.
+    description  String? @db.Text
+
+    // Department Head (optional link)
+    headUserId String? // Links to UniversityMember.id
+
+    // Relations
+    university   University              @relation(fields: [universityId], references: [id], onDelete: Cascade)
+    members      UniversityMember[]
+    classes      UniversityClass[]
+    studentLinks StudentUniversityLink[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([universityId, name])
+    @@unique([universityId, code])
+    @@index([universityId])
+}
+
+// University Members - connects Users to Universities with roles
+model UniversityMember {
+    id           String  @id @default(cuid())
+    userId       String // Links to User.id from main schema (SSO)
+    universityId String
+    departmentId String? // Optional: for department-specific roles
+
+    // Role & Title
+    role           UniversityMemberRole     @default(FACULTY)
+    jobTitle       UniversityMemberJobTitle @default(OTHER)
+    jobTitleCustom String? // If jobTitle is OTHER
+
+    // Profile info (can differ from User profile)
+    displayName String?
+    email       String
+    phone       String?
+
+    // Permissions (JSON array for flexibility)
+    // Faculty: ["view_classes", "create_assignments", "grade_submissions", "view_students"]
+    // HEAD: all permissions including ["manage_members", "manage_university", "manage_billing", "manage_departments"]
+    permissions Json @default("[\"view_classes\", \"create_assignments\", \"grade_submissions\", \"view_students\"]")
+
+    // Invite tracking
+    inviteStatus UniversityMemberInviteStatus @default(ACCEPTED)
+    invitedById  String?
+    invitedAt    DateTime?
+    acceptedAt   DateTime?
+
+    // Activity
+    isActive     Boolean   @default(true)
+    lastActiveAt DateTime?
+
+    // Relations
+    university         University             @relation(fields: [universityId], references: [id], onDelete: Cascade)
+    department         Department?            @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+    taughtClasses      UniversityClass[]      @relation("ClassFaculty")
+    createdAssignments UniversityAssignment[] @relation("CreatedBy")
+    gradedSubmissions  UniversitySubmission[] @relation("GradedBy")
+
+    // Self-referential for invite tracking
+    invitedMembers UniversityMember[] @relation("InvitedByMember")
+    invitedBy      UniversityMember?  @relation("InvitedByMember", fields: [invitedById], references: [id], onDelete: SetNull)
+
+    // Sent invitations
+    sentInvitations UniversityMemberInvitation[] @relation("SentInvitations")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // A user can only be a member of a university once
+    @@unique([userId, universityId])
+    @@index([userId])
+    @@index([universityId])
+    @@index([departmentId])
+    @@index([email])
+    @@index([role])
+}
+
+// University Class/Course
+model UniversityClass {
+    id           String  @id @default(cuid())
+    universityId String
+    departmentId String?
+
+    // Class Information
+    name        String // "CS301 - Data Structures"
+    code        String? // "CS301"
+    description String? @db.Text
+
+    // Academic Period
+    semester     SemesterType
+    academicYear String // "2024-25"
+    section      String? // "A", "B", etc.
+
+    // Faculty assigned to this class
+    facultyId String?
+
+    // Student count (can be auto-calculated from enrollments)
+    studentCount Int @default(0)
+
+    // Settings
+    isActive Boolean @default(true)
+
+    // Relations
+    university  University             @relation(fields: [universityId], references: [id], onDelete: Cascade)
+    department  Department?            @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+    faculty     UniversityMember?      @relation("ClassFaculty", fields: [facultyId], references: [id], onDelete: SetNull)
+    assignments UniversityAssignment[]
+    enrollments ClassEnrollment[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([universityId, code, academicYear, section])
+    @@index([universityId])
+    @@index([departmentId])
+    @@index([facultyId])
+    @@index([semester])
+    @@index([academicYear])
+}
+
+// Student enrollment in a class
+model ClassEnrollment {
+    id            String @id @default(cuid())
+    classId       String
+    studentLinkId String // Links to StudentUniversityLink
+
+    // Enrollment status
+    isActive   Boolean  @default(true)
+    enrolledAt DateTime @default(now())
+
+    // Relations
+    class       UniversityClass       @relation(fields: [classId], references: [id], onDelete: Cascade)
+    studentLink StudentUniversityLink @relation(fields: [studentLinkId], references: [id], onDelete: Cascade)
+
+    @@unique([classId, studentLinkId])
+    @@index([classId])
+    @@index([studentLinkId])
+}
+
+// Student verification and linkage to university
+model StudentUniversityLink {
+    id           String  @id @default(cuid())
+    userId       String // Student's user ID from main schema
+    universityId String
+    departmentId String?
+
+    // University Email for verification
+    universityEmail String
+
+    // Verification
+    verificationStatus StudentVerificationStatus @default(PENDING)
+    verificationOtp    String?
+    otpExpiresAt       DateTime?
+    verifiedAt         DateTime?
+    rejectionReason    String?                   @db.Text
+
+    // Student Info
+    rollNumber String?
+    semester   SemesterType?
+    batchYear  String? // "2021-25" (admission year - graduation year)
+
+    // Credit allocation
+    creditsAllocated Int @default(0)
+    creditsUsed      Int @default(0)
+
+    // Status
+    isActive Boolean @default(true)
+
+    // Relations
+    university  University             @relation(fields: [universityId], references: [id], onDelete: Cascade)
+    department  Department?            @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+    enrollments ClassEnrollment[]
+    submissions UniversitySubmission[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // A student can only be linked to a university once
+    @@unique([userId, universityId])
+    @@unique([universityId, universityEmail])
+    @@unique([universityId, rollNumber])
+    @@index([userId])
+    @@index([universityId])
+    @@index([departmentId])
+    @@index([verificationStatus])
+}
+
+// ============================================
+// ASSIGNMENT MODELS
+// ============================================
+
+// University Assignments created by faculty
+model UniversityAssignment {
+    id          String @id @default(cuid())
+    classId     String
+    createdById String // UniversityMember who created this
+
+    // Assignment Details
+    title        String
+    description  String? @db.Text
+    instructions String? @db.Text
+
+    // Assignment Type & Reference
+    type          UniversityAssignmentType
+    referenceId   String? // ID from respective module (assessment, project, mock, space)
+    referenceData Json? // Additional config data
+
+    // Deadline & Attempts
+    deadline    DateTime?
+    maxAttempts Int       @default(1)
+
+    // Credit Requirements
+    creditsRequired Int @default(0)
+
+    // Grading
+    maxScore     Int @default(100)
+    passingScore Int @default(40)
+
+    // Auto-grading settings (for Quiz/Coding)
+    isAutoGraded Boolean @default(false)
+
+    // Status
+    status      UniversityAssignmentStatus @default(DRAFT)
+    publishedAt DateTime?
+    closedAt    DateTime?
+
+    // Attachments (URLs/file paths)
+    attachments Json? // Array of {name, url, type}
+
+    // Relations
+    class       UniversityClass        @relation(fields: [classId], references: [id], onDelete: Cascade)
+    createdBy   UniversityMember       @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+    submissions UniversitySubmission[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([classId])
+    @@index([createdById])
+    @@index([type])
+    @@index([status])
+    @@index([deadline])
+}
+
+// Student Submissions for assignments
+model UniversitySubmission {
+    id            String @id @default(cuid())
+    assignmentId  String
+    studentLinkId String // Links to StudentUniversityLink
+
+    // Submission Data
+    submissionData Json? // Type-specific data
+    submissionUrl  String? // If file submission
+    submissionText String? @db.Text // If text submission
+
+    // Attempt tracking
+    attemptNumber Int @default(1)
+
+    // Credits
+    creditsUsed Int @default(0)
+
+    // Grading
+    status     SubmissionGradingStatus @default(NOT_SUBMITTED)
+    score      Int?
+    feedback   String?                 @db.Text
+    gradedById String? // UniversityMember who graded
+    gradedAt   DateTime?
+
+    // Auto-grade results (for Quiz/Coding)
+    autoGradeResult Json?
+
+    // Timestamps
+    submittedAt DateTime?
+
+    // Relations
+    assignment  UniversityAssignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+    studentLink StudentUniversityLink @relation(fields: [studentLinkId], references: [id], onDelete: Cascade)
+    gradedBy    UniversityMember?     @relation("GradedBy", fields: [gradedById], references: [id], onDelete: SetNull)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([assignmentId, studentLinkId, attemptNumber])
+    @@index([assignmentId])
+    @@index([studentLinkId])
+    @@index([status])
+}
+
+// ============================================
+// JOB INTEGRATION MODELS
+// ============================================
+
+// Link between Company (from hiring.prisma) and University
+model CompanyUniversityLink {
+    id           String @id @default(cuid())
+    companyId    String // From Company model in hiring.prisma
+    universityId String
+
+    // Referral tracking
+    referredById String? // Placement officer who referred
+    referralCode String? @unique
+
+    // Partnership status
+    isPartner    Boolean   @default(false) // Premium partner
+    partnerSince DateTime?
+
+    // Stats (can be computed)
+    jobsPosted    Int @default(0)
+    studentsHired Int @default(0)
+
+    isActive Boolean @default(true)
+
+    // Relations
+    university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([companyId, universityId])
+    @@index([companyId])
+    @@index([universityId])
+    @@index([referredById])
+}
+
+// University-specific job visibility/filtering
+model UniversityJob {
+    id           String @id @default(cuid())
+    jobId        String // From Job model in jobs.prisma
+    universityId String
+
+    // Visibility settings
+    visibility UniversityJobVisibility @default(UNIVERSITY_ONLY)
+
+    // Filters (if visibility is FILTERED)
+    filters Json? // { semesters: [], departments: [], minGpa: null }
+
+    // Who posted/tagged this
+    taggedById String? // Placement officer or company
+
+    // Stats
+    applications Int @default(0)
+
+    isActive Boolean @default(true)
+
+    // Relations
+    university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([jobId, universityId])
+    @@index([jobId])
+    @@index([universityId])
+    @@index([visibility])
+}
+
+// ============================================
+// CREDIT & BILLING MODELS
+// ============================================
+
+// Credit transactions for universities
+model UniversityCreditTransaction {
+    id           String @id @default(cuid())
+    universityId String
+
+    // Transaction details
+    type    String // "PURCHASE", "ALLOCATION", "USAGE", "REFUND", "EXPIRY"
+    amount  Int // Positive for credit, negative for debit
+    balance Int // Balance after transaction
+
+    // Description
+    description String?
+
+    // Reference (order ID, student ID, etc.)
+    referenceType String? // "ORDER", "STUDENT", "ASSIGNMENT"
+    referenceId   String?
+
+    // Relations
+    university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@index([universityId])
+    @@index([type])
+    @@index([createdAt])
+}
+
+// ============================================
+// INVITATION MODELS
+// ============================================
+
+// Platform invitations for new universities (invite-only system)
+model UniversityInvitation {
+    id             String                       @id @default(cuid())
+    email          String
+    universityName String?
+    invitedBy      String? // Platform admin user ID
+    inviteCode     String                       @unique
+    status         UniversityMemberInviteStatus @default(PENDING)
+    acceptedAt     DateTime?
+    expiresAt      DateTime?
+    metadata       Json?
+
+    // Used after accepted
+    universityId String?
+    university   University? @relation(fields: [universityId], references: [id])
+
+    createdAt DateTime @default(now())
+
+    @@index([email])
+    @@index([inviteCode])
+    @@index([status])
+}
+
+// Invitations for new members to join a university
+model UniversityMemberInvitation {
+    id           String  @id @default(cuid())
+    universityId String
+    email        String
+    name         String?
+    departmentId String? // Optional department assignment
+
+    // Assigned role for when they join
+    role     UniversityMemberRole     @default(FACULTY)
+    jobTitle UniversityMemberJobTitle @default(OTHER)
+
+    // Invite details
+    inviteCode  String                       @unique
+    invitedById String // UniversityMember who sent the invite
+    status      UniversityMemberInviteStatus @default(PENDING)
+    message     String?                      @db.Text
+
+    // Timestamps
+    expiresAt  DateTime?
+    acceptedAt DateTime?
+    createdAt  DateTime  @default(now())
+
+    // Relations
+    university University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
+    invitedBy  UniversityMember @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+
+    // After acceptance, link to the created member
+    resultingMemberId String?
+
+    @@index([email])
+    @@index([inviteCode])
+    @@index([status])
+    @@index([universityId])
+}

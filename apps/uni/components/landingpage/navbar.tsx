@@ -1,0 +1,91 @@
+"use client";
+
+import { Button } from "@repo/ui/components/ui/button";
+import Link from "next/link";
+import { useState } from "react";
+import {
+    Sheet, SheetContent
+} from "@repo/ui/components/ui/sheet";
+import {
+    Menu, GraduationCap, ArrowRight
+} from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { ThemeToggle } from "@repo/ui/components/themetoggle";
+import { cn } from "@repo/ui/lib/utils";
+
+export default function Navbar() {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const navLinkClass = "text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors";
+
+    return (
+        <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
+            <nav className={cn(
+                "flex items-center justify-between w-full max-w-5xl h-14 px-4 pr-2 rounded-full",
+                "bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md",
+                "border border-neutral-200 dark:border-neutral-800",
+                "shadow-sm"
+            )}>
+                <Link href="/" className="flex items-center gap-3 pl-2 group">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center transition-transform group-hover:scale-105">
+                        <GraduationCap className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex flex-col justify-center h-8">
+                        <span className="text-base font-bold tracking-tight text-neutral-900 dark:text-white leading-none">
+                            Coder&apos;z University
+                        </span>
+                        <span className="text-[9px] font-mono uppercase tracking-widest text-neutral-500 leading-none mt-0.5 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                            Edu Platform
+                        </span>
+                    </div>
+                </Link>
+                <div className="hidden md:flex items-center space-x-8">
+                    <Link href="/" className={navLinkClass}>Overview</Link>
+                    <Link href="#features" className={navLinkClass}>Features</Link>
+                    <Link href="#how-it-works" className={navLinkClass}>How It Works</Link>
+                    <Link href="#pricing" className={navLinkClass}>Pricing</Link>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <ThemeToggle />
+                    <Link href="/register">
+                        <Button className="cursor-pointer rounded-full h-9 px-4 text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white transition-transform hover:scale-105">
+                            Get Started
+                            <ArrowRight className="ml-1.5 h-3 w-3" />
+                        </Button>
+                    </Link>
+                    <Button
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        variant="ghost"
+                        size="icon"
+                        className="cursor-pointer md:hidden rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                        <Menu className="h-4 w-4" />
+                    </Button>
+                </div>
+            </nav>
+            <AnimatePresence>
+                {
+                    isMobileMenuOpen && (
+                        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                            <SheetContent className="w-full sm:max-w-md bg-white dark:bg-neutral-950 border-l border-neutral-200 dark:border-neutral-800">
+                                <div className="flex flex-col gap-6 mt-8">
+                                    <Link href="/" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Overview</Link>
+                                    <Link href="#features" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Features</Link>
+                                    <Link href="#how-it-works" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>How It Works</Link>
+                                    <Link href="#pricing" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Pricing</Link>
+                                    <hr className="border-neutral-200 dark:border-neutral-800" />
+                                    <Link href="/signin" className="text-lg font-medium text-neutral-600" onClick={() => setIsMobileMenuOpen(false)}>Sign In</Link>
+                                    <Link href="/register">
+                                        <Button className="cursor-pointer w-full rounded-full h-12 text-base font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+                                            Register Your University
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                    )
+                }
+            </AnimatePresence>
+        </div>
+    );
+}

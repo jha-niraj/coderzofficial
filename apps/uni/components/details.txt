@@ -1,0 +1,961 @@
+Complete Job Integration & Hiring Platform Architecture for Coderz
+I'll provide you with a comprehensive design document covering both platforms, user flows, page structures, and implementation details using flowcharts and detailed specifications.
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SHARED DATABASE                                    │
+│  (Users, Companies, Jobs, Applications, Projects, Studios, Interviews)      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │                               │
+                    ▼                               ▼
+    ┌───────────────────────────┐     ┌───────────────────────────┐
+    │     coderzai.xyz          │     │   hiring.coderzai.xyz     │
+    │   (Main Platform)         │     │   (Hiring Platform)       │
+    │                           │     │                           │
+    │  • Students/Candidates    │     │  • HR/Recruiters          │
+    │  • Job Discovery          │     │  • Companies              │
+    │  • Skill Building         │     │  • Job Posting            │
+    │  • Applications           │     │  • Candidate Review       │
+    │  • Mock Interviews        │     │  • Assignment Creation    │
+    │  • AI Tools               │     │  • Interview Scheduling   │
+    │  • Studio                 │     │  • Analytics Dashboard    │
+    └───────────────────────────┘     └───────────────────────────┘
+
+-- ============================================
+-- CORE ENTITIES
+-- ============================================
+
+-- Users (Students/Candidates on main platform)
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    avatar_url TEXT,
+    bio TEXT,
+    resume_url TEXT,
+    portfolio_url TEXT,
+    github_url TEXT,
+    linkedin_url TEXT,
+    skills JSONB DEFAULT '[]',  -- ["JavaScript", "React", "Node.js"]
+    experience_years INTEGER DEFAULT 0,
+    education JSONB DEFAULT '[]',
+    location VARCHAR(255),
+    preferred_roles JSONB DEFAULT '[]',  -- ["Frontend", "Full Stack"]
+    salary_expectation JSONB,  -- {min: 500000, max: 800000, currency: "INR"}
+    availability VARCHAR(50),  -- "immediate", "2_weeks", "1_month"
+    profile_completion_score INTEGER DEFAULT 0,
+    job_readiness_score INTEGER DEFAULT 0,  -- Calculated based on activities
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Companies
+CREATE TABLE companies (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    logo_url TEXT,
+    website VARCHAR(255),
+    description TEXT,
+    industry VARCHAR(100),
+    company_size VARCHAR(50),  -- "1-10", "11-50", "51-200", "201-500", "500+"
+    founded_year INTEGER,
+    headquarters VARCHAR(255),
+    social_links JSONB,
+    verification_status VARCHAR(50) DEFAULT 'pending',  -- pending, verified, rejected
+    verified_at TIMESTAMP,
+    verified_by UUID REFERENCES users(id),
+    invite_code VARCHAR(50) UNIQUE,  -- For invite-only onboarding
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- HR/Recruiters (Users on hiring platform)
+CREATE TABLE recruiters (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),  -- Links to main user account (SSO)
+    company_id UUID REFERENCES companies(id) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(100),  -- "HR Manager", "Recruiter", "Hiring Manager"
+    permissions JSONB DEFAULT '["view_jobs", "post_jobs", "view_applications"]',
+    is_admin BOOLEAN DEFAULT FALSE,  -- Company admin
+    invite_status VARCHAR(50) DEFAULT 'pending',  -- pending, accepted, revoked
+    invited_by UUID REFERENCES recruiters(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- JOBS & APPLICATIONS
+-- ============================================
+
+-- Jobs
+CREATE TABLE jobs (
+    id UUID PRIMARY KEY,
+    company_id UUID REFERENCES companies(id) NOT NULL,
+    posted_by UUID REFERENCES recruiters(id) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    requirements JSONB,  -- Skills, experience, education requirements
+    responsibilities JSONB,
+    benefits JSONB,
+    location VARCHAR(255),
+    location_type VARCHAR(50),  -- "remote", "hybrid", "onsite"
+    employment_type VARCHAR(50),  -- "full_time", "part_time", "contract", "internship"
+    experience_range JSONB,  -- {min: 0, max: 2}
+    salary_range JSONB,  -- {min: 500000, max: 800000, currency: "INR", disclosed: true}
+    skills_required JSONB DEFAULT '[]',
+    skills_preferred JSONB DEFAULT '[]',
+    
+    -- Assignment integration
+    has_assignment BOOLEAN DEFAULT FALSE,
+    assignment_studio_id UUID,  -- References studio for assignment
+    assignment_project_id UUID,  -- Template project for cloning
+    assignment_deadline_days INTEGER,  -- Days after application to complete
+    
+    -- Job status
+    status VARCHAR(50) DEFAULT 'draft',  -- draft, active, paused, closed, filled
+    visibility VARCHAR(50) DEFAULT 'public',  -- public, invite_only
+    featured BOOLEAN DEFAULT FALSE,
+    
+    -- Metrics
+    views_count INTEGER DEFAULT 0,
+    applications_count INTEGER DEFAULT 0,
+    
+    -- Matching criteria
+    matching_criteria JSONB,  -- For smart recommendations
+    
+    expires_at TIMESTAMP,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Job Applications
+CREATE TABLE applications (
+    id UUID PRIMARY KEY,
+    job_id UUID REFERENCES jobs(id) NOT NULL,
+    user_id UUID REFERENCES users(id) NOT NULL,
+    
+    -- Application status flow
+    status VARCHAR(50) DEFAULT 'interested',
+    -- Status values: interested → preparing → applied → under_review → 
+    --                shortlisted → interview_scheduled → interviewed → 
+    --                offer_extended → hired / rejected
+    
+    -- Preparation tracking
+    preparation_status JSONB DEFAULT '{
+        "profile_complete": false,
+        "resume_reviewed": false,
+        "mock_interview_done": false,
+        "concepts_reviewed": false,
+        "assignment_started": false,
+        "assignment_completed": false
+    }',
+    preparation_score INTEGER DEFAULT 0,
+    is_ready_to_apply BOOLEAN DEFAULT FALSE,
+    
+    -- Assignment tracking
+    assignment_project_clone_id UUID,
+    assignment_started_at TIMESTAMP,
+    assignment_submitted_at TIMESTAMP,
+    assignment_score INTEGER,
+    assignment_feedback TEXT,
+    
+    -- Interview tracking
+    interview_id UUID,
+    interview_scheduled_at TIMESTAMP,
+    interview_completed_at TIMESTAMP,
+    interview_feedback JSONB,
+    
+    -- HR actions
+    reviewed_by UUID REFERENCES recruiters(id),
+    reviewed_at TIMESTAMP,
+    rejection_reason TEXT,
+    hr_notes TEXT,
+    
+    -- Match score (calculated)
+    match_score INTEGER,  -- 0-100 based on profile vs job requirements
+    
+    applied_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    UNIQUE(job_id, user_id)
+);
+
+-- ============================================
+-- PREPARATION TRACKING
+-- ============================================
+
+-- Track user activities for each job application
+CREATE TABLE application_activities (
+    id UUID PRIMARY KEY,
+    application_id UUID REFERENCES applications(id) NOT NULL,
+    user_id UUID REFERENCES users(id) NOT NULL,
+    activity_type VARCHAR(50) NOT NULL,
+    -- Types: mock_interview, ai_resume_review, concept_review, 
+    --        project_progress, studio_note, skill_assessment
+    activity_id UUID,  -- Reference to the actual activity
+    metadata JSONB,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Smart job recommendations tracking
+CREATE TABLE job_recommendations (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id) NOT NULL,
+    job_id UUID REFERENCES jobs(id) NOT NULL,
+    match_score INTEGER NOT NULL,
+    match_reasons JSONB,  -- Why this job was recommended
+    -- {
+    --   "skill_match": 85,
+    --   "experience_match": 90,
+    --   "location_match": 100,
+    --   "salary_match": 75,
+    --   "matched_skills": ["React", "Node.js"],
+    --   "missing_skills": ["GraphQL"]
+    -- }
+    is_dismissed BOOLEAN DEFAULT FALSE,
+    is_saved BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- COMPANY INVITATIONS (Invite-only system)
+-- ============================================
+
+CREATE TABLE company_invitations (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    company_name VARCHAR(255),
+    invited_by UUID REFERENCES users(id),  -- Admin who invited
+    invite_code VARCHAR(50) UNIQUE NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',  -- pending, accepted, expired, revoked
+    accepted_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    metadata JSONB,  -- Additional info about the invite
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+
+🎯 Platform 1: Main Platform (coderzai.xyz) - User Flow
+Complete User Journey Flowchart
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        MAIN PLATFORM USER FLOW                              │
+│                           coderzai.xyz                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                              ┌──────────────┐
+                              │   Landing    │
+                              │    Page      │
+                              └──────┬───────┘
+                                     │
+                                     ▼
+                              ┌──────────────┐
+                              │   Sign Up/   │
+                              │   Login      │
+                              └──────┬───────┘
+                                     │
+                    ┌────────────────┼────────────────┐
+                    ▼                ▼                ▼
+            ┌───────────┐    ┌───────────┐    ┌───────────┐
+            │  Profile  │    │  Studio   │    │   Jobs    │
+            │  Setup    │    │  (Notes)  │    │  Section  │
+            └─────┬─────┘    └───────────┘    └─────┬─────┘
+                  │                                  │
+                  ▼                                  ▼
+            ┌───────────┐                    ┌───────────┐
+            │ Dashboard │◄───────────────────│ Job List  │
+            └─────┬─────┘                    └─────┬─────┘
+                  │                                │
+     ┌────────────┼────────────┐                   ▼
+     ▼            ▼            ▼           ┌───────────────┐
+┌─────────┐ ┌─────────┐ ┌─────────┐        │  Job Details  │
+│Projects │ │  Mock   │ │   AI    │        └───────┬───────┘
+│         │ │Interview│ │  Tools  │                │
+└─────────┘ └─────────┘ └─────────┘                ▼
+                                          ┌───────────────┐
+                                          │ Show Interest │
+                                          └───────┬───────┘
+                                                  │
+                                    ┌─────────────┴─────────────┐
+                                    ▼                           ▼
+                            ┌───────────────┐         ┌───────────────┐
+                            │   Ready to    │         │  Not Ready    │
+                            │    Apply      │         │  (Prepare)    │
+                            └───────┬───────┘         └───────┬───────┘
+                                    │                         │
+                                    ▼                         ▼
+                            ┌───────────────┐         ┌───────────────┐
+                            │    Apply      │         │  Preparation  │
+                            │   Directly    │         │    Hub        │
+                            └───────┬───────┘         └───────┬───────┘
+                                    │                         │
+                                    │            ┌────────────┼────────────┐
+                                    │            ▼            ▼            ▼
+                                    │     ┌─────────┐  ┌─────────┐  ┌─────────┐
+                                    │     │  Mock   │  │   AI    │  │Concepts │
+                                    │     │Interview│  │  Resume │  │ Review  │
+                                    │     └────┬────┘  └────┬────┘  └────┬────┘
+                                    │          │            │            │
+                                    │          └────────────┼────────────┘
+                                    │                       │
+                                    │                       ▼
+                                    │               ┌───────────────┐
+                                    │               │  Preparation  │
+                                    │               │   Complete    │
+                                    │               └───────┬───────┘
+                                    │                       │
+                                    └───────────────────────┤
+                                                            ▼
+                                                    ┌───────────────┐
+                                                    │  Application  │
+                                                    │   Submitted   │
+                                                    └───────┬───────┘
+                                                            │
+                                              ┌─────────────┼─────────────┐
+                                              ▼             ▼             ▼
+                                      ┌───────────┐ ┌───────────┐ ┌───────────┐
+                                      │Assignment │ │ Interview │ │ Track     │
+                                      │(if any)   │ │ Scheduled │ │ Status    │
+                                      └───────────┘ └───────────┘ └───────────┘
+
+Page-by-Page Breakdown for Main Platform
+1. Jobs Discovery Page (/jobs)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  JOBS PAGE LAYOUT                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  🔍 Search Jobs                    📍 Location ▼   💼 Type ▼        │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌──────────────────────┐  ┌─────────────────────────────────────────────┐ │
+│  │ FILTERS              │  │ SMART RECOMMENDATIONS FOR YOU 🎯            │ │
+│  │                      │  │ ┌─────────────────────────────────────────┐ │ │
+│  │ Experience Level     │  │ │ 💡 Based on your React & Node.js skills │ │ │
+│  │ ○ Fresher           │  │ └─────────────────────────────────────────┘ │ │
+│  │ ○ 0-2 years         │  │                                             │ │
+│  │ ○ 2-5 years         │  │ ┌─────────────────────────────────────────┐ │ │
+│  │ ○ 5+ years          │  │ │ [Google Logo]                           │ │ │
+│  │                      │  │ │ Frontend Engineer                      │ │ │
+│  │ Job Type             │  │ │ Google • Bangalore                     │ │ │
+│  │ ☑ Full-time         │  │ │ 🎯 92% Match | 💰 ₹15-25 LPA           │ │ │
+│  │ ☐ Part-time         │  │ │ Skills: React, TypeScript, GraphQL     │ │ │
+│  │ ☐ Contract          │  │ │                                         │ │ │
+│  │ ☐ Internship        │  │ │ [📋 Assignment Required]                │ │ │
+│  │                      │  │ │                                         │ │ │
+│  │ Location Type        │  │ │ [💜 Show Interest] [🔖 Save]           │ │ │
+│  │ ☑ Remote            │  │ └─────────────────────────────────────────┘ │ │
+│  │ ☑ Hybrid            │  │                                             │ │
+│  │ ☐ On-site           │  │ ┌─────────────────────────────────────────┐ │ │
+│  │                      │  │ │ [Razorpay Logo]                        │ │ │
+│  │ Salary Range         │  │ │ Full Stack Developer                   │ │ │
+│  │ ├────●────────┤      │  │ │ Razorpay • Remote                      │ │ │
+│  │ ₹5L    ₹30L         │  │ │ 🎯 87% Match | 💰 ₹12-18 LPA           │ │ │
+│  │                      │  │ │ Skills: Node.js, PostgreSQL, AWS       │ │ │
+│  │ Skills               │  │ │                                         │ │ │
+│  │ [React    ×]         │  │ │ [💜 Show Interest] [🔖 Save]           │ │ │
+│  │ [Node.js  ×]         │  │ └─────────────────────────────────────────┘ │ │
+│  │ [+ Add more]         │  │                                             │ │
+│  │                      │  │ ALL JOBS ─────────────────────────────────  │ │
+│  │ Has Assignment       │  │                                             │ │
+│  │ ☐ Yes               │  │ [More job cards...]                         │ │
+│  │                      │  │                                             │ │
+│  └──────────────────────┘  └─────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+2. Job Details Page (/jobs/[jobId])
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  JOB DETAILS PAGE                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ← Back to Jobs                                                             │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ [Company Logo]                                                       │   │
+│  │                                                                       │   │
+│  │ Frontend Engineer                                                     │   │
+│  │ Google • Bangalore, India • Hybrid                                    │   │
+│  │                                                                       │   │
+│  │ 💰 ₹15-25 LPA  •  👥 501-1000 employees  •  📅 Posted 3 days ago     │   │
+│  │                                                                       │   │
+│  │ ┌─────────────────────────────────────────────────────────────────┐   │   │
+│  │ │ 🎯 YOUR MATCH SCORE: 92%                                        │   │   │
+│  │ │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━●━━━━━━━   │   │   │
+│  │ │                                                                  │   │   │
+│  │ │ ✅ Skills Match: React, TypeScript, CSS (you have 5/6)          │   │   │
+│  │ │ ✅ Experience: 1 year required (you have 2)                      │   │   │
+│  │ │ ⚠️  Missing: GraphQL (recommended to learn)                      │   │   │
+│  │ └─────────────────────────────────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  │ [💜 Show Interest]  [🔖 Save Job]  [📤 Share]                        │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌──────────────────────────────┐ ┌────────────────────────────────────┐   │
+│  │ ABOUT THIS ROLE              │ │ 📋 ASSIGNMENT REQUIRED             │   │
+│  │                              │ │                                    │   │
+│  │ We're looking for a          │ │ This job requires completing an    │   │
+│  │ passionate frontend engineer │ │ assignment before interview.       │   │
+│  │ to join our team...          │ │                                    │   │
+│  │                              │ │ 🕐 Duration: 3-4 hours             │   │
+│  │ RESPONSIBILITIES             │ │ 📅 Deadline: 7 days after apply    │   │
+│  │ • Build responsive UIs       │ │                                    │   │
+│  │ • Optimize performance       │ │ Topics covered:                    │   │
+│  │ • Collaborate with design    │ │ • React Component Design           │   │
+│  │                              │ │ • State Management                 │   │
+│  │ REQUIREMENTS                 │ │ • API Integration                  │   │
+│  │ • 1+ years experience        │ │                                    │   │
+│  │ • Strong React skills        │ │ [Preview Assignment →]             │   │
+│  │ • TypeScript knowledge       │ └────────────────────────────────────┘   │
+│  │                              │                                          │
+│  │ NICE TO HAVE                 │ ┌────────────────────────────────────┐   │
+│  │ • GraphQL experience         │ │ ABOUT GOOGLE                       │   │
+│  │ • Testing experience         │ │                                    │   │
+│  │                              │ │ [Logo] Google                      │   │
+│  │ BENEFITS                     │ │                                    │   │
+│  │ • Competitive salary         │ │ Technology company focused on      │   │
+│  │ • Health insurance           │ │ search, cloud computing, and       │   │
+│  │ • Remote work options        │ │ artificial intelligence...         │   │
+│  │ • Learning budget            │ │                                    │   │
+│  └──────────────────────────────┘ │ 🌐 google.com                      │   │
+│                                    │ 📍 Mountain View, CA               │   │
+│                                    │ 👥 100,000+ employees              │   │
+│                                    └────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ SIMILAR JOBS YOU MIGHT LIKE                                         │   │
+│  │ [Card] [Card] [Card]                                                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+3. Show Interest Flow (Modal/Sheet)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SHOW INTEREST MODAL                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        ×                                             │   │
+│  │                                                                       │   │
+│  │  🎯 Interested in Frontend Engineer at Google?                       │   │
+│  │                                                                       │   │
+│  │  ─────────────────────────────────────────────────────────────────   │   │
+│  │                                                                       │   │
+│  │  YOUR READINESS SCORE: 65%                                           │   │
+│  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━●━━━━━━━━━━━━━━━━━━━━━                │   │
+│  │                                                                       │   │
+│  │  Complete these to boost your application:                            │   │
+│  │                                                                       │   │
+│  │  ✅ Profile completed (20/20 points)                                  │   │
+│  │  ✅ Resume uploaded (15/15 points)                                    │   │
+│  │  ⬜ Mock interview for Frontend (0/20 points)                         │   │
+│  │     └─ [Take Mock Interview →]                                        │   │
+│  │  ⬜ AI Resume Review (0/15 points)                                    │   │
+│  │     └─ [Review Your Resume →]                                         │   │
+│  │  ⬜ React Concepts Review (0/15 points)                               │   │
+│  │     └─ [Review Concepts →]                                            │   │
+│  │  ⬜ Similar Project Experience (0/15 points)                          │   │
+│  │     └─ [Browse Related Projects →]                                    │   │
+│  │                                                                       │   │
+│  │  ─────────────────────────────────────────────────────────────────   │   │
+│  │                                                                       │   │
+│  │  ⓘ Higher readiness score = Better visibility to recruiters          │   │
+│  │                                                                       │   │
+│  │  ┌──────────────────────┐  ┌──────────────────────────────────────┐ │   │
+│  │  │  Continue Preparing  │  │  ✨ Express Interest Anyway           │ │   │
+│  │  │      (Recommended)   │  │     (Score: 65%)                      │ │   │
+│  │  └──────────────────────┘  └──────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+4. Job Preparation Hub (/jobs/[jobId]/prepare)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  JOB PREPARATION HUB                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ← Back to Job                                                              │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ Preparing for: Frontend Engineer at Google                           │   │
+│  │                                                                       │   │
+│  │ Overall Progress: 35%  ━━━━━━━━━━━━━●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │   │
+│  │                                                                       │   │
+│  │ [🚀 Apply Now (Locked - Complete 80%)]                               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌───────────────────────┐ ┌───────────────────────┐ ┌──────────────────┐  │
+│  │ 🎤 MOCK INTERVIEW      │ │ 📄 RESUME REVIEW      │ │ 📚 CONCEPTS      │  │
+│  │                        │ │                        │ │                  │  │
+│  │ Practice for this role │ │ AI-powered feedback    │ │ Review topics    │  │
+│  │                        │ │                        │ │ for this job     │  │
+│  │ ⬜ Not Started         │ │ ⬜ Not Started         │ │ ⬜ Not Started   │  │
+│  │                        │ │                        │ │                  │  │
+│  │ Topics:                │ │ Checks:                │ │ Recommended:     │  │
+│  │ • React Fundamentals   │ │ • ATS Compatibility    │ │ • React Hooks    │  │
+│  │ • State Management     │ │ • Skills Match         │ │ • TypeScript     │  │
+│  │ • Component Design     │ │ • Experience Format    │ │ • CSS Grid       │  │
+│  │ • Performance          │ │ • Keywords Check       │ │ • Performance    │  │
+│  │                        │ │                        │ │                  │  │
+│  │ Est. time: 30 mins     │ │ Est. time: 5 mins      │ │ Est. time: 1 hr  │  │
+│  │                        │ │                        │ │                  │  │
+│  │ [Start Interview →]    │ │ [Review Resume →]      │ │ [Start Review →] │  │
+│  └───────────────────────┘ └───────────────────────┘ └──────────────────┘  │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │ 💻 ASSIGNMENT (Required for this job)                                 │ │
+│  │                                                                        │ │
+│  │ Build a responsive dashboard component with data fetching              │ │
+│  │                                                                        │ │
+│  │ Status: ⬜ Not Started                                                 │ │
+│  │ Deadline: 7 days after application                                     │ │
+│  │                                                                        │ │
+│  │ This assignment will be cloned to your Studio when you apply.          │ │
+│  │                                                                        │ │
+│  │ [Preview Assignment Details →]                                         │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │ 🎯 SIMILAR PROJECTS TO PRACTICE                                       │ │
+│  │                                                                        │ │
+│  │ [Project Card: React Dashboard]  [Project Card: Data Viz]             │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │ 💡 LEARNING RESOURCES                                                 │ │
+│  │                                                                        │ │
+│  │ Based on job requirements, we recommend:                               │ │
+│  │ • [GraphQL Basics Course] (you're missing this skill)                  │ │
+│  │ • [React Performance Optimization]                                      │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+5. My Applications Page (/jobs/applications)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  MY APPLICATIONS                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ Filter: [All ▼]  [Active ▼]  [With Assignment ▼]                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 📊 OVERVIEW                                                          │   │
+│  │                                                                       │   │
+│  │ ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐     │   │
+│  │ │    5    │  │    2    │  │    1    │  │    1    │  │    1    │     │   │
+│  │ │  Total  │  │Preparing│  │ Applied │  │Shortlist│  │Interview│     │   │
+│  │ └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ─── INTERVIEW SCHEDULED ─────────────────────────────────────────────────  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ [Stripe Logo] Backend Engineer at Stripe                             │   │
+│  │                                                                       │   │
+│  │ 📅 Interview: Dec 25, 2024 at 3:00 PM                                │   │
+│  │ 🎯 Match: 88%  |  Status: Interview Scheduled                        │   │
+│  │                                                                       │   │
+│  │ [🎤 Practice Mock] [📋 View Assignment] [📍 Join Interview]          │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ─── SHORTLISTED ─────────────────────────────────────────────────────────  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ [Google Logo] Frontend Engineer at Google                            │   │
+│  │                                                                       │   │
+│  │ 🎯 Match: 92%  |  Status: Shortlisted                                │   │
+│  │ ✅ Assignment Completed  |  Score: 85/100                            │   │
+│  │                                                                       │   │
+│  │ Waiting for interview schedule...                                    │   │
+│  │                                                                       │   │
+│  │ [View Assignment Feedback →]                                         │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ─── IN PROGRESS ─────────────────────────────────────────────────────────  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ [Razorpay Logo] Full Stack Developer at Razorpay                     │   │
+│  │                                                                       │   │
+│  │ 🎯 Match: 87%  |  Status: Preparing (65%)                            │   │
+│  │ ━━━━━━━━━━━━━━━━━━━━━●━━━━━━━━━━━━━━━━━━                            │   │
+│  │                                                                       │   │
+│  │ Next steps:                                                          │   │
+│  │ ⬜ Complete Mock Interview                                           │   │
+│  │ ⬜ Review Node.js Concepts                                           │   │
+│  │                                                                       │   │
+│  │ [Continue Preparing →]                                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+🏢 Platform 2: Hiring Platform (hiring.coderzai.xyz) - HR Flow
+Complete HR/Recruiter Journey Flowchart
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        HIRING PLATFORM HR FLOW                              │
+│                        hiring.coderzai.xyz                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                              ┌──────────────┐
+                              │   Landing    │
+                              │    Page      │
+                              └──────┬───────┘
+                                     │
+                    ┌────────────────┴────────────────┐
+                    ▼                                 ▼
+            ┌───────────────┐                ┌───────────────┐
+            │  Have Invite  │                │  Request      │
+            │    Code?      │                │   Access      │
+            └───────┬───────┘                └───────┬───────┘
+                    │                                │
+                    ▼                                ▼
+            ┌───────────────┐                ┌───────────────┐
+            │   Sign Up     │                │  Application  │
+            │  with Code    │                │    Form       │
+            └───────┬───────┘                └───────┬───────┘
+                    │                                │
+                    ▼                                ▼
+            ┌───────────────┐                ┌───────────────┐
+            │   Company     │                │  Under Review │
+            │   Setup       │                │  (Admin)      │
+            └───────┬───────┘                └───────────────┘
+                    │
+                    ▼
+            ┌───────────────┐
+            │   Dashboard   │
+            └───────┬───────┘
+                    │
+     ┌──────────────┼──────────────┬──────────────┐
+     ▼              ▼              ▼              ▼
+┌─────────┐   ┌─────────┐   ┌───────────┐   ┌───────────┐
+│  Post   │   │  View   │   │ Manage    │   │  Team     │
+│  Jobs   │   │Applicants│  │Assignments│   │ Settings  │
+└────┬────┘   └────┬────┘   └─────┬─────┘   └───────────┘
+     │             │              │
+     ▼             ▼              ▼
+┌─────────┐   ┌─────────┐   ┌───────────────┐
+│   Job   │   │Candidate │   │   Studio      │
+│  Form   │   │ Profile  │   │ (Assignment)  │
+└────┬────┘   └────┬────┘   └───────────────┘
+     │             │
+     ▼             ▼
+┌─────────┐   ┌─────────────────────┐
+│ Create  │   │  Review Submission  │
+│Assignment│  │  (Code + Feedback)  │
+│(Studio) │   └──────────┬──────────┘
+└─────────┘              │
+                         ▼
+                 ┌───────────────┐
+                 │   Schedule    │
+                 │  Interview    │
+                 └───────┬───────┘
+                         │
+                         ▼
+                 ┌───────────────┐
+                 │   Conduct     │
+                 │  Interview    │
+                 │ (Main Platform)│
+                 └───────┬───────┘
+                         │
+                         ▼
+                 ┌───────────────┐
+                 │ Make Decision │
+                 │ (Hire/Reject) │
+                 └───────────────┘
+
+
+Page-by-Page Breakdown for Hiring Platform
+1. Landing Page (hiring.coderzai.xyz)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  HIRING PLATFORM LANDING                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │        🎯 Hire Proven Engineers, Not Just Resumes                    │   │
+│  │                                                                       │   │
+│  │    See real code. Verified skills. Pre-vetted candidates.            │   │
+│  │                                                                       │   │
+│  │    ┌────────────────────┐   ┌────────────────────────────────────┐   │   │
+│  │    │  Have Invite Code  │   │   Request Access                    │   │   │
+│  │    │    [Enter Code]    │   │   [Fill Application]                │   │   │
+│  │    └────────────────────┘   └────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ WHY CODERZ FOR HIRING?                                               │   │
+│  │                                                                       │   │
+│  │ ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                │   │
+│  │ │ 💻 Real Code │  │ 🎯 Pre-vetted│  │ 🚀 Fast Hire │                │   │
+│  │ │              │  │              │  │              │                │   │
+│  │ │ See actual   │  │ Candidates   │  │ Average 2    │                │   │
+│  │ │ projects &   │  │ practice on  │  │ weeks from   │                │   │
+│  │ │ assignments  │  │ our platform │  │ post to hire │                │   │
+│  │ └──────────────┘  └──────────────┘  └──────────────┘                │   │
+│  │                                                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ TRUSTED BY                                                           │   │
+│  │                                                                       │   │
+│  │ [Logo] [Logo] [Logo] [Logo] [Logo]                                   │   │
+│  │                                                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+2. Company Onboarding Flow
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  COMPANY ONBOARDING                                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Step 1 of 4: Company Information                    ━━━━●━━━━━━━━━━━━━━━   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  Company Name *                                                       │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │ Acme Technologies                                                │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  │  Company Website *                                                    │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │ https://acme.com                                                 │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  │  Industry *                          Company Size *                   │   │
+│  │  ┌────────────────────┐             ┌────────────────────┐          │   │
+│  │  │ Technology      ▼  │             │ 51-200          ▼  │          │   │
+│  │  └────────────────────┘             └────────────────────┘          │   │
+│  │                                                                       │   │
+│  │  Company Logo                                                         │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │  📁 Drop logo here or click to upload                           │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  │  About Company *                                                      │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │ We build innovative solutions...                                 │ │   │
+│  │  │                                                                  │ │   │
+│  │  │                                                                  │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  │                                            [Next: Your Details →]    │   │
+│  │                                                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+3. HR Dashboard
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  HR DASHBOARD                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │ 🏢 Acme Technologies                         [⚙️ Settings] [👤 Niraj] │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ OVERVIEW                                     Last 30 days            │   │
+│  │                                                                       │   │
+│  │ ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐     │   │
+│  │ │    5    │  │   47    │  │   12    │  │    3    │  │    1    │     │   │
+│  │ │ Active  │  │  Total  │  │Shortlist│  │Interview│  │  Hired  │     │   │
+│  │ │  Jobs   │  │ Applies │  │         │  │         │  │         │     │   │
+│  │ └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌───────────────────────────────┐ ┌─────────────────────────────────────┐ │
+│  │ 📋 ACTIVE JOBS                 │ │ 🔔 RECENT ACTIVITY                  │ │
+│  │                                │ │                                      │ │
+│  │ ┌────────────────────────────┐ │ │ • New application: Frontend Eng     │ │
+│  │ │ Frontend Engineer          │ │ │   Rahul S. • 92% match • 2 min ago  │ │
+│  │ │ 12 applicants • 3 new      │ │ │                                      │ │
+│  │ │ [View] [Edit] [Pause]      │ │ │ • Assignment submitted: Backend     │ │
+│  │ └────────────────────────────┘ │ │   Priya K. • Score: 87 • 1 hr ago   │ │
+│  │                                │ │                                      │ │
+│  │ ┌────────────────────────────┐ │ │ • Interview completed: Full Stack   │ │
+│  │ │ Backend Developer          │ │ │   Amit P. • Feedback pending        │ │
+│  │ │ 8 applicants • 1 new       │ │ │                                      │ │
+│  │ │ [View] [Edit] [Pause]      │ │ │ [View All Activity →]               │ │
+│  │ └────────────────────────────┘ │ │                                      │ │
+│  │                                │ └─────────────────────────────────────┘ │
+│  │ [+ Post New Job]               │                                         │
+│  └───────────────────────────────┘                                          │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ ⏰ PENDING REVIEWS                                                   │   │
+│  │                                                                       │   │
+│  │ ┌─────────┐  ┌─────────┐  ┌─────────┐                               │   │
+│  │ │ [Photo] │  │ [Photo] │  │ [Photo] │                               │   │
+│  │ │ Rahul S │  │ Priya K │  │ Neha R  │                               │   │
+│  │ │Frontend │  │ Backend │  │Full Stack│                               │   │
+│  │ │92% match│  │87% match│  │85% match│                               │   │
+│  │ │[Review] │  │[Review] │  │[Review] │                               │   │
+│  │ └─────────┘  └─────────┘  └─────────┘                               │   │
+│  │                                                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+4. Post Job Page (with Assignment Integration)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  POST NEW JOB                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ← Back to Dashboard                                                        │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ JOB DETAILS                                                          │   │
+│  │                                                                       │   │
+│  │ Job Title *                                                           │   │
+│  │ ┌───────────────────────────────────────────────────────────────────┐│   │
+│  │ │ Frontend Engineer                                                  ││   │
+│  │ └───────────────────────────────────────────────────────────────────┘│   │
+│  │                                                                       │   │
+│  │ Job Type *                    Location Type *                         │   │
+│  │ ┌─────────────────┐          ┌─────────────────┐                     │   │
+│  │ │ Full-time    ▼  │          │ Remote       ▼  │                     │   │
+│  │ └─────────────────┘          └─────────────────┘                     │   │
+│  │                                                                       │   │
+│  │ Experience Required *                                                 │   │
+│  │ Min: [0] years    Max: [2] years                                     │   │
+│  │                                                                       │   │
+│  │ Salary Range (Optional)                                               │   │
+│  │ ☑ Display on job post                                                │   │
+│  │ Min: ₹ [8,00,000]    Max: ₹ [15,00,000]                             │   │
+│  │                                                                       │   │
+│  │ Required Skills *                                                     │   │
+│  │ [React ×] [TypeScript ×] [CSS ×] [+ Add Skill]                       │   │
+│  │                                                                       │   │
+│  │ Job Description *                                                     │   │
+│  │ ┌───────────────────────────────────────────────────────────────────┐│   │
+│  │ │ We're looking for a passionate frontend engineer...                ││   │
+│  │ │                                                                    ││   │
+│  │ │ [Bold] [Italic] [List] [Link]                                      ││   │
+│  │ └───────────────────────────────────────────────────────────────────┘│   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 📋 ASSIGNMENT (Recommended)                                          │   │
+│  │                                                                       │   │
+│  │ ☑ Require candidates to complete an assignment                       │   │
+│  │                                                                       │   │
+│  │ ┌─────────────────────────────────────────────────────────────────┐   │   │
+│  │ │  Choose how to create assignment:                                │   │   │
+│  │ │                                                                   │   │   │
+│  │ │  ○ Create new in Studio                                          │   │   │
+│  │ │    └─ Opens Studio editor to create assignment                    │   │   │
+│  │ │                                                                   │   │   │
+│  │ │  ○ Use existing Studio template                                   │   │   │
+│  │ │    └─ Select from: [React Dashboard ▼]                            │   │   │
+│  │ │                                                                   │   │   │
+│  │ │  ○ Link external assignment                                       │   │   │
+│  │ │    └─ GitHub URL: [________________________]                      │   │   │
+│  │ │                                                                   │   │   │
+│  │ └─────────────────────────────────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  │ Deadline for completion: [7] days after application                   │   │
+│  │                                                                       │   │
+│  │ Evaluation Criteria:                                                  │   │
+│  │ ☑ Code Quality (25%)                                                 │   │
+│  │ ☑ Functionality (30%)                                                │   │
+│  │ ☑ UI/UX (20%)                                                        │   │
+│  │ ☑ Documentation (15%)                                                │   │
+│  │ ☑ Test Coverage (10%)                                                │   │
+│  │                                                                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌───────────────────────┐  ┌────────────────────────────────────────────┐ │
+│  │   Save as Draft       │  │   🚀 Publish Job                           │ │
+│  └───────────────────────┘  └────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+5. Studio Assignment Editor (Integrated from Main Platform)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STUDIO - CREATE ASSIGNMENT                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ← Back to Job Post                      [Preview] [Save Draft] [Publish]   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ Assignment: Frontend Engineer Take-home                              │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐                              │   │
+│  │ │ 📝    │ │ 💻    │ │ 📎    │ │ ⚙️    │                              │   │
+│  │ │ Intro │ │ Tasks │ │ Files │ │ Config│                              │   │
+│  │ └───┬───┘ └───────┘ └───────┘ └───────┘                              │   │
+│  │     │                                                                 │   │
+│  │ ┌───┴───────────────────────────────────────────────────────────────┐│   │
+│  │ │                                                                    ││   │
+│  │ │  # Build a Dashboard Component                                     ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Overview                                                       ││   │
+│  │ │  Create a responsive dashboard that displays user analytics.       ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Requirements                                                   ││   │
+│  │ │  1. Fetch data from provided API endpoint                          ││   │
+│  │ │  2. Display metrics in card format                                 ││   │
+│  │ │  3. Implement filtering by date range                              ││   │
+│  │ │  4. Add loading and error states                                   ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Evaluation Criteria                                            ││   │
+│  │ │  - Code organization and cleanliness                               ││   │
+│  │ │  - Component reusability                                           ││   │
+│  │ │  - Error handling                                                  ││   │
+│  │ │  - Responsive design                                               ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Starter Files                                                ┌─────────────────────────────────────────────────────────────────────────────┐
+│  STUDIO - CREATE ASSIGNMENT                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ← Back to Job Post                      [Preview] [Save Draft] [Publish]   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ Assignment: Frontend Engineer Take-home                              │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐                              │   │
+│  │ │ 📝    │ │ 💻    │ │ 📎    │ │ ⚙️    │                              │   │
+│  │ │ Intro │ │ Tasks │ │ Files │ │ Config│                              │   │
+│  │ └───┬───┘ └───────┘ └───────┘ └───────┘                              │   │
+│  │     │                                                                 │   │
+│  │ ┌───┴───────────────────────────────────────────────────────────────┐│   │
+│  │ │                                                                    ││   │
+│  │ │  # Build a Dashboard Component                                     ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Overview                                                       ││   │
+│  │ │  Create a responsive dashboard that displays user analytics.       ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Requirements                                                   ││   │
+│  │ │  1. Fetch data from provided API endpoint                          ││   │
+│  │ │  2. Display metrics in card format                                 ││   │
+│  │ │  3. Implement filtering by date range                              ││   │
+│  │ │  4. Add loading and error states                                   ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Evaluation Criteria                                            ││   │
+│  │ │  - Code organization and cleanliness                               ││   │
+│  │ │  - Component reusability                                           ││   │
+│  │ │  - Error handling                                                  ││   │
+│  │ │  - Responsive design                                               ││   │
+│  │ │                                                                    ││   │
+│  │ │  ## Starter Files                                                

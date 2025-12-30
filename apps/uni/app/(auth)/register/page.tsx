@@ -1,0 +1,370 @@
+"use client";
+
+import { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from '@repo/auth/client';
+import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Eye, EyeOff, Check, X, GraduationCap, ArrowRight, Loader2
+} from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
+import { Input } from "@repo/ui/components/ui/input";
+import { Button } from "@repo/ui/components/ui/button";
+import { Label } from "@repo/ui/components/ui/label";
+import { Checkbox } from "@repo/ui/components/ui/checkbox";
+import toast from "@repo/ui/components/ui/sonner";
+
+function SignUpForm() {
+    const [companyName, setCompanyName] = useState("");
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const router = useRouter();
+
+    // Password validation states
+    const [hasCapital, setHasCapital] = useState(false);
+    const [hasNumber, setHasNumber] = useState(false);
+    const [hasSpecial, setHasSpecial] = useState(false);
+    const [hasMinLength, setHasMinLength] = useState(false);
+
+    useEffect(() => {
+        setHasCapital(/[A-Z]/.test(password));
+        setHasNumber(/[0-9]/.test(password));
+        setHasSpecial(/[!@#$%^&*(),.?":{}|<>]/.test(password));
+        setHasMinLength(password.length >= 8);
+    }, [password]);
+
+    const isPasswordValid = hasCapital && hasNumber && hasSpecial && hasMinLength;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!agreedToTerms) {
+            setError("Please agree to the Terms of Service and Privacy Policy");
+            return;
+        }
+
+        if (!isPasswordValid) {
+            setError("Please ensure your password meets all requirements");
+            return;
+        }
+
+        setIsLoading(true);
+        setError("");
+
+        try {
+            const response = await axios.post("/api/auth/register", {
+                name,
+                email,
+                password,
+                companyName,
+                role: "RECRUITER",
+            });
+
+            if (response.data.success) {
+                toast.success("Account created! Please check your email for verification code.");
+                router.push(`/verify?email=${encodeURIComponent(email)}`);
+            }
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.error || "An error occurred during registration");
+            } else {
+                setError("An unexpected error occurred");
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSignUp = async () => {
+        try {
+            setIsGoogleLoading(true);
+            await signIn("google", {
+                callbackUrl: "/onboarding",
+            });
+        } catch {
+            setError("Google sign-up failed. Please try again.");
+            setIsGoogleLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex bg-white dark:bg-neutral-950">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
+
+            <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center bg-neutral-950 overflow-hidden">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
+
+                <div className="relative z-10 px-12 max-w-lg">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center">
+                                <GraduationCap className="h-6 w-6 text-violet-600" />
+                            </div>
+                            <span className="text-2xl font-bold text-white">Coder&apos;z University</span>
+                        </div>
+                        <h1 className="text-4xl font-bold text-white tracking-tight mb-4">
+                            Transform Your <br />
+                            <span className="text-violet-400">Technical Education.</span>
+                        </h1>
+                        <p className="text-neutral-400 text-lg mb-8">
+                            Initialize your university portal and empower students with industry-ready skills.
+                        </p>
+                        <div className="p-6 rounded-2xl border border-violet-800/50 bg-violet-900/20">
+                            <p className="text-neutral-300 italic">
+                                &quot;Our students&apos; placement rates increased by 40% after integrating with Coder&apos;z.&quot;
+                            </p>
+                            <p className="text-neutral-500 mt-3 text-sm font-mono">
+                                — Dean, Top Engineering College
+                            </p>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full max-w-md"
+                >
+                    <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
+                            <GraduationCap className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-lg font-bold text-neutral-900 dark:text-white">
+                            Coder&apos;z <span className="text-violet-600 font-mono font-normal">UNIVERSITY</span>
+                        </span>
+                    </div>
+                    <div className="text-center mb-8">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
+                            New Registration
+                        </span>
+                        <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                            Initialize University Portal
+                        </h2>
+                    </div>
+                    <AnimatePresence>
+                        {
+                            error && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
+                                >
+                                    <p className="text-neutral-600 dark:text-neutral-400 text-sm text-center">{error}</p>
+                                </motion.div>
+                            )
+                        }
+                    </AnimatePresence>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-12 mb-6 rounded-xl border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                        onClick={handleGoogleSignUp}
+                        disabled={isGoogleLoading}
+                    >
+                        {
+                            isGoogleLoading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <FcGoogle className="h-5 w-5 mr-2" />
+                                    Continue with Google
+                                </>
+                            )
+                        }
+                    </Button>
+                    <div className="relative mb-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-neutral-200 dark:border-neutral-800" />
+                        </div>
+                        <div className="relative flex justify-center">
+                            <span className="px-4 bg-white dark:bg-neutral-950 text-[10px] font-mono uppercase tracking-widest text-neutral-500">
+                                Or continue with email
+                            </span>
+                        </div>
+                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="companyName" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                                University Name
+                            </Label>
+                            <Input
+                                id="companyName"
+                                type="text"
+                                placeholder="Delhi Technical University"
+                                value={companyName}
+                                onChange={(e) => setCompanyName(e.target.value)}
+                                required
+                                className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="name" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                                Your Full Name
+                            </Label>
+                            <Input
+                                id="name"
+                                type="text"
+                                placeholder="John Doe"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                                className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="email" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                                University Email
+                            </Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="you@university.edu"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                                Password
+                            </Label>
+                            <div className="relative">
+                                <Input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Create a secure password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    className="h-12 pr-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
+                            {
+                                password && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        className="mt-3 p-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
+                                    >
+                                        <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2">
+                                            Security Requirements
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {
+                                                [
+                                                    { check: hasMinLength, label: "8+ chars" },
+                                                    { check: hasCapital, label: "Uppercase" },
+                                                    { check: hasNumber, label: "Number" },
+                                                    { check: hasSpecial, label: "Special char" },
+                                                ].map((req, i) => (
+                                                    <div key={i} className="flex items-center gap-2">
+                                                        {
+                                                            req.check ? (
+                                                                <Check className="h-3 w-3 text-neutral-900 dark:text-white" />
+                                                            ) : (
+                                                                <X className="h-3 w-3 text-neutral-400" />
+                                                            )
+                                                        }
+                                                        <span className={req.check ? "text-neutral-900 dark:text-white" : "text-neutral-400"}>
+                                                            {req.label}
+                                                        </span>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </motion.div>
+                                )
+                            }
+                        </div>
+                        <div className="flex items-start gap-3 pt-2">
+                            <Checkbox
+                                id="terms"
+                                checked={agreedToTerms}
+                                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                                className="cursor-pointer mt-0.5 border-neutral-300 dark:border-neutral-700 data-[state=checked]:bg-neutral-900 dark:data-[state=checked]:bg-white data-[state=checked]:border-neutral-900 dark:data-[state=checked]:border-white"
+                            />
+                            <Label
+                                htmlFor="terms"
+                                className="text-sm text-neutral-500 leading-relaxed cursor-pointer"
+                            >
+                                I agree to the{" "}
+                                <Link href="/terms" className="text-neutral-900 dark:text-white hover:underline">
+                                    Terms of Service
+                                </Link>{" "}
+                                and{" "}
+                                <Link href="/privacy" className="text-neutral-900 dark:text-white hover:underline">
+                                    Privacy Policy
+                                </Link>
+                            </Label>
+                        </div>
+                        <Button
+                            type="submit"
+                            disabled={isLoading || !agreedToTerms}
+                            className="w-full h-12 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold mt-6"
+                        >
+                            {
+                                isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Initializing...
+                                    </>
+                                ) : (
+                                    <>
+                                        Create Workspace
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </>
+                                )
+                            }
+                        </Button>
+                    </form>
+                    <p className="mt-6 text-center text-neutral-500">
+                        Already have access?{" "}
+                        <Link
+                            href="/signin"
+                            className="text-neutral-900 dark:text-white font-semibold hover:underline"
+                        >
+                            Sign in
+                        </Link>
+                    </p>
+                </motion.div>
+            </div>
+        </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
+                    <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+                </div>
+            }
+        >
+            <SignUpForm />
+        </Suspense>
+    );
+}
