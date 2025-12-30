@@ -6,7 +6,8 @@ import { usePathname, useRouter } from "next/navigation"
 import { useSession, signOut } from "@repo/auth/client"
 import { cn } from "@repo/ui/lib/utils"
 import {
-    User, LogOut, ChevronLeft, ChevronRight, ChevronDown, Shield
+    User, LogOut, ChevronLeft, ChevronRight, ChevronDown, Shield,
+    Code, Building2, GraduationCap
 } from "lucide-react"
 import {
     Tooltip, TooltipTrigger, TooltipContent, TooltipProvider
@@ -15,7 +16,7 @@ import { useSidebar } from "./sidebarprovider"
 import { toast } from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
 import {
-    adminNavigation, type NavigationItem
+    adminNavigation, type NavigationItem, type PlatformNavigationItem
 } from "@/lib/navigation"
 import {
     Sheet, SheetContent
@@ -23,10 +24,43 @@ import {
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@repo/ui/components/themetoggle"
 
+type Platform = "main" | "hiring" | "uni" | null
+
+const platformIcons = {
+    main: Code,
+    hiring: Building2,
+    uni: GraduationCap,
+}
+
+const platformColors = {
+    main: {
+        bg: "bg-blue-500",
+        bgLight: "bg-blue-50 dark:bg-blue-900/20",
+        text: "text-blue-600 dark:text-blue-400",
+        border: "border-blue-500",
+        ring: "ring-blue-500/20",
+    },
+    hiring: {
+        bg: "bg-emerald-500",
+        bgLight: "bg-emerald-50 dark:bg-emerald-900/20",
+        text: "text-emerald-600 dark:text-emerald-400",
+        border: "border-emerald-500",
+        ring: "ring-emerald-500/20",
+    },
+    uni: {
+        bg: "bg-violet-500",
+        bgLight: "bg-violet-50 dark:bg-violet-900/20",
+        text: "text-violet-600 dark:text-violet-400",
+        border: "border-violet-500",
+        ring: "ring-violet-500/20",
+    },
+}
+
 export function AdminSidebar() {
     const { isCollapsed, setIsCollapsed } = useSidebar()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
     const [expandedItems, setExpandedItems] = useState<string[]>([])
+    const [activePlatform, setActivePlatform] = useState<Platform>(null)
     const pathname = usePathname()
     const router = useRouter()
     const { data: session, status } = useSession()
@@ -37,9 +71,24 @@ export function AdminSidebar() {
         setIsMobileOpen(false)
     }, [pathname])
 
+    // Detect active platform from URL
+    useEffect(() => {
+        if (pathname.startsWith("/main")) {
+            setActivePlatform("main")
+        } else if (pathname.startsWith("/hiring")) {
+            setActivePlatform("hiring")
+        } else if (pathname.startsWith("/uni")) {
+            setActivePlatform("uni")
+        } else {
+            setActivePlatform(null)
+        }
+    }, [pathname])
+
     // Auto-expand active parent item
     useEffect(() => {
-        const allItems = [...adminNavigation.primary, ...adminNavigation.secondary]
+        const allPlatformItems = adminNavigation.platforms.flatMap(p => p.children || [])
+        const allItems = [...adminNavigation.global, ...allPlatformItems, ...adminNavigation.secondary]
+
         for (const item of allItems) {
             if (item.children) {
                 for (const child of item.children) {
@@ -81,13 +130,9 @@ export function AdminSidebar() {
             if (prev.includes(path)) {
                 return prev.filter(p => p !== path)
             }
-            return [path]
+            return [...prev, path]
         })
     }
-
-    // Get navigation items (in real implementation, filter based on permissions)
-    const navItems = adminNavigation.primary
-    const secondaryItems = adminNavigation.secondary
 
     const renderNavItem = (item: NavigationItem, depth: number = 0) => {
         const isActive = pathname === `/${item.path}` || pathname.startsWith(`/${item.path}/`)
@@ -101,7 +146,7 @@ export function AdminSidebar() {
                     <button
                         onClick={() => toggleItemExpanded(item.path)}
                         className={cn(
-                            "flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
+                            "flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group cursor-pointer",
                             isActive
                                 ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
                                 : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
@@ -176,180 +221,327 @@ export function AdminSidebar() {
         ) : linkContent
     }
 
-    const SidebarContent = () => (
-        <>
-            <div className={cn("p-6 flex items-center relative border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "justify-center" : "gap-3")}>
-                <Link href="/dashboard" className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0">
-                        <Shield className="w-5 h-5 text-white" />
+    const renderPlatformSwitcher = () => {
+        if (isCollapsed) {
+            return (
+                <div className="px-3 space-y-2">
+                    {adminNavigation.platforms.map((platform) => {
+                        const Icon = platformIcons[platform.path as keyof typeof platformIcons]
+                        const colors = platformColors[platform.path as keyof typeof platformColors]
+                        const isActive = activePlatform === platform.path
+
+                        return (
+                            <Tooltip key={platform.path}>
+                                <TooltipTrigger asChild>
+                                    <Link
+                                        href={`/${platform.path}`}
+                                        className={cn(
+                                            "flex items-center justify-center w-full p-3 rounded-xl transition-all",
+                                            isActive
+                                                ? cn(colors.bg, "text-white shadow-lg")
+                                                : cn("hover:bg-neutral-100 dark:hover:bg-neutral-800", colors.text)
+                                        )}
+                                    >
+                                        <Icon className="h-5 w-5" />
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="bg-neutral-900 dark:bg-white text-white dark:text-black">
+                                    {platform.name}
+                                </TooltipContent>
+                            </Tooltip>
+                        )
+                    })}
+                </div>
+            )
+        }
+
+        return (
+            <div className="px-3">
+                <p className="text-[10px] font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400 px-2 mb-2 tracking-widest">
+                    Platforms
+                </p>
+                <div className="space-y-1">
+                    {adminNavigation.platforms.map((platform) => {
+                        const Icon = platformIcons[platform.path as keyof typeof platformIcons]
+                        const colors = platformColors[platform.path as keyof typeof platformColors]
+                        const isActive = activePlatform === platform.path
+
+                        return (
+                            <Link
+                                key={platform.path}
+                                href={`/${platform.path}`}
+                                className={cn(
+                                    "flex items-center gap-3 w-full p-3 rounded-xl transition-all",
+                                    isActive
+                                        ? cn(colors.bg, "text-white shadow-lg")
+                                        : cn("hover:bg-neutral-100 dark:hover:bg-neutral-800", colors.text)
+                                )}
+                            >
+                                <div className={cn(
+                                    "p-2 rounded-lg",
+                                    isActive ? "bg-white/20" : colors.bgLight
+                                )}>
+                                    <Icon className="h-4 w-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className={cn(
+                                        "font-medium text-sm truncate",
+                                        isActive ? "text-white" : "text-neutral-900 dark:text-white"
+                                    )}>
+                                        {platform.name}
+                                    </p>
+                                    <p className={cn(
+                                        "text-[10px] truncate",
+                                        isActive ? "text-white/70" : "text-neutral-500"
+                                    )}>
+                                        {platform.description}
+                                    </p>
+                                </div>
+                                <ChevronRight className={cn(
+                                    "h-4 w-4",
+                                    isActive ? "text-white/70" : "text-neutral-400"
+                                )} />
+                            </Link>
+                        )
+                    })}
+                </div>
+            </div>
+        )
+    }
+
+    const renderPlatformNav = (platform: PlatformNavigationItem) => {
+        const colors = platformColors[platform.path as keyof typeof platformColors]
+
+        return (
+            <div className="space-y-1">
+                {!isCollapsed && (
+                    <div className="flex items-center gap-2 px-2 mb-2">
+                        <div className={cn("w-1 h-4 rounded-full", colors.bg)} />
+                        <p className={cn("text-[10px] font-mono font-bold uppercase tracking-widest", colors.text)}>
+                            {platform.name}
+                        </p>
                     </div>
+                )}
+                {platform.children?.map((item) => renderNavItem(item))}
+            </div>
+        )
+    }
+
+    const SidebarContent = () => {
+        const currentPlatform = activePlatform
+            ? adminNavigation.platforms.find(p => p.path === activePlatform)
+            : null
+
+        return (
+            <>
+                <div className={cn("p-6 flex items-center relative border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "justify-center" : "gap-3")}>
+                    <Link href="/dashboard" className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                            <Shield className="w-5 h-5 text-white" />
+                        </div>
+                        {
+                            !isCollapsed && (
+                                <div className="flex-1 text-left min-w-0 hidden lg:block">
+                                    <h1 className="font-bold text-neutral-900 dark:text-white truncate tracking-tight">Admin Panel</h1>
+                                    <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate uppercase tracking-widest font-mono">
+                                        Multi-Platform Control
+                                    </p>
+                                </div>
+                            )
+                        }
+                    </Link>
+                    <button
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="hidden lg:block absolute top-6 -right-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-full p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors z-50 shadow-lg cursor-pointer"
+                    >
+                        {isCollapsed ? <ChevronRight className="w-4 h-4 text-neutral-900 dark:text-white" /> : <ChevronLeft className="w-4 h-4 text-neutral-900 dark:text-white" />}
+                    </button>
+                </div>
+
+                <nav className="flex-1 py-4 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+                    {/* Global Navigation */}
+                    <div className="px-3 space-y-1">
+                        {adminNavigation.global?.map((item) => renderNavItem(item))}
+                    </div>
+
+                    {/* Platform Switcher or Platform Nav */}
+                    {!activePlatform ? (
+                        <>
+                            <div className="border-t border-neutral-200 dark:border-neutral-800 pt-4">
+                                {renderPlatformSwitcher()}
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Back to Overview */}
+                            <div className="px-3">
+                                <Link
+                                    href="/dashboard"
+                                    className={cn(
+                                        "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                                        "text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                    )}
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                    {!isCollapsed && <span>All Platforms</span>}
+                                </Link>
+                            </div>
+
+                            {/* Platform-specific Navigation */}
+                            <div className="border-t border-neutral-200 dark:border-neutral-800 pt-4 px-3">
+                                {currentPlatform && renderPlatformNav(currentPlatform)}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Secondary Navigation */}
+                    {adminNavigation.secondary && adminNavigation.secondary.length > 0 && (
+                        <div className="border-t border-neutral-200 dark:border-neutral-800 pt-4 px-3">
+                            {
+                                !isCollapsed && (
+                                    <p className="text-[10px] font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400 px-2 mb-2 tracking-widest">Administration</p>
+                                )
+                            }
+                            <div className="space-y-1">
+                                {adminNavigation.secondary.map((item) => renderNavItem(item))}
+                            </div>
+                        </div>
+                    )}
+                </nav>
+
+                <div className="mt-auto border-t border-neutral-200 dark:border-neutral-800">
+                    <ThemeToggle />
                     {
-                        !isCollapsed && (
-                            <div className="flex-1 text-left min-w-0 hidden lg:block">
-                                <h1 className="font-bold text-neutral-900 dark:text-white truncate tracking-tight">Admin Panel</h1>
-                                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate uppercase tracking-widest font-mono">
-                                    Control Center
-                                </p>
+                        status === "authenticated" && session ? (
+                            <div
+                                className="relative px-3 py-2"
+                                onMouseEnter={handleProfileMouseEnter}
+                                onMouseLeave={handleProfileMouseLeave}
+                            >
+                                <button className={cn("flex cursor-pointer items-center gap-3 w-full rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 p-2 transition-colors", isCollapsed && "justify-center")}>
+                                    <div className="flex flex-1 gap-2">
+                                        {
+                                            session?.user?.image ? (
+                                                <Image
+                                                    className="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-800"
+                                                    src={session.user.image}
+                                                    alt={`Profile picture of ${session.user.name || 'admin'}`}
+                                                    width={40}
+                                                    height={40}
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0 border border-neutral-200 dark:border-neutral-800">
+                                                    <span className="text-white text-sm font-bold">
+                                                        {session?.user?.name?.[0] || 'A'}
+                                                    </span>
+                                                </div>
+                                            )
+                                        }
+                                        {
+                                            !isCollapsed && (
+                                                <div className="flex-1 text-left hidden lg:block min-w-0">
+                                                    <p className="text-sm font-bold text-neutral-900 dark:text-white truncate">{session?.user?.name || 'Admin'}</p>
+                                                    <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate font-mono">{session?.user?.email || 'admin@example.com'}</p>
+                                                </div>
+                                            )
+                                        }
+                                    </div>
+                                    {
+                                        !isCollapsed && (
+                                            <div className="flex-shrink-0">
+                                                <ChevronRight className="w-4 h-4 text-neutral-900 dark:text-white" />
+                                            </div>
+                                        )
+                                    }
+                                </button>
+                                {
+                                    profileDropdownOpen && (
+                                        <div
+                                            className="absolute left-full ml-2 bottom-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-2xl z-50 w-64 overflow-hidden"
+                                            onMouseEnter={handleProfileMouseEnter}
+                                            onMouseLeave={handleProfileMouseLeave}
+                                        >
+                                            <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
+                                                <div className="flex items-center gap-3">
+                                                    {
+                                                        session?.user?.image ? (
+                                                            <Image
+                                                                className="h-12 w-12 rounded-full border border-neutral-200 dark:border-neutral-800"
+                                                                src={session.user.image}
+                                                                alt={`Profile picture of ${session.user.name || 'admin'}`}
+                                                                width={48}
+                                                                height={48}
+                                                            />
+                                                        ) : (
+                                                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                                                                <span className="text-white text-lg font-bold">
+                                                                    {session?.user?.name?.[0] || 'A'}
+                                                                </span>
+                                                            </div>
+                                                        )
+                                                    }
+                                                    <div className="flex-1">
+                                                        <h3 className="font-bold text-sm text-neutral-900 dark:text-white">
+                                                            {session?.user?.name || 'Admin'}
+                                                        </h3>
+                                                        <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+                                                            {session?.user?.email || 'admin@example.com'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button
+                                                    onClick={() => router.push('/admins/profile')}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                                                >
+                                                    <div className="w-8 h-8 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                                    </div>
+                                                    <span className="font-medium text-sm text-neutral-900 dark:text-white">Profile Settings</span>
+                                                </button>
+                                            </div>
+                                            <div className="border-t border-neutral-100 dark:border-neutral-800">
+                                                <button
+                                                    onClick={handleSignOut}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-600 dark:text-red-400 cursor-pointer"
+                                                >
+                                                    <div className="w-8 h-8 bg-red-500/10 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
+                                                        <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                                    </div>
+                                                    <span className="font-medium text-sm">Sign Out</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )
+                                }
+                            </div>
+                        ) : (
+                            <div className="px-3 py-2">
+                                <button
+                                    onClick={() => router.push('/')}
+                                    className={cn(
+                                        "flex items-center w-full rounded-lg p-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 group cursor-pointer",
+                                        isCollapsed && "justify-center"
+                                    )}
+                                    title="Sign In"
+                                >
+                                    <User className="h-5 w-5" />
+                                    {!isCollapsed && <span className="ml-3">Sign In</span>}
+                                </button>
                             </div>
                         )
                     }
-                </Link>
-                <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="hidden lg:block absolute top-6 -right-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-full p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors z-50 shadow-lg"
-                >
-                    {isCollapsed ? <ChevronRight className="w-4 h-4 text-neutral-900 dark:text-white" /> : <ChevronLeft className="w-4 h-4 text-neutral-900 dark:text-white" />}
-                </button>
-            </div>
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent">
-                {navItems?.map((item) => renderNavItem(item))}
-                {
-                    secondaryItems && secondaryItems.length > 0 && (
-                        <>
-                            <div className="pt-4 pb-2">
-                                {
-                                    !isCollapsed && (
-                                        <p className="text-[10px] font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400 px-2 tracking-widest">Administration</p>
-                                    )
-                                }
-                            </div>
-                            {secondaryItems.map((item) => renderNavItem(item))}
-                        </>
-                    )
-                }
-            </nav>
-            <div className="mt-auto border-t border-neutral-200 dark:border-neutral-800">
-                <ThemeToggle />
-                {
-                    status === "authenticated" && session ? (
-                        <div
-                            className="relative px-3 py-2"
-                            onMouseEnter={handleProfileMouseEnter}
-                            onMouseLeave={handleProfileMouseLeave}
-                        >
-                            <button className={cn("flex cursor-pointer items-center gap-3 w-full rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 p-2 transition-colors", isCollapsed && "justify-center")}>
-                                <div className="flex flex-1 gap-2">
-                                    {
-                                        session?.user?.image ? (
-                                            <Image
-                                                className="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-800"
-                                                src={session.user.image}
-                                                alt={`Profile picture of ${session.user.name || 'admin'}`}
-                                                width={40}
-                                                height={40}
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0 border border-neutral-200 dark:border-neutral-800">
-                                                <span className="text-white text-sm font-bold">
-                                                    {session?.user?.name?.[0] || 'A'}
-                                                </span>
-                                            </div>
-                                        )
-                                    }
-                                    {
-                                        !isCollapsed && (
-                                            <div className="flex-1 text-left hidden lg:block min-w-0">
-                                                <p className="text-sm font-bold text-neutral-900 dark:text-white truncate">{session?.user?.name || 'Admin'}</p>
-                                                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate font-mono">{session?.user?.email || 'admin@example.com'}</p>
-                                            </div>
-                                        )
-                                    }
-                                </div>
-                                {
-                                    !isCollapsed && (
-                                        <div className="flex-shrink-0">
-                                            <ChevronRight className="w-4 h-4 text-neutral-900 dark:text-white" />
-                                        </div>
-                                    )
-                                }
-                            </button>
-                            {
-                                profileDropdownOpen && (
-                                    <div
-                                        className="absolute left-full ml-2 bottom-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-2xl z-50 w-64 overflow-hidden"
-                                        onMouseEnter={handleProfileMouseEnter}
-                                        onMouseLeave={handleProfileMouseLeave}
-                                    >
-                                        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
-                                            <div className="flex items-center gap-3">
-                                                {
-                                                    session?.user?.image ? (
-                                                        <Image
-                                                            className="h-12 w-12 rounded-full border border-neutral-200 dark:border-neutral-800"
-                                                            src={session.user.image}
-                                                            alt={`Profile picture of ${session.user.name || 'admin'}`}
-                                                            width={48}
-                                                            height={48}
-                                                        />
-                                                    ) : (
-                                                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
-                                                            <span className="text-white text-lg font-bold">
-                                                                {session?.user?.name?.[0] || 'A'}
-                                                            </span>
-                                                        </div>
-                                                    )
-                                                }
-                                                <div className="flex-1">
-                                                    <h3 className="font-bold text-sm text-neutral-900 dark:text-white">
-                                                        {session?.user?.name || 'Admin'}
-                                                    </h3>
-                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
-                                                        {session?.user?.email || 'admin@example.com'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <button
-                                                onClick={() => router.push('/profile')}
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-                                            >
-                                                <div className="w-8 h-8 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                                </div>
-                                                <span className="font-medium text-sm text-neutral-900 dark:text-white">Profile Settings</span>
-                                            </button>
-                                        </div>
-                                        <div className="border-t border-neutral-100 dark:border-neutral-800">
-                                            <button
-                                                onClick={handleSignOut}
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-600 dark:text-red-400"
-                                            >
-                                                <div className="w-8 h-8 bg-red-500/10 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
-                                                    <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                                </div>
-                                                <span className="font-medium text-sm">Sign Out</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                )
-                            }
-                        </div>
-                    ) : (
-                        <div className="px-3 py-2">
-                            <button
-                                onClick={() => router.push('/')}
-                                className={cn(
-                                    "flex items-center w-full rounded-lg p-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 group",
-                                    isCollapsed && "justify-center"
-                                )}
-                                title="Sign In"
-                            >
-                                <User className="h-5 w-5" />
-                                {!isCollapsed && <span className="ml-3">Sign In</span>}
-                            </button>
-                        </div>
-                    )
-                }
-            </div>
-        </>
-    )
+                </div>
+            </>
+        )
+    }
 
     return (
         <TooltipProvider>
             <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
-                className="fixed top-6 left-6 z-50 lg:hidden bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all shadow-lg"
+                className="fixed top-6 left-6 z-50 lg:hidden bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all shadow-lg cursor-pointer"
                 aria-label="Toggle sidebar"
             >
                 {

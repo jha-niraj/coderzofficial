@@ -4,11 +4,10 @@ import { useEffect, useState } from "react"
 import {
 	getAdminUsers, updateAdminPermissions, updateAdminStatus
 } from "@/actions/admin.action"
-import { 
-	Shield, Settings, Loader2, Check, X 
+import {
+	Shield, Settings, Loader2, Check, X
 } from "lucide-react"
 import { toast } from "@repo/ui/components/ui/sonner"
-import type { AdminPermissions } from "@/types/admin"
 
 const MODULE_KEYS = [
 	"dashboard", "users", "credits", "projects", "mocks", "assessments", "challenges", "communities", "feedback", "analytics", "admin_management", "system"
@@ -64,7 +63,7 @@ export default function AdminAccessPage() {
 		const row = admins[idx]
 		if (!row) return
 		setSavingId(row.id)
-		const res = await updateAdminPermissions(row.id, row.permissions as AdminPermissions)
+		const res = await updateAdminPermissions(row.id, row.permissions)
 		setSavingId(null)
 		if (res.success) { toast.success('Permissions updated') } else { toast.error(res.error || 'Failed to update') }
 	}
