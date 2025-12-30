@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { 
-    Shield, Building2 
+import {
+    Shield, GraduationCap
 } from "lucide-react";
 import Link from "next/link";
 
@@ -18,15 +18,15 @@ export default function PrivacyPage() {
                     className="text-center mb-16"
                 >
                     <Link href="/" className="inline-flex items-center gap-2 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-white flex items-center justify-center">
-                            <Building2 className="w-5 h-5 text-white dark:text-black" />
+                        <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center">
+                            <GraduationCap className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
-                            CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
+                            CODER&apos;Z <span className="text-violet-500 font-mono font-normal">UNI</span>
                         </span>
                     </Link>
-                    <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <Shield className="w-8 h-8 text-neutral-900 dark:text-white" />
+                    <div className="w-16 h-16 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Shield className="w-8 h-8 text-violet-600 dark:text-violet-400" />
                     </div>
                     <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
                         Legal Document
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
                         Privacy Policy
                     </h1>
                     <p className="text-neutral-500 mt-4 max-w-xl mx-auto">
-                        Last updated: December 29, 2025
+                        Last updated: December 30, 2025
                     </p>
                 </motion.div>
                 <motion.div
@@ -51,9 +51,9 @@ export default function PrivacyPage() {
                                 Introduction
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                Coder&apos;z Hiring (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy.
+                                Coder&apos;z Uni (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy.
                                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information
-                                when you use our hiring platform services.
+                                when you use our university education platform services.
                             </p>
                         </section>
                         <section className="mb-10">
@@ -62,16 +62,23 @@ export default function PrivacyPage() {
                                 Information We Collect
                             </h2>
                             <div className="space-y-4 text-neutral-600 dark:text-neutral-400">
-                                <p className="font-medium text-neutral-900 dark:text-white">Account Information</p>
+                                <p className="font-medium text-neutral-900 dark:text-white">University Information</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>Company name, website, and description</li>
-                                    <li>Contact information (email, phone)</li>
-                                    <li>User account credentials</li>
-                                    <li>Team member information</li>
+                                    <li>University name, website, and description</li>
+                                    <li>Contact information (official email, phone)</li>
+                                    <li>Faculty and staff account credentials</li>
+                                    <li>Department and class information</li>
+                                </ul>
+                                <p className="font-medium text-neutral-900 dark:text-white mt-6">Student Data</p>
+                                <ul className="list-disc list-inside space-y-2 ml-4">
+                                    <li>University email for verification</li>
+                                    <li>Academic information (department, semester, batch)</li>
+                                    <li>Assignment submissions and grades</li>
+                                    <li>Platform interaction and learning analytics</li>
                                 </ul>
                                 <p className="font-medium text-neutral-900 dark:text-white mt-6">Usage Data</p>
                                 <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>Job posting and application data</li>
+                                    <li>Assignment and assessment completion data</li>
                                     <li>Platform interaction logs</li>
                                     <li>Analytics and performance metrics</li>
                                 </ul>
@@ -83,9 +90,10 @@ export default function PrivacyPage() {
                                 How We Use Information
                             </h2>
                             <ul className="list-disc list-inside space-y-2 text-neutral-600 dark:text-neutral-400 ml-4">
-                                <li>Provide and maintain our hiring platform services</li>
-                                <li>Match candidates with job opportunities</li>
-                                <li>Facilitate communication between employers and candidates</li>
+                                <li>Provide and maintain our educational platform services</li>
+                                <li>Facilitate learning and assignment management</li>
+                                <li>Enable communication between faculty and students</li>
+                                <li>Connect students with placement opportunities</li>
                                 <li>Improve and optimize our platform</li>
                                 <li>Send service-related communications</li>
                                 <li>Ensure platform security and prevent fraud</li>
@@ -100,9 +108,10 @@ export default function PrivacyPage() {
                                 We do not sell your personal information. We may share data with:
                             </p>
                             <ul className="list-disc list-inside space-y-2 mt-4 text-neutral-600 dark:text-neutral-400 ml-4">
+                                <li>Your registered university administration</li>
                                 <li>Service providers who assist in platform operations</li>
+                                <li>Employers (with student consent for placements)</li>
                                 <li>Law enforcement when required by law</li>
-                                <li>Business partners with your explicit consent</li>
                             </ul>
                         </section>
                         <section className="mb-10">
@@ -112,7 +121,7 @@ export default function PrivacyPage() {
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
                                 We implement industry-standard security measures including encryption,
-                                access controls, and regular security audits to protect your data.
+                                access controls, and regular security audits to protect your academic and personal data.
                             </p>
                         </section>
                         <section className="mb-10">
@@ -123,7 +132,7 @@ export default function PrivacyPage() {
                             <ul className="list-disc list-inside space-y-2 text-neutral-600 dark:text-neutral-400 ml-4">
                                 <li>Access and export your data</li>
                                 <li>Request correction of inaccurate information</li>
-                                <li>Delete your account and associated data</li>
+                                <li>Request data deletion (subject to academic records requirements)</li>
                                 <li>Opt-out of marketing communications</li>
                             </ul>
                         </section>
@@ -134,7 +143,7 @@ export default function PrivacyPage() {
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400">
                                 For privacy-related inquiries, contact us at{" "}
-                                <a href="mailto:privacy@coderzai.xyz" className="text-neutral-900 dark:text-white hover:underline">
+                                <a href="mailto:privacy@coderzai.xyz" className="text-violet-600 dark:text-violet-400 hover:underline">
                                     privacy@coderzai.xyz
                                 </a>
                             </p>
@@ -144,7 +153,7 @@ export default function PrivacyPage() {
                 <div className="text-center mt-8">
                     <Link
                         href="/"
-                        className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                        className="text-sm text-neutral-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                     >
                         ← Back to Home
                     </Link>

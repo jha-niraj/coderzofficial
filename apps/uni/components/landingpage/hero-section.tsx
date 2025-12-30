@@ -6,16 +6,14 @@ import {
 import { Button } from "@repo/ui/components/ui/button"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { BackgroundOrbits } from "./backgroundorbits";
+import { BackgroundOrbits } from "./backgroundorbits"
 
 export default function HeroSection() {
     const router = useRouter()
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-white dark:bg-neutral-950 flex flex-col items-center justify-center pt-20">
-
             <BackgroundOrbits />
-
             <div className="relative z-10 w-full px-6">
                 <div className="mx-auto max-w-4xl text-center">
                     <motion.div
@@ -23,8 +21,8 @@ export default function HeroSection() {
                         animate={{ opacity: 1, y: 0 }}
                         className="flex justify-center mb-8"
                     >
-                        <span className="px-3 py-1 rounded-full border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/20 backdrop-blur-sm text-[10px] font-mono uppercase tracking-widest text-violet-600 dark:text-violet-400">
-                            University Platform // Industry-Ready Education
+                        <span className="px-3 py-1 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 backdrop-blur-sm text-[10px] font-mono uppercase tracking-widest text-neutral-600 dark:text-neutral-400">
+                            University Platform // V2.0
                         </span>
                     </motion.div>
                     <motion.h1
@@ -33,9 +31,9 @@ export default function HeroSection() {
                         transition={{ delay: 0.1 }}
                         className="text-5xl md:text-7xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-6"
                     >
-                        Transform Your <br />
-                        <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                            Technical Education.
+                        Deploy Industry-Ready <br />
+                        <span className="text-neutral-500 dark:text-neutral-500">
+                            Curriculum Infrastructure.
                         </span>
                     </motion.h1>
                     <motion.p
@@ -44,8 +42,7 @@ export default function HeroSection() {
                         transition={{ delay: 0.2 }}
                         className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light"
                     >
-                        Give your students real-world coding experience, AI-powered mock interviews,
-                        and direct connections to hiring companies. All from one unified platform.
+                        Equip your institution with automated coding sandboxes, AI-driven assessment engines, and direct pipelines to hiring partners.
                     </motion.p>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -55,17 +52,17 @@ export default function HeroSection() {
                     >
                         <Button
                             onClick={() => router.push("/register")}
-                            className="cursor-pointer h-12 px-8 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold transition-all hover:scale-105"
+                            className="cursor-pointer h-12 px-8 rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold transition-all hover:scale-105"
                         >
                             <GraduationCap className="mr-2 h-4 w-4" />
-                            Register Your University
+                            Register Institution
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => router.push("#how-it-works")}
-                            className="cursor-pointer h-12 px-8 rounded-full border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                            className="cursor-pointer h-12 px-8 rounded-full border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900"
                         >
-                            See How It Works
+                            System Architecture
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </motion.div>
@@ -77,13 +74,13 @@ export default function HeroSection() {
                     >
                         {
                             [
-                                { label: "Students Empowered", value: "50k+", icon: Users },
-                                { label: "Universities", value: "100+", icon: GraduationCap },
-                                { label: "Assignments Created", value: "10k+", icon: BookOpen },
-                                { label: "Placement Rate", value: "85%", icon: TrendingUp },
+                                { label: "Students", value: "50k+", icon: Users },
+                                { label: "Campuses", value: "100+", icon: GraduationCap },
+                                { label: "Assignments", value: "10k+", icon: BookOpen },
+                                { label: "Placements", value: "85%", icon: TrendingUp },
                             ].map((stat, i) => (
-                                <div key={i} className="bg-white dark:bg-neutral-900 p-6 flex flex-col items-center justify-center group hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">
-                                    <stat.icon className="w-5 h-5 text-violet-500 mb-3" />
+                                <div key={i} className="bg-white dark:bg-neutral-950 p-6 flex flex-col items-center justify-center group hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
+                                    <stat.icon className="w-5 h-5 text-neutral-400 mb-3 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors" />
                                     <div className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
                                         {stat.value}
                                     </div>

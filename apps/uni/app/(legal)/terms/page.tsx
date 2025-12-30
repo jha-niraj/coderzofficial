@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
-    FileText, Building2
+    FileText, GraduationCap
 } from "lucide-react";
 import Link from "next/link";
 
@@ -18,15 +18,15 @@ export default function TermsPage() {
                     className="text-center mb-16"
                 >
                     <Link href="/" className="inline-flex items-center gap-2 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-white flex items-center justify-center">
-                            <Building2 className="w-5 h-5 text-white dark:text-black" />
+                        <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center">
+                            <GraduationCap className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
-                            CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
+                            CODER&apos;Z <span className="text-violet-500 font-mono font-normal">UNI</span>
                         </span>
                     </Link>
-                    <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <FileText className="w-8 h-8 text-neutral-900 dark:text-white" />
+                    <div className="w-16 h-16 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <FileText className="w-8 h-8 text-violet-600 dark:text-violet-400" />
                     </div>
                     <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
                         Legal Document
@@ -35,7 +35,7 @@ export default function TermsPage() {
                         Terms of Service
                     </h1>
                     <p className="text-neutral-500 mt-4 max-w-xl mx-auto">
-                        Last updated: December 29, 2025
+                        Last updated: December 30, 2025
                     </p>
                 </motion.div>
                 <motion.div
@@ -51,7 +51,7 @@ export default function TermsPage() {
                                 Acceptance of Terms
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                By accessing or using Coder&apos;z Hiring, you agree to be bound by these Terms of Service.
+                                By accessing or using Coder&apos;z Uni, you agree to be bound by these Terms of Service.
                                 If you disagree with any part of the terms, you may not access the service.
                             </p>
                         </section>
@@ -61,15 +61,16 @@ export default function TermsPage() {
                                 Platform Services
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-                                Coder&apos;z Hiring provides a technical hiring platform that connects companies
-                                with pre-vetted engineering candidates. Our services include:
+                                Coder&apos;z Uni provides an educational technology platform that connects universities
+                                with industry-standard learning and assessment tools. Our services include:
                             </p>
                             <ul className="list-disc list-inside space-y-2 text-neutral-600 dark:text-neutral-400 ml-4">
-                                <li>Candidate sourcing and vetting</li>
-                                <li>Technical assessment tools</li>
-                                <li>AI-powered interview systems</li>
-                                <li>Application tracking and management</li>
-                                <li>Analytics and reporting</li>
+                                <li>Assignment and assessment management</li>
+                                <li>AI-powered coding assessments</li>
+                                <li>Mock interview practice systems</li>
+                                <li>Student progress tracking and analytics</li>
+                                <li>Placement portal integration</li>
+                                <li>Credit-based resource allocation</li>
                             </ul>
                         </section>
                         <section className="mb-10">
@@ -78,9 +79,9 @@ export default function TermsPage() {
                                 Account Registration
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                To use our platform, you must register a company account and provide accurate information.
-                                You are responsible for maintaining the confidentiality of your account credentials
-                                and for all activities under your account.
+                                Universities must register and complete verification to use our platform. Faculty members
+                                are invited by university administrators. Students verify through their university email domain.
+                                You are responsible for maintaining the confidentiality of your account credentials.
                             </p>
                         </section>
                         <section className="mb-10">
@@ -90,32 +91,34 @@ export default function TermsPage() {
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 mb-4">You agree not to:</p>
                             <ul className="list-disc list-inside space-y-2 text-neutral-600 dark:text-neutral-400 ml-4">
-                                <li>Post false, misleading, or discriminatory job listings</li>
-                                <li>Misuse candidate information or violate their privacy</li>
-                                <li>Attempt to circumvent platform fees or security measures</li>
-                                <li>Use the platform for any unlawful purpose</li>
+                                <li>Submit plagiarized or dishonest work</li>
+                                <li>Share account credentials or bypass security measures</li>
+                                <li>Misuse platform resources or credits</li>
+                                <li>Attempt to manipulate grades or assessment results</li>
                                 <li>Harass, abuse, or harm other users</li>
+                                <li>Use the platform for any unlawful purpose</li>
                             </ul>
                         </section>
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">05</span>
-                                Fees and Payment
+                                Credit System
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                Subscription fees are billed according to your selected plan. All fees are non-refundable
-                                unless otherwise specified. We reserve the right to modify pricing with 30 days notice.
+                                Universities purchase credits to enable student access to premium features like AI assessments
+                                and mock interviews. Credits are allocated by university administrators and may expire
+                                per the subscription terms. Unused credits are non-refundable unless otherwise specified.
                             </p>
                         </section>
                         <section className="mb-10">
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
                                 <span className="text-[10px] font-mono text-neutral-400">06</span>
-                                Quality Guarantee
+                                Academic Integrity
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                We offer a 30-day replacement guarantee for candidates hired through our platform.
-                                If a hire doesn&apos;t meet expectations within 30 days, we&apos;ll provide replacement
-                                candidates at no additional cost.
+                                Our platform includes AI-powered plagiarism detection and proctoring features.
+                                Any attempt to cheat or violate academic integrity policies may result in account suspension
+                                and notification to your university administration.
                             </p>
                         </section>
                         <section className="mb-10">
@@ -126,7 +129,7 @@ export default function TermsPage() {
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
                                 The platform, including its original content, features, and functionality,
                                 is owned by Shunya Tech and protected by international copyright, trademark,
-                                and other intellectual property laws.
+                                and other intellectual property laws. Faculty-created content remains their property.
                             </p>
                         </section>
                         <section className="mb-10">
@@ -135,7 +138,7 @@ export default function TermsPage() {
                                 Limitation of Liability
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                Coder&apos;z Hiring shall not be liable for any indirect, incidental, special,
+                                Coder&apos;z Uni shall not be liable for any indirect, incidental, special,
                                 consequential, or punitive damages resulting from your use of the service.
                             </p>
                         </section>
@@ -146,7 +149,8 @@ export default function TermsPage() {
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
                                 We may terminate or suspend your account immediately for any breach of these Terms.
-                                Upon termination, your right to use the platform will cease immediately.
+                                University administrators may also suspend individual user accounts.
+                                Academic records may be retained per legal requirements.
                             </p>
                         </section>
                         <section>
@@ -156,7 +160,7 @@ export default function TermsPage() {
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400">
                                 Questions about these Terms? Contact us at{" "}
-                                <a href="mailto:legal@coderzai.xyz" className="text-neutral-900 dark:text-white hover:underline">
+                                <a href="mailto:legal@coderzai.xyz" className="text-violet-600 dark:text-violet-400 hover:underline">
                                     legal@coderzai.xyz
                                 </a>
                             </p>
@@ -166,7 +170,7 @@ export default function TermsPage() {
                 <div className="text-center mt-8">
                     <Link
                         href="/"
-                        className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                        className="text-sm text-neutral-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                     >
                         ← Back to Home
                     </Link>

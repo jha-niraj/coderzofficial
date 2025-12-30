@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import {
-    User, Building2, Shield, Mail, Phone, Calendar, MapPin, Globe,
+    User, GraduationCap, Shield, Mail, Phone, Calendar, MapPin, Globe,
     Briefcase, Crown, Edit2, Save, X, Eye, EyeOff, Check, AlertCircle,
-    Loader2, Link as LinkIcon, Lock, Key
+    Loader2, Link as LinkIcon, Lock, Key, Building, Users, Award
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -18,25 +18,52 @@ import {
 } from "@repo/ui/components/ui/tabs"
 import { useSession } from "@repo/auth/client"
 import {
-    getUserProfile, getCompanyDetails, getCurrentMember,
-    updateUserProfile, changePassword, updateCompanyDetails
+    getUserProfile, getUniversityDetails, getCurrentMember,
+    updateUserProfile, changePassword, updateUniversityDetails
 } from "@/actions/profile/profile.action"
 import type {
-    UserProfile, CompanyDetails, CompanyMemberRole, CompanyMemberJobTitle,
-    Permission, UpdateCompanyPayload,
+    UserProfile, UniversityDetails, UniversityMemberRole, UniversityMemberJobTitle,
+    UniversityPermission, UpdateUniversityPayload,
 } from "@/types"
 
-// Job title display mapping
-const JOB_TITLE_LABELS: Record<CompanyMemberJobTitle, string> = {
-    CEO: "CEO",
-    CTO: "CTO",
-    COFOUNDER: "Co-Founder",
-    VP_ENGINEERING: "VP Engineering",
-    HR_HEAD: "HR Head",
-    HR_MANAGER: "HR Manager",
-    RECRUITER: "Recruiter",
-    HIRING_MANAGER: "Hiring Manager",
+// Job title display mapping for university members
+const JOB_TITLE_LABELS: Record<UniversityMemberJobTitle, string> = {
+    CHANCELLOR: "Chancellor",
+    PRINCIPAL: "Principal",
+    REGISTRAR: "Registrar",
+    DEAN: "Dean",
+    HOD: "Head of Department",
+    PROFESSOR: "Professor",
+    ASSOCIATE_PROFESSOR: "Associate Professor",
+    ASSISTANT_PROFESSOR: "Assistant Professor",
+    LECTURER: "Lecturer",
+    PLACEMENT_COORDINATOR: "Placement Coordinator",
+    PLACEMENT_OFFICER: "Placement Officer",
+    FINANCE_MANAGER: "Finance Manager",
+    ACCOUNTS_OFFICER: "Accounts Officer",
+    TEACHING_ASSISTANT: "Teaching Assistant",
+    LAB_INSTRUCTOR: "Lab Instructor",
     OTHER: "Other",
+}
+
+// Role display mapping
+const ROLE_LABELS: Record<UniversityMemberRole, string> = {
+    HEAD: "University Admin",
+    DEPARTMENT_HEAD: "Department Head",
+    PLACEMENT_OFFICER: "Placement Officer",
+    FINANCE_OFFICER: "Finance Officer",
+    FACULTY: "Faculty",
+    TEACHING_ASSISTANT: "Teaching Assistant",
+}
+
+// Role colors
+const ROLE_COLORS: Record<UniversityMemberRole, string> = {
+    HEAD: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+    DEPARTMENT_HEAD: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    PLACEMENT_OFFICER: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    FINANCE_OFFICER: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    FACULTY: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400",
+    TEACHING_ASSISTANT: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
 }
 
 export default function ProfilePage() {
@@ -44,23 +71,24 @@ export default function ProfilePage() {
 
     // Profile data
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-    const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null)
-    const [memberRole, setMemberRole] = useState<CompanyMemberRole | null>(null)
-    const [memberJobTitle, setMemberJobTitle] = useState<CompanyMemberJobTitle | null>(null)
+    const [universityDetails, setUniversityDetails] = useState<UniversityDetails | null>(null)
+    const [memberRole, setMemberRole] = useState<UniversityMemberRole | null>(null)
+    const [memberJobTitle, setMemberJobTitle] = useState<UniversityMemberJobTitle | null>(null)
     const [memberJobTitleCustom, setMemberJobTitleCustom] = useState<string | null>(null)
     const [memberDisplayName, setMemberDisplayName] = useState<string | null>(null)
-    const [memberPermissions, setMemberPermissions] = useState<Permission[]>([])
+    const [memberDepartment, setMemberDepartment] = useState<{ id: string; name: string; code: string | null } | null>(null)
+    const [memberPermissions, setMemberPermissions] = useState<UniversityPermission[]>([])
     const [isHead, setIsHead] = useState(false)
 
     // Loading states
     const [loading, setLoading] = useState(true)
     const [savingProfile, setSavingProfile] = useState(false)
     const [savingPassword, setSavingPassword] = useState(false)
-    const [savingCompany, setSavingCompany] = useState(false)
+    const [savingUniversity, setSavingUniversity] = useState(false)
 
     // Edit modes
     const [editingProfile, setEditingProfile] = useState(false)
-    const [editingCompany, setEditingCompany] = useState(false)
+    const [editingUniversity, setEditingUniversity] = useState(false)
 
     // Form data
     const [profileForm, setProfileForm] = useState({
@@ -74,7 +102,7 @@ export default function ProfilePage() {
         newPassword: "",
         confirmPassword: "",
     })
-    const [companyForm, setCompanyForm] = useState<UpdateCompanyPayload>({})
+    const [universityForm, setUniversityForm] = useState<UpdateUniversityPayload>({})
 
     // Password visibility
     const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -84,16 +112,16 @@ export default function ProfilePage() {
     // Messages
     const [profileMessage, setProfileMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
     const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-    const [companyMessage, setCompanyMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+    const [universityMessage, setUniversityMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
     // Fetch profile data
     useEffect(() => {
         async function fetchData() {
             setLoading(true)
             try {
-                const [profileRes, companyRes, memberRes] = await Promise.all([
+                const [profileRes, universityRes, memberRes] = await Promise.all([
                     getUserProfile(),
-                    getCompanyDetails(),
+                    getUniversityDetails(),
                     getCurrentMember(),
                 ])
 
@@ -107,29 +135,32 @@ export default function ProfilePage() {
                     })
                 }
 
-                if (companyRes.success && companyRes.data) {
-                    setCompanyDetails(companyRes.data)
-                    setIsHead(companyRes.isHead ?? false)
-                    setCompanyForm({
-                        name: companyRes.data.name,
-                        website: companyRes.data.website || "",
-                        description: companyRes.data.description || "",
-                        industry: companyRes.data.industry || "",
-                        companySize: companyRes.data.companySize || "",
-                        headquarters: companyRes.data.headquarters || "",
-                        address: companyRes.data.address || "",
-                        city: companyRes.data.city || "",
-                        state: companyRes.data.state || "",
-                        country: companyRes.data.country || "",
-                        pincode: companyRes.data.pincode || "",
+                if (universityRes.success && universityRes.data) {
+                    setUniversityDetails(universityRes.data)
+                    setIsHead(universityRes.isHead ?? false)
+                    setUniversityForm({
+                        name: universityRes.data.name,
+                        website: universityRes.data.website || "",
+                        description: universityRes.data.description || "",
+                        email: universityRes.data.email || "",
+                        phone: universityRes.data.phone || "",
+                        universityType: universityRes.data.universityType || "",
+                        affiliatedTo: universityRes.data.affiliatedTo || "",
+                        accreditation: universityRes.data.accreditation || "",
+                        address: universityRes.data.address || "",
+                        city: universityRes.data.city || "",
+                        state: universityRes.data.state || "",
+                        country: universityRes.data.country || "India",
+                        pincode: universityRes.data.pincode || "",
                     })
                 }
 
                 if (memberRes.success && memberRes.data) {
-                    setMemberRole(memberRes.data.role as CompanyMemberRole)
-                    setMemberJobTitle(memberRes.data.jobTitle as CompanyMemberJobTitle)
+                    setMemberRole(memberRes.data.role as UniversityMemberRole)
+                    setMemberJobTitle(memberRes.data.jobTitle as UniversityMemberJobTitle)
                     setMemberJobTitleCustom(memberRes.data.jobTitleCustom)
                     setMemberDisplayName(memberRes.data.displayName)
+                    setMemberDepartment(memberRes.data.department)
                     setMemberPermissions(memberRes.data.permissions)
                     setProfileForm(prev => ({
                         ...prev,
@@ -223,31 +254,31 @@ export default function ProfilePage() {
         }
     }
 
-    // Handle company update
-    const handleCompanySave = async () => {
-        setSavingCompany(true)
-        setCompanyMessage(null)
+    // Handle university update
+    const handleUniversitySave = async () => {
+        setSavingUniversity(true)
+        setUniversityMessage(null)
 
         try {
-            const result = await updateCompanyDetails(companyForm)
+            const result = await updateUniversityDetails(universityForm)
 
             if (result.success) {
-                setCompanyMessage({ type: "success", text: "Company details updated successfully" })
-                setEditingCompany(false)
-                if (companyDetails) {
-                    setCompanyDetails({
-                        ...companyDetails,
-                        ...companyForm,
-                    } as CompanyDetails)
+                setUniversityMessage({ type: "success", text: "University details updated successfully" })
+                setEditingUniversity(false)
+                if (universityDetails) {
+                    setUniversityDetails({
+                        ...universityDetails,
+                        ...universityForm,
+                    } as UniversityDetails)
                 }
             } else {
-                setCompanyMessage({ type: "error", text: result.error || "Failed to update company" })
+                setUniversityMessage({ type: "error", text: result.error || "Failed to update university" })
             }
         } catch (error) {
-            console.error("Company update error:", error)
-            setCompanyMessage({ type: "error", text: "An unexpected error occurred" })
+            console.error("University update error:", error)
+            setUniversityMessage({ type: "error", text: "An unexpected error occurred" })
         } finally {
-            setSavingCompany(false)
+            setSavingUniversity(false)
         }
     }
 
@@ -269,7 +300,7 @@ export default function ProfilePage() {
                     Profile
                 </h1>
                 <p className="text-neutral-500 mt-1">
-                    Manage your personal and company information
+                    Manage your personal and university information
                 </p>
             </div>
             <div className="max-w-4xl">
@@ -278,7 +309,7 @@ export default function ProfilePage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden mb-8"
                 >
-                    <div className="relative bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 h-32">
+                    <div className="relative bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 h-32">
                         <div className="absolute inset-0 bg-black/10" />
                     </div>
                     <div className="relative px-6 pb-6 -mt-12">
@@ -320,16 +351,21 @@ export default function ProfilePage() {
                                                 ? memberJobTitleCustom
                                                 : memberJobTitle
                                                     ? JOB_TITLE_LABELS[memberJobTitle]
-                                                    : "Team Member"
+                                                    : "Faculty"
                                         }
                                     </span>
-                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${memberRole === "HEAD"
-                                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                                        : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-                                        }`}>
-                                        <Shield className="w-3 h-3" />
-                                        {memberRole || "Member"}
-                                    </span>
+                                    {memberRole && (
+                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[memberRole]}`}>
+                                            <Shield className="w-3 h-3" />
+                                            {ROLE_LABELS[memberRole]}
+                                        </span>
+                                    )}
+                                    {memberDepartment && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                                            <Building className="w-3 h-3" />
+                                            {memberDepartment.name}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -345,11 +381,11 @@ export default function ProfilePage() {
                             Personal Info
                         </TabsTrigger>
                         <TabsTrigger
-                            value="company"
+                            value="university"
                             className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:shadow-sm cursor-pointer"
                         >
-                            <Building2 className="w-4 h-4 mr-2" />
-                            Company
+                            <GraduationCap className="w-4 h-4 mr-2" />
+                            University
                         </TabsTrigger>
                         <TabsTrigger
                             value="security"
@@ -414,7 +450,7 @@ export default function ProfilePage() {
                                                 <Input
                                                     value={profileForm.displayName}
                                                     onChange={(e) => setProfileForm(prev => ({ ...prev, displayName: e.target.value }))}
-                                                    placeholder="How you appear to team members"
+                                                    placeholder="How you appear to colleagues"
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
@@ -423,7 +459,7 @@ export default function ProfilePage() {
                                                 <Input
                                                     value={profileForm.phone}
                                                     onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
-                                                    placeholder="+1 (555) 123-4567"
+                                                    placeholder="+91 98765 43210"
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
@@ -442,7 +478,7 @@ export default function ProfilePage() {
                                             <Button
                                                 onClick={handleProfileSave}
                                                 disabled={savingProfile}
-                                                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                                                className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white cursor-pointer"
                                             >
                                                 {
                                                     savingProfile ? (
@@ -536,7 +572,7 @@ export default function ProfilePage() {
                             }
                         </motion.div>
                     </TabsContent>
-                    <TabsContent value="company">
+                    <TabsContent value="university">
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -544,8 +580,8 @@ export default function ProfilePage() {
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2">
-                                    <Building2 className="w-5 h-5" />
-                                    Company Details
+                                    <GraduationCap className="w-5 h-5" />
+                                    University Details
                                     {
                                         isHead && (
                                             <span className="ml-2 text-xs font-normal text-amber-500 flex items-center gap-1">
@@ -559,11 +595,11 @@ export default function ProfilePage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setEditingCompany(!editingCompany)}
+                                            onClick={() => setEditingUniversity(!editingUniversity)}
                                             className="rounded-xl cursor-pointer"
                                         >
                                             {
-                                                editingCompany ? (
+                                                editingUniversity ? (
                                                     <>
                                                         <X className="w-4 h-4 mr-2" /> Cancel
                                                     </>
@@ -579,100 +615,99 @@ export default function ProfilePage() {
                             </div>
 
                             {
-                                editingCompany && isHead ? (
+                                editingUniversity && isHead ? (
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label className="text-sm font-medium">Company Name</Label>
+                                                <Label className="text-sm font-medium">University Name</Label>
                                                 <Input
-                                                    value={companyForm.name || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, name: e.target.value }))}
+                                                    value={universityForm.name || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, name: e.target.value }))}
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
                                                 <Label className="text-sm font-medium">Website</Label>
                                                 <Input
-                                                    value={companyForm.website || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, website: e.target.value }))}
-                                                    placeholder="https://example.com"
+                                                    value={universityForm.website || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, website: e.target.value }))}
+                                                    placeholder="https://university.edu"
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="text-sm font-medium">Industry</Label>
+                                                <Label className="text-sm font-medium">Email</Label>
                                                 <Input
-                                                    value={companyForm.industry || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, industry: e.target.value }))}
-                                                    placeholder="Technology, Healthcare, etc."
+                                                    value={universityForm.email || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, email: e.target.value }))}
+                                                    placeholder="contact@university.edu"
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="text-sm font-medium">Company Size</Label>
+                                                <Label className="text-sm font-medium">Phone</Label>
                                                 <Input
-                                                    value={companyForm.companySize || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, companySize: e.target.value }))}
-                                                    placeholder="1-10, 11-50, etc."
+                                                    value={universityForm.phone || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, phone: e.target.value }))}
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="text-sm font-medium">Headquarters</Label>
+                                                <Label className="text-sm font-medium">University Type</Label>
                                                 <Input
-                                                    value={companyForm.headquarters || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, headquarters: e.target.value }))}
-                                                    placeholder="San Francisco, CA"
+                                                    value={universityForm.universityType || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, universityType: e.target.value }))}
+                                                    placeholder="Public, Private, Deemed..."
+                                                    className="mt-2 rounded-xl"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-medium">Accreditation</Label>
+                                                <Input
+                                                    value={universityForm.accreditation || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, accreditation: e.target.value }))}
+                                                    placeholder="NAAC A++, NBA..."
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
                                                 <Label className="text-sm font-medium">Address</Label>
                                                 <Input
-                                                    value={companyForm.address || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, address: e.target.value }))}
-                                                    placeholder="123 Main Street"
+                                                    value={universityForm.address || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, address: e.target.value }))}
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
                                                 <Label className="text-sm font-medium">City</Label>
                                                 <Input
-                                                    value={companyForm.city || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, city: e.target.value }))}
+                                                    value={universityForm.city || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, city: e.target.value }))}
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
                                                 <Label className="text-sm font-medium">State</Label>
                                                 <Input
-                                                    value={companyForm.state || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, state: e.target.value }))}
-                                                    className="mt-2 rounded-xl"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label className="text-sm font-medium">Country</Label>
-                                                <Input
-                                                    value={companyForm.country || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, country: e.target.value }))}
+                                                    value={universityForm.state || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, state: e.target.value }))}
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div>
                                                 <Label className="text-sm font-medium">Pincode</Label>
                                                 <Input
-                                                    value={companyForm.pincode || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, pincode: e.target.value }))}
+                                                    value={universityForm.pincode || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, pincode: e.target.value }))}
                                                     className="mt-2 rounded-xl"
                                                 />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <Label className="text-sm font-medium">Description</Label>
                                                 <Textarea
-                                                    value={companyForm.description || ""}
-                                                    onChange={(e) => setCompanyForm(prev => ({ ...prev, description: e.target.value }))}
-                                                    placeholder="Brief description of your company..."
+                                                    value={universityForm.description || ""}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, description: e.target.value }))}
+                                                    placeholder="Brief description of your university..."
                                                     className="mt-2 rounded-xl resize-none"
                                                     rows={3}
                                                 />
@@ -680,12 +715,12 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="flex items-center gap-3 pt-2">
                                             <Button
-                                                onClick={handleCompanySave}
-                                                disabled={savingCompany}
-                                                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                                                onClick={handleUniversitySave}
+                                                disabled={savingUniversity}
+                                                className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white cursor-pointer"
                                             >
                                                 {
-                                                    savingCompany ? (
+                                                    savingUniversity ? (
                                                         <>
                                                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                                             Saving...
@@ -693,23 +728,23 @@ export default function ProfilePage() {
                                                     ) : (
                                                         <>
                                                             <Save className="w-4 h-4 mr-2" />
-                                                            Save Company Details
+                                                            Save University Details
                                                         </>
                                                     )
                                                 }
                                             </Button>
                                             {
-                                                companyMessage && (
-                                                    <span className={`text-sm flex items-center gap-1 ${companyMessage.type === "success" ? "text-green-500" : "text-red-500"
+                                                universityMessage && (
+                                                    <span className={`text-sm flex items-center gap-1 ${universityMessage.type === "success" ? "text-green-500" : "text-red-500"
                                                         }`}>
                                                         {
-                                                            companyMessage.type === "success" ? (
+                                                            universityMessage.type === "success" ? (
                                                                 <Check className="w-4 h-4" />
                                                             ) : (
                                                                 <AlertCircle className="w-4 h-4" />
                                                             )
                                                         }
-                                                        {companyMessage.text}
+                                                        {universityMessage.text}
                                                     </span>
                                                 )
                                             }
@@ -724,65 +759,89 @@ export default function ProfilePage() {
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                    <Building2 className="w-5 h-5 text-neutral-400" />
+                                                    <GraduationCap className="w-5 h-5 text-violet-500" />
                                                     <div className="min-w-0">
-                                                        <p className="text-xs text-neutral-500">Company Name</p>
+                                                        <p className="text-xs text-neutral-500">University Name</p>
                                                         <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                            {companyDetails?.name || "Not set"}
+                                                            {universityDetails?.name || "Not set"}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 {
-                                                    companyDetails?.website && (
+                                                    universityDetails?.website && (
                                                         <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
                                                             <LinkIcon className="w-5 h-5 text-neutral-400" />
                                                             <div className="min-w-0">
                                                                 <p className="text-xs text-neutral-500">Website</p>
                                                                 <Link
-                                                                    href={companyDetails.website}
+                                                                    href={universityDetails.website}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="text-sm font-medium text-violet-600 dark:text-violet-400 hover:underline truncate block"
                                                                 >
-                                                                    {companyDetails.website}
+                                                                    {universityDetails.website}
                                                                 </Link>
                                                             </div>
                                                         </div>
                                                     )
                                                 }
                                                 {
-                                                    companyDetails?.industry && (
+                                                    universityDetails?.universityType && (
                                                         <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                            <Briefcase className="w-5 h-5 text-neutral-400" />
+                                                            <Building className="w-5 h-5 text-neutral-400" />
                                                             <div className="min-w-0">
-                                                                <p className="text-xs text-neutral-500">Industry</p>
+                                                                <p className="text-xs text-neutral-500">Type</p>
                                                                 <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                    {companyDetails.industry}
+                                                                    {universityDetails.universityType}
                                                                 </p>
                                                             </div>
                                                         </div>
                                                     )
                                                 }
                                                 {
-                                                    companyDetails?.companySize && (
+                                                    universityDetails?.accreditation && (
                                                         <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
-                                                            <User className="w-5 h-5 text-neutral-400" />
+                                                            <Award className="w-5 h-5 text-neutral-400" />
                                                             <div className="min-w-0">
-                                                                <p className="text-xs text-neutral-500">Company Size</p>
+                                                                <p className="text-xs text-neutral-500">Accreditation</p>
                                                                 <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                    {companyDetails.companySize} employees
+                                                                    {universityDetails.accreditation}
                                                                 </p>
                                                             </div>
                                                         </div>
                                                     )
                                                 }
                                             </div>
+                                            {/* Stats */}
+                                            <div className="grid grid-cols-3 gap-4 mt-4">
+                                                <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-center">
+                                                    <Users className="w-5 h-5 text-violet-600 dark:text-violet-400 mx-auto mb-1" />
+                                                    <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                                                        {universityDetails?.memberCount || 0}
+                                                    </p>
+                                                    <p className="text-xs text-neutral-500">Faculty</p>
+                                                </div>
+                                                <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-center">
+                                                    <User className="w-5 h-5 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
+                                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                                        {universityDetails?.studentCount || 0}
+                                                    </p>
+                                                    <p className="text-xs text-neutral-500">Students</p>
+                                                </div>
+                                                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-center">
+                                                    <Building className="w-5 h-5 text-green-600 dark:text-green-400 mx-auto mb-1" />
+                                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                        {universityDetails?.departmentCount || 0}
+                                                    </p>
+                                                    <p className="text-xs text-neutral-500">Departments</p>
+                                                </div>
+                                            </div>
                                             {
-                                                companyDetails?.description && (
+                                                universityDetails?.description && (
                                                     <div className="mt-4 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
                                                         <p className="text-xs text-neutral-500 mb-1">About</p>
                                                         <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                                                            {companyDetails.description}
+                                                            {universityDetails.description}
                                                         </p>
                                                     </div>
                                                 )
@@ -797,70 +856,49 @@ export default function ProfilePage() {
                                                     </h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {
-                                                            companyDetails?.address && (
-                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                    <MapPin className="w-5 h-5 text-amber-500" />
+                                                            universityDetails?.address && (
+                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                                    <MapPin className="w-5 h-5 text-neutral-400" />
                                                                     <div className="min-w-0">
-                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">Address</p>
+                                                                        <p className="text-xs text-neutral-500">Address</p>
                                                                         <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                            {companyDetails.address}
+                                                                            {universityDetails.address}
                                                                         </p>
                                                                     </div>
                                                                 </div>
                                                             )
                                                         }
                                                         {
-                                                            (companyDetails?.city || companyDetails?.state) && (
-                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                    <MapPin className="w-5 h-5 text-amber-500" />
+                                                            universityDetails?.city && (
+                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900/50">
+                                                                    <MapPin className="w-5 h-5 text-neutral-400" />
                                                                     <div className="min-w-0">
-                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">City, State</p>
+                                                                        <p className="text-xs text-neutral-500">Location</p>
                                                                         <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                            {[companyDetails?.city, companyDetails?.state].filter(Boolean).join(", ") || "Not set"}
+                                                                            {universityDetails.city}, {universityDetails.state}
                                                                         </p>
                                                                     </div>
                                                                 </div>
                                                             )
                                                         }
-                                                        {
-                                                            companyDetails?.country && (
-                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                    <Globe className="w-5 h-5 text-amber-500" />
-                                                                    <div className="min-w-0">
-                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">Country</p>
-                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                            {companyDetails.country}
-                                                                        </p>
-                                                                    </div>
+                                                        {/* Credits Info */}
+                                                        <div className="md:col-span-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                                            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2 font-medium">Credit Balance</p>
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                                                                        {(universityDetails?.totalCreditsAllocated || 0) - (universityDetails?.totalCreditsUsed || 0)}
+                                                                    </span>
+                                                                    <span className="text-sm text-amber-600 dark:text-amber-400 ml-2">
+                                                                        / {universityDetails?.totalCreditsAllocated || 0} credits
+                                                                    </span>
                                                                 </div>
-                                                            )
-                                                        }
-                                                        {
-                                                            companyDetails?.pincode && (
-                                                                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                                                                    <MapPin className="w-5 h-5 text-amber-500" />
-                                                                    <div className="min-w-0">
-                                                                        <p className="text-xs text-amber-600 dark:text-amber-400">Pincode</p>
-                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                                            {companyDetails.pincode}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        }
-                                                    </div>
-                                                    <div className="mt-4 grid grid-cols-2 gap-4">
-                                                        <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-100 dark:border-violet-800/30">
-                                                            <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                                                                {companyDetails?.memberCount || 0}
-                                                            </p>
-                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Team Members</p>
-                                                        </div>
-                                                        <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/30">
-                                                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                                                {companyDetails?.jobCount || 0}
-                                                            </p>
-                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Active Jobs</p>
+                                                                {universityDetails?.creditExpiryDate && (
+                                                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                                                        Expires: {new Date(universityDetails.creditExpiryDate).toLocaleDateString()}
+                                                                    </p>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -877,88 +915,83 @@ export default function ProfilePage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
                         >
-                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
+                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2 mb-6">
                                 <Key className="w-5 h-5" />
                                 Change Password
                             </h3>
-                            <form onSubmit={handlePasswordChange} className="space-y-4">
-                                <p className="text-sm text-neutral-500">
-                                    Change your password to keep your account secure. Password must be at least 8 characters.
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="relative">
-                                        <Label className="text-sm font-medium">Current Password</Label>
-                                        <div className="relative mt-2">
-                                            <Input
-                                                type={showCurrentPassword ? "text" : "password"}
-                                                value={passwordForm.currentPassword}
-                                                onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                                                placeholder="••••••••"
-                                                className="rounded-xl pr-10"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                                            >
-                                                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
-                                        </div>
+                            <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                                <div>
+                                    <Label className="text-sm font-medium">Current Password</Label>
+                                    <div className="relative mt-2">
+                                        <Input
+                                            type={showCurrentPassword ? "text" : "password"}
+                                            value={passwordForm.currentPassword}
+                                            onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                            placeholder="Enter current password"
+                                            className="rounded-xl pr-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                                        >
+                                            {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
                                     </div>
-                                    <div className="relative">
-                                        <Label className="text-sm font-medium">New Password</Label>
-                                        <div className="relative mt-2">
-                                            <Input
-                                                type={showNewPassword ? "text" : "password"}
-                                                value={passwordForm.newPassword}
-                                                onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                                                placeholder="••••••••"
-                                                className="rounded-xl pr-10"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowNewPassword(!showNewPassword)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                                            >
-                                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
-                                        </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">New Password</Label>
+                                    <div className="relative mt-2">
+                                        <Input
+                                            type={showNewPassword ? "text" : "password"}
+                                            value={passwordForm.newPassword}
+                                            onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                                            placeholder="Enter new password"
+                                            className="rounded-xl pr-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                                        >
+                                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
                                     </div>
-                                    <div className="relative">
-                                        <Label className="text-sm font-medium">Confirm Password</Label>
-                                        <div className="relative mt-2">
-                                            <Input
-                                                type={showConfirmPassword ? "text" : "password"}
-                                                value={passwordForm.confirmPassword}
-                                                onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                                                placeholder="••••••••"
-                                                className="rounded-xl pr-10"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                                            >
-                                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
-                                        </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Confirm New Password</Label>
+                                    <div className="relative mt-2">
+                                        <Input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            value={passwordForm.confirmPassword}
+                                            onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                            placeholder="Confirm new password"
+                                            className="rounded-xl pr-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 pt-2">
                                     <Button
                                         type="submit"
-                                        disabled={savingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
-                                        className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                                        disabled={savingPassword}
+                                        className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white cursor-pointer"
                                     >
                                         {
                                             savingPassword ? (
                                                 <>
                                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                    Changing Password...
+                                                    Changing...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Lock className="w-4 h-4 mr-2" />
+                                                    <Key className="w-4 h-4 mr-2" />
                                                     Change Password
                                                 </>
                                             )
@@ -989,44 +1022,29 @@ export default function ProfilePage() {
                             animate={{ opacity: 1, y: 0 }}
                             className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
                         >
-                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2 mb-6">
                                 <Shield className="w-5 h-5" />
                                 Your Permissions
                             </h3>
-                            <p className="text-sm text-neutral-500 mb-6">
-                                These are the actions you can perform in this workspace. Contact your admin to request additional permissions.
+                            <p className="text-neutral-500 mb-6">
+                                These are the permissions assigned to your role. Contact your university admin to request changes.
                             </p>
-                            {
-                                memberPermissions.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        {
-                                            memberPermissions.map((permission) => (
-                                                <span
-                                                    key={permission}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                                                >
-                                                    <Check className="w-3 h-3" />
-                                                    {permission.replace(/_/g, " ")}
-                                                </span>
-                                            ))
-                                        }
-                                    </div>
-                                ) : (
-                                    <p className="text-neutral-500">No permissions assigned.</p>
-                                )
-                            }
-                            {
-                                isHead && (
-                                    <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800">
-                                        <Link href="/team/roles">
-                                            <Button className="rounded-xl cursor-pointer">
-                                                <Shield className="w-4 h-4 mr-2" />
-                                                Manage Team Permissions
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                )
-                            }
+                            <div className="flex flex-wrap gap-2">
+                                {
+                                    memberPermissions.length > 0 ? (
+                                        memberPermissions.map((perm) => (
+                                            <span
+                                                key={perm}
+                                                className="px-3 py-1.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-xs font-medium"
+                                            >
+                                                {perm.replace(/_/g, " ")}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <p className="text-neutral-400 text-sm">No permissions assigned</p>
+                                    )
+                                }
+                            </div>
                         </motion.div>
                     </TabsContent>
                 </Tabs>

@@ -3,7 +3,7 @@ export interface RegisterRequestBody {
     name: string;
     email: string;
     password: string;
-    companyName?: string;
+    universityName?: string;
 }
 
 // Types for API responses
@@ -15,7 +15,7 @@ export interface ApiResponse<T = unknown> {
 }
 
 // User types
-export interface HiringUser {
+export interface UniUser {
     id: string;
     name: string | null;
     email: string;
@@ -24,39 +24,63 @@ export interface HiringUser {
     image?: string | null;
 }
 
-// Company types
-export interface Company {
+// ============================================
+// UNIVERSITY TYPES
+// ============================================
+
+export interface University {
     id: string;
     name: string;
     slug: string;
     logoUrl?: string | null;
+    bannerUrl?: string | null;
     website?: string | null;
     description?: string | null;
-    industry?: string | null;
-    companySize?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    universityType?: string | null;
+    affiliatedTo?: string | null;
+    accreditation?: string | null;
+    establishedYear?: number | null;
+    emailDomain: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
-// Company member types
-export type CompanyMemberRole = "HEAD" | "RECRUITER";
-export type CompanyMemberJobTitle =
-    | "CEO"
-    | "CTO"
-    | "COFOUNDER"
-    | "VP_ENGINEERING"
-    | "HR_HEAD"
-    | "HR_MANAGER"
-    | "RECRUITER"
-    | "HIRING_MANAGER"
+// University member types
+export type UniversityMemberRole =
+    | "HEAD"
+    | "DEPARTMENT_HEAD"
+    | "PLACEMENT_OFFICER"
+    | "FINANCE_OFFICER"
+    | "FACULTY"
+    | "TEACHING_ASSISTANT";
+
+export type UniversityMemberJobTitle =
+    | "CHANCELLOR"
+    | "PRINCIPAL"
+    | "REGISTRAR"
+    | "DEAN"
+    | "HOD"
+    | "PROFESSOR"
+    | "ASSOCIATE_PROFESSOR"
+    | "ASSISTANT_PROFESSOR"
+    | "LECTURER"
+    | "PLACEMENT_COORDINATOR"
+    | "PLACEMENT_OFFICER"
+    | "FINANCE_MANAGER"
+    | "ACCOUNTS_OFFICER"
+    | "TEACHING_ASSISTANT"
+    | "LAB_INSTRUCTOR"
     | "OTHER";
 
-export interface CompanyMember {
+export interface UniversityMember {
     id: string;
     userId: string;
-    companyId: string;
-    role: CompanyMemberRole;
-    jobTitle: CompanyMemberJobTitle;
+    universityId: string;
+    departmentId?: string | null;
+    role: UniversityMemberRole;
+    jobTitle: UniversityMemberJobTitle;
     jobTitleCustom?: string | null;
     displayName?: string | null;
     email: string;
@@ -68,10 +92,10 @@ export interface CompanyMember {
 }
 
 // Session types for middleware
-export interface HiringSession {
-    user: HiringUser;
-    companyMember?: CompanyMember;
-    company?: Company;
+export interface UniSession {
+    user: UniUser;
+    universityMember?: UniversityMember;
+    university?: University;
 }
 
 // ============================================
@@ -106,80 +130,101 @@ export interface ChangePasswordPayload {
 }
 
 // ============================================
-// COMPANY DETAILS TYPES
+// UNIVERSITY DETAILS TYPES
 // ============================================
 
-// Extended company details with location
-export interface CompanyDetails {
+// Extended university details with location
+export interface UniversityDetails {
     id: string;
     name: string;
     slug: string;
     logoUrl: string | null;
+    bannerUrl: string | null;
     website: string | null;
     description: string | null;
-    industry: string | null;
-    companySize: string | null;
-    foundedYear: number | null;
-    headquarters: string | null;
-    socialLinks: CompanySocialLinks | null;
+    email: string | null;
+    phone: string | null;
+    universityType: string | null;
+    affiliatedTo: string | null;
+    accreditation: string | null;
+    establishedYear: number | null;
+    emailDomain: string;
     // Location details
     address: string | null;
     city: string | null;
     state: string | null;
-    country: string | null;
+    country: string;
     pincode: string | null;
     // Verification
-    verificationStatus: CompanyVerificationStatus;
+    verificationStatus: UniversityVerificationStatus;
     verifiedAt: Date | null;
+    // Credits
+    totalCreditsAllocated: number;
+    totalCreditsUsed: number;
+    creditExpiryDate: Date | null;
     // Stats
     memberCount?: number;
-    jobCount?: number;
+    studentCount?: number;
+    departmentCount?: number;
     createdAt: Date;
     updatedAt: Date;
 }
 
-export type CompanyVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
+export type UniversityVerificationStatus = "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED" | "SUSPENDED";
 
-export interface CompanySocialLinks {
-    linkedin?: string;
-    twitter?: string;
-    github?: string;
-}
-
-// Update company details payload
-export interface UpdateCompanyPayload {
+// Update university details payload
+export interface UpdateUniversityPayload {
     name?: string;
     website?: string;
     description?: string;
-    industry?: string;
-    companySize?: string;
-    foundedYear?: number;
-    headquarters?: string;
+    email?: string;
+    phone?: string;
+    universityType?: string;
+    affiliatedTo?: string;
+    accreditation?: string;
+    establishedYear?: number;
     address?: string;
     city?: string;
     state?: string;
     country?: string;
     pincode?: string;
-    socialLinks?: CompanySocialLinks;
 }
 
 // ============================================
 // PERMISSIONS & ROLES TYPES
 // ============================================
 
-// Available permissions in the system
-export type Permission =
-    | "view_jobs"
-    | "post_jobs"
-    | "edit_jobs"
-    | "delete_jobs"
-    | "view_applications"
-    | "review_candidates"
-    | "manage_assessments"
+// Available permissions in the university system
+export type UniversityPermission =
+    // Class & Teaching
+    | "view_classes"
+    | "create_classes"
+    | "edit_classes"
+    | "delete_classes"
+    // Assignments
+    | "create_assignments"
+    | "edit_assignments"
+    | "delete_assignments"
+    | "grade_submissions"
+    // Students
+    | "view_students"
+    | "verify_students"
+    | "manage_student_credits"
+    // Departments
+    | "manage_departments"
+    // Members
     | "manage_members"
-    | "manage_company"
+    | "invite_members"
+    // University Admin
+    | "manage_university"
     | "manage_billing"
-    | "view_analytics";
+    | "manage_credits"
+    // Placements
+    | "manage_placements"
+    | "view_job_applications"
+    // Analytics
+    | "view_analytics"
+    | "view_reports";
 
 // Permission group for UI display
 export interface PermissionGroup {
@@ -189,31 +234,76 @@ export interface PermissionGroup {
 }
 
 export interface PermissionItem {
-    key: Permission;
+    key: UniversityPermission;
     label: string;
     description: string;
 }
 
 // Default role permissions
-export const DEFAULT_HEAD_PERMISSIONS: Permission[] = [
-    "view_jobs",
-    "post_jobs",
-    "edit_jobs",
-    "delete_jobs",
-    "view_applications",
-    "review_candidates",
-    "manage_assessments",
+export const DEFAULT_HEAD_PERMISSIONS: UniversityPermission[] = [
+    "view_classes",
+    "create_classes",
+    "edit_classes",
+    "delete_classes",
+    "create_assignments",
+    "edit_assignments",
+    "delete_assignments",
+    "grade_submissions",
+    "view_students",
+    "verify_students",
+    "manage_student_credits",
+    "manage_departments",
     "manage_members",
-    "manage_company",
+    "invite_members",
+    "manage_university",
     "manage_billing",
+    "manage_credits",
+    "manage_placements",
+    "view_job_applications",
+    "view_analytics",
+    "view_reports",
+];
+
+export const DEFAULT_DEPARTMENT_HEAD_PERMISSIONS: UniversityPermission[] = [
+    "view_classes",
+    "create_classes",
+    "edit_classes",
+    "create_assignments",
+    "edit_assignments",
+    "delete_assignments",
+    "grade_submissions",
+    "view_students",
+    "invite_members",
     "view_analytics",
 ];
 
-export const DEFAULT_RECRUITER_PERMISSIONS: Permission[] = [
-    "view_jobs",
-    "post_jobs",
-    "view_applications",
-    "review_candidates",
+export const DEFAULT_FACULTY_PERMISSIONS: UniversityPermission[] = [
+    "view_classes",
+    "create_assignments",
+    "edit_assignments",
+    "grade_submissions",
+    "view_students",
+];
+
+export const DEFAULT_PLACEMENT_OFFICER_PERMISSIONS: UniversityPermission[] = [
+    "view_students",
+    "manage_placements",
+    "view_job_applications",
+    "view_analytics",
+];
+
+export const DEFAULT_FINANCE_OFFICER_PERMISSIONS: UniversityPermission[] = [
+    "manage_billing",
+    "manage_credits",
+    "manage_student_credits",
+    "view_analytics",
+    "view_reports",
+];
+
+export const DEFAULT_TA_PERMISSIONS: UniversityPermission[] = [
+    "view_classes",
+    "grade_submissions",
+    "view_students",
 ];
 
 // ============================================
@@ -224,14 +314,15 @@ export const DEFAULT_RECRUITER_PERMISSIONS: Permission[] = [
 export interface TeamMember {
     id: string;
     userId: string;
-    companyId: string;
-    role: CompanyMemberRole;
-    jobTitle: CompanyMemberJobTitle;
+    universityId: string;
+    departmentId: string | null;
+    role: UniversityMemberRole;
+    jobTitle: UniversityMemberJobTitle;
     jobTitleCustom: string | null;
     displayName: string | null;
     email: string;
     phone: string | null;
-    permissions: Permission[];
+    permissions: UniversityPermission[];
     inviteStatus: MemberInviteStatus;
     isActive: boolean;
     lastActiveAt: Date | null;
@@ -242,16 +333,23 @@ export interface TeamMember {
         name: string | null;
         image: string | null;
     };
+    // Department info
+    department?: {
+        id: string;
+        name: string;
+        code: string | null;
+    } | null;
 }
 
 export type MemberInviteStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 
 // Update team member payload
 export interface UpdateTeamMemberPayload {
-    role?: CompanyMemberRole;
-    jobTitle?: CompanyMemberJobTitle;
+    role?: UniversityMemberRole;
+    jobTitle?: UniversityMemberJobTitle;
     jobTitleCustom?: string;
-    permissions?: Permission[];
+    departmentId?: string | null;
+    permissions?: UniversityPermission[];
     isActive?: boolean;
 }
 
@@ -259,8 +357,21 @@ export interface UpdateTeamMemberPayload {
 export interface InviteTeamMemberPayload {
     email: string;
     name?: string;
-    role: CompanyMemberRole;
-    jobTitle: CompanyMemberJobTitle;
-    permissions?: Permission[];
+    role: UniversityMemberRole;
+    jobTitle: UniversityMemberJobTitle;
+    departmentId?: string;
+    permissions?: UniversityPermission[];
     message?: string;
+}
+
+// Department type
+export interface Department {
+    id: string;
+    universityId: string;
+    name: string;
+    code: string | null;
+    description: string | null;
+    headUserId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
 }

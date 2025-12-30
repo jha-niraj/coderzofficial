@@ -5,13 +5,12 @@ import { auth } from "@repo/auth";
 import bcrypt from "bcryptjs";
 import type {
     UserProfile,
-    CompanyDetails,
+    UniversityDetails,
     UpdateProfilePayload,
     ChangePasswordPayload,
-    UpdateCompanyPayload,
-    Permission,
-    CompanySocialLinks,
-    CompanyVerificationStatus,
+    UpdateUniversityPayload,
+    UniversityPermission,
+    UniversityVerificationStatus,
 } from "../../types";
 
 // ============================================
@@ -19,7 +18,7 @@ import type {
 // ============================================
 
 /**
- * Get the current user's profile along with their company member info
+ * Get the current user's profile along with their university member info
  */
 export async function getUserProfile() {
     const session = await auth();
@@ -64,7 +63,7 @@ export async function getUserProfile() {
 }
 
 /**
- * Get the current user's company member info
+ * Get the current user's university member info
  */
 export async function getCurrentMember() {
     const session = await auth();
@@ -74,23 +73,16 @@ export async function getCurrentMember() {
     }
 
     try {
-        const member = await prisma.companyMember.findFirst({
+        const member = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: {
-                id: true,
-                userId: true,
-                companyId: true,
-                role: true,
-                jobTitle: true,
-                jobTitleCustom: true,
-                displayName: true,
-                email: true,
-                phone: true,
-                permissions: true,
-                isActive: true,
-                lastActiveAt: true,
-                createdAt: true,
-                updatedAt: true,
+            include: {
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                        code: true,
+                    },
+                },
             },
         });
 
@@ -99,14 +91,14 @@ export async function getCurrentMember() {
         }
 
         // Parse permissions from JSON
-        let permissions: Permission[] = [];
+        let permissions: UniversityPermission[] = [];
         if (member.permissions) {
             try {
                 const parsed = typeof member.permissions === "string"
                     ? JSON.parse(member.permissions)
                     : member.permissions;
                 if (Array.isArray(parsed)) {
-                    permissions = parsed as Permission[];
+                    permissions = parsed as UniversityPermission[];
                 }
             } catch {
                 permissions = [];
@@ -116,8 +108,22 @@ export async function getCurrentMember() {
         return {
             success: true,
             data: {
-                ...member,
+                id: member.id,
+                userId: member.userId,
+                universityId: member.universityId,
+                departmentId: member.departmentId,
+                role: member.role,
+                jobTitle: member.jobTitle,
+                jobTitleCustom: member.jobTitleCustom,
+                displayName: member.displayName,
+                email: member.email,
+                phone: member.phone,
                 permissions,
+                isActive: member.isActive,
+                lastActiveAt: member.lastActiveAt,
+                createdAt: member.createdAt,
+                updatedAt: member.updatedAt,
+                department: member.department,
             },
         };
     } catch (error) {
@@ -127,9 +133,9 @@ export async function getCurrentMember() {
 }
 
 /**
- * Get company details (accessible to all members)
+ * Get university details (accessible to all members)
  */
-export async function getCompanyDetails() {
+export async function getUniversityDetails() {
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -137,74 +143,72 @@ export async function getCompanyDetails() {
     }
 
     try {
-        const member = await prisma.companyMember.findFirst({
+        const member = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+            select: { universityId: true, role: true },
         });
 
         if (!member) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
-        const company = await prisma.company.findUnique({
-            where: { id: member.companyId },
+        const university = await prisma.university.findUnique({
+            where: { id: member.universityId },
             include: {
                 _count: {
                     select: {
                         members: true,
-                        jobs: true,
+                        studentLinks: true,
+                        departments: true,
                     },
                 },
             },
         });
 
-        if (!company) {
-            return { success: false, error: "Company not found" };
+        if (!university) {
+            return { success: false, error: "University not found" };
         }
 
-        // Parse social links
-        let socialLinks: CompanySocialLinks | null = null;
-        if (company.socialLinks) {
-            try {
-                socialLinks = company.socialLinks as CompanySocialLinks;
-            } catch {
-                socialLinks = null;
-            }
-        }
-
-        const companyDetails: CompanyDetails = {
-            id: company.id,
-            name: company.name,
-            slug: company.slug,
-            logoUrl: company.logoUrl,
-            website: company.website,
-            description: company.description,
-            industry: company.industry,
-            companySize: company.companySize,
-            foundedYear: company.foundedYear,
-            headquarters: company.headquarters,
-            socialLinks,
-            address: company.address,
-            city: company.city,
-            state: company.state,
-            country: company.country,
-            pincode: company.pincode,
-            verificationStatus: company.verificationStatus as CompanyVerificationStatus,
-            verifiedAt: company.verifiedAt,
-            memberCount: company._count.members,
-            jobCount: company._count.jobs,
-            createdAt: company.createdAt,
-            updatedAt: company.updatedAt,
+        const universityDetails: UniversityDetails = {
+            id: university.id,
+            name: university.name,
+            slug: university.slug,
+            logoUrl: university.logoUrl,
+            bannerUrl: university.bannerUrl,
+            website: university.website,
+            description: university.description,
+            email: university.email,
+            phone: university.phone,
+            universityType: university.universityType,
+            affiliatedTo: university.affiliatedTo,
+            accreditation: university.accreditation,
+            establishedYear: university.establishedYear,
+            emailDomain: university.emailDomain,
+            address: university.address,
+            city: university.city,
+            state: university.state,
+            country: university.country,
+            pincode: university.pincode,
+            verificationStatus: university.verificationStatus as UniversityVerificationStatus,
+            verifiedAt: university.verifiedAt,
+            totalCreditsAllocated: university.totalCreditsAllocated,
+            totalCreditsUsed: university.totalCreditsUsed,
+            creditExpiryDate: university.creditExpiryDate,
+            memberCount: university._count.members,
+            studentCount: university._count.studentLinks,
+            departmentCount: university._count.departments,
+            createdAt: university.createdAt,
+            updatedAt: university.updatedAt,
         };
 
         return {
             success: true,
-            data: companyDetails,
+            data: universityDetails,
             isHead: member.role === "HEAD",
         };
     } catch (error) {
-        console.error("Get company details error:", error);
-        return { success: false, error: "Failed to fetch company details" };
+        console.error("Get university details error:", error);
+        return { success: false, error: "Failed to fetch university details" };
     }
 }
 
@@ -236,13 +240,13 @@ export async function updateUserProfile(payload: UpdateProfilePayload) {
             });
         }
 
-        // Update company member info if display name or custom job title changed
+        // Update university member info if display name or custom job title changed
         if (payload.displayName !== undefined || payload.jobTitleCustom !== undefined) {
             const memberUpdateData: Record<string, string | undefined> = {};
             if (payload.displayName !== undefined) memberUpdateData.displayName = payload.displayName;
             if (payload.jobTitleCustom !== undefined) memberUpdateData.jobTitleCustom = payload.jobTitleCustom;
 
-            await prisma.companyMember.updateMany({
+            await prisma.universityMember.updateMany({
                 where: { userId: session.user.id },
                 data: memberUpdateData,
             });
@@ -313,9 +317,9 @@ export async function changePassword(payload: ChangePasswordPayload) {
 }
 
 /**
- * Update company details (HEAD only)
+ * Update university details (HEAD only)
  */
-export async function updateCompanyDetails(payload: UpdateCompanyPayload) {
+export async function updateUniversityDetails(payload: UpdateUniversityPayload) {
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -324,17 +328,17 @@ export async function updateCompanyDetails(payload: UpdateCompanyPayload) {
 
     try {
         // Check if user is HEAD
-        const member = await prisma.companyMember.findFirst({
+        const member = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+            select: { universityId: true, role: true },
         });
 
         if (!member) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         if (member.role !== "HEAD") {
-            return { success: false, error: "Only HEAD can update company details" };
+            return { success: false, error: "Only HEAD can update university details" };
         }
 
         // Build update data
@@ -342,27 +346,28 @@ export async function updateCompanyDetails(payload: UpdateCompanyPayload) {
         if (payload.name !== undefined) updateData.name = payload.name;
         if (payload.website !== undefined) updateData.website = payload.website;
         if (payload.description !== undefined) updateData.description = payload.description;
-        if (payload.industry !== undefined) updateData.industry = payload.industry;
-        if (payload.companySize !== undefined) updateData.companySize = payload.companySize;
-        if (payload.foundedYear !== undefined) updateData.foundedYear = payload.foundedYear;
-        if (payload.headquarters !== undefined) updateData.headquarters = payload.headquarters;
+        if (payload.email !== undefined) updateData.email = payload.email;
+        if (payload.phone !== undefined) updateData.phone = payload.phone;
+        if (payload.universityType !== undefined) updateData.universityType = payload.universityType;
+        if (payload.affiliatedTo !== undefined) updateData.affiliatedTo = payload.affiliatedTo;
+        if (payload.accreditation !== undefined) updateData.accreditation = payload.accreditation;
+        if (payload.establishedYear !== undefined) updateData.establishedYear = payload.establishedYear;
         if (payload.address !== undefined) updateData.address = payload.address;
         if (payload.city !== undefined) updateData.city = payload.city;
         if (payload.state !== undefined) updateData.state = payload.state;
         if (payload.country !== undefined) updateData.country = payload.country;
         if (payload.pincode !== undefined) updateData.pincode = payload.pincode;
-        if (payload.socialLinks !== undefined) updateData.socialLinks = payload.socialLinks;
 
         if (Object.keys(updateData).length > 0) {
-            await prisma.company.update({
-                where: { id: member.companyId },
+            await prisma.university.update({
+                where: { id: member.universityId },
                 data: updateData,
             });
         }
 
-        return { success: true, message: "Company details updated successfully" };
+        return { success: true, message: "University details updated successfully" };
     } catch (error) {
-        console.error("Update company error:", error);
-        return { success: false, error: "Failed to update company details" };
+        console.error("Update university error:", error);
+        return { success: false, error: "Failed to update university details" };
     }
 }

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import {
     Mail, Phone, MapPin, Clock, ArrowRight, Calendar,
-    MessageCircle, Building2
+    MessageCircle, GraduationCap
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
@@ -39,15 +39,23 @@ export default function ContactPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-center mb-16"
                     >
+                        <Link href="/" className="inline-flex items-center gap-2 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center">
+                                <GraduationCap className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
+                                CODER&apos;Z <span className="text-violet-500 font-mono font-normal">UNI</span>
+                            </span>
+                        </Link>
                         <span className="inline-block text-[10px] font-mono uppercase tracking-widest text-neutral-500 bg-neutral-100 dark:bg-neutral-900 px-4 py-2 rounded-full mb-6">
                             Contact Protocol
                         </span>
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-6">
-                            Let&apos;s Build <br />
-                            <span className="text-neutral-400 dark:text-neutral-600">Something Great.</span>
+                            Let&apos;s Transform <br />
+                            <span className="text-violet-500">Education Together.</span>
                         </h1>
                         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
-                            Whether you have questions about our platform, need a demo, or want to discuss enterprise solutions — we&apos;re here to help.
+                            Whether you have questions about our platform, need a demo for your university, or want to discuss enterprise solutions — we&apos;re here to help.
                         </p>
                     </motion.div>
                     <motion.div
@@ -57,40 +65,40 @@ export default function ContactPage() {
                         className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20"
                     >
                         <Link href="https://cal.com/coderzai" target="_blank">
-                            <div className="group bg-gradient-to-br from-neutral-900 to-neutral-800 dark:from-white dark:to-neutral-100 rounded-2xl p-8 text-white dark:text-black hover:scale-105 transition-transform cursor-pointer">
-                                <div className="w-14 h-14 rounded-xl bg-white/10 dark:bg-black/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <div className="group bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl p-8 text-white hover:scale-105 transition-transform cursor-pointer">
+                                <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                     <Calendar className="w-7 h-7" />
                                 </div>
                                 <h3 className="text-xl font-bold mb-2">Schedule a Demo</h3>
-                                <p className="text-neutral-400 dark:text-neutral-600 text-sm mb-4">
-                                    See FlowSync in action with a personalized walkthrough.
+                                <p className="text-violet-200 text-sm mb-4">
+                                    See Coder&apos;z Uni in action with a personalized walkthrough for your university.
                                 </p>
                                 <div className="flex items-center gap-2 font-medium text-sm">
                                     Book Meeting <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             </div>
                         </Link>
-                        <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
+                        <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 hover:border-violet-300 dark:hover:border-violet-700 transition-colors">
                             <div className="w-14 h-14 rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6">
-                                <Building2 className="w-7 h-7 text-neutral-600 dark:text-neutral-400" />
+                                <GraduationCap className="w-7 h-7 text-violet-600 dark:text-violet-400" />
                             </div>
-                            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">Enterprise Sales</h3>
+                            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">University Sales</h3>
                             <p className="text-neutral-500 text-sm mb-4">
-                                Custom solutions for large organizations with complex needs.
+                                Custom solutions for universities and educational institutions.
                             </p>
-                            <a href="mailto:sales@coderzai.xyz" className="flex items-center gap-2 font-medium text-sm text-neutral-900 dark:text-white hover:underline">
+                            <a href="mailto:sales@coderzai.xyz" className="flex items-center gap-2 font-medium text-sm text-violet-600 dark:text-violet-400 hover:underline">
                                 sales@coderzai.xyz <ArrowRight className="w-4 h-4" />
                             </a>
                         </div>
-                        <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
+                        <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 hover:border-violet-300 dark:hover:border-violet-700 transition-colors">
                             <div className="w-14 h-14 rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6">
-                                <MessageCircle className="w-7 h-7 text-neutral-600 dark:text-neutral-400" />
+                                <MessageCircle className="w-7 h-7 text-violet-600 dark:text-violet-400" />
                             </div>
                             <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">Technical Support</h3>
                             <p className="text-neutral-500 text-sm mb-4">
                                 Get help with platform issues and technical questions.
                             </p>
-                            <a href="mailto:support@coderzai.xyz" className="flex items-center gap-2 font-medium text-sm text-neutral-900 dark:text-white hover:underline">
+                            <a href="mailto:support@coderzai.xyz" className="flex items-center gap-2 font-medium text-sm text-violet-600 dark:text-violet-400 hover:underline">
                                 support@coderzai.xyz <ArrowRight className="w-4 h-4" />
                             </a>
                         </div>
@@ -152,20 +160,20 @@ export default function ContactPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <Label htmlFor="email" className="text-sm font-medium">Work Email</Label>
+                                            <Label htmlFor="email" className="text-sm font-medium">University Email</Label>
                                             <Input
                                                 id="email"
                                                 type="email"
-                                                placeholder="john@company.com"
+                                                placeholder="john@university.edu"
                                                 className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
                                                 required
                                             />
                                         </div>
                                         <div>
-                                            <Label htmlFor="company" className="text-sm font-medium">Company Name</Label>
+                                            <Label htmlFor="university" className="text-sm font-medium">University Name</Label>
                                             <Input
-                                                id="company"
-                                                placeholder="Acme Inc."
+                                                id="university"
+                                                placeholder="XYZ University"
                                                 className="mt-2 rounded-xl bg-white dark:bg-neutral-950"
                                             />
                                         </div>
@@ -177,9 +185,10 @@ export default function ContactPage() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="demo">Request a Demo</SelectItem>
-                                                    <SelectItem value="sales">Sales Inquiry</SelectItem>
+                                                    <SelectItem value="pricing">Pricing Inquiry</SelectItem>
                                                     <SelectItem value="support">Technical Support</SelectItem>
-                                                    <SelectItem value="partnership">Partnership</SelectItem>
+                                                    <SelectItem value="integration">Platform Integration</SelectItem>
+                                                    <SelectItem value="placement">Placement Partnership</SelectItem>
                                                     <SelectItem value="other">Other</SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -188,7 +197,7 @@ export default function ContactPage() {
                                             <Label htmlFor="message" className="text-sm font-medium">Message</Label>
                                             <Textarea
                                                 id="message"
-                                                placeholder="Tell us about your needs..."
+                                                placeholder="Tell us about your university's needs..."
                                                 className="mt-2 rounded-xl bg-white dark:bg-neutral-950 min-h-[150px]"
                                                 required
                                             />
@@ -196,7 +205,7 @@ export default function ContactPage() {
                                         <Button
                                             type="submit"
                                             disabled={loading}
-                                            className="w-full rounded-xl h-12 bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-bold"
+                                            className="w-full rounded-xl h-12 bg-violet-600 hover:bg-violet-700 text-white font-bold cursor-pointer"
                                         >
                                             {loading ? "Sending..." : "Send Message"}
                                             <ArrowRight className="w-4 h-4 ml-2" />
@@ -219,19 +228,19 @@ export default function ContactPage() {
                             </p>
                             <div className="space-y-8">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
-                                        <Mail className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                                    <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                                        <Mail className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                                     </div>
                                     <div>
                                         <p className="font-bold text-neutral-900 dark:text-white mb-1">Email</p>
-                                        <a href="mailto:hello@coderzai.xyz" className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors">
-                                            hello@coderzai.xyz
+                                        <a href="mailto:university@coderzai.xyz" className="text-neutral-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
+                                            university@coderzai.xyz
                                         </a>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
-                                        <Phone className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                                    <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                                        <Phone className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                                     </div>
                                     <div>
                                         <p className="font-bold text-neutral-900 dark:text-white mb-1">Phone</p>
@@ -239,8 +248,8 @@ export default function ContactPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
-                                        <MapPin className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                                    <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                                        <MapPin className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                                     </div>
                                     <div>
                                         <p className="font-bold text-neutral-900 dark:text-white mb-1">Office</p>
@@ -252,8 +261,8 @@ export default function ContactPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
-                                        <Clock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                                    <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                                        <Clock className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                                     </div>
                                     <div>
                                         <p className="font-bold text-neutral-900 dark:text-white mb-1">Business Hours</p>
@@ -264,8 +273,8 @@ export default function ContactPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="mt-12 h-64 rounded-2xl bg-neutral-200 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center">
-                                <p className="text-neutral-500 text-sm">Map Integration</p>
+                            <div className="mt-12 h-64 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 flex items-center justify-center">
+                                <p className="text-violet-500 dark:text-violet-400 text-sm">Map Integration</p>
                             </div>
                         </motion.div>
                     </div>

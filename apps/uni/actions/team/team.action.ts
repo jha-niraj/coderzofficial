@@ -3,8 +3,8 @@
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
 import type {
-    Permission, TeamMember, UpdateTeamMemberPayload, InviteTeamMemberPayload, 
-    CompanyMemberRole, CompanyMemberJobTitle, MemberInviteStatus
+    UniversityPermission, TeamMember, UpdateTeamMemberPayload, InviteTeamMemberPayload,
+    UniversityMemberRole, UniversityMemberJobTitle, MemberInviteStatus, Department
 } from "@/types";
 
 // ============================================
@@ -12,7 +12,7 @@ import type {
 // ============================================
 
 /**
- * Get all team members of the current user's company
+ * Get all team members of the current user's university
  */
 export async function getTeamMembers() {
     const session = await auth();
@@ -22,19 +22,28 @@ export async function getTeamMembers() {
     }
 
     try {
-        // Get user's company
-        const currentMember = await prisma.companyMember.findFirst({
+        // Get user's university
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+            select: { universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         // Fetch all members
-        const members = await prisma.companyMember.findMany({
-            where: { companyId: currentMember.companyId },
+        const members = await prisma.universityMember.findMany({
+            where: { universityId: currentMember.universityId },
+            include: {
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                        code: true,
+                    },
+                },
+            },
             orderBy: [
                 { role: "asc" }, // HEAD first
                 { createdAt: "asc" },
@@ -44,14 +53,14 @@ export async function getTeamMembers() {
         // Transform to TeamMember type
         const teamMembers: TeamMember[] = members.map((member) => {
             // Parse permissions
-            let permissions: Permission[] = [];
+            let permissions: UniversityPermission[] = [];
             if (member.permissions) {
                 try {
                     const parsed = typeof member.permissions === "string"
                         ? JSON.parse(member.permissions)
                         : member.permissions;
                     if (Array.isArray(parsed)) {
-                        permissions = parsed as Permission[];
+                        permissions = parsed as UniversityPermission[];
                     }
                 } catch {
                     permissions = [];
@@ -61,9 +70,10 @@ export async function getTeamMembers() {
             return {
                 id: member.id,
                 userId: member.userId,
-                companyId: member.companyId,
-                role: member.role as CompanyMemberRole,
-                jobTitle: member.jobTitle as CompanyMemberJobTitle,
+                universityId: member.universityId,
+                departmentId: member.departmentId,
+                role: member.role as UniversityMemberRole,
+                jobTitle: member.jobTitle as UniversityMemberJobTitle,
                 jobTitleCustom: member.jobTitleCustom,
                 displayName: member.displayName,
                 email: member.email,
@@ -74,6 +84,7 @@ export async function getTeamMembers() {
                 lastActiveAt: member.lastActiveAt,
                 createdAt: member.createdAt,
                 updatedAt: member.updatedAt,
+                department: member.department,
             };
         });
 
@@ -99,19 +110,28 @@ export async function getTeamMember(memberId: string) {
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+            select: { universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
-        const member = await prisma.companyMember.findFirst({
+        const member = await prisma.universityMember.findFirst({
             where: {
                 id: memberId,
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
+            },
+            include: {
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                        code: true,
+                    },
+                },
             },
         });
 
@@ -120,14 +140,14 @@ export async function getTeamMember(memberId: string) {
         }
 
         // Parse permissions
-        let permissions: Permission[] = [];
+        let permissions: UniversityPermission[] = [];
         if (member.permissions) {
             try {
                 const parsed = typeof member.permissions === "string"
                     ? JSON.parse(member.permissions)
                     : member.permissions;
                 if (Array.isArray(parsed)) {
-                    permissions = parsed as Permission[];
+                    permissions = parsed as UniversityPermission[];
                 }
             } catch {
                 permissions = [];
@@ -137,9 +157,10 @@ export async function getTeamMember(memberId: string) {
         const teamMember: TeamMember = {
             id: member.id,
             userId: member.userId,
-            companyId: member.companyId,
-            role: member.role as CompanyMemberRole,
-            jobTitle: member.jobTitle as CompanyMemberJobTitle,
+            universityId: member.universityId,
+            departmentId: member.departmentId,
+            role: member.role as UniversityMemberRole,
+            jobTitle: member.jobTitle as UniversityMemberJobTitle,
             jobTitleCustom: member.jobTitleCustom,
             displayName: member.displayName,
             email: member.email,
@@ -150,6 +171,7 @@ export async function getTeamMember(memberId: string) {
             lastActiveAt: member.lastActiveAt,
             createdAt: member.createdAt,
             updatedAt: member.updatedAt,
+            department: member.department,
         };
 
         return {
@@ -160,6 +182,49 @@ export async function getTeamMember(memberId: string) {
     } catch (error) {
         console.error("Get team member error:", error);
         return { success: false, error: "Failed to fetch team member" };
+    }
+}
+
+/**
+ * Get all departments in the university
+ */
+export async function getDepartments() {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        const currentMember = await prisma.universityMember.findFirst({
+            where: { userId: session.user.id },
+            select: { universityId: true },
+        });
+
+        if (!currentMember) {
+            return { success: false, error: "Not a member of any university" };
+        }
+
+        const departments = await prisma.department.findMany({
+            where: { universityId: currentMember.universityId },
+            orderBy: { name: "asc" },
+        });
+
+        const deptList: Department[] = departments.map((dept) => ({
+            id: dept.id,
+            universityId: dept.universityId,
+            name: dept.name,
+            code: dept.code,
+            description: dept.description,
+            headUserId: dept.headUserId,
+            createdAt: dept.createdAt,
+            updatedAt: dept.updatedAt,
+        }));
+
+        return { success: true, data: deptList };
+    } catch (error) {
+        console.error("Get departments error:", error);
+        return { success: false, error: "Failed to fetch departments" };
     }
 }
 
@@ -179,24 +244,24 @@ export async function updateTeamMember(memberId: string, payload: UpdateTeamMemb
 
     try {
         // Check if user is HEAD
-        const currentMember = await prisma.companyMember.findFirst({
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { id: true, companyId: true, role: true },
+            select: { id: true, universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         if (currentMember.role !== "HEAD") {
             return { success: false, error: "Only HEAD can update team members" };
         }
 
-        // Check if target member exists in same company
-        const targetMember = await prisma.companyMember.findFirst({
+        // Check if target member exists in same university
+        const targetMember = await prisma.universityMember.findFirst({
             where: {
                 id: memberId,
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
             },
         });
 
@@ -214,13 +279,14 @@ export async function updateTeamMember(memberId: string, payload: UpdateTeamMemb
         if (payload.role !== undefined) updateData.role = payload.role;
         if (payload.jobTitle !== undefined) updateData.jobTitle = payload.jobTitle;
         if (payload.jobTitleCustom !== undefined) updateData.jobTitleCustom = payload.jobTitleCustom;
+        if (payload.departmentId !== undefined) updateData.departmentId = payload.departmentId;
         if (payload.isActive !== undefined) updateData.isActive = payload.isActive;
         if (payload.permissions !== undefined) {
             updateData.permissions = JSON.stringify(payload.permissions);
         }
 
         if (Object.keys(updateData).length > 0) {
-            await prisma.companyMember.update({
+            await prisma.universityMember.update({
                 where: { id: memberId },
                 data: updateData,
             });
@@ -245,13 +311,13 @@ export async function deactivateTeamMember(memberId: string) {
 
     try {
         // Check if user is HEAD
-        const currentMember = await prisma.companyMember.findFirst({
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { id: true, companyId: true, role: true },
+            select: { id: true, universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         if (currentMember.role !== "HEAD") {
@@ -263,11 +329,11 @@ export async function deactivateTeamMember(memberId: string) {
             return { success: false, error: "Cannot deactivate yourself" };
         }
 
-        // Check if target member exists in same company
-        const targetMember = await prisma.companyMember.findFirst({
+        // Check if target member exists in same university
+        const targetMember = await prisma.universityMember.findFirst({
             where: {
                 id: memberId,
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
             },
         });
 
@@ -275,7 +341,7 @@ export async function deactivateTeamMember(memberId: string) {
             return { success: false, error: "Member not found" };
         }
 
-        await prisma.companyMember.update({
+        await prisma.universityMember.update({
             where: { id: memberId },
             data: { isActive: false },
         });
@@ -298,23 +364,23 @@ export async function reactivateTeamMember(memberId: string) {
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+            select: { universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         if (currentMember.role !== "HEAD") {
             return { success: false, error: "Only HEAD can reactivate team members" };
         }
 
-        const targetMember = await prisma.companyMember.findFirst({
+        const targetMember = await prisma.universityMember.findFirst({
             where: {
                 id: memberId,
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
             },
         });
 
@@ -322,7 +388,7 @@ export async function reactivateTeamMember(memberId: string) {
             return { success: false, error: "Member not found" };
         }
 
-        await prisma.companyMember.update({
+        await prisma.universityMember.update({
             where: { id: memberId },
             data: { isActive: true },
         });
@@ -350,23 +416,23 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
 
     try {
         // Check if user is HEAD
-        const currentMember = await prisma.companyMember.findFirst({
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { id: true, companyId: true, role: true },
+            select: { id: true, universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         if (currentMember.role !== "HEAD") {
             return { success: false, error: "Only HEAD can invite team members" };
         }
 
-        // Check if email already exists in company
-        const existingMember = await prisma.companyMember.findFirst({
+        // Check if email already exists in university
+        const existingMember = await prisma.universityMember.findFirst({
             where: {
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
                 email: payload.email,
             },
         });
@@ -376,9 +442,9 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
         }
 
         // Check for existing pending invitation
-        const existingInvite = await prisma.memberInvitation.findFirst({
+        const existingInvite = await prisma.universityMemberInvitation.findFirst({
             where: {
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
                 email: payload.email,
                 status: "PENDING",
             },
@@ -393,13 +459,14 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
             Math.random().toString(36).substring(2, 10);
 
         // Create invitation
-        await prisma.memberInvitation.create({
+        await prisma.universityMemberInvitation.create({
             data: {
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
                 email: payload.email,
                 name: payload.name || null,
                 role: payload.role,
                 jobTitle: payload.jobTitle,
+                departmentId: payload.departmentId || null,
                 inviteCode,
                 invitedById: currentMember.id,
                 status: "PENDING",
@@ -428,23 +495,23 @@ export async function revokeInvitation(inviteId: string) {
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+            select: { universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         if (currentMember.role !== "HEAD") {
             return { success: false, error: "Only HEAD can revoke invitations" };
         }
 
-        const invitation = await prisma.memberInvitation.findFirst({
+        const invitation = await prisma.universityMemberInvitation.findFirst({
             where: {
                 id: inviteId,
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
                 status: "PENDING",
             },
         });
@@ -453,7 +520,7 @@ export async function revokeInvitation(inviteId: string) {
             return { success: false, error: "Invitation not found" };
         }
 
-        await prisma.memberInvitation.update({
+        await prisma.universityMemberInvitation.update({
             where: { id: inviteId },
             data: { status: "REVOKED" },
         });
@@ -466,7 +533,7 @@ export async function revokeInvitation(inviteId: string) {
 }
 
 /**
- * Get all pending invitations for the company
+ * Get all pending invitations for the university
  */
 export async function getPendingInvitations() {
     const session = await auth();
@@ -476,22 +543,22 @@ export async function getPendingInvitations() {
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
+        const currentMember = await prisma.universityMember.findFirst({
             where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+            select: { universityId: true, role: true },
         });
 
         if (!currentMember) {
-            return { success: false, error: "Not a member of any company" };
+            return { success: false, error: "Not a member of any university" };
         }
 
         if (currentMember.role !== "HEAD") {
             return { success: false, error: "Only HEAD can view invitations" };
         }
 
-        const invitations = await prisma.memberInvitation.findMany({
+        const invitations = await prisma.universityMemberInvitation.findMany({
             where: {
-                companyId: currentMember.companyId,
+                universityId: currentMember.universityId,
                 status: "PENDING",
             },
             orderBy: { createdAt: "desc" },

@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    Users, Shield, Crown, UserPlus, Settings, Mail, Phone, Calendar,
+    Users, Shield, Crown, UserPlus, Settings, Mail, Calendar,
     Check, X, AlertCircle, Loader2, ChevronDown, ChevronUp, Ban,
-    UserCheck, Trash2, Send, Clock
+    UserCheck, Trash2, Send, Clock, GraduationCap, Building
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -21,43 +21,76 @@ import {
 } from "@repo/ui/components/ui/sheet"
 import { useSession } from "@repo/auth/client"
 import {
-    getTeamMembers, updateTeamMember, deactivateTeamMember,
+    getTeamMembers, getDepartments, updateTeamMember, deactivateTeamMember,
     reactivateTeamMember, inviteTeamMember, getPendingInvitations,
     revokeInvitation
 } from "@/actions/team/team.action"
 import { getCurrentMember } from "@/actions/profile/profile.action"
 import type {
-    TeamMember, Permission, CompanyMemberRole, CompanyMemberJobTitle,
+    TeamMember, UniversityPermission, UniversityMemberRole, 
+    UniversityMemberJobTitle, Department,
 } from "@/types"
 
 // Job title display mapping
-const JOB_TITLE_OPTIONS: { value: CompanyMemberJobTitle; label: string }[] = [
-    { value: "CEO", label: "CEO" },
-    { value: "CTO", label: "CTO" },
-    { value: "COFOUNDER", label: "Co-Founder" },
-    { value: "VP_ENGINEERING", label: "VP Engineering" },
-    { value: "HR_HEAD", label: "HR Head" },
-    { value: "HR_MANAGER", label: "HR Manager" },
-    { value: "RECRUITER", label: "Recruiter" },
-    { value: "HIRING_MANAGER", label: "Hiring Manager" },
+const JOB_TITLE_OPTIONS: { value: UniversityMemberJobTitle; label: string }[] = [
+    { value: "CHANCELLOR", label: "Chancellor" },
+    { value: "PRINCIPAL", label: "Principal" },
+    { value: "REGISTRAR", label: "Registrar" },
+    { value: "DEAN", label: "Dean" },
+    { value: "HOD", label: "Head of Department" },
+    { value: "PROFESSOR", label: "Professor" },
+    { value: "ASSOCIATE_PROFESSOR", label: "Associate Professor" },
+    { value: "ASSISTANT_PROFESSOR", label: "Assistant Professor" },
+    { value: "LECTURER", label: "Lecturer" },
+    { value: "PLACEMENT_COORDINATOR", label: "Placement Coordinator" },
+    { value: "PLACEMENT_OFFICER", label: "Placement Officer" },
+    { value: "FINANCE_MANAGER", label: "Finance Manager" },
+    { value: "ACCOUNTS_OFFICER", label: "Accounts Officer" },
+    { value: "TEACHING_ASSISTANT", label: "Teaching Assistant" },
+    { value: "LAB_INSTRUCTOR", label: "Lab Instructor" },
     { value: "OTHER", label: "Other" },
 ]
 
-const JOB_TITLE_LABELS: Record<CompanyMemberJobTitle, string> = {
-    CEO: "CEO",
-    CTO: "CTO",
-    COFOUNDER: "Co-Founder",
-    VP_ENGINEERING: "VP Engineering",
-    HR_HEAD: "HR Head",
-    HR_MANAGER: "HR Manager",
-    RECRUITER: "Recruiter",
-    HIRING_MANAGER: "Hiring Manager",
+const JOB_TITLE_LABELS: Record<UniversityMemberJobTitle, string> = {
+    CHANCELLOR: "Chancellor",
+    PRINCIPAL: "Principal",
+    REGISTRAR: "Registrar",
+    DEAN: "Dean",
+    HOD: "Head of Department",
+    PROFESSOR: "Professor",
+    ASSOCIATE_PROFESSOR: "Associate Professor",
+    ASSISTANT_PROFESSOR: "Assistant Professor",
+    LECTURER: "Lecturer",
+    PLACEMENT_COORDINATOR: "Placement Coordinator",
+    PLACEMENT_OFFICER: "Placement Officer",
+    FINANCE_MANAGER: "Finance Manager",
+    ACCOUNTS_OFFICER: "Accounts Officer",
+    TEACHING_ASSISTANT: "Teaching Assistant",
+    LAB_INSTRUCTOR: "Lab Instructor",
     OTHER: "Other",
+}
+
+const ROLE_LABELS: Record<UniversityMemberRole, string> = {
+    HEAD: "University Admin",
+    DEPARTMENT_HEAD: "Department Head",
+    PLACEMENT_OFFICER: "Placement Officer",
+    FINANCE_OFFICER: "Finance Officer",
+    FACULTY: "Faculty",
+    TEACHING_ASSISTANT: "Teaching Assistant",
+}
+
+const ROLE_COLORS: Record<UniversityMemberRole, string> = {
+    HEAD: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+    DEPARTMENT_HEAD: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    PLACEMENT_OFFICER: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    FINANCE_OFFICER: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    FACULTY: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400",
+    TEACHING_ASSISTANT: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
 }
 
 // Permission definition type
 interface PermissionDefinition {
-    key: Permission;
+    key: UniversityPermission;
     label: string;
     description: string;
     category: string;
@@ -65,17 +98,33 @@ interface PermissionDefinition {
 
 // Permission definitions for display
 const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
-    { key: "view_jobs", label: "View Jobs", description: "Can view all job postings", category: "Jobs" },
-    { key: "post_jobs", label: "Post Jobs", description: "Can create new job postings", category: "Jobs" },
-    { key: "edit_jobs", label: "Edit Jobs", description: "Can modify existing job postings", category: "Jobs" },
-    { key: "delete_jobs", label: "Delete Jobs", description: "Can remove job postings", category: "Jobs" },
-    { key: "view_applications", label: "View Applications", description: "Can view candidate applications", category: "Applications" },
-    { key: "review_candidates", label: "Review Candidates", description: "Can review and rate candidates", category: "Applications" },
-    { key: "manage_assessments", label: "Manage Assessments", description: "Can create and manage assessments", category: "Assessments" },
-    { key: "manage_members", label: "Manage Members", description: "Can add, remove, and modify team members", category: "Admin" },
-    { key: "manage_company", label: "Manage Company", description: "Can update company settings", category: "Admin" },
-    { key: "manage_billing", label: "Manage Billing", description: "Can manage billing and payments", category: "Admin" },
-    { key: "view_analytics", label: "View Analytics", description: "Can access analytics dashboard", category: "Analytics" },
+    // Classes
+    { key: "view_classes", label: "View Classes", description: "Can view all university classes", category: "Classes" },
+    { key: "create_classes", label: "Create Classes", description: "Can create new classes", category: "Classes" },
+    { key: "edit_classes", label: "Edit Classes", description: "Can modify class details", category: "Classes" },
+    { key: "delete_classes", label: "Delete Classes", description: "Can remove classes", category: "Classes" },
+    // Assignments
+    { key: "create_assignments", label: "Create Assignments", description: "Can create new assignments", category: "Assignments" },
+    { key: "edit_assignments", label: "Edit Assignments", description: "Can modify assignments", category: "Assignments" },
+    { key: "delete_assignments", label: "Delete Assignments", description: "Can remove assignments", category: "Assignments" },
+    { key: "grade_submissions", label: "Grade Submissions", description: "Can grade student work", category: "Assignments" },
+    // Students
+    { key: "view_students", label: "View Students", description: "Can access student info", category: "Students" },
+    { key: "verify_students", label: "Verify Students", description: "Can verify student accounts", category: "Students" },
+    { key: "manage_student_credits", label: "Manage Credits", description: "Can allocate credits to students", category: "Students" },
+    // Admin
+    { key: "manage_departments", label: "Manage Departments", description: "Can create and edit departments", category: "Admin" },
+    { key: "manage_members", label: "Manage Members", description: "Can update team roles", category: "Admin" },
+    { key: "invite_members", label: "Invite Members", description: "Can invite new faculty", category: "Admin" },
+    { key: "manage_university", label: "Manage University", description: "Can update university settings", category: "Admin" },
+    { key: "manage_billing", label: "Manage Billing", description: "Can handle payments", category: "Admin" },
+    { key: "manage_credits", label: "Manage Credits", description: "Can manage credit pool", category: "Admin" },
+    // Placements
+    { key: "manage_placements", label: "Manage Placements", description: "Can manage job partnerships", category: "Placements" },
+    { key: "view_job_applications", label: "View Applications", description: "Can view student job applications", category: "Placements" },
+    // Analytics
+    { key: "view_analytics", label: "View Analytics", description: "Can access analytics", category: "Analytics" },
+    { key: "view_reports", label: "View Reports", description: "Can generate reports", category: "Analytics" },
 ]
 
 // Group permissions by category
@@ -90,12 +139,42 @@ const PERMISSION_GROUPS: Record<string, PermissionDefinition[]> = PERMISSION_DEF
     {} as Record<string, PermissionDefinition[]>
 )
 
+// Default permissions per role
+const DEFAULT_ROLE_PERMISSIONS: Record<UniversityMemberRole, UniversityPermission[]> = {
+    HEAD: [
+        "view_classes", "create_classes", "edit_classes", "delete_classes",
+        "create_assignments", "edit_assignments", "delete_assignments", "grade_submissions",
+        "view_students", "verify_students", "manage_student_credits",
+        "manage_departments", "manage_members", "invite_members", "manage_university", "manage_billing", "manage_credits",
+        "manage_placements", "view_job_applications",
+        "view_analytics", "view_reports",
+    ],
+    DEPARTMENT_HEAD: [
+        "view_classes", "create_classes", "edit_classes",
+        "create_assignments", "edit_assignments", "delete_assignments", "grade_submissions",
+        "view_students", "invite_members",
+        "view_analytics",
+    ],
+    PLACEMENT_OFFICER: [
+        "view_students", "manage_placements", "view_job_applications", "view_analytics",
+    ],
+    FINANCE_OFFICER: [
+        "manage_billing", "manage_credits", "manage_student_credits", "view_analytics", "view_reports",
+    ],
+    FACULTY: [
+        "view_classes", "create_assignments", "edit_assignments", "grade_submissions", "view_students",
+    ],
+    TEACHING_ASSISTANT: [
+        "view_classes", "grade_submissions", "view_students",
+    ],
+}
+
 interface PendingInvitation {
     id: string
     email: string
     name: string | null
-    role: CompanyMemberRole
-    jobTitle: CompanyMemberJobTitle
+    role: UniversityMemberRole
+    jobTitle: UniversityMemberJobTitle
     status: string
     createdAt: Date
     expiresAt: Date | null
@@ -106,6 +185,7 @@ export default function RolesPermissionsPage() {
 
     // State
     const [members, setMembers] = useState<TeamMember[]>([])
+    const [departments, setDepartments] = useState<Department[]>([])
     const [invitations, setInvitations] = useState<PendingInvitation[]>([])
     const [isHead, setIsHead] = useState(false)
     const [currentMemberId, setCurrentMemberId] = useState<string | null>(null)
@@ -122,8 +202,9 @@ export default function RolesPermissionsPage() {
     const [inviteForm, setInviteForm] = useState({
         email: "",
         name: "",
-        role: "RECRUITER" as CompanyMemberRole,
-        jobTitle: "RECRUITER" as CompanyMemberJobTitle,
+        role: "FACULTY" as UniversityMemberRole,
+        jobTitle: "LECTURER" as UniversityMemberJobTitle,
+        departmentId: "",
     })
     const [inviteLoading, setInviteLoading] = useState(false)
     const [inviteMessage, setInviteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -136,10 +217,11 @@ export default function RolesPermissionsPage() {
         async function fetchData() {
             setLoading(true)
             try {
-                const [membersRes, memberRes, invitationsRes] = await Promise.all([
+                const [membersRes, memberRes, invitationsRes, deptsRes] = await Promise.all([
                     getTeamMembers(),
                     getCurrentMember(),
                     getPendingInvitations(),
+                    getDepartments(),
                 ])
 
                 if (membersRes.success && membersRes.data) {
@@ -158,6 +240,10 @@ export default function RolesPermissionsPage() {
                         expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : null,
                     })))
                 }
+
+                if (deptsRes.success && deptsRes.data) {
+                    setDepartments(deptsRes.data)
+                }
             } catch (error) {
                 console.error("Failed to fetch data:", error)
             } finally {
@@ -171,14 +257,12 @@ export default function RolesPermissionsPage() {
     }, [session?.user?.id])
 
     // Handle role change
-    const handleRoleChange = async (memberId: string, newRole: CompanyMemberRole) => {
+    const handleRoleChange = async (memberId: string, newRole: UniversityMemberRole) => {
         setActionLoading(memberId)
         setActionMessage(null)
 
         try {
-            const defaultPermissions: Permission[] = newRole === "HEAD"
-                ? ["view_jobs", "post_jobs", "edit_jobs", "delete_jobs", "view_applications", "review_candidates", "manage_assessments", "manage_members", "manage_company", "manage_billing", "view_analytics"]
-                : ["view_jobs", "post_jobs", "view_applications", "review_candidates"]
+            const defaultPermissions = DEFAULT_ROLE_PERMISSIONS[newRole]
 
             const result = await updateTeamMember(memberId, {
                 role: newRole,
@@ -204,7 +288,7 @@ export default function RolesPermissionsPage() {
     }
 
     // Handle permission toggle
-    const handlePermissionToggle = async (memberId: string, permission: Permission, currentPermissions: Permission[]) => {
+    const handlePermissionToggle = async (memberId: string, permission: UniversityPermission, currentPermissions: UniversityPermission[]) => {
         setActionLoading(memberId)
 
         const newPermissions = currentPermissions.includes(permission)
@@ -286,11 +370,13 @@ export default function RolesPermissionsPage() {
                 name: inviteForm.name || undefined,
                 role: inviteForm.role,
                 jobTitle: inviteForm.jobTitle,
+                departmentId: inviteForm.departmentId || undefined,
+                permissions: DEFAULT_ROLE_PERMISSIONS[inviteForm.role],
             })
 
             if (result.success) {
                 setInviteMessage({ type: "success", text: "Invitation sent successfully" })
-                setInviteForm({ email: "", name: "", role: "RECRUITER", jobTitle: "RECRUITER" })
+                setInviteForm({ email: "", name: "", role: "FACULTY", jobTitle: "LECTURER", departmentId: "" })
                 // Refresh invitations
                 const invitationsRes = await getPendingInvitations()
                 if (invitationsRes.success && invitationsRes.data) {
@@ -350,9 +436,9 @@ export default function RolesPermissionsPage() {
                     <p className="text-neutral-500 mb-6">
                         Only team members with HEAD role can access the Roles &amp; Permissions management page.
                     </p>
-                    <Link href="/team">
+                    <Link href="/faculty">
                         <Button className="rounded-xl cursor-pointer">
-                            Go to Team Page
+                            Go to Faculty Page
                         </Button>
                     </Link>
                 </motion.div>
@@ -376,16 +462,16 @@ export default function RolesPermissionsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                        <Shield className="w-7 h-7" />
+                        <Shield className="w-7 h-7 text-violet-500" />
                         Roles &amp; Permissions
                     </h1>
                     <p className="text-neutral-500 mt-1">
-                        Manage team member roles and access permissions
+                        Manage faculty, staff roles and access permissions
                     </p>
                 </div>
                 <Button
                     onClick={() => setShowInviteSheet(true)}
-                    className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
+                    className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white cursor-pointer"
                 >
                     <UserPlus className="w-4 h-4 mr-2" />
                     Invite Member
@@ -505,7 +591,7 @@ export default function RolesPermissionsPage() {
                                                     {invitation.name || invitation.email}
                                                 </p>
                                                 <p className="text-sm text-neutral-500">
-                                                    {invitation.email} • {JOB_TITLE_LABELS[invitation.jobTitle]}
+                                                    {invitation.email} • {ROLE_LABELS[invitation.role]}
                                                 </p>
                                             </div>
                                         </div>
@@ -567,7 +653,7 @@ export default function RolesPermissionsPage() {
                                         <div className="relative shrink-0">
                                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${member.role === "HEAD"
                                                 ? "bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30"
-                                                : "bg-neutral-100 dark:bg-neutral-900"
+                                                : "bg-violet-50 dark:bg-violet-900/30"
                                                 }`}>
                                                 {
                                                     member.user?.image ? (
@@ -579,9 +665,9 @@ export default function RolesPermissionsPage() {
                                                             className="w-full h-full object-cover rounded-xl"
                                                         />
                                                     ) : (
-                                                        <Users className={`w-5 h-5 ${member.role === "HEAD"
+                                                        <GraduationCap className={`w-5 h-5 ${member.role === "HEAD"
                                                             ? "text-amber-600 dark:text-amber-400"
-                                                            : "text-neutral-400"
+                                                            : "text-violet-600 dark:text-violet-400"
                                                             }`} />
                                                     )
                                                 }
@@ -614,7 +700,7 @@ export default function RolesPermissionsPage() {
                                                     )
                                                 }
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-neutral-500">
+                                            <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-500">
                                                 <span>{member.email}</span>
                                                 <span>•</span>
                                                 <span>
@@ -622,16 +708,22 @@ export default function RolesPermissionsPage() {
                                                         ? member.jobTitleCustom
                                                         : JOB_TITLE_LABELS[member.jobTitle]}
                                                 </span>
+                                                {member.department && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span className="flex items-center gap-1">
+                                                            <Building className="w-3 h-3" />
+                                                            {member.department.name}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${member.role === "HEAD"
-                                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-                                            }`}>
+                                        <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[member.role]}`}>
                                             <Shield className="w-3 h-3" />
-                                            {member.role}
+                                            {ROLE_LABELS[member.role]}
                                         </span>
                                         <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
                                             {member.permissions.length} permissions
@@ -663,15 +755,16 @@ export default function RolesPermissionsPage() {
                                                                         <Label className="text-sm font-medium">Role:</Label>
                                                                         <Select
                                                                             value={member.role}
-                                                                            onValueChange={(value) => handleRoleChange(member.id, value as CompanyMemberRole)}
+                                                                            onValueChange={(value) => handleRoleChange(member.id, value as UniversityMemberRole)}
                                                                             disabled={actionLoading === member.id}
                                                                         >
-                                                                            <SelectTrigger className="w-32 rounded-lg cursor-pointer">
+                                                                            <SelectTrigger className="w-48 rounded-lg cursor-pointer">
                                                                                 <SelectValue />
                                                                             </SelectTrigger>
                                                                             <SelectContent>
-                                                                                <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
-                                                                                <SelectItem value="RECRUITER">RECRUITER</SelectItem>
+                                                                                {Object.entries(ROLE_LABELS).map(([key, label]) => (
+                                                                                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                                                                                ))}
                                                                             </SelectContent>
                                                                         </Select>
                                                                     </div>
@@ -733,7 +826,7 @@ export default function RolesPermissionsPage() {
                                                                             {
                                                                                 permissions.map((perm) => {
                                                                                     const hasPermission = member.permissions.includes(perm.key)
-                                                                                    const isAdminPermission = ["manage_members", "manage_company", "manage_billing"].includes(perm.key)
+                                                                                    const isAdminPermission = ["manage_members", "manage_university", "manage_billing", "manage_credits"].includes(perm.key)
 
                                                                                     return (
                                                                                         <div
@@ -780,31 +873,21 @@ export default function RolesPermissionsPage() {
                                                         </div>
                                                     </div>
                                                     <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                                                             <div className="flex items-center gap-2 text-neutral-500">
                                                                 <Mail className="w-4 h-4" />
                                                                 <span className="truncate">{member.email}</span>
                                                             </div>
-                                                            {
-                                                                member.phone && (
-                                                                    <div className="flex items-center gap-2 text-neutral-500">
-                                                                        <Phone className="w-4 h-4" />
-                                                                        <span>{member.phone}</span>
-                                                                    </div>
-                                                                )
-                                                            }
                                                             <div className="flex items-center gap-2 text-neutral-500">
                                                                 <Calendar className="w-4 h-4" />
                                                                 <span>Joined {new Date(member.createdAt).toLocaleDateString()}</span>
                                                             </div>
-                                                            {
-                                                                member.lastActiveAt && (
-                                                                    <div className="flex items-center gap-2 text-neutral-500">
-                                                                        <Clock className="w-4 h-4" />
-                                                                        <span>Active {new Date(member.lastActiveAt).toLocaleDateString()}</span>
-                                                                    </div>
-                                                                )
-                                                            }
+                                                            {member.department && (
+                                                                <div className="flex items-center gap-2 text-neutral-500">
+                                                                    <Building className="w-4 h-4" />
+                                                                    <span>{member.department.name}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -814,39 +897,40 @@ export default function RolesPermissionsPage() {
                                 </AnimatePresence>
                             </motion.div>
                         )
-                    })
-                    }
+                    })}
                 </div>
             </motion.div>
+            {/* Invite Sheet */}
             <Sheet open={showInviteSheet} onOpenChange={setShowInviteSheet}>
-                <SheetContent side="right" className="w-full sm:max-w-md">
+                <SheetContent side="right" className="sm:max-w-md overflow-y-auto">
                     <SheetHeader>
                         <SheetTitle className="flex items-center gap-2">
-                            <UserPlus className="w-5 h-5" />
+                            <UserPlus className="w-5 h-5 text-violet-500" />
                             Invite Team Member
                         </SheetTitle>
                         <SheetDescription>
-                            Send an invitation to add a new member to your team.
+                            Send an invitation to a faculty or staff member
                         </SheetDescription>
                     </SheetHeader>
-                    <form onSubmit={handleInvite} className="space-y-6 mt-6">
+                    <form onSubmit={handleInvite} className="mt-6 space-y-6">
                         <div>
                             <Label className="text-sm font-medium">Email Address *</Label>
                             <Input
                                 type="email"
                                 value={inviteForm.email}
                                 onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
-                                placeholder="colleague@company.com"
-                                className="mt-2 rounded-xl"
+                                placeholder="faculty@university.edu"
                                 required
+                                className="mt-2 rounded-xl"
                             />
                         </div>
                         <div>
                             <Label className="text-sm font-medium">Name (Optional)</Label>
                             <Input
+                                type="text"
                                 value={inviteForm.name}
                                 onChange={(e) => setInviteForm(prev => ({ ...prev, name: e.target.value }))}
-                                placeholder="John Doe"
+                                placeholder="Dr. John Doe"
                                 className="mt-2 rounded-xl"
                             />
                         </div>
@@ -854,14 +938,15 @@ export default function RolesPermissionsPage() {
                             <Label className="text-sm font-medium">Role</Label>
                             <Select
                                 value={inviteForm.role}
-                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, role: value as CompanyMemberRole }))}
+                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, role: value as UniversityMemberRole }))}
                             >
                                 <SelectTrigger className="mt-2 rounded-xl cursor-pointer">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="RECRUITER">Recruiter</SelectItem>
-                                    <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
+                                    {Object.entries(ROLE_LABELS).map(([key, label]) => (
+                                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -869,70 +954,80 @@ export default function RolesPermissionsPage() {
                             <Label className="text-sm font-medium">Job Title</Label>
                             <Select
                                 value={inviteForm.jobTitle}
-                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, jobTitle: value as CompanyMemberJobTitle }))}
+                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, jobTitle: value as UniversityMemberJobTitle }))}
                             >
                                 <SelectTrigger className="mt-2 rounded-xl cursor-pointer">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {
-                                        JOB_TITLE_OPTIONS.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>
-                                                {option.label}
-                                            </SelectItem>
-                                        ))
-                                    }
+                                    {JOB_TITLE_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        {
-                            inviteMessage && (
-                                <div className={`p-3 rounded-xl flex items-center gap-2 text-sm ${inviteMessage.type === "success"
-                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                    }`}>
-                                    {
-                                        inviteMessage.type === "success" ? (
-                                            <Check className="w-4 h-4" />
-                                        ) : (
-                                            <AlertCircle className="w-4 h-4" />
-                                        )
-                                    }
-                                    {inviteMessage.text}
-                                </div>
-                            )
-                        }
-
-                        <div className="flex gap-3 pt-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowInviteSheet(false)}
-                                className="flex-1 rounded-xl cursor-pointer"
+                        <div>
+                            <Label className="text-sm font-medium">Department (Optional)</Label>
+                            <Select
+                                value={inviteForm.departmentId || "none"}
+                                onValueChange={(value) => setInviteForm(prev => ({ ...prev, departmentId: value === "none" ? "" : value }))}
                             >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={inviteLoading || !inviteForm.email}
-                                className="flex-1 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 cursor-pointer"
-                            >
-                                {
-                                    inviteLoading ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Sending...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="w-4 h-4 mr-2" />
-                                            Send Invitation
-                                        </>
-                                    )
-                                }
-                            </Button>
+                                <SelectTrigger className="mt-2 rounded-xl cursor-pointer">
+                                    <SelectValue placeholder="Select department" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">No Department</SelectItem>
+                                    {departments.map((dept) => (
+                                        <SelectItem key={dept.id} value={dept.id}>
+                                            {dept.name} {dept.code && `(${dept.code})`}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
+                        <AnimatePresence>
+                            {
+                                inviteMessage && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className={`p-3 rounded-xl flex items-center gap-2 text-sm ${inviteMessage.type === "success"
+                                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                            }`}
+                                    >
+                                        {
+                                            inviteMessage.type === "success" ? (
+                                                <Check className="w-4 h-4" />
+                                            ) : (
+                                                <AlertCircle className="w-4 h-4" />
+                                            )
+                                        }
+                                        {inviteMessage.text}
+                                    </motion.div>
+                                )
+                            }
+                        </AnimatePresence>
+                        <Button
+                            type="submit"
+                            disabled={inviteLoading || !inviteForm.email}
+                            className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white cursor-pointer"
+                        >
+                            {
+                                inviteLoading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Sending Invitation...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Mail className="w-4 h-4 mr-2" />
+                                        Send Invitation
+                                    </>
+                                )
+                            }
+                        </Button>
                     </form>
                 </SheetContent>
             </Sheet>

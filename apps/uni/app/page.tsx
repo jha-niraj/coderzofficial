@@ -16,6 +16,8 @@ import SmoothScroll from "../components/smoothscroll";
 import CreditsSystem from "@/components/landingpage/credits-system";
 import StudentManagement from "@/components/landingpage/student-management";
 import IntegrationMarquee from "@/components/landingpage/integration-marquee";
+import AdminControlCenter from "@/components/landingpage/admincontrolcenter";
+import ComplianceGrid from "@/components/landingpage/compliancegrid";
 
 export default function UniversityLandingPage() {
 	return (
@@ -45,6 +47,12 @@ export default function UniversityLandingPage() {
 				</section>
 				<section id="placement-connect">
 					<PlacementConnect />
+				</section>
+				<section id="admin-control-center">
+					<AdminControlCenter />
+				</section>
+				<section id="compliance-grid">
+					<ComplianceGrid />
 				</section>
 				<section id="pricing">
 					<PricingSection />
