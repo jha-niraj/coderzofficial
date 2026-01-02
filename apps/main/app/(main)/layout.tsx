@@ -1,12 +1,12 @@
 'use client'
 
-import { useMemo } from 'react';
+import React from 'react';
 import Script from 'next/script';
 import { usePathname } from "next/navigation";
-import { LayoutDashboard } from 'lucide-react';
-import Sidebar, { 
-    Route, useSidebar, SidebarProvider 
-} from '@/components/common/mainsidebar';
+import Sidebar from '@/components/common/mainsidebar';
+import { 
+    useSidebar, SidebarProvider 
+} from '@/components/common/sidebarprovider';
 import { WifiOff, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -18,12 +18,12 @@ interface LayoutProps {
 }
 
 // Inner layout component that uses the sidebar context
-const MainContent = ({ children, routes }: { children: React.ReactNode; routes: Route[] }) => {
+const MainContent = ({ children }: { children: React.ReactNode }) => {
     const { isCollapsed, isAISidebarOpen } = useSidebar();
-    
+
     return (
         <>
-            <Sidebar routes={routes} />
+            <Sidebar />
             <div className="flex flex-col flex-1 h-screen overflow-hidden bg-neutral-100 dark:bg-neutral-900">
                 <main className={cn(
                     "transition-all duration-300 h-screen",
@@ -67,16 +67,6 @@ const Layout = ({ children }: LayoutProps) => {
         return regex.test(pathname);
     });
 
-    const routes: Route[] = useMemo(() => [
-        {
-            layout: "main",
-            path: "home",
-            name: "Home",
-            icon: <LayoutDashboard className="h-5 w-5" />,
-            status: "active"
-        }
-    ], []);
-
     const isOnline = useNetworkStatus();
 
     if (!isOnline) return <OfflineFallback />;
@@ -93,7 +83,7 @@ const Layout = ({ children }: LayoutProps) => {
     return (
         <SidebarProvider>
             <div className="flex h-screen">
-                <MainContent routes={routes}>{children}</MainContent>
+                <MainContent>{children}</MainContent>
             </div>
         </SidebarProvider>
     );

@@ -10,7 +10,7 @@ import { Input } from "@repo/ui/components/ui/input"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { chatWithAI } from "@/actions/tools/ai.action"
 import { cn } from "@repo/ui/lib/utils"
-import { useSidebar } from "@/components/common/mainsidebar"
+import { useSidebar } from "@/components/common/sidebarprovider"
 
 export function AIChat() {
     const { isAISidebarOpen, setIsAISidebarOpen, setIsCollapsed } = useSidebar()

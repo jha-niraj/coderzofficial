@@ -472,9 +472,9 @@ model User {
     ProjectV2Leaderboard       ProjectV2Leaderboard[]       @relation("ProjectV2Leaderboard")
     ProjectV2GlobalLeaderboard ProjectV2GlobalLeaderboard?  @relation("ProjectV2GlobalLeaderboard")
     ProjectV2Resource          ProjectV2Resource[]          @relation("ProjectV2Resources")
-    submittedProjectIdeas ProjectIdea[] @relation("SubmittedProjectIdeas")
-    submittedProjectErrors ProjectV2Error[]     @relation("SubmittedProjectErrors")
-    projectErrorVotes      ProjectV2ErrorVote[] @relation("ProjectErrorVotes")
+    submittedProjectIdeas      ProjectIdea[]                @relation("SubmittedProjectIdeas")
+    submittedProjectErrors     ProjectV2Error[]             @relation("SubmittedProjectErrors")
+    projectErrorVotes          ProjectV2ErrorVote[]         @relation("ProjectErrorVotes")
 
     UserTaskV2DetailAccess UserTaskV2DetailAccess[] @relation("UserTaskDetailAccess")
 
@@ -622,7 +622,8 @@ model User {
     // ===============================================
     // ADMIN SYSTEM RELATIONS
     // ===============================================
-    adminAccess AdminAccess? @relation("UserAdminAccess")
+    adminAccess   AdminAccess?   @relation("UserAdminAccess")
+    notifications Notification[]
 
     @@index([username])
     @@index([email])
@@ -1048,4 +1049,41 @@ model Message {
     createdAt DateTime @default(now())
 
     @@map("contact_submissions")
+}
+
+// ===============================================
+// NOTIFICATION SYSTEM
+// ===============================================
+enum NotificationType {
+    INFO
+    SUCCESS
+    WARNING
+    ERROR
+}
+
+enum Platform {
+    MAIN
+    HIRING
+    UNI
+    ADMIN
+}
+
+model Notification {
+    id String @id @default(cuid())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    title     String
+    message   String
+    type      NotificationType @default(INFO)
+    platform  Platform         @default(MAIN)
+    read      Boolean          @default(false)
+    actionUrl String?
+    createdAt DateTime         @default(now())
+    updatedAt DateTime         @updatedAt
+
+    @@index([userId])
+    @@index([read])
+    @@index([platform])
 }

@@ -11,4 +11,4 @@ export function ThemeProvider({
     return <NextThemesProvider {...props}>{children}</NextThemesProvider>
 }
 
-export default useTheme;
+export { useTheme };

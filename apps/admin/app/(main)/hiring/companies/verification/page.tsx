@@ -300,6 +300,7 @@ export default function CompanyVerificationPage() {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleReject = async (id: string, _reason: string) => {
         if (!session?.user?.id) {
             toast.error("You must be logged in to reject companies")

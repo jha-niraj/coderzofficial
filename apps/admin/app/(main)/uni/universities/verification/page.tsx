@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import {
     GraduationCap, CheckCircle, XCircle, Clock, Eye, ExternalLink,
-    Globe, Mail, Users, MapPin, Calendar, ArrowLeft, Loader2, Building2
+    Globe, Users, Calendar, ArrowLeft, Loader2, Building2
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -105,7 +105,7 @@ function UniversityCard({ university, onApprove, onReject, isLoading }: Universi
                     </div>
                     <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
                         <Users className="w-4 h-4" />
-                        <span>{university._count.students} student(s)</span>
+                        <span>{university._count.studentLinks} student(s)</span>
                     </div>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-neutral-100 dark:border-neutral-800">
@@ -207,7 +207,7 @@ function UniversityCard({ university, onApprove, onReject, isLoading }: Universi
                                     <p className="text-xs text-neutral-500">Faculty</p>
                                 </div>
                                 <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3">
-                                    <p className="font-medium text-neutral-900 dark:text-white">{university._count.students}</p>
+                                    <p className="font-medium text-neutral-900 dark:text-white">{university._count.studentLinks}</p>
                                     <p className="text-xs text-neutral-500">Students</p>
                                 </div>
                             </div>
@@ -305,6 +305,7 @@ export default function UniversityVerificationPage() {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleReject = async (id: string, _reason: string) => {
         if (!session?.user?.id) {
             toast.error("You must be logged in to reject universities")
