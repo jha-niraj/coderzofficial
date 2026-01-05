@@ -13,10 +13,9 @@ import {
 import { cn } from "@repo/ui/lib/utils";
 import { saveCodeBlock } from "@/actions/(main)/studios/studio.action";
 import toast from "@repo/ui/components/ui/sonner";
-import useTheme from "@repo/ui/components/themetoggle";
 
 // Dynamically import Monaco to avoid SSR issues
-const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
+const CodeEditor = dynamic(() => import("@/components/main/code-editor"), { ssr: false });
 
 const LANGUAGES = [
 	{ value: "javascript", label: "JavaScript" },
@@ -66,7 +65,6 @@ export default function StudioCodeBlock({
 	const [output, setOutput] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const { theme } = useTheme();
 
 	// Auto-save with debounce
 	const handleCodeChange = useCallback(
@@ -217,29 +215,14 @@ export default function StudioCodeBlock({
 				</div>
 			</div>
 			<div className={cn("relative", isExpanded ? "h-[calc(100%-8rem)]" : "h-64")}>
-				<Editor
+				<CodeEditor
 					height="100%"
 					language={language}
-					value={code}
+					code={code}
 					onChange={handleCodeChange}
-					theme={theme === "dark" ? "vs-dark" : "light"}
-					options={{
-						minimap: { enabled: false },
-						fontSize: 14,
-						lineNumbers: "on",
-						roundedSelection: true,
-						scrollBeyondLastLine: false,
-						automaticLayout: true,
-						padding: { top: 16 },
-						fontFamily: "JetBrains Mono, Menlo, Monaco, Consolas, monospace",
-						cursorBlinking: "smooth",
-						smoothScrolling: true,
-						folding: true,
-						lineDecorationsWidth: 0,
-						lineNumbersMinChars: 3,
-						renderLineHighlight: "all",
-						tabSize: 2,
-					}}
+					showLanguageSelector={false}
+					showCopyButton={false}
+					showExpandButton={false}
 				/>
 			</div>
 			{

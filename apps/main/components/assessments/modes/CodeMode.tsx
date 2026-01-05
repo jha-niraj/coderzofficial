@@ -11,8 +11,8 @@ import { Progress } from "@repo/ui/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { cn } from "@repo/ui/lib/utils";
 import {
-    Play, CheckCircle2, XCircle, ChevronRight, ChevronLeft, Clock, Lightbulb,
-    RefreshCw, Terminal, Code2, FileCode
+    Play, CheckCircle2, XCircle, ChevronRight, ChevronLeft, Clock, 
+    Lightbulb, RefreshCw, Terminal, Code2, FileCode
 } from "lucide-react";
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
@@ -22,7 +22,7 @@ import type { QuestionDifficulty, AssessmentQuestionType } from "@repo/prisma/cl
 import dynamic from "next/dynamic";
 
 // Dynamic import for CodeEditor to avoid SSR issues
-const CodeEditor = dynamic(() => import("@/components/CodeEditor"), {
+const CodeEditor = dynamic(() => import("@/components/main/code-editor"), {
     ssr: false,
     loading: () => (
         <div className="h-[400px] bg-zinc-900 rounded-lg flex items-center justify-center">
@@ -420,8 +420,7 @@ export function CodeMode({
                             <div className="h-[400px] border rounded-lg overflow-hidden">
                                 <CodeEditor
                                     language={currentQuestion?.language?.toLowerCase() || "javascript"}
-                                    forceCode={code}
-                                    initialCode={currentQuestion?.starterCode || ""}
+                                    placeholder={currentQuestion?.starterCode || ""}
                                     onChange={(value) => setCode(value || "")}
                                     height="400px"
                                 />

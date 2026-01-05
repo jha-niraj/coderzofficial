@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ArrowLeft, Plus, Trash2, Save, Eye, Check, Code2, FileText, 
-    BarChart3, HelpCircle, Zap, Lightbulb, Layers, Sparkles, 
-    Loader2, Terminal, Smartphone, Database, Globe, Cpu, Shield, 
+    ArrowLeft, Plus, Trash2, Save, Eye, Check, Code2, FileText,
+    BarChart3, HelpCircle, Zap, Lightbulb, Layers, Sparkles,
+    Loader2, Terminal, Smartphone, Database, Globe, Cpu, Shield,
     Box, FilePlus2, X, FileEdit, Upload, Wand2
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
@@ -23,7 +23,7 @@ import {
 import { Separator } from "@repo/ui/components/ui/separator";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import toast from "@repo/ui/components/ui/sonner";
-import ConceptCodeEditor from "./concept-code-editor";
+import CodeEditor from "@/components/main/code-editor";
 import { cn } from "@repo/ui/lib/utils";
 import Image from "next/image";
 
@@ -691,7 +691,7 @@ export default function ConceptCreateForm() {
                                                                         <div className="space-y-2">
                                                                             <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Starter Code</Label>
                                                                             <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
-                                                                                <ConceptCodeEditor
+                                                                                <CodeEditor
                                                                                     code={activeStep.challengeStarterCode}
                                                                                     onChange={(c) => updateStep(activeStepIndex, { challengeStarterCode: c })}
                                                                                     height="160px"
@@ -701,7 +701,7 @@ export default function ConceptCreateForm() {
                                                                         <div className="space-y-2">
                                                                             <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Solution Code</Label>
                                                                             <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
-                                                                                <ConceptCodeEditor
+                                                                                <CodeEditor
                                                                                     code={activeStep.challengeSolution}
                                                                                     onChange={(c) => updateStep(activeStepIndex, { challengeSolution: c })}
                                                                                     height="160px"
@@ -773,7 +773,7 @@ export default function ConceptCreateForm() {
                                                                                 </Button>
                                                                             </div>
                                                                         </div>
-                                                                        <ConceptCodeEditor
+                                                                        <CodeEditor
                                                                             code={block.code}
                                                                             onChange={(c) => {
                                                                                 const newSteps = [...steps];

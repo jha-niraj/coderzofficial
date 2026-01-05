@@ -14,7 +14,7 @@ import {
 import {
 	CheckCircle, XCircle, Code2, Play, Send, ArrowLeft, Target, Lightbulb, Brain
 } from "lucide-react"
-import CodeEditor from "@/components/CodeEditor"
+import CodeEditor from "@/components/main/code-editor"
 import {
 	getGenerationBySlug, runCodeEvaluation, submitCodeEvaluation,
 	generateCodingQuestionAnswer, getCodingQuestionAnswer, getPreviousSubmissions
@@ -531,12 +531,10 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 												<div className="h-80">
 													<CodeEditor
 														language={selectedLanguage}
-														initialCode={generatedAnswer.answer?.solution || "// No solution available"}
+														code={generatedAnswer.answer?.solution || "// No solution available"}
 														readOnly={true}
-														questionType={currentProblem?.questionType || "DSA"}
-														showRunSubmit={false}
-														allowCopyPaste={true}
-														allowRightClick={true}
+														showRunButton={false}
+														showSubmitButton={false}
 													/>
 												</div>
 											</div>
@@ -731,16 +729,14 @@ export default function CodingQuestionsPage({ params }: { params: Promise<{ slug
 							language={selectedLanguage}
 							onRun={handleRun}
 							onSubmit={handleSubmitClick}
-							questionType={currentProblem?.questionType || "DSA"}
 							readOnly={false}
 							allowedLanguages={allowedLanguages}
 							onLanguageChange={handleLanguageChange}
-							forceCode={currentCode}
-							showRunSubmit={true}
+							code={currentCode}
+							showRunButton={true}
+							showSubmitButton={true}
 							isRunning={isRunning}
 							isSubmitting={isSubmitting}
-							allowCopyPaste={true}
-							allowRightClick={true}
 							key={`${selectedProblem}-${selectedLanguage}`}
 						/>
 					</div>
