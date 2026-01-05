@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Code2, Brain, Rocket, 
+    ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Code2, Brain, Rocket,
     AlertCircle, Eye, Zap, Globe, Lock
 } from 'lucide-react'
 import Link from 'next/link'
@@ -17,12 +17,12 @@ import toast from '@repo/ui/components/ui/sonner'
 import { searchSimilarProjects } from '@/actions/(main)/projects/project.action'
 import { ProjectEchoSchema } from '@/actions/(main)/schemas/projects.schema'
 import {
-    createProjectGenerationJob, updateJobStatusInDatabase, saveProjectToDatabase,
-    getWorkerToken
+    initiateProjectGeneration, syncJobStatus, finalizeGeneratedProject,
+    issueWorkerToken
 } from '@/actions/(main)/workers/projectsworker.action'
 import { ProjectCard } from '@/components/projects/project-card'
-import { 
-    GenerationProgressDialog 
+import {
+    GenerationProgressDialog
 } from '@/components/projects/generation-progress-dialog'
 import { z } from 'zod'
 import { cn } from '@repo/ui/lib/utils'
@@ -80,7 +80,7 @@ export default function GenerateProjectPage() {
     const [hasSearched, setHasSearched] = useState(false)
     const [progressPercent, setProgressPercent] = useState(0)
     const [jobStatus, setJobStatus] = useState<string>('waiting')
-    
+
     const containerRef = useRef<HTMLDivElement>(null)
     const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({})
 
@@ -203,7 +203,7 @@ export default function GenerateProjectPage() {
 
         setSearchingProjects(true)
         setHasSearched(true)
-        
+
         try {
             const result = await searchSimilarProjects({
                 title: formData.projectTitle,
@@ -227,10 +227,10 @@ export default function GenerateProjectPage() {
 
             toast.info('Creating generation job...')
 
-            const workerToken = await getWorkerToken('generate_project')
+            const workerToken = await issueWorkerToken('generate_project')
 
-            const jobResult = await createProjectGenerationJob(validated, workerToken)
-            
+            const jobResult = await initiateProjectGeneration(validated, workerToken)
+
             if (!jobResult.success || !jobResult.jobId) {
                 toast.error(jobResult.error || 'Failed to create job')
                 setLoading(false)
@@ -261,7 +261,7 @@ export default function GenerateProjectPage() {
 
             try {
 
-                const token = await getWorkerToken('check_job', jobId);
+                const token = await issueWorkerToken('check_job', jobId);
 
                 const response = await fetch(`${process.env.NEXT_PUBLIC_WORKER_URL}/api/v1/job/${jobId}`, {
                     method: 'GET',
@@ -284,14 +284,14 @@ export default function GenerateProjectPage() {
                 setProgressPercent(progress)
                 setJobStatus(status)
 
-                await updateJobStatusInDatabase(jobId, status, progress, data, failedReason)
+                await syncJobStatus(jobId, status, progress, data, failedReason)
 
                 if (status === 'completed' && data) {
                     clearInterval(pollInterval)
                     setProgressPercent(100)
                     setJobStatus('completed')
 
-                    const savedProject = await saveProjectToDatabase(jobId, data)
+                    const savedProject = await finalizeGeneratedProject(jobId, data)
                     if (!savedProject.success) {
                         toast.error(savedProject.error || 'Failed to save project')
                         setLoading(false)
@@ -359,10 +359,10 @@ export default function GenerateProjectPage() {
                             onClick={() => goToStep(index)}
                             className={cn(
                                 "w-2 h-2 rounded-full transition-all duration-300",
-                                index === currentStep 
-                                    ? "w-6 bg-gradient-to-r from-blue-600 to-purple-600" 
-                                    : index < currentStep 
-                                        ? "bg-green-500" 
+                                index === currentStep
+                                    ? "w-6 bg-gradient-to-r from-blue-600 to-purple-600"
+                                    : index < currentStep
+                                        ? "bg-green-500"
                                         : "bg-neutral-300 dark:bg-neutral-600"
                             )}
                             disabled={index > currentStep}
@@ -464,8 +464,8 @@ export default function GenerateProjectPage() {
                                             >
                                                 <div className={cn(
                                                     "p-3 rounded-xl inline-flex mb-3",
-                                                    isSelected 
-                                                        ? "bg-white/20" 
+                                                    isSelected
+                                                        ? "bg-white/20"
                                                         : `bg-gradient-to-br ${type.color} bg-opacity-10`
                                                 )}>
                                                     <Icon className={cn(
@@ -497,26 +497,26 @@ export default function GenerateProjectPage() {
                             {currentStepConfig?.id === 'stack' && (
                                 <div className="space-y-6">
                                     {/* Show relevant stack options based on type */}
-                                    {(formData.generationType === 'FULL_STACK' || 
-                                      formData.generationType === 'FRONTEND' || 
-                                      formData.generationType === 'AI_AGENT') && (
-                                        <div className="space-y-3">
-                                            <label className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Frontend</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {FRONTEND_STACKS.map((stack) => (
-                                                    <Button
-                                                        key={stack}
-                                                        variant={formData.stacks?.frontend === stack ? "default" : "outline"}
-                                                        size="sm"
-                                                        onClick={() => updateStacks('frontend', formData.stacks?.frontend === stack ? '' : stack)}
-                                                        className="rounded-full"
-                                                    >
-                                                        {stack}
-                                                    </Button>
-                                                ))}
+                                    {(formData.generationType === 'FULL_STACK' ||
+                                        formData.generationType === 'FRONTEND' ||
+                                        formData.generationType === 'AI_AGENT') && (
+                                            <div className="space-y-3">
+                                                <label className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Frontend</label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {FRONTEND_STACKS.map((stack) => (
+                                                        <Button
+                                                            key={stack}
+                                                            variant={formData.stacks?.frontend === stack ? "default" : "outline"}
+                                                            size="sm"
+                                                            onClick={() => updateStacks('frontend', formData.stacks?.frontend === stack ? '' : stack)}
+                                                            className="rounded-full"
+                                                        >
+                                                            {stack}
+                                                        </Button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
                                     {(formData.generationType === 'FULL_STACK' || formData.generationType === 'AI_AGENT') && (
                                         <div className="space-y-3">

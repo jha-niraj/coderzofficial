@@ -6,12 +6,13 @@ import { Button } from "@repo/ui/components/ui/button";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select";
-import { 
-    Play, Send, Copy, Check, Loader2, Maximize2, Minimize2 
+import {
+    Play, Send, Copy, Check, Loader2, Maximize2, Minimize2
 } from "lucide-react";
 import { useTheme } from '@repo/ui/components/themeprovider';
 import toast from '@repo/ui/components/ui/sonner';
 import { cn } from "@repo/ui/lib/utils";
+import { issueWorkerToken } from '@/actions/(main)/workers/projectsworker.action';
 
 // Dynamically import Monaco to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -63,6 +64,13 @@ const languageMap: Record<string, string> = {
     shell: "shell",
 };
 
+export interface ExecutionResult {
+    success: boolean;
+    output?: string;
+    error?: string;
+    [key: string]: unknown;
+}
+
 export interface CodeEditorProps {
     /** Initial code to display. If not provided, shows placeholder comment */
     code?: string;
@@ -80,17 +88,17 @@ export interface CodeEditorProps {
     showLanguageSelector?: boolean;
     /** Show copy button */
     showCopyButton?: boolean;
-    /** Show Run button - handler must be provided by parent */
+    /** Show Run button */
     showRunButton?: boolean;
-    /** Show Submit button - handler must be provided by parent */
+    /** Show Submit button */
     showSubmitButton?: boolean;
-    /** Run button handler - provided by parent component */
+    /** Run button handler - overrides default execution logic */
     onRun?: (code: string) => void | Promise<void>;
-    /** Submit button handler - provided by parent component */
+    /** Submit button handler */
     onSubmit?: (code: string) => void | Promise<void>;
-    /** Whether run is in progress */
+    /** Whether run is in progress (controlled) */
     isRunning?: boolean;
-    /** Whether submit is in progress */
+    /** Whether submit is in progress (controlled) */
     isSubmitting?: boolean;
     /** Allowed languages (subset of supported languages) */
     allowedLanguages?: string[];
@@ -100,6 +108,10 @@ export interface CodeEditorProps {
     className?: string;
     /** Placeholder text when no code is provided */
     placeholder?: string;
+    /** Enable default execution logic via Worker */
+    enableExecution?: boolean;
+    /** Callback when execution completes (if enableExecution is true) */
+    onExecutionComplete?: (result: ExecutionResult) => void;
 }
 
 export default function CodeEditor({
@@ -115,12 +127,14 @@ export default function CodeEditor({
     showSubmitButton = false,
     onRun,
     onSubmit,
-    isRunning = false,
-    isSubmitting = false,
+    isRunning: isRunningProp,
+    isSubmitting: isSubmittingProp,
     allowedLanguages,
     showExpandButton = false,
     className = "",
     placeholder = "// Write your code here...",
+    enableExecution = false,
+    onExecutionComplete,
 }: CodeEditorProps) {
     const { theme } = useTheme();
     const [currentLanguage, setCurrentLanguage] = useState(language);
@@ -128,6 +142,13 @@ export default function CodeEditor({
     const [copied, setCopied] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const editorRef = useRef<unknown>(null);
+
+    // Internal state for execution if controlled props are not provided
+    const [internalIsRunning, setInternalIsRunning] = useState(false);
+
+    // Effective state
+    const isRunning = isRunningProp ?? internalIsRunning;
+    const isSubmitting = isSubmittingProp ?? false;
 
     // Update code when prop changes
     useEffect(() => {
@@ -168,11 +189,90 @@ export default function CodeEditor({
         }
     }, [currentCode]);
 
-    const handleRun = useCallback(async () => {
-        if (onRun && !isRunning) {
-            await onRun(currentCode);
+    const executeCode = useCallback(async () => {
+        if (!process.env.NEXT_PUBLIC_WORKER_URL) {
+            toast.error("Worker URL not configured");
+            return;
         }
-    }, [onRun, isRunning, currentCode]);
+
+        setInternalIsRunning(true);
+        try {
+            // Get token
+            const token = await issueWorkerToken('run_code');
+
+            // Send execution request
+            const response = await fetch(`${process.env.NEXT_PUBLIC_WORKER_URL}/api/v1/run`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    code: currentCode,
+                    language: currentLanguage,
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || "Failed to submit code");
+            }
+
+            const { submissionId } = await response.json();
+
+            // Poll for results
+            let polls = 0;
+            const maxPolls = 20; // 20 * 500ms = 10s
+
+            const pollInterval = setInterval(async () => {
+                polls++;
+                try {
+                    const token = await issueWorkerToken('check_execution', submissionId); // Reuse logic or new token? simpler to get new one? Or check_job? 
+                    // Actually 'check_execution' action was added.
+
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_WORKER_URL}/api/v1/execution/${submissionId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status !== 'running' && data.status !== 'pending') {
+                            clearInterval(pollInterval);
+                            setInternalIsRunning(false);
+                            onExecutionComplete?.(data);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Polling error", e);
+                }
+
+                if (polls >= maxPolls) {
+                    clearInterval(pollInterval);
+                    setInternalIsRunning(false);
+                    toast.error("Execution timed out");
+                }
+            }, 1000);
+
+        } catch (error) {
+            console.error("Execution error:", error);
+            const errorMessage = error instanceof Error ? error.message : "Failed to submit code";
+            toast.error(errorMessage);
+            setInternalIsRunning(false);
+            onExecutionComplete?.({ success: false, error: errorMessage });
+        }
+    }, [currentCode, currentLanguage, onExecutionComplete]);
+
+    const handleRun = useCallback(async () => {
+        if (isRunning) return;
+
+        if (onRun) {
+            await onRun(currentCode);
+        } else if (enableExecution) {
+            await executeCode();
+        }
+    }, [onRun, isRunning, currentCode, enableExecution, executeCode]);
 
     const handleSubmit = useCallback(async () => {
         if (onSubmit && !isSubmitting) {
@@ -206,120 +306,123 @@ export default function CodeEditor({
                     </div>
 
                     {
-                    showLanguageSelector && availableLanguages.length > 1 ? (
-                        <Select
-                            value={currentLanguage}
-                            onValueChange={handleLanguageChange}
-                            disabled={readOnly}
-                        >
-                            <SelectTrigger className="w-[130px] h-7 text-xs">
-                                <SelectValue placeholder="Language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {
-                                availableLanguages.map((lang) => (
-                                    <SelectItem key={lang.value} value={lang.value} className="text-xs">
-                                        {lang.label}
-                                    </SelectItem>
-                                ))
-                                }
-                            </SelectContent>
-                        </Select>
-                    ) : (
-                        <div className="text-xs font-medium text-neutral-600 dark:text-neutral-400 px-2 py-1 bg-neutral-100 dark:bg-neutral-700 rounded">
-                            {SUPPORTED_LANGUAGES.find(l => l.value === currentLanguage)?.label || currentLanguage}
-                        </div>
-                    )
+                        showLanguageSelector && availableLanguages.length > 1 ? (
+                            <Select
+                                value={currentLanguage}
+                                onValueChange={handleLanguageChange}
+                                disabled={readOnly}
+                            >
+                                <SelectTrigger className="w-[130px] h-7 text-xs">
+                                    <SelectValue placeholder="Language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {
+                                        availableLanguages.map((lang) => (
+                                            <SelectItem key={lang.value} value={lang.value} className="text-xs">
+                                                {lang.label}
+                                            </SelectItem>
+                                        ))
+                                    }
+                                </SelectContent>
+                            </Select>
+                        ) : (
+                            <div className="text-xs font-medium text-neutral-600 dark:text-neutral-400 px-2 py-1 bg-neutral-100 dark:bg-neutral-700 rounded">
+                                {SUPPORTED_LANGUAGES.find(l => l.value === currentLanguage)?.label || currentLanguage}
+                            </div>
+                        )
                     }
                 </div>
                 <div className="flex items-center gap-2">
-                    {showCopyButton && currentCode && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleCopy}
-                            className="h-7 text-xs px-2"
-                        >
-                            {
-                            copied ? (
-                                <>
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Copied
-                                </>
-                            ) : (
-                                <>
-                                    <Copy className="h-3 w-3 mr-1" />
-                                    Copy
-                                </>
-                            )
-                            }
-                        </Button>
-                    )
+                    {
+                        showCopyButton && currentCode && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCopy}
+                                className="h-7 text-xs px-2"
+                            >
+                                {
+                                    copied ? (
+                                        <>
+                                            <Check className="h-3 w-3 mr-1" />
+                                            Copied
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="h-3 w-3 mr-1" />
+                                            Copy
+                                        </>
+                                    )
+                                }
+                            </Button>
+                        )
                     }
                     {
-                    showExpandButton && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => setIsExpanded(!isExpanded)}
-                        >
-                            {isExpanded ? (
-                                <Minimize2 className="h-3 w-3" />
-                            ) : (
-                                <Maximize2 className="h-3 w-3" />
-                            )}
-                        </Button>
-                    )
+                        showExpandButton && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => setIsExpanded(!isExpanded)}
+                            >
+                                {
+                                    isExpanded ? (
+                                        <Minimize2 className="h-3 w-3" />
+                                    ) : (
+                                        <Maximize2 className="h-3 w-3" />
+                                    )
+                                }
+                            </Button>
+                        )
                     }
                     {
-                    showRunButton && onRun && !readOnly && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRun}
-                            disabled={isRunning || isSubmitting}
-                            className="h-7 text-xs gap-1"
-                        >
-                            {
-                            isRunning ? (
-                                <>
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Running...
-                                </>
-                            ) : (
-                                <>
-                                    <Play className="h-3 w-3" />
-                                    Run
-                                </>
-                            )
-                            }
-                        </Button>
-                    )
+                        showRunButton && (onRun || enableExecution) && !readOnly && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRun}
+                                disabled={isRunning || isSubmitting}
+                                className="h-7 text-xs gap-1"
+                            >
+                                {
+                                    isRunning ? (
+                                        <>
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            Running...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="h-3 w-3" />
+                                            Run
+                                        </>
+                                    )
+                                }
+                            </Button>
+                        )
                     }
                     {
-                    showSubmitButton && onSubmit && !readOnly && (
-                        <Button
-                            size="sm"
-                            onClick={handleSubmit}
-                            disabled={isRunning || isSubmitting}
-                            className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700"
-                        >
-                            {
-                            isSubmitting ? (
-                                <>
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Submitting...
-                                </>
-                            ) : (
-                                <>
-                                    <Send className="h-3 w-3" />
-                                    Submit
-                                </>
-                            )
-                            }
-                        </Button>
-                    )
+                        showSubmitButton && onSubmit && !readOnly && (
+                            <Button
+                                size="sm"
+                                onClick={handleSubmit}
+                                disabled={isRunning || isSubmitting}
+                                className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700"
+                            >
+                                {
+                                    isSubmitting ? (
+                                        <>
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            Submitting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="h-3 w-3" />
+                                            Submit
+                                        </>
+                                    )
+                                }
+                            </Button>
+                        )
                     }
                 </div>
             </div>

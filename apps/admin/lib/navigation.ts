@@ -40,8 +40,14 @@ export const adminNavigation: NavigationConfig = {
             icon: Users,
             requiredPermission: "users",
             children: [
-                { name: "All Users", path: "users", icon: Users },
-                { name: "Roles & Access", path: "users/roles", icon: Shield },
+                { 
+                    name: "All Users", 
+                    path: "main/users", 
+                    icon: Users },
+                { 
+                    name: "Roles & Access", 
+                    path: "main/users/roles", 
+                    icon: Shield },
             ]
         },
         {
@@ -50,21 +56,33 @@ export const adminNavigation: NavigationConfig = {
             icon: CreditCard,
             requiredPermission: "credits",
             children: [
-                { name: "Transactions", path: "credits/transactions", icon: Receipt },
-                { name: "Requests", path: "credits/requests", icon: FileText },
-                { name: "Transfers", path: "credits/transfers", icon: ArrowLeftRight },
-                { name: "Payments", path: "credits/payments", icon: Coins },
+                { 
+                    name: "Transactions", 
+                    path: "credits/transactions", 
+                    icon: Receipt },
+                { 
+                    name: "Requests", 
+                    path: "credits/requests", 
+                    icon: FileText },
+                { 
+                    name: "Transfers", 
+                    path: "credits/transfers", 
+                    icon: ArrowLeftRight },
+                { 
+                    name: "Payments", 
+                    path: "credits/payments", 
+                    icon: Coins },
             ]
         },
         {
             name: "Feedback",
             path: "feedback",
             icon: MessageCircle,
-            requiredPermission: "feedback",
+            requiredPermission: "feedback"
         },
         {
             name: "Analytics",
-            path: "analytics",
+            path: "main/analytics",
             icon: BarChart3,
             requiredPermission: "analytics",
         },
@@ -80,8 +98,14 @@ export const adminNavigation: NavigationConfig = {
                     icon: FolderKanban,
                     requiredPermission: "projects",
                     children: [
-                        { name: "All Projects", path: "main/projects", icon: FolderKanban },
-                        { name: "Project Ideas", path: "main/projects/ideas", icon: Lightbulb },
+                        { 
+                            name: "All Projects", 
+                            path: "main/projects", 
+                            icon: FolderKanban },
+                        { 
+                            name: "Project Ideas", 
+                            path: "main/projects/ideas", 
+                            icon: Lightbulb },
                     ]
                 },
                 {
@@ -90,8 +114,14 @@ export const adminNavigation: NavigationConfig = {
                     icon: Mic,
                     requiredPermission: "mocks",
                     children: [
-                        { name: "Voice Mocks", path: "main/mocks", icon: Mic },
-                        { name: "Sessions", path: "main/mocks/sessions", icon: Activity },
+                        { 
+                            name: "Voice Mocks", 
+                            path: "main/mocks", 
+                            icon: Mic },
+                        { 
+                            name: "Sessions", 
+                            path: "main/mocks/sessions", 
+                            icon: Activity },
                     ]
                 },
                 {

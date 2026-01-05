@@ -9,7 +9,7 @@ const WORKER_SECRET = process.env.WORKER_SECRET!
 
 interface TokenPayload {
     userId: string
-    action: 'generate_project' | 'check_job'
+    action: 'generate_project' | 'check_job' | 'run_code' | 'check_execution'
     jobId?: string
     iat: number  // issued at
     exp: number  // expires at
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         const { action, jobId } = body
 
         // 2. Validate action
-        if (!['generate_project', 'check_job'].includes(action)) {
+        if (!['generate_project', 'check_job', 'run_code', 'check_execution'].includes(action)) {
             return NextResponse.json(
                 { error: 'Invalid action' },
                 { status: 400 }

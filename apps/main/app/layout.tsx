@@ -4,6 +4,7 @@ import { ThemeProvider } from "@repo/ui/components/themeprovider";
 import { Geist, Space_Grotesk, Geist_Mono } from "next/font/google";
 import { Toaster as SonnerToaster } from "@repo/ui/components/ui/sonner";
 import { Providers } from "@/app/providers/providers";
+import { AppProvider } from "./context/usercontext";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -101,7 +102,9 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						{children}
+						<AppProvider>
+							{children}
+						</AppProvider>
 						<SonnerToaster position="top-center" closeButton richColors />
 					</ThemeProvider>
 				</Providers>

@@ -1,7 +1,5 @@
-import { PrismaClient } from '@repo/prisma'
+import { prisma } from '@repo/prisma'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Starting database seeding...\n')

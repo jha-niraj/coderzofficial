@@ -7,8 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    LogOut, User, Bell, ChevronLeft, ChevronRight, ChevronDown, Coins, 
-    Crown, Loader, Sun, Moon, AlignLeft, Plus, LayoutDashboard, Share2, 
+    LogOut, User, ChevronLeft, ChevronRight, ChevronDown, Coins, Crown, 
+    Loader, Sun, Moon, AlignLeft, Plus, LayoutDashboard, Share2,
     MessageCircleCodeIcon, Award
 } from "lucide-react";
 import {
@@ -22,6 +22,7 @@ import {
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from "@repo/ui/components/ui/sheet";
+import { NotificationsSheet } from "@/components/notifications/notifications-sheet";
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import { useUserStore } from "@/app/store/useUserStore";
@@ -36,14 +37,7 @@ import { useTheme } from "@repo/ui/components/themeprovider";
 import { mainNavigation, NavigationItem } from "../../lib/navigation";
 
 // --- Types ---
-interface Notification {
-    id: string;
-    title: string;
-    description?: string;
-    actionUrl?: string;
-    read: boolean;
-    createdAt: Date;
-}
+
 
 import { useSidebar } from "./sidebarprovider";
 
@@ -100,13 +94,8 @@ function SidebarContent() {
     const pathname = usePathname();
     const router = useRouter();
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
-    const [notifications] = useState<Notification[]>([]);
-    const [unreadCount] = useState(0);
-
     const [expandedItems, setExpandedItems] = useState<string[]>([]);
     const profileTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const notificationsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Dialog States
     const [referDialogOpen, setReferDialogOpen] = useState(false);
@@ -231,13 +220,7 @@ function SidebarContent() {
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const handleNotificationClick = async (notification: Notification) => {
-        if (notification.actionUrl) {
-            router.push(notification.actionUrl);
-        }
-        setNotificationsDropdownOpen(false);
-    };
+
 
     const handleProfileMouseEnter = () => {
         if (profileTimeoutRef.current) clearTimeout(profileTimeoutRef.current);
@@ -249,15 +232,7 @@ function SidebarContent() {
         profileTimeoutRef.current = setTimeout(() => setProfileDropdownOpen(false), 150);
     };
 
-    const handleNotificationsMouseEnter = () => {
-        if (notificationsTimeoutRef.current) clearTimeout(notificationsTimeoutRef.current);
-        setNotificationsDropdownOpen(true);
-    };
 
-    const handleNotificationsMouseLeave = () => {
-        if (notificationsTimeoutRef.current) clearTimeout(notificationsTimeoutRef.current);
-        notificationsTimeoutRef.current = setTimeout(() => setNotificationsDropdownOpen(false), 150);
-    };
 
     // --- Renderers ---
     const renderNavItem = (item: NavigationItem) => {
@@ -443,7 +418,6 @@ function SidebarContent() {
                 </nav>
             </ScrollArea>
             <div className="mt-auto border-t border-neutral-200 dark:border-neutral-800">
-                {/* Gamification Credits Display */}
                 {
                     status === "authenticated" && (
                         <div className={cn("p-3 border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "text-center" : "")}>
@@ -497,41 +471,7 @@ function SidebarContent() {
                     </div>
                     {
                         status === "authenticated" && session && (
-                            <div
-                                className="relative"
-                                onMouseEnter={handleNotificationsMouseEnter}
-                                onMouseLeave={handleNotificationsMouseLeave}
-                            >
-                                <button className={cn(
-                                    "flex items-center justify-center rounded-lg p-2 text-sm font-medium transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full",
-                                    isCollapsed && "aspect-square"
-                                )}>
-                                    <div className="relative">
-                                        <Bell className="h-5 w-5" />
-                                        {
-                                            unreadCount > 0 && (
-                                                <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-600 border border-white dark:border-neutral-950"></span>
-                                            )
-                                        }
-                                    </div>
-                                    {!isCollapsed && <span className="ml-2">Inbox</span>}
-                                </button>
-                                {
-                                    notificationsDropdownOpen && (
-                                        <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl z-50 overflow-hidden">
-                                            <div className="p-3 border-b border-neutral-100 dark:border-neutral-800">
-                                                <h3 className="font-semibold text-sm">Notifications</h3>
-                                            </div>
-                                            <div className="max-h-80 overflow-y-auto">
-                                                {/* Notification Content Mock */}
-                                                <div className="p-4 text-center text-neutral-500 text-sm">No notifications</div>
-                                                {/* Use notifications variable to shut up linter if necessary or just dummy map */}
-                                                {notifications.map(n => <div key={n.id}>{n.title}</div>)}
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                            </div>
+                            <NotificationsSheet isCollapsed={isCollapsed} />
                         )
                     }
                 </div>

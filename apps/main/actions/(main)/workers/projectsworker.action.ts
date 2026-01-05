@@ -2,9 +2,9 @@
 
 import { auth } from '@repo/auth'
 import prisma from "@repo/prisma"
-import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { ProjectEchoSchema } from "../schemas/projects.schema"
+import crypto from 'crypto'
 
 interface ActionResponse {
     success: boolean
@@ -20,28 +20,27 @@ async function getCurrentUser() {
     return user
 }
 
-function generateSlug(title: string): string {
-    return title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-        .substring(0, 50)
-}
+// Helper to get signed token directly (no fetch needed)
+export async function issueWorkerToken(action: 'generate_project' | 'check_job' | 'run_code' | 'check_execution', jobId?: string) {
+    const user = await getCurrentUser()
+    const secret = process.env.WORKER_SECRET
 
-// Helper to get signed token from backend
-export async function getWorkerToken(action: 'generate_project' | 'check_job', jobId?: string) {
-    const response = await fetch('/api/worker-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, jobId }),
-    })
-    
-    if (!response.ok) {
-        throw new Error('Failed to get worker token')
+    if (!secret) throw new Error("Worker secret not configured")
+
+    const now = Math.floor(Date.now() / 1000)
+    const payload = {
+        userId: user.id,
+        action,
+        jobId,
+        iat: now,
+        exp: now + 300 // 5 minutes
     }
-    
-    const { token } = await response.json()
-    return token
+
+    const data = JSON.stringify(payload)
+    const signature = crypto.createHmac('sha256', secret).update(data).digest('base64url')
+    const encodedPayload = Buffer.from(data).toString('base64url')
+
+    return `${encodedPayload}.${signature}`
 }
 
 async function deductCredits(userId: string, amount: number, description: string) {
@@ -70,7 +69,7 @@ async function deductCredits(userId: string, amount: number, description: string
  * Create a project generation job and call the external worker API
  * This is the new entry point for project generation
  */
-export async function createProjectGenerationJob(
+export async function initiateProjectGeneration(
     input: z.infer<typeof ProjectEchoSchema>,
     workerToken: string
 ): Promise<{ success: boolean, jobId?: string, error?: string }> {
@@ -111,6 +110,7 @@ export async function createProjectGenerationJob(
             visibility: validatedInput.visibility,
             includeAssessment: validatedInput.includeAssessment || false,
             stacks: stacksArray,
+            userId: user.id
         }
 
         // Call worker API to create job
@@ -168,7 +168,7 @@ export async function createProjectGenerationJob(
  * Update job status in database
  * Called from client after polling worker API
  */
-export async function updateJobStatusInDatabase(
+export async function syncJobStatus(
     jobId: string,
     status: string,
     progress: number,
@@ -200,7 +200,7 @@ export async function updateJobStatusInDatabase(
     }
 }
 
-export async function saveProjectToDatabase(jobId: string, workerData: any) {
+export async function finalizeGeneratedProject(jobId: string, workerData: any) {
     try {
         const user = await getCurrentUser()
 
@@ -223,39 +223,13 @@ export async function saveProjectToDatabase(jobId: string, workerData: any) {
         const assessmentCost = inputData.includeAssessment ? 30 : 0
         const totalCost = baseCost + assessmentCost
 
-        // Extract data from worker response
-        const { project, blueprint, pages, tasks } = workerData
+        // Data from worker is now minimal: { projectId, slug, title, saved: true }
+        if (!workerData.projectId || !workerData.slug) {
+            throw new Error('Invalid worker response: Missing project ID or slug')
+        }
 
-        // Generate slug from title
-        const slug = generateSlug(project.title)
-
-        // Save project to database
-        const savedProject = await prisma.projectV2.create({
-            data: {
-                title: project.title,
-                slug: slug,
-                shortDescription: project.shortDescription,
-                description: project.description,
-                technologies: project.technologies,
-                generationType: inputData.generationType,
-                primaryLanguageOrFramework: project.primaryLanguage,
-                difficulty: project.difficulty,
-                visibility: inputData.visibility,
-                estimatedHours: project.estimatedHours,
-                createdBy: user.id,
-                blueprintOverview: blueprint.overview,
-                learningObjectives: blueprint.learningObjectives,
-                prerequisites: blueprint.prerequisites,
-                coreFeatures: blueprint.coreFeatures,
-                advancedFeatures: blueprint.advancedFeatures,
-                stacks: inputData.stacks,
-                assistantEcho: JSON.stringify({ pages, tasks }),
-                assistantRaw: JSON.stringify(workerData),
-            }
-        })
-
-        // Deduct credits after successful project creation
-        await deductCredits(user.id, totalCost, `Generated project: ${project.title}`)
+        // Deduct credits
+        await deductCredits(user.id, totalCost, `Generated project: ${workerData.title || 'Project'}`)
 
         // Update job status
         await prisma.backgroundJob.update({
@@ -266,21 +240,21 @@ export async function saveProjectToDatabase(jobId: string, workerData: any) {
             },
         })
 
-        console.log(`✅ [PROJECT SAVED] Project: ${savedProject.slug}`)
+        console.log(`✅ [PROJECT GENERATION COMPLETED] Project: ${workerData.slug}`)
 
         return {
             success: true,
-            message: 'Project saved to database successfully',
+            message: 'Project generation finalized',
             data: {
-                projectSlug: savedProject.slug,
-                projectId: savedProject.id,
+                projectSlug: workerData.slug,
+                projectId: workerData.projectId,
             },
         }
     } catch (err: any) {
-        console.error('Failed to save project:', err)
+        console.error('Failed to finalize project generation:', err)
         return {
             success: false,
-            error: err.message || 'Failed to save project',
+            error: err.message || 'Failed to finalize project',
         }
     }
 }

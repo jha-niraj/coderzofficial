@@ -7,8 +7,8 @@ import {
 	Controller, FormProvider, useFormContext,
 	type ControllerProps, type FieldPath, type FieldValues
 } from "react-hook-form"
-
-pnpm add @radix-ui/react-label @radix-ui/react-slot react-hook-form @hookform/resolvers zodimport { Label } from "@repo/ui/components/ui/label"
+import { Label } from "@repo/ui/components/ui/label"
+import { cn } from "../../lib/utils"
 
 const Form = FormProvider
 
