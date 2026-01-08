@@ -133,14 +133,16 @@ export function NotificationsSheet({ isCollapsed }: { isCollapsed?: boolean }) {
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
                 <button className={cn(
-                    "flex items-center justify-center rounded-lg p-2 text-sm font-medium transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full outline-none",
+                    "cursor-pointer flex items-center justify-center rounded-lg p-2 text-sm font-medium transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full outline-none",
                     isCollapsed && "aspect-square"
                 )}>
                     <div className="relative">
                         <Bell className="h-5 w-5" />
-                        {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-600 border border-white dark:border-neutral-950 animate-pulse" />
-                        )}
+                        {
+                            unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-600 border border-white dark:border-neutral-950 animate-pulse" />
+                            )
+                        }
                     </div>
                     {!isCollapsed && <span className="ml-2">Inbox</span>}
                 </button>

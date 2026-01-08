@@ -1,6 +1,9 @@
 import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
-    Briefcase, Users, Trophy, Video, Brain, Building2, Cable, LayoutDashboard
+    Briefcase, Users, Trophy, Video, Brain, Building2, Cable, LayoutDashboard,
+    Heading,
+    BookAIcon,
+    Home
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -22,6 +25,12 @@ export interface NavigationConfig {
 
 export const mainNavigation: NavigationConfig = {
     primary: [
+        {
+            name: "Home",
+            path: "home",
+            icon: Home,
+            status: "active"
+        },
         {
             name: "Studio",
             path: "studio",
@@ -46,9 +55,26 @@ export const mainNavigation: NavigationConfig = {
             icon: FolderKanban,
             status: "active",
             children: [
-                { name: 'Generate Project', path: 'projects/generate', icon: Sparkles },
-                { name: 'My Projects', path: 'projects/myprojects', icon: User },
-                { name: 'All Projects', path: 'projects/allprojects', icon: User2 }
+                { 
+                    name: 'Generate', 
+                    path: 'projects/generate', 
+                    icon: Sparkles 
+                },
+                { 
+                    name: 'Ideas', 
+                    path: 'projects/ideas', 
+                    icon: Heading 
+                },
+                { 
+                    name: 'My Projects', 
+                    path: 'projects/myprojects', 
+                    icon: User 
+                },
+                { 
+                    name: 'All Projects', 
+                    path: 'projects/allprojects', 
+                    icon: User2 
+                }
             ]
         },
         {
@@ -57,7 +83,11 @@ export const mainNavigation: NavigationConfig = {
             icon: Sparkles,
             status: "active",
             children: [
-                { name: 'Job Interview', path: 'ai/jobinterviewassistant', icon: Briefcase },
+                { 
+                    name: 'Job Interview', 
+                    path: 'ai/jobinterviewassistant', 
+                    icon: Briefcase 
+                },
             ]
         },
         {
@@ -66,7 +96,12 @@ export const mainNavigation: NavigationConfig = {
             icon: Users,
             status: "active",
             children: [
-                { name: 'Collective', path: 'collective', icon: Trophy, comingSoon: true }
+                { 
+                    name: 'Collective', 
+                    path: 'collective', 
+                    icon: Trophy, 
+                    comingSoon: true 
+                }
             ]
         },
         {
@@ -75,14 +110,51 @@ export const mainNavigation: NavigationConfig = {
             icon: Video,
             status: "active",
             children: [
-                { name: 'Mock Overview', path: 'mock', icon: Brain },
-                { name: 'Voice Mock', path: 'mock/voice', icon: Brain, comingSoon: true },
-                { name: 'AI Video Mock', path: 'mock/video', icon: Video, comingSoon: true },
-                { name: 'Peer to Peer Mock', path: 'mock/peertopeer', icon: MessageSquare, comingSoon: true },
-                { name: 'Company Wise Mock', path: 'mock/companywise', icon: Building2, comingSoon: true },
-                { name: 'Connect', path: 'mock/connect', icon: Cable, comingSoon: true }
+                { 
+                    name: 'Mock Overview', 
+                    path: 'mock', 
+                    icon: Brain 
+                },
+                { 
+                    name: 'Voice Mock', 
+                    path: 'mock/voice', 
+                    icon: Brain, 
+                    comingSoon: true 
+                },
+                { 
+                    name: 'Video Mock', 
+                    path: 'mock/video', 
+                    icon: Video, 
+                    comingSoon: true 
+                },
+                { 
+                    name: 'Peer to Peer', 
+                    path: 'mock/peertopeer', 
+                    icon: MessageSquare, 
+                    comingSoon: true 
+                },
+                { 
+                    name: 'Connect', 
+                    path: 'mock/connect', 
+                    icon: Cable, 
+                    comingSoon: true 
+                }
             ]
-        }
+        },
+        {
+            name: "Interview Prep",
+            path: "interview",
+            icon: BookAIcon,
+            status: "active",
+            children: [
+                { 
+                    name: 'Company Wise', 
+                    path: 'companywise', 
+                    icon: Trophy, 
+                    comingSoon: true 
+                }
+            ]
+        },
     ],
     secondary: []
 }

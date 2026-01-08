@@ -11,7 +11,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
+    DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import {
     Command, CommandEmpty, CommandGroup, CommandInput, CommandItem
@@ -20,16 +21,22 @@ import {
     Popover, PopoverContent, PopoverTrigger
 } from '@repo/ui/components/ui/popover'
 import {
-    Loader2, CheckCircle2, XCircle, Upload, ArrowRight, ArrowLeft, Sparkles,
-    Code, Briefcase, Target, TrendingUp, LogOut, ChevronsUpDown, Check,
-    AlertCircle, Plus, X as XIcon
+    Loader2, CheckCircle2, XCircle, Upload, ArrowRight, ArrowLeft,
+    Sparkles, Code, Briefcase, Target, TrendingUp, LogOut, ChevronsUpDown,
+    Check, AlertCircle, Plus, X as XIcon, Cloud, ShieldCheck, Database,
+    Gamepad2, Palette, Server, Smartphone, Globe, Cpu, Blocks, TestTube2,
+    Layers, BrainCircuit
 } from 'lucide-react'
 import { useDebounce } from '@/hooks/use-debounce'
 import toast from '@repo/ui/components/ui/sonner'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { cn } from '@repo/ui/lib/utils'
-import { getColleges, getCompanies } from '@/actions/(main)/user/college.action'
-import { checkUsernameAvailability, completeOnboarding } from '@/actions/(main)/user/onboarding.action'
+import {
+    getColleges, getCompanies
+} from '@/actions/(main)/user/college.action'
+import {
+    checkUsernameAvailability, completeOnboarding
+} from '@/actions/(main)/user/onboarding.action'
 import { uploadResume } from '@/actions/(main)/user/resume.action'
 
 const SEMESTERS = [
@@ -39,12 +46,33 @@ const SEMESTERS = [
 ]
 
 const LEARNING_GOALS = [
-    { id: 'web-dev', label: 'Web Development', icon: Code },
-    { id: 'mobile-dev', label: 'Mobile Development', icon: Code },
-    { id: 'ai-ml', label: 'AI & Machine Learning', icon: Sparkles },
+    // Core Engineering
+    { id: 'web-dev', label: 'Web Development', icon: Globe },
+    { id: 'mobile-dev', label: 'Mobile Development', icon: Smartphone },
+    { id: 'backend', label: 'Backend Engineering', icon: Server },
+    { id: 'fullstack', label: 'Full Stack', icon: Layers },
+
+    // Computer Science Fundamentals
     { id: 'dsa', label: 'Data Structures & Algorithms', icon: Target },
     { id: 'system-design', label: 'System Design', icon: TrendingUp },
-    { id: 'devops', label: 'DevOps', icon: Briefcase },
+    { id: 'os-db', label: 'OS & Databases', icon: Database },
+
+    // Advanced Tech
+    { id: 'ai-ml', label: 'AI & Machine Learning', icon: Sparkles },
+    { id: 'cloud', label: 'Cloud Computing (AWS/GCP)', icon: Cloud },
+    { id: 'devops', label: 'DevOps & CI/CD', icon: Briefcase },
+    { id: 'cybersecurity', label: 'Cybersecurity', icon: ShieldCheck },
+
+    // Specialized Fields
+    { id: 'blockchain', label: 'Blockchain & Web3', icon: Blocks },
+    { id: 'game-dev', label: 'Game Development', icon: Gamepad2 },
+    { id: 'iot', label: 'Internet of Things (IoT)', icon: Cpu },
+    { id: 'qa-testing', label: 'QA & Automation', icon: TestTube2 },
+
+    // Design & Strategy
+    { id: 'ui-ux', label: 'UI/UX Design', icon: Palette },
+    { id: 'product-mgmt', label: 'Product Management', icon: BrainCircuit },
+    { id: 'technical-writing', label: 'Technical Writing', icon: Code },
 ]
 
 const JOB_PREFERENCES = [
@@ -433,8 +461,8 @@ export default function OnboardingPage() {
                                             className="space-y-6"
                                         >
                                             <div className="space-y-2">
-                                                <Label htmlFor="username" className="text-white text-base">
-                                                    Username * <span className="text-neutral-500 text-sm font-normal">Your unique identity</span>
+                                                <Label htmlFor="username" className="flex items-start text-white text-base">
+                                                    Username* <span className="text-left text-neutral-500 text-sm font-normal">Your unique identity</span>
                                                 </Label>
                                                 <div className="relative">
                                                     <Input
@@ -460,7 +488,7 @@ export default function OnboardingPage() {
                                             </div>
                                             <div className="grid md:grid-cols-2 gap-6">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="university" className="text-white text-base">
+                                                    <Label htmlFor="university" className="flex items-start text-white text-base">
                                                         College/University <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
                                                     </Label>
                                                     <Popover open={openCollegePicker} onOpenChange={
@@ -515,7 +543,7 @@ export default function OnboardingPage() {
                                                     </Popover>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="semester" className="text-white text-base">
+                                                    <Label htmlFor="semester" className="flex items-start text-white text-base">
                                                         Current Semester <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
                                                     </Label>
                                                     <Select value={semester} onValueChange={setSemester}>
@@ -533,7 +561,7 @@ export default function OnboardingPage() {
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="resume" className="text-white text-base">
+                                                <Label htmlFor="resume" className="flex items-start text-white text-base">
                                                     Resume (PDF, DOC, DOCX) <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
                                                 </Label>
                                                 <div className="relative">
@@ -580,7 +608,6 @@ export default function OnboardingPage() {
                                         </motion.div>
                                     )
                                 }
-
                                 {
                                     currentStep === 1 && (
                                         <motion.div
@@ -632,18 +659,17 @@ export default function OnboardingPage() {
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -20 }}
-                                            className="space-y-6"
+                                            className="w-full mx-auto space-y-6"
                                         >
                                             <div>
                                                 <h2 className="text-2xl font-bold text-white mb-2">What&apos;s your dream job?</h2>
                                                 <p className="text-neutral-400">Help us personalize your learning journey</p>
                                             </div>
-
-                                            <div className="grid md:grid-cols-2 gap-6">
+                                            <div className="grid md:grid-cols-2 gap-6 w-full">
                                                 <div className="space-y-2">
-                                                    <Label className="text-white text-base">Preferred Job Role</Label>
+                                                    <Label className="flex items-start text-white text-base">Preferred Job Role</Label>
                                                     <Select value={jobPreference} onValueChange={setJobPreference}>
-                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700">
+                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 w-full">
                                                             <SelectValue placeholder="Select your target role" />
                                                         </SelectTrigger>
                                                         <SelectContent className="bg-neutral-900 border-neutral-700">
@@ -656,11 +682,11 @@ export default function OnboardingPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-white text-base">
+                                                    <Label className="flex items-start text-white text-base">
                                                         Work Experience <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
                                                     </Label>
                                                     <Select value={workExperience} onValueChange={setWorkExperience}>
-                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700">
+                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 w-full">
                                                             <SelectValue placeholder="Select experience" />
                                                         </SelectTrigger>
                                                         <SelectContent className="bg-neutral-900 border-neutral-700">
@@ -673,7 +699,7 @@ export default function OnboardingPage() {
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="location" className="text-white text-base">
+                                                    <Label htmlFor="location" className="flex items-start text-white text-base">
                                                         Preferred Location <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
                                                     </Label>
                                                     <Input
@@ -681,11 +707,11 @@ export default function OnboardingPage() {
                                                         placeholder="e.g., Bangalore, Remote"
                                                         value={location}
                                                         onChange={(e) => setLocation(e.target.value)}
-                                                        className="bg-neutral-800 border-neutral-700 text-white"
+                                                        className="bg-neutral-800 border-neutral-700 text-white w-full"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="salary" className="text-white text-base">
+                                                    <Label htmlFor="salary" className="flex items-start text-white text-base">
                                                         Expected Salary (LPA) <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
                                                     </Label>
                                                     <Input
@@ -693,117 +719,117 @@ export default function OnboardingPage() {
                                                         placeholder="e.g., 8-12 LPA"
                                                         value={expectedSalary}
                                                         onChange={(e) => setExpectedSalary(e.target.value)}
-                                                        className="bg-neutral-800 border-neutral-700 text-white"
+                                                        className="bg-neutral-800 border-neutral-700 text-white w-full"
                                                     />
                                                 </div>
-
-                                                <div className="space-y-2 md:col-span-2">
-                                                    <Label className="text-white text-base">
+                                                <div className="space-y-2">
+                                                    <Label className="flex items-start text-white text-base">
                                                         Notice Period <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
                                                     </Label>
                                                     <Select value={noticePeriod} onValueChange={setNoticePeriod}>
-                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700">
+                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 w-full">
                                                             <SelectValue placeholder="Select notice period" />
                                                         </SelectTrigger>
                                                         <SelectContent className="bg-neutral-900 border-neutral-700">
-                                                            {NOTICE_PERIODS.map((period) => (
-                                                                <SelectItem key={period} value={period} className="text-white focus:bg-neutral-800 focus:text-white">{period}</SelectItem>
-                                                            ))}
+                                                            {
+                                                                NOTICE_PERIODS.map((period) => (
+                                                                    <SelectItem key={period} value={period} className="text-white focus:bg-neutral-800 focus:text-white">{period}</SelectItem>
+                                                                ))
+                                                            }
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label className="text-white text-base">
-                                                    Target Companies <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
-                                                </Label>
-                                                <div className="flex gap-2">
-                                                    <Popover open={openCompanyPicker} onOpenChange={setOpenCompanyPicker}>
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant="outline"
-                                                                role="combobox"
-                                                                className="flex-1 justify-between bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 hover:text-white"
-                                                            >
-                                                                {companyInput || "Select or type company name"}
-                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-[min(400px,calc(100vw-2rem))] p-0 bg-neutral-900 border-neutral-700">
-                                                            <Command className="bg-neutral-900">
-                                                                <CommandInput
-                                                                    placeholder="Search or type company..."
-                                                                    className="text-white"
-                                                                    value={companyInput}
-                                                                    onValueChange={setCompanyInput}
-                                                                />
-                                                                <CommandEmpty className="text-neutral-400 p-4">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            addCompany(companyInput)
-                                                                            setOpenCompanyPicker(false)
-                                                                        }}
-                                                                        className="text-sm text-blue-400 hover:underline"
-                                                                    >
-                                                                        Add &quot;{companyInput}&quot;
-                                                                    </button>
-                                                                </CommandEmpty>
-                                                                <CommandGroup className="max-h-64 overflow-auto">
-                                                                    {
-                                                                        companies.map((company) => (
-                                                                            <CommandItem
-                                                                                key={company}
-                                                                                value={company}
-                                                                                onSelect={(currentValue) => {
-                                                                                    addCompany(currentValue)
-                                                                                    setOpenCompanyPicker(false)
-                                                                                }}
-                                                                                className="text-white"
-                                                                            >
-                                                                                {company}
-                                                                            </CommandItem>
-                                                                        ))
-                                                                    }
-                                                                </CommandGroup>
-                                                            </Command>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                    <Button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            addCompany(companyInput)
-                                                        }}
-                                                        disabled={!companyInput}
-                                                        className="bg-blue-600 hover:bg-blue-700"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                                {
-                                                    targetCompanies.length > 0 && (
-                                                        <div className="flex flex-wrap gap-2 mt-2">
-                                                            {
-                                                                targetCompanies.map((company) => (
-                                                                    <Badge
-                                                                        key={company}
-                                                                        variant="secondary"
-                                                                        className="bg-blue-500/20 text-blue-400 border-blue-500/30 pr-1"
-                                                                    >
-                                                                        {company}
+                                                <div className="space-y-2">
+                                                    <Label className="flex items-start text-white text-base">
+                                                        Target Companies <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
+                                                    </Label>
+                                                    <div className="flex gap-2 w-full">
+                                                        <Popover open={openCompanyPicker} onOpenChange={setOpenCompanyPicker}>
+                                                            <PopoverTrigger asChild>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    role="combobox"
+                                                                    className="flex-1 justify-between bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 hover:text-white"
+                                                                >
+                                                                    {companyInput || "Select or type company name"}
+                                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[min(400px,calc(100vw-2rem))] p-0 bg-neutral-900 border-neutral-700">
+                                                                <Command className="bg-neutral-900">
+                                                                    <CommandInput
+                                                                        placeholder="Search or type company..."
+                                                                        className="text-white"
+                                                                        value={companyInput}
+                                                                        onValueChange={setCompanyInput}
+                                                                    />
+                                                                    <CommandEmpty className="text-neutral-400 p-4">
                                                                         <button
-                                                                            onClick={() => removeCompany(company)}
-                                                                            className="ml-2 hover:bg-blue-500/30 rounded-full p-0.5"
+                                                                            onClick={() => {
+                                                                                addCompany(companyInput)
+                                                                                setOpenCompanyPicker(false)
+                                                                            }}
+                                                                            className="text-sm text-blue-400 hover:underline"
                                                                         >
-                                                                            <XIcon className="w-3 h-3" />
+                                                                            Add &quot;{companyInput}&quot;
                                                                         </button>
-                                                                    </Badge>
-                                                                ))
-                                                            }
-                                                        </div>
-                                                    )
-                                                }
-                                                <p className="text-xs text-neutral-500">Select from existing or add your own</p>
+                                                                    </CommandEmpty>
+                                                                    <CommandGroup className="max-h-64 overflow-auto">
+                                                                        {
+                                                                            companies.map((company) => (
+                                                                                <CommandItem
+                                                                                    key={company}
+                                                                                    value={company}
+                                                                                    onSelect={(currentValue) => {
+                                                                                        addCompany(currentValue)
+                                                                                        setOpenCompanyPicker(false)
+                                                                                    }}
+                                                                                    className="text-white"
+                                                                                >
+                                                                                    {company}
+                                                                                </CommandItem>
+                                                                            ))
+                                                                        }
+                                                                    </CommandGroup>
+                                                                </Command>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                addCompany(companyInput)
+                                                            }}
+                                                            disabled={!companyInput}
+                                                            className="bg-blue-600 hover:bg-blue-700"
+                                                        >
+                                                            <Plus className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                    {
+                                                        targetCompanies.length > 0 && (
+                                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                                {
+                                                                    targetCompanies.map((company) => (
+                                                                        <Badge
+                                                                            key={company}
+                                                                            variant="secondary"
+                                                                            className="bg-blue-500/20 text-blue-400 border-blue-500/30 pr-1"
+                                                                        >
+                                                                            {company}
+                                                                            <button
+                                                                                onClick={() => removeCompany(company)}
+                                                                                className="ml-2 hover:bg-blue-500/30 rounded-full p-0.5"
+                                                                            >
+                                                                                <XIcon className="w-3 h-3" />
+                                                                            </button>
+                                                                        </Badge>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        )
+                                                    }
+                                                    <p className="text-xs text-neutral-500">Select from existing or add your own</p>
+                                                </div>
                                             </div>
                                             <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                                                 <p className="text-blue-400 text-sm text-center">

@@ -101,7 +101,7 @@ export function ProfileHeader({
 	];
 
 	return (
-		<div className="relative w-full">
+		<div className="relative max-w-7xl mx-auto">
 			<div
 				className={cn(
 					"relative h-48 md:h-64 lg:h-72 w-full overflow-hidden rounded-t-2xl",

@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
                     name: user.name,
                     email: user.email,
                 },
-            },
-            { status: 200 }
+                status: 200
+            }
         );
     } catch (err: unknown) {
         const error = err instanceof Error ? err : new Error('Unknown error')

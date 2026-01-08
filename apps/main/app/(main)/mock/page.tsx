@@ -154,7 +154,7 @@ export default function MockInterviewLandingPage() {
     }, [])
 
     return (
-        <SmoothScroll>
+        // <SmoothScroll>
             <main className="min-h-screen bg-white dark:bg-neutral-950">
                 <section className="relative overflow-hidden py-20 bg-white dark:bg-neutral-950">
                     <div className="max-w-7xl mx-auto px-6">
@@ -460,6 +460,6 @@ export default function MockInterviewLandingPage() {
                     </div>
                 </section>
             </main>
-        </SmoothScroll>
+        // </SmoothScroll>
     )
 }

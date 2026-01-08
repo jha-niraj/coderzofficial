@@ -40,14 +40,16 @@ function PlatformCard({ title, description, icon: Icon, color, bgColor, href, st
             >
                 <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 -translate-y-1/2 translate-x-1/2", bgColor)} />
 
-                {pendingActions && pendingActions > 0 && (
-                    <div className="absolute top-4 right-4">
-                        <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-xs font-medium">
-                            <AlertCircle className="w-3 h-3" />
-                            {pendingActions} pending
-                        </span>
-                    </div>
-                )}
+                {
+                    pendingActions && pendingActions > 0 && (
+                        <div className="absolute top-4 right-4">
+                            <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-xs font-medium">
+                                <AlertCircle className="w-3 h-3" />
+                                {pendingActions} pending
+                            </span>
+                        </div>
+                    )
+                }
 
                 <div className="flex items-center gap-3 mb-4">
                     <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", bgColor)}>
@@ -58,16 +60,16 @@ function PlatformCard({ title, description, icon: Icon, color, bgColor, href, st
                         <p className="text-sm text-neutral-500">{description}</p>
                     </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4 mt-6">
-                    {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-3">
-                            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value}</p>
-                            <p className="text-xs text-neutral-500">{stat.label}</p>
-                        </div>
-                    ))}
+                    {
+                        stats.map((stat, idx) => (
+                            <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-3">
+                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value}</p>
+                                <p className="text-xs text-neutral-500">{stat.label}</p>
+                            </div>
+                        ))
+                    }
                 </div>
-
                 <div className={cn(
                     "mt-6 flex items-center text-sm font-medium transition-colors",
                     color
@@ -95,16 +97,18 @@ function QuickStat({ title, value, change, icon: Icon, color }: QuickStatProps) 
                 <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", color)}>
                     <Icon className="w-5 h-5 text-white" />
                 </div>
-                {change !== undefined && (
-                    <span className={cn(
-                        "text-xs font-medium px-2 py-0.5 rounded-full",
-                        change >= 0
-                            ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-                            : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-                    )}>
-                        {change >= 0 ? "+" : ""}{change}%
-                    </span>
-                )}
+                {
+                    change !== undefined && (
+                        <span className={cn(
+                            "text-xs font-medium px-2 py-0.5 rounded-full",
+                            change >= 0
+                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                                : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                        )}>
+                            {change >= 0 ? "+" : ""}{change}%
+                        </span>
+                    )
+                }
             </div>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-3">{value}</p>
             <p className="text-sm text-neutral-500">{title}</p>
@@ -204,7 +208,6 @@ export default function AdminDashboard() {
 
     return (
         <div className="p-6 lg:p-8 w-full mx-auto">
-            {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
@@ -220,8 +223,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <QuickStat
                     title="Total Users"
@@ -251,8 +252,6 @@ export default function AdminDashboard() {
                     color="bg-amber-500"
                 />
             </div>
-
-            {/* Platform Cards */}
             <div className="mb-8">
                 <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Platform Overview</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -303,8 +302,6 @@ export default function AdminDashboard() {
                     />
                 </div>
             </div>
-
-            {/* Pending Actions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -314,12 +311,13 @@ export default function AdminDashboard() {
                         </span>
                     </div>
                     <div className="space-y-3">
-                        {pendingActions.map((action, index) => (
-                            <PendingAction key={index} {...action} />
-                        ))}
+                        {
+                            pendingActions.map((action, index) => (
+                                <PendingAction key={index} {...action} />
+                            ))
+                        }
                     </div>
                 </div>
-
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">Quick Links</h2>

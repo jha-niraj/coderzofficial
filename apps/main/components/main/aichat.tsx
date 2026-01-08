@@ -94,7 +94,7 @@ export function AIChat() {
 
     return (
         <>
-            <div className="fixed bottom-6 right-6 z-[60]">
+            <div className="fixed bottom-6 right-6">
                 <Button
                     onClick={toggleAI}
                     className={cn(
@@ -144,14 +144,25 @@ export function AIChat() {
                     isAISidebarOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >
-                {/* Header */}
                 <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                             <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">AI Assistant: Online</span>
                         </div>
-                        <Sparkles className="h-4 w-4 text-neutral-400" />
+                        <motion.button
+                            key="close"
+                            initial={{ opacity: 0, rotate: -90 }}
+                            animate={{ opacity: 1, rotate: 0 }}
+                            exit={{ opacity: 0, rotate: 90 }}
+                            className="cursor-pointer"
+                            onClick={() => {
+                                setIsAISidebarOpen(false),
+                                setIsCollapsed(false)
+                            }}
+                        >
+                            <X className="h-6 w-6" />
+                        </motion.button>
                     </div>
                     <h2 className="text-xl font-black tracking-tighter flex items-center gap-2">
                         CoderzHQ AI

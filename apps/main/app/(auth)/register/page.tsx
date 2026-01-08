@@ -6,13 +6,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from '@repo/auth/client';
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Check, X, Gift, Code2 } from "lucide-react";
+import {
+    Eye, EyeOff, Check, X, Gift, Code2
+} from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
 import { Label } from "@repo/ui/components/ui/label";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import { useAppContext } from "@/app/context/usercontext";
+import toast from "@repo/ui/components/ui/sonner";
 
 function SignUpForm() {
     const [name, setName] = useState("");
@@ -75,26 +78,33 @@ function SignUpForm() {
         setError("");
 
         try {
-            const response = await axios.post("/api/auth/register", {
+            const response = await axios.post("/api/register", {
                 name,
                 email,
                 password,
                 referralCode,
             });
 
-            if (response.data.success) {
-                // Store credentials in context for auto-fill on signin page
-                setContextEmail(email);
-                setContextPassword(password);
+            console.log(response.data);
 
-                // Check if there's an SSO callback to return to
-                const ssoCallback = sessionStorage.getItem("sso_callback");
-                if (ssoCallback) {
-                    router.push(`/signin?sso_callback=${encodeURIComponent(ssoCallback)}`);
-                } else {
-                    router.push("/signin?registered=true");
-                }
+            if (!response.data) {
+                toast.error("Failed to register at this time!!!");
+                return;
             }
+
+            setContextEmail(email);
+
+            const ssoCallback = sessionStorage.getItem("sso_callback");
+            const params = new URLSearchParams();
+            params.set("email", email);
+
+            if (ssoCallback) {
+                params.set("redirect_uri", ssoCallback);
+            }
+
+            toast.success(response?.data?.message);
+
+            router.push(`/verify?${params.toString()}`);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 setError(err.response?.data?.error || "An error occurred during registration");
@@ -112,7 +122,7 @@ function SignUpForm() {
             const ssoCallback = sessionStorage.getItem("sso_callback");
 
             await signIn("google", {
-                callbackUrl: ssoCallback || "/dashboard",
+                callbackUrl: ssoCallback || "/home",
             });
         } catch {
             setError("Google sign-up failed. Please try again.");
@@ -122,20 +132,16 @@ function SignUpForm() {
 
     return (
         <div className="min-h-screen flex">
-            {/* Left Section - Decorative */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-zinc-950 flex-col justify-center items-center overflow-hidden">
-                {/* Decorative Elements */}
                 <div className="absolute left-8 top-1/4 flex flex-col gap-2">
                     <div className="w-1 h-24 bg-gradient-to-b from-orange-500 to-transparent rounded-full" />
                     <div className="w-1 h-16 bg-gradient-to-b from-orange-400/60 to-transparent rounded-full" />
                     <div className="w-1 h-8 bg-gradient-to-b from-orange-300/40 to-transparent rounded-full" />
                 </div>
 
-                {/* Orange Circle */}
                 <div className="absolute right-16 top-1/3 w-32 h-32 rounded-full bg-orange-500/20 blur-xl" />
                 <div className="absolute right-20 top-1/3 w-24 h-24 rounded-full bg-orange-500/30 blur-lg" />
 
-                {/* Content */}
                 <div className="relative z-10 px-12 max-w-lg">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -156,8 +162,6 @@ function SignUpForm() {
                             Build projects, learn from peers, and grow your skills with
                             thousands of developers worldwide.
                         </p>
-
-                        {/* Motivational Quote */}
                         <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-xl p-6">
                             <p className="text-zinc-300 italic text-lg">
                                 &quot;Every expert was once a beginner.&quot;
@@ -168,8 +172,6 @@ function SignUpForm() {
                         </div>
                     </motion.div>
                 </div>
-
-                {/* Bottom Decoration */}
                 <div className="absolute bottom-8 left-8 right-8 flex justify-between items-center">
                     <div className="flex gap-2">
                         <div className="w-2 h-2 rounded-full bg-orange-500" />
@@ -179,8 +181,6 @@ function SignUpForm() {
                     <p className="text-zinc-500 text-sm">Empowering developers since 2024</p>
                 </div>
             </div>
-
-            {/* Right Section - Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white dark:bg-zinc-900">
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -188,62 +188,58 @@ function SignUpForm() {
                     transition={{ duration: 0.5 }}
                     className="w-full max-w-md"
                 >
-                    {/* Mobile Logo */}
                     <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
                         <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
                             <Code2 className="h-6 w-6 text-orange-500" />
                         </div>
                         <span className="text-xl font-bold dark:text-white">TheCoderz</span>
                     </div>
-
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-bold dark:text-white">Create an account</h2>
                         <p className="text-zinc-500 dark:text-zinc-400 mt-2">
                             Start your developer journey with us
                         </p>
                     </div>
-
-                    {/* Referral Code Banner */}
                     <AnimatePresence>
-                        {referralCode && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="mb-6 p-4 bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-xl"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-orange-500/20 rounded-lg">
-                                        <Gift className="h-5 w-5 text-orange-500" />
+                        {
+                            referralCode && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="mb-6 p-4 bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-xl"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-orange-500/20 rounded-lg">
+                                            <Gift className="h-5 w-5 text-orange-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium dark:text-white">
+                                                Referral bonus applied!
+                                            </p>
+                                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                                You&apos;ll receive 100 bonus credits upon signup
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-medium dark:text-white">
-                                            Referral bonus applied!
-                                        </p>
-                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                            You&apos;ll receive 100 bonus credits upon signup
-                                        </p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
-
-                    {/* Error Message */}
                     <AnimatePresence>
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
-                            >
-                                <p className="text-red-500 text-sm text-center">{error}</p>
-                            </motion.div>
-                        )}
+                        {
+                            error && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
+                                >
+                                    <p className="text-red-500 text-sm text-center">{error}</p>
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
-
-                    {/* Google Sign Up */}
                     <Button
                         type="button"
                         variant="outline"
@@ -251,16 +247,17 @@ function SignUpForm() {
                         onClick={handleGoogleSignUp}
                         disabled={isGoogleLoading}
                     >
-                        {isGoogleLoading ? (
-                            <div className="h-5 w-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                <FcGoogle className="h-5 w-5 mr-2" />
-                                Continue with Google
-                            </>
-                        )}
+                        {
+                            isGoogleLoading ? (
+                                <div className="h-5 w-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    <FcGoogle className="h-5 w-5 mr-2" />
+                                    Continue with Google
+                                </>
+                            )
+                        }
                     </Button>
-
                     <div className="relative mb-6">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
@@ -271,9 +268,7 @@ function SignUpForm() {
                             </span>
                         </div>
                     </div>
-
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Name Field */}
                         <div className="space-y-2">
                             <Label htmlFor="name" className="text-sm font-medium dark:text-zinc-300">
                                 Full Name
@@ -288,8 +283,6 @@ function SignUpForm() {
                                 className="h-12 dark:bg-zinc-800 dark:border-zinc-700 dark:focus:border-orange-500"
                             />
                         </div>
-
-                        {/* Email Field */}
                         <div className="space-y-2">
                             <Label htmlFor="email" className="text-sm font-medium dark:text-zinc-300">
                                 Email
@@ -304,8 +297,6 @@ function SignUpForm() {
                                 className="h-12 dark:bg-zinc-800 dark:border-zinc-700 dark:focus:border-orange-500"
                             />
                         </div>
-
-                        {/* Password Field */}
                         <div className="space-y-2">
                             <Label htmlFor="password" className="text-sm font-medium dark:text-zinc-300">
                                 Password
@@ -328,70 +319,76 @@ function SignUpForm() {
                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
                             </div>
-
-                            {/* Password Requirements */}
-                            {password && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    className="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"
-                                >
-                                    <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
-                                        Password requirements:
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="flex items-center gap-2">
-                                            {hasMinLength ? (
-                                                <Check className="h-3.5 w-3.5 text-green-500" />
-                                            ) : (
-                                                <X className="h-3.5 w-3.5 text-zinc-400" />
-                                            )}
-                                            <span className={`text-xs ${hasMinLength ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
-                                                8+ characters
-                                            </span>
+                            {
+                                password && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        className="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg"
+                                    >
+                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+                                            Password requirements:
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="flex items-center gap-2">
+                                                {
+                                                    hasMinLength ? (
+                                                        <Check className="h-3.5 w-3.5 text-green-500" />
+                                                    ) : (
+                                                        <X className="h-3.5 w-3.5 text-zinc-400" />
+                                                    )
+                                                }
+                                                <span className={`text-xs ${hasMinLength ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
+                                                    8+ characters
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {
+                                                    hasCapital ? (
+                                                        <Check className="h-3.5 w-3.5 text-green-500" />
+                                                    ) : (
+                                                        <X className="h-3.5 w-3.5 text-zinc-400" />
+                                                    )
+                                                }
+                                                <span className={`text-xs ${hasCapital ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
+                                                    Uppercase letter
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {
+                                                    hasNumber ? (
+                                                        <Check className="h-3.5 w-3.5 text-green-500" />
+                                                    ) : (
+                                                        <X className="h-3.5 w-3.5 text-zinc-400" />
+                                                    )
+                                                }
+                                                <span className={`text-xs ${hasNumber ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
+                                                    Number
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {
+                                                    hasSpecial ? (
+                                                        <Check className="h-3.5 w-3.5 text-green-500" />
+                                                    ) : (
+                                                        <X className="h-3.5 w-3.5 text-zinc-400" />
+                                                    )
+                                                }
+                                                <span className={`text-xs ${hasSpecial ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
+                                                    Special character
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            {hasCapital ? (
-                                                <Check className="h-3.5 w-3.5 text-green-500" />
-                                            ) : (
-                                                <X className="h-3.5 w-3.5 text-zinc-400" />
-                                            )}
-                                            <span className={`text-xs ${hasCapital ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
-                                                Uppercase letter
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {hasNumber ? (
-                                                <Check className="h-3.5 w-3.5 text-green-500" />
-                                            ) : (
-                                                <X className="h-3.5 w-3.5 text-zinc-400" />
-                                            )}
-                                            <span className={`text-xs ${hasNumber ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
-                                                Number
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {hasSpecial ? (
-                                                <Check className="h-3.5 w-3.5 text-green-500" />
-                                            ) : (
-                                                <X className="h-3.5 w-3.5 text-zinc-400" />
-                                            )}
-                                            <span className={`text-xs ${hasSpecial ? "text-green-500" : "text-zinc-500 dark:text-zinc-400"}`}>
-                                                Special character
-                                            </span>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
+                                    </motion.div>
+                                )
+                            }
                         </div>
-
-                        {/* Terms Checkbox */}
                         <div className="flex items-start gap-3 pt-2">
                             <Checkbox
                                 id="terms"
                                 checked={agreedToTerms}
                                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                                className="mt-0.5 border-zinc-300 dark:border-zinc-600 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                                className="cursor-pointer mt-0.5 border-zinc-300 dark:border-zinc-600 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
                             />
                             <Label
                                 htmlFor="terms"
@@ -407,25 +404,23 @@ function SignUpForm() {
                                 </Link>
                             </Label>
                         </div>
-
-                        {/* Submit Button */}
                         <Button
                             type="submit"
                             disabled={isLoading || !agreedToTerms}
                             className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium mt-6"
                         >
-                            {isLoading ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Creating account...
-                                </div>
-                            ) : (
-                                "Create Account"
-                            )}
+                            {
+                                isLoading ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Creating account...
+                                    </div>
+                                ) : (
+                                    "Create Account"
+                                )
+                            }
                         </Button>
                     </form>
-
-                    {/* Sign In Link */}
                     <p className="mt-8 text-center text-zinc-500 dark:text-zinc-400">
                         Already have an account?{" "}
                         <Link

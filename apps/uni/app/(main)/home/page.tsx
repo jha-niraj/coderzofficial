@@ -3,8 +3,8 @@
 import { useSession } from "@repo/auth/client"
 import { motion } from "framer-motion"
 import {
-    Users, BookOpen, School, Plus, ArrowRight,
-    TrendingUp, GraduationCap, CheckCircle2, AlertCircle, Briefcase, Award
+    Users, BookOpen, School, Plus, ArrowRight, TrendingUp, GraduationCap,
+    CheckCircle2, AlertCircle, Briefcase, Award
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import Link from "next/link"
@@ -34,14 +34,16 @@ const StatCard = ({ title, value, change, changeType = "neutral", icon, href }: 
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">{value}</p>
                 <p className="text-sm text-neutral-500">{title}</p>
             </div>
-            {change && (
-                <div className={`mt-3 text-xs font-medium ${changeType === "positive" ? "text-green-600 dark:text-green-400" :
-                    changeType === "negative" ? "text-red-600 dark:text-red-400" :
-                        "text-neutral-500"
-                    }`}>
-                    {change}
-                </div>
-            )}
+            {
+                change && (
+                    <div className={`mt-3 text-xs font-medium ${changeType === "positive" ? "text-green-600 dark:text-green-400" :
+                        changeType === "negative" ? "text-red-600 dark:text-red-400" :
+                            "text-neutral-500"
+                        }`}>
+                        {change}
+                    </div>
+                )
+            }
         </motion.div>
     </Link>
 )
@@ -98,7 +100,6 @@ export default function UniversityDashboard() {
 
     return (
         <div className="min-h-full p-6 lg:p-8">
-            {/* Header */}
             <div className="mb-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -129,22 +130,19 @@ export default function UniversityDashboard() {
                     </div>
                 </motion.div>
             </div>
-
-            {/* Stats Grid */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
             >
-                {stats.map((stat, index) => (
-                    <StatCard key={index} {...stat} />
-                ))}
+                {
+                    stats.map((stat, index) => (
+                        <StatCard key={index} {...stat} />
+                    ))
+                }
             </motion.div>
-
-            {/* Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Recent Activity */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -160,39 +158,40 @@ export default function UniversityDashboard() {
                         </Link>
                     </div>
 
-                    {recentActivity.length > 0 ? (
-                        <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {recentActivity.map((activity, index) => (
-                                <ActivityItem key={index} {...activity} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12">
-                            <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mx-auto mb-4">
-                                <AlertCircle className="w-8 h-8 text-violet-500" />
+                    {
+                        recentActivity.length > 0 ? (
+                            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                                {
+                                    recentActivity.map((activity, index) => (
+                                        <ActivityItem key={index} {...activity} />
+                                    ))
+                                }
                             </div>
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">No activity yet</h3>
-                            <p className="text-sm text-neutral-500 mb-4 max-w-sm mx-auto">
-                                Start by verifying students or creating your first assignment to see activity here.
-                            </p>
-                            <Link href="/classes/new">
-                                <Button variant="outline" size="sm" className="rounded-xl">
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Create Your First Class
-                                </Button>
-                            </Link>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mx-auto mb-4">
+                                    <AlertCircle className="w-8 h-8 text-violet-500" />
+                                </div>
+                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-2">No activity yet</h3>
+                                <p className="text-sm text-neutral-500 mb-4 max-w-sm mx-auto">
+                                    Start by verifying students or creating your first assignment to see activity here.
+                                </p>
+                                <Link href="/classes/new">
+                                    <Button variant="outline" size="sm" className="rounded-xl">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Create Your First Class
+                                    </Button>
+                                </Link>
+                            </div>
+                        )
+                    }
                 </motion.div>
-
-                {/* Quick Actions */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                     className="space-y-4"
                 >
-                    {/* Getting Started Card */}
                     <div className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-2xl p-6 text-white">
                         <h3 className="font-bold text-lg mb-2">Getting Started</h3>
                         <p className="text-violet-200 text-sm mb-4">
@@ -217,8 +216,6 @@ export default function UniversityDashboard() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Placements Preview */}
                     <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2 rounded-lg bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
@@ -235,8 +232,6 @@ export default function UniversityDashboard() {
                             </Button>
                         </Link>
                     </div>
-
-                    {/* Analytics Preview */}
                     <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2 rounded-lg bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">

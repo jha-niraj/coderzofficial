@@ -2,7 +2,6 @@
 
 import { cn } from "@repo/ui/lib/utils";
 
-// Component Imports
 import Navbar from "@/components/landingpage/homepagenavbar";
 import StudioSection from "@/components/landingpage/studio-section";
 import FeaturesSection from "@/components/landingpage/featuressection";

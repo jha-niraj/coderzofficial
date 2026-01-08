@@ -26,6 +26,7 @@
         "@repo/prisma": "workspace:*",
         "@repo/ui": "workspace:*",
         "@tailwindcss/postcss": "^4.1.18",
+        "@vercel/analytics": "^1.6.1",
         "@xyflow/react": "^12.10.0",
         "axios": "^1.13.2",
         "bcryptjs": "^3.0.3",

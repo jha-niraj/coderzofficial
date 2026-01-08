@@ -4,7 +4,9 @@ import type React from "react";
 import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Loader2, Eye, EyeOff, Code2 } from "lucide-react";
+import { 
+    Loader2, Eye, EyeOff, Code2 
+} from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
@@ -12,7 +14,9 @@ import { signIn, useSession } from '@repo/auth/client';
 import toast from '@repo/ui/components/ui/sonner'
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppContext } from "@/app/context/usercontext";
-import { getAuthErrorMessage, shouldRedirectToVerification } from "@/lib/auth-errors";
+import { 
+    getAuthErrorMessage, shouldRedirectToVerification 
+} from "@/lib/auth-errors";
 import { cn } from "@repo/ui/lib/utils";
 
 function SearchParamsLoader() {

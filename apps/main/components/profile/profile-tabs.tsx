@@ -72,8 +72,8 @@ export function ProfileTabs({
 	const [hoveredTab, setHoveredTab] = useState<ProfileTab | null>(null);
 
 	return (
-		<div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-			<div className="w-full overflow-x-auto scrollbar-hide">
+		<div className="sticky top-0 w-full z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+			<div className="max-w-7xl mx-auto overflow-x-auto scrollbar-hide">
 				<nav className="flex items-center gap-1 px-4 md:px-8 min-w-max" role="tablist">
 					{
 						tabs.map((tab) => {

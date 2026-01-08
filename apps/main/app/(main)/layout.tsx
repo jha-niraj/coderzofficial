@@ -4,14 +4,15 @@ import React from 'react';
 import Script from 'next/script';
 import { usePathname } from "next/navigation";
 import Sidebar from '@/components/common/mainsidebar';
-import { 
-    useSidebar, SidebarProvider 
+import {
+    useSidebar, SidebarProvider
 } from '@/components/common/sidebarprovider';
 import { WifiOff, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { cn } from '@repo/ui/lib/utils';
 import { AIChat } from '@/components/main/aichat';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 
 interface LayoutProps {
     children: React.ReactNode
@@ -24,17 +25,19 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
     return (
         <>
             <Sidebar />
-            <div className="flex flex-col flex-1 h-screen overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+            <div className="flex flex-col flex-1 h-screen overflow-hidden bg-neutral-100 dark:bg-black transition-colors duration-300">
                 <main className={cn(
-                    "transition-all duration-300 h-screen",
+                    "h-full relative transition-all duration-300 ease-in-out",
                     "ml-0",
-                    isCollapsed ? "md:ml-[70px]" : "md:ml-[200px]",
+                    isCollapsed ? "lg:ml-[70px]" : "lg:ml-[240px]",
                     isAISidebarOpen ? "lg:mr-[400px]" : "lg:mr-0"
                 )}>
-                    <div className="h-screen bg-white dark:bg-neutral-950 md:rounded-l-3xl md:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
-                        <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent p-4 md:p-6">
-                            {children}
-                        </div>
+                    <div className="p-2 h-full w-full bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden relative">
+                        <ScrollArea className="h-full w-full">
+                            <div className="min-h-full w-full">
+                                {children}
+                            </div>
+                        </ScrollArea>
                     </div>
                 </main>
             </div>
@@ -74,15 +77,17 @@ const Layout = ({ children }: LayoutProps) => {
     // If in full-screen mode, render children without sidebar and navbar
     if (isFullScreenMode) {
         return (
-            <div className="h-screen w-screen">
-                {children}
+            <div className="h-screen w-screen bg-neutral-950 overflow-hidden">
+                <ScrollArea className="h-full w-full">
+                    {children}
+                </ScrollArea>
             </div>
         );
     }
 
     return (
         <SidebarProvider>
-            <div className="flex h-screen">
+            <div className="flex h-screen bg-neutral-100 dark:bg-black overflow-hidden">
                 <MainContent>{children}</MainContent>
             </div>
         </SidebarProvider>
@@ -93,7 +98,7 @@ const OfflineFallback = () => {
     const handleRefresh = () => window.location.reload();
 
     return (
-        <div className="h-screen flex items-center justify-center bg-background px-4">
+        <div className="h-screen flex items-center justify-center bg-background px-4 overflow-hidden">
             <AnimatePresence>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: 100 }}

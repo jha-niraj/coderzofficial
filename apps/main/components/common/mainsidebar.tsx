@@ -7,9 +7,11 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    LogOut, User, ChevronLeft, ChevronRight, ChevronDown, Coins, Crown, 
+    LogOut, User, ChevronLeft, ChevronRight, ChevronDown, Coins, Crown,
     Loader, Sun, Moon, AlignLeft, Plus, LayoutDashboard, Share2,
-    MessageCircleCodeIcon, Award
+    MessageCircleCodeIcon, Award, Zap, ArrowLeftRight, Eye,
+    Trophy,
+    TrendingUp
 } from "lucide-react";
 import {
     TooltipProvider, Tooltip, TooltipTrigger, TooltipContent
@@ -35,13 +37,9 @@ import { getUserLevelInfo } from "@/actions/(main)/user/level.action";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { useTheme } from "@repo/ui/components/themeprovider";
 import { mainNavigation, NavigationItem } from "../../lib/navigation";
-
-// --- Types ---
-
-
 import { useSidebar } from "./sidebarprovider";
+import { Label } from "@repo/ui/components/ui/label";
 
-// --- Interfaces for Gamification ---
 interface LevelConfig {
     level: number;
     title: string;
@@ -232,9 +230,6 @@ function SidebarContent() {
         profileTimeoutRef.current = setTimeout(() => setProfileDropdownOpen(false), 150);
     };
 
-
-
-    // --- Renderers ---
     const renderNavItem = (item: NavigationItem) => {
         const itemPath = item.path;
         const itemName = item.name;
@@ -254,7 +249,7 @@ function SidebarContent() {
                     <button
                         onClick={() => toggleItemExpanded(itemPath)}
                         className={cn(
-                            "flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
+                            "cursor-pointer flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
                             isChildActive
                                 ? "text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800/50"
                                 : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
@@ -299,7 +294,7 @@ function SidebarContent() {
                                                         key={child.path}
                                                         onClick={() => toast.info("Coming Soon", { description: `${child.name} feature is under development` })}
                                                         className={cn(
-                                                            "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors text-muted-foreground cursor-not-allowed opacity-60"
+                                                            "cursor-pointer w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors text-muted-foreground cursor-not-allowed opacity-60"
                                                         )}
                                                     >
                                                         <div className="w-4 h-4 flex items-center justify-center"><ChildIcon className="w-4 h-4" /></div>
@@ -316,7 +311,7 @@ function SidebarContent() {
                                                     key={child.path}
                                                     href={`/${child.path}`}
                                                     className={cn(
-                                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                                                        "cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
                                                         childIsActive
                                                             ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
                                                             : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
@@ -344,7 +339,7 @@ function SidebarContent() {
                 key={itemPath}
                 href={`/${itemPath}`}
                 className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    "cursor-pointer flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                     isActive
                         ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
                         : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
@@ -380,7 +375,7 @@ function SidebarContent() {
     return (
         <>
             <div className={cn("p-6 flex items-center relative border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "justify-center" : "gap-3")}>
-                <Link href={session ? "/dashboard" : "/"} className="flex items-center gap-3">
+                <Link href={session ? "/home" : "/"} className="flex items-center gap-3">
                     <div className="relative h-10 w-10 flex-shrink-0">
                         <Image
                             src={mainWebLogo}
@@ -392,7 +387,7 @@ function SidebarContent() {
                     </div>
                     {
                         !isCollapsed && (
-                            <div className="flex-1 text-left min-w-0 hidden lg:block">
+                            <div className="flex-1 text-left min-w-0">
                                 <h1 className="font-bold text-neutral-900 dark:text-white truncate tracking-tight">CoderzLab</h1>
                                 <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate uppercase tracking-widest font-mono">
                                     Main Platform
@@ -420,47 +415,102 @@ function SidebarContent() {
             <div className="mt-auto border-t border-neutral-200 dark:border-neutral-800">
                 {
                     status === "authenticated" && (
-                        <div className={cn("p-3 border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "text-center" : "")}>
+                        <div className={cn(
+                            "p-3 border-b border-neutral-200 dark:border-neutral-800",
+                            isCollapsed ? "flex flex-col items-center gap-4 py-4" : "space-y-3"
+                        )}>
                             {
-                                !isCollapsed ? (
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setLevelDialogOpen(true)}>
-                                            <Crown className="h-3.5 w-3.5 text-indigo-500" />
-                                            <span className="text-xs font-semibold text-neutral-500 uppercase">Lvl {currentLevel}</span>
+                                isCollapsed ? (
+                                    <>
+                                        <div className="relative group cursor-pointer" onClick={() => setLevelDialogOpen(true)}>
+                                            <Crown className="h-5 w-5 text-indigo-500" />
+                                            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-indigo-500 text-[8px] text-white">
+                                                {currentLevel}
+                                            </span>
                                         </div>
-                                        <Link href="/purchase" className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Buy Credits">
-                                            <Plus className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                                        <div className="group cursor-pointer text-center" onClick={() => setTradeDialogOpen(true)}>
+                                            <div className="mb-0.5 flex justify-center">
+                                                <Zap className="h-4 w-4 text-amber-500" />
+                                            </div>
+                                            <span className="text-[9px] font-bold text-neutral-700 dark:text-neutral-300">
+                                                {currentXp > 999 ? `${(currentXp / 1000).toFixed(1)}k` : currentXp}
+                                            </span>
+                                        </div>
+                                        <Link href="/purchase" className="group text-center block">
+                                            <div className="mb-0.5 flex justify-center">
+                                                <Coins className="h-4 w-4 text-violet-500" />
+                                            </div>
+                                            <span className="text-[9px] font-bold text-neutral-700 dark:text-neutral-300">
+                                                {credits > 999 ? `${(credits / 1000).toFixed(1)}k` : credits}
+                                            </span>
                                         </Link>
-                                    </div>
-                                ) : null}
-                            <div className={cn("flex items-center gap-2 group cursor-pointer", isCollapsed && "justify-center flex-col gap-1")} onClick={() => setTradeDialogOpen(true)}>
-                                <div className="p-1.5 bg-violet-100 dark:bg-violet-900/30 rounded-lg group-hover:bg-violet-200 dark:group-hover:bg-violet-900/50 transition-colors">
-                                    <Coins className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                                </div>
-                                {
-                                    !isCollapsed && (
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-neutral-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{credits} Credits</span>
-                                            <span className="text-[10px] text-muted-foreground">{currentXp} XP</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div
+                                            className="flex w-full justify-between items-center gap-2 px-2 py-1.5 rounded-md bg-gradient-to-r from-indigo-500/10 to-purple-500/10 cursor-pointer hover:from-indigo-500/20 hover:to-purple-500/20 transition-all border border-indigo-500/20"
+                                        >
+                                            <div className="flex gap-2">
+                                                <div className="p-1 bg-indigo-500 rounded text-white shadow-sm">
+                                                    <Crown className="h-3.5 w-3.5" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 leading-none">Current Level</span>
+                                                    <span className="text-sm font-bold text-neutral-900 dark:text-white leading-tight">{currentLevel}</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setLevelDialogOpen(true)}
+                                                className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 rounded-md transition-colors border border-amber-200 dark:border-amber-800/50"
+                                            >
+                                                <Eye className="h-3 w-3" />
+                                                View
+                                            </button>
                                         </div>
-                                    )
-                                }
-                                {
-                                    isCollapsed && (
-                                        <span className="text-[10px] font-bold text-neutral-900 dark:text-white">{credits}</span>
-                                    )
-                                }
-                            </div>
+                                        <div className="flex items-center justify-between px-1">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] uppercase font-semibold text-neutral-500 dark:text-neutral-400">Total XP</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                                                    <span className="text-sm font-bold text-neutral-900 dark:text-white">{currentXp}</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setTradeDialogOpen(true)}
+                                                className="cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 rounded-md transition-colors border border-amber-200 dark:border-amber-800/50"
+                                            >
+                                                <ArrowLeftRight className="h-3 w-3" />
+                                                Trade
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center justify-between px-1">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] uppercase font-semibold text-neutral-500 dark:text-neutral-400">Balance</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Coins className="h-3.5 w-3.5 text-violet-500 fill-yellow-500" />
+                                                    <span className="text-sm font-bold text-neutral-900 dark:text-white">{credits}</span>
+                                                </div>
+                                            </div>
+                                            <Link
+                                                href="/purchase"
+                                                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-neutral-900 dark:bg-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 rounded-md transition-colors shadow-sm"
+                                            >
+                                                <Plus className="h-3 w-3" />
+                                                Buy
+                                            </Link>
+                                        </div>
+                                    </>
+                                )
+                            }
                         </div>
                     )
                 }
-
-                <div className={cn("p-2", isCollapsed ? "flex justify-center" : "grid grid-cols-2 gap-2")}>
-                    <div className={isCollapsed ? "mb-2" : ""}>
+                <div className={cn("p-2", isCollapsed ? "flex flex-col justify-center" : "grid grid-cols-2 gap-2")}>
+                    <div className={isCollapsed ? "" : ""}>
                         <button
                             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                             className={cn(
-                                "flex items-center justify-center rounded-lg p-2 text-sm font-medium transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full",
+                                "cursor-pointer flex items-center justify-center rounded-lg p-2 text-sm font-medium transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full",
                                 isCollapsed && "aspect-square"
                             )}
                             title="Toggle Theme"
@@ -500,7 +550,7 @@ function SidebarContent() {
                                 }
                                 {
                                     !isCollapsed && (
-                                        <div className="flex-1 text-left min-w-0 hidden lg:block">
+                                        <div className="flex-1 text-left min-w-0">
                                             <p className="text-sm font-bold truncate">{session?.user?.name}</p>
                                             <p className="text-[10px] text-neutral-500 truncate">{session?.user?.email}</p>
                                         </div>
@@ -552,8 +602,6 @@ function SidebarContent() {
                     )
                 }
             </div>
-
-            {/* Dialogs */}
             <Dialog open={referDialogOpen} onOpenChange={() => setReferDialogOpen(false)}>
                 <DialogContent className="bg-background text-foreground border-border">
                     <DialogHeader>
@@ -571,101 +619,276 @@ function SidebarContent() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             <Sheet open={tradeDialogOpen} onOpenChange={() => setTradeDialogOpen(false)}>
-                <SheetContent side="right" className="w-[400px]">
+                <SheetContent
+                    side="right"
+                    className="w-full sm:max-w-md md:max-w-xl p-6 border-l border-border overflow-y-auto"
+                >
                     <SheetHeader>
-                        <SheetTitle>Trade XP for Credits</SheetTitle>
-                        <SheetDescription>Convert your hard-earned XP into credits.</SheetDescription>
+                        <SheetTitle className="text-xl font-bold flex items-center">
+                            <Award className="h-5 w-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+                            Trade XP for Credits
+                        </SheetTitle>
+                        <SheetDescription className="text-muted-foreground">
+                            Convert your current XP into credits to unlock assessments, projects, and AI tools.
+                        </SheetDescription>
                     </SheetHeader>
-                    <div className="py-6 space-y-6">
-                        <div className="flex justify-between items-center p-4 rounded-lg bg-muted/50">
-                            <div className="text-center">
-                                <p className="text-2xl font-bold">{currentXp}</p>
-                                <p className="text-xs text-muted-foreground uppercase">XP Available</p>
+                    <div className="space-y-5 mt-2">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-indigo-50 dark:bg-indigo-950/30 p-3 rounded-lg">
+                                <p className="text-sm text-muted-foreground">Current XP</p>
+                                <p className="text-xl font-bold flex items-center mt-1">
+                                    <Award className="h-4 w-4 mr-1 text-indigo-600 dark:text-indigo-400" />
+                                    {currentXp}
+                                </p>
                             </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold">{credits}</p>
-                                <p className="text-xs text-muted-foreground uppercase">Current Credits</p>
+                            <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg">
+                                <p className="text-sm text-muted-foreground">Your Credits</p>
+                                <p className="text-xl font-bold flex items-center mt-1">
+                                    <Coins className="h-4 w-4 mr-1 text-amber-600 dark:text-amber-400" />
+                                    {credits}
+                                </p>
                             </div>
                         </div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between text-sm">
-                                <span>XP to Convert</span>
-                                <span className="font-mono">{xpToConvert}</span>
+                        <div className="py-3">
+                            <Label htmlFor="xp-input" className="block mb-2 font-medium">
+                                XP to convert
+                            </Label>
+                            <div className="flex items-center gap-3">
+                                <Input
+                                    id="xp-input"
+                                    type="number"
+                                    value={xpToConvert}
+                                    onChange={(e) => setXpToConvert(Math.max(0, Math.min(maxConvertibleXp, Number(e.target.value))))}
+                                    min={0}
+                                    max={maxConvertibleXp}
+                                    className="flex-1"
+                                />
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setXpToConvert(Math.min(maxConvertibleXp, Math.floor(xpToConvert + 10)))}
+                                    className="px-2"
+                                >
+                                    +10
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setXpToConvert(Math.max(0, Math.floor(xpToConvert / 2)))}
+                                    className="px-2"
+                                >
+                                    ½
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setXpToConvert(maxConvertibleXp)}
+                                    className="px-2"
+                                >
+                                    Max
+                                </Button>
                             </div>
                             <Slider
                                 value={[xpToConvert]}
                                 min={0}
                                 max={maxConvertibleXp}
                                 step={10}
-                                onValueChange={(val) => setXpToConvert(val[0]!)}
+                                onValueChange={(value) => setXpToConvert(value[0]!)}
+                                className="mt-4"
                             />
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                                <span>Rate: 10 XP = 1 Credit</span>
-                                <span>You get: {creditsGained} Credits</span>
+                        </div>
+                        <div className="bg-muted/40 p-4 rounded-lg">
+                            <div className="flex justify-between items-center mb-2">
+                                <p className="text-sm text-muted-foreground">Conversion rate</p>
+                                <p className="text-sm font-medium">100 XP = 1 Credit</p>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-sm text-muted-foreground">You&apos;ll receive</p>
+                                <p className="text-lg font-bold flex items-center">
+                                    <Coins className="h-4 w-4 mr-1 text-amber-600 dark:text-amber-400" />
+                                    {creditsGained} Credits
+                                </p>
+                            </div>
+                            <div className="flex justify-between items-center mt-2">
+                                <p className="text-sm text-muted-foreground">Remaining XP</p>
+                                <p className="text-lg font-medium">{currentXp - xpToConvert} XP</p>
                             </div>
                         </div>
-
-                        <Button onClick={handleConvert} disabled={converting || xpToConvert === 0} className="w-full">
-                            {converting ? <Loader className="animate-spin w-4 h-4" /> : "Confirm Conversion"}
+                        <Button
+                            onClick={handleConvert}
+                            disabled={xpToConvert <= 0 || xpToConvert > maxConvertibleXp || converting}
+                            className="w-full bg-primary text-primary-foreground rounded-2xl py-2"
+                            size="lg"
+                        >
+                            {
+                                converting ? (
+                                    <div className="flex gap-2 items-center justify-center">
+                                        <Loader className="h-4 w-4 animate-spin" />
+                                        Converting...
+                                    </div>
+                                ) : (
+                                    "Convert XP to Credits"
+                                )
+                            }
                         </Button>
                     </div>
                 </SheetContent>
             </Sheet>
-
             <Sheet open={levelDialogOpen} onOpenChange={() => setLevelDialogOpen(false)}>
-                <SheetContent side="right" className="w-[500px] overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle>Your Level</SheetTitle>
-                        <SheetDescription>View your progress and stats.</SheetDescription>
+                <SheetContent
+                    side="right"
+                    className="w-full h-full sm:w-[80vw] md:w-[55vw] sm:max-w-[80vw] p-6 overflow-y-auto"
+                    style={{ maxWidth: '90vw' }}
+                >
+                    <SheetHeader className="mb-6">
+                        <SheetTitle className="text-2xl font-bold flex items-center gap-2">
+                            <Trophy className="h-6 w-6 text-amber-500" />
+                            Your Coding Journey
+                        </SheetTitle>
+                        <SheetDescription>
+                            Track your progress through our leveling system and earn rewards for your achievements.
+                        </SheetDescription>
                     </SheetHeader>
-
-                    <div className="py-6 space-y-6">
-                        {
-                            levelInfoLoading ? (
-                                <div className="flex justify-center p-8"><Loader className="animate-spin" /></div>
-                            ) : levelInfo ? (
-                                <div className="space-y-6">
-                                    <div className="text-center">
-                                        <div className="inline-flex items-center justify-center p-4 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-4">
-                                            <Crown className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                    {
+                        levelInfoLoading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="flex flex-col items-center gap-4">
+                                    <Loader className="h-8 w-8 animate-spin text-indigo-600" />
+                                    <p className="text-muted-foreground">Loading your progress...</p>
+                                </div>
+                            </div>
+                        ) : levelInfo ? (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="md:col-span-2 bg-card rounded-xl p-2 border border-border shadow-sm">
+                                        <div className="p-6">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="text-2xl">{levelInfo.currentLevelConfig?.icon || "🌱"}</span>
+                                                <div>
+                                                    <h3 className="text-lg font-semibold">{levelInfo.currentLevelConfig?.title || "Coding Newbie"}</h3>
+                                                    <p className="text-sm text-muted-foreground">Level {levelInfo.currentLevel}</p>
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                {levelInfo.currentLevelConfig?.description || "Welcome to your coding journey!"}
+                                            </p>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between text-sm mb-2">
+                                                        <span>Progress to next level</span>
+                                                        <span>{Math.round(levelInfo.levelInfo.progressPercentage)}%</span>
+                                                    </div>
+                                                    <Progress
+                                                        value={levelInfo.levelInfo.progressPercentage}
+                                                        className="h-3"
+                                                    />
+                                                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                                        <span>{levelInfo.levelInfo.progressInCurrentLevel} XP</span>
+                                                        <span>{levelInfo.levelInfo.xpNeededForNextLevel} XP to go</span>
+                                                    </div>
+                                                </div>
+                                                {
+                                                    levelInfo.nextLevelConfig && (
+                                                        <div className="bg-muted/50 p-3 rounded-lg">
+                                                            <p className="text-sm font-medium mb-1">Next Level:</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-lg">{levelInfo.nextLevelConfig.icon}</span>
+                                                                <div>
+                                                                    <p className="font-semibold">{levelInfo.nextLevelConfig.title}</p>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        Rewards: {levelInfo.nextLevelConfig.xpReward} XP + {levelInfo.nextLevelConfig.creditsReward} Credits
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                            </div>
                                         </div>
-                                        <h3 className="text-2xl font-bold">Level {levelInfo.currentLevel}</h3>
-                                        <p className="text-muted-foreground">{levelInfo.currentLevelConfig?.title}</p>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span>Progress</span>
-                                            <span>{Math.round(levelInfo.levelInfo.progressPercentage)}%</span>
+                                    <div className="space-y-4">
+                                        <div className="bg-card rounded-xl p-2 border border-border shadow-sm">
+                                            <div className="p-4 text-center">
+                                                <Award className="h-8 w-8 mx-auto mb-2 text-indigo-500" />
+                                                <div className="text-2xl font-bold text-indigo-600">{levelInfo.currentXp}</div>
+                                                <div className="text-sm text-muted-foreground">Current XP</div>
+                                            </div>
                                         </div>
-                                        <Progress value={levelInfo.levelInfo.progressPercentage} />
-                                        <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>{levelInfo.currentXp} XP</span>
-                                            <span>Next Level: {levelInfo.levelInfo.nextLevelXp} XP</span>
+                                        <div className="bg-card rounded-xl p-2 border border-border shadow-sm">
+                                            <div className="p-4 text-center">
+                                                <TrendingUp className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                                                <div className="text-2xl font-bold text-green-600">{levelInfo.totalXp}</div>
+                                                <div className="text-sm text-muted-foreground">Total XP Earned</div>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 rounded-xl border bg-card text-center">
-                                            <Award className="w-6 h-6 mx-auto mb-2 text-blue-500" />
-                                            <div className="text-xl font-bold">{levelInfo.totalXp}</div>
-                                            <div className="text-xs text-muted-foreground">Total XP</div>
-                                        </div>
-                                        <div className="p-4 rounded-xl border bg-card text-center">
-                                            <Coins className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
-                                            <div className="text-xl font-bold">{levelInfo.credits}</div>
-                                            <div className="text-xs text-muted-foreground">Credits</div>
+                                        <div className="bg-card rounded-xl p-2 border border-border shadow-sm">
+                                            <div className="p-4 text-center">
+                                                <Coins className="h-8 w-8 mx-auto mb-2 text-amber-500" />
+                                                <div className="text-2xl font-bold text-amber-600">{levelInfo.credits}</div>
+                                                <div className="text-sm text-muted-foreground">Credits</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            ) : (
-                                <p className="text-center text-muted-foreground">Could not load level info.</p>
-                            )
-                        }
-                    </div>
+                                {
+                                    levelInfo.recentLevelUps.length > 0 && (
+                                        <div className="bg-card rounded-xl p-2 border border-border shadow-sm">
+                                            <div className="p-6">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <Trophy className="h-5 w-5 text-amber-500" />
+                                                    <h3 className="text-lg font-semibold">Recent Achievements</h3>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {
+                                                        levelInfo.recentLevelUps.map((levelUp: any, index: number) => (
+                                                            <div key={index} className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                                                                <span className="text-xl">{levelUp.levelInfo.icon}</span>
+                                                                <div className="flex-1">
+                                                                    <p className="font-medium">{levelUp.levelInfo.title}</p>
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        Achieved on {new Date(levelUp.achievedAt).toLocaleDateString()}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-sm font-medium">+{levelUp.xpEarned} XP</p>
+                                                                    {
+                                                                        levelUp.creditsEarned > 0 && (
+                                                                            <p className="text-sm text-amber-600">+{levelUp.creditsEarned} Credits</p>
+                                                                        )
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                }
+                                <div className="flex gap-4">
+                                    <Button
+                                        onClick={() => setLevelDialogOpen(false)}
+                                        variant="outline"
+                                        className="flex-1"
+                                    >
+                                        Close
+                                    </Button>
+                                    <Button
+                                        onClick={() => {
+                                            setLevelDialogOpen(false);
+                                            setTradeDialogOpen(true);
+                                        }}
+                                        className="flex-1 bg-primary text-primary-foreground rounded-2xl"
+                                    >
+                                        <Zap className="mr-2 h-4 w-4" />
+                                        Trade XP for Credits
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center py-12">
+                                <p className="text-muted-foreground">Unable to load level information.</p>
+                            </div>
+                        )
+                    }
                 </SheetContent>
             </Sheet>
         </>
@@ -673,25 +896,12 @@ function SidebarContent() {
 }
 
 const Sidebar = ({ className = "" }: SidebarProps) => {
-    // We only use the external context now
-    // If context not found, useSidebar hook inside SidebarContent will throw error which is desired behavior if wrapped improperly
-
-    // We can't really remove the wrapping component easily if the user expects one, 
-    // but the request was "local context should not be there". 
-    // However, SidebarContent consumes useSidebar.
-    // And Sidebar component renders SidebarContent along with the toggle button and mobile behavior.
-
-    // The previous implementation had a "fallback" local state if external context was missing.
-    // The user wants to remove that "local isCollapsed" stuff.
-
-    // Since SidebarProvider is exported for Layout to use, Sidebar should just consume it.
-
     const { isCollapsed, isMobileOpen, setIsMobileOpen } = useSidebar();
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth < 1024); // lg breakpoint consistent with other sidebars
+            setIsMobile(window.innerWidth < 1024);
         };
         checkMobile();
         window.addEventListener('resize', checkMobile);
@@ -711,32 +921,32 @@ const Sidebar = ({ className = "" }: SidebarProps) => {
         <TooltipProvider>
             <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
-                className="fixed top-2 left-2 z-50 lg:hidden bg-white dark:bg-neutral-950 p-2 rounded-lg border border-neutral-200 dark:border-neutral-800"
+                className="fixed top-2 left-2 z-50 lg:hidden bg-white dark:bg-neutral-950 p-2 rounded-lg shadow-md"
             >
-                <AlignLeft className="h-5 w-5" />
+                <AlignLeft className="h-5 w-5 text-neutral-800 dark:text-neutral-200" />
             </button>
-
             {
                 isMobileOpen && (
                     <div
-                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                        className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
                         onClick={() => setIsMobileOpen(false)}
                     />
                 )
             }
-
             <aside
                 className={cn(
-                    "fixed top-0 left-0 h-screen bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800 flex flex-col z-40 transition-all duration-300",
+                    "fixed top-0 left-0 h-screen flex flex-col z-40 transition-all duration-300 ease-in-out",
+                    "bg-neutral-100 dark:bg-black",
                     "hidden lg:flex",
-                    isCollapsed ? "w-[90px]" : "w-64",
+                    isCollapsed ? "w-[70px]" : "w-[240px]",
                     className
                 )}
             >
                 {content}
             </aside>
             <div className={cn(
-                "fixed top-0 left-0 h-full w-64 bg-white dark:bg-neutral-950 z-50 transition-transform duration-300 transform border-r border-neutral-200 dark:border-neutral-800 lg:hidden flex flex-col",
+                "fixed top-0 left-0 h-full w-64 z-50 transition-transform duration-300 transform lg:hidden flex flex-col",
+                "bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800",
                 isMobileOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 {content}
