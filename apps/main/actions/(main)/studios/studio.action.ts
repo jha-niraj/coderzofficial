@@ -52,6 +52,18 @@ export interface ChatMessage {
 // STUDIO CRUD OPERATIONS
 // ==========================================
 
+// ==========================================
+// STUDIO FILTERS INTERFACE
+// ==========================================
+export interface StudioFilters {
+    search?: string;
+    category?: string;
+    visibility?: "PUBLIC" | "PRIVATE";
+    sortBy?: 'latest' | 'popular' | 'views' | 'likes';
+    page?: number;
+    limit?: number;
+}
+
 export async function getStudios() {
     try {
         const session = await auth();
@@ -80,7 +92,236 @@ export async function getStudios() {
     }
 }
 
-export async function getStudio(studioId: string) {
+export async function getMyStudios(filters: StudioFilters = {}) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { error: "Unauthorized" };
+        }
+
+        const { search, category, sortBy = 'latest', page = 1, limit = 10 } = filters;
+        const skip = (page - 1) * limit;
+
+        const where: Record<string, unknown> = { userId: session.user.id };
+        
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+        
+        if (category) {
+            where.category = category;
+        }
+
+        const orderBy: Record<string, string> = {};
+        switch (sortBy) {
+            case 'popular': orderBy.likes = 'desc'; break;
+            case 'views': orderBy.views = 'desc'; break;
+            case 'likes': orderBy.likes = 'desc'; break;
+            default: orderBy.updatedAt = 'desc';
+        }
+
+        const [studios, total] = await Promise.all([
+            prisma.studio.findMany({
+                where,
+                orderBy,
+                skip,
+                take: limit,
+                include: {
+                    _count: {
+                        select: {
+                            quizzes: true,
+                            flashcardDecks: true,
+                            codeBlocks: true,
+                        },
+                    },
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            image: true,
+                        },
+                    },
+                },
+            }),
+            prisma.studio.count({ where }),
+        ]);
+
+        return {
+            studios,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    } catch (error) {
+        console.error("Error fetching my studios:", error);
+        return { error: "Failed to fetch studios" };
+    }
+}
+
+export async function getPublicStudios(filters: StudioFilters = {}) {
+    try {
+        const { search, category, sortBy = 'popular', page = 1, limit = 10 } = filters;
+        const skip = (page - 1) * limit;
+
+        const where: Record<string, unknown> = { 
+            visibility: StudioVisibility.PUBLIC 
+        };
+        
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+        
+        if (category) {
+            where.category = category;
+        }
+
+        const orderBy: Record<string, string> = {};
+        switch (sortBy) {
+            case 'latest': orderBy.createdAt = 'desc'; break;
+            case 'views': orderBy.views = 'desc'; break;
+            case 'likes': orderBy.likes = 'desc'; break;
+            default: orderBy.views = 'desc';
+        }
+
+        const [studios, total] = await Promise.all([
+            prisma.studio.findMany({
+                where,
+                orderBy,
+                skip,
+                take: limit,
+                include: {
+                    _count: {
+                        select: {
+                            quizzes: true,
+                            flashcardDecks: true,
+                            codeBlocks: true,
+                        },
+                    },
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            image: true,
+                        },
+                    },
+                },
+            }),
+            prisma.studio.count({ where }),
+        ]);
+
+        return {
+            studios,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    } catch (error) {
+        console.error("Error fetching public studios:", error);
+        return { error: "Failed to fetch public studios" };
+    }
+}
+
+export async function getStudiosByCategory(category: string, filters: StudioFilters = {}) {
+    try {
+        const { search, sortBy = 'popular', page = 1, limit = 10 } = filters;
+        const skip = (page - 1) * limit;
+
+        const where: Record<string, unknown> = { 
+            visibility: StudioVisibility.PUBLIC,
+            category: category.toUpperCase()
+        };
+        
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
+        const orderBy: Record<string, string> = {};
+        switch (sortBy) {
+            case 'latest': orderBy.createdAt = 'desc'; break;
+            case 'views': orderBy.views = 'desc'; break;
+            case 'likes': orderBy.likes = 'desc'; break;
+            default: orderBy.views = 'desc';
+        }
+
+        const [studios, total] = await Promise.all([
+            prisma.studio.findMany({
+                where,
+                orderBy,
+                skip,
+                take: limit,
+                include: {
+                    _count: {
+                        select: {
+                            quizzes: true,
+                            flashcardDecks: true,
+                            codeBlocks: true,
+                        },
+                    },
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            image: true,
+                        },
+                    },
+                },
+            }),
+            prisma.studio.count({ where }),
+        ]);
+
+        return {
+            studios,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    } catch (error) {
+        console.error("Error fetching studios by category:", error);
+        return { error: "Failed to fetch studios" };
+    }
+}
+
+export async function getStudioStats() {
+    try {
+        const [totalStudios, totalPublicStudios, totalLearners] = await Promise.all([
+            prisma.studio.count(),
+            prisma.studio.count({ where: { visibility: StudioVisibility.PUBLIC } }),
+            prisma.studio.aggregate({ _sum: { views: true } }),
+        ]);
+
+        return {
+            totalStudios,
+            totalPublicStudios,
+            totalLearners: totalLearners._sum.views || 0,
+        };
+    } catch (error) {
+        console.error("Error fetching studio stats:", error);
+        return { totalStudios: 0, totalPublicStudios: 0, totalLearners: 0 };
+    }
+}
+
+export async function getStudio(slugOrId: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -89,11 +330,16 @@ export async function getStudio(studioId: string) {
 
         const studio = await prisma.studio.findFirst({
             where: {
-                id: studioId,
                 OR: [
-                    { userId: session.user.id },
-                    { visibility: StudioVisibility.PUBLIC },
+                    { slug: slugOrId },
+                    { id: slugOrId },
                 ],
+                AND: {
+                    OR: [
+                        { userId: session.user.id },
+                        { visibility: StudioVisibility.PUBLIC },
+                    ],
+                },
             },
             include: {
                 quizzes: true,
@@ -125,6 +371,17 @@ export async function getStudio(studioId: string) {
     }
 }
 
+function generateStudioSlug(title: string): string {
+    const base = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .substring(0, 50);
+    const suffix = Math.random().toString(36).substring(2, 8);
+    return `${base}-${suffix}`;
+}
+
 export async function createStudio(data: StudioFormData) {
     try {
         const session = await auth();
@@ -132,8 +389,11 @@ export async function createStudio(data: StudioFormData) {
             return { error: "Unauthorized" };
         }
 
+        const slug = generateStudioSlug(data.title);
+
         const studio = await prisma.studio.create({
             data: {
+                slug,
                 title: data.title,
                 description: data.description,
                 category: data.category as any,

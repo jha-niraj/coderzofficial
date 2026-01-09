@@ -10,13 +10,13 @@ import type {
 
 interface StudioEditorPageProps {
 	params: Promise<{
-		studioId: string;
+		slug: string;
 	}>;
 }
 
 export async function generateMetadata({ params }: StudioEditorPageProps): Promise<Metadata> {
-	const { studioId } = await params;
-	const result = await getStudio(studioId);
+	const { slug } = await params;
+	const result = await getStudio(slug);
 
 	if (result.error || !result.studio) {
 		return {
@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: StudioEditorPageProps): Promi
 }
 
 export default async function StudioEditorPage({ params }: StudioEditorPageProps) {
-	const { studioId } = await params;
-	const result = await getStudio(studioId);
+	const { slug } = await params;
+	const result = await getStudio(slug);
 
 	if (result.error || !result.studio) {
 		notFound();
@@ -41,6 +41,7 @@ export default async function StudioEditorPage({ params }: StudioEditorPageProps
 	// Transform the Prisma result to match our Studio type
 	const studio: Studio = {
 		id: result.studio.id,
+		slug: result.studio.slug || null,
 		title: result.studio.title,
 		description: result.studio.description,
 		emoji: result.studio.emoji ?? undefined,

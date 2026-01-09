@@ -59,3 +59,36 @@ export {
     getContributorsLeaderboard,
     getUserRank
 } from './contributions.action'
+
+// AI validation actions
+export {
+    validateCode,
+    validateTerminalCommand,
+    validateQuizAnswer,
+    simulateGitSession
+} from './ai-validation.action'
+
+export type {
+    ValidationResult,
+    CodeValidationInput,
+    TerminalValidationInput,
+    QuizValidationInput
+} from './ai-validation.action'
+
+// AI-powered exam actions
+export {
+    generateExamQuestions,
+    validateExamAnswer,
+    validateExamSubmission,
+    checkExamEligibility,
+    saveExamResult
+} from './exam.action'
+
+export type {
+    QuizQuestion,
+    CodeQuestion,
+    ScenarioQuestion,
+    ExamQuestion,
+    ExamValidationResult,
+    GeneratedExamResult
+} from './exam.action'

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
 	Plus, FileText, BookOpen, Code, MoreVertical, Trash2,
-	Edit, Globe, Lock, Clock, Sparkles, Users
+	Edit, Globe, Lock, Clock, Sparkles, Users,
+	Loader
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@repo/ui/components/ui/button";
@@ -17,7 +18,7 @@ import {
 } from "@repo/ui/components/ui/dropdown-menu";
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
-	DialogTitle, DialogTrigger
+	DialogTitle
 } from "@repo/ui/components/ui/dialog";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
@@ -87,7 +88,7 @@ export default function StudioList() {
 			toast.success("Studio created successfully!");
 			setCreateDialogOpen(false);
 			setFormData({ title: "", description: "", category: "PROGRAMMING", isPublic: false });
-			router.push(`/studio/${result.studio.id}`);
+			router.push(`/studio/${result.studio.slug || result.studio.id}`);
 		}
 		setCreating(false);
 	};
@@ -122,15 +123,6 @@ export default function StudioList() {
 	return (
 		<div>
 			<Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-				<DialogTrigger asChild>
-					<Button
-						className="mb-6 gap-2"
-						size="lg"
-					>
-						<Plus className="h-5 w-5" />
-						Create New Studio
-					</Button>
-				</DialogTrigger>
 				<DialogContent className="sm:max-w-[500px] bg-white dark:bg-neutral-900">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
@@ -203,11 +195,7 @@ export default function StudioList() {
 						<Button onClick={handleCreateStudio} disabled={creating}>
 							{
 								creating ? (
-									<motion.div
-										className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full"
-										animate={{ rotate: 360 }}
-										transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-									/>
+									<Loader className="animate-spin" />
 								) : (
 									"Create Studio"
 								)
@@ -249,7 +237,7 @@ export default function StudioList() {
 								<motion.div key={studio.id} variants={itemVariants}>
 									<Card
 										className="group cursor-pointer bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-primary/50 dark:hover:border-primary/50 transition-all hover:shadow-lg"
-										onClick={() => router.push(`/studio/${studio.id}`)}
+										onClick={() => router.push(`/studio/${studio.slug || studio.id}`)}
 									>
 										<CardHeader className="pb-3">
 											<div className="flex items-start justify-between">
@@ -270,7 +258,7 @@ export default function StudioList() {
 													<DropdownMenuContent align="end">
 														<DropdownMenuItem onClick={(e) => {
 															e.stopPropagation();
-															router.push(`/studio/${studio.id}`);
+															router.push(`/studio/${studio.slug || studio.id}`);
 														}}>
 															<Edit className="h-4 w-4 mr-2" />
 															Edit

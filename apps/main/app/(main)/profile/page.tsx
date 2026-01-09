@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, ProjectsTab,
-    ActivityTab, SkillsTab, ResumeTab, AboutTab, ShareProfileModal, EditProfileModal
+    ActivityTab, SkillsTab, ResumeTab, AboutTab, IntegrationsTab, 
+    ShareProfileModal, EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    getOwnProfile, getUserProfileStats, endorseSkill, pinProject, unpinProject
+    getOwnProfile, getUserProfileStats, endorseSkill, pinProject, 
+    unpinProject
 } from "@/actions/(main)/user/profile.action";
 import { useRouter } from "next/navigation";
 
@@ -367,6 +369,8 @@ export default function ProfilePage() {
                         onEditProfile={() => setEditModalOpen(true)}
                     />
                 );
+            case "integrations":
+                return <IntegrationsTab {...commonProps} />;
             default:
                 return null;
         }

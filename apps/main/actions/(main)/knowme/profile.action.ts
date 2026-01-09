@@ -1,0 +1,488 @@
+"use server";
+
+/**
+ * KnowMe Profile Server Actions
+ * 
+ * Handles profile creation, retrieval, and management
+ */
+
+import { auth } from "@repo/auth";
+import { prisma } from "@repo/prisma";
+import { revalidatePath } from "next/cache";
+import type { 
+  KnowMeProfileBasic, 
+  KnowMeProfileFull, 
+  KnowMeProfilePublic,
+  KnowMeActionResponse 
+} from "@/types/knowme";
+import { 
+  generateApiKey, 
+  calculateNextUpdate 
+} from "@/utils/knowme";
+
+// ============================================
+// GET PROFILE ACTIONS
+// ============================================
+
+/**
+ * Get current user's KnowMe profile
+ */
+export async function getMyKnowMeProfile(): Promise<
+  KnowMeActionResponse<KnowMeProfileFull>
+> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const profile = await prisma.knowMeProfile.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            image: true,
+            bio: true,
+            occupation: true,
+          },
+        },
+        personalData: {
+          where: { isActive: true },
+          orderBy: { createdAt: "desc" },
+        },
+        platformConnections: {
+          orderBy: { createdAt: "desc" },
+        },
+        privacySettings: true,
+      },
+    });
+
+    if (!profile) {
+      return { success: false, error: "Profile not found" };
+    }
+
+    return {
+      success: true,
+      data: {
+        id: profile.id,
+        userId: profile.userId,
+        status: profile.status,
+        privacy: profile.privacy,
+        isPublic: profile.isPublic,
+        includePersonalData: profile.includePersonalData,
+        includePlatformData: profile.includePlatformData,
+        updateCycleDays: profile.updateCycleDays,
+        lastUpdatedAt: profile.lastUpdatedAt,
+        nextScheduledUpdate: profile.nextScheduledUpdate,
+        totalQuestionsAnswered: profile.totalQuestionsAnswered,
+        totalSessions: profile.totalSessions,
+        totalVisitors: profile.totalVisitors,
+        apiEnabled: profile.apiEnabled,
+        apiRateLimit: profile.apiRateLimit,
+        onboardingCompleted: profile.onboardingCompleted,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+        user: profile.user,
+        personalData: profile.personalData.map((pd) => ({
+          id: pd.id,
+          dataType: pd.dataType,
+          title: pd.title,
+          fileName: pd.fileName,
+          fileUrl: pd.fileUrl,
+          fileSize: pd.fileSize,
+          isActive: pd.isActive,
+          isIndexed: pd.isIndexed,
+          createdAt: pd.createdAt,
+          updatedAt: pd.updatedAt,
+        })),
+        platformConnections: profile.platformConnections.map((pc) => ({
+          id: pc.id,
+          platform: pc.platform,
+          platformUsername: pc.platformUsername,
+          profileUrl: pc.profileUrl,
+          connectionStatus: pc.connectionStatus,
+          isConnected: pc.isConnected,
+          lastSyncedAt: pc.lastSyncedAt,
+          nextSyncAt: pc.nextSyncAt,
+          metadata: pc.metadata as Record<string, unknown> | null,
+          createdAt: pc.createdAt,
+        })),
+        privacySettings: profile.privacySettings
+          ? {
+              allowAnonymous: profile.privacySettings.allowAnonymous,
+              allowRegisteredUsers: profile.privacySettings.allowRegisteredUsers,
+              allowRecruiters: profile.privacySettings.allowRecruiters,
+              shareBasicInfo: profile.privacySettings.shareBasicInfo,
+              shareProjects: profile.privacySettings.shareProjects,
+              shareAssessments: profile.privacySettings.shareAssessments,
+              shareWorkHistory: profile.privacySettings.shareWorkHistory,
+              shareEducation: profile.privacySettings.shareEducation,
+              shareSalary: profile.privacySettings.shareSalary,
+              shareExternalData: profile.privacySettings.shareExternalData as Record<
+                string,
+                boolean
+              >,
+              maxQuestionsPerSession:
+                profile.privacySettings.maxQuestionsPerSession,
+              requireAuthForSensitive:
+                profile.privacySettings.requireAuthForSensitive,
+              blockedUserIds: profile.privacySettings.blockedUserIds,
+              blockedCompanies: profile.privacySettings.blockedCompanies,
+            }
+          : null,
+        suggestedQuestions: profile.suggestedQuestions,
+        welcomeMessage: profile.welcomeMessage,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting KnowMe profile:", error);
+    return { success: false, error: "Failed to get profile" };
+  }
+}
+
+/**
+ * Get KnowMe profile by username (public view)
+ */
+export async function getKnowMeProfileByUsername(
+  username: string
+): Promise<KnowMeActionResponse<KnowMeProfilePublic>> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { username },
+      include: {
+        knowmeProfile: {
+          include: {
+            privacySettings: true,
+          },
+        },
+      },
+    });
+
+    if (!user || !user.knowmeProfile) {
+      return { success: false, error: "Profile not found" };
+    }
+
+    const profile = user.knowmeProfile;
+
+    // Check if profile is accessible
+    if (profile.status !== "ACTIVE" || !profile.isPublic) {
+      return { success: false, error: "Profile is not public" };
+    }
+
+    return {
+      success: true,
+      data: {
+        id: profile.id,
+        user: {
+          username: user.username,
+          name: user.name,
+          image: user.image,
+          bio: user.bio,
+          occupation: user.occupation,
+        },
+        isActive: profile.status === "ACTIVE",
+        welcomeMessage: profile.welcomeMessage,
+        suggestedQuestions: profile.suggestedQuestions,
+        privacy: profile.privacy,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting public profile:", error);
+    return { success: false, error: "Failed to get profile" };
+  }
+}
+
+// ============================================
+// CREATE/INITIALIZE PROFILE
+// ============================================
+
+/**
+ * Initialize KnowMe profile for current user
+ */
+export async function initializeKnowMeProfile(): Promise<
+  KnowMeActionResponse<KnowMeProfileBasic>
+> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Check if profile already exists
+    const existing = await prisma.knowMeProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (existing) {
+      return { success: false, error: "Profile already exists" };
+    }
+
+    // Generate API key
+    const { key, hash } = generateApiKey();
+
+    // Create profile with default settings
+    const profile = await prisma.knowMeProfile.create({
+      data: {
+        userId: session.user.id,
+        status: "SETUP",
+        privacy: "PUBLIC",
+        isPublic: true,
+        includePersonalData: true,
+        includePlatformData: false,
+        includeProjects: true,
+        includeAssessments: true,
+        includeResume: true,
+        updateCycleDays: 10,
+        apiKey: key,
+        apiKeyHash: hash,
+        apiEnabled: false,
+        apiRateLimit: 100,
+        onboardingStep: 1,
+        onboardingCompleted: false,
+        suggestedQuestions: [
+          "What's your experience with React?",
+          "Tell me about your projects",
+          "What technologies do you know?",
+          "Are you available for opportunities?",
+        ],
+      },
+    });
+
+    // Create default privacy settings
+    await prisma.knowMePrivacySettings.create({
+      data: {
+        profileId: profile.id,
+      },
+    });
+
+    revalidatePath("/knowme");
+
+    return {
+      success: true,
+      data: {
+        id: profile.id,
+        userId: profile.userId,
+        status: profile.status,
+        privacy: profile.privacy,
+        isPublic: profile.isPublic,
+        includePersonalData: profile.includePersonalData,
+        includePlatformData: profile.includePlatformData,
+        updateCycleDays: profile.updateCycleDays,
+        lastUpdatedAt: profile.lastUpdatedAt,
+        nextScheduledUpdate: profile.nextScheduledUpdate,
+        totalQuestionsAnswered: profile.totalQuestionsAnswered,
+        totalSessions: profile.totalSessions,
+        totalVisitors: profile.totalVisitors,
+        apiEnabled: profile.apiEnabled,
+        apiRateLimit: profile.apiRateLimit,
+        onboardingCompleted: profile.onboardingCompleted,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+      },
+      message: "Profile initialized successfully",
+    };
+  } catch (error) {
+    console.error("Error initializing KnowMe profile:", error);
+    return { success: false, error: "Failed to initialize profile" };
+  }
+}
+
+// ============================================
+// UPDATE PROFILE
+// ============================================
+
+/**
+ * Update KnowMe profile settings
+ */
+export async function updateKnowMeProfile(data: {
+  privacy?: "PUBLIC" | "REGISTERED" | "RECRUITERS" | "PRIVATE";
+  isPublic?: boolean;
+  includePersonalData?: boolean;
+  includePlatformData?: boolean;
+  includeProjects?: boolean;
+  includeAssessments?: boolean;
+  includeResume?: boolean;
+  updateCycleDays?: number;
+  welcomeMessage?: string;
+  suggestedQuestions?: string[];
+  aiPersonality?: string;
+}): Promise<KnowMeActionResponse<void>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const profile = await prisma.knowMeProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!profile) {
+      return { success: false, error: "Profile not found" };
+    }
+
+    // Calculate next update if cycle changed
+    let nextScheduledUpdate = profile.nextScheduledUpdate;
+    if (data.updateCycleDays && data.updateCycleDays !== profile.updateCycleDays) {
+      nextScheduledUpdate = calculateNextUpdate(data.updateCycleDays);
+    }
+
+    await prisma.knowMeProfile.update({
+      where: { id: profile.id },
+      data: {
+        ...data,
+        nextScheduledUpdate,
+      },
+    });
+
+    revalidatePath("/knowme");
+    revalidatePath("/knowme/settings");
+
+    return { success: true, message: "Profile updated successfully" };
+  } catch (error) {
+    console.error("Error updating KnowMe profile:", error);
+    return { success: false, error: "Failed to update profile" };
+  }
+}
+
+/**
+ * Activate KnowMe profile (after onboarding)
+ */
+export async function activateKnowMeProfile(): Promise<
+  KnowMeActionResponse<void>
+> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const profile = await prisma.knowMeProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!profile) {
+      return { success: false, error: "Profile not found" };
+    }
+
+    await prisma.knowMeProfile.update({
+      where: { id: profile.id },
+      data: {
+        status: "ACTIVE",
+        onboardingCompleted: true,
+        lastUpdatedAt: new Date(),
+        nextScheduledUpdate: calculateNextUpdate(profile.updateCycleDays),
+      },
+    });
+
+    revalidatePath("/knowme");
+
+    return { success: true, message: "Profile activated successfully" };
+  } catch (error) {
+    console.error("Error activating KnowMe profile:", error);
+    return { success: false, error: "Failed to activate profile" };
+  }
+}
+
+/**
+ * Update onboarding step
+ */
+export async function updateOnboardingStep(
+  step: number
+): Promise<KnowMeActionResponse<void>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    await prisma.knowMeProfile.update({
+      where: { userId: session.user.id },
+      data: { onboardingStep: step },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating onboarding step:", error);
+    return { success: false, error: "Failed to update step" };
+  }
+}
+
+// ============================================
+// DELETE PROFILE
+// ============================================
+
+/**
+ * Delete KnowMe profile and all associated data
+ */
+export async function deleteKnowMeProfile(): Promise<
+  KnowMeActionResponse<void>
+> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const profile = await prisma.knowMeProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!profile) {
+      return { success: false, error: "Profile not found" };
+    }
+
+    // Delete profile (cascade will delete related data)
+    await prisma.knowMeProfile.delete({
+      where: { id: profile.id },
+    });
+
+    // TODO: Also delete vectors from Upstash
+    // await deleteNamespace(profile.id);
+
+    revalidatePath("/knowme");
+
+    return { success: true, message: "Profile deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting KnowMe profile:", error);
+    return { success: false, error: "Failed to delete profile" };
+  }
+}
+
+// ============================================
+// PROFILE STATUS CHECK
+// ============================================
+
+/**
+ * Check if current user has KnowMe profile
+ */
+export async function hasKnowMeProfile(): Promise<
+  KnowMeActionResponse<{ exists: boolean; status?: string }>
+> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const profile = await prisma.knowMeProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { status: true },
+    });
+
+    return {
+      success: true,
+      data: {
+        exists: !!profile,
+        status: profile?.status,
+      },
+    };
+  } catch (error) {
+    console.error("Error checking profile:", error);
+    return { success: false, error: "Failed to check profile" };
+  }
+}
+

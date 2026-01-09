@@ -131,5 +131,26 @@ export {
     StudioCategory,
     StudioBlockType,
     StudioVisibility,
-    StudioMediaType
+    StudioMediaType,
+
+    // Space Enums and Types
+    SpaceVisibility,
+    SpaceType,
+    SpaceStatus,
+    SpaceRole,
+    SpaceChannelType,
+    SpacePostType,
+    SpaceResourceType,
+    SpaceEventStatus,
+
+    // KnowMe Enums and Types
+    KnowMeStatus,
+    KnowMePrivacy,
+    KnowMePlatform,
+    KnowMeSyncStatus,
+    KnowMeDataType,
+    KnowMeJobStatus,
+    KnowMeJobType,
+    KnowMeQuestionCategory,
+    KnowMeViewerType
 } from "@prisma/client";

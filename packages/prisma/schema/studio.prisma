@@ -49,6 +49,7 @@ enum StudioMediaType {
 
 model Studio {
     id          String  @id @default(cuid())
+    slug        String? @unique
     title       String
     description String? @db.Text
     emoji       String? @default("📚")
@@ -84,6 +85,10 @@ model Studio {
     // AI Chat history
     chatHistory StudioChatMessage[]
 
+    // Space relation
+    spaceId String?
+    space   Space?  @relation("SpaceStudios", fields: [spaceId], references: [id], onDelete: SetNull)
+
     // Timestamps
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
@@ -92,6 +97,7 @@ model Studio {
     @@index([userId])
     @@index([category])
     @@index([visibility])
+    @@index([spaceId])
 }
 
 model StudioQuiz {

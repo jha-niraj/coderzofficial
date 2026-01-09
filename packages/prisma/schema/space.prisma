@@ -1,0 +1,472 @@
+// ===============================================
+// SPACES MODULE - Collaborative Learning Spaces
+// ===============================================
+
+enum SpaceVisibility {
+    PUBLIC      // Anyone can join
+    PRIVATE     // Invite only
+    PROTECTED   // Access code required
+}
+
+enum SpaceCategory {
+    FRONTEND
+    BACKEND
+    FULLSTACK
+    DSA
+    SYSTEM_DESIGN
+    AI_ML
+    DEVOPS
+    MOBILE
+    DATABASE
+    SECURITY
+    BLOCKCHAIN
+    CLOUD
+    INTERVIEW_PREP
+    PROJECT_BASED
+    CAREER
+    GENERAL
+    OTHER
+}
+
+enum SpaceMemberRole {
+    CREATOR  // Space creator/admin
+    MEMBER   // Regular member
+}
+
+enum SpaceStepContentType {
+    LINK         // External link (docs, articles)
+    VIDEO        // YouTube/Vimeo video
+    PROJECT      // Link to ProjectV2
+    CONCEPT      // Link to Concept
+    STUDIO       // Link to Studio
+    QUIZ         // Quiz (embedded or Studio quiz)
+    FLASHCARD    // Flashcard deck (Studio flashcard)
+    MOCK         // Mock interview (Project mock)
+    PDF          // PDF document
+    TEXT         // Plain text content
+    AI_GENERATED // AI-generated content
+}
+
+enum SpaceStepStatus {
+    ACTIVE
+    ARCHIVED
+    DRAFT
+}
+
+enum SpaceBranchVisibility {
+    PRIVATE // Only creator sees
+    SHARED  // Others can opt-in
+    PUBLIC  // Visible to all space members
+}
+
+enum SpaceActivityType {
+    STEP_COMPLETED
+    BRANCH_CREATED
+    CONTENT_ADDED
+    MEMBER_JOINED
+    COMMENT_ADDED
+    LIKE_ADDED
+}
+
+// Main Space model
+model Space {
+    id          String  @id @default(cuid())
+    slug        String  @unique
+    title       String
+    description String? @db.Text
+    emoji       String? @default("🚀")
+    coverImage  String?
+
+    // Category
+    category SpaceCategory @default(OTHER)
+    tags     String[]
+
+    // Visibility and access
+    visibility      SpaceVisibility @default(PUBLIC)
+    accessCode      String?         @unique // For PROTECTED spaces
+    allowMemberContent Boolean       @default(false) // Allow members to add to main timeline
+
+    // Paid space settings (commented out for future use)
+    // isPaid      Boolean @default(false)
+    // priceCredits Int?    // Cost in credits to join
+    // trialDays   Int?    // Free trial period
+
+    // Settings
+    isAssignmentMode Boolean @default(false) // Teacher/assignment mode
+    enableProgressTracking Boolean @default(true)
+    enableBranches        Boolean @default(true)
+    enableComments        Boolean @default(true)
+    enableLikes           Boolean @default(true)
+
+    // Stats
+    memberCount    Int @default(0)
+    totalSteps     Int @default(0)
+    totalBranches  Int @default(0)
+    viewCount      Int @default(0)
+    likeCount      Int @default(0)
+
+    // Creator
+    creatorId String
+    creator   User   @relation("SpaceCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+    // Relations
+    members         SpaceMember[]
+    steps           SpaceStep[]
+    branches        SpaceBranch[]
+    activities      SpaceActivity[]
+    comments        SpaceComment[]
+    likes           SpaceLike[]
+    aiChatHistory   SpaceAIChat[]
+    accessCodeShares SpaceAccessCodeShare[]
+    invitations     SpaceInvitation[]
+    
+    // Module relations
+    projects     ProjectV2[] @relation("SpaceProjects")
+    studios      Studio[]    @relation("SpaceStudios")
+    concepts     Concept[]    @relation("SpaceConcepts")
+    stepCompletions SpaceStepCompletion[]
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([creatorId])
+    @@index([visibility])
+    @@index([slug])
+    @@index([createdAt])
+    @@index([memberCount])
+    @@index([category])
+}
+
+// Space members with roles and progress
+model SpaceMember {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User  @relation("SpaceMembers", fields: [userId], references: [id], onDelete: Cascade)
+
+    role SpaceMemberRole @default(MEMBER)
+
+    // Progress tracking
+    currentStepId    String? // Current step they're on
+    currentStep      SpaceStep? @relation("CurrentStep", fields: [currentStepId], references: [id], onDelete: SetNull)
+    completedSteps   String[] // Array of completed step IDs
+    progressPercent  Float    @default(0)
+    totalTimeSpent   Int      @default(0) // in seconds
+
+    // Personal branch (root of their branching tree)
+    personalBranchId String?
+    personalBranch   SpaceBranch? @relation("PersonalBranch", fields: [personalBranchId], references: [id], onDelete: SetNull)
+
+    // Joined branches (branches user opted into)
+    joinedBranchId String?
+    joinedBranch   SpaceBranch? @relation("JoinedBranches", fields: [joinedBranchId], references: [id], onDelete: SetNull)
+
+    // Status
+    isActive    Boolean  @default(true)
+    lastActiveAt DateTime @default(now())
+
+    // Timestamps
+    joinedAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([spaceId, userId])
+    @@index([spaceId])
+    @@index([userId])
+    @@index([role])
+    @@index([isActive])
+    @@index([lastActiveAt])
+}
+
+// Timeline steps in a space
+model SpaceStep {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    // Step details
+    order       Int
+    title       String
+    description String? @db.Text
+    contentType SpaceStepContentType
+
+    // Content reference (varies by contentType)
+    contentId   String? // ID of ProjectV2, Concept, Studio, etc.
+    contentData Json?   // Additional content data (for links, videos, etc.)
+
+    // Settings
+    isRequired    Boolean @default(true)
+    estimatedTime Int?    // in minutes
+    dueDate       DateTime? // For assignment mode
+
+    // Status
+    status SpaceStepStatus @default(ACTIVE)
+
+    // Stats
+    completionCount Int @default(0)
+    averageTimeSpent Int? // in seconds
+
+    // Relations
+    completions SpaceStepCompletion[]
+    branches    SpaceBranch[] @relation("StepBranches") // Branches created from this step
+    comments    SpaceComment[] @relation("StepComments")
+    likes       SpaceLike[] @relation("StepLikes")
+    currentMembers SpaceMember[] @relation("CurrentStep")
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([spaceId, order])
+    @@index([spaceId])
+    @@index([order])
+    @@index([contentType])
+    @@index([status])
+}
+
+// Step completion tracking
+model SpaceStepCompletion {
+    id String @id @default(cuid())
+
+    stepId String
+    step   SpaceStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User  @relation("SpaceStepCompletions", fields: [userId], references: [id], onDelete: Cascade)
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    // Completion details
+    timeSpent    Int      @default(0) // in seconds
+    isShared     Boolean  @default(false) // Shared to space feed
+    notes        String?  @db.Text
+    attachments  Json?    // Screenshots, links, etc.
+
+    // Timestamps
+    completedAt DateTime @default(now())
+    createdAt   DateTime @default(now())
+
+    @@unique([stepId, userId])
+    @@index([stepId])
+    @@index([userId])
+    @@index([spaceId])
+    @@index([completedAt])
+    @@index([isShared])
+}
+
+// Branches from steps (personalized paths)
+model SpaceBranch {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    parentStepId String
+    parentStep   SpaceStep @relation("StepBranches", fields: [parentStepId], references: [id], onDelete: Cascade)
+
+    creatorId String
+    creator   User  @relation("SpaceBranchCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+    // Branch details
+    title       String
+    description String? @db.Text
+    visibility  SpaceBranchVisibility @default(PRIVATE)
+
+    // Branch steps (personalized content)
+    steps Json? // Array of step-like objects
+
+    // Members who joined this branch
+    memberIds String[] @default([])
+    
+    // Personal branch reference
+    personalBranchMembers SpaceMember[] @relation("PersonalBranch")
+    joinedBranches        SpaceMember[] @relation("JoinedBranches")
+
+    // Stats
+    memberCount Int @default(0)
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([spaceId])
+    @@index([parentStepId])
+    @@index([creatorId])
+    @@index([visibility])
+}
+
+// Space activities (feed items)
+model SpaceActivity {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User  @relation("SpaceActivities", fields: [userId], references: [id], onDelete: Cascade)
+
+    type SpaceActivityType
+
+    // Activity data
+    stepId      String?
+    branchId    String?
+    contentId   String? // Related ProjectV2, Concept, etc.
+    metadata    Json?   // Additional activity data
+
+    // Timestamps
+    createdAt DateTime @default(now())
+
+    @@index([spaceId])
+    @@index([userId])
+    @@index([type])
+    @@index([createdAt])
+}
+
+// Comments on steps
+model SpaceComment {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    stepId String
+    step   SpaceStep @relation("StepComments", fields: [stepId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User  @relation("SpaceComments", fields: [userId], references: [id], onDelete: Cascade)
+
+    content String @db.Text
+
+    // Reply system
+    parentId String?
+    parent   SpaceComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+    replies  SpaceComment[] @relation("CommentReplies")
+
+    // Engagement
+    likeCount Int @default(0)
+
+    // Moderation
+    isEdited Boolean @default(false)
+    isHidden Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([spaceId])
+    @@index([stepId])
+    @@index([userId])
+    @@index([parentId])
+    @@index([createdAt])
+}
+
+// Likes on steps
+model SpaceLike {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    stepId String?
+    step   SpaceStep? @relation("StepLikes", fields: [stepId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User  @relation("SpaceLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([spaceId, stepId, userId])
+    @@index([spaceId])
+    @@index([stepId])
+    @@index([userId])
+}
+
+// AI Chat history for space-specific assistant
+model SpaceAIChat {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User  @relation("SpaceAIChats", fields: [userId], references: [id], onDelete: Cascade)
+
+    role    String // 'user' or 'assistant'
+    content String @db.Text
+
+    // Context
+    stepId    String? // If related to a specific step
+    branchId  String? // If related to a branch
+    metadata  Json?   // Additional context
+
+    createdAt DateTime @default(now())
+
+    @@index([spaceId])
+    @@index([userId])
+    @@index([stepId])
+    @@index([createdAt])
+}
+
+// Access code sharing tracking for protected spaces
+model SpaceAccessCodeShare {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    // Who the code was shared with (email or name)
+    sharedWith  String
+    sharedEmail String?
+    
+    // Who shared it
+    sharedById String
+    sharedBy   User  @relation("SpaceAccessCodeSharer", fields: [sharedById], references: [id], onDelete: Cascade)
+
+    // Tracking
+    isUsed     Boolean   @default(false)
+    usedAt     DateTime?
+    usedById   String?   // User who used the code
+
+    createdAt DateTime @default(now())
+
+    @@index([spaceId])
+    @@index([sharedById])
+    @@index([isUsed])
+}
+
+// Space invitations for private spaces
+model SpaceInvitation {
+    id String @id @default(cuid())
+
+    spaceId String
+    space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+    // Inviter
+    invitedById String
+    invitedBy   User  @relation("SpaceInviter", fields: [invitedById], references: [id], onDelete: Cascade)
+
+    // Invitee (either by email or user ID)
+    inviteeEmail String?
+    inviteeId    String?
+    invitee      User?  @relation("SpaceInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+    // Status
+    status    String    @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+    expiresAt DateTime?
+    
+    // Tracking
+    acceptedAt DateTime?
+    declinedAt DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([spaceId])
+    @@index([invitedById])
+    @@index([inviteeId])
+    @@index([status])
+}

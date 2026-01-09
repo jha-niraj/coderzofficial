@@ -10,14 +10,12 @@ import {
     LogOut, User, ChevronLeft, ChevronRight, ChevronDown, Coins, Crown,
     Loader, Sun, Moon, AlignLeft, Plus, LayoutDashboard, Share2,
     MessageCircleCodeIcon, Award, Zap, ArrowLeftRight, Eye,
-    Trophy,
-    TrendingUp
+    Trophy, TrendingUp
 } from "lucide-react";
 import {
     TooltipProvider, Tooltip, TooltipTrigger, TooltipContent
 } from "@repo/ui/components/ui/tooltip";
 import { cn } from "@repo/ui/lib/utils";
-import mainWebLogo from "@/utils/titlelogo.png";
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from "@repo/ui/components/ui/dialog";
@@ -164,7 +162,6 @@ function SidebarContent() {
         }
     }, [session]);
 
-    // Auto-expand active routes
     useEffect(() => {
         const fullRoutes = mainNavigation.primary;
         for (const route of fullRoutes) {
@@ -179,7 +176,6 @@ function SidebarContent() {
         }
     }, [pathname]);
 
-    // --- Helpers ---
     const toggleItemExpanded = (path: string) => {
         setExpandedItems(prev => {
             if (prev.includes(path)) {
@@ -378,7 +374,7 @@ function SidebarContent() {
                 <Link href={session ? "/home" : "/"} className="flex items-center gap-3">
                     <div className="relative h-10 w-10 flex-shrink-0">
                         <Image
-                            src={mainWebLogo}
+                            src="/mainlogo.png"
                             alt="CoderzLab"
                             fill
                             className="object-contain"
@@ -400,7 +396,7 @@ function SidebarContent() {
                     setIsCollapsed && (
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
-                            className="hidden lg:block absolute top-6 -right-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-full p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors z-50 shadow-lg"
+                            className="cursor-pointer hidden lg:block absolute top-6 -right-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-full p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors z-50 shadow-lg"
                         >
                             {isCollapsed ? <ChevronRight className="w-4 h-4 text-neutral-900 dark:text-white" /> : <ChevronLeft className="w-4 h-4 text-neutral-900 dark:text-white" />}
                         </button>

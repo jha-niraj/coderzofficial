@@ -147,12 +147,17 @@ model ProjectV2 {
     // Bookmarks
     bookmarks ProjectV2Bookmark[] @relation("ProjectV2Bookmarks")
 
+    // Space relation
+    spaceId String?
+    space   Space?  @relation("SpaceProjects", fields: [spaceId], references: [id], onDelete: SetNull)
+
     @@index([createdBy])
     @@index([visibility])
     @@index([difficulty])
     @@index([technologies])
     @@index([createdAt])
     @@index([slug])
+    @@index([spaceId])
 }
 
 model ProjectV2Page {

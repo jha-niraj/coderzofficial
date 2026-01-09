@@ -23,6 +23,7 @@ import {
     Clock, Lightbulb, CheckCircle, XCircle, SkipForward, RotateCcw
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
+import CodeEditor from "./code-editor";
 
 // ==================== TYPES ====================
 
@@ -578,9 +579,10 @@ export default function Quiz({
                 </div>
                 {
                     currentQuestion.codeSnippet && (
-                        <pre className="p-4 bg-zinc-900 text-zinc-100 rounded-lg overflow-x-auto text-sm font-mono mb-6">
-                            <code>{currentQuestion.codeSnippet}</code>
-                        </pre>
+                        <CodeEditor 
+                            placeholder={currentQuestion?.codeSnippet}
+                            readOnly={true}
+                        />
                     )
                 }
                 <AnimatePresence>

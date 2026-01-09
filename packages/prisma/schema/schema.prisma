@@ -384,7 +384,6 @@ model User {
     location            String?
     website             String?
     socials             Json?
-    githubUsername      String?
     interests           String[]
     learningPreferences String[]
     careerGoals         String[]
@@ -563,6 +562,21 @@ model User {
     conceptRequests  ConceptRequest[]  @relation("ConceptRequests")
 
     // ===============================================
+    // SPACES MODULE RELATIONS
+    // ===============================================
+    createdSpaces          Space[]              @relation("SpaceCreator")
+    spaceMemberships       SpaceMember[]        @relation("SpaceMembers")
+    spaceStepCompletions   SpaceStepCompletion[] @relation("SpaceStepCompletions")
+    spaceBranches          SpaceBranch[]        @relation("SpaceBranchCreator")
+    spaceActivities        SpaceActivity[]      @relation("SpaceActivities")
+    spaceComments          SpaceComment[]       @relation("SpaceComments")
+    spaceLikes             SpaceLike[]          @relation("SpaceLikes")
+    spaceAIChats           SpaceAIChat[]        @relation("SpaceAIChats")
+    spaceAccessCodeShares  SpaceAccessCodeShare[] @relation("SpaceAccessCodeSharer")
+    spaceInvitationsSent   SpaceInvitation[]    @relation("SpaceInviter")
+    spaceInvitationsReceived SpaceInvitation[]  @relation("SpaceInvitee")
+
+    // ===============================================
     // UNIFIED BOOKMARKS SYSTEM RELATIONS
     // ===============================================
     projectBookmarks       ProjectBookmark[]       @relation("ProjectBookmarks")
@@ -595,6 +609,9 @@ model User {
     // Stats & Earnings
     osStats                UserOSStats?            @relation("UserOSStats")
     osEarningsTransactions OSEarningsTransaction[] @relation("OSEarningsTransactions")
+    
+    // GitHub Integration
+    osGitHubProfile        OSGitHubProfile?        @relation("OSGitHubProfile")
 
     // ===============================================
     // ASSESSMENTS MODULE RELATIONS
@@ -624,6 +641,15 @@ model User {
     // ===============================================
     adminAccess   AdminAccess?   @relation("UserAdminAccess")
     notifications Notification[]
+
+    // ===============================================
+    // KNOWME MODULE RELATIONS
+    // ===============================================
+    knowmeProfile            KnowMeProfile?            @relation("UserKnowMeProfile")
+    knowmeVisitorSessions    KnowMeChatSession[]       @relation("KnowMeVisitorSessions")
+    knowmeQuestionsAsked     KnowMeQuestionAnalytics[] @relation("KnowMeQuestionsAsked")
+    knowmeProfileViews       KnowMeProfileView[]       @relation("KnowMeProfileViews")
+    knowmeCreditTransactions KnowMeCreditTransaction[] @relation("KnowMeCreditTransactions")
 
     @@index([username])
     @@index([email])

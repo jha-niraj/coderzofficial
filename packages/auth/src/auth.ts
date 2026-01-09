@@ -1,5 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import type { AuthOptions, Account, Profile } from "./next-auth";
 import type { JWT } from "next-auth/jwt";
@@ -10,6 +11,23 @@ import {
     createSignupActivity, generateReferralCode, processReferral 
 } from './utils/referral';
 import bcrypt from 'bcryptjs';
+
+// Extended GitHub profile type
+interface GitHubProfile extends Profile {
+    login?: string;
+    id?: number;
+    avatar_url?: string;
+    name?: string;
+    email?: string;
+    bio?: string;
+    location?: string;
+    company?: string;
+    blog?: string;
+    public_repos?: number;
+    public_gists?: number;
+    followers?: number;
+    following?: number;
+}
 
 export const authOptions: AuthOptions = {
     adapter: PrismaAdapter(prisma),
@@ -108,6 +126,25 @@ export const authOptions: AuthOptions = {
                 },
             },
         }),
+        GitHubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID || "",
+            clientSecret: process.env.GITHUB_SECRET_ID || "",
+            authorization: {
+                params: {
+                    scope: "read:user user:email repo",
+                },
+            },
+            profile(profile: GitHubProfile) {
+                return {
+                    id: String(profile.id),
+                    name: profile.name || profile.login,
+                    email: profile.email,
+                    image: profile.avatar_url,
+                    role: Role.Student,
+                    githubUsername: profile.login,
+                }
+            },
+        }),
     ],
     callbacks: {
         async jwt({ token, user, trigger }: { token: JWT; user?: User; trigger?: "signIn" | "signUp" | "update" }) {
@@ -115,13 +152,15 @@ export const authOptions: AuthOptions = {
                 token.id = user.id!;
                 token.role = user.role;
                 token.emailVerified = user.emailVerified;
+                token.githubUsername = (user as { githubUsername?: string }).githubUsername;
                 
                 try {
                     const dbUser = await prisma.user.findUnique({
                         where: { id: user.id! },
-                        select: { onboardingCompleted: true }
+                        select: { onboardingCompleted: true, githubUsername: true }
                     });
                     token.onboardingCompleted = dbUser?.onboardingCompleted || false;
+                    token.githubUsername = dbUser?.githubUsername || token.githubUsername;
                 } catch (error) {
                     token.onboardingCompleted = false;
                 }
@@ -135,6 +174,7 @@ export const authOptions: AuthOptions = {
                             emailVerified: true,
                             role: true,
                             onboardingCompleted: true,
+                            githubUsername: true,
                         }
                     });
 
@@ -142,6 +182,7 @@ export const authOptions: AuthOptions = {
                         token.emailVerified = dbUser.emailVerified ? new Date() : null;
                         token.role = dbUser.role;
                         token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
+                        token.githubUsername = dbUser.githubUsername;
                     }
                 } catch (error) {
                     console.error('JWT callback error:', error);
@@ -156,6 +197,7 @@ export const authOptions: AuthOptions = {
                 session.user.role = token.role as Role;
                 session.user.emailVerified = token.emailVerified ? new Date() : null;
                 (session.user as unknown as { onboardingCompleted: boolean }).onboardingCompleted = token.onboardingCompleted || false;
+                (session.user as unknown as { githubUsername: string | null }).githubUsername = token.githubUsername as string | null || null;
             }
             return session;
         },
@@ -211,6 +253,135 @@ export const authOptions: AuthOptions = {
                         }
                     } catch (error) {
                         console.error("Error processing new Google user:", error);
+                    }
+                }, 1000);
+            }
+
+            // Handle GitHub sign in
+            if (account?.provider === 'github') {
+                const githubProfile = profile as GitHubProfile;
+                const existingUser = await prisma.user.findUnique({
+                    where: { email: githubProfile?.email as string }
+                });
+
+                if (existingUser) {
+                    // Update GitHub username if not set
+                    if (!existingUser.githubUsername && githubProfile?.login) {
+                        await prisma.user.update({
+                            where: { id: existingUser.id },
+                            data: { githubUsername: githubProfile.login }
+                        });
+                    }
+
+                    // Create or update GitHub profile for opensource
+                    try {
+                        await prisma.oSGitHubProfile.upsert({
+                            where: { userId: existingUser.id },
+                            update: {
+                                githubUsername: githubProfile?.login || '',
+                                githubName: githubProfile?.name,
+                                githubAvatar: githubProfile?.avatar_url,
+                                githubBio: githubProfile?.bio,
+                                githubLocation: githubProfile?.location,
+                                githubCompany: githubProfile?.company,
+                                githubBlog: githubProfile?.blog,
+                                publicRepos: githubProfile?.public_repos || 0,
+                                publicGists: githubProfile?.public_gists || 0,
+                                followers: githubProfile?.followers || 0,
+                                following: githubProfile?.following || 0,
+                                accessToken: account?.access_token,
+                                scopes: account?.scope?.split(',') || [],
+                                lastSyncedAt: new Date(),
+                            },
+                            create: {
+                                userId: existingUser.id,
+                                githubId: String(githubProfile?.id),
+                                githubUsername: githubProfile?.login || '',
+                                githubName: githubProfile?.name,
+                                githubAvatar: githubProfile?.avatar_url,
+                                githubBio: githubProfile?.bio,
+                                githubLocation: githubProfile?.location,
+                                githubCompany: githubProfile?.company,
+                                githubBlog: githubProfile?.blog,
+                                publicRepos: githubProfile?.public_repos || 0,
+                                publicGists: githubProfile?.public_gists || 0,
+                                followers: githubProfile?.followers || 0,
+                                following: githubProfile?.following || 0,
+                                accessToken: account?.access_token,
+                                scopes: account?.scope?.split(',') || [],
+                                lastSyncedAt: new Date(),
+                            }
+                        });
+                    } catch (error) {
+                        console.error("Error creating/updating GitHub profile:", error);
+                    }
+                    
+                    return true;
+                }
+
+                // New user via GitHub
+                let referralCode = null;
+                const state = account?.state ? account.state : null;
+                if (state && typeof state === 'string') {
+                    try {
+                        const stateData = JSON.parse(state);
+                        referralCode = stateData.referralCode;
+                    } catch (e) {
+                        console.error("Error parsing state data:", e);
+                    }
+                }
+
+                setTimeout(async () => {
+                    try {
+                        const newUser = await prisma.user.findUnique({
+                            where: { email: githubProfile?.email as string }
+                        });
+
+                        if (newUser) {
+                            await prisma.user.update({
+                                where: { id: newUser.id },
+                                data: {
+                                    referralCode: await generateReferralCode(newUser?.name as string),
+                                    emailVerified: true,
+                                    onboardingCompleted: false,
+                                    githubUsername: githubProfile?.login,
+                                }
+                            });
+
+                            // Create GitHub profile for new user
+                            try {
+                                await prisma.oSGitHubProfile.create({
+                                    data: {
+                                        userId: newUser.id,
+                                        githubId: String(githubProfile?.id),
+                                        githubUsername: githubProfile?.login || '',
+                                        githubName: githubProfile?.name,
+                                        githubAvatar: githubProfile?.avatar_url,
+                                        githubBio: githubProfile?.bio,
+                                        githubLocation: githubProfile?.location,
+                                        githubCompany: githubProfile?.company,
+                                        githubBlog: githubProfile?.blog,
+                                        publicRepos: githubProfile?.public_repos || 0,
+                                        publicGists: githubProfile?.public_gists || 0,
+                                        followers: githubProfile?.followers || 0,
+                                        following: githubProfile?.following || 0,
+                                        accessToken: account?.access_token,
+                                        scopes: account?.scope?.split(',') || [],
+                                        lastSyncedAt: new Date(),
+                                    }
+                                });
+                            } catch (error) {
+                                console.error("Error creating GitHub profile for new user:", error);
+                            }
+
+                            if (referralCode) {
+                                await processReferral(referralCode, newUser.id, githubProfile?.name || 'a new user');
+                            } else {
+                                await createSignupActivity(newUser.id);
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error processing new GitHub user:", error);
                     }
                 }, 1000);
             }

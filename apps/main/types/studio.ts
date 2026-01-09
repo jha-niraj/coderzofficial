@@ -215,6 +215,7 @@ export interface StudioUser {
 
 export interface StudioListItem {
     id: string;
+    slug: string | null;
     title: string;
     description: string | null;
     emoji?: string;
@@ -233,6 +234,7 @@ export interface StudioListItem {
 
 export interface Studio {
     id: string;
+    slug: string | null;
     title: string;
     description: string | null;
     emoji?: string;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@repo/ui/lib/utils";
 import {
-	LayoutGrid, FolderKanban, Activity, Code2, FileText, User
+	LayoutGrid, FolderKanban, Activity, Code2, FileText, User, Plug
 } from "lucide-react";
 
 export type ProfileTab =
@@ -13,7 +13,8 @@ export type ProfileTab =
 	| "activity"
 	| "skills"
 	| "resume"
-	| "about";
+	| "about"
+	| "integrations";
 
 interface ProfileTabsProps {
 	activeTab: ProfileTab;
@@ -62,6 +63,12 @@ const tabs: {
 			label: "About",
 			icon: User,
 			description: "Personal information and bio",
+		},
+		{
+			id: "integrations",
+			label: "Integrations",
+			icon: Plug,
+			description: "Connected accounts and services",
 		},
 	];
 

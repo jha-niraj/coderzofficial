@@ -49,6 +49,10 @@ model Concept {
     views     ConceptView[]     @relation("ConceptViews")
     progress  ConceptProgress[] @relation("ConceptProgress")
 
+    // Space relation
+    spaceId String?
+    space   Space?  @relation("SpaceConcepts", fields: [spaceId], references: [id], onDelete: SetNull)
+
     // Timestamps
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -61,6 +65,7 @@ model Concept {
     @@index([createdAt])
     @@index([likeCount])
     @@index([viewCount])
+    @@index([spaceId])
 }
 
 model ConceptStep {

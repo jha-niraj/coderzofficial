@@ -7,7 +7,9 @@ import Sidebar from '@/components/common/mainsidebar';
 import {
     useSidebar, SidebarProvider
 } from '@/components/common/sidebarprovider';
-import { WifiOff, RotateCcw } from 'lucide-react';
+import { 
+    WifiOff, RotateCcw 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { cn } from '@repo/ui/lib/utils';
@@ -32,7 +34,7 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
                     isCollapsed ? "lg:ml-[70px]" : "lg:ml-[240px]",
                     isAISidebarOpen ? "lg:mr-[400px]" : "lg:mr-0"
                 )}>
-                    <div className="p-2 h-full w-full bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden relative">
+                    <div className="h-full w-full bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl relative">
                         <ScrollArea className="h-full w-full">
                             <div className="min-h-full w-full">
                                 {children}

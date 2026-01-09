@@ -78,15 +78,15 @@ export default function StudioEditor({ studio }: StudioEditorProps) {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [saveStudio]);
 
-	const handleContentChange = (newContent: BlockContent) => {
+	const handleContentChange = useCallback((newContent: BlockContent) => {
 		setContent(newContent);
 		setHasChanges(true);
-	};
+	}, []);
 
-	const handleTitleChange = (newTitle: string) => {
+	const handleTitleChange = useCallback((newTitle: string) => {
 		setTitle(newTitle);
 		setHasChanges(true);
-	};
+	}, []);
 
 	const handleDelete = async () => {
 		const result = await deleteStudio(studio.id);

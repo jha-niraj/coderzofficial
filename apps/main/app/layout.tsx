@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 		description: "The Engineering Intelligence Platform for Computer Science Students",
 		images: [
 			{
-				url: "/mainlogo.jpeg",
+				url: "/mainlogo.png",
 				width: 1024,
 				height: 1024,
 				alt: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
@@ -56,16 +56,16 @@ export const metadata: Metadata = {
 		card: "summary_large_image",
 		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
 		description: "The Engineering Intelligence Platform for Computer Science Students",
-		images: ["/mainlogo.jpeg"],
+		images: ["/mainlogo.png"],
 		creator: "@thecoderz",
 	},
 	icons: {
 		icon: [
 			{ url: "/mainlogo.ico", sizes: "any" },
-			{ url: "/mainlogo.jpeg", type: "image/jpeg", sizes: "512x512" },
+			{ url: "/mainlogo.png", type: "image/png", sizes: "512x512" },
 		],
 		apple: [
-			{ url: "/mainlogo.jpeg", sizes: "180x180", type: "image/jpeg" },
+			{ url: "/mainlogo.png", sizes: "180x180", type: "image/png" },
 		],
 	},
 	robots: {

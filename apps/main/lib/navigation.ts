@@ -1,9 +1,7 @@
 import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
-    Briefcase, Users, Trophy, Video, Brain, Building2, Cable, LayoutDashboard,
-    Heading,
-    BookAIcon,
-    Home
+    Briefcase, Users, Trophy, Video, Brain, Cable, LayoutDashboard,
+    Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -32,10 +30,50 @@ export const mainNavigation: NavigationConfig = {
             status: "active"
         },
         {
+            name: "Spaces",
+            path: "space",
+            icon: Orbit,
+            status: "active",
+            children: [
+                {
+                    name: 'Spaces',
+                    path: 'space',
+                    icon: OrbitIcon
+                },
+                {
+                    name: 'My Spaces',
+                    path: 'space/myspaces',
+                    icon: User
+                },
+                {
+                    name: 'All Spaces',
+                    path: 'space/allspaces',
+                    icon: Globe
+                },
+            ]
+        },
+        {
             name: "Studio",
             path: "studio",
             icon: Notebook,
-            status: "active"
+            status: "active",
+            children: [
+                {
+                    name: 'Studio',
+                    path: 'studio',
+                    icon: Notebook
+                },
+                {
+                    name: 'My Studios',
+                    path: 'studio/mystudios',
+                    icon: User
+                },
+                {
+                    name: 'All Studios',
+                    path: 'studio/allstudios',
+                    icon: Globe
+                }
+            ]
         },
         {
             name: "Communities",
@@ -96,6 +134,11 @@ export const mainNavigation: NavigationConfig = {
             icon: Users,
             status: "active",
             children: [
+                { 
+                    name: 'KnowMe', 
+                    path: 'knowme', 
+                    icon: LucideWandSparkles 
+                },
                 { 
                     name: 'Collective', 
                     path: 'collective', 

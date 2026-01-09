@@ -3,9 +3,22 @@
 // ===============================================
 
 enum OSProjectType {
-    FREE // Community/learning projects
+    LEARNING // Practice projects in learn module
+    FREE // Community/free contribution projects
     PAID // Bounty projects from companies
     EXCLUSIVE // Premium/invite-only projects
+}
+
+enum OSProjectCategory {
+    WEB_DEVELOPMENT
+    MOBILE_DEVELOPMENT
+    BACKEND
+    FULLSTACK
+    AI_ML
+    DEVOPS
+    BLOCKCHAIN
+    GAME_DEVELOPMENT
+    OTHER
 }
 
 enum OSProjectStatus {
@@ -77,15 +90,22 @@ model OpenSourceProject {
     
     // GitHub Integration
     githubRepoUrl   String
-    githubOwner     String // e.g., "Shunya-Tech-Official"
+    githubOwner     String // e.g., "coderz-org"
     githubRepo      String // e.g., "awesome-project"
+    defaultBranch   String      @default("main")
     
     // Project Details
     type            OSProjectType   @default(FREE)
+    category        OSProjectCategory @default(WEB_DEVELOPMENT)
     status          OSProjectStatus @default(DRAFT)
     technologies    String[]
     tags            String[]
     difficulty      OSIssueDifficulty @default(MEDIUM)
+    
+    // Learning Goals (for LEARNING type projects)
+    learningGoals   String[]    // What students will learn
+    prerequisites   String[]    // What students should know
+    estimatedHours  Int?        // Hours to complete
     
     // Bounty Info (for PAID projects)
     totalBudget     Float       @default(0)
@@ -97,23 +117,39 @@ model OpenSourceProject {
     companyLogo     String?
     companyUrl      String?
     
-    // Stats
+    // Stats (synced from GitHub)
     totalIssues         Int @default(0)
     openIssues          Int @default(0)
+    closedIssues        Int @default(0)
     totalContributors   Int @default(0)
     totalPRsMerged      Int @default(0)
+    totalPRsOpen        Int @default(0)
     totalCommits        Int @default(0)
     stars               Int @default(0)
     forks               Int @default(0)
+    watchers            Int @default(0)
+    
+    // Last GitHub sync
+    lastSyncedAt    DateTime?
+    syncError       String?
     
     // Settings
     requiresCertification Boolean @default(true) // Must pass OS certification
     maxActiveIssues       Int     @default(2) // Max issues per contributor
     prDeadlineHours       Int     @default(48) // Hours to submit PR
+    maxContributionsPerUser Int   @default(0) // 0 = unlimited
+    
+    // README content (cached from GitHub)
+    readmeContent   String?     @db.Text
+    contributingGuide String?   @db.Text
     
     // Cover/Banner
     coverImage      String?
     bannerImage     String?
+    
+    // Order for displaying
+    orderIndex      Int         @default(0)
+    isFeatured      Boolean     @default(false)
     
     // Maintainer (admin/moderator)
     maintainerId    String?
@@ -131,12 +167,41 @@ model OpenSourceProject {
     contributions   OSContribution[]
     contributors    OSProjectContributor[]
     leaderboard     OSProjectLeaderboard[]
+    setupGuide      OSProjectSetupGuide?
     
     @@index([type])
+    @@index([category])
     @@index([status])
     @@index([maintainerId])
     @@index([createdById])
     @@index([slug])
+    @@index([orderIndex])
+    @@index([isFeatured])
+}
+
+// Project Setup Guide (step-by-step instructions)
+model OSProjectSetupGuide {
+    id          String          @id @default(cuid())
+    
+    projectId   String          @unique
+    project     OpenSourceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    // Setup steps (JSON array of steps)
+    steps       Json            // Array of { title, description, commands, expectedOutput }
+    
+    // Environment requirements
+    nodeVersion String?
+    npmPackages String[]
+    envVariables Json?          // Required env variables
+    
+    // Local development instructions
+    installCommand  String      @default("npm install")
+    devCommand      String      @default("npm run dev")
+    buildCommand    String      @default("npm run build")
+    testCommand     String      @default("npm test")
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
 }
 
 // Issues within a project
@@ -148,6 +213,7 @@ model OSIssue {
     // GitHub Integration
     githubIssueNumber   Int?
     githubIssueUrl      String?
+    githubIssueId       String?     // GitHub issue ID for API
     
     // Issue Details
     title           String
@@ -156,10 +222,16 @@ model OSIssue {
     acceptanceCriteria String[] // How to know it's done
     hints           String[] // Helpful tips
     
+    // Learning context (what students will learn from this issue)
+    learningGoals   String[]
+    filesToModify   String[]    // List of files to be modified
+    relatedDocs     String[]    // Related documentation links
+    
     // Classification
     status          OSIssueStatus       @default(OPEN)
     difficulty      OSIssueDifficulty   @default(EASY)
     labels          String[]
+    estimatedHours  Int         @default(4)
     
     // Bounty (for PAID issues)
     bountyAmount    Float   @default(0)
@@ -171,8 +243,17 @@ model OSIssue {
     assignedAt      DateTime?
     deadlineAt      DateTime?
     
+    // PR info (when submitted)
+    prNumber        Int?
+    prUrl           String?
+    prStatus        String?     // open, closed, merged
+    
     // Stats
     totalAttempts   Int @default(0)
+    orderIndex      Int @default(0)
+    
+    // Synced from GitHub
+    lastSyncedAt    DateTime?
     
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
@@ -184,6 +265,8 @@ model OSIssue {
     @@index([status])
     @@index([difficulty])
     @@index([assignedToId])
+    @@index([githubIssueNumber])
+    @@index([orderIndex])
 }
 
 // User contributions (PRs, reviews, etc.)
@@ -206,15 +289,22 @@ model OSContribution {
     // GitHub Integration
     githubPrNumber  Int?
     githubPrUrl     String?
+    githubPrId      String?     // GitHub PR ID for API
     githubCommitSha String?
+    githubBranch    String?     // Branch name used for contribution
+    
+    // Fork info
+    forkRepoUrl     String?     // User's fork URL
+    forkOwner       String?     // User's GitHub username
     
     // Content
     title           String?
     description     String? @db.Text
     
     // Review
-    reviewScore     Int?    // AI score 0-100
+    reviewScore     Int?    // AI/Manual score 0-100
     reviewFeedback  String? @db.Text
+    reviewCycles    Int     @default(0) // Number of revision cycles
     
     // Reviewer (maintainer)
     reviewedById    String?
@@ -225,11 +315,25 @@ model OSContribution {
     xpEarned        Int     @default(0)
     bountyEarned    Float   @default(0)
     
-    // Quality metrics
+    // Quality metrics (synced from GitHub)
     linesAdded      Int     @default(0)
     linesRemoved    Int     @default(0)
     filesChanged    Int     @default(0)
+    commitsCount    Int     @default(0)
     testsPassing    Boolean @default(true)
+    
+    // GitHub PR status details
+    isMerged        Boolean @default(false)
+    mergedAt        DateTime?
+    mergedBy        String?
+    closedAt        DateTime?
+    
+    // Checks status
+    checksStatus    String?     // pending, success, failure
+    checksDetails   Json?       // CI/CD check details
+    
+    // Last sync from GitHub
+    lastSyncedAt    DateTime?
     
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
@@ -239,6 +343,8 @@ model OSContribution {
     @@index([userId])
     @@index([type])
     @@index([status])
+    @@index([githubPrNumber])
+    @@index([isMerged])
 }
 
 // Project contributors tracking
@@ -351,6 +457,12 @@ model OSLearnLesson {
     // Interactive content (for INTERACTIVE type)
     interactiveData Json? // Commands to run, expected outputs, etc.
     
+    // Code Lab content (for CODE type)
+    codeLab     Json?   // { language, starterCode, expectedOutput, hints, solution }
+    
+    // Terminal Lab content (for TERMINAL type)
+    terminalLab Json?   // { commands, expectedOutputs, validations }
+    
     // Quiz content (for QUIZ type)
     quizQuestions   Json? // Array of quiz questions
     passingScore    Int     @default(70) // Percentage to pass
@@ -358,6 +470,7 @@ model OSLearnLesson {
     // Settings
     orderIndex      Int     @default(0)
     estimatedMinutes Int    @default(10)
+    isRequired      Boolean @default(true)
     
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
@@ -367,6 +480,13 @@ model OSLearnLesson {
     
     @@index([moduleId])
     @@index([orderIndex])
+}
+
+enum OSLearnLabType {
+    CODE        // Code writing exercise
+    TERMINAL    // Git/terminal commands
+    QUIZ        // Multiple choice
+    PROJECT     // Mini project
 }
 
 // User progress on modules
@@ -579,4 +699,194 @@ model OSEarningsTransaction {
     @@index([userId])
     @@index([type])
     @@index([status])
+}
+
+// ===============================================
+// GITHUB USER INTEGRATION
+// ===============================================
+
+model OSGitHubProfile {
+    id          String  @id @default(cuid())
+    
+    userId      String  @unique
+    user        User    @relation("OSGitHubProfile", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // GitHub Profile Info
+    githubId        String  @unique  // GitHub user ID
+    githubUsername  String           // GitHub username
+    githubName      String?          // GitHub display name
+    githubAvatar    String?          // Avatar URL
+    githubBio       String?          // Bio
+    githubLocation  String?          // Location
+    githubCompany   String?          // Company
+    githubBlog      String?          // Blog URL
+    
+    // GitHub Stats
+    publicRepos     Int     @default(0)
+    publicGists     Int     @default(0)
+    followers       Int     @default(0)
+    following       Int     @default(0)
+    
+    // OAuth tokens (encrypted)
+    accessToken     String?  // GitHub access token for API calls
+    refreshToken    String?  // GitHub refresh token if applicable
+    tokenExpiresAt  DateTime?
+    
+    // Scope of access
+    scopes          String[]  // OAuth scopes granted
+    
+    // Sync status
+    lastSyncedAt    DateTime?
+    syncError       String?
+    
+    // Preferences
+    showOnProfile   Boolean @default(true)  // Show GitHub stats on profile
+    autoSync        Boolean @default(true)  // Auto-sync contributions
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([githubUsername])
+    @@index([githubId])
+}
+
+// ===============================================
+// LEARNING PRACTICE PROJECTS
+// ===============================================
+
+// Practice project for learning module (simulated, not real GitHub)
+model OSLearnPracticeProject {
+    id          String  @id @default(cuid())
+    
+    moduleId    String?
+    
+    slug        String  @unique
+    title       String
+    description String  @db.Text
+    
+    // Project type
+    techStack   String[]    // e.g., ["HTML", "CSS", "JavaScript"]
+    category    OSProjectCategory @default(WEB_DEVELOPMENT)
+    difficulty  OSIssueDifficulty @default(EASY)
+    
+    // Content
+    starterFiles    Json    // { filename: content } structure
+    solutionFiles   Json?   // Solution files
+    
+    // Learning context
+    learningGoals   String[]
+    prerequisites   String[]
+    estimatedHours  Int     @default(2)
+    
+    // Practice issues/tasks
+    orderIndex      Int     @default(0)
+    isActive        Boolean @default(true)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    tasks           OSLearnPracticeTask[]
+    completions     OSLearnPracticeCompletion[]
+    
+    @@index([slug])
+    @@index([difficulty])
+    @@index([orderIndex])
+}
+
+// Tasks within a practice project
+model OSLearnPracticeTask {
+    id          String  @id @default(cuid())
+    
+    projectId   String
+    project     OSLearnPracticeProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    title       String
+    description String  @db.Text
+    
+    // Task requirements
+    requirements    String[]
+    hints           String[]
+    
+    // Files to modify
+    targetFiles     String[]
+    
+    // Validation (AI will check against this)
+    validationRules Json?   // Rules for AI to check
+    expectedChanges Json?   // Expected code changes
+    
+    // Classification
+    difficulty      OSIssueDifficulty @default(EASY)
+    estimatedMinutes Int    @default(30)
+    xpReward        Int     @default(50)
+    
+    orderIndex      Int     @default(0)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    submissions     OSLearnPracticeSubmission[]
+    
+    @@index([projectId])
+    @@index([orderIndex])
+}
+
+// User submissions for practice tasks
+model OSLearnPracticeSubmission {
+    id          String  @id @default(cuid())
+    
+    userId      String
+    taskId      String
+    task        OSLearnPracticeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+    
+    // Submission content
+    submittedCode   Json    // { filename: content }
+    
+    // AI Review
+    isCorrect       Boolean @default(false)
+    score           Int?    // 0-100
+    feedback        String? @db.Text
+    aiReview        Json?   // Detailed AI feedback
+    
+    // Attempts
+    attemptNumber   Int     @default(1)
+    
+    // XP awarded
+    xpEarned        Int     @default(0)
+    
+    createdAt   DateTime @default(now())
+    
+    @@index([userId])
+    @@index([taskId])
+}
+
+// User practice project completions
+model OSLearnPracticeCompletion {
+    id          String  @id @default(cuid())
+    
+    userId      String
+    projectId   String
+    project     OSLearnPracticeProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    // Progress
+    tasksCompleted  Int     @default(0)
+    totalTasks      Int     @default(0)
+    progressPercent Float   @default(0)
+    
+    // Completion status
+    isCompleted     Boolean @default(false)
+    completedAt     DateTime?
+    
+    // Stats
+    totalXpEarned   Int     @default(0)
+    totalAttempts   Int     @default(0)
+    averageScore    Float   @default(0)
+    
+    startedAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@unique([userId, projectId])
+    @@index([userId])
+    @@index([projectId])
 }

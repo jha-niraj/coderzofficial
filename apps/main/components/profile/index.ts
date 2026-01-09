@@ -11,6 +11,7 @@ export { ActivityTab } from "./tabs/activity-tab";
 export { SkillsTab } from "./tabs/skills-tab";
 export { ResumeTab } from "./tabs/resume-tab";
 export { AboutTab } from "./tabs/about-tab";
+export { IntegrationsTab } from "./integrations-tab";
 
 // Modal Components
 export { ShareProfileModal } from "./modals/share-profile-modal";

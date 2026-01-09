@@ -25,6 +25,7 @@ interface Project {
 
 interface Studio {
     id: string;
+    slug: string | null;
     title: string;
     description: string | null;
     emoji: string | null;
@@ -156,7 +157,7 @@ export default function ContinueLearning({ projects, studios }: ContinueLearning
                                 variants={itemVariants}
                                 className="flex-shrink-0 w-[300px]"
                             >
-                                <Link href={`/studio/${studio.id}`}>
+                                <Link href={`/studio/${studio.slug || studio.id}`}>
                                     <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-purple-500/10 hover:border-purple-500/30">
                                         <CardHeader className="pb-2">
                                             <div className="flex items-start justify-between">
