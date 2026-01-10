@@ -344,7 +344,7 @@ async function getDailyActivity(
     ]);
 
     dailyData.push({
-      date: dayStart.toISOString().split("T")[0],
+      date: dayStart.toISOString().split("T")[0] as string,
       questions,
       visitors,
       sessions,
@@ -369,8 +369,9 @@ function generateInsights(
   const insights: AnalyticsInsight[] = [];
 
   // Top category insight
-  if (categories.length > 0 && categories[0].count >= 5) {
-    const topCategory = categories[0];
+  const firstCategory = categories[0];
+  if (firstCategory && firstCategory.count >= 5) {
+    const topCategory = firstCategory;
     const insight = generateInsight("strength", {
       topCategory: topCategory.category,
       questionCount: topCategory.count,

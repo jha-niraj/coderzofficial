@@ -834,7 +834,7 @@ function SidebarContent() {
                                                 </div>
                                                 <div className="space-y-3">
                                                     {
-                                                        levelInfo.recentLevelUps.map((levelUp: any, index: number) => (
+                                                        levelInfo.recentLevelUps.map((levelUp: LevelUpHistory, index: number) => (
                                                             <div key={index} className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                                                                 <span className="text-xl">{levelUp.levelInfo.icon}</span>
                                                                 <div className="flex-1">

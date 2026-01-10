@@ -110,7 +110,7 @@ export function formatContextForPrompt(
     if (meta.title) {
       header += ` - ${meta.title}`;
     }
-    if (meta.sourceType) {
+    if (meta.sourceType && typeof meta.sourceType === 'string') {
       header += ` (${meta.sourceType.toLowerCase().replace("_", " ")})`;
     }
 
@@ -129,14 +129,14 @@ export function extractSources(
   const sourcesMap = new Map<string, ChatMessageSource>();
 
   for (const chunk of chunks) {
-    const meta = chunk.metadata;
-    const key = `${meta.sourceType}-${meta.sourceId}`;
+    const meta = chunk.metadata as Record<string, unknown>;
+    const key = `${meta.sourceType as string}-${meta.sourceId as string}`;
 
     if (!sourcesMap.has(key)) {
       sourcesMap.set(key, {
-        type: mapSourceType(meta.sourceType),
-        title: meta.title || "Unknown",
-        url: meta.url,
+        type: mapSourceType(meta.sourceType as string),
+        title: meta.title as string || "Unknown",
+        url: meta.url as string | undefined,
         description: chunk.text.slice(0, 100) + "...",
       });
     }

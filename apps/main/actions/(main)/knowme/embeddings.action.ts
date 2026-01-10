@@ -319,10 +319,10 @@ async function processEmbeddings(profile: {
         passed: true,
       },
       include: {
-        exam: {
+        topic: {
           select: {
-            title: true,
-            technology: true,
+            name: true,
+            language: true,
           },
         },
       },
@@ -332,9 +332,9 @@ async function processEmbeddings(profile: {
     for (const attempt of examAttempts) {
       try {
         const chunks = createAssessmentChunks(profile.id, attempt.id, {
-          title: attempt.exam.title,
-          technology: attempt.exam.technology,
-          score: attempt.score,
+          title: attempt.topic.name,
+          technology: attempt.topic.language,
+          score: attempt.score ?? 0,
           maxScore: 100,
           completedAt: attempt.completedAt || new Date(),
         });
@@ -440,7 +440,7 @@ async function processEmbeddings(profile: {
       vectorsToUpsert.map((v) => ({
         id: v.id,
         embedding: v.embedding,
-        metadata: v.metadata as import("@/types/knowme").EmbeddingMetadata,
+        metadata: v.metadata as unknown as import("@/types/knowme").EmbeddingMetadata,
       })),
       profile.id
     );
@@ -455,7 +455,7 @@ async function processEmbeddings(profile: {
       chunkHash: createContentHash(v.metadata.text as string),
       vectorId: v.id,
       vectorNamespace: profile.id,
-      metadata: v.metadata,
+      metadata: v.metadata as unknown as Record<string, string | number | boolean>,
       isActive: true,
     }));
 
@@ -530,7 +530,7 @@ export async function triggerManualUpdate(): Promise<
         where: { id: session.user.id },
         data: { credits: { increment: 1 } },
       });
-      return result;
+      return { success: false, error: result.error || "Failed to generate embeddings" };
     }
 
     return { success: true, message: "Update completed successfully" };

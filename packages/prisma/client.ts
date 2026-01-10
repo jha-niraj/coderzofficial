@@ -10,7 +10,7 @@ export * from "@prisma/client";
 
 // Types Export
 export type {
-    Prisma   
+    Prisma
 } from "@prisma/client"
 
 // Enums exports for User and other models
@@ -135,13 +135,12 @@ export {
 
     // Space Enums and Types
     SpaceVisibility,
-    SpaceType,
-    SpaceStatus,
-    SpaceRole,
-    SpaceChannelType,
-    SpacePostType,
-    SpaceResourceType,
-    SpaceEventStatus,
+    SpaceCategory,
+    SpaceMemberRole,
+    SpaceStepContentType,
+    SpaceStepStatus,
+    SpaceBranchVisibility,
+    SpaceActivityType,
 
     // KnowMe Enums and Types
     KnowMeStatus,

@@ -401,7 +401,7 @@ export default function KnowMeSettings({ profile, apiConfig, initialTab }: KnowM
                                         return (
                                             <div
                                                 key={option.value}
-                                                onClick={() => setPrivacy(option.value)}
+                                                onClick={() => setPrivacy(option.value as "PRIVATE" | "PUBLIC" | "REGISTERED" | "RECRUITERS")}
                                                 className={cn(
                                                     "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all",
                                                     isSelected

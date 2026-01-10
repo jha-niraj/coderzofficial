@@ -118,7 +118,7 @@ export default async function StudioEditorPage({ params }: StudioEditorPageProps
 	};
 
 	return (
-		<div className="min-h-screen bg-white dark:bg-neutral-950">
+		<div className="min-h-screen bg-white dark:bg-neutral-950" data-hide-ai-chat="true">
 			<Suspense fallback={<StudioEditorSkeleton />}>
 				<StudioEditor studio={studio} />
 			</Suspense>

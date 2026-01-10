@@ -12,13 +12,3 @@ export { getServerSession as getSession } from 'next-auth/next';
 
 // Export utility functions
 export * from './utils/referral';
-
-// =========================================================
-// IMPORTANT: Separate imports for different runtime contexts
-// =========================================================
-// For MIDDLEWARE (Edge Runtime):
-//   import { withAuth, type NextRequestWithAuth } from '@repo/auth/middleware';
-//
-// For CLIENT components (React):
-//   import { signIn, signOut, useSession, SessionProvider } from '@repo/auth/client';
-// =========================================================

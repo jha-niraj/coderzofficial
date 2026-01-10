@@ -58,7 +58,7 @@ export async function createBranch(
                 title: data.title,
                 description: data.description,
                 visibility: data.visibility,
-                steps: data.steps as unknown as Record<string, unknown>
+                steps: data.steps as unknown as Record<string, string | number | boolean>
             }
         });
 
@@ -324,7 +324,7 @@ export async function updateBranch(
         if (data.title !== undefined) updateData.title = data.title;
         if (data.description !== undefined) updateData.description = data.description;
         if (data.visibility !== undefined) updateData.visibility = data.visibility;
-        if (data.steps !== undefined) updateData.steps = data.steps as unknown as Record<string, unknown>;
+        if (data.steps !== undefined) updateData.steps = data.steps as unknown as Record<string, string | number | boolean>;
 
         await prisma.spaceBranch.update({
             where: { id: branchId },

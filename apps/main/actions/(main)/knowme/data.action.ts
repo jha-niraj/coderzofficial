@@ -10,12 +10,12 @@ import { auth } from "@repo/auth";
 import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import type { KnowMePlatform, KnowMeDataType } from "@repo/prisma/client";
-import type { 
+import type {
   KnowMeActionResponse,
   KnowMePersonalDataItem,
   KnowMePlatformConnectionItem,
 } from "@/types/knowme";
-import { 
+import {
   createContentHash,
   isValidProfileUrl,
   extractUsernameFromUrl,
@@ -181,8 +181,8 @@ export async function updatePersonalData(
       where: { id: dataId },
       data: {
         ...updates,
-        contentHash: updates.contentText 
-          ? createContentHash(updates.contentText) 
+        contentHash: updates.contentText
+          ? createContentHash(updates.contentText)
           : undefined,
         isIndexed: false, // Needs re-indexing
       },
@@ -453,7 +453,7 @@ export async function syncPlatformData(
         case "GITHUB":
           if (connection.platformUsername) {
             const githubData = await fetchGithubData(connection.platformUsername);
-            
+
             // Convert repos to external data
             externalDataItems = githubData.repositories.map((repo) => ({
               dataType: "GITHUB_REPO" as KnowMeDataType,
@@ -510,7 +510,7 @@ export async function syncPlatformData(
             url: item.url,
             techStack: item.techStack,
             dateUpdated: new Date(),
-            metrics: item.metrics,
+            metrics: item.metrics as unknown as Record<string, number | string | boolean>,
             isActive: true,
           },
           create: {
@@ -523,7 +523,7 @@ export async function syncPlatformData(
             url: item.url,
             techStack: item.techStack,
             dateCreated: item.dateCreated,
-            metrics: item.metrics,
+            metrics: item.metrics as unknown as Record<string, number | string | boolean>,
             isActive: true,
           },
         });

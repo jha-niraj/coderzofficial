@@ -276,15 +276,21 @@ export async function claimIssue(issueId: string) {
         if (issue.githubIssueNumber) {
             const user = await prisma.user.findUnique({
                 where: { id: session.user.id },
-                select: { githubUsername: true }
+                include: { 
+                    osGitHubProfile: { 
+                        select: { 
+                            githubUsername: true 
+                        } 
+                    } 
+                }
             })
 
-            if (user?.githubUsername) {
+            if (user?.osGitHubProfile?.githubUsername) {
                 await github.assignIssue(
                     issue.project.githubOwner,
                     issue.project.githubRepo,
                     issue.githubIssueNumber,
-                    [user.githubUsername]
+                    [user.osGitHubProfile.githubUsername]
                 )
             }
         }
@@ -333,16 +339,20 @@ export async function unclaimIssue(issueId: string) {
         // Unassign on GitHub
         if (issue.githubIssueNumber) {
             const user = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: { githubUsername: true }
+                where: { 
+                    id: session.user.id 
+                },
+                include: { 
+                    osGitHubProfile: true
+                }
             })
 
-            if (user?.githubUsername) {
+            if (user?.osGitHubProfile?.githubUsername) {
                 await github.unassignIssue(
                     issue.project.githubOwner,
                     issue.project.githubRepo,
                     issue.githubIssueNumber,
-                    [user.githubUsername]
+                    [user.osGitHubProfile.githubUsername]
                 )
             }
         }

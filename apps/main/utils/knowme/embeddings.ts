@@ -98,11 +98,11 @@ export async function generateEmbeddingsBatch(
  */
 export async function generateChunkEmbedding(
   chunk: EmbeddingChunk
-): Promise<{ embedding: number[]; metadata: EmbeddingMetadata }> {
+): Promise<{ embedding: number[]; metadata: Record<string, unknown> }> {
   const embedding = await generateEmbedding(chunk.text);
   return {
     embedding,
-    metadata: chunk.metadata,
+    metadata: chunk.metadata as unknown as Record<string, unknown>,
   };
 }
 

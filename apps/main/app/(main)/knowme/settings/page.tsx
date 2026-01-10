@@ -28,13 +28,13 @@ export default async function KnowMeSettingsPage({ searchParams }: Props) {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
             <Suspense fallback={<SettingsSkeleton />}>
-                <SettingsContent userId={session.user.id} initialTab={params.tab} />
+                <SettingsContent initialTab={params.tab} />
             </Suspense>
         </div>
     );
 }
 
-async function SettingsContent({ userId, initialTab }: { userId: string; initialTab?: string }) {
+async function SettingsContent({ initialTab }: { initialTab?: string }) {
     const [profileResult, apiConfigResult] = await Promise.all([
         getMyKnowMeProfile(),
         getApiConfig(),

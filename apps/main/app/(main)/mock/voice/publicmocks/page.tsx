@@ -360,8 +360,8 @@ export default function PublicMocksPage() {
             </div>
 
             <CreateMockSheet
-                isOpen={createSheetOpen}
-                onClose={() => setCreateSheetOpen(false)}
+                open={createSheetOpen}
+                onOpenChange={setCreateSheetOpen}
                 userCredits={credits}
             />
             <PurchaseMockSheet

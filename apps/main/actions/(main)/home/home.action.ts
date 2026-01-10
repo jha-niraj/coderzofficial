@@ -82,6 +82,7 @@ export async function getHomeData() {
                 where: { userId },
                 select: {
                     id: true,
+                    slug: true,
                     title: true,
                     description: true,
                     emoji: true,

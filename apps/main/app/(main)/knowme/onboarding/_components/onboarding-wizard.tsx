@@ -554,7 +554,7 @@ function PrivacyStep({
                                         <h4 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                                             {option.label}
                                             {
-                                                option.recommended === true && (
+                                                'recommended' in option && option.recommended === true && (
                                                     <Badge className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                                                         Recommended
                                                     </Badge>

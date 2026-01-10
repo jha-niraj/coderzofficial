@@ -14,10 +14,10 @@ export function generateApiKey(): { key: string; hash: string } {
   // Generate a random 32-byte key
   const keyBuffer = randomBytes(32);
   const key = `coderz_km_live_${keyBuffer.toString("hex")}`;
-  
+
   // Create hash for storage (never store plain key)
   const hash = hashApiKey(key);
-  
+
   return { key, hash };
 }
 
@@ -54,7 +54,7 @@ export function createContentHash(content: string): string {
  */
 export function shouldResetRateLimit(lastResetAt: Date): boolean {
   const now = new Date();
-  const hoursSinceReset = 
+  const hoursSinceReset =
     (now.getTime() - lastResetAt.getTime()) / (1000 * 60 * 60);
   return hoursSinceReset >= 24;
 }
@@ -86,7 +86,7 @@ export function formatRelativeDate(date: Date): string {
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? "s" : ""} ago`;
-  
+
   return date.toLocaleDateString();
 }
 
@@ -191,13 +191,15 @@ export function categorizeQuestion(question: string): KnowMeQuestionCategory {
 export function calculateTrend(
   current: number,
   previous: number
-): { change: number; changePercent: number; direction: "up" | "down" | "stable" } {
+): { current: number; previous: number; change: number; changePercent: number; direction: "up" | "down" | "stable" } {
   const change = current - previous;
-  const changePercent = previous > 0 
-    ? Math.round((change / previous) * 100) 
+  const changePercent = previous > 0
+    ? Math.round((change / previous) * 100)
     : current > 0 ? 100 : 0;
 
   return {
+    current,
+    previous,
     change,
     changePercent: Math.abs(changePercent),
     direction: change > 0 ? "up" : change < 0 ? "down" : "stable",

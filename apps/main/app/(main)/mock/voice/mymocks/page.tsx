@@ -372,8 +372,8 @@ export default function MyMocksPage() {
             </div>
 
             <CreateMockSheet
-                isOpen={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
+                open={isCreateOpen}
+                onOpenChange={setIsCreateOpen}
                 userCredits={user?.credits || 0}
             />
         </div>

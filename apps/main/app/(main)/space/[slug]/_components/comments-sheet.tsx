@@ -8,10 +8,9 @@ import {
 import { Button } from '@repo/ui/components/ui/button';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@repo/ui/components/ui/avatar';
-import { Badge } from '@repo/ui/components/ui/badge';
 import {
     MessageSquare, Heart, Send, MoreHorizontal, Trash2, Flag,
-    Loader2, ChevronDown
+    Loader2, ChevronDown, Reply
 } from 'lucide-react';
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -19,21 +18,9 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@repo/ui/lib/utils';
 import toast from '@repo/ui/components/ui/sonner';
-
-interface Comment {
-    id: string;
-    content: string;
-    createdAt: Date;
-    user: {
-        id: string;
-        name?: string | null;
-        username?: string | null;
-        image?: string | null;
-    };
-    likes: number;
-    isLiked?: boolean;
-    replies?: Comment[];
-}
+import {
+    getStepComments, createComment, deleteComment, type CommentData
+} from '@/actions/(main)/space/social.action';
 
 interface CommentsSheetProps {
     open: boolean;
@@ -44,51 +31,6 @@ interface CommentsSheetProps {
     currentUserId?: string;
 }
 
-// Mock data for demonstration
-const mockComments: Comment[] = [
-    {
-        id: '1',
-        content: 'This step was really helpful! The project requirements are clear.',
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-        user: {
-            id: 'u1',
-            name: 'John Doe',
-            username: 'johndoe',
-            image: null
-        },
-        likes: 5,
-        isLiked: false
-    },
-    {
-        id: '2',
-        content: 'I had some trouble with the authentication part. Anyone else facing similar issues?',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        user: {
-            id: 'u2',
-            name: 'Jane Smith',
-            username: 'janesmith',
-            image: null
-        },
-        likes: 3,
-        isLiked: true,
-        replies: [
-            {
-                id: '2-1',
-                content: 'Yes! Check the documentation link in step 2, it helped me.',
-                createdAt: new Date(Date.now() - 1000 * 60 * 45),
-                user: {
-                    id: 'u3',
-                    name: 'Bob Wilson',
-                    username: 'bobwilson',
-                    image: null
-                },
-                likes: 2,
-                isLiked: false
-            }
-        ]
-    }
-];
-
 export default function CommentsSheet({
     open,
     onOpenChange,
@@ -97,18 +39,19 @@ export default function CommentsSheet({
     stepTitle,
     currentUserId
 }: CommentsSheetProps) {
-    const [comments, setComments] = useState<Comment[]>([]);
+    const [comments, setComments] = useState<CommentData[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMore, setHasMore] = useState(false);
     const [page, setPage] = useState(1);
     const [newComment, setNewComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
-
-    const COMMENTS_PER_PAGE = 50;
+    const [replyingToName, setReplyingToName] = useState<string>('');
 
     const loadComments = useCallback(async (pageNum: number = 1) => {
+        if (!stepId) return;
+
         if (pageNum === 1) {
             setLoading(true);
         } else {
@@ -116,21 +59,19 @@ export default function CommentsSheet({
         }
 
         try {
-            // TODO: Replace with actual API call
-            // const result = await getComments({ spaceId, stepId, page: pageNum, limit: COMMENTS_PER_PAGE });
-            
-            // Simulating API call
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            if (pageNum === 1) {
-                setComments(mockComments);
+            const result = await getStepComments(spaceId, stepId, pageNum);
+
+            if (result.success && result.data) {
+                if (pageNum === 1) {
+                    setComments(result.data.comments);
+                } else {
+                    setComments(prev => [...prev, ...result.data!.comments]);
+                }
+                setHasMore(result.data.hasMore);
+                setPage(pageNum);
             } else {
-                setComments(prev => [...prev, ...mockComments]);
+                toast.error(result.error || 'Failed to load comments');
             }
-            
-            // For demo, we'll say there's no more after page 1
-            setHasMore(pageNum < 2);
-            setPage(pageNum);
         } catch (error) {
             console.error('Error loading comments:', error);
             toast.error('Failed to load comments');
@@ -141,52 +82,47 @@ export default function CommentsSheet({
     }, [spaceId, stepId]);
 
     useEffect(() => {
-        if (open) {
+        if (open && stepId) {
             loadComments(1);
         }
-    }, [open, loadComments]);
+    }, [open, stepId, loadComments]);
 
     const handleSubmitComment = async () => {
-        if (!newComment.trim()) return;
+        if (!newComment.trim() || !stepId) return;
 
         setSubmitting(true);
         try {
-            // TODO: Replace with actual API call
-            // await createComment({ spaceId, stepId, content: newComment, parentId: replyingTo });
-            
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            const newCommentObj: Comment = {
-                id: Date.now().toString(),
-                content: newComment,
-                createdAt: new Date(),
-                user: {
-                    id: currentUserId || 'current',
-                    name: 'You',
-                    username: 'you',
-                    image: null
-                },
-                likes: 0,
-                isLiked: false
-            };
+            const result = await createComment(
+                spaceId,
+                stepId,
+                newComment.trim(),
+                replyingTo || undefined
+            );
 
-            if (replyingTo) {
-                setComments(prev => prev.map(c => {
-                    if (c.id === replyingTo) {
-                        return {
-                            ...c,
-                            replies: [...(c.replies || []), newCommentObj]
-                        };
-                    }
-                    return c;
-                }));
+            if (result.success && result.data) {
+                if (replyingTo) {
+                    // Add reply to parent comment
+                    setComments(prev => prev.map(c => {
+                        if (c.id === replyingTo) {
+                            return {
+                                ...c,
+                                replies: [...(c.replies || []), result.data!]
+                            };
+                        }
+                        return c;
+                    }));
+                } else {
+                    // Add new top-level comment
+                    setComments(prev => [result.data!, ...prev]);
+                }
+
+                setNewComment('');
+                setReplyingTo(null);
+                setReplyingToName('');
+                toast.success('Comment added!');
             } else {
-                setComments(prev => [newCommentObj, ...prev]);
+                toast.error(result.error || 'Failed to add comment');
             }
-
-            setNewComment('');
-            setReplyingTo(null);
-            toast.success('Comment added!');
         } catch (error) {
             console.error('Error adding comment:', error);
             toast.error('Failed to add comment');
@@ -195,30 +131,45 @@ export default function CommentsSheet({
         }
     };
 
-    const handleLikeComment = async (commentId: string) => {
-        // TODO: Implement like functionality
-        setComments(prev => prev.map(c => {
-            if (c.id === commentId) {
-                return {
-                    ...c,
-                    likes: c.isLiked ? c.likes - 1 : c.likes + 1,
-                    isLiked: !c.isLiked
-                };
-            }
-            return c;
-        }));
-    };
+    const handleDeleteComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+        try {
+            const result = await deleteComment(commentId);
 
-    const handleDeleteComment = async (commentId: string) => {
-        // TODO: Implement delete functionality
-        setComments(prev => prev.filter(c => c.id !== commentId));
-        toast.success('Comment deleted');
+            if (result.success) {
+                if (isReply && parentId) {
+                    // Remove reply from parent
+                    setComments(prev => prev.map(c => {
+                        if (c.id === parentId) {
+                            return {
+                                ...c,
+                                replies: (c.replies || []).filter(r => r.id !== commentId)
+                            };
+                        }
+                        return c;
+                    }));
+                } else {
+                    // Remove top-level comment
+                    setComments(prev => prev.filter(c => c.id !== commentId));
+                }
+                toast.success('Comment deleted');
+            } else {
+                toast.error(result.error || 'Failed to delete comment');
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            toast.error('Failed to delete comment');
+        }
     };
 
     const handleLoadMore = () => {
         if (!loadingMore && hasMore) {
             loadComments(page + 1);
         }
+    };
+
+    const handleReply = (commentId: string, userName: string) => {
+        setReplyingTo(commentId);
+        setReplyingToName(userName);
     };
 
     return (
@@ -231,95 +182,86 @@ export default function CommentsSheet({
                         </div>
                         Comments
                     </SheetTitle>
-                    {
-                        stepTitle && (
-                            <SheetDescription>
-                                Discussion for: {stepTitle}
-                            </SheetDescription>
-                        )
-                    }
+                    {stepTitle && (
+                        <SheetDescription>
+                            Discussion for: {stepTitle}
+                        </SheetDescription>
+                    )}
                 </SheetHeader>
 
                 {/* Comments List */}
                 <div className="flex-1 overflow-y-auto py-4 space-y-4">
-                    {
-                        loading ? (
-                            <div className="flex items-center justify-center py-12">
-                                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                    {loading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                        </div>
+                    ) : comments.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+                                <MessageSquare className="w-8 h-8 text-neutral-400" />
                             </div>
-                        ) : comments.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
-                                    <MessageSquare className="w-8 h-8 text-neutral-400" />
+                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
+                                No Comments Yet
+                            </h3>
+                            <p className="text-sm text-neutral-500">
+                                Be the first to start the discussion!
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <AnimatePresence>
+                                {comments.map((comment, index) => (
+                                    <CommentItem
+                                        key={comment.id}
+                                        comment={comment}
+                                        currentUserId={currentUserId}
+                                        onDelete={handleDeleteComment}
+                                        onReply={handleReply}
+                                        index={index}
+                                    />
+                                ))}
+                            </AnimatePresence>
+                            {hasMore && (
+                                <div className="flex justify-center pt-4">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleLoadMore}
+                                        disabled={loadingMore}
+                                    >
+                                        {loadingMore ? (
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <ChevronDown className="w-4 h-4 mr-2" />
+                                        )}
+                                        Load More
+                                    </Button>
                                 </div>
-                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
-                                    No Comments Yet
-                                </h3>
-                                <p className="text-sm text-neutral-500">
-                                    Be the first to start the discussion!
-                                </p>
-                            </div>
-                        ) : (
-                            <>
-                                <AnimatePresence>
-                                    {
-                                        comments.map((comment, index) => (
-                                            <CommentItem
-                                                key={comment.id}
-                                                comment={comment}
-                                                currentUserId={currentUserId}
-                                                onLike={handleLikeComment}
-                                                onDelete={handleDeleteComment}
-                                                onReply={(id) => setReplyingTo(id)}
-                                                index={index}
-                                            />
-                                        ))
-                                    }
-                                </AnimatePresence>
-                                {
-                                    hasMore && (
-                                        <div className="flex justify-center pt-4">
-                                            <Button
-                                                variant="outline"
-                                                onClick={handleLoadMore}
-                                                disabled={loadingMore}
-                                            >
-                                                {
-                                                    loadingMore ? (
-                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                    ) : (
-                                                        <ChevronDown className="w-4 h-4 mr-2" />
-                                                    )
-                                                }
-                                                Load More
-                                            </Button>
-                                        </div>
-                                    )
-                                }
-                            </>
-                        )
-                    }
+                            )}
+                        </>
+                    )}
                 </div>
 
                 {/* Comment Input */}
                 <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                    {
-                        replyingTo && (
-                            <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950 rounded-lg px-3 py-2 mb-2">
-                                <span className="text-sm text-blue-600 dark:text-blue-400">
-                                    Replying to comment...
-                                </span>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setReplyingTo(null)}
-                                    className="h-6 px-2"
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
-                        )
-                    }
+                    {replyingTo && (
+                        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950 rounded-lg px-3 py-2 mb-2">
+                            <span className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                                <Reply className="w-4 h-4" />
+                                Replying to {replyingToName}
+                            </span>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setReplyingTo(null);
+                                    setReplyingToName('');
+                                }}
+                                className="h-6 px-2"
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    )}
                     <div className="flex gap-2">
                         <Textarea
                             placeholder="Write a comment..."
@@ -339,13 +281,11 @@ export default function CommentsSheet({
                             disabled={!newComment.trim() || submitting}
                             className="shrink-0"
                         >
-                            {
-                                submitting ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Send className="w-4 h-4" />
-                                )
-                            }
+                            {submitting ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Send className="w-4 h-4" />
+                            )}
                         </Button>
                     </div>
                 </div>
@@ -355,25 +295,25 @@ export default function CommentsSheet({
 }
 
 interface CommentItemProps {
-    comment: Comment;
+    comment: CommentData;
     currentUserId?: string;
-    onLike: (id: string) => void;
-    onDelete: (id: string) => void;
-    onReply: (id: string) => void;
+    onDelete: (id: string, isReply?: boolean, parentId?: string) => void;
+    onReply: (id: string, userName: string) => void;
     index: number;
     isReply?: boolean;
+    parentId?: string;
 }
 
 function CommentItem({
     comment,
     currentUserId,
-    onLike,
     onDelete,
     onReply,
     index,
-    isReply = false
+    isReply = false,
+    parentId
 }: CommentItemProps) {
-    const isOwn = comment.user.id === currentUserId;
+    const isOwn = comment.userId === currentUserId;
 
     return (
         <motion.div
@@ -404,28 +344,20 @@ function CommentItem({
                     </p>
                     <div className="flex items-center gap-3 mt-2">
                         <button
-                            onClick={() => onLike(comment.id)}
-                            className={cn(
-                                "flex items-center gap-1 text-xs transition-colors",
-                                comment.isLiked
-                                    ? "text-red-500"
-                                    : "text-neutral-500 hover:text-red-500"
-                            )}
+                            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-red-500 transition-colors"
                         >
-                            <Heart className={cn("w-4 h-4", comment.isLiked && "fill-current")} />
-                            {comment.likes}
+                            <Heart className={cn("w-4 h-4", comment.isLiked && "fill-current text-red-500")} />
+                            {comment.likeCount}
                         </button>
-                        {
-                            !isReply && (
-                                <button
-                                    onClick={() => onReply(comment.id)}
-                                    className="flex items-center gap-1 text-xs text-neutral-500 hover:text-blue-500 transition-colors"
-                                >
-                                    <MessageSquare className="w-4 h-4" />
-                                    Reply
-                                </button>
-                            )
-                        }
+                        {!isReply && (
+                            <button
+                                onClick={() => onReply(comment.id, comment.user.name || comment.user.username || 'User')}
+                                className="flex items-center gap-1 text-xs text-neutral-500 hover:text-blue-500 transition-colors"
+                            >
+                                <Reply className="w-4 h-4" />
+                                Reply
+                            </button>
+                        )}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button className="p-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -433,17 +365,15 @@ function CommentItem({
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                {
-                                    isOwn && (
-                                        <DropdownMenuItem
-                                            onClick={() => onDelete(comment.id)}
-                                            className="text-red-600"
-                                        >
-                                            <Trash2 className="w-4 h-4 mr-2" />
-                                            Delete
-                                        </DropdownMenuItem>
-                                    )
-                                }
+                                {isOwn && (
+                                    <DropdownMenuItem
+                                        onClick={() => onDelete(comment.id, isReply, parentId)}
+                                        className="text-red-600"
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem>
                                     <Flag className="w-4 h-4 mr-2" />
                                     Report
@@ -455,28 +385,22 @@ function CommentItem({
             </div>
 
             {/* Replies */}
-            {
-                comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-3 space-y-3">
-                        {
-                            comment.replies.map((reply, replyIndex) => (
-                                <CommentItem
-                                    key={reply.id}
-                                    comment={reply}
-                                    currentUserId={currentUserId}
-                                    onLike={onLike}
-                                    onDelete={onDelete}
-                                    onReply={onReply}
-                                    index={replyIndex}
-                                    isReply
-                                />
-                            ))
-                        }
-                    </div>
-                )
-            }
+            {comment.replies && comment.replies.length > 0 && (
+                <div className="mt-3 space-y-3">
+                    {comment.replies.map((reply, replyIndex) => (
+                        <CommentItem
+                            key={reply.id}
+                            comment={reply}
+                            currentUserId={currentUserId}
+                            onDelete={onDelete}
+                            onReply={onReply}
+                            index={replyIndex}
+                            isReply
+                            parentId={comment.id}
+                        />
+                    ))}
+                </div>
+            )}
         </motion.div>
     );
 }
-
-

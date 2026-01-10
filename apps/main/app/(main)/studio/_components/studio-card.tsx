@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@repo/ui/lib/utils';
-import { STUDIO_CATEGORIES, getCategoryColor } from '@/types/studio';
+import { STUDIO_CATEGORIES, getCategoryColor, type StudioCategory } from '@/types/studio';
 
 interface StudioCardProps {
     studio: {
@@ -77,7 +77,7 @@ export default function StudioCard({ studio, index = 0, showCreator = true }: St
                         <h3 className="font-bold text-lg text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                             {studio.title}
                         </h3>
-                        <Badge className={cn("mt-1 text-xs", getCategoryColor(studio.category))}>
+                        <Badge className={cn("mt-1 text-xs", getCategoryColor(studio.category as StudioCategory))}>
                             {categoryLabel}
                         </Badge>
                     </div>
@@ -168,7 +168,10 @@ function VisibilityBadge({ visibility }: { visibility: string }) {
         }
     };
 
-    const { icon: Icon, label, className } = config[visibility] || config.PRIVATE;
+    const visibilityConfig = config[visibility] || config.PRIVATE;
+    const Icon = visibilityConfig?.icon || Lock;
+    const label = visibilityConfig?.label || 'Private';
+    const className = visibilityConfig?.className || 'bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700';
 
     return (
         <Badge variant="outline" className={cn("flex items-center gap-1 text-xs font-medium", className)}>

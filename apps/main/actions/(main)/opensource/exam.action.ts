@@ -267,13 +267,9 @@ Respond in JSON:
             }
         }
 
-        return {
-            questionId: question.id,
-            isCorrect: false,
-            explanation: 'Unknown question type',
-            userAnswer,
-            score: 0
-        }
+        // Exhaustive check - this should never be reached
+        const _exhaustiveCheck: never = question
+        return _exhaustiveCheck
     } catch (error) {
         console.error('Error validating answer:', error)
         return {
@@ -376,47 +372,33 @@ export async function checkExamEligibility(): Promise<{
     }
 
     try {
-        // Check learning progress
-        const progress = await prisma.oSUserLessonProgress.findMany({
+        // Check learning progress - using OSLearnProgress model
+        const learnProgress = await prisma.oSLearnProgress.findMany({
             where: { userId: session.user.id },
-            include: { lesson: { include: { module: true } } }
+            include: { module: { include: { lessons: true } } }
         })
 
         // Count completed modules
-        const moduleProgress: Record<string, { total: number; completed: number }> = {}
-        
-        progress.forEach(p => {
-            const moduleId = p.lesson.moduleId
-            if (!moduleProgress[moduleId]) {
-                moduleProgress[moduleId] = { total: 0, completed: 0 }
-            }
-            moduleProgress[moduleId].total++
-            if (p.status === 'COMPLETED') {
-                moduleProgress[moduleId].completed++
-            }
-        })
-
-        // A module is complete if all lessons are done
-        const modules = await prisma.oSLearningModule.findMany({
-            where: { isActive: true },
-            include: { lessons: true }
-        })
-
         let completedModules = 0
-        modules.forEach(m => {
-            const mp = moduleProgress[m.id]
-            if (mp && mp.completed >= m.lessons.length) {
+        learnProgress.forEach(p => {
+            if (p.isCompleted) {
                 completedModules++
             }
+        })
+
+        // Get all active modules
+        const modules = await prisma.oSLearnModule.findMany({
+            where: { isActive: true },
+            include: { lessons: true }
         })
 
         const totalModules = modules.length || 5
 
         // Check for recent exam attempts (24 hour cooldown for failed attempts)
-        const recentExam = await prisma.oSExamResult.findFirst({
+        const recentExam = await prisma.oSCertificationExam.findFirst({
             where: {
                 userId: session.user.id,
-                passed: false,
+                status: 'FAILED',
                 completedAt: {
                     gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
                 }
@@ -424,7 +406,7 @@ export async function checkExamEligibility(): Promise<{
             orderBy: { completedAt: 'desc' }
         })
 
-        if (recentExam) {
+        if (recentExam && recentExam.completedAt) {
             const canRetakeAt = new Date(recentExam.completedAt.getTime() + 24 * 60 * 60 * 1000)
             return {
                 eligible: false,
@@ -437,10 +419,10 @@ export async function checkExamEligibility(): Promise<{
         }
 
         // Check if already passed
-        const passedExam = await prisma.oSExamResult.findFirst({
+        const passedExam = await prisma.oSCertificationExam.findFirst({
             where: {
                 userId: session.user.id,
-                passed: true
+                status: 'PASSED'
             }
         })
 
@@ -496,13 +478,12 @@ export async function saveExamResult(data: {
     }
 
     try {
-        const result = await prisma.oSExamResult.create({
+        const result = await prisma.oSCertificationExam.create({
             data: {
                 userId: session.user.id,
-                score: data.score,
-                passed: data.passed,
-                timeTaken: data.timeTaken,
-                answers: data.answers,
+                totalScore: data.score,
+                status: data.passed ? 'PASSED' : 'FAILED',
+                quizAnswers: data.answers,
                 completedAt: new Date()
             }
         })
@@ -523,12 +504,12 @@ export async function saveExamResult(data: {
             })
 
             // Create certificate
-            const certificate = await prisma.oSCertificate.create({
+            const certificate = await prisma.oSCertification.create({
                 data: {
                     userId: session.user.id,
-                    examId: result.id,
-                    type: 'CONTRIBUTION',
-                    certificateId: `OSC-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`
+                    score: data.score,
+                    certificateId: `OSC-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`,
+                    expiresAt: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000) // 2 years from now
                 }
             })
 
@@ -544,8 +525,3 @@ export async function saveExamResult(data: {
         }
     }
 }
-
-
-
-
-

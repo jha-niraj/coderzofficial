@@ -69,7 +69,9 @@ async function getContributionSummary(userId: string) {
             by: ['status'],
             where: { 
                 userId,
-                type: 'PULL_REQUEST'
+                type: { 
+                    in: ['PR_SUBMITTED', 'PR_MERGED'] 
+                }
             },
             _count: true
         })
@@ -136,7 +138,11 @@ export async function disconnectGitHub() {
         // Update user to remove GitHub username
         await prisma.user.update({
             where: { id: session.user.id },
-            data: { githubUsername: null }
+            data: { 
+                osGitHubProfile: { 
+                    delete: true
+                } 
+            }
         })
 
         revalidatePath('/profile')
@@ -215,7 +221,7 @@ export async function syncGitHubContributions() {
                         data: {
                             userId: session.user.id,
                             projectId: project.id,
-                            type: 'PULL_REQUEST',
+                            type: pr.merged ? 'PR_MERGED' : 'PR_SUBMITTED',
                             title: pr.title,
                             description: pr.body || '',
                             status: pr.merged ? 'MERGED' : (pr.state === 'closed' ? 'REJECTED' : 'IN_REVIEW'),
@@ -238,8 +244,12 @@ export async function syncGitHubContributions() {
 
         // Update last sync time
         await prisma.oSGitHubProfile.update({
-            where: { userId: session.user.id },
-            data: { lastSyncedAt: new Date() }
+            where: { 
+                userId: session.user.id 
+            },
+            data: { 
+                lastSyncedAt: new Date() 
+            }
         })
 
         // Update user's OS stats
@@ -269,7 +279,9 @@ async function updateUserOSStats(userId: string) {
                 by: ['status'],
                 where: { 
                     userId,
-                    type: 'PULL_REQUEST'
+                    type: {
+                        in: ['PR_SUBMITTED', 'PR_MERGED']
+                    }
                 },
                 _count: true
             }),
@@ -292,14 +304,14 @@ async function updateUserOSStats(userId: string) {
             where: { userId },
             update: {
                 totalContributions,
-                prsMerged,
+                prsMerged: prsMerged as number,
                 issuesSolved,
                 lastContributionAt: new Date()
             },
             create: {
                 userId,
                 totalContributions,
-                prsMerged,
+                prsMerged: prsMerged as number,
                 issuesSolved,
                 lastContributionAt: new Date()
             }
@@ -366,7 +378,13 @@ export async function linkGitHubAccount(data: {
         // Update user with GitHub username
         await prisma.user.update({
             where: { id: session.user.id },
-            data: { githubUsername: data.username }
+            data: { 
+                osGitHubProfile: { 
+                    update: { 
+                        githubUsername: data.username 
+                    } 
+                } 
+            }
         })
 
         revalidatePath('/profile')
@@ -377,4 +395,3 @@ export async function linkGitHubAccount(data: {
         return { success: false, error: 'Failed to link GitHub account' }
     }
 }
-

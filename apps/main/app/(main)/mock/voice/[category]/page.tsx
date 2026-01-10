@@ -324,8 +324,8 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
                 }
             </div>
             <CreateMockSheet
-                isOpen={createSheetOpen}
-                onClose={() => setCreateSheetOpen(false)}
+                open={createSheetOpen}
+                onOpenChange={setCreateSheetOpen}
                 userCredits={userCredits}
             />
             <PurchaseMockSheet

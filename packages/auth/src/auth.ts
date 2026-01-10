@@ -7,22 +7,22 @@ import type { JWT } from "next-auth/jwt";
 import type { Session, User } from "next-auth";
 import { Role } from '@repo/prisma/client';
 import { prisma } from '@repo/prisma';
-import { 
-    createSignupActivity, generateReferralCode, processReferral 
+import {
+    createSignupActivity, generateReferralCode, processReferral
 } from './utils/referral';
 import bcrypt from 'bcryptjs';
 
 // Extended GitHub profile type
 interface GitHubProfile extends Profile {
-    login?: string;
+    login?: string | null;
     id?: number;
-    avatar_url?: string;
-    name?: string;
-    email?: string;
-    bio?: string;
-    location?: string;
-    company?: string;
-    blog?: string;
+    avatar_url?: string | null;
+    name?: string | null;
+    email?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    company?: string | null;
+    blog?: string | null;
     public_repos?: number;
     public_gists?: number;
     followers?: number;
@@ -137,11 +137,11 @@ export const authOptions: AuthOptions = {
             profile(profile: GitHubProfile) {
                 return {
                     id: String(profile.id),
-                    name: profile.name || profile.login,
-                    email: profile.email,
-                    image: profile.avatar_url,
+                    name: profile.name || profile.login || "GitHub User",
+                    email: profile.email || "",
+                    image: profile.avatar_url || null,
                     role: Role.Student,
-                    githubUsername: profile.login,
+                    githubUsername: profile.login || null,
                 }
             },
         }),
@@ -153,14 +153,23 @@ export const authOptions: AuthOptions = {
                 token.role = user.role;
                 token.emailVerified = user.emailVerified;
                 token.githubUsername = (user as { githubUsername?: string }).githubUsername;
-                
+
                 try {
                     const dbUser = await prisma.user.findUnique({
-                        where: { id: user.id! },
-                        select: { onboardingCompleted: true, githubUsername: true }
+                        where: {
+                            id: user.id!
+                        },
+                        select: {
+                            onboardingCompleted: true,
+                            osGitHubProfile: {
+                                select: {
+                                    githubUsername: true
+                                }
+                            }
+                        }
                     });
                     token.onboardingCompleted = dbUser?.onboardingCompleted || false;
-                    token.githubUsername = dbUser?.githubUsername || token.githubUsername;
+                    token.githubUsername = dbUser?.osGitHubProfile?.githubUsername || token.githubUsername;
                 } catch (error) {
                     token.onboardingCompleted = false;
                 }
@@ -174,7 +183,11 @@ export const authOptions: AuthOptions = {
                             emailVerified: true,
                             role: true,
                             onboardingCompleted: true,
-                            githubUsername: true,
+                            osGitHubProfile: {
+                                select: {
+                                    githubUsername: true
+                                }
+                            }
                         }
                     });
 
@@ -182,7 +195,7 @@ export const authOptions: AuthOptions = {
                         token.emailVerified = dbUser.emailVerified ? new Date() : null;
                         token.role = dbUser.role;
                         token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
-                        token.githubUsername = dbUser.githubUsername;
+                        token.githubUsername = dbUser.osGitHubProfile?.githubUsername;
                     }
                 } catch (error) {
                     console.error('JWT callback error:', error);
@@ -201,10 +214,10 @@ export const authOptions: AuthOptions = {
             }
             return session;
         },
-        async signIn({ user, account, profile }: { 
-            user: User; 
-            account: Account | null; 
-            profile?: Profile; 
+        async signIn({ user, account, profile }: {
+            user: User;
+            account: Account | null;
+            profile?: Profile;
         }) {
             if (account?.provider === 'google') {
                 const existingUser = await prisma.user.findUnique({
@@ -261,17 +274,20 @@ export const authOptions: AuthOptions = {
             if (account?.provider === 'github') {
                 const githubProfile = profile as GitHubProfile;
                 const existingUser = await prisma.user.findUnique({
-                    where: { email: githubProfile?.email as string }
+                    where: {
+                        email: githubProfile?.email as string
+                    },
+                    select: {
+                        id: true,
+                        osGitHubProfile: {
+                            select: {
+                                githubUsername: true
+                            }
+                        }
+                    }
                 });
 
                 if (existingUser) {
-                    // Update GitHub username if not set
-                    if (!existingUser.githubUsername && githubProfile?.login) {
-                        await prisma.user.update({
-                            where: { id: existingUser.id },
-                            data: { githubUsername: githubProfile.login }
-                        });
-                    }
 
                     // Create or update GitHub profile for opensource
                     try {
@@ -315,7 +331,7 @@ export const authOptions: AuthOptions = {
                     } catch (error) {
                         console.error("Error creating/updating GitHub profile:", error);
                     }
-                    
+
                     return true;
                 }
 
@@ -334,7 +350,9 @@ export const authOptions: AuthOptions = {
                 setTimeout(async () => {
                     try {
                         const newUser = await prisma.user.findUnique({
-                            where: { email: githubProfile?.email as string }
+                            where: {
+                                email: githubProfile?.email as string
+                            }
                         });
 
                         if (newUser) {
@@ -344,7 +362,6 @@ export const authOptions: AuthOptions = {
                                     referralCode: await generateReferralCode(newUser?.name as string),
                                     emailVerified: true,
                                     onboardingCompleted: false,
-                                    githubUsername: githubProfile?.login,
                                 }
                             });
 
@@ -391,12 +408,12 @@ export const authOptions: AuthOptions = {
         async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
             if (url.startsWith("/")) return `${baseUrl}${url}`
             if (new URL(url).origin === baseUrl) return url
-            
+
             const learnPlatformUrl = process.env.LEARN_PLATFORM_URL || 'https://learn.coderzai.xyz'
             if (url.startsWith(learnPlatformUrl)) {
                 return url
             }
-            
+
             return baseUrl
         },
     },

@@ -96,17 +96,6 @@ export default function KnowMeAnalytics({ analytics, initialRange }: KnowMeAnaly
         }
     };
 
-    const getTrendIcon = (direction: "up" | "down" | "stable") => {
-        switch (direction) {
-            case "up":
-                return <TrendingUp className="w-4 h-4 text-emerald-500" />;
-            case "down":
-                return <TrendingDown className="w-4 h-4 text-red-500" />;
-            default:
-                return <Minus className="w-4 h-4 text-slate-400" />;
-        }
-    };
-
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
             <motion.div

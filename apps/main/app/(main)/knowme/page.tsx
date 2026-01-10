@@ -24,13 +24,13 @@ export default async function KnowMePage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
             <Suspense fallback={<KnowMeDashboardSkeleton />}>
-                <KnowMeContent userId={session.user.id} />
+                <KnowMeContent />
             </Suspense>
         </div>
     );
 }
 
-async function KnowMeContent({ userId }: { userId: string }) {
+async function KnowMeContent() {
     const profileCheck = await hasKnowMeProfile();
     
     if (!profileCheck.success || !profileCheck.data?.exists) {

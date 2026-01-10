@@ -81,7 +81,7 @@ export async function createStep(
                 description: data.description,
                 contentType: data.contentType,
                 contentId: data.contentId,
-                contentData: data.contentData as unknown as Record<string, unknown>,
+                contentData: data.contentData as unknown as Record<string, string | number | boolean>,
                 isRequired: data.isRequired,
                 estimatedTime: data.estimatedTime,
                 dueDate: data.dueDate,
@@ -159,7 +159,7 @@ export async function updateStep(
         if (data.description !== undefined) updateData.description = data.description;
         if (data.contentType !== undefined) updateData.contentType = data.contentType;
         if (data.contentId !== undefined) updateData.contentId = data.contentId;
-        if (data.contentData !== undefined) updateData.contentData = data.contentData as unknown as Record<string, unknown>;
+        if (data.contentData !== undefined) updateData.contentData = data.contentData as unknown as Record<string, string | number | boolean>;
         if (data.isRequired !== undefined) updateData.isRequired = data.isRequired;
         if (data.estimatedTime !== undefined) updateData.estimatedTime = data.estimatedTime;
         if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
@@ -229,8 +229,12 @@ export async function deleteStep(stepId: string): Promise<ActionResponse> {
 
         for (let i = 0; i < remainingSteps.length; i++) {
             await prisma.spaceStep.update({
-                where: { id: remainingSteps[i].id },
-                data: { order: step.order + i }
+                where: { 
+                    id: remainingSteps[i]?.id 
+                },
+                data: { 
+                    order: step.order + i 
+                }
             });
         }
 
@@ -448,7 +452,7 @@ export async function completeStep(
                 timeSpent: data?.timeSpent || 0,
                 isShared: data?.isShared || false,
                 notes: data?.notes,
-                attachments: data?.attachments as unknown as Record<string, unknown>
+                attachments: data?.attachments as unknown as Record<string, string | number | boolean>
             }
         });
 

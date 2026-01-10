@@ -9,6 +9,7 @@ import CreateStudioSheet from './create-studio-sheet';
 
 interface Studio {
     id: string;
+    slug: string | null;
     title: string;
     description?: string | null;
     category: string;

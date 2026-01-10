@@ -5,7 +5,6 @@ import { getSpace } from '@/actions/(main)/space/space.action';
 import SpaceHeader from './_components/space-header';
 import SpaceTimeline from './_components/space-timeline';
 import SpaceSidebar from './_components/space-sidebar';
-import SpaceActivityFeed from './_components/space-activity-feed';
 import SpaceTimelineSkeleton from './_components/space-timeline-skeleton';
 
 interface SpacePageProps {
@@ -39,25 +38,24 @@ export default async function SpacePage({ params }: SpacePageProps) {
     const space = result.data;
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
+        <div className="w-full h-screen flex flex-col bg-white dark:bg-neutral-950" data-hide-ai-chat="true">
             <SpaceHeader space={space} />
 
-            <div className="container mx-auto px-4 py-6 max-w-7xl">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <div className="lg:col-span-1 order-2 lg:order-1">
-                        <Suspense fallback={<div className="h-64 bg-neutral-100 dark:bg-neutral-900 rounded-lg animate-pulse" />}>
-                            <SpaceActivityFeed spaceId={space.id} />
-                        </Suspense>
-                    </div>
-                    <div className="lg:col-span-2 order-1 lg:order-2">
+            {/* Two-column layout with fixed height */}
+            <div className="flex-1 w-full px-4 py-4 overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+                    {/* Timeline Column */}
+                    <div className="h-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
                         <Suspense fallback={<SpaceTimelineSkeleton />}>
                             <SpaceTimeline space={space} />
                         </Suspense>
                     </div>
-                    <div className="lg:col-span-1 order-3">
-                        <Suspense fallback={<div className="h-64 bg-neutral-100 dark:bg-neutral-900 rounded-lg animate-pulse" />}>
-                            <SpaceSidebar space={space} />
-                        </Suspense>
+
+                    {/* Sidebar Column */}
+                    <div className="h-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+                        <SpaceSidebar
+                            spaceTitle={space.title}
+                        />
                     </div>
                 </div>
             </div>

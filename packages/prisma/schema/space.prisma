@@ -3,9 +3,9 @@
 // ===============================================
 
 enum SpaceVisibility {
-    PUBLIC      // Anyone can join
-    PRIVATE     // Invite only
-    PROTECTED   // Access code required
+    PUBLIC
+    PRIVATE
+    PROTECTED
 }
 
 enum SpaceCategory {
@@ -29,22 +29,22 @@ enum SpaceCategory {
 }
 
 enum SpaceMemberRole {
-    CREATOR  // Space creator/admin
-    MEMBER   // Regular member
+    CREATOR
+    MEMBER   
 }
 
 enum SpaceStepContentType {
-    LINK         // External link (docs, articles)
-    VIDEO        // YouTube/Vimeo video
-    PROJECT      // Link to ProjectV2
-    CONCEPT      // Link to Concept
-    STUDIO       // Link to Studio
-    QUIZ         // Quiz (embedded or Studio quiz)
-    FLASHCARD    // Flashcard deck (Studio flashcard)
-    MOCK         // Mock interview (Project mock)
-    PDF          // PDF document
-    TEXT         // Plain text content
-    AI_GENERATED // AI-generated content
+    LINK         
+    VIDEO        
+    PROJECT      
+    CONCEPT      
+    STUDIO      
+    QUIZ         
+    FLASHCARD    
+    MOCK         
+    PDF          
+    TEXT         
+    AI_GENERATED
 }
 
 enum SpaceStepStatus {
@@ -54,9 +54,9 @@ enum SpaceStepStatus {
 }
 
 enum SpaceBranchVisibility {
-    PRIVATE // Only creator sees
-    SHARED  // Others can opt-in
-    PUBLIC  // Visible to all space members
+    PRIVATE
+    SHARED
+    PUBLIC
 }
 
 enum SpaceActivityType {

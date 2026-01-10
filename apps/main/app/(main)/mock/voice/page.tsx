@@ -576,8 +576,8 @@ export default function VoiceMockInterviewPage() {
             </section>
 
             <CreateMockSheet
-                isOpen={createSheetOpen}
-                onClose={() => setCreateSheetOpen(false)}
+                open={createSheetOpen}
+                onOpenChange={setCreateSheetOpen}
                 userCredits={credits}
             />
             <PurchaseMockSheet

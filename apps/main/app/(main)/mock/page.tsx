@@ -14,7 +14,6 @@ import {
 } from 'lucide-react'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getMockInterviewStats } from '@/actions/(main)/mockvoice/stats.action'
-import SmoothScroll from '@/components/smoothscroll'
 
 const mockInterviewTypes = [
     {

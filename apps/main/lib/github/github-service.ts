@@ -175,7 +175,7 @@ export async function getContributingGuide(owner: string, repo: string): Promise
         })
         
         return typeof data === 'string' ? data : null
-    } catch (error) {
+    } catch {
         // CONTRIBUTING.md might not exist
         return null
     }
@@ -399,11 +399,45 @@ export async function getPullRequests(
             state: pr.state as 'open' | 'closed',
             merged: pr.merged_at !== null,
             merged_at: pr.merged_at,
-            merged_by: pr.merged_by ? {
-                id: pr.merged_by?.id || 0,
-                login: pr.merged_by?.login || '',
-                avatar_url: pr.merged_by?.avatar_url || '',
-                html_url: pr.merged_by?.html_url || '',
+            merged_by: (pr as { 
+                merged_by?: { 
+                    id: number; 
+                    login: string; 
+                    avatar_url: string; 
+                    html_url: string 
+                } | null }).merged_by ? {
+                id: (pr as { 
+                    merged_by?: { 
+                        id: number; 
+                        login: string; 
+                        avatar_url: string; 
+                        html_url: string 
+                    } | null 
+                }).merged_by?.id || 0,
+                login: (pr as { 
+                    merged_by?: { 
+                        id: number; 
+                        login: string; 
+                        avatar_url: string; 
+                        html_url: string 
+                    } | null 
+                }).merged_by?.login || '',
+                avatar_url: (pr as { 
+                    merged_by?: { 
+                        id: number; 
+                        login: string; 
+                        avatar_url: string; 
+                        html_url: string 
+                    } | null 
+                }).merged_by?.avatar_url || '',
+                html_url: (pr as { 
+                    merged_by?: { 
+                        id: number; 
+                        login: string; 
+                        avatar_url: string; 
+                        html_url: string 
+                    } | null 
+                }).merged_by?.html_url || '',
             } : null,
             created_at: pr.created_at,
             updated_at: pr.updated_at,
@@ -633,38 +667,48 @@ export async function syncProjectFromGitHub(projectId: string): Promise<{
         
         // Sync issues to database
         for (const issue of openIssues) {
-            await prisma.oSIssue.upsert({
+            // Find existing issue by githubIssueId or create new one
+            const existingIssue = await prisma.oSIssue.findFirst({
                 where: {
-                    projectId_githubIssueNumber: {
-                        projectId,
-                        githubIssueNumber: issue.number
-                    }
-                },
-                update: {
-                    title: issue.title,
-                    description: issue.body || '',
-                    githubIssueUrl: issue.html_url,
-                    githubIssueId: String(issue.id),
-                    labels: issue.labels.map(l => l.name),
-                    status: issue.state === 'open' ? 'OPEN' : 'COMPLETED',
-                    lastSyncedAt: new Date(),
-                },
-                create: {
                     projectId,
-                    githubIssueNumber: issue.number,
-                    githubIssueUrl: issue.html_url,
-                    githubIssueId: String(issue.id),
-                    title: issue.title,
-                    description: issue.body || '',
-                    labels: issue.labels.map(l => l.name),
-                    status: 'OPEN',
-                    difficulty: 'EASY', // Default, should be set manually
-                    requirements: [],
-                    acceptanceCriteria: [],
-                    hints: [],
-                    lastSyncedAt: new Date(),
+                    githubIssueId: String(issue.id)
                 }
-            })
+            });
+
+            if (existingIssue) {
+                await prisma.oSIssue.update({
+                    where: {
+                        id: existingIssue.id
+                    },
+                    data: {
+                        title: issue.title,
+                        description: issue.body || '',
+                        githubIssueUrl: issue.html_url,
+                        githubIssueId: String(issue.id),
+                        labels: issue.labels.map(l => l.name),
+                        status: issue.state === 'open' ? 'OPEN' : 'COMPLETED',
+                        lastSyncedAt: new Date(),
+                    }
+                });
+            } else {
+                await prisma.oSIssue.create({
+                    data: {
+                        projectId,
+                        githubIssueNumber: issue.number,
+                        githubIssueUrl: issue.html_url,
+                        githubIssueId: String(issue.id),
+                        title: issue.title,
+                        description: issue.body || '',
+                        labels: issue.labels.map(l => l.name),
+                        status: 'OPEN',
+                        difficulty: 'EASY', // Default, should be set manually
+                        requirements: [],
+                        acceptanceCriteria: [],
+                        hints: [],
+                        lastSyncedAt: new Date(),
+                    }
+                });
+            }
         }
         
         return { success: true }

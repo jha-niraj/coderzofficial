@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Send, X, Sparkles, Wand2, Terminal, Cpu, Zap
@@ -12,7 +13,14 @@ import { chatWithAI } from "@/actions/tools/ai.action"
 import { cn } from "@repo/ui/lib/utils"
 import { useSidebar } from "@/components/common/sidebarprovider"
 
+// Pages where the AI Chat should be hidden
+const HIDDEN_PATHS = [
+    '/studio/', // Studio detail pages
+    '/space/',  // Space detail pages
+]
+
 export function AIChat() {
+    const pathname = usePathname()
     const { isAISidebarOpen, setIsAISidebarOpen, setIsCollapsed } = useSidebar()
     const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
         { role: "assistant", content: "👋 Hey there! I'm CoderzHQ AI - your learning companion. Ask me anything about the platform, projects, challenges, or how to get started!" }
@@ -21,6 +29,22 @@ export function AIChat() {
     const [isLoading, setIsLoading] = useState(false)
     const [showSlashMenu, setShowSlashMenu] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
+
+    // Check if we should hide the AI chat on current page
+    const shouldHide = HIDDEN_PATHS.some(path => {
+        // For /studio/ path, hide on /studio/[anything]
+        // For /space/ path, hide on /space/[anything]
+        if (path.endsWith('/')) {
+            // Check if current path starts with this prefix and has more segments
+            const baseSegments = path.split('/').filter(Boolean)
+            const currentSegments = pathname.split('/').filter(Boolean)
+            
+            if (currentSegments.length > baseSegments.length) {
+                return currentSegments.slice(0, baseSegments.length).join('/') === baseSegments.join('/')
+            }
+        }
+        return pathname.startsWith(path)
+    })
 
     const tools = [
         { name: "Projects Guide", icon: <Terminal className="h-4 w-4" />, command: "Tell me about the Projects Hub" },
@@ -40,6 +64,14 @@ export function AIChat() {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight
         }
     }, [messages])
+
+    // Close AI sidebar when navigating to hidden pages
+    useEffect(() => {
+        if (shouldHide && isAISidebarOpen) {
+            setIsAISidebarOpen(false)
+            setIsCollapsed(false)
+        }
+    }, [shouldHide, isAISidebarOpen, setIsAISidebarOpen, setIsCollapsed])
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return
@@ -92,9 +124,14 @@ export function AIChat() {
         }
     }
 
+    // Don't render on hidden pages
+    if (shouldHide) {
+        return null
+    }
+
     return (
         <>
-            <div className="fixed bottom-6 right-6">
+            <div className="fixed bottom-6 right-6 z-50">
                 <Button
                     onClick={toggleAI}
                     className={cn(
@@ -157,8 +194,8 @@ export function AIChat() {
                             exit={{ opacity: 0, rotate: 90 }}
                             className="cursor-pointer"
                             onClick={() => {
-                                setIsAISidebarOpen(false),
-                                setIsCollapsed(false)
+                                setIsAISidebarOpen(false);
+                                setIsCollapsed(false);
                             }}
                         >
                             <X className="h-6 w-6" />
