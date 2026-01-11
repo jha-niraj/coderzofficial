@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { getPublicProjects } from '@/actions/(main)/projects/project.action'
-import { 
-    ProjectCard, ProjectCardSkeleton 
+import {
+    ProjectCard, ProjectCardSkeleton
 } from '@/components/projects/project-card'
-import { Button } from '@repo/ui/components/ui/button'
-import Link from 'next/link'
-import { 
-    Rocket, Terminal, AlertCircle 
+import {
+    Terminal, AlertCircle
 } from 'lucide-react'
 import { ProjectV2Basic } from '@/types/project'
+import ProjectGenerateSheet from '@/components/projects/project-generate-sheet'
 
 export function PublicProjectsGrid() {
     const [projects, setProjects] = useState<ProjectV2Basic[]>([])
@@ -68,12 +67,7 @@ export function PublicProjectsGrid() {
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-6">
                     No public projects have been deployed to the registry yet. Be the first to ship.
                 </p>
-                <Link href="/projects/generate">
-                    <Button className="cursor-pointer rounded-full bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900">
-                        <Rocket className="mr-2 h-4 w-4" />
-                        Initialize First Project
-                    </Button>
-                </Link>
+                <ProjectGenerateSheet />
             </div>
         )
     }

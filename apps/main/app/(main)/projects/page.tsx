@@ -18,6 +18,7 @@ import {
 	RecentSubmissionsGrid
 } from "@/app/(main)/projects/_components/recent-submissions-grid"
 import SmoothScroll from "@/components/smoothscroll"
+import ProjectGenerateSheet from "@/components/projects/project-generate-sheet"
 
 const features = [
 	{
@@ -52,29 +53,6 @@ const stats = [
 	{ label: "Tasks Completed", value: "125K", icon: CheckCircle2, suffix: "+" },
 	{ label: "Success Rate", value: "94", icon: Trophy, suffix: "%" },
 ]
-
-// const benefits = [
-// 	{
-// 		icon: Shield,
-// 		title: "Production-Ready Skills",
-// 		description: "Build projects that employers actually want to see"
-// 	},
-// 	{
-// 		icon: Timer,
-// 		title: "Learn 10x Faster",
-// 		description: "Hands-on learning beats passive tutorials every time"
-// 	},
-// 	{
-// 		icon: Github,
-// 		title: "Portfolio Projects",
-// 		description: "Create a GitHub portfolio that stands out from the crowd"
-// 	},
-// 	{
-// 		icon: Lightbulb,
-// 		title: "Real Problem Solving",
-// 		description: "Tackle challenges you'll face in actual development jobs"
-// 	}
-// ]
 
 export default function ProjectsHomePage() {
 	const scrollToProjects = () => {
@@ -138,12 +116,7 @@ export default function ProjectsHomePage() {
 								transition={{ delay: 0.4, duration: 0.6 }}
 							>
 								<div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-									<Link href="/projects/generate" className="w-full sm:w-auto">
-										<Button className="w-full sm:w-auto h-14 px-8 text-base bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 rounded-xl shadow-xl shadow-neutral-900/10 transition-all hover:-translate-y-0.5 font-semibold">
-											<Rocket className="mr-2 h-5 w-5" />
-											Generate My Project
-										</Button>
-									</Link>
+									<ProjectGenerateSheet />
 									<Link href="/projects/ideas" className="w-full sm:w-auto">
 										<Button
 											variant="outline"
@@ -417,12 +390,7 @@ export default function ProjectsHomePage() {
 								Join thousands of developers who are building real projects, earning XP, and advancing their careers through hands-on learning.
 							</p>
 							<div className="flex flex-col sm:flex-row gap-4 justify-center">
-								<Link href="/projects/generate">
-									<Button size="lg" className="bg-black text-white dark:bg-white dark:text-black hover:opacity-90 px-8 py-6 text-lg font-semibold rounded-xl shadow-lg transition-all">
-										<Sparkles className="mr-2 h-5 w-5" />
-										Start Building Now
-									</Button>
-								</Link>
+								<ProjectGenerateSheet />
 								<Link href="/projects/leaderboard">
 									<Button variant="outline" size="lg" className="border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 px-8 py-6 text-lg font-semibold rounded-xl bg-white dark:bg-neutral-900">
 										<Trophy className="mr-2 h-5 w-5" />

@@ -19,14 +19,14 @@ export default async function CreateConceptPage() {
     }
 
     // Check if user is admin
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { role: true },
-    });
+    // const user = await prisma.user.findUnique({
+    //     where: { id: session.user.id },
+    //     select: { role: true },
+    // });
 
-    if (user?.role !== "Admin") {
-        redirect("/concepts");
-    }
+    // if (user?.role !== "Admin") {
+    //     redirect("/concepts");
+    // }
 
     return (
         <div className="min-h-screen bg-background">

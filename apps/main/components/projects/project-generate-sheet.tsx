@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Code2, Brain, Rocket,
-    Zap, Globe, Lock, Eye, AlertCircle
+    Zap, Globe, Lock, Eye, AlertCircle, Compass, Bell, Clock
 } from 'lucide-react'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
@@ -81,6 +81,8 @@ export default function ProjectGenerateSheet({
     const [searchingProjects, setSearchingProjects] = useState(false)
     const [similarProjects, setSimilarProjects] = useState<ProjectV2Basic[]>([])
     const [hasSearched, setHasSearched] = useState(false)
+    const [currentJobId, setCurrentJobId] = useState<string | null>(null)
+    const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
     const [formData, setFormData] = useState<Partial<FormData>>({
         projectTitle: defaultValues?.title || '',
@@ -196,8 +198,9 @@ export default function ProjectGenerateSheet({
 
             setProgressPercent(0)
             setJobStatus('waiting')
+            setCurrentJobId(jobResult.jobId)
 
-            await startPolling(jobResult.jobId)
+            startPolling(jobResult.jobId)
         } catch (error) {
             console.error('Generation error:', error)
             if (error instanceof z.ZodError) {
@@ -209,11 +212,30 @@ export default function ProjectGenerateSheet({
         }
     }
 
-    const startPolling = useCallback(async (jobId: string) => {
+    const stopPolling = useCallback(() => {
+        if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+            pollingRef.current = null
+        }
+    }, [])
+
+    const handleExplorePlatform = useCallback(() => {
+        stopPolling()
+        toast.info('You\'ll receive a notification when your project is ready!', {
+            icon: <Bell className="w-4 h-4" />,
+            duration: 5000,
+        })
+        setOpen(false)
+        setLoading(false)
+        resetForm()
+        router.push('/explore')
+    }, [stopPolling, router])
+
+    const startPolling = useCallback((jobId: string) => {
         const maxPolls = 120
         let pollCount = 0
 
-        const pollInterval = setInterval(async () => {
+        pollingRef.current = setInterval(async () => {
             pollCount++
 
             try {
@@ -226,7 +248,7 @@ export default function ProjectGenerateSheet({
                 })
 
                 if (!response.ok) {
-                    clearInterval(pollInterval)
+                    stopPolling()
                     toast.error('Failed to check job status')
                     setLoading(false)
                     return
@@ -241,7 +263,7 @@ export default function ProjectGenerateSheet({
                 await syncJobStatus(jobId, status, progress, data, failedReason)
 
                 if (status === 'completed' && data) {
-                    clearInterval(pollInterval)
+                    stopPolling()
                     setProgressPercent(100)
                     setJobStatus('completed')
 
@@ -263,31 +285,28 @@ export default function ProjectGenerateSheet({
                         onSuccess(projectSlug)
                     } else if (spaceId) {
                         // When called from space, don't redirect - let the timeline handle it
-                        // The onSuccess callback should update the space timeline
                     } else {
                         router.push(`/projects/${projectSlug}`)
                     }
                 } else if (status === 'failed') {
-                    clearInterval(pollInterval)
+                    stopPolling()
                     toast.error(failedReason || 'Generation failed')
                     setLoading(false)
                 } else if (pollCount >= maxPolls) {
-                    clearInterval(pollInterval)
+                    stopPolling()
                     toast.error('Generation timeout. Please try again.')
                     setLoading(false)
                 }
             } catch (error) {
                 console.log("Polling error:", error)
                 if (pollCount >= maxPolls) {
-                    clearInterval(pollInterval)
+                    stopPolling()
                     toast.error('Failed to connect to worker.')
                     setLoading(false)
                 }
             }
         }, 5000)
-
-        return () => clearInterval(pollInterval)
-    }, [router, onSuccess, spaceId])
+    }, [router, onSuccess, spaceId, stopPolling])
 
     const resetForm = () => {
         setCurrentStep(0)
@@ -314,6 +333,7 @@ export default function ProjectGenerateSheet({
         })
         setSimilarProjects([])
         setHasSearched(false)
+        setCurrentJobId(null)
     }
 
     const baseCost = formData.visibility === "PUBLIC" ? 13 : 25
@@ -333,7 +353,16 @@ export default function ProjectGenerateSheet({
     return (
         <Sheet open={open} onOpenChange={(isOpen) => {
             setOpen(isOpen)
-            if (!isOpen) {
+            if (!isOpen && loading && currentJobId) {
+                // User closed while generating - stop polling but job continues
+                stopPolling()
+                toast.info('Generation continues in background. You\'ll be notified when ready!', {
+                    icon: <Bell className="w-4 h-4" />,
+                    duration: 5000,
+                })
+                resetForm()
+                setLoading(false)
+            } else if (!isOpen) {
                 resetForm()
                 setLoading(false)
             }
@@ -341,7 +370,7 @@ export default function ProjectGenerateSheet({
             <SheetTrigger asChild>
                 {
                     trigger || (
-                        <Button className="flex items-center gap-2">
+                        <Button className="text-white dark:text-black flex gap-2 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 px-8 py-6 text-lg font-semibold rounded-xl bg-neutral-900 dark:bg-white">
                             <Sparkles className="w-4 h-4" />
                             Generate Project
                         </Button>
@@ -442,6 +471,21 @@ export default function ProjectGenerateSheet({
                                             </span>
                                         </motion.div>
                                     ))}
+                                </div>
+
+                                {/* Explore Platform Button */}
+                                <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3 text-center">
+                                        Don&apos;t want to wait? We&apos;ll notify you when it&apos;s ready!
+                                    </p>
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleExplorePlatform}
+                                        className="w-full flex items-center justify-center gap-2"
+                                    >
+                                        <Compass className="w-4 h-4" />
+                                        Explore the Platform
+                                    </Button>
                                 </div>
                             </motion.div>
                         ) : (
@@ -763,18 +807,32 @@ export default function ProjectGenerateSheet({
                                                 </div>
 
                                                 {/* Assessment Toggle */}
-                                                <div className="flex items-center justify-between p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-                                                    <div className="flex items-center gap-3">
-                                                        <Brain className="w-5 h-5 text-purple-500" />
-                                                        <div>
-                                                            <Label>Quiz & Mock Interview</Label>
-                                                            <p className="text-xs text-neutral-500">+30 credits</p>
+                                                <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <Brain className="w-5 h-5 text-purple-500" />
+                                                            <div>
+                                                                <Label>Generate Quiz & Mock Knowledge</Label>
+                                                                <p className="text-xs text-neutral-500">+30 credits</p>
+                                                            </div>
                                                         </div>
+                                                        <Switch
+                                                            checked={formData.includeAssessment}
+                                                            onCheckedChange={(checked) => updateFormData('includeAssessment', checked)}
+                                                        />
                                                     </div>
-                                                    <Switch
-                                                        checked={formData.includeAssessment}
-                                                        onCheckedChange={(checked) => updateFormData('includeAssessment', checked)}
-                                                    />
+                                                    {formData.includeAssessment ? (
+                                                        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                                                            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                                                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                                                                This will take <strong>longer</strong> to generate as it creates comprehensive quiz questions and mock interview knowledge base.
+                                                            </p>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                                            You can generate quiz and mock interview content later when you need it.
+                                                        </p>
+                                                    )}
                                                 </div>
 
                                                 {/* Cost Summary */}

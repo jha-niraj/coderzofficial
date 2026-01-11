@@ -18,6 +18,7 @@ import { issueWorkerToken } from '@/actions/(main)/workers/projectsworker.action
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
 // Supported languages configuration
+// NOTE: These are the only languages the compiler worker supports
 const SUPPORTED_LANGUAGES = [
     { value: "javascript", label: "JavaScript" },
     { value: "typescript", label: "TypeScript" },
@@ -25,6 +26,10 @@ const SUPPORTED_LANGUAGES = [
     { value: "java", label: "Java" },
     { value: "cpp", label: "C++" },
     { value: "c", label: "C" },
+] as const;
+
+// Languages supported for syntax highlighting but not execution
+const DISPLAY_ONLY_LANGUAGES = [
     { value: "csharp", label: "C#" },
     { value: "go", label: "Go" },
     { value: "rust", label: "Rust" },
@@ -40,6 +45,15 @@ const SUPPORTED_LANGUAGES = [
     { value: "markdown", label: "Markdown" },
     { value: "shell", label: "Shell/Bash" },
 ] as const;
+
+// Combined for display purposes
+const ALL_LANGUAGES = [...SUPPORTED_LANGUAGES, ...DISPLAY_ONLY_LANGUAGES];
+
+// Type for executable languages
+type ExecutableLanguage = typeof SUPPORTED_LANGUAGES[number]['value'];
+
+// Executable languages array (for checking if we can run code)
+const EXECUTABLE_LANGUAGES: readonly ExecutableLanguage[] = SUPPORTED_LANGUAGES.map(l => l.value);
 
 const languageMap: Record<string, string> = {
     javascript: "javascript",
@@ -195,6 +209,12 @@ export default function CodeEditor({
             return;
         }
 
+        // Check if language is supported for execution
+        if (!EXECUTABLE_LANGUAGES.includes(currentLanguage as ExecutableLanguage)) {
+            toast.error(`${currentLanguage} execution is not supported. Supported languages: JavaScript, TypeScript, Python, Java, C, C++`);
+            return;
+        }
+
         setInternalIsRunning(true);
         try {
             // Get token
@@ -284,10 +304,13 @@ export default function CodeEditor({
         return languageMap[lang] || lang;
     };
 
-    // Filter languages if allowedLanguages is provided
+    // Check if current language can be executed
+    const canExecute = EXECUTABLE_LANGUAGES.includes(currentLanguage as ExecutableLanguage);
+
+    // Filter languages if allowedLanguages is provided, otherwise show all
     const availableLanguages = allowedLanguages
-        ? SUPPORTED_LANGUAGES.filter(l => allowedLanguages.includes(l.value))
-        : SUPPORTED_LANGUAGES;
+        ? ALL_LANGUAGES.filter(l => allowedLanguages.includes(l.value))
+        : ALL_LANGUAGES;
 
     return (
         <div
@@ -320,6 +343,9 @@ export default function CodeEditor({
                                         availableLanguages.map((lang) => (
                                             <SelectItem key={lang.value} value={lang.value} className="text-xs">
                                                 {lang.label}
+                                                {!EXECUTABLE_LANGUAGES.includes(lang.value as ExecutableLanguage) &&
+                                                    <span className="ml-1 text-neutral-400">(view only)</span>
+                                                }
                                             </SelectItem>
                                         ))
                                     }
@@ -327,7 +353,7 @@ export default function CodeEditor({
                             </Select>
                         ) : (
                             <div className="text-xs font-medium text-neutral-600 dark:text-neutral-400 px-2 py-1 bg-neutral-100 dark:bg-neutral-700 rounded">
-                                {SUPPORTED_LANGUAGES.find(l => l.value === currentLanguage)?.label || currentLanguage}
+                                {ALL_LANGUAGES.find(l => l.value === currentLanguage)?.label || currentLanguage}
                             </div>
                         )
                     }
@@ -376,7 +402,7 @@ export default function CodeEditor({
                         )
                     }
                     {
-                        showRunButton && (onRun || enableExecution) && !readOnly && (
+                        showRunButton && (onRun || enableExecution) && !readOnly && canExecute && (
                             <Button
                                 variant="outline"
                                 size="sm"

@@ -94,9 +94,9 @@ export const mainNavigation: NavigationConfig = {
             status: "active",
             children: [
                 { 
-                    name: 'Generate', 
-                    path: 'projects/generate', 
-                    icon: Sparkles 
+                    name: 'Projects', 
+                    path: 'projects', 
+                    icon: FolderKanban 
                 },
                 { 
                     name: 'Ideas', 

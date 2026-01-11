@@ -147,177 +147,177 @@ export default function AddContentSheet({
         }}>
             <SheetTrigger asChild>
                 {
-                trigger || (
-                    <Button className="flex items-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        Add Content
-                    </Button>
-                )
+                    trigger || (
+                        <Button className="flex items-center gap-2">
+                            <Plus className="w-4 h-4" />
+                            Add Content
+                        </Button>
+                    )
                 }
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
                 <div className="max-w-3xl mx-auto">
                     <AnimatePresence mode="wait">
                         {
-                        !selectedType ? (
-                            <motion.div
-                                key="selector"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                            >
-                                <SheetHeader className="mb-8">
-                                    <SheetTitle className="text-2xl flex items-center gap-3">
-                                        <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
-                                            <Plus className="w-6 h-6 text-white" />
-                                        </div>
-                                        Add Content to Timeline
-                                    </SheetTitle>
-                                    <SheetDescription>
-                                        Choose what type of content you want to add to this Space
-                                    </SheetDescription>
-                                </SheetHeader>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {
-                                    contentOptions.map((option, index) => {
-                                        const Icon = option.icon;
-                                        return (
-                                            <motion.button
-                                                key={option.type}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: index * 0.05 }}
-                                                onClick={() => handleTypeSelect(option.type)}
-                                                className="group relative p-5 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all text-left bg-white dark:bg-neutral-900"
-                                            >
-                                                <div className="flex items-start gap-4">
-                                                    <div className={cn(
-                                                        "p-3 rounded-xl bg-gradient-to-br text-white shrink-0",
-                                                        option.color
-                                                    )}>
-                                                        <Icon className="w-5 h-5" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                            {option.label}
-                                                        </h3>
-                                                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                                                            {option.description}
-                                                        </p>
-                                                    </div>
-                                                    <ArrowRight className="w-5 h-5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                                                </div>
-                                            </motion.button>
-                                        );
-                                    })
-                                    }
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key={selectedType}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                            >
-                                <div className="flex items-center gap-4 mb-6">
-                                    <Button variant="ghost" size="sm" onClick={handleBack} disabled={generating}>
-                                        <ArrowLeft className="w-4 h-4 mr-2" />
-                                        Back
-                                    </Button>
-                                </div>
-                                
-                                {
-                                selectedType === 'project' && (
-                                    <ProjectGenerateSheet
-                                        trigger={
-                                            <div className="text-center py-8">
-                                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mx-auto mb-4">
-                                                    <Rocket className="w-10 h-10 text-white" />
-                                                </div>
-                                                <h3 className="text-2xl font-bold mb-2">Generate Project</h3>
-                                                <p className="text-neutral-500 mb-6 max-w-md mx-auto">
-                                                    Create a complete project with tasks and concepts. The project will be added to your timeline.
-                                                </p>
-                                                <Button size="lg" className="gap-2">
-                                                    <Sparkles className="w-5 h-5" />
-                                                    Start Generating
-                                                </Button>
+                            !selectedType ? (
+                                <motion.div
+                                    key="selector"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                >
+                                    <SheetHeader className="mb-8">
+                                        <SheetTitle className="text-2xl flex items-center gap-3">
+                                            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+                                                <Plus className="w-6 h-6 text-white" />
                                             </div>
+                                            Add Content to Timeline
+                                        </SheetTitle>
+                                        <SheetDescription>
+                                            Choose what type of content you want to add to this Space
+                                        </SheetDescription>
+                                    </SheetHeader>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {
+                                            contentOptions.map((option, index) => {
+                                                const Icon = option.icon;
+                                                return (
+                                                    <motion.button
+                                                        key={option.type}
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: index * 0.05 }}
+                                                        onClick={() => handleTypeSelect(option.type)}
+                                                        className="group relative p-5 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all text-left bg-white dark:bg-neutral-900"
+                                                    >
+                                                        <div className="flex items-start gap-4">
+                                                            <div className={cn(
+                                                                "p-3 rounded-xl bg-gradient-to-br text-white shrink-0",
+                                                                option.color
+                                                            )}>
+                                                                <Icon className="w-5 h-5" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                    {option.label}
+                                                                </h3>
+                                                                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                                                                    {option.description}
+                                                                </p>
+                                                            </div>
+                                                            <ArrowRight className="w-5 h-5 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                                        </div>
+                                                    </motion.button>
+                                                );
+                                            })
                                         }
-                                        spaceId={spaceId}
-                                        onSuccess={handleProjectSuccess}
-                                    />
-                                )
-                                }
-                                {
-                                selectedType === 'studio' && (
-                                    <CreateStudioSheet
-                                        trigger={
-                                            <div className="text-center py-8">
-                                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
-                                                    <FileText className="w-10 h-10 text-white" />
-                                                </div>
-                                                <h3 className="text-2xl font-bold mb-2">Create Studio</h3>
-                                                <p className="text-neutral-500 mb-6 max-w-md mx-auto">
-                                                    Create notes and learning materials. The studio will be added to your timeline.
-                                                </p>
-                                                <Button size="lg" className="gap-2">
-                                                    <Plus className="w-5 h-5" />
-                                                    Create Studio
-                                                </Button>
-                                            </div>
-                                        }
-                                        spaceId={spaceId}
-                                        onSuccess={handleStudioSuccess}
-                                    />
-                                )
-                                }
-                                {
-                                selectedType === 'quiz' && (
-                                    <QuizCreator
-                                        spaceId={spaceId}
-                                        onSuccess={handleSuccess}
-                                        generating={generating}
-                                        setGenerating={setGenerating}
-                                    />
-                                )
-                                }
-                                {
-                                selectedType === 'flashcard' && (
-                                    <FlashcardCreator
-                                        spaceId={spaceId}
-                                        onSuccess={handleSuccess}
-                                        generating={generating}
-                                        setGenerating={setGenerating}
-                                    />
-                                )
-                                }
-                                {
-                                selectedType === 'link' && (
-                                    <LinkAdder spaceId={spaceId} onSuccess={handleSuccess} />
-                                )
-                                }
-                                {
-                                selectedType === 'video' && (
-                                    <VideoAdder spaceId={spaceId} onSuccess={handleSuccess} />
-                                )
-                                }
-                                {
-                                (selectedType === 'concept' || selectedType === 'mock') && (
-                                    <div className="text-center py-12">
-                                        <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
-                                            {selectedType === 'concept' ? <BookOpen className="w-10 h-10 text-neutral-400" /> : <Mic className="w-10 h-10 text-neutral-400" />}
-                                        </div>
-                                        <h3 className="text-2xl font-bold mb-2">Coming Soon</h3>
-                                        <p className="text-neutral-500">
-                                            This feature is under development
-                                        </p>
                                     </div>
-                                )
-                                }
-                            </motion.div>
-                        )
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key={selectedType}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                >
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <Button variant="ghost" size="sm" onClick={handleBack} disabled={generating}>
+                                            <ArrowLeft className="w-4 h-4 mr-2" />
+                                            Back
+                                        </Button>
+                                    </div>
+
+                                    {
+                                        selectedType === 'project' && (
+                                            <ProjectGenerateSheet
+                                                trigger={
+                                                    <div className="text-center py-8">
+                                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mx-auto mb-4">
+                                                            <Rocket className="w-10 h-10 text-white" />
+                                                        </div>
+                                                        <h3 className="text-2xl font-bold mb-2">Generate Project</h3>
+                                                        <p className="text-neutral-500 mb-6 max-w-md mx-auto">
+                                                            Create a complete project with tasks and concepts. The project will be added to your timeline.
+                                                        </p>
+                                                        <Button size="lg" className="gap-2">
+                                                            <Sparkles className="w-5 h-5" />
+                                                            Start Generating
+                                                        </Button>
+                                                    </div>
+                                                }
+                                                spaceId={spaceId}
+                                                onSuccess={handleProjectSuccess}
+                                            />
+                                        )
+                                    }
+                                    {
+                                        selectedType === 'studio' && (
+                                            <CreateStudioSheet
+                                                trigger={
+                                                    <div className="text-center py-8">
+                                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
+                                                            <FileText className="w-10 h-10 text-white" />
+                                                        </div>
+                                                        <h3 className="text-2xl font-bold mb-2">Create Studio</h3>
+                                                        <p className="text-neutral-500 mb-6 max-w-md mx-auto">
+                                                            Create notes and learning materials. The studio will be added to your timeline.
+                                                        </p>
+                                                        <Button size="lg" className="gap-2">
+                                                            <Plus className="w-5 h-5" />
+                                                            Create Studio
+                                                        </Button>
+                                                    </div>
+                                                }
+                                                spaceId={spaceId}
+                                                onSuccess={handleStudioSuccess}
+                                            />
+                                        )
+                                    }
+                                    {
+                                        selectedType === 'quiz' && (
+                                            <QuizCreator
+                                                spaceId={spaceId}
+                                                onSuccess={handleSuccess}
+                                                generating={generating}
+                                                setGenerating={setGenerating}
+                                            />
+                                        )
+                                    }
+                                    {
+                                        selectedType === 'flashcard' && (
+                                            <FlashcardCreator
+                                                spaceId={spaceId}
+                                                onSuccess={handleSuccess}
+                                                generating={generating}
+                                                setGenerating={setGenerating}
+                                            />
+                                        )
+                                    }
+                                    {
+                                        selectedType === 'link' && (
+                                            <LinkAdder spaceId={spaceId} onSuccess={handleSuccess} />
+                                        )
+                                    }
+                                    {
+                                        selectedType === 'video' && (
+                                            <VideoAdder spaceId={spaceId} onSuccess={handleSuccess} />
+                                        )
+                                    }
+                                    {
+                                        (selectedType === 'concept' || selectedType === 'mock') && (
+                                            <div className="text-center py-12">
+                                                <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
+                                                    {selectedType === 'concept' ? <BookOpen className="w-10 h-10 text-neutral-400" /> : <Mic className="w-10 h-10 text-neutral-400" />}
+                                                </div>
+                                                <h3 className="text-2xl font-bold mb-2">Coming Soon</h3>
+                                                <p className="text-neutral-500">
+                                                    This feature is under development
+                                                </p>
+                                            </div>
+                                        )
+                                    }
+                                </motion.div>
+                            )
                         }
                     </AnimatePresence>
                 </div>
@@ -373,7 +373,7 @@ function QuizCreator({
             isLoading: true,
             error: null,
         };
-        
+
         // Add to store immediately (optimistic)
         addStep(optimisticStep);
         onSuccess(); // Close sheet immediately
@@ -445,11 +445,11 @@ function QuizCreator({
                     >
                         <div className="w-20 h-20 rounded-full bg-white dark:bg-neutral-950 flex items-center justify-center">
                             {
-                            progress === 100 ? (
-                                <Check className="w-10 h-10 text-green-500" />
-                            ) : (
-                                <Brain className="w-10 h-10 text-emerald-500" />
-                            )
+                                progress === 100 ? (
+                                    <Check className="w-10 h-10 text-green-500" />
+                                ) : (
+                                    <Brain className="w-10 h-10 text-emerald-500" />
+                                )
                             }
                         </div>
                     </motion.div>
@@ -582,7 +582,7 @@ function FlashcardCreator({
             isLoading: true,
             error: null,
         };
-        
+
         // Add to store immediately (optimistic)
         addStep(optimisticStep);
         onSuccess(); // Close sheet immediately
@@ -652,11 +652,11 @@ function FlashcardCreator({
                     >
                         <div className="w-20 h-20 rounded-full bg-white dark:bg-neutral-950 flex items-center justify-center">
                             {
-                            progress === 100 ? (
-                                <Check className="w-10 h-10 text-green-500" />
-                            ) : (
-                                <Layers className="w-10 h-10 text-amber-500" />
-                            )
+                                progress === 100 ? (
+                                    <Check className="w-10 h-10 text-green-500" />
+                                ) : (
+                                    <Layers className="w-10 h-10 text-amber-500" />
+                                )
                             }
                         </div>
                     </motion.div>
@@ -744,7 +744,7 @@ function LinkAdder({ spaceId, onSuccess }: { spaceId: string; onSuccess: () => v
         }
 
         setLoading(true);
-        
+
         // Create optimistic step
         const tempId = `temp-link-${Date.now()}`;
         const optimisticStep: OptimisticStep = {
@@ -764,7 +764,7 @@ function LinkAdder({ spaceId, onSuccess }: { spaceId: string; onSuccess: () => v
             isLoading: true,
             error: null,
         };
-        
+
         // Add to store immediately (optimistic)
         addStep(optimisticStep);
         onSuccess(); // Close sheet immediately
@@ -845,7 +845,7 @@ function LinkAdder({ spaceId, onSuccess }: { spaceId: string; onSuccess: () => v
                     {loading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</>
                     ) : (
-                     
+
                         <><Plus className="w-4 h-4 mr-2" /> Add Link</>
                     )}
                 </Button>
@@ -869,7 +869,7 @@ function VideoAdder({ spaceId, onSuccess }: { spaceId: string; onSuccess: () => 
         }
 
         setLoading(true);
-        
+
         // Create optimistic step
         const tempId = `temp-video-${Date.now()}`;
         const optimisticStep: OptimisticStep = {
@@ -889,7 +889,7 @@ function VideoAdder({ spaceId, onSuccess }: { spaceId: string; onSuccess: () => 
             isLoading: true,
             error: null,
         };
-        
+
         // Add to store immediately (optimistic)
         addStep(optimisticStep);
         onSuccess(); // Close sheet immediately

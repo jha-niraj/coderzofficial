@@ -226,17 +226,14 @@ export default function ConceptCreateForm() {
         }, 1200);
     };
 
-    // --- Render ---
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 selection:bg-neutral-200 dark:selection:bg-neutral-800 font-sans">
 
-            {/* Background Visuals */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-0" />
             <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-neutral-50 to-transparent dark:from-neutral-900 dark:to-transparent pointer-events-none z-0" />
 
             <div className="relative z-10 max-w-[1600px] mx-auto p-4 md:p-8 flex flex-col h-full min-h-screen gap-6">
 
-                {/* HEADER */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-50 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl py-3 -mx-4 px-4 border-b border-neutral-100 dark:border-neutral-800 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800">
@@ -256,8 +253,6 @@ export default function ConceptCreateForm() {
                         </Button>
                     </div>
                 </div>
-
-                {/* BASIC DETAILS */}
                 <section className="animate-in fade-in slide-in-from-bottom-4 duration-700 flex-shrink-0">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         <div className="lg:col-span-8 space-y-5">
@@ -280,7 +275,6 @@ export default function ConceptCreateForm() {
                                 />
                             </div>
                         </div>
-
                         <div className="lg:col-span-4">
                             <Card className="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
                                 <CardContent className="p-5 space-y-5">
@@ -292,9 +286,11 @@ export default function ConceptCreateForm() {
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {categories.map((cat) => (
-                                                        <SelectItem key={cat.value} value={cat.value} className="text-sm">{cat.label}</SelectItem>
-                                                    ))}
+                                                    {
+                                                        categories.map((cat) => (
+                                                            <SelectItem key={cat.value} value={cat.value} className="text-sm">{cat.label}</SelectItem>
+                                                        ))
+                                                    }
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -305,11 +301,13 @@ export default function ConceptCreateForm() {
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {difficulties.map((diff) => (
-                                                        <SelectItem key={diff.value} value={diff.value} className="text-sm">
-                                                            <Badge variant="outline" className={cn("rounded-sm px-1.5 py-0.5 text-xs font-normal", diff.color)}>{diff.label}</Badge>
-                                                        </SelectItem>
-                                                    ))}
+                                                    {
+                                                        difficulties.map((diff) => (
+                                                            <SelectItem key={diff.value} value={diff.value} className="text-sm">
+                                                                <Badge variant="outline" className={cn("rounded-sm px-1.5 py-0.5 text-xs font-normal", diff.color)}>{diff.label}</Badge>
+                                                            </SelectItem>
+                                                        ))
+                                                    }
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -317,11 +315,13 @@ export default function ConceptCreateForm() {
                                     <div className="space-y-1.5">
                                         <Label className="font-mono text-xs font-medium uppercase text-neutral-500">Tags</Label>
                                         <div className="flex flex-wrap gap-2 p-2 min-h-[3rem] bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 focus-within:ring-2 focus-within:ring-neutral-900 transition-all">
-                                            {tags.map(tag => (
-                                                <Badge key={tag} variant="secondary" className="rounded-md text-xs h-6 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 font-normal text-neutral-700 dark:text-neutral-300">
-                                                    {tag} <button onClick={() => removeTag(tag)} className="ml-1.5 hover:text-red-500">×</button>
-                                                </Badge>
-                                            ))}
+                                            {
+                                                tags.map(tag => (
+                                                    <Badge key={tag} variant="secondary" className="rounded-md text-xs h-6 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 font-normal text-neutral-700 dark:text-neutral-300">
+                                                        {tag} <button onClick={() => removeTag(tag)} className="ml-1.5 hover:text-red-500">×</button>
+                                                    </Badge>
+                                                ))
+                                            }
                                             <input
                                                 className="bg-transparent text-sm outline-none flex-1 min-w-[60px] px-1 placeholder:text-neutral-400"
                                                 placeholder="Add tag..."
@@ -339,7 +339,6 @@ export default function ConceptCreateForm() {
 
                 <Separator className="bg-neutral-200 dark:bg-neutral-800 flex-shrink-0" />
 
-                {/* LEARNING STEPS EDITOR */}
                 <section className="space-y-6 flex-1 flex flex-col min-h-0">
                     <div className="flex items-center justify-between flex-shrink-0">
                         <h2 className="text-xl font-bold tracking-tight flex items-center gap-2 text-neutral-900 dark:text-white">
@@ -353,50 +352,50 @@ export default function ConceptCreateForm() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
 
-                        {/* LEFT: NAVIGATOR - WRAPPED IN SCROLLAREA WITH FIXED HEIGHT */}
                         <div className="lg:col-span-3 h-full overflow-hidden">
                             <ScrollArea className="h-full pr-3">
                                 <div className="flex flex-col gap-3 pb-4">
-                                    {steps.map((step, index) => {
-                                        const isActive = activeStepIndex === index;
-                                        const TypeIcon = stepTypes.find(t => t.value === step.type)?.icon || FileText;
-                                        return (
-                                            <div
-                                                key={step.id}
-                                                onClick={() => setActiveStepIndex(index)}
-                                                className={cn(
-                                                    "group relative p-4 rounded-xl border transition-all duration-300 cursor-pointer select-none",
-                                                    isActive
-                                                        ? "bg-neutral-900 text-white border-neutral-900 shadow-lg dark:bg-white dark:text-neutral-900"
-                                                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
-                                                )}
-                                            >
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <Badge variant="outline" className={cn("font-mono text-[10px] tracking-wider border-current/20 px-1.5 py-0.5", isActive ? "text-white/80 dark:text-neutral-900/80" : "text-neutral-500")}>
-                                                        STEP {index + 1}
-                                                    </Badge>
-                                                    {steps.length > 1 && (
-                                                        <button onClick={(e) => { e.stopPropagation(); removeStep(index); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                                                            <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400" />
-                                                        </button>
+                                    {
+                                        steps.map((step, index) => {
+                                            const isActive = activeStepIndex === index;
+                                            const TypeIcon = stepTypes.find(t => t.value === step.type)?.icon || FileText;
+                                            return (
+                                                <div
+                                                    key={step.id}
+                                                    onClick={() => setActiveStepIndex(index)}
+                                                    className={cn(
+                                                        "group relative p-4 rounded-xl border transition-all duration-300 cursor-pointer select-none",
+                                                        isActive
+                                                            ? "bg-neutral-900 text-white border-neutral-900 shadow-lg dark:bg-white dark:text-neutral-900"
+                                                            : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
                                                     )}
+                                                >
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <Badge variant="outline" className={cn("font-mono text-[10px] tracking-wider border-current/20 px-1.5 py-0.5", isActive ? "text-white/80 dark:text-neutral-900/80" : "text-neutral-500")}>
+                                                            STEP {index + 1}
+                                                        </Badge>
+                                                        {
+                                                            steps.length > 1 && (
+                                                                <button onClick={(e) => { e.stopPropagation(); removeStep(index); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                                                                    <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400" />
+                                                                </button>
+                                                            )
+                                                        }
+                                                    </div>
+                                                    <h4 className={cn("font-semibold text-sm truncate pr-2", isActive ? "text-white dark:text-neutral-900" : "text-neutral-700 dark:text-neutral-200")}>{step.title || "Untitled Step"}</h4>
+                                                    <div className={cn("flex items-center gap-1.5 mt-2 opacity-80", isActive ? "text-white/90 dark:text-neutral-900/90" : "text-neutral-500")}>
+                                                        <TypeIcon className="w-3.5 h-3.5" />
+                                                        <span className="text-[10px] uppercase font-semibold">{stepTypes.find(t => t.value === step.type)?.label}</span>
+                                                    </div>
                                                 </div>
-                                                <h4 className={cn("font-semibold text-sm truncate pr-2", isActive ? "text-white dark:text-neutral-900" : "text-neutral-700 dark:text-neutral-200")}>{step.title || "Untitled Step"}</h4>
-                                                <div className={cn("flex items-center gap-1.5 mt-2 opacity-80", isActive ? "text-white/90 dark:text-neutral-900/90" : "text-neutral-500")}>
-                                                    <TypeIcon className="w-3.5 h-3.5" />
-                                                    <span className="text-[10px] uppercase font-semibold">{stepTypes.find(t => t.value === step.type)?.label}</span>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
+                                            )
+                                        })
+                                    }
                                 </div>
                             </ScrollArea>
                         </div>
-
-                        {/* RIGHT: ACTIVE EDITOR - FIXED SCROLLING CONTAINER */}
                         <div className="lg:col-span-9 h-full">
                             <Card className="h-full border-neutral-200 dark:border-neutral-800 shadow-xl shadow-neutral-200/50 dark:shadow-black/50 rounded-3xl overflow-hidden flex flex-col bg-white dark:bg-neutral-950">
-                                {/* Step Header */}
                                 <div className="px-8 py-5 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/80 dark:bg-neutral-900/80 backdrop-blur-sm flex-shrink-0 z-10">
                                     <Input
                                         value={activeStep?.title}
@@ -411,89 +410,90 @@ export default function ConceptCreateForm() {
                                         </Badge>
                                     </div>
                                 </div>
-
-                                {/* SCROLL AREA CONTAINER - KEY FIX HERE using min-h-0 and flex-1 */}
                                 <div className="flex-1 min-h-0 relative">
                                     <ScrollArea className="h-full w-full">
                                         <div className="p-8 space-y-8 max-w-4xl mx-auto pb-20">
 
-                                            {/* 1. Content Module Selector */}
                                             <div className="space-y-3">
                                                 <Label className="font-mono text-xs font-medium uppercase text-neutral-500 pl-1">Module Type</Label>
                                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                                                    {stepTypes.map((type) => {
-                                                        const isSelected = activeStep?.type === type.value;
-                                                        return (
-                                                            <button
-                                                                key={type.value}
-                                                                onClick={() => updateStep(activeStepIndex, { type: type.value })}
-                                                                className={cn(
-                                                                    "flex flex-col items-center justify-center gap-2.5 p-3 rounded-xl border transition-all duration-200 h-24",
-                                                                    isSelected
-                                                                        ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 shadow-md"
-                                                                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                                                                )}
-                                                            >
-                                                                <type.icon className={cn("w-5 h-5", isSelected ? "text-inherit" : "text-neutral-400")} />
-                                                                <span className="text-[10px] font-bold text-center leading-tight tracking-wide">{type.label}</span>
-                                                            </button>
-                                                        )
-                                                    })}
+                                                    {
+                                                        stepTypes.map((type) => {
+                                                            const isSelected = activeStep?.type === type.value;
+                                                            return (
+                                                                <button
+                                                                    key={type.value}
+                                                                    onClick={() => updateStep(activeStepIndex, { type: type.value })}
+                                                                    className={cn(
+                                                                        "flex flex-col items-center justify-center gap-2.5 p-3 rounded-xl border transition-all duration-200 h-24",
+                                                                        isSelected
+                                                                            ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 shadow-md"
+                                                                            : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                                                                    )}
+                                                                >
+                                                                    <type.icon className={cn("w-5 h-5", isSelected ? "text-inherit" : "text-neutral-400")} />
+                                                                    <span className="text-[10px] font-bold text-center leading-tight tracking-wide">{type.label}</span>
+                                                                </button>
+                                                            )
+                                                        })
+                                                    }
                                                 </div>
                                             </div>
 
                                             <Separator className="bg-neutral-100 dark:bg-neutral-800" />
 
-                                            {/* 2. Universal "Add Context" & Primary Content */}
                                             <div className="space-y-4">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
                                                         <Label className="font-mono text-xs font-medium uppercase text-neutral-500">Context / Primary Content</Label>
                                                     </div>
-                                                    {!showContextBox && (
-                                                        <Button
-                                                            size="sm" variant="outline" className="h-8 text-xs font-medium border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-900"
-                                                            onClick={() => setShowContextBox(true)}
-                                                        >
-                                                            <FilePlus2 className="w-3.5 h-3.5 mr-1.5" /> Add Context
-                                                        </Button>
-                                                    )}
+                                                    {
+                                                        !showContextBox && (
+                                                            <Button
+                                                                size="sm" variant="outline" className="h-8 text-xs font-medium border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                                                                onClick={() => setShowContextBox(true)}
+                                                            >
+                                                                <FilePlus2 className="w-3.5 h-3.5 mr-1.5" /> Add Context
+                                                            </Button>
+                                                        )
+                                                    }
                                                 </div>
 
-                                                {showContextBox && (
-                                                    <div className="space-y-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                                                        <div className="relative">
-                                                            <Textarea
-                                                                value={activeStep?.content}
-                                                                onChange={(e) => updateStep(activeStepIndex, { content: e.target.value })}
-                                                                className="min-h-[140px] text-sm font-normal leading-relaxed rounded-xl border-neutral-200 dark:border-neutral-800 resize-y focus-visible:ring-1 pr-10"
-                                                                placeholder="Provide context, explanation, or instructions for this step..."
-                                                            />
-                                                            <Button
-                                                                variant="ghost" size="icon"
-                                                                className="absolute top-2 right-2 h-6 w-6 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
-                                                                onClick={() => {
-                                                                    updateStep(activeStepIndex, { content: "" });
-                                                                    setShowContextBox(false);
-                                                                }}
-                                                            >
-                                                                <X className="w-3.5 h-3.5" />
-                                                            </Button>
+                                                {
+                                                    showContextBox && (
+                                                        <div className="space-y-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                                                            <div className="relative">
+                                                                <Textarea
+                                                                    value={activeStep?.content}
+                                                                    onChange={(e) => updateStep(activeStepIndex, { content: e.target.value })}
+                                                                    className="min-h-[140px] text-sm font-normal leading-relaxed rounded-xl border-neutral-200 dark:border-neutral-800 resize-y focus-visible:ring-1 pr-10"
+                                                                    placeholder="Provide context, explanation, or instructions for this step..."
+                                                                />
+                                                                <Button
+                                                                    variant="ghost" size="icon"
+                                                                    className="absolute top-2 right-2 h-6 w-6 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+                                                                    onClick={() => {
+                                                                        updateStep(activeStepIndex, { content: "" });
+                                                                        setShowContextBox(false);
+                                                                    }}
+                                                                >
+                                                                    <X className="w-3.5 h-3.5" />
+                                                                </Button>
+                                                            </div>
+                                                            <div className="flex justify-end">
+                                                                <Button
+                                                                    size="sm" variant="ghost" className="h-6 text-[10px] text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
+                                                                    onClick={() => handleGenerate('content')}
+                                                                    disabled={isGenerating}
+                                                                >
+                                                                    <Sparkles className="w-3 h-3 mr-1" /> AI Generate Content
+                                                                </Button>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex justify-end">
-                                                            <Button
-                                                                size="sm" variant="ghost" className="h-6 text-[10px] text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
-                                                                onClick={() => handleGenerate('content')}
-                                                                disabled={isGenerating}
-                                                            >
-                                                                <Sparkles className="w-3 h-3 mr-1" /> AI Generate Content
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                    )
+                                                }
                                             </div>
 
-                                            {/* 3. DYNAMIC MODULE EDITORS */}
                                             <AnimatePresence mode="wait">
                                                 <motion.div
                                                     key={activeStep?.type}
@@ -503,377 +503,366 @@ export default function ConceptCreateForm() {
                                                     transition={{ duration: 0.2 }}
                                                     className="space-y-6 pt-2"
                                                 >
-                                                    {/* --- VISUALIZATION (Revamped) --- */}
-                                                    {activeStep?.type === "VISUALIZATION" && (
-                                                        <div className="space-y-4">
-                                                            <div className="bg-blue-50/50 dark:bg-blue-950/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-900/50 space-y-6">
-                                                                <div className="flex items-center justify-center p-1 bg-white dark:bg-neutral-950 rounded-lg w-fit mx-auto border border-neutral-200 dark:border-neutral-800">
-                                                                    <button
-                                                                        onClick={() => setVisMode("upload")}
-                                                                        className={cn("px-4 py-1.5 rounded-md text-xs font-medium transition-all", visMode === "upload" ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white" : "text-neutral-500 hover:text-neutral-900")}
-                                                                    >
-                                                                        Upload Image
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => setVisMode("generate")}
-                                                                        className={cn("px-4 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5", visMode === "generate" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" : "text-neutral-500 hover:text-neutral-900")}
-                                                                    >
-                                                                        <Wand2 className="w-3 h-3" /> AI Generate
-                                                                    </button>
-                                                                </div>
+                                                    {
+                                                        activeStep?.type === "VISUALIZATION" && (
+                                                            <div className="space-y-4">
+                                                                <div className="bg-blue-50/50 dark:bg-blue-950/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-900/50 space-y-6">
+                                                                    <div className="flex items-center justify-center p-1 bg-white dark:bg-neutral-950 rounded-lg w-fit mx-auto border border-neutral-200 dark:border-neutral-800">
+                                                                        <button
+                                                                            onClick={() => setVisMode("upload")}
+                                                                            className={cn("px-4 py-1.5 rounded-md text-xs font-medium transition-all", visMode === "upload" ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white" : "text-neutral-500 hover:text-neutral-900")}
+                                                                        >
+                                                                            Upload Image
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setVisMode("generate")}
+                                                                            className={cn("px-4 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5", visMode === "generate" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" : "text-neutral-500 hover:text-neutral-900")}
+                                                                        >
+                                                                            <Wand2 className="w-3 h-3" /> AI Generate
+                                                                        </button>
+                                                                    </div>
 
+                                                                    {
+                                                                        visMode === "generate" && (
+                                                                            <div className="space-y-3 animate-in fade-in zoom-in-95">
+                                                                                <div className="space-y-2">
+                                                                                    <Label className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase">Image Prompt</Label>
+                                                                                    <div className="flex gap-2">
+                                                                                        <Input
+                                                                                            value={imagePrompt}
+                                                                                            onChange={(e) => setImagePrompt(e.target.value)}
+                                                                                            placeholder="Describe the diagram or chart you need..."
+                                                                                            className="bg-white dark:bg-neutral-950 border-blue-200 dark:border-blue-800"
+                                                                                        />
+                                                                                        <Button onClick={() => handleGenerate('image')} disabled={isGenerating} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                                                                            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        )
+                                                                    }
+
+                                                                    {
+                                                                        visMode === "upload" && (
+                                                                            <div className="border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white/50 dark:bg-neutral-950/50 animate-in fade-in zoom-in-95 cursor-pointer hover:bg-blue-50/50 transition-colors">
+                                                                                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                                                                                    <Upload className="w-5 h-5" />
+                                                                                </div>
+                                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">Click to upload or drag and drop</p>
+                                                                                <p className="text-xs text-neutral-500 mt-1">SVG, PNG, JPG (Max 2MB)</p>
+                                                                            </div>
+                                                                        )
+                                                                    }
+
+                                                                    {
+                                                                        activeStep?.visualizationImage && (
+                                                                            <div className="relative rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 group">
+                                                                                <Image
+                                                                                    src={activeStep?.visualizationImage}
+                                                                                    alt="Visualization"
+                                                                                    className="w-full h-64 object-cover bg-neutral-100 dark:bg-neutral-900"
+                                                                                    height={256}
+                                                                                    width={512}
+                                                                                />
+                                                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                                    <Button variant="destructive" size="sm" onClick={() => updateStep(activeStepIndex, { visualizationImage: "" })}>Remove Image</Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    }
+                                                    {
+                                                        activeStep.type === "QUIZ" && (
+                                                            <div className="space-y-4">
                                                                 {
-                                                                    visMode === "generate" && (
-                                                                        <div className="space-y-3 animate-in fade-in zoom-in-95">
+                                                                    !activeStep.quizQuestion ? (
+                                                                        <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-neutral-50/50 dark:bg-neutral-900/50">
+                                                                            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center mb-4">
+                                                                                <HelpCircle className="w-6 h-6" />
+                                                                            </div>
+                                                                            <h3 className="font-semibold text-sm mb-1 text-neutral-900 dark:text-white">No Questions Yet</h3>
+                                                                            <p className="text-xs text-neutral-500 max-w-xs mb-6">Generate a quiz question based on your system context.</p>
+                                                                            <Button
+                                                                                onClick={() => handleGenerate('quiz')}
+                                                                                disabled={isGenerating}
+                                                                                className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs h-9 px-6 font-medium"
+                                                                            >
+                                                                                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
+                                                                                Generate Question
+                                                                            </Button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="bg-purple-50/50 dark:bg-purple-950/10 rounded-2xl p-6 border border-purple-100 dark:border-purple-900 space-y-6 animate-in fade-in zoom-in-95">
+                                                                            <div className="space-y-2 relative">
+                                                                                <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Question</Label>
+                                                                                <Input
+                                                                                    className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm font-medium h-10"
+                                                                                    value={activeStep.quizQuestion}
+                                                                                    onChange={(e) => updateStep(activeStepIndex, { quizQuestion: e.target.value })}
+                                                                                />
+                                                                                <Button size="icon" variant="ghost" className="absolute right-2 top-7 h-7 w-7 text-neutral-400 hover:text-red-500" onClick={() => updateStep(activeStepIndex, { quizQuestion: "" })}>
+                                                                                    <X className="w-4 h-4" />
+                                                                                </Button>
+                                                                            </div>
+                                                                            <div className="space-y-3">
+                                                                                <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Options</Label>
+                                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                                    {
+                                                                                        activeStep.quizOptions.map((opt, i) => (
+                                                                                            <div key={i} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-colors bg-white dark:bg-neutral-950", opt.isCorrect ? "border-green-500 ring-1 ring-green-500/20" : "border-neutral-200 dark:border-neutral-800")}>
+                                                                                                <div
+                                                                                                    className={cn("w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors", opt.isCorrect ? "bg-green-500 border-green-500 text-white" : "border-neutral-300 hover:border-neutral-400")}
+                                                                                                    onClick={() => {
+                                                                                                        const newOpts = activeStep.quizOptions.map((o, idx) => ({ ...o, isCorrect: idx === i }));
+                                                                                                        updateStep(activeStepIndex, { quizOptions: newOpts });
+                                                                                                    }}
+                                                                                                >
+                                                                                                    {opt.isCorrect && <Check className="w-3 h-3" />}
+                                                                                                </div>
+                                                                                                <Input
+                                                                                                    className="border-0 h-auto py-1 px-0 focus-visible:ring-0 bg-transparent text-sm text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400"
+                                                                                                    placeholder={`Option ${i + 1}`}
+                                                                                                    value={opt.text}
+                                                                                                    onChange={(e) => {
+                                                                                                        const newOpts = [...activeStep.quizOptions];
+                                                                                                        const opt = newOpts[i];
+                                                                                                        if (opt) {
+                                                                                                            opt.text = e.target.value;
+                                                                                                            updateStep(activeStepIndex, { quizOptions: newOpts });
+                                                                                                        }
+                                                                                                    }}
+                                                                                                />
+                                                                                            </div>
+                                                                                        ))
+                                                                                    }
+                                                                                </div>
+                                                                            </div>
                                                                             <div className="space-y-2">
-                                                                                <Label className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase">Image Prompt</Label>
-                                                                                <div className="flex gap-2">
-                                                                                    <Input
-                                                                                        value={imagePrompt}
-                                                                                        onChange={(e) => setImagePrompt(e.target.value)}
-                                                                                        placeholder="Describe the diagram or chart you need..."
-                                                                                        className="bg-white dark:bg-neutral-950 border-blue-200 dark:border-blue-800"
+                                                                                <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Explanation</Label>
+                                                                                <Textarea
+                                                                                    className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm min-h-[80px]"
+                                                                                    value={activeStep.quizExplanation}
+                                                                                    onChange={(e) => updateStep(activeStepIndex, { quizExplanation: e.target.value })}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                            </div>
+                                                        )
+                                                    }
+                                                    {
+                                                        activeStep.type === "CHALLENGE" && (
+                                                            <div className="space-y-4">
+                                                                {
+                                                                    !activeStep.challengeDescription ? (
+                                                                        <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-neutral-50/50 dark:bg-neutral-900/50">
+                                                                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full flex items-center justify-center mb-4">
+                                                                                <Zap className="w-6 h-6" />
+                                                                            </div>
+                                                                            <h3 className="font-semibold text-sm mb-1 text-neutral-900 dark:text-white">Empty Coding Lab</h3>
+                                                                            <Button
+                                                                                onClick={() => handleGenerate('challenge')}
+                                                                                disabled={isGenerating}
+                                                                                className="bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs h-9 px-6 mt-4 font-medium"
+                                                                            >
+                                                                                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
+                                                                                Generate Challenge
+                                                                            </Button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="bg-amber-50/50 dark:bg-amber-950/10 rounded-2xl p-6 border border-amber-200/50 dark:border-amber-900/50 space-y-6 animate-in fade-in zoom-in-95">
+                                                                            <div className="flex justify-between items-start">
+                                                                                <div className="space-y-2 w-full">
+                                                                                    <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Task Requirement</Label>
+                                                                                    <Textarea
+                                                                                        value={activeStep.challengeDescription}
+                                                                                        onChange={(e) => updateStep(activeStepIndex, { challengeDescription: e.target.value })}
+                                                                                        className="bg-white dark:bg-neutral-950 border-amber-100 dark:border-amber-900 min-h-[80px] text-sm"
                                                                                     />
-                                                                                    <Button onClick={() => handleGenerate('image')} disabled={isGenerating} className="bg-blue-600 hover:bg-blue-700 text-white">
-                                                                                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                                                                    </Button>
+                                                                                </div>
+                                                                                <Button size="icon" variant="ghost" className="h-6 w-6 ml-2 text-neutral-400 hover:text-red-500" onClick={() => updateStep(activeStepIndex, { challengeDescription: "" })}>
+                                                                                    <X className="w-4 h-4" />
+                                                                                </Button>
+                                                                            </div>
+                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                <div className="space-y-2">
+                                                                                    <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Starter Code</Label>
+                                                                                    <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
+                                                                                        <CodeEditor
+                                                                                            code={activeStep.challengeStarterCode}
+                                                                                            onChange={(c) => updateStep(activeStepIndex, { challengeStarterCode: c })}
+                                                                                            height="160px"
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="space-y-2">
+                                                                                    <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Solution Code</Label>
+                                                                                    <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
+                                                                                        <CodeEditor
+                                                                                            code={activeStep.challengeSolution}
+                                                                                            onChange={(c) => updateStep(activeStepIndex, { challengeSolution: c })}
+                                                                                            height="160px"
+                                                                                        />
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     )
                                                                 }
-
-                                                                {
-                                                                    visMode === "upload" && (
-                                                                        <div className="border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white/50 dark:bg-neutral-950/50 animate-in fade-in zoom-in-95 cursor-pointer hover:bg-blue-50/50 transition-colors">
-                                                                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mb-3">
-                                                                                <Upload className="w-5 h-5" />
-                                                                            </div>
-                                                                            <p className="text-sm font-medium text-neutral-900 dark:text-white">Click to upload or drag and drop</p>
-                                                                            <p className="text-xs text-neutral-500 mt-1">SVG, PNG, JPG (Max 2MB)</p>
-                                                                        </div>
-                                                                    )
-                                                                }
-
-                                                                {
-                                                                    activeStep?.visualizationImage && (
-                                                                        <div className="relative rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 group">
-                                                                            <Image
-                                                                                src={activeStep?.visualizationImage}
-                                                                                alt="Visualization"
-                                                                                className="w-full h-64 object-cover bg-neutral-100 dark:bg-neutral-900"
-                                                                                height={256}
-                                                                                width={512}
-                                                                            />
-                                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                                <Button variant="destructive" size="sm" onClick={() => updateStep(activeStepIndex, { visualizationImage: "" })}>Remove Image</Button>
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                }
                                                             </div>
-                                                        </div>
-                                                    )
+                                                        )
                                                     }
-
-                                                    {/* --- QUIZ --- */}
                                                     {
-                                                        activeStep.type === "QUIZ" && (
-                                                            <div className="space-y-4">
-                                                                {!activeStep.quizQuestion ? (
-                                                                    <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-neutral-50/50 dark:bg-neutral-900/50">
-                                                                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-full flex items-center justify-center mb-4">
-                                                                            <HelpCircle className="w-6 h-6" />
-                                                                        </div>
-                                                                        <h3 className="font-semibold text-sm mb-1 text-neutral-900 dark:text-white">No Questions Yet</h3>
-                                                                        <p className="text-xs text-neutral-500 max-w-xs mb-6">Generate a quiz question based on your system context.</p>
-                                                                        <Button
-                                                                            onClick={() => handleGenerate('quiz')}
-                                                                            disabled={isGenerating}
-                                                                            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs h-9 px-6 font-medium"
-                                                                        >
-                                                                            {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
-                                                                            Generate Question
-                                                                        </Button>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="bg-purple-50/50 dark:bg-purple-950/10 rounded-2xl p-6 border border-purple-100 dark:border-purple-900 space-y-6 animate-in fade-in zoom-in-95">
-                                                                        <div className="space-y-2 relative">
-                                                                            <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Question</Label>
-                                                                            <Input
-                                                                                className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm font-medium h-10"
-                                                                                value={activeStep.quizQuestion}
-                                                                                onChange={(e) => updateStep(activeStepIndex, { quizQuestion: e.target.value })}
-                                                                            />
-                                                                            <Button size="icon" variant="ghost" className="absolute right-2 top-7 h-7 w-7 text-neutral-400 hover:text-red-500" onClick={() => updateStep(activeStepIndex, { quizQuestion: "" })}>
-                                                                                <X className="w-4 h-4" />
-                                                                            </Button>
-                                                                        </div>
-
-                                                                        <div className="space-y-3">
-                                                                            <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Options</Label>
-                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                                                {activeStep.quizOptions.map((opt, i) => (
-                                                                                    <div key={i} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-colors bg-white dark:bg-neutral-950", opt.isCorrect ? "border-green-500 ring-1 ring-green-500/20" : "border-neutral-200 dark:border-neutral-800")}>
-                                                                                        <div
-                                                                                            className={cn("w-5 h-5 rounded-full border flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors", opt.isCorrect ? "bg-green-500 border-green-500 text-white" : "border-neutral-300 hover:border-neutral-400")}
-                                                                                            onClick={() => {
-                                                                                                const newOpts = activeStep.quizOptions.map((o, idx) => ({ ...o, isCorrect: idx === i }));
-                                                                                                updateStep(activeStepIndex, { quizOptions: newOpts });
-                                                                                            }}
-                                                                                        >
-                                                                                            {opt.isCorrect && <Check className="w-3 h-3" />}
-                                                                                        </div>
+                                                        activeStep.type === "CODE" && (
+                                                            <div className="space-y-6">
+                                                                <div className="flex items-center justify-between">
+                                                                    <Label className="font-mono text-xs font-medium uppercase text-neutral-500">Code Blocks</Label>
+                                                                    <Button size="sm" onClick={() => addCodeBlock(activeStepIndex)} className="rounded-full h-8 text-xs px-4 bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 font-medium">
+                                                                        <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Code Block
+                                                                    </Button>
+                                                                </div>
+                                                                <div className="space-y-6">
+                                                                    {
+                                                                        activeStep.codeBlocks.map((block, idx) => (
+                                                                            <div key={block.id} className="border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden bg-neutral-900 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                                                                                <div className="flex items-center justify-between p-3 bg-neutral-800 border-b border-neutral-700">
+                                                                                    <div className="flex items-center gap-3">
+                                                                                        <Terminal className="w-4 h-4 text-neutral-400" />
                                                                                         <Input
-                                                                                            className="border-0 h-auto py-1 px-0 focus-visible:ring-0 bg-transparent text-sm text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400"
-                                                                                            placeholder={`Option ${i + 1}`}
-                                                                                            value={opt.text}
+                                                                                            value={block.title}
                                                                                             onChange={(e) => {
-                                                                                                const newOpts = [...activeStep.quizOptions];
-                                                                                                const opt = newOpts[i];
-                                                                                                if (opt) {
-                                                                                                    opt.text = e.target.value;
-                                                                                                    updateStep(activeStepIndex, { quizOptions: newOpts });
+                                                                                                const newSteps = [...steps];
+                                                                                                const step = newSteps[activeStepIndex];
+                                                                                                const block = step?.codeBlocks[idx];
+                                                                                                if (block) {
+                                                                                                    block.title = e.target.value;
+                                                                                                    setSteps(newSteps);
+                                                                                                }
+                                                                                            }}
+                                                                                            placeholder="Filename.js"
+                                                                                            className="bg-transparent border-0 text-white h-7 w-48 focus-visible:ring-0 placeholder:text-neutral-500 text-xs font-mono"
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <Button size="icon" variant="ghost" className="h-7 w-7 hover:bg-red-500/20 hover:text-red-500 rounded-md" onClick={() => removeCodeBlock(activeStepIndex, idx)}>
+                                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <CodeEditor
+                                                                                    code={block.code}
+                                                                                    onChange={(c) => {
+                                                                                        const newSteps = [...steps];
+                                                                                        const step = newSteps[activeStepIndex];
+                                                                                        const codeBlock = step?.codeBlocks[idx];
+                                                                                        if (codeBlock) {
+                                                                                            codeBlock.code = c;
+                                                                                            setSteps(newSteps);
+                                                                                        }
+                                                                                    }}
+                                                                                    allowedLanguages={["javascript", "typescript", "python", "java", "c", "cpp"]}
+                                                                                    height="220px"
+                                                                                />
+                                                                                <div className="bg-white dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800 p-3">
+                                                                                    <div className="flex gap-3 items-start">
+                                                                                        <FileEdit className="w-4 h-4 text-neutral-400 mt-2" />
+                                                                                        <Textarea
+                                                                                            className="border-0 bg-transparent text-sm text-neutral-600 dark:text-neutral-400 min-h-[40px] resize-none focus-visible:ring-0 p-1"
+                                                                                            placeholder="Add a brief caption or explanation for this specific snippet..."
+                                                                                            value={block.explanation}
+                                                                                            onChange={(e) => {
+                                                                                                const newSteps = [...steps];
+                                                                                                const step = newSteps[activeStepIndex];
+                                                                                                const codeBlock = step?.codeBlocks[idx];
+                                                                                                if (codeBlock) {
+                                                                                                    codeBlock.explanation = e.target.value;
+                                                                                                    setSteps(newSteps);
                                                                                                 }
                                                                                             }}
                                                                                         />
                                                                                     </div>
-                                                                                ))}
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                        <div className="space-y-2">
-                                                                            <Label className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Explanation</Label>
-                                                                            <Textarea
-                                                                                className="bg-white dark:bg-neutral-950 border-purple-200 dark:border-purple-800 text-sm min-h-[80px]"
-                                                                                value={activeStep.quizExplanation}
-                                                                                onChange={(e) => updateStep(activeStepIndex, { quizExplanation: e.target.value })}
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                    {/* --- CHALLENGE (CODING LAB) --- */}
-                                                    {activeStep.type === "CHALLENGE" && (
-                                                        <div className="space-y-4">
-                                                            {!activeStep.challengeDescription ? (
-                                                                <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-neutral-50/50 dark:bg-neutral-900/50">
-                                                                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full flex items-center justify-center mb-4">
-                                                                        <Zap className="w-6 h-6" />
-                                                                    </div>
-                                                                    <h3 className="font-semibold text-sm mb-1 text-neutral-900 dark:text-white">Empty Coding Lab</h3>
-                                                                    <Button
-                                                                        onClick={() => handleGenerate('challenge')}
-                                                                        disabled={isGenerating}
-                                                                        className="bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs h-9 px-6 mt-4 font-medium"
-                                                                    >
-                                                                        {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
-                                                                        Generate Challenge
-                                                                    </Button>
+                                                                        ))
+                                                                    }
+                                                                    {
+                                                                        activeStep.codeBlocks.length === 0 && (
+                                                                            <div className="text-center p-12 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 bg-neutral-50/50 dark:bg-neutral-900/50">
+                                                                                <Code2 className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                                                                                <p className="text-sm font-medium mb-1">No Code Blocks</p>
+                                                                                <p className="text-xs text-neutral-400 mb-4">Add snippets to illustrate your concept.</p>
+                                                                                <Button size="sm" variant="outline" onClick={() => addCodeBlock(activeStepIndex)}>Add First Block</Button>
+                                                                            </div>
+                                                                        )
+                                                                    }
                                                                 </div>
-                                                            ) : (
-                                                                <div className="bg-amber-50/50 dark:bg-amber-950/10 rounded-2xl p-6 border border-amber-200/50 dark:border-amber-900/50 space-y-6 animate-in fade-in zoom-in-95">
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div className="space-y-2 w-full">
-                                                                            <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Task Requirement</Label>
-                                                                            <Textarea
-                                                                                value={activeStep.challengeDescription}
-                                                                                onChange={(e) => updateStep(activeStepIndex, { challengeDescription: e.target.value })}
-                                                                                className="bg-white dark:bg-neutral-950 border-amber-100 dark:border-amber-900 min-h-[80px] text-sm"
-                                                                            />
-                                                                        </div>
-                                                                        <Button size="icon" variant="ghost" className="h-6 w-6 ml-2 text-neutral-400 hover:text-red-500" onClick={() => updateStep(activeStepIndex, { challengeDescription: "" })}>
-                                                                            <X className="w-4 h-4" />
+                                                            </div>
+                                                        )
+                                                    }
+                                                    {
+                                                        activeStep.type === "COMPARISON" && (
+                                                            <div className="space-y-4">
+                                                                <div className="bg-neutral-50/80 dark:bg-neutral-900/50 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 space-y-4">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <Label className="font-mono text-xs font-bold uppercase text-neutral-500">Topics to Compare</Label>
+                                                                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleGenerate('comparison')} disabled={isGenerating}>
+                                                                            <Sparkles className="w-3 h-3 mr-1.5" /> AI Table
                                                                         </Button>
                                                                     </div>
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                        <div className="space-y-2">
-                                                                            <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Starter Code</Label>
-                                                                            <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
-                                                                                <CodeEditor
-                                                                                    code={activeStep.challengeStarterCode}
-                                                                                    onChange={(c) => updateStep(activeStepIndex, { challengeStarterCode: c })}
-                                                                                    height="160px"
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="space-y-2">
-                                                                            <Label className="text-xs uppercase font-bold text-amber-700 dark:text-amber-500 tracking-wide">Solution Code</Label>
-                                                                            <div className="rounded-xl overflow-hidden border border-amber-100 dark:border-amber-900 bg-white dark:bg-neutral-950 shadow-sm">
-                                                                                <CodeEditor
-                                                                                    code={activeStep.challengeSolution}
-                                                                                    onChange={(c) => updateStep(activeStepIndex, { challengeSolution: c })}
-                                                                                    height="160px"
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {/* --- CODE ANALYSIS --- */}
-                                                    {activeStep.type === "CODE" && (
-                                                        <div className="space-y-6">
-                                                            <div className="flex items-center justify-between">
-                                                                <Label className="font-mono text-xs font-medium uppercase text-neutral-500">Code Blocks</Label>
-                                                                <Button size="sm" onClick={() => addCodeBlock(activeStepIndex)} className="rounded-full h-8 text-xs px-4 bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 font-medium">
-                                                                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Code Block
-                                                                </Button>
-                                                            </div>
-
-                                                            <div className="space-y-6">
-                                                                {activeStep.codeBlocks.map((block, idx) => (
-                                                                    <div key={block.id} className="border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden bg-neutral-900 text-white shadow-lg animate-in fade-in slide-in-from-bottom-2">
-                                                                        <div className="flex items-center justify-between p-3 bg-neutral-800 border-b border-neutral-700">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <Terminal className="w-4 h-4 text-neutral-400" />
-                                                                                <Input
-                                                                                    value={block.title}
-                                                                                    onChange={(e) => {
-                                                                                        const newSteps = [...steps];
-                                                                                        const step = newSteps[activeStepIndex];
-                                                                                        const block = step?.codeBlocks[idx];
-                                                                                        if (block) {
-                                                                                            block.title = e.target.value;
-                                                                                            setSteps(newSteps);
-                                                                                        }
-                                                                                    }}
-                                                                                    placeholder="Filename.js"
-                                                                                    className="bg-transparent border-0 text-white h-7 w-48 focus-visible:ring-0 placeholder:text-neutral-500 text-xs font-mono"
-                                                                                />
-                                                                            </div>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Select
-                                                                                    value={block.language}
-                                                                                    onValueChange={(v) => {
-                                                                                        const newSteps = [...steps];
-                                                                                        const step = newSteps[activeStepIndex];
-                                                                                        const codeBlock = step?.codeBlocks[idx];
-                                                                                        if (codeBlock) {
-                                                                                            codeBlock.language = v;
-                                                                                            setSteps(newSteps);
-                                                                                        }
-                                                                                    }}
-                                                                                >
-                                                                                    <SelectTrigger className="h-7 w-[100px] bg-neutral-900 border-neutral-700 text-xs text-neutral-300">
-                                                                                        <SelectValue />
-                                                                                    </SelectTrigger>
-                                                                                    <SelectContent>
-                                                                                        <SelectItem value="javascript">JavaScript</SelectItem>
-                                                                                        <SelectItem value="typescript">TypeScript</SelectItem>
-                                                                                        <SelectItem value="python">Python</SelectItem>
-                                                                                        <SelectItem value="rust">Rust</SelectItem>
-                                                                                    </SelectContent>
-                                                                                </Select>
-                                                                                <Button size="icon" variant="ghost" className="h-7 w-7 hover:bg-red-500/20 hover:text-red-500 rounded-md" onClick={() => removeCodeBlock(activeStepIndex, idx)}>
-                                                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        </div>
-                                                                        <CodeEditor
-                                                                            code={block.code}
-                                                                            onChange={(c) => {
-                                                                                const newSteps = [...steps];
-                                                                                const step = newSteps[activeStepIndex];
-                                                                                const codeBlock = step?.codeBlocks[idx];
-                                                                                if (codeBlock) {
-                                                                                    codeBlock.code = c;
-                                                                                    setSteps(newSteps);
+                                                                    <div className="flex flex-wrap gap-2 items-center">
+                                                                        {
+                                                                            activeStep.comparisonTopics.map((t, i) => (
+                                                                                <Badge key={i} variant="secondary" className="pl-3 pr-1 py-1 h-8 text-sm bg-white border border-neutral-200 shadow-sm">
+                                                                                    {t}
+                                                                                    <button className="ml-2 p-0.5 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-red-500" onClick={() => {
+                                                                                        const newTopics = activeStep.comparisonTopics.filter((_, idx) => idx !== i);
+                                                                                        updateStep(activeStepIndex, { comparisonTopics: newTopics });
+                                                                                    }}>
+                                                                                        <X className="w-3 h-3" />
+                                                                                    </button>
+                                                                                </Badge>
+                                                                            ))
+                                                                        }
+                                                                        <Input
+                                                                            className="w-48 h-8 bg-white dark:bg-neutral-950 text-sm border-neutral-200 dark:border-neutral-800"
+                                                                            placeholder="Add topic (Press Enter)"
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === "Enter") {
+                                                                                    const val = (e.currentTarget as HTMLInputElement).value.trim();
+                                                                                    if (val) {
+                                                                                        updateStep(activeStepIndex, { comparisonTopics: [...activeStep.comparisonTopics, val] });
+                                                                                        (e.currentTarget as HTMLInputElement).value = "";
+                                                                                    }
                                                                                 }
                                                                             }}
-                                                                            height="220px"
                                                                         />
-                                                                        <div className="bg-white dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800 p-3">
-                                                                            <div className="flex gap-3 items-start">
-                                                                                <FileEdit className="w-4 h-4 text-neutral-400 mt-2" />
-                                                                                <Textarea
-                                                                                    className="border-0 bg-transparent text-sm text-neutral-600 dark:text-neutral-400 min-h-[40px] resize-none focus-visible:ring-0 p-1"
-                                                                                    placeholder="Add a brief caption or explanation for this specific snippet..."
-                                                                                    value={block.explanation}
-                                                                                    onChange={(e) => {
-                                                                                        const newSteps = [...steps];
-                                                                                        const step = newSteps[activeStepIndex];
-                                                                                        const codeBlock = step?.codeBlocks[idx];
-                                                                                        if (codeBlock) {
-                                                                                            codeBlock.explanation = e.target.value;
-                                                                                            setSteps(newSteps);
-                                                                                        }
-                                                                                    }}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
                                                                     </div>
-                                                                ))}
-                                                                {activeStep.codeBlocks.length === 0 && (
-                                                                    <div className="text-center p-12 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 bg-neutral-50/50 dark:bg-neutral-900/50">
-                                                                        <Code2 className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                                                                        <p className="text-sm font-medium mb-1">No Code Blocks</p>
-                                                                        <p className="text-xs text-neutral-400 mb-4">Add snippets to illustrate your concept.</p>
-                                                                        <Button size="sm" variant="outline" onClick={() => addCodeBlock(activeStepIndex)}>Add First Block</Button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* --- COMPARISON --- */}
-                                                    {activeStep.type === "COMPARISON" && (
-                                                        <div className="space-y-4">
-                                                            <div className="bg-neutral-50/80 dark:bg-neutral-900/50 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 space-y-4">
-                                                                <div className="flex justify-between items-center">
-                                                                    <Label className="font-mono text-xs font-bold uppercase text-neutral-500">Topics to Compare</Label>
-                                                                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleGenerate('comparison')} disabled={isGenerating}>
-                                                                        <Sparkles className="w-3 h-3 mr-1.5" /> AI Table
-                                                                    </Button>
                                                                 </div>
-                                                                <div className="flex flex-wrap gap-2 items-center">
-                                                                    {activeStep.comparisonTopics.map((t, i) => (
-                                                                        <Badge key={i} variant="secondary" className="pl-3 pr-1 py-1 h-8 text-sm bg-white border border-neutral-200 shadow-sm">
-                                                                            {t}
-                                                                            <button className="ml-2 p-0.5 hover:bg-neutral-100 rounded-full text-neutral-400 hover:text-red-500" onClick={() => {
-                                                                                const newTopics = activeStep.comparisonTopics.filter((_, idx) => idx !== i);
-                                                                                updateStep(activeStepIndex, { comparisonTopics: newTopics });
-                                                                            }}>
-                                                                                <X className="w-3 h-3" />
-                                                                            </button>
-                                                                        </Badge>
-                                                                    ))}
-                                                                    <Input
-                                                                        className="w-48 h-8 bg-white dark:bg-neutral-950 text-sm border-neutral-200 dark:border-neutral-800"
-                                                                        placeholder="Add topic (Press Enter)"
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === "Enter") {
-                                                                                const val = (e.currentTarget as HTMLInputElement).value.trim();
-                                                                                if (val) {
-                                                                                    updateStep(activeStepIndex, { comparisonTopics: [...activeStep.comparisonTopics, val] });
-                                                                                    (e.currentTarget as HTMLInputElement).value = "";
-                                                                                }
+                                                                {
+                                                                    activeStep.comparisonItems.length > 0 && (
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2">
+                                                                            {
+                                                                                activeStep.comparisonItems.map((item, i) => (
+                                                                                    <div key={i} className="border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 bg-white dark:bg-neutral-950">
+                                                                                        <h4 className="font-bold text-sm mb-1">{item.title}</h4>
+                                                                                        <p className="text-xs text-neutral-500 mb-3">{item.description}</p>
+                                                                                        <div className="space-y-1">
+                                                                                            {item.pros.map((p, idx) => <div key={idx} className="flex gap-2 text-xs text-green-700"><Check className="w-3 h-3 mt-0.5" /> {p}</div>)}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))
                                                                             }
-                                                                        }}
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Comparison Items Preview (Mock) */}
-                                                            {activeStep.comparisonItems.length > 0 && (
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2">
-                                                                    {activeStep.comparisonItems.map((item, i) => (
-                                                                        <div key={i} className="border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 bg-white dark:bg-neutral-950">
-                                                                            <h4 className="font-bold text-sm mb-1">{item.title}</h4>
-                                                                            <p className="text-xs text-neutral-500 mb-3">{item.description}</p>
-                                                                            <div className="space-y-1">
-                                                                                {item.pros.map((p, idx) => <div key={idx} className="flex gap-2 text-xs text-green-700"><Check className="w-3 h-3 mt-0.5" /> {p}</div>)}
-                                                                            </div>
                                                                         </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
+                                                                    )
+                                                                }
+                                                            </div>
+                                                        )
+                                                    }
                                                 </motion.div>
                                             </AnimatePresence>
                                         </div>
