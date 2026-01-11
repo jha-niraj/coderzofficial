@@ -142,7 +142,7 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        const project = await prisma.projectV2.findUnique({ 
+        const project = await prisma.projectV2.findUnique({
             where: { id: projectId },
             include: { tasks: true },
         });
@@ -206,7 +206,7 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        const project = await prisma.projectV2.findUnique({ 
+        const project = await prisma.projectV2.findUnique({
             where: { slug },
             select: { id: true, title: true },
         });
@@ -258,9 +258,9 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
             completed: tasksWithStatus.filter((t: any) => t.status === "COMPLETED"),
         };
 
-        return { 
-            success: true, 
-            data: { 
+        return {
+            success: true,
+            data: {
                 columns,
                 progress: {
                     totalTasks: progress.totalTasks,
@@ -268,7 +268,7 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
                     progressPercentage: progress.progressPercentage,
                 },
                 projectTitle: project.title,
-            } 
+            }
         };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -276,7 +276,7 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
 }
 
 export async function updateTaskStatus(
-    taskId: string, 
+    taskId: string,
     newStatus: "TO_DO" | "IN_PROGRESS" | "COMPLETED"
 ): Promise<ActionResponse> {
     try {
@@ -894,7 +894,7 @@ export async function searchSimilarProjects({
 
         // Get all public projects using the existing function
         const result = await getAllPublicProjects({ limit: 100 }); // Get more projects for better matching
-        
+
         if (!result.success || !result.data) {
             return {
                 success: false,
@@ -907,11 +907,11 @@ export async function searchSimilarProjects({
         // Search and score projects based on similarity
         const scoredProjects = projects.map((project: any) => {
             let score = 0;
-            
+
             // Title similarity (case insensitive, partial matches)
             const titleWords = title.toLowerCase().split(' ');
             const projectTitleWords = project.title.toLowerCase().split(' ');
-            
+
             titleWords.forEach(word => {
                 if (word.length > 2) { // Ignore very short words
                     projectTitleWords.forEach((projectWord: string) => {
@@ -938,8 +938,8 @@ export async function searchSimilarProjects({
 
             // Technology overlap
             const projectTechs = Array.isArray(project.technologies) ? project.technologies : [];
-            const commonTechs = technologies.filter(tech => 
-                projectTechs.some((projectTech: string) => 
+            const commonTechs = technologies.filter(tech =>
+                projectTechs.some((projectTech: string) =>
                     projectTech.toLowerCase() === tech.toLowerCase()
                 )
             );
@@ -1047,9 +1047,9 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
 
         // Check user credits
         if (user.credits < enrollmentCost) {
-            return { 
-                success: false, 
-                error: `Insufficient credits. You need ${enrollmentCost} credits to enroll.` 
+            return {
+                success: false,
+                error: `Insufficient credits. You need ${enrollmentCost} credits to enroll.`
             };
         }
 
@@ -1125,6 +1125,201 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
         return {
             success: false,
             error: error.message || "Failed to enroll in project"
+        };
+    }
+}
+
+// ========================================
+// PROJECT FORKING
+// ========================================
+
+/**
+ * Fork a public project
+ * - Creates a complete copy of the project for the new user
+ * - Copies ALL current tasks (including any added by the owner)
+ * - Copies pages
+ * - Links to original project via forkedFromId
+ * - User starts with 0% progress
+ */
+export async function forkProject(
+    projectId: string,
+    options?: { customTitle?: string }
+): Promise<ActionResponse> {
+    try {
+        const user = await getCurrentUser();
+
+        // Get the source project with ALL related data
+        const sourceProject = await prisma.projectV2.findUnique({
+            where: { id: projectId },
+            include: {
+                tasks: {
+                    orderBy: { orderIndex: 'asc' }
+                },
+                pages: {
+                    orderBy: { orderIndex: 'asc' }
+                },
+                creator: {
+                    select: { id: true, name: true, username: true }
+                }
+            }
+        });
+
+        if (!sourceProject) {
+            return { success: false, error: "Project not found" };
+        }
+
+        // Check if project is public (only public projects can be forked)
+        if (sourceProject.visibility !== 'PUBLIC') {
+            return { success: false, error: "Only public projects can be forked" };
+        }
+
+        // Check if user is trying to fork their own project
+        if (sourceProject.createdBy === user.id) {
+            return { success: false, error: "You cannot fork your own project" };
+        }
+
+        // Generate unique slug for the forked project
+        const baseTitle = options?.customTitle || `${sourceProject.title}`;
+        const baseSlug = generateSlug(baseTitle);
+        let finalSlug = baseSlug;
+        let slugCounter = 1;
+
+        // Ensure unique slug
+        while (await prisma.projectV2.findUnique({ where: { slug: finalSlug } })) {
+            finalSlug = `${baseSlug}-${slugCounter}`;
+            slugCounter++;
+        }
+
+        // Create the forked project in a transaction
+        const result = await prisma.$transaction(async (tx: any) => {
+            // 1. Create the forked project
+            const forkedProject = await tx.projectV2.create({
+                data: {
+                    slug: finalSlug,
+                    title: baseTitle,
+                    shortDescription: sourceProject.shortDescription,
+                    description: sourceProject.description,
+                    technologies: sourceProject.technologies,
+                    generationType: sourceProject.generationType,
+                    primaryLanguageOrFramework: sourceProject.primaryLanguageOrFramework,
+                    difficulty: sourceProject.difficulty,
+                    visibility: 'PRIVATE', // Forked projects start as private
+                    estimatedHours: sourceProject.estimatedHours,
+                    includeAssessment: sourceProject.includeAssessment,
+                    blueprintOverview: sourceProject.blueprintOverview,
+                    learningObjectives: sourceProject.learningObjectives,
+                    prerequisites: sourceProject.prerequisites,
+                    coreFeatures: sourceProject.coreFeatures,
+                    advancedFeatures: sourceProject.advancedFeatures,
+                    stacks: sourceProject.stacks,
+                    assistantEcho: sourceProject.assistantEcho,
+                    assistantRaw: sourceProject.assistantRaw,
+                    createdBy: user.id,
+                    // Fork tracking
+                    isFork: true,
+                    forkedFromId: sourceProject.id,
+                }
+            });
+
+            // 2. Copy all pages
+            if (sourceProject.pages.length > 0) {
+                await tx.projectV2Page.createMany({
+                    data: sourceProject.pages.map((page: any) => ({
+                        projectId: forkedProject.id,
+                        name: page.name,
+                        difficulty: page.difficulty,
+                        coreFeatures: page.coreFeatures,
+                        recommendedComponents: page.recommendedComponents,
+                        orderIndex: page.orderIndex,
+                    }))
+                });
+            }
+
+            // 3. Copy all tasks (including any custom tasks added by owner)
+            const newTasks: any[] = [];
+            if (sourceProject.tasks.length > 0) {
+                for (const task of sourceProject.tasks) {
+                    const newTask = await tx.projectV2Task.create({
+                        data: {
+                            projectId: forkedProject.id,
+                            title: task.title,
+                            description: task.description,
+                            criteria: task.criteria,
+                            hints: task.hints,
+                            badges: task.badges,
+                            tags: task.tags,
+                            difficulty: task.difficulty,
+                            terminalCommand: task.terminalCommand,
+                            orderIndex: task.orderIndex,
+                        }
+                    });
+                    newTasks.push(newTask);
+                }
+            }
+
+            // 4. Create user progress (starting at 0%)
+            const progress = await tx.userProjectV2Progress.create({
+                data: {
+                    userId: user.id,
+                    projectId: forkedProject.id,
+                    status: "IN_PROGRESS",
+                    totalTasks: newTasks.length,
+                    tasksCompleted: 0,
+                    progressPercentage: 0,
+                    startedAt: new Date(),
+                }
+            });
+
+            // 5. Create task statuses for all new tasks
+            if (newTasks.length > 0) {
+                await tx.userTaskV2Status.createMany({
+                    data: newTasks.map((task: any) => ({
+                        userId: user.id,
+                        projectId: forkedProject.id,
+                        taskId: task.id,
+                        progressId: progress.id,
+                        status: "TO_DO" as const,
+                    }))
+                });
+            }
+
+            // 6. Increment fork count on original project
+            await tx.projectV2.update({
+                where: { id: sourceProject.id },
+                data: { forkCount: { increment: 1 } }
+            });
+
+            return {
+                forkedProject,
+                progress,
+                tasksCount: newTasks.length
+            };
+        });
+
+        revalidatePath('/projects');
+        revalidatePath('/projects/myprojects');
+        revalidatePath(`/projects/${sourceProject.slug}`);
+
+        return {
+            success: true,
+            data: {
+                projectId: result.forkedProject.id,
+                projectSlug: result.forkedProject.slug,
+                projectTitle: result.forkedProject.title,
+                tasksCount: result.tasksCount,
+                forkedFrom: {
+                    id: sourceProject.id,
+                    title: sourceProject.title,
+                    creatorName: sourceProject.creator.name || sourceProject.creator.username
+                }
+            }
+        };
+
+    } catch (error: any) {
+        console.error("[FORK PROJECT ERROR]:", error);
+        return {
+            success: false,
+            error: error.message || "Failed to fork project"
         };
     }
 }

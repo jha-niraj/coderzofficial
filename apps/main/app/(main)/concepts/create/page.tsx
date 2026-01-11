@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import { auth } from '@repo/auth';
 import { redirect } from "next/navigation";
-import { prisma } from "@repo/prisma";
+// import { prisma } from "@repo/prisma";
 import ConceptCreateForm from "./_components/concept-create-form";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 

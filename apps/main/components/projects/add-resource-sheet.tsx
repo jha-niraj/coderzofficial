@@ -84,128 +84,130 @@ export default function AddResourceSheet({ projectId }: AddResourceSheetProps) {
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button size="sm" className="w-full gap-2">
+                <Button size="sm" className="w-fit gap-2">
                     <Plus className="w-4 h-4" />
                     Add Learning Resource
                 </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-[500px] overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle>Add Learning Resource</SheetTitle>
-                    <SheetDescription>
-                        Share a helpful resource with the community
-                    </SheetDescription>
-                </SheetHeader>
-                <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="title">
-                            Title <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                            id="title"
-                            placeholder="e.g., Complete React Tutorial"
-                            value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            maxLength={200}
-                            required
-                        />
-                        <p className="text-xs text-neutral-500">
-                            {formData.title.length}/200 characters
-                        </p>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="type">
-                            Resource Type <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                            value={formData.type}
-                            onValueChange={(value) => setFormData({ ...formData, type: value as ResourceType })}
-                            required
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select resource type">
+            <SheetContent side="bottom" className="h-[70vh] w-full overflow-y-auto">
+                <section className="w-full max-w-5xl mx-auto">
+                    <SheetHeader>
+                        <SheetTitle>Add Learning Resource</SheetTitle>
+                        <SheetDescription>
+                            Share a helpful resource with the community
+                        </SheetDescription>
+                    </SheetHeader>
+                    <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="title">
+                                Title <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="title"
+                                placeholder="e.g., Complete React Tutorial"
+                                value={formData.title}
+                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                maxLength={200}
+                                required
+                            />
+                            <p className="text-xs text-neutral-500">
+                                {formData.title.length}/200 characters
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="type">
+                                Resource Type <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                value={formData.type}
+                                onValueChange={(value) => setFormData({ ...formData, type: value as ResourceType })}
+                                required
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select resource type">
+                                        {
+                                            selectedTypeConfig && (
+                                                <div className="flex items-center gap-2">
+                                                    <selectedTypeConfig.icon className={`w-4 h-4 ${selectedTypeConfig.color}`} />
+                                                    <span>{selectedTypeConfig.label}</span>
+                                                </div>
+                                            )
+                                        }
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
                                     {
-                                        selectedTypeConfig && (
-                                            <div className="flex items-center gap-2">
-                                                <selectedTypeConfig.icon className={`w-4 h-4 ${selectedTypeConfig.color}`} />
-                                                <span>{selectedTypeConfig.label}</span>
-                                            </div>
-                                        )
+                                        RESOURCE_TYPES.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                <div className="flex items-center gap-2">
+                                                    <type.icon className={`w-4 h-4 ${type.color}`} />
+                                                    <span>{type.label}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))
                                     }
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="link">
+                                Link <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="link"
+                                type="url"
+                                placeholder="https://..."
+                                value={formData.link}
+                                onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                                required
+                            />
+                            <p className="text-xs text-neutral-500">
+                                Full URL to the resource
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">
+                                Description <span className="text-neutral-500">(Optional)</span>
+                            </Label>
+                            <Textarea
+                                id="description"
+                                placeholder="Brief description of what this resource covers..."
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                rows={3}
+                            />
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                                className="flex-1"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                className="flex-1"
+                            >
                                 {
-                                    RESOURCE_TYPES.map((type) => (
-                                        <SelectItem key={type.value} value={type.value}>
-                                            <div className="flex items-center gap-2">
-                                                <type.icon className={`w-4 h-4 ${type.color}`} />
-                                                <span>{type.label}</span>
-                                            </div>
-                                        </SelectItem>
-                                    ))
+                                    loading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Adding...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Add Resource
+                                        </>
+                                    )
                                 }
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="link">
-                            Link <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                            id="link"
-                            type="url"
-                            placeholder="https://..."
-                            value={formData.link}
-                            onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                            required
-                        />
-                        <p className="text-xs text-neutral-500">
-                            Full URL to the resource
-                        </p>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="description">
-                            Description <span className="text-neutral-500">(Optional)</span>
-                        </Label>
-                        <Textarea
-                            id="description"
-                            placeholder="Brief description of what this resource covers..."
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            rows={3}
-                        />
-                    </div>
-                    <div className="flex gap-2 pt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                            className="flex-1"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="flex-1"
-                        >
-                            {
-                                loading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Adding...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Add Resource
-                                    </>
-                                )
-                            }
-                        </Button>
-                    </div>
-                </form>
+                            </Button>
+                        </div>
+                    </form>
+                </section>
             </SheetContent>
         </Sheet>
     )

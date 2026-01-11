@@ -64,16 +64,28 @@ interface ProjectGenerateSheetProps {
         type?: string
         difficulty?: string
     }
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export default function ProjectGenerateSheet({
     trigger,
     onSuccess,
     spaceId,
-    defaultValues
+    defaultValues,
+    isOpen: externalIsOpen,
+    onOpenChange: externalOnOpenChange
 }: ProjectGenerateSheetProps) {
     const router = useRouter()
-    const [open, setOpen] = useState(false)
+    const [internalOpen, setInternalOpen] = useState(false)
+
+    // Support both controlled and uncontrolled modes
+    const open = externalIsOpen !== undefined ? externalIsOpen : internalOpen
+    const setOpen = useCallback((value: boolean) => {
+        setInternalOpen(value)
+        externalOnOpenChange?.(value)
+    }, [externalOnOpenChange]);
+
     const [currentStep, setCurrentStep] = useState(0)
     const [loading, setLoading] = useState(false)
     const [progressPercent, setProgressPercent] = useState(0)
@@ -229,7 +241,7 @@ export default function ProjectGenerateSheet({
         setLoading(false)
         resetForm()
         router.push('/explore')
-    }, [stopPolling, router])
+    }, [stopPolling, router, setOpen])
 
     const startPolling = useCallback((jobId: string) => {
         const maxPolls = 120
@@ -306,7 +318,7 @@ export default function ProjectGenerateSheet({
                 }
             }
         }, 5000)
-    }, [router, onSuccess, spaceId, stopPolling])
+    }, [router, onSuccess, spaceId, stopPolling, setOpen])
 
     const resetForm = () => {
         setCurrentStep(0)

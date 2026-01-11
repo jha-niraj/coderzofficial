@@ -23,7 +23,7 @@ export async function getProjectIdeasByTechnology(technology: string) {
                 { createdAt: 'desc' },
             ],
         })
-        
+
         return {
             success: true,
             data: projects,
@@ -55,20 +55,20 @@ export async function getProjectIdeaById(id: string) {
                 },
             },
         })
-        
+
         if (!project) {
             return {
                 success: false,
                 error: 'Project not found',
             }
         }
-        
+
         // Increment view count
         await prisma.projectIdea.update({
             where: { id },
             data: { views: { increment: 1 } },
         })
-        
+
         return {
             success: true,
             data: project,
@@ -110,7 +110,7 @@ export async function searchProjectIdeas(query: string, filters?: {
             ],
             take: 50,
         })
-        
+
         return {
             success: true,
             data: projects,
@@ -153,18 +153,18 @@ export async function submitProjectIdea(data: {
                 error: 'You must be logged in to submit a project idea',
             }
         }
-        
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
         })
-        
+
         if (!user) {
             return {
                 success: false,
                 error: 'User not found',
             }
         }
-        
+
         // Create project idea
         const projectIdea = await prisma.projectIdea.create({
             data: {
@@ -185,9 +185,9 @@ export async function submitProjectIdea(data: {
                 submittedById: user.id,
             },
         })
-        
+
         revalidatePath('/projects/ideas')
-        
+
         return {
             success: true,
             data: projectIdea,
@@ -214,18 +214,18 @@ export async function getUserSubmittedProjectIdeas() {
                 error: 'Not authenticated',
             }
         }
-        
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
         })
-        
+
         if (!user) {
             return {
                 success: false,
                 error: 'User not found',
             }
         }
-        
+
         const projects = await prisma.projectIdea.findMany({
             where: {
                 submittedById: user.id,
@@ -234,7 +234,7 @@ export async function getUserSubmittedProjectIdeas() {
                 createdAt: 'desc',
             },
         })
-        
+
         return {
             success: true,
             data: projects,
@@ -264,30 +264,30 @@ export async function approveProjectIdea(id: string) {
                 error: 'Not authenticated',
             }
         }
-        
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
         })
-        
+
         if (!user || user.role !== 'Admin') {
             return {
                 success: false,
                 error: 'Unauthorized',
             }
         }
-        
+
         const projectIdea = await prisma.projectIdea.findUnique({
             where: { id },
             include: { submittedBy: true },
         })
-        
+
         if (!projectIdea) {
             return {
                 success: false,
                 error: 'Project idea not found',
             }
         }
-        
+
         // Update project status
         await prisma.projectIdea.update({
             where: { id },
@@ -296,7 +296,7 @@ export async function approveProjectIdea(id: string) {
                 approvedAt: new Date(),
             },
         })
-        
+
         // Reward user with XP if it's a user submission
         if (projectIdea.isUserSubmitted && projectIdea.submittedById) {
             await prisma.$transaction([
@@ -317,9 +317,9 @@ export async function approveProjectIdea(id: string) {
                 }),
             ])
         }
-        
+
         revalidatePath('/projects/ideas')
-        
+
         return {
             success: true,
             message: 'Project idea approved successfully',
@@ -345,27 +345,27 @@ export async function rejectProjectIdea(id: string, reason?: string) {
                 error: 'Not authenticated',
             }
         }
-        
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
         })
-        
+
         if (!user || user.role !== 'Admin') {
             return {
                 success: false,
                 error: 'Unauthorized',
             }
         }
-        
+
         await prisma.projectIdea.update({
             where: { id },
             data: {
                 status: 'REJECTED',
             },
         })
-        
+
         revalidatePath('/projects/ideas')
-        
+
         return {
             success: true,
             message: 'Project idea rejected',
@@ -394,7 +394,7 @@ export async function incrementProjectView(projectId: string) {
                 views: { increment: 1 },
             },
         })
-        
+
         return {
             success: true,
         }
@@ -419,18 +419,18 @@ export async function toggleProjectUpvote(projectId: string) {
                 error: 'You must be logged in to upvote',
             }
         }
-        
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
         })
-        
+
         if (!user) {
             return {
                 success: false,
                 error: 'User not found',
             }
         }
-        
+
         // Check if user already upvoted
         const existingUpvote = await prisma.projectIdeaUpvote.findUnique({
             where: {
@@ -440,7 +440,7 @@ export async function toggleProjectUpvote(projectId: string) {
                 },
             },
         })
-        
+
         if (existingUpvote) {
             // Remove upvote
             await prisma.$transaction([
@@ -454,7 +454,7 @@ export async function toggleProjectUpvote(projectId: string) {
                     },
                 }),
             ])
-            
+
             return {
                 success: true,
                 upvoted: false,
@@ -476,7 +476,7 @@ export async function toggleProjectUpvote(projectId: string) {
                     },
                 }),
             ])
-            
+
             return {
                 success: true,
                 upvoted: true,
@@ -504,18 +504,18 @@ export async function checkUserUpvote(projectId: string) {
                 upvoted: false,
             }
         }
-        
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
         })
-        
+
         if (!user) {
             return {
                 success: true,
                 upvoted: false,
             }
         }
-        
+
         const upvote = await prisma.projectIdeaUpvote.findUnique({
             where: {
                 projectIdeaId_userId: {
@@ -524,7 +524,7 @@ export async function checkUserUpvote(projectId: string) {
                 },
             },
         })
-        
+
         return {
             success: true,
             upvoted: !!upvote,
@@ -553,7 +553,7 @@ export async function getTopUpvotedProjects(technology: string, limit: number = 
             },
             take: limit,
         })
-        
+
         return {
             success: true,
             data: projects,
@@ -563,6 +563,129 @@ export async function getTopUpvotedProjects(technology: string, limit: number = 
         return {
             success: false,
             error: error.message || 'Failed to fetch top projects',
+        }
+    }
+}
+
+// ===============================================
+// PROBLEM STATEMENTS
+// ===============================================
+
+/**
+ * Get all approved problem statements (technology-agnostic ideas)
+ */
+export async function getProblemStatements(options?: {
+    limit?: number
+    difficulty?: string
+    search?: string
+}) {
+    try {
+        const { limit = 50, difficulty, search } = options || {}
+
+        const where: any = {
+            ideaType: 'PROBLEM_STATEMENT',
+            status: 'APPROVED',
+        }
+
+        if (difficulty && difficulty !== 'all') {
+            where.difficulty = difficulty
+        }
+
+        if (search) {
+            where.OR = [
+                { projectTitle: { contains: search, mode: 'insensitive' } },
+                { projectDescription: { contains: search, mode: 'insensitive' } },
+                { overview: { contains: search, mode: 'insensitive' } },
+            ]
+        }
+
+        const ideas = await prisma.projectIdea.findMany({
+            where,
+            orderBy: [
+                { upvotes: 'desc' },
+                { createdAt: 'desc' },
+            ],
+            take: limit,
+            include: {
+                submittedBy: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        image: true,
+                    },
+                },
+            },
+        })
+
+        return {
+            success: true,
+            data: ideas,
+        }
+    } catch (error: any) {
+        console.error('Failed to fetch problem statements:', error)
+        return {
+            success: false,
+            error: error.message || 'Failed to fetch problem statements',
+        }
+    }
+}
+
+/**
+ * Submit a problem statement (technology-agnostic idea)
+ */
+export async function submitProblemStatement(data: {
+    projectTitle: string
+    projectDescription: string
+    difficulty: string
+    overview?: string
+    coreRequirements?: string[]
+    engineeringConstraints?: string[]
+    suggestedStacks?: any
+    recruiterSignal?: string
+    categories?: string[]
+}) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return {
+                success: false,
+                error: 'You must be logged in to submit a problem statement',
+            }
+        }
+
+        const idea = await prisma.projectIdea.create({
+            data: {
+                projectTitle: data.projectTitle,
+                projectDescription: data.projectDescription,
+                generationType: 'FULL_STACK', // Default for problem statements
+                difficulty: data.difficulty,
+                ideaType: 'PROBLEM_STATEMENT',
+                overview: data.overview || data.projectDescription,
+                coreRequirements: data.coreRequirements || [],
+                engineeringConstraints: data.engineeringConstraints || [],
+                suggestedStacks: data.suggestedStacks || null,
+                recruiterSignal: data.recruiterSignal || null,
+                categories: data.categories || [],
+                technologies: [],
+                status: 'PENDING',
+                submittedById: session.user.id,
+                isUserSubmitted: true,
+            },
+        })
+
+        revalidatePath('/projects/ideas')
+
+        return {
+            success: true,
+            data: idea,
+            message: 'Problem statement submitted successfully! It will be reviewed by our team.',
+        }
+    } catch (error: any) {
+        console.error('Failed to submit problem statement:', error)
+        return {
+            success: false,
+            error: error.message || 'Failed to submit problem statement',
         }
     }
 }

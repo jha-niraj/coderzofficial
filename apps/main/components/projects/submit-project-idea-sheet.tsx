@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import {
-    X, Link as LinkIcon, Image as ImageIcon, Loader2, Check
+    X, Link as LinkIcon, Image as ImageIcon, Loader2, Check,
+    Target, Code2, ArrowLeft, ArrowRight, Lightbulb
 } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -17,7 +18,9 @@ import {
 } from '@repo/ui/components/ui/select'
 import { Badge } from '@repo/ui/components/ui/badge'
 import toast from '@repo/ui/components/ui/sonner'
-import { submitProjectIdea } from '@/actions/(main)/projects/project-ideas.action'
+import {
+    submitProjectIdea, submitProblemStatement
+} from '@/actions/(main)/projects/project-ideas.action'
 import { uploadImageToCloudinary } from '@/actions/(common)/shared/upload.action'
 
 interface SubmitProjectIdeaSheetProps {
@@ -25,11 +28,15 @@ interface SubmitProjectIdeaSheetProps {
     onOpenChange: (open: boolean) => void
 }
 
+type IdeaType = 'select' | 'problem' | 'technology'
+
 export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdeaSheetProps) {
     const [loading, setLoading] = useState(false)
     const [uploadingImage, setUploadingImage] = useState(false)
+    const [ideaType, setIdeaType] = useState<IdeaType>('select')
 
-    const [formData, setFormData] = useState({
+    // Technology-specific form data
+    const [techFormData, setTechFormData] = useState({
         projectTitle: '',
         projectDescription: '',
         generationType: '',
@@ -43,22 +50,34 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
         resourceLinks: [] as string[],
     })
 
+    // Problem statement form data
+    const [problemFormData, setProblemFormData] = useState({
+        projectTitle: '',
+        projectDescription: '',
+        difficulty: '',
+        overview: '',
+        coreRequirements: [] as string[],
+        engineeringConstraints: [] as string[],
+        recruiterSignal: '',
+        categories: [] as string[],
+    })
+
     const [techInput, setTechInput] = useState('')
     const [categoryInput, setCategoryInput] = useState('')
     const [figmaInput, setFigmaInput] = useState('')
     const [resourceInput, setResourceInput] = useState('')
+    const [requirementInput, setRequirementInput] = useState('')
+    const [constraintInput, setConstraintInput] = useState('')
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             toast.error('Image size must be less than 5MB')
             return
         }
 
-        // Validate file type
         if (!file.type.startsWith('image/')) {
             toast.error('Please upload an image file')
             return
@@ -72,7 +91,7 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
             const result = await uploadImageToCloudinary(uploadFormData)
 
             if (result.success && result.url) {
-                setFormData(prev => ({
+                setTechFormData(prev => ({
                     ...prev,
                     images: [...prev.images, result.url!],
                 }))
@@ -88,54 +107,35 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
         }
     }
 
-    const handleSubmit = async () => {
-        // Validation
-        if (!formData.projectTitle.trim()) {
+    const handleSubmitTechnology = async () => {
+        if (!techFormData.projectTitle.trim()) {
             toast.error('Please enter a project title')
             return
         }
-
-        if (!formData.projectDescription.trim()) {
+        if (!techFormData.projectDescription.trim()) {
             toast.error('Please enter a project description')
             return
         }
-
-        if (!formData.generationType) {
+        if (!techFormData.generationType) {
             toast.error('Please select a generation type')
             return
         }
-
-        if (!formData.difficulty) {
+        if (!techFormData.difficulty) {
             toast.error('Please select a difficulty level')
             return
         }
-
-        if (!formData.technology) {
+        if (!techFormData.technology) {
             toast.error('Please select a technology')
             return
         }
 
         setLoading(true)
         try {
-            const result = await submitProjectIdea(formData)
+            const result = await submitProjectIdea(techFormData)
 
             if (result.success) {
                 toast.success(result.message || 'Project idea submitted successfully!')
-                onOpenChange(false)
-                // Reset form
-                setFormData({
-                    projectTitle: '',
-                    projectDescription: '',
-                    generationType: '',
-                    difficulty: '',
-                    primaryLanguageOrFramework: '',
-                    technology: '',
-                    technologies: [],
-                    categories: [],
-                    images: [],
-                    figmaLinks: [],
-                    resourceLinks: [],
-                })
+                resetAndClose()
             } else {
                 toast.error(result.error || 'Failed to submit project idea')
             }
@@ -147,9 +147,78 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
         }
     }
 
+    const handleSubmitProblem = async () => {
+        if (!problemFormData.projectTitle.trim()) {
+            toast.error('Please enter a title')
+            return
+        }
+        if (!problemFormData.projectDescription.trim()) {
+            toast.error('Please enter a description')
+            return
+        }
+        if (!problemFormData.difficulty) {
+            toast.error('Please select a difficulty level')
+            return
+        }
+
+        setLoading(true)
+        try {
+            const result = await submitProblemStatement({
+                projectTitle: problemFormData.projectTitle,
+                projectDescription: problemFormData.projectDescription,
+                difficulty: problemFormData.difficulty,
+                overview: problemFormData.overview || problemFormData.projectDescription,
+                coreRequirements: problemFormData.coreRequirements,
+                engineeringConstraints: problemFormData.engineeringConstraints,
+                recruiterSignal: problemFormData.recruiterSignal,
+                categories: problemFormData.categories,
+            })
+
+            if (result.success) {
+                toast.success(result.message || 'Problem statement submitted successfully!')
+                resetAndClose()
+            } else {
+                toast.error(result.error || 'Failed to submit problem statement')
+            }
+        } catch (error) {
+            console.error('Submit error:', error)
+            toast.error('Failed to submit problem statement')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const resetAndClose = () => {
+        setIdeaType('select')
+        setTechFormData({
+            projectTitle: '',
+            projectDescription: '',
+            generationType: '',
+            difficulty: '',
+            primaryLanguageOrFramework: '',
+            technology: '',
+            technologies: [],
+            categories: [],
+            images: [],
+            figmaLinks: [],
+            resourceLinks: [],
+        })
+        setProblemFormData({
+            projectTitle: '',
+            projectDescription: '',
+            difficulty: '',
+            overview: '',
+            coreRequirements: [],
+            engineeringConstraints: [],
+            recruiterSignal: '',
+            categories: [],
+        })
+        onOpenChange(false)
+    }
+
     const addTechnology = () => {
-        if (techInput.trim() && !formData.technologies.includes(techInput.trim())) {
-            setFormData(prev => ({
+        if (techInput.trim() && !techFormData.technologies.includes(techInput.trim())) {
+            setTechFormData(prev => ({
                 ...prev,
                 technologies: [...prev.technologies, techInput.trim()],
             }))
@@ -158,32 +227,50 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
     }
 
     const removeTechnology = (tech: string) => {
-        setFormData(prev => ({
+        setTechFormData(prev => ({
             ...prev,
             technologies: prev.technologies.filter(t => t !== tech),
         }))
     }
 
-    const addCategory = () => {
-        if (categoryInput.trim() && !formData.categories.includes(categoryInput.trim())) {
-            setFormData(prev => ({
-                ...prev,
-                categories: [...prev.categories, categoryInput.trim()],
-            }))
+    const addCategory = (isProblem: boolean = false) => {
+        if (categoryInput.trim()) {
+            if (isProblem) {
+                if (!problemFormData.categories.includes(categoryInput.trim())) {
+                    setProblemFormData(prev => ({
+                        ...prev,
+                        categories: [...prev.categories, categoryInput.trim()],
+                    }))
+                }
+            } else {
+                if (!techFormData.categories.includes(categoryInput.trim())) {
+                    setTechFormData(prev => ({
+                        ...prev,
+                        categories: [...prev.categories, categoryInput.trim()],
+                    }))
+                }
+            }
             setCategoryInput('')
         }
     }
 
-    const removeCategory = (cat: string) => {
-        setFormData(prev => ({
-            ...prev,
-            categories: prev.categories.filter(c => c !== cat),
-        }))
+    const removeCategory = (cat: string, isProblem: boolean = false) => {
+        if (isProblem) {
+            setProblemFormData(prev => ({
+                ...prev,
+                categories: prev.categories.filter(c => c !== cat),
+            }))
+        } else {
+            setTechFormData(prev => ({
+                ...prev,
+                categories: prev.categories.filter(c => c !== cat),
+            }))
+        }
     }
 
     const addFigmaLink = () => {
-        if (figmaInput.trim() && !formData.figmaLinks.includes(figmaInput.trim())) {
-            setFormData(prev => ({
+        if (figmaInput.trim() && !techFormData.figmaLinks.includes(figmaInput.trim())) {
+            setTechFormData(prev => ({
                 ...prev,
                 figmaLinks: [...prev.figmaLinks, figmaInput.trim()],
             }))
@@ -192,8 +279,8 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
     }
 
     const addResourceLink = () => {
-        if (resourceInput.trim() && !formData.resourceLinks.includes(resourceInput.trim())) {
-            setFormData(prev => ({
+        if (resourceInput.trim() && !techFormData.resourceLinks.includes(resourceInput.trim())) {
+            setTechFormData(prev => ({
                 ...prev,
                 resourceLinks: [...prev.resourceLinks, resourceInput.trim()],
             }))
@@ -201,285 +288,539 @@ export function SubmitProjectIdeaSheet({ open, onOpenChange }: SubmitProjectIdea
         }
     }
 
+    const addRequirement = () => {
+        if (requirementInput.trim() && !problemFormData.coreRequirements.includes(requirementInput.trim())) {
+            setProblemFormData(prev => ({
+                ...prev,
+                coreRequirements: [...prev.coreRequirements, requirementInput.trim()],
+            }))
+            setRequirementInput('')
+        }
+    }
+
+    const removeRequirement = (req: string) => {
+        setProblemFormData(prev => ({
+            ...prev,
+            coreRequirements: prev.coreRequirements.filter(r => r !== req),
+        }))
+    }
+
+    const addConstraint = () => {
+        if (constraintInput.trim() && !problemFormData.engineeringConstraints.includes(constraintInput.trim())) {
+            setProblemFormData(prev => ({
+                ...prev,
+                engineeringConstraints: [...prev.engineeringConstraints, constraintInput.trim()],
+            }))
+            setConstraintInput('')
+        }
+    }
+
+    const removeConstraint = (constraint: string) => {
+        setProblemFormData(prev => ({
+            ...prev,
+            engineeringConstraints: prev.engineeringConstraints.filter(c => c !== constraint),
+        }))
+    }
+
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle>Submit Project Idea</SheetTitle>
-                    <SheetDescription>
-                        Share your project idea with the community. You&qpos;ll earn 20 XP once it&apos;s approved!
-                    </SheetDescription>
-                </SheetHeader>
-                <div className="space-y-6 mt-6">
-                    <div>
-                        <Label htmlFor="title">Project Title *</Label>
-                        <Input
-                            id="title"
-                            placeholder="e.g., React Task Manager"
-                            value={formData.projectTitle}
-                            onChange={(e) => setFormData(prev => ({ ...prev, projectTitle: e.target.value }))}
-                            className="mt-2"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="description">Project Description *</Label>
-                        <Textarea
-                            id="description"
-                            placeholder="Describe what the project does, key features, and learning outcomes..."
-                            value={formData.projectDescription}
-                            onChange={(e) => setFormData(prev => ({ ...prev, projectDescription: e.target.value }))}
-                            rows={4}
-                            className="mt-2"
-                        />
-                    </div>
-                    <div>
-                        <Label>Generation Type *</Label>
-                        <Select
-                            value={formData.generationType}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, generationType: value }))}
-                        >
-                            <SelectTrigger className="mt-2">
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="FRONTEND">Frontend</SelectItem>
-                                <SelectItem value="FULL_STACK">Full Stack</SelectItem>
-                                <SelectItem value="BACKEND">Backend</SelectItem>
-                                <SelectItem value="AI_AGENT">AI Agent</SelectItem>
-                                <SelectItem value="PROGRAMS">Programs</SelectItem>
-                                <SelectItem value="OTHER">Other</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Difficulty Level *</Label>
-                        <Select
-                            value={formData.difficulty}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}
-                        >
-                            <SelectTrigger className="mt-2">
-                                <SelectValue placeholder="Select difficulty" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="BEGINNER">Beginner</SelectItem>
-                                <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-                                <SelectItem value="ADVANCED">Advanced</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Main Technology *</Label>
-                        <Select
-                            value={formData.technology}
-                            onValueChange={(value) => {
-                                setFormData(prev => ({
-                                    ...prev,
-                                    technology: value,
-                                    primaryLanguageOrFramework: value,
-                                }))
-                            }}
-                        >
-                            <SelectTrigger className="mt-2">
-                                <SelectValue placeholder="Select technology" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="React">React</SelectItem>
-                                <SelectItem value="Next.js">Next.js</SelectItem>
-                                <SelectItem value="Vue.js">Vue.js</SelectItem>
-                                <SelectItem value="Angular">Angular</SelectItem>
-                                <SelectItem value="Node.js">Node.js</SelectItem>
-                                <SelectItem value="Python">Python</SelectItem>
-                                <SelectItem value="Java">Java</SelectItem>
-                                <SelectItem value="Go">Go</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Additional Technologies</Label>
-                        <div className="flex gap-2 mt-2">
-                            <Input
-                                placeholder="e.g., TypeScript, Tailwind CSS"
-                                value={techInput}
-                                onChange={(e) => setTechInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnology())}
-                            />
-                            <Button onClick={addTechnology} variant="outline">Add</Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {
-                                formData.technologies.map((tech) => (
-                                    <Badge key={tech} variant="secondary" className="cursor-pointer" onClick={() => removeTechnology(tech)}>
-                                        {tech} ×
-                                    </Badge>
-                                ))
-                            }
-                        </div>
-                    </div>
-                    <div>
-                        <Label>Categories</Label>
-                        <div className="flex gap-2 mt-2">
-                            <Input
-                                placeholder="e.g., Web Development, E-Commerce"
-                                value={categoryInput}
-                                onChange={(e) => setCategoryInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCategory())}
-                            />
-                            <Button onClick={addCategory} variant="outline">Add</Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {
-                                formData.categories.map((cat) => (
-                                    <Badge key={cat} variant="secondary" className="cursor-pointer" onClick={() => removeCategory(cat)}>
-                                        {cat} ×
-                                    </Badge>
-                                ))
-                            }
-                        </div>
-                    </div>
-                    <div>
-                        <Label>UI Images (Optional)</Label>
-                        <div className="mt-2">
-                            <label className="flex items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                    disabled={uploadingImage}
-                                />
-                                <div className="text-center">
-                                    {
-                                        uploadingImage ? (
-                                            <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-neutral-400" />
-                                        ) : (
-                                            <ImageIcon className="w-8 h-8 mx-auto mb-2 text-neutral-400" />
-                                        )
-                                    }
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                        {uploadingImage ? 'Uploading...' : 'Click to upload image'}
-                                    </p>
-                                    <p className="text-xs text-neutral-500 mt-1">Max 5MB</p>
+        <Sheet open={open} onOpenChange={(isOpen) => {
+            if (!isOpen) resetAndClose()
+            else onOpenChange(isOpen)
+        }}>
+            <SheetContent side="bottom" className="h-[80vh] w-full overflow-y-auto">
+                <section className="w-full max-w-5xl mx-auto">
+                    {
+                        ideaType === 'select' && (
+                            <>
+                                <SheetHeader className="mb-8">
+                                    <SheetTitle className="flex items-center gap-2">
+                                        <Lightbulb className="w-5 h-5" />
+                                        Submit an Idea
+                                    </SheetTitle>
+                                    <SheetDescription>
+                                        What type of idea would you like to submit?
+                                    </SheetDescription>
+                                </SheetHeader>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <button
+                                        onClick={() => setIdeaType('problem')}
+                                        className="group text-left bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 hover:border-amber-400 dark:hover:border-amber-600 transition-all hover:shadow-lg"
+                                    >
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
+                                                <Target className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Problem Statement</h3>
+                                                <p className="text-sm text-neutral-500">Technology agnostic</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                            Submit a challenge or problem that developers can solve using any tech stack they prefer.
+                                            Great for real-world scenarios and open-ended projects.
+                                        </p>
+                                        <div className="mt-4 flex items-center text-sm font-medium text-amber-600 dark:text-amber-400 group-hover:gap-2 transition-all">
+                                            Choose this
+                                            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setIdeaType('technology')}
+                                        className="group text-left bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 hover:border-blue-400 dark:hover:border-blue-600 transition-all hover:shadow-lg"
+                                    >
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
+                                                <Code2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Technology Specific</h3>
+                                                <p className="text-sm text-neutral-500">With defined stack</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                            Submit a project idea with a specific technology stack.
+                                            Best for tutorials, guided projects, and learning paths.
+                                        </p>
+                                        <div className="mt-4 flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 group-hover:gap-2 transition-all">
+                                            Choose this
+                                            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                    </button>
                                 </div>
-                            </label>
-                        </div>
-                        {
-                            formData.images.length > 0 && (
-                                <div className="grid grid-cols-3 gap-2 mt-2">
-                                    {
-                                        formData.images.map((img, i) => (
-                                            <div key={i} className="relative group">
-                                                <Image 
-                                                src={img} 
-                                                alt="Project preview" 
-                                                width={200} 
-                                                height={96} 
-                                                className="w-full h-24 object-cover rounded-lg" 
+                            </>
+                        )
+                    }
+                    {
+                        ideaType === 'problem' && (
+                            <>
+                                <SheetHeader className="mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setIdeaType('select')}
+                                            className="p-2"
+                                        >
+                                            <ArrowLeft className="w-4 h-4" />
+                                        </Button>
+                                        <div>
+                                            <SheetTitle className="flex items-center gap-2">
+                                                <Target className="w-5 h-5 text-amber-600" />
+                                                Submit Problem Statement
+                                            </SheetTitle>
+                                            <SheetDescription>
+                                                A technology-agnostic challenge for developers
+                                            </SheetDescription>
+                                        </div>
+                                    </div>
+                                </SheetHeader>
+                                <div className="space-y-6">
+                                    <div>
+                                        <Label htmlFor="problem-title">Title *</Label>
+                                        <Input
+                                            id="problem-title"
+                                            placeholder="e.g., Build an Event-Driven Notification System"
+                                            value={problemFormData.projectTitle}
+                                            onChange={(e) => setProblemFormData(prev => ({ ...prev, projectTitle: e.target.value }))}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="problem-desc">Short Description *</Label>
+                                        <Textarea
+                                            id="problem-desc"
+                                            placeholder="A brief description of the problem..."
+                                            value={problemFormData.projectDescription}
+                                            onChange={(e) => setProblemFormData(prev => ({ ...prev, projectDescription: e.target.value }))}
+                                            rows={3}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="problem-overview">Detailed Overview (optional)</Label>
+                                        <Textarea
+                                            id="problem-overview"
+                                            placeholder="Provide a detailed explanation of the problem, context, and what makes it interesting..."
+                                            value={problemFormData.overview}
+                                            onChange={(e) => setProblemFormData(prev => ({ ...prev, overview: e.target.value }))}
+                                            rows={4}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Difficulty Level *</Label>
+                                        <Select
+                                            value={problemFormData.difficulty}
+                                            onValueChange={(value) => setProblemFormData(prev => ({ ...prev, difficulty: value }))}
+                                        >
+                                            <SelectTrigger className="mt-2">
+                                                <SelectValue placeholder="Select difficulty" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="BEGINNER">Beginner</SelectItem>
+                                                <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+                                                <SelectItem value="ADVANCED">Advanced</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label>Core Requirements (what must be implemented)</Label>
+                                        <div className="flex gap-2 mt-2">
+                                            <Input
+                                                placeholder="e.g., User authentication"
+                                                value={requirementInput}
+                                                onChange={(e) => setRequirementInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addRequirement())}
+                                            />
+                                            <Button type="button" onClick={addRequirement} variant="outline">Add</Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {
+                                                problemFormData.coreRequirements.map((req) => (
+                                                    <Badge key={req} variant="secondary" className="flex items-center gap-1">
+                                                        {req}
+                                                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeRequirement(req)} />
+                                                    </Badge>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label>Engineering Constraints (optional)</Label>
+                                        <div className="flex gap-2 mt-2">
+                                            <Input
+                                                placeholder="e.g., Must handle 10k concurrent users"
+                                                value={constraintInput}
+                                                onChange={(e) => setConstraintInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addConstraint())}
+                                            />
+                                            <Button type="button" onClick={addConstraint} variant="outline">Add</Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {
+                                                problemFormData.engineeringConstraints.map((constraint) => (
+                                                    <Badge key={constraint} variant="secondary" className="flex items-center gap-1">
+                                                        {constraint}
+                                                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeConstraint(constraint)} />
+                                                    </Badge>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="recruiter-signal">Recruiter Signal (optional)</Label>
+                                        <Input
+                                            id="recruiter-signal"
+                                            placeholder="e.g., Demonstrates understanding of event-driven architecture"
+                                            value={problemFormData.recruiterSignal}
+                                            onChange={(e) => setProblemFormData(prev => ({ ...prev, recruiterSignal: e.target.value }))}
+                                            className="mt-2"
+                                        />
+                                        <p className="text-xs text-neutral-500 mt-1">What skill does this project prove to recruiters?</p>
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-4 border-t">
+                                        <Button variant="outline" onClick={() => setIdeaType('select')}>
+                                            Back
+                                        </Button>
+                                        <Button onClick={handleSubmitProblem} disabled={loading}>
+                                            {
+                                                loading ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        Submitting...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Check className="w-4 h-4 mr-2" />
+                                                        Submit Problem Statement
+                                                    </>
+                                                )
+                                            }
+                                        </Button>
+                                    </div>
+                                </div>
+                            </>
+                        )
+                    }
+                    {
+                        ideaType === 'technology' && (
+                            <>
+                                <SheetHeader className="mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setIdeaType('select')}
+                                            className="p-2"
+                                        >
+                                            <ArrowLeft className="w-4 h-4" />
+                                        </Button>
+                                        <div>
+                                            <SheetTitle className="flex items-center gap-2">
+                                                <Code2 className="w-5 h-5 text-blue-600" />
+                                                Submit Technology-Specific Idea
+                                            </SheetTitle>
+                                            <SheetDescription>
+                                                A project idea with a defined tech stack
+                                            </SheetDescription>
+                                        </div>
+                                    </div>
+                                </SheetHeader>
+                                <div className="space-y-6">
+                                    <div>
+                                        <Label htmlFor="title">Project Title *</Label>
+                                        <Input
+                                            id="title"
+                                            placeholder="e.g., React Task Manager"
+                                            value={techFormData.projectTitle}
+                                            onChange={(e) => setTechFormData(prev => ({ ...prev, projectTitle: e.target.value }))}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="description">Project Description *</Label>
+                                        <Textarea
+                                            id="description"
+                                            placeholder="Describe what the project does, key features, and learning outcomes..."
+                                            value={techFormData.projectDescription}
+                                            onChange={(e) => setTechFormData(prev => ({ ...prev, projectDescription: e.target.value }))}
+                                            rows={4}
+                                            className="mt-2"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label>Generation Type *</Label>
+                                            <Select
+                                                value={techFormData.generationType}
+                                                onValueChange={(value) => setTechFormData(prev => ({ ...prev, generationType: value }))}
+                                            >
+                                                <SelectTrigger className="mt-2">
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="FRONTEND">Frontend</SelectItem>
+                                                    <SelectItem value="FULL_STACK">Full Stack</SelectItem>
+                                                    <SelectItem value="BACKEND">Backend</SelectItem>
+                                                    <SelectItem value="AI_AGENT">AI Agent</SelectItem>
+                                                    <SelectItem value="PROGRAMS">Programs</SelectItem>
+                                                    <SelectItem value="OTHER">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label>Difficulty Level *</Label>
+                                            <Select
+                                                value={techFormData.difficulty}
+                                                onValueChange={(value) => setTechFormData(prev => ({ ...prev, difficulty: value }))}
+                                            >
+                                                <SelectTrigger className="mt-2">
+                                                    <SelectValue placeholder="Select difficulty" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="BEGINNER">Beginner</SelectItem>
+                                                    <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+                                                    <SelectItem value="ADVANCED">Advanced</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label>Primary Technology *</Label>
+                                        <Select
+                                            value={techFormData.technology}
+                                            onValueChange={(value) => setTechFormData(prev => ({ ...prev, technology: value, primaryLanguageOrFramework: value }))}
+                                        >
+                                            <SelectTrigger className="mt-2">
+                                                <SelectValue placeholder="Select primary technology" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="react">React</SelectItem>
+                                                <SelectItem value="nextjs">Next.js</SelectItem>
+                                                <SelectItem value="vue">Vue</SelectItem>
+                                                <SelectItem value="angular">Angular</SelectItem>
+                                                <SelectItem value="svelte">Svelte</SelectItem>
+                                                <SelectItem value="node">Node.js</SelectItem>
+                                                <SelectItem value="python">Python</SelectItem>
+                                                <SelectItem value="golang">Go</SelectItem>
+                                                <SelectItem value="java">Java</SelectItem>
+                                                <SelectItem value="rust">Rust</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label>Additional Technologies</Label>
+                                        <div className="flex gap-2 mt-2">
+                                            <Input
+                                                placeholder="e.g., Tailwind CSS, PostgreSQL"
+                                                value={techInput}
+                                                onChange={(e) => setTechInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnology())}
+                                            />
+                                            <Button type="button" onClick={addTechnology} variant="outline">Add</Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {
+                                                techFormData.technologies.map((tech) => (
+                                                    <Badge key={tech} variant="secondary" className="flex items-center gap-1">
+                                                        {tech}
+                                                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeTechnology(tech)} />
+                                                    </Badge>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label>Categories</Label>
+                                        <div className="flex gap-2 mt-2">
+                                            <Input
+                                                placeholder="e.g., E-commerce, Social Media"
+                                                value={categoryInput}
+                                                onChange={(e) => setCategoryInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCategory())}
+                                            />
+                                            <Button type="button" onClick={() => addCategory()} variant="outline">Add</Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {
+                                                techFormData.categories.map((cat) => (
+                                                    <Badge key={cat} variant="secondary" className="flex items-center gap-1">
+                                                        {cat}
+                                                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeCategory(cat)} />
+                                                    </Badge>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label>UI Screenshots</Label>
+                                        <div className="mt-2 flex flex-wrap gap-4">
+                                            {
+                                                techFormData.images.map((img, idx) => (
+                                                    <div key={idx} className="relative group">
+                                                        <Image
+                                                            src={img}
+                                                            alt={`Screenshot ${idx + 1}`}
+                                                            width={120}
+                                                            height={80}
+                                                            className="rounded-lg border object-cover"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setTechFormData(prev => ({
+                                                                ...prev,
+                                                                images: prev.images.filter((_, i) => i !== idx),
+                                                            }))}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            }
+                                            <Label className="w-[120px] h-[80px] border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={handleImageUpload}
+                                                    disabled={uploadingImage}
                                                 />
-                                                <button
-                                                    onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }))}
-                                                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))
-                                    }
+                                                {
+                                                    uploadingImage ? (
+                                                        <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+                                                    ) : (
+                                                        <ImageIcon className="w-6 h-6 text-neutral-400" />
+                                                    )
+                                                }
+                                            </Label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label>Figma Links</Label>
+                                        <div className="flex gap-2 mt-2">
+                                            <Input
+                                                placeholder="https://figma.com/..."
+                                                value={figmaInput}
+                                                onChange={(e) => setFigmaInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addFigmaLink())}
+                                            />
+                                            <Button type="button" onClick={addFigmaLink} variant="outline">
+                                                <LinkIcon className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {
+                                                techFormData.figmaLinks.map((link) => (
+                                                    <Badge key={link} variant="outline" className="flex items-center gap-1 text-xs">
+                                                        {link.substring(0, 30)}...
+                                                        <X
+                                                            className="w-3 h-3 cursor-pointer"
+                                                            onClick={() => setTechFormData(prev => ({
+                                                                ...prev,
+                                                                figmaLinks: prev.figmaLinks.filter(l => l !== link),
+                                                            }))}
+                                                        />
+                                                    </Badge>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label>Resource Links</Label>
+                                        <div className="flex gap-2 mt-2">
+                                            <Input
+                                                placeholder="https://..."
+                                                value={resourceInput}
+                                                onChange={(e) => setResourceInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addResourceLink())}
+                                            />
+                                            <Button type="button" onClick={addResourceLink} variant="outline">
+                                                <LinkIcon className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {
+                                                techFormData.resourceLinks.map((link) => (
+                                                    <Badge key={link} variant="outline" className="flex items-center gap-1 text-xs">
+                                                        {link.substring(0, 30)}...
+                                                        <X
+                                                            className="w-3 h-3 cursor-pointer"
+                                                            onClick={() => setTechFormData(prev => ({
+                                                                ...prev,
+                                                                resourceLinks: prev.resourceLinks.filter(l => l !== link),
+                                                            }))}
+                                                        />
+                                                    </Badge>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-4 border-t">
+                                        <Button variant="outline" onClick={() => setIdeaType('select')}>
+                                            Back
+                                        </Button>
+                                        <Button onClick={handleSubmitTechnology} disabled={loading}>
+                                            {
+                                                loading ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        Submitting...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Check className="w-4 h-4 mr-2" />
+                                                        Submit Idea
+                                                    </>
+                                                )
+                                            }
+                                        </Button>
+                                    </div>
                                 </div>
-                            )
-                        }
-                    </div>
-                    <div>
-                        <Label>Figma Links (Optional)</Label>
-                        <div className="flex gap-2 mt-2">
-                            <Input
-                                placeholder="https://figma.com/..."
-                                value={figmaInput}
-                                onChange={(e) => setFigmaInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addFigmaLink())}
-                            />
-                            <Button onClick={addFigmaLink} variant="outline">
-                                <LinkIcon className="w-4 h-4" />
-                            </Button>
-                        </div>
-                        {
-                            formData.figmaLinks.length > 0 && (
-                                <div className="space-y-1 mt-2">
-                                    {
-                                        formData.figmaLinks.map((link, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-sm text-blue-500">
-                                                <LinkIcon className="w-3 h-3" />
-                                                <span className="truncate flex-1">{link}</span>
-                                                <button onClick={() => setFormData(prev => ({ ...prev, figmaLinks: prev.figmaLinks.filter((_, idx) => idx !== i) }))}>
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            )
-                        }
-                    </div>
-                    <div>
-                        <Label>Resource Links (Optional)</Label>
-                        <div className="flex gap-2 mt-2">
-                            <Input
-                                placeholder="https://..."
-                                value={resourceInput}
-                                onChange={(e) => setResourceInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addResourceLink())}
-                            />
-                            <Button onClick={addResourceLink} variant="outline">
-                                <LinkIcon className="w-4 h-4" />
-                            </Button>
-                        </div>
-                        {
-                            formData.resourceLinks.length > 0 && (
-                                <div className="space-y-1 mt-2">
-                                    {
-                                        formData.resourceLinks.map((link, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-sm text-blue-500">
-                                                <LinkIcon className="w-3 h-3" />
-                                                <span className="truncate flex-1">{link}</span>
-                                                <button onClick={() => setFormData(prev => ({ ...prev, resourceLinks: prev.resourceLinks.filter((_, idx) => idx !== i) }))}>
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            )
-                        }
-                    </div>
-                    <div className="flex gap-2 pt-4">
-                        <Button
-                            onClick={() => onOpenChange(false)}
-                            variant="outline"
-                            className="flex-1"
-                            disabled={loading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:opacity-90"
-                            disabled={loading}
-                        >
-                            {
-                                loading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Submitting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Check className="w-4 h-4 mr-2" />
-                                        Submit Idea
-                                    </>
-                                )
-                            }
-                        </Button>
-                    </div>
-                </div>
+                            </>
+                        )
+                    }
+                </section>
             </SheetContent>
         </Sheet>
     )

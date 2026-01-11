@@ -19,6 +19,7 @@ import {
     getProjectIdeasByTechnology, getTopUpvotedProjects
 } from '@/actions/(main)/projects/project-ideas.action'
 import toast from '@repo/ui/components/ui/sonner'
+import ProjectGenerateSheet from '@/components/projects/project-generate-sheet'
 
 interface ProjectIdea {
     id: string
@@ -43,6 +44,25 @@ export default function TechnologyProjectsPage() {
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [difficultyFilter, setDifficultyFilter] = useState<string>('all')
+
+    // Generate sheet state
+    const [generateSheetOpen, setGenerateSheetOpen] = useState(false)
+    const [generateDefaults, setGenerateDefaults] = useState<{
+        title?: string
+        description?: string
+        type?: string
+        difficulty?: string
+    }>({})
+
+    const handleBuildProject = (project: ProjectIdea) => {
+        setGenerateDefaults({
+            title: project.projectTitle,
+            description: project.projectDescription,
+            type: project.generationType,
+            difficulty: project.difficulty,
+        })
+        setGenerateSheetOpen(true)
+    }
 
     const category = getCategoryById(categoryId)
     const technology = getTechnologyById(categoryId, technologyId)
@@ -210,6 +230,7 @@ export default function TechnologyProjectsPage() {
                                             project={project}
                                             index={index}
                                             isTopProject={true}
+                                            onBuildClick={handleBuildProject}
                                         />
                                     ))
                                 }
@@ -262,6 +283,7 @@ export default function TechnologyProjectsPage() {
                                         project={project}
                                         index={index}
                                         isTopProject={false}
+                                        onBuildClick={handleBuildProject}
                                     />
                                 ))
                             }
@@ -269,6 +291,18 @@ export default function TechnologyProjectsPage() {
                     )
                 }
             </div>
+
+            {/* Project Generate Sheet - controlled mode */}
+            <ProjectGenerateSheet
+                trigger={<></>}
+                defaultValues={generateDefaults}
+                isOpen={generateSheetOpen}
+                onOpenChange={setGenerateSheetOpen}
+                onSuccess={(slug) => {
+                    setGenerateSheetOpen(false)
+                    router.push(`/projects/${slug}`)
+                }}
+            />
         </div>
     )
 }
@@ -278,10 +312,10 @@ interface ProjectCardProps {
     project: ProjectIdea
     index: number
     isTopProject: boolean
+    onBuildClick: (project: ProjectIdea) => void
 }
 
-function ProjectCard({ project, index, isTopProject }: ProjectCardProps) {
-    const router = useRouter()
+function ProjectCard({ project, index, isTopProject, onBuildClick }: ProjectCardProps) {
     const [upvoted, setUpvoted] = useState(false)
     const [upvoteCount, setUpvoteCount] = useState(project.upvotes || 0)
     const [upvoting, setUpvoting] = useState(false)
@@ -316,13 +350,7 @@ function ProjectCard({ project, index, isTopProject }: ProjectCardProps) {
     const handleBuildOwn = async () => {
         const { incrementProjectView } = await import('@/actions/(main)/projects/project-ideas.action')
         await incrementProjectView(project.id)
-        const params = new URLSearchParams({
-            title: project.projectTitle,
-            description: project.projectDescription,
-            type: project.generationType,
-            difficulty: project.difficulty,
-        })
-        router.push(`/projects/generate?${params.toString()}`)
+        onBuildClick(project)
     }
 
     const getDifficultyStyle = (difficulty: string) => {

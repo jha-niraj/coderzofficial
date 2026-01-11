@@ -1,0 +1,669 @@
+================================================================================
+                    CODER'Z PROJECTS MODULE - COMPREHENSIVE ANALYSIS
+================================================================================
+
+Document Created: 2026-01-12
+Last Updated: 2026-01-12
+Author: Technical Analysis
+
+================================================================================
+                               TABLE OF CONTENTS
+================================================================================
+
+1. EXECUTIVE SUMMARY
+2. CURRENT ARCHITECTURE ANALYSIS
+3. IDENTIFIED ISSUES & GAPS
+4. PROPOSED IMPROVEMENTS
+5. USER FLOW DIAGRAMS
+6. DATABASE SCHEMA RECOMMENDATIONS
+7. IMPLEMENTATION PLAN
+8. UI/UX RECOMMENDATIONS
+
+================================================================================
+                           1. EXECUTIVE SUMMARY
+================================================================================
+
+The Projects Module is a core feature of the Coder'z platform that enables users 
+to generate, build, and track coding projects. This document analyzes the current
+implementation, identifies gaps, and proposes improvements to create a unified,
+cohesive experience.
+
+KEY MODULES ANALYZED:
+- Project Ideas (/projects/ideas)
+- Project Generation (/projects/generate via ProjectGenerateSheet)
+- Project Details (/projects/[slug])
+- Submit Project Idea Sheet (user submissions)
+- Project V2 (generated projects database)
+- Project Idea (curated ideas database)
+
+================================================================================
+                      2. CURRENT ARCHITECTURE ANALYSIS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CURRENT PROJECTS ECOSYSTEM                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                           ┌─────────────────┐
+                           │  /projects      │
+                           │  (Landing Page) │
+                           └────────┬────────┘
+                                    │
+           ┌────────────────────────┼────────────────────────┐
+           │                        │                        │
+           ▼                        ▼                        ▼
+   ┌───────────────┐       ┌───────────────┐       ┌───────────────┐
+   │ /projects/    │       │ ProjectGenerate│       │ /projects/    │
+   │    ideas      │       │    Sheet       │       │  myprojects   │
+   │ (Browse Ideas)│       │ (AI Generate)  │       │ (User's Own)  │
+   └───────┬───────┘       └───────┬────────┘       └───────────────┘
+           │                       │
+           ▼                       │
+   ┌───────────────┐               │
+   │ /ideas/       │               │
+   │ [category]/   │               │
+   │ [technology]  │               │
+   │ (Idea Cards)  │               │
+   └───────┬───────┘               │
+           │                       │
+           │  "Build Now" Button   │
+           │         │             │
+           │         ▼             │
+           │  ┌─────────────────┐  │
+           │  │ /projects/      │  │
+           │  │   generate?     │◄─┘
+           │  │ (Pre-filled)    │
+           │  └────────┬────────┘
+           │           │
+           └───────────┼───────────────────┐
+                       ▼                   │
+              ┌─────────────────┐          │
+              │   Worker API    │          │
+              │  /api/v1/       │          │
+              │ generateproject │          │
+              └────────┬────────┘          │
+                       │                   │
+                       ▼                   │
+              ┌─────────────────┐          │
+              │   ProjectV2     │          │
+              │  (Database)     │          │
+              │                 │          │
+              │ - title         │          │
+              │ - tasks         │          │
+              │ - pages         │          │
+              │ - quiz          │          │
+              │ - blueprint     │          │
+              └─────────────────┘          │
+                                           │
+                    ┌──────────────────────┘
+                    │
+                    ▼
+           ┌─────────────────┐
+           │   ProjectIdea   │ (SEPARATE DATABASE - NOT CONNECTED!)
+           │   (Database)    │
+           │                 │
+           │ - projectTitle  │
+           │ - technology    │
+           │ - difficulty    │
+           │ - status        │
+           │ - upvotes       │
+           └─────────────────┘
+
+
+CURRENT DATA FLOW:
+------------------
+
+1. IDEAS FLOW:
+   - User visits /projects/ideas
+   - Selects a category (Web Development, AI/ML, etc.)
+   - Selects a technology (React, Node.js, etc.)
+   - Sees list of ProjectIdea records from database
+   - Clicks "Build Now" → redirects to /projects/generate with URL params
+
+2. GENERATION FLOW:
+   - User opens ProjectGenerateSheet (from /projects or /projects/ideas)
+   - Fills out form: title, description, type, stack, difficulty
+   - Submits → Worker API generates project with AI
+   - New ProjectV2 record created in database
+   - NO LINK between ProjectIdea and ProjectV2!
+
+3. SUBMISSION FLOW:
+   - User clicks "Submit Idea" on /projects/ideas
+   - Opens SubmitProjectIdeaSheet
+   - Fills: title, description, type, difficulty, technology, etc.
+   - Creates new ProjectIdea with status: PENDING
+   - Admin approves → status: APPROVED
+   - User earns 20 XP
+
+================================================================================
+                        3. IDENTIFIED ISSUES & GAPS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CRITICAL ISSUES                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+ISSUE #1: DISCONNECTED IDEAS AND PROJECTS
+------------------------------------------
+Problem: When user clicks "Build Now" on a ProjectIdea, a new ProjectV2 is
+created, but there's NO LINK back to the original idea.
+
+Impact:
+- Cannot show "5 users built this project"
+- Cannot share community solutions
+- Cannot track which ideas are popular for building
+- Duplicate projects created each time
+
+Current Schema:
+  ProjectIdea has: blueprintProjectId (optional, for pre-generated templates)
+  ProjectV2 has: NO reference to ProjectIdea
+
+ISSUE #2: TWO TYPES OF IDEAS NOT DISTINGUISHED
+-----------------------------------------------
+Problem: User wants two types of ideas:
+  
+  TYPE A: "Problem Statements" (Technology Agnostic)
+    - Just a problem to solve
+    - User chooses their own tech stack
+    - Example: "Build an Event-Driven Notification Service"
+    
+  TYPE B: "Technology-Specific Ideas" (Current Implementation)
+    - Has specific technology (React, Node.js, etc.)
+    - Pre-defined stack suggestions
+    - Example: "Build a React Task Manager"
+
+Current: Only Type B is supported. Type A has no place.
+
+ISSUE #3: NO CLONE/FORK FUNCTIONALITY
+--------------------------------------
+Problem: If User A generates "E-commerce Platform", and User B wants to build
+the same thing, User B must:
+  1. Go to ideas
+  2. Find the idea
+  3. Generate a new project from scratch
+
+Better: User B should be able to "Clone" or "Fork" User A's project:
+  - Start from same checkpoint
+  - Get own timeline
+  - Track that it's a fork
+
+ISSUE #4: SUBMIT IDEA SHEET REQUIRES TECHNOLOGY
+------------------------------------------------
+Problem: Current SubmitProjectIdeaSheet requires:
+  - Generation Type (required)
+  - Difficulty (required)
+  - Main Technology (required) ← This prevents problem statements!
+
+Impact: Users cannot submit technology-agnostic problem statements.
+
+ISSUE #5: NO PROJECT DISCOVERY FROM BUILDS
+-------------------------------------------
+Problem: If 10 users built "React Todo App", there's no way to:
+  - See all 10 implementations
+  - Compare approaches
+  - Learn from others' solutions
+
+The ideas page is one-directional: Idea → Generate
+It should be bidirectional: Idea ↔ Projects (built from idea)
+
+ISSUE #6: BLUEPRINT/SOURCE IDEA LINK EXISTS BUT NOT FULLY USED
+----------------------------------------------------------------
+Schema shows: 
+  - ProjectV2.sourceIdea → ProjectIdea (via IdeaBlueprint) ✅ EXISTS!
+  - ProjectIdea.blueprintProjectId → ProjectV2 ✅ EXISTS!
+  - ProjectIdea.hasBlueprintGenerated ✅ EXISTS!
+
+Current State:
+  - The relation EXISTS in the schema
+  - But: "Build Now" from ideas page does NOT use this link!
+  - Projects are generated fresh each time
+  - The sourceIdea is never set during generation
+
+What's Missing:
+  - Actually passing sourceIdeaId when generating from an idea
+  - Updating buildCount on the idea when someone builds it
+  - UI to show "Built from: [Idea Name]" on projects
+  - "Community Builds" section on idea detail page
+
+================================================================================
+                        WHAT ALREADY EXISTS VS WHAT'S MISSING
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ✅ ALREADY EXISTS                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. sourceIdea relation on ProjectV2 (line 142 in projects.prisma)
+2. blueprintProjectId on ProjectIdea (line 691-694)
+3. hasBlueprintGenerated flag on ProjectIdea
+4. IdeaBlueprint relation between models
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ❌ MISSING                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. Fork Schema:
+   - isFork: Boolean
+   - forkedFromId: String?  
+   - forkedFrom: ProjectV2 (self-relation)
+   - forks: ProjectV2[] (self-relation)
+   - forkCount: Int
+
+2. Problem Statement Schema:
+   - ideaType: IdeaType enum (PROBLEM_STATEMENT | TECHNOLOGY_SPECIFIC)
+   - overview: String (for detailed problem)
+   - coreRequirements: String[]
+   - engineeringConstraints: String[]
+   - suggestedStacks: Json
+   - recruiterSignal: String
+   - buildCount: Int
+
+3. UI Components:
+   - Problem Statement Card
+   - Problem Statement Detail Sheet
+   - Fork Project Sheet
+   - Two-tab layout on ideas page
+   - "Community Builds" section
+
+4. Logic:
+   - Pass sourceIdeaId when generating from idea
+   - Increment buildCount on idea
+   - Fork project without AI regeneration
+
+================================================================================
+                         4. PROPOSED IMPROVEMENTS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        SOLUTION ARCHITECTURE                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+PROPOSAL 1: TWO-TAB IDEAS PAGE
+-------------------------------
+
+/projects/ideas
+├── Tab 1: "Problem Statements" (NEW!)
+│   ├── Technology-agnostic challenges
+│   ├── Card shows: Title, Overview, Core Requirements, Engineering Constraints
+│   ├── User clicks → Opens detail sheet with:
+│   │   - Full problem description
+│   │   - Suggested stacks (optional)
+│   │   - "Start Building" → Opens ProjectGenerateSheet (pre-filled title/desc)
+│   └── Users can submit problem statements via same sheet (just different mode)
+│
+└── Tab 2: "Technology Ideas" (Current)
+    ├── Organized by Category → Technology
+    ├── Specific tech stack ideas
+    └── "Build Now" works as before
+
+PROPOSAL 2: LINK IDEAS TO PROJECTS
+-----------------------------------
+
+Database Change:
+  ProjectV2 {
+    // ... existing fields
+    sourceIdeaId: String?     // Link to ProjectIdea
+    sourceIdea: ProjectIdea?  // Relation
+    isFork: Boolean           // If forked from another ProjectV2
+    forkedFromId: String?     // Original project if forked
+  }
+
+  ProjectIdea {
+    // ... existing fields
+    builtProjects: ProjectV2[] // All projects built from this idea
+    buildCount: Int            // Denormalized count for performance
+  }
+
+PROPOSAL 3: UNIFIED SUBMIT SHEET WITH MODES
+--------------------------------------------
+
+SubmitProjectIdeaSheet:
+├── Mode: "Problem Statement"
+│   ├── Title (required)
+│   ├── Overview (required, markdown)
+│   ├── Core Requirements (checklist)
+│   ├── Engineering Constraints (optional)
+│   ├── Suggested Stacks (optional, multi-select)
+│   └── technology = null (marks it as problem statement)
+│
+└── Mode: "Technology Idea" (Current)
+    ├── Title (required)
+    ├── Description (required)
+    ├── Main Technology (required)
+    ├── Additional Tech (optional)
+    └── Difficulty (required)
+
+PROPOSAL 4: PROJECT FORKING SYSTEM
+-----------------------------------
+
+When viewing a public ProjectV2:
+  [Clone This Project] button
+    → Creates new ProjectV2 with:
+      - Same title (+ "My Version")
+      - Same blueprint/tasks
+      - forkedFromId = originalProject.id
+      - User's own progress tracking
+
+PROPOSAL 5: COMMUNITY BUILDS SECTION
+--------------------------------------
+
+On ProjectIdea detail page:
+  "Community Builds" section:
+    - Shows all ProjectV2 where sourceIdeaId = thisIdea.id
+    - Cards show: User avatar, project title, completion %, stars
+    - Click to view their project
+
+================================================================================
+                          5. USER FLOW DIAGRAMS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PROPOSED USER FLOW: PROBLEM STATEMENTS                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+User Journey for "I have a problem, not a solution":
+
+    ┌─────────────────┐
+    │  /projects/ideas │
+    │   [Tab: Problem  │
+    │    Statements]   │
+    └────────┬─────────┘
+             │
+             ▼
+    ┌─────────────────────────────────────────────────┐
+    │  Problem Statement Card                         │
+    │  ┌─────────────────────────────────────────┐   │
+    │  │ 🔔 Event-Driven Notification Service    │   │
+    │  │                                          │   │
+    │  │ Build a backend service that reacts to  │   │
+    │  │ events and delivers notifications...    │   │
+    │  │                                          │   │
+    │  │ ✓ Idempotency  ✓ Retry  ✓ Dead Letter  │   │
+    │  │                                          │   │
+    │  │ [View Details]          [Start Building]│   │
+    │  └─────────────────────────────────────────┘   │
+    └─────────────────────┬───────────────────────────┘
+                          │
+           ┌──────────────┴──────────────┐
+           │                             │
+           ▼                             ▼
+    ┌─────────────────┐          ┌─────────────────┐
+    │  View Details   │          │  Start Building │
+    │    (Sheet)      │          │                 │
+    └────────┬────────┘          └────────┬────────┘
+             │                            │
+             ▼                            │
+    ┌─────────────────┐                   │
+    │ Full Problem    │                   │
+    │ Statement with: │                   │
+    │ - Overview      │                   │
+    │ - Requirements  │                   │
+    │ - Constraints   │                   │
+    │ - Resources     │                   │
+    │                 │                   │
+    │ Community Builds│                   │
+    │ (5 devs built)  │                   │
+    │                 │                   │
+    │ [Start Building]│◄──────────────────┘
+    └────────┬────────┘
+             │
+             ▼
+    ┌─────────────────────────────────────────────────┐
+    │  ProjectGenerateSheet (Pre-filled)             │
+    │                                                 │
+    │  Title: Event-Driven Notification Service      │
+    │  Description: [auto-filled from problem]       │
+    │  Source: Problem Statement (linked)            │
+    │                                                 │
+    │  → User picks: Tech Stack, Difficulty, etc.    │
+    └─────────────────────────────────────────────────┘
+             │
+             ▼
+    ┌─────────────────────────────────────────────────┐
+    │  New ProjectV2 Created                          │
+    │                                                 │
+    │  sourceIdeaId = problemStatementId              │
+    │  (Links back to the problem statement)          │
+    │                                                 │
+    │  problemStatementIdea.buildCount++              │
+    └─────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PROPOSED USER FLOW: CLONE/FORK PROJECT                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+User Journey for "I want to build what X built":
+
+    ┌─────────────────────────────────────────────────┐
+    │  PUBLIC ProjectV2 Page                          │
+    │  /projects/[slug]                               │
+    │                                                 │
+    │  E-Commerce Platform by @alexdev               │
+    │  Progress: 75% | ⭐ 4.8 | 1.2k views           │
+    │                                                 │
+    │  [View Code]  [Fork Project]  [⭐ Star]        │
+    └─────────────────────┬───────────────────────────┘
+                          │
+                          ▼ (Click "Fork Project")
+    ┌─────────────────────────────────────────────────┐
+    │  Fork Project Sheet                             │
+    │                                                 │
+    │  You're creating your own version of:          │
+    │  "E-Commerce Platform"                         │
+    │                                                 │
+    │  Your Title: [E-Commerce Platform - My Build]  │
+    │  Visibility: [Public ▼]                         │
+    │                                                 │
+    │  What gets copied:                              │
+    │  ✓ Project blueprint and tasks                 │
+    │  ✓ Learning objectives                         │
+    │  ✗ Progress & submissions (starts fresh)       │
+    │  ✗ Original author's code                      │
+    │                                                 │
+    │  [Create My Fork]                               │
+    └─────────────────────┬───────────────────────────┘
+                          │
+                          ▼
+    ┌─────────────────────────────────────────────────┐
+    │  New ProjectV2 Created Instantly                │
+    │                                                 │
+    │  forkedFromId = originalProject.id              │
+    │  isFork = true                                  │
+    │  sourceIdeaId = originalProject.sourceIdeaId    │
+    │                                                 │
+    │  (No AI generation needed - instant!)          │
+    └─────────────────────────────────────────────────┘
+
+
+================================================================================
+                      6. DATABASE SCHEMA RECOMMENDATIONS
+================================================================================
+
+MODIFIED ProjectIdea MODEL:
+---------------------------
+
+model ProjectIdea {
+    id                         String   @id @default(cuid())
+    
+    // --- Core Fields ---
+    projectTitle               String
+    projectDescription         String   @db.Text
+    
+    // --- Problem Statement Fields (NEW) ---
+    ideaType                   IdeaType @default(TECHNOLOGY_SPECIFIC)
+    overview                   String?  @db.Text    // For problem statements
+    coreRequirements           String[] // Checklist items
+    engineeringConstraints     String[] // Technical constraints
+    suggestedStacks            Json?    // { lang: [...], queue: [...], db: [...] }
+    recruiterSignal            String?  @db.Text    // Why recruiters care
+    
+    // --- Existing Fields ---
+    generationType             String
+    difficulty                 String
+    primaryLanguageOrFramework String?  // Optional for problem statements
+    technologies               String[]
+    categories                 String[]
+    technology                 String?  // Optional for problem statements
+    
+    // ... rest of fields
+    
+    // --- Stats ---
+    buildCount                 Int      @default(0) // How many built this
+    
+    // --- Relation to Built Projects ---
+    builtProjects              ProjectV2[] @relation("IdeaToProjects")
+}
+
+enum IdeaType {
+    PROBLEM_STATEMENT      // Technology agnostic
+    TECHNOLOGY_SPECIFIC    // Current behavior
+}
+
+
+MODIFIED ProjectV2 MODEL:
+-------------------------
+
+model ProjectV2 {
+    // ... existing fields
+    
+    // --- Link to Source Idea ---
+    sourceIdeaId    String?
+    sourceIdea      ProjectIdea? @relation("IdeaToProjects", fields: [sourceIdeaId], references: [id])
+    
+    // --- Fork Tracking ---
+    isFork          Boolean      @default(false)
+    forkedFromId    String?
+    forkedFrom      ProjectV2?   @relation("ProjectForks", fields: [forkedFromId], references: [id])
+    forks           ProjectV2[]  @relation("ProjectForks")
+    forkCount       Int          @default(0) // Denormalized
+}
+
+
+================================================================================
+                          7. IMPLEMENTATION PLAN
+================================================================================
+
+PHASE 1: FOUNDATION (Week 1)
+-----------------------------
+[ ] Update Prisma schema with new fields
+[ ] Add ideaType enum and fields to ProjectIdea
+[ ] Add sourceIdeaId, isFork, forkedFromId to ProjectV2
+[ ] Run migrations
+[ ] Update server actions to handle new fields
+
+PHASE 2: PROBLEM STATEMENTS (Week 2)
+-------------------------------------
+[ ] Create ProblemStatementCard component
+[ ] Create ProblemStatementDetailSheet component
+[ ] Update SubmitProjectIdeaSheet with mode toggle
+[ ] Add "Problem Statements" tab to /projects/ideas
+[ ] Create seed data for initial problem statements
+
+PHASE 3: LINKING (Week 3)
+--------------------------
+[ ] Update ProjectGenerateSheet to accept sourceIdeaId
+[ ] Pass sourceIdeaId when generating from idea
+[ ] Update worker to save sourceIdeaId
+[ ] Increment buildCount on ProjectIdea when project created
+[ ] Add "Community Builds" section to idea detail
+
+PHASE 4: FORKING (Week 4)
+--------------------------
+[ ] Create ForkProjectSheet component
+[ ] Add [Fork] button to public project pages
+[ ] Implement fork logic (copy blueprint, tasks, without AI)
+[ ] Track fork relationships
+[ ] Show "Forked from X" badge on forked projects
+
+PHASE 5: POLISH (Week 5)
+-------------------------
+[ ] Add filters for ideaType on ideas page
+[ ] Add stats display (X devs built this)
+[ ] Performance optimization (caching, pagination)
+[ ] Admin panel for problem statement moderation
+[ ] Documentation and testing
+
+================================================================================
+                        8. UI/UX RECOMMENDATIONS
+================================================================================
+
+PROBLEM STATEMENT CARD DESIGN:
+-------------------------------
+┌─────────────────────────────────────────────────────────────────┐
+│  🔔 Event-Driven Notification Service           [Intermediate]  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Build a backend service that reacts to system events and      │
+│  delivers notifications via email and webhooks.                │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │ 📡 RECRUITER SIGNAL                                       │ │
+│  │ Proves you understand Event-Driven Architecture,         │ │
+│  │ Async Processing, and Failure-Aware Design.              │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  CORE REQUIREMENTS:                                            │
+│  ✓ Event Producer: API trigger                                 │
+│  ✓ Event Consumer: Worker listener                             │
+│  ✓ Delivery: Mock email & webhooks                             │
+│  ✓ Resilience: Retry + dead-letter                             │
+│                                                                 │
+│  SUGGESTED STACKS:                                             │
+│  [Node.js] [Python] | [Redis] [Kafka] | [PostgreSQL]          │
+│                                                                 │
+│  ├────────────────────────────────────────────────────────────┤ │
+│  │ 👥 12 devs built this   |   ❤️ 45 upvotes   |   👁️ 234    │ │
+│  ├────────────────────────────────────────────────────────────┤ │
+│  │     [View Full Details]           [Start Building →]       │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+
+TAB UI FOR IDEAS PAGE:
+-----------------------
+
+┌─────────────────────────────────────────────────────────────────┐
+│  Build your portfolio with real-world projects.                 │
+│                                                                 │
+│  ┌─────────────────────────┐ ┌─────────────────────────┐       │
+│  │   🎯 Problem First      │ │   🛠️ Technology Based   │       │
+│  │   (Technology Agnostic) │ │   (Specific Stack)      │       │
+│  └─────────────────────────┘ └─────────────────────────┘       │
+│                                                                 │
+│  [Submit Your Idea]                                             │
+└─────────────────────────────────────────────────────────────────┘
+
+When "Problem First" tab is active:
+  - Show problem statement cards
+  - Filter by: Difficulty, Domain (Backend, Frontend, Full Stack)
+
+When "Technology Based" tab is active:
+  - Show current category → technology flow
+  - Keep existing behavior
+
+
+================================================================================
+                              CONCLUSION
+================================================================================
+
+The proposed changes will:
+
+1. UNIFY the experience: Ideas and Projects become connected
+2. SUPPORT both types of users:
+   - "I have a problem" → Problem Statements tab
+   - "I want to learn X" → Technology Ideas tab
+3. ENABLE community: See what others built, fork their projects
+4. REDUCE friction: Clone projects instead of regenerating
+5. IMPROVE discovery: Stats show popular ideas and builds
+6. MAINTAIN simplicity: Clear tabs, no confusion
+
+NEXT STEPS:
+-----------
+1. Review this document with stakeholders
+2. Finalize database schema changes
+3. Create implementation tickets
+4. Begin Phase 1 development
+
+================================================================================
+                                  END OF DOCUMENT
+================================================================================

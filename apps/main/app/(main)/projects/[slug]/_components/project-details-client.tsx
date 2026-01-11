@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import {
     ArrowLeft, Sparkles, Clock, Code2, Brain, Trophy, CheckCircle2, Lock,
     Unlock, Play, Users, Target, Lightbulb, Layers, ListChecks, Share2,
-    Coins, BookOpen, Copy, Check, Zap, AlertTriangle
+    Coins, BookOpen, Copy, Check, Zap, AlertTriangle, GitFork
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -33,7 +33,7 @@ import {
 } from '@repo/ui/components/ui/dialog'
 import toast from '@repo/ui/components/ui/sonner'
 import {
-    startProject, submitProject
+    startProject, submitProject, forkProject
 } from '@/actions/(main)/projects/project.action'
 import {
     ProjectDetailsClientProps, ProjectV2Page
@@ -242,6 +242,7 @@ export default function ProjectDetailsClient({
     const [copied, setCopied] = useState(false)
     const [standupSheetOpen, setStandupSheetOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('overview')
+    const [forking, setForking] = useState(false)
 
     const userProgress = project.progress?.[0]
     const hasStarted = userProgress && userProgress.status !== 'NOT_STARTED'
@@ -360,6 +361,25 @@ export default function ProjectDetailsClient({
         }
     }
 
+    const handleForkProject = async () => {
+        try {
+            setForking(true)
+            const result = await forkProject(project.id)
+
+            if (result.success) {
+                toast.success(`Project forked successfully! Redirecting to your copy...`)
+                router.push(`/projects/${result.data.projectSlug}`)
+            } else {
+                toast.error(result.error || 'Failed to fork project')
+            }
+        } catch (error) {
+            console.log("Error occurred while forking project: " + error);
+            toast.error('Something went wrong while forking')
+        } finally {
+            setForking(false)
+        }
+    }
+
     const difficultyColors = {
         BEGINNER: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
         INTERMEDIATE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -368,7 +388,7 @@ export default function ProjectDetailsClient({
 
     return (
         <div className="relative min-h-screen w-full bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900">
-            <div className="max-w-7xl mx-auto py-6 px-4 md:px-6">
+            <div className="w-full py-6 px-4 md:px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -561,6 +581,40 @@ export default function ProjectDetailsClient({
                                                 <p className="text-xs text-center text-neutral-500">
                                                     50% discount for public projects!
                                                 </p>
+
+                                                {/* Fork option */}
+                                                <div className="relative my-4">
+                                                    <div className="absolute inset-0 flex items-center">
+                                                        <span className="w-full border-t border-neutral-200 dark:border-neutral-800" />
+                                                    </div>
+                                                    <div className="relative flex justify-center text-xs uppercase">
+                                                        <span className="bg-white dark:bg-neutral-900 px-2 text-neutral-500">or</span>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    onClick={handleForkProject}
+                                                    disabled={forking}
+                                                    variant="outline"
+                                                    className="w-full border-neutral-200 dark:border-neutral-700"
+                                                    size="lg"
+                                                >
+                                                    {
+                                                        forking ? (
+                                                            <>
+                                                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                                                                Forking...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <GitFork className="w-4 h-4 mr-2" />
+                                                                Fork This Project (Free)
+                                                            </>
+                                                        )
+                                                    }
+                                                </Button>
+                                                <p className="text-xs text-center text-neutral-500">
+                                                    Get your own copy with all {project.tasks.length} tasks
+                                                </p>
                                             </>
                                         ) : null
 
@@ -637,28 +691,30 @@ export default function ProjectDetailsClient({
                                     </TabsTrigger>
                                 )
                             }
-                            <TabsTrigger value="pages" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
+                            <TabsTrigger value="pages">
                                 Pages ({project.pages.length})
                             </TabsTrigger>
-                            <TabsTrigger value="resources" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
+                            <TabsTrigger value="resources">
                                 Resources
                             </TabsTrigger>
-                            <TabsTrigger value="suggestions" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
+                            <TabsTrigger value="suggestions">
                                 Suggestions {suggestions.length > 0 && `(${suggestions.length})`}
                             </TabsTrigger>
-                            <TabsTrigger value="errors" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
-                                <AlertTriangle className="w-3 h-3 mr-1" />
-                                Errors
+                            <TabsTrigger value="errors">
+                                <div className="flex items-center justify-center gap-2">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    <p>Errors</p>
+                                </div>
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="overview" className="mt-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                                     <CardHeader>
-                                        <CardTitle>Project Overview</CardTitle>
+                                        <CardTitle className='text-left'>Project Overview</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                        <p className="text-left text-neutral-700 dark:text-neutral-300 leading-relaxed">
                                             {project.blueprintOverview}
                                         </p>
                                     </CardContent>
@@ -674,32 +730,32 @@ export default function ProjectDetailsClient({
                                         <div className="grid grid-cols-2 gap-4">
                                             {
                                                 project.stacks?.frontend && (
-                                                    <div>
-                                                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Frontend</p>
+                                                    <div className="flex gap-4">
+                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Frontend</p>
                                                         <Badge>{project.stacks.frontend}</Badge>
                                                     </div>
                                                 )
                                             }
                                             {
                                                 project.stacks?.backend && (
-                                                    <div>
-                                                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Backend</p>
+                                                    <div className="flex gap-4">
+                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Backend</p>
                                                         <Badge>{project.stacks.backend}</Badge>
                                                     </div>
                                                 )
                                             }
                                             {
                                                 project.stacks?.database && (
-                                                    <div>
-                                                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Database</p>
+                                                    <div className="flex gap-4">
+                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Database</p>
                                                         <Badge>{project.stacks.database}</Badge>
                                                     </div>
                                                 )
                                             }
                                             {
                                                 project.stacks?.deployment && (
-                                                    <div>
-                                                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Deployment</p>
+                                                    <div className="flex gap-4">
+                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Deployment</p>
                                                         <Badge>{project.stacks.deployment}</Badge>
                                                     </div>
                                                 )
@@ -715,7 +771,7 @@ export default function ProjectDetailsClient({
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <ul className="space-y-2">
+                                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                                             {
                                                 project.learningObjectives.map((objective: string, index: number) => (
                                                     <li key={index} className="flex items-start gap-2">
@@ -736,7 +792,7 @@ export default function ProjectDetailsClient({
                                         <CardDescription>What you should know before starting</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                                             {
                                                 project.prerequisites.map((prereq: string, index: number) => (
                                                     <Badge key={index} variant="outline">{prereq}</Badge>
@@ -747,11 +803,11 @@ export default function ProjectDetailsClient({
                                 </Card>
                                 <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                                     <CardHeader>
-                                        <CardTitle>Core Features</CardTitle>
-                                        <CardDescription>Main features you&apos;ll implement</CardDescription>
+                                        <CardTitle className="text-left">Core Features</CardTitle>
+                                        <CardDescription className="text-left">Main features you&apos;ll implement</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <ul className="space-y-2">
+                                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                                             {
                                                 project.coreFeatures.map((feature: string, index: number) => (
                                                     <li key={index} className="flex items-start gap-2">
@@ -765,11 +821,11 @@ export default function ProjectDetailsClient({
                                 </Card>
                                 <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                                     <CardHeader>
-                                        <CardTitle>Advanced Features</CardTitle>
-                                        <CardDescription>Optional enhancements for extra learning</CardDescription>
+                                        <CardTitle className="text-left">Advanced Features</CardTitle>
+                                        <CardDescription className="text-left">Optional enhancements for extra learning</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <ul className="space-y-2">
+                                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                             {
                                                 project.advancedFeatures.map((feature: string, index: number) => (
                                                     <li key={index} className="flex items-start gap-2">
@@ -812,7 +868,7 @@ export default function ProjectDetailsClient({
                                             <CardContent className="space-y-4">
                                                 <div>
                                                     <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-2">Core Features:</p>
-                                                    <ul className="space-y-1">
+                                                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                                         {
                                                             page.coreFeatures.map((feature: string, idx: number) => (
                                                                 <li key={idx} className="text-sm text-neutral-700 dark:text-neutral-300 flex items-start gap-2">
@@ -825,7 +881,7 @@ export default function ProjectDetailsClient({
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-2">Components:</p>
-                                                    <div className="flex flex-wrap gap-1">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                                                         {
                                                             page.recommendedComponents.map((comp: string, idx: number) => (
                                                                 <Badge key={idx} variant="outline" className="text-xs">{comp}</Badge>
@@ -859,7 +915,7 @@ export default function ProjectDetailsClient({
                                         }
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-4">
                                     <ResourcesList
                                         projectId={project.id}
                                         currentUserId={currentUserId}
@@ -893,7 +949,7 @@ export default function ProjectDetailsClient({
                                         }
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-4">
                                     {
                                         loadingSuggestions ? (
                                             <div className="flex items-center justify-center py-12">

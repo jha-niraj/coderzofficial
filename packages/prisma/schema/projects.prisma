@@ -86,6 +86,11 @@ enum ProjectIdeaStatus {
     REJECTED
 }
 
+enum IdeaType {
+    PROBLEM_STATEMENT // Technology agnostic - user picks their stack
+    TECHNOLOGY_SPECIFIC // Current behavior - specific tech stack
+}
+
 model ProjectV2 {
     id                         String              @id @default(cuid())
     slug                       String              @unique
@@ -141,6 +146,13 @@ model ProjectV2 {
     errors             ProjectV2Error[]             @relation("ProjectV2Errors")
     sourceIdea         ProjectIdea?                 @relation("IdeaBlueprint")
 
+    // Fork tracking
+    isFork       Boolean     @default(false)
+    forkedFromId String?
+    forkedFrom   ProjectV2?  @relation("ProjectForks", fields: [forkedFromId], references: [id], onDelete: SetNull)
+    forks        ProjectV2[] @relation("ProjectForks")
+    forkCount    Int         @default(0)
+
     // Standup Configuration
     standupConfigs ProjectV2StandupConfig[]
 
@@ -158,6 +170,7 @@ model ProjectV2 {
     @@index([createdAt])
     @@index([slug])
     @@index([spaceId])
+    @@index([forkedFromId])
 }
 
 model ProjectV2Page {
@@ -674,10 +687,23 @@ model ProjectIdea {
     projectDescription         String   @db.Text
     generationType             String // FRONTEND, FULL_STACK, etc.
     difficulty                 String // BEGINNER, INTERMEDIATE, ADVANCED
-    primaryLanguageOrFramework String
+    primaryLanguageOrFramework String? // Optional for problem statements
     technologies               String[] // Array of tech names
     categories                 String[] // Array of category names
-    technology                 String // Main technology (React, Next.js, etc.)
+    technology                 String? // Optional for problem statements
+
+    // Idea type - distinguishes problem statements from tech-specific ideas
+    ideaType IdeaType @default(TECHNOLOGY_SPECIFIC)
+
+    // Problem Statement fields (for PROBLEM_STATEMENT type)
+    overview               String?  @db.Text // Detailed problem overview
+    coreRequirements       String[] // Checklist of requirements
+    engineeringConstraints String[] // Technical constraints
+    suggestedStacks        Json? // { languages: [], databases: [], queues: [] }
+    recruiterSignal        String?  @db.Text // Why recruiters care about this
+
+    // Build tracking
+    buildCount Int @default(0) // How many users built this idea
 
     // Optional fields for user submissions
     images        String[] // URLs to UI images
@@ -717,6 +743,7 @@ model ProjectIdea {
     @@index([createdAt])
     @@index([upvotes])
     @@index([hasBlueprintGenerated])
+    @@index([ideaType])
 }
 
 // Track who upvoted which project idea
@@ -738,8 +765,8 @@ model ProjectIdeaUpvote {
 
 // Common errors and mistakes for projects
 model ProjectV2Error {
-    id        String    @id @default(cuid())
-    
+    id String @id @default(cuid())
+
     projectId String
     project   ProjectV2 @relation("ProjectV2Errors", fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -793,8 +820,8 @@ model ProjectV2Error {
 
 // Track votes on project errors
 model ProjectV2ErrorVote {
-    id      String         @id @default(cuid())
-    
+    id String @id @default(cuid())
+
     errorId String
     error   ProjectV2Error @relation("ProjectErrorVotes", fields: [errorId], references: [id], onDelete: Cascade)
     userId  String

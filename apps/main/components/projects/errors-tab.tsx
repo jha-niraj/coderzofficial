@@ -13,10 +13,12 @@ import { Input } from '@repo/ui/components/ui/input'
 import { Label } from '@repo/ui/components/ui/label'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+    Select, SelectContent, SelectItem, SelectTrigger,
+    SelectValue
 } from '@repo/ui/components/ui/select'
 import {
-    Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader,
+    Sheet, SheetContent, SheetDescription, SheetFooter,
+    SheetHeader,
     SheetTitle, SheetTrigger
 } from '@repo/ui/components/ui/sheet'
 import {
@@ -25,7 +27,8 @@ import {
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
 import {
-    getProjectErrors, createProjectError, voteOnError, getProjectErrorStats
+    getProjectErrors, createProjectError, voteOnError,
+    getProjectErrorStats
 } from '@/actions/(main)/projects/project-errors.action'
 
 // ============================================================================
@@ -327,129 +330,131 @@ function SubmitErrorSheet({
                     Share Error
                 </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-lg overflow-y-auto">
-                <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-amber-500" />
-                        Share an Error or Mistake
-                    </SheetTitle>
-                    <SheetDescription>
-                        Help others avoid the same pitfalls you encountered
-                    </SheetDescription>
-                </SheetHeader>
-                <div className="space-y-4 py-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="title">Error Title *</Label>
-                        <Input
-                            id="title"
-                            placeholder="e.g., 'CORS error when fetching data'"
-                            value={form.title}
-                            onChange={(e) => setForm({ ...form, title: e.target.value })}
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+            <SheetContent side="bottom" className="h-[70vh] w-full overflow-y-auto">
+                <section className="w-full max-w-5xl mx-auto">
+                    <SheetHeader>
+                        <SheetTitle className="flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-amber-500" />
+                            Share an Error or Mistake
+                        </SheetTitle>
+                        <SheetDescription>
+                            Help others avoid the same pitfalls you encountered
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-4 py-6">
                         <div className="space-y-2">
-                            <Label>Category</Label>
-                            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {
-                                        Object.entries(categoryConfig).map(([key, { label }]) => (
-                                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                                        ))
-                                    }
-                                </SelectContent>
-                            </Select>
+                            <Label htmlFor="title">Error Title *</Label>
+                            <Input
+                                id="title"
+                                placeholder="e.g., 'CORS error when fetching data'"
+                                value={form.title}
+                                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Category</Label>
+                                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {
+                                            Object.entries(categoryConfig).map(([key, { label }]) => (
+                                                <SelectItem key={key} value={key}>{label}</SelectItem>
+                                            ))
+                                        }
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Frequency</Label>
+                                <Select value={form.severity} onValueChange={(v: 'HIGH' | 'MEDIUM' | 'LOW') => setForm({ ...form, severity: v })}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="HIGH">Common</SelectItem>
+                                        <SelectItem value="MEDIUM">Occasional</SelectItem>
+                                        <SelectItem value="LOW">Rare</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="space-y-2">
-                            <Label>Frequency</Label>
-                            <Select value={form.severity} onValueChange={(v: 'HIGH' | 'MEDIUM' | 'LOW') => setForm({ ...form, severity: v })}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="HIGH">Common</SelectItem>
-                                    <SelectItem value="MEDIUM">Occasional</SelectItem>
-                                    <SelectItem value="LOW">Rare</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Label htmlFor="description">What happened? *</Label>
+                            <Textarea
+                                id="description"
+                                placeholder="Describe the error or mistake..."
+                                value={form.description}
+                                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                rows={3}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="solution">How did you fix it? *</Label>
+                            <Textarea
+                                id="solution"
+                                placeholder="Explain the solution..."
+                                value={form.solution}
+                                onChange={(e) => setForm({ ...form, solution: e.target.value })}
+                                rows={3}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="errorCode">Problematic Code (optional)</Label>
+                            <Textarea
+                                id="errorCode"
+                                placeholder="Paste the code that caused the issue..."
+                                value={form.errorCode}
+                                onChange={(e) => setForm({ ...form, errorCode: e.target.value })}
+                                rows={3}
+                                className="font-mono text-sm"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fixedCode">Corrected Code (optional)</Label>
+                            <Textarea
+                                id="fixedCode"
+                                placeholder="Paste the corrected code..."
+                                value={form.fixedCode}
+                                onChange={(e) => setForm({ ...form, fixedCode: e.target.value })}
+                                rows={3}
+                                className="font-mono text-sm"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="tags">Tags (comma separated)</Label>
+                            <Input
+                                id="tags"
+                                placeholder="e.g., react, api, fetch"
+                                value={form.tags}
+                                onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                            />
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="description">What happened? *</Label>
-                        <Textarea
-                            id="description"
-                            placeholder="Describe the error or mistake..."
-                            value={form.description}
-                            onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            rows={3}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="solution">How did you fix it? *</Label>
-                        <Textarea
-                            id="solution"
-                            placeholder="Explain the solution..."
-                            value={form.solution}
-                            onChange={(e) => setForm({ ...form, solution: e.target.value })}
-                            rows={3}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="errorCode">Problematic Code (optional)</Label>
-                        <Textarea
-                            id="errorCode"
-                            placeholder="Paste the code that caused the issue..."
-                            value={form.errorCode}
-                            onChange={(e) => setForm({ ...form, errorCode: e.target.value })}
-                            rows={3}
-                            className="font-mono text-sm"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="fixedCode">Corrected Code (optional)</Label>
-                        <Textarea
-                            id="fixedCode"
-                            placeholder="Paste the corrected code..."
-                            value={form.fixedCode}
-                            onChange={(e) => setForm({ ...form, fixedCode: e.target.value })}
-                            rows={3}
-                            className="font-mono text-sm"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="tags">Tags (comma separated)</Label>
-                        <Input
-                            id="tags"
-                            placeholder="e.g., react, api, fetch"
-                            value={form.tags}
-                            onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                        />
-                    </div>
-                </div>
-                <SheetFooter>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={loading || !form.title || !form.description || !form.solution}
-                        className="w-full bg-gradient-to-r from-amber-500 to-orange-600"
-                    >
-                        {
-                            loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    Submitting...
-                                </>
-                            ) : (
-                                <>
-                                    <AlertTriangle className="w-4 h-4 mr-2" />
-                                    Submit Error
-                                </>
-                            )
-                        }
-                    </Button>
-                </SheetFooter>
+                    <SheetFooter>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={loading || !form.title || !form.description || !form.solution}
+                            className="w-full bg-gradient-to-r from-amber-500 to-orange-600"
+                        >
+                            {
+                                loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                        Submitting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertTriangle className="w-4 h-4 mr-2" />
+                                        Submit Error
+                                    </>
+                                )
+                            }
+                        </Button>
+                    </SheetFooter>
+                </section>
             </SheetContent>
         </Sheet>
     )
