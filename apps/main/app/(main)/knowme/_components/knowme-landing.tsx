@@ -18,7 +18,6 @@ import {
     activateKnowMeProfile, generateProfileEmbeddings
 } from "@/actions/(main)/knowme";
 import toast from "@repo/ui/components/ui/sonner";
-import Image from "next/image";
 import { cn } from "@repo/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import type { KnowMeProfileFull } from "@/types/knowme";
