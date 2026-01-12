@@ -9,15 +9,15 @@
 import { auth } from "@repo/auth";
 import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
-import type { 
-  KnowMeProfileBasic, 
-  KnowMeProfileFull, 
+import type {
+  KnowMeProfileBasic,
+  KnowMeProfileFull,
   KnowMeProfilePublic,
-  KnowMeActionResponse 
+  KnowMeActionResponse
 } from "@/types/knowme";
-import { 
-  generateApiKey, 
-  calculateNextUpdate 
+import {
+  generateApiKey,
+  calculateNextUpdate
 } from "@/utils/knowme";
 
 // ============================================
@@ -74,6 +74,8 @@ export async function getMyKnowMeProfile(): Promise<
         isPublic: profile.isPublic,
         includePersonalData: profile.includePersonalData,
         includePlatformData: profile.includePlatformData,
+        includeProjects: profile.includeProjects,
+        includeAssessments: profile.includeAssessments,
         updateCycleDays: profile.updateCycleDays,
         lastUpdatedAt: profile.lastUpdatedAt,
         nextScheduledUpdate: profile.nextScheduledUpdate,
@@ -112,26 +114,26 @@ export async function getMyKnowMeProfile(): Promise<
         })),
         privacySettings: profile.privacySettings
           ? {
-              allowAnonymous: profile.privacySettings.allowAnonymous,
-              allowRegisteredUsers: profile.privacySettings.allowRegisteredUsers,
-              allowRecruiters: profile.privacySettings.allowRecruiters,
-              shareBasicInfo: profile.privacySettings.shareBasicInfo,
-              shareProjects: profile.privacySettings.shareProjects,
-              shareAssessments: profile.privacySettings.shareAssessments,
-              shareWorkHistory: profile.privacySettings.shareWorkHistory,
-              shareEducation: profile.privacySettings.shareEducation,
-              shareSalary: profile.privacySettings.shareSalary,
-              shareExternalData: profile.privacySettings.shareExternalData as Record<
-                string,
-                boolean
-              >,
-              maxQuestionsPerSession:
-                profile.privacySettings.maxQuestionsPerSession,
-              requireAuthForSensitive:
-                profile.privacySettings.requireAuthForSensitive,
-              blockedUserIds: profile.privacySettings.blockedUserIds,
-              blockedCompanies: profile.privacySettings.blockedCompanies,
-            }
+            allowAnonymous: profile.privacySettings.allowAnonymous,
+            allowRegisteredUsers: profile.privacySettings.allowRegisteredUsers,
+            allowRecruiters: profile.privacySettings.allowRecruiters,
+            shareBasicInfo: profile.privacySettings.shareBasicInfo,
+            shareProjects: profile.privacySettings.shareProjects,
+            shareAssessments: profile.privacySettings.shareAssessments,
+            shareWorkHistory: profile.privacySettings.shareWorkHistory,
+            shareEducation: profile.privacySettings.shareEducation,
+            shareSalary: profile.privacySettings.shareSalary,
+            shareExternalData: profile.privacySettings.shareExternalData as Record<
+              string,
+              boolean
+            >,
+            maxQuestionsPerSession:
+              profile.privacySettings.maxQuestionsPerSession,
+            requireAuthForSensitive:
+              profile.privacySettings.requireAuthForSensitive,
+            blockedUserIds: profile.privacySettings.blockedUserIds,
+            blockedCompanies: profile.privacySettings.blockedCompanies,
+          }
           : null,
         suggestedQuestions: profile.suggestedQuestions,
         welcomeMessage: profile.welcomeMessage,
@@ -217,7 +219,37 @@ export async function initializeKnowMeProfile(): Promise<
     });
 
     if (existing) {
-      return { success: false, error: "Profile already exists" };
+      // If onboarding is not completed, return the existing profile to resume
+      if (!existing.onboardingCompleted && existing.status === "SETUP") {
+        return {
+          success: true,
+          data: {
+            id: existing.id,
+            userId: existing.userId,
+            status: existing.status,
+            privacy: existing.privacy,
+            isPublic: existing.isPublic,
+            includePersonalData: existing.includePersonalData,
+            includePlatformData: existing.includePlatformData,
+            includeProjects: existing.includeProjects,
+            includeAssessments: existing.includeAssessments,
+            updateCycleDays: existing.updateCycleDays,
+            lastUpdatedAt: existing.lastUpdatedAt,
+            nextScheduledUpdate: existing.nextScheduledUpdate,
+            totalQuestionsAnswered: existing.totalQuestionsAnswered,
+            totalSessions: existing.totalSessions,
+            totalVisitors: existing.totalVisitors,
+            apiEnabled: existing.apiEnabled,
+            apiRateLimit: existing.apiRateLimit,
+            onboardingCompleted: existing.onboardingCompleted,
+            createdAt: existing.createdAt,
+            updatedAt: existing.updatedAt,
+          },
+          message: "Resume onboarding",
+        };
+      }
+      // If already completed, return error
+      return { success: false, error: "Profile already exists and is active" };
     }
 
     // Generate API key
@@ -270,6 +302,8 @@ export async function initializeKnowMeProfile(): Promise<
         isPublic: profile.isPublic,
         includePersonalData: profile.includePersonalData,
         includePlatformData: profile.includePlatformData,
+        includeProjects: profile.includeProjects,
+        includeAssessments: profile.includeAssessments,
         updateCycleDays: profile.updateCycleDays,
         lastUpdatedAt: profile.lastUpdatedAt,
         nextScheduledUpdate: profile.nextScheduledUpdate,

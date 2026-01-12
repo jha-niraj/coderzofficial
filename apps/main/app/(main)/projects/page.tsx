@@ -18,7 +18,6 @@ import {
 import {
 	RecentSubmissionsGrid
 } from "@/app/(main)/projects/_components/recent-submissions-grid"
-import SmoothScroll from "@/components/smoothscroll"
 import ProjectGenerateSheet from "@/components/projects/project-generate-sheet"
 import { getProjectsPageStats } from "@/actions/(common)/stats/platform-stats.action"
 
@@ -129,7 +128,7 @@ export default function ProjectsHomePage() {
 	]
 
 	return (
-		<SmoothScroll>
+		<>
 			<div className="min-h-screen bg-white dark:bg-neutral-950">
 				<section className="relative py-20 bg-white dark:bg-neutral-950">
 					<div className="absolute inset-0 bg-[radial-gradient(circle_at_top_center,_var(--tw-gradient-stops))] from-neutral-100/50 via-white to-white dark:from-neutral-900/50 dark:via-neutral-950 dark:to-neutral-950 -z-10" />
@@ -468,6 +467,6 @@ export default function ProjectsHomePage() {
 					</div>
 				</section>
 			</div>
-		</SmoothScroll>
+		</>
 	)
 }

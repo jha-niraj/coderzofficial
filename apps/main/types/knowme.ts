@@ -26,6 +26,8 @@ export interface KnowMeProfileBasic {
 	isPublic: boolean;
 	includePersonalData: boolean;
 	includePlatformData: boolean;
+	includeProjects: boolean;
+	includeAssessments: boolean;
 	updateCycleDays: number;
 	lastUpdatedAt: Date | null;
 	nextScheduledUpdate: Date | null;

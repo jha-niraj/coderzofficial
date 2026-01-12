@@ -116,11 +116,11 @@ model KnowMeProfile {
     includeResume       Boolean @default(true)
 
     // Update Settings
-    updateCycleDays       Int       @default(10) // 3, 5, 10 days
-    lastUpdatedAt         DateTime?
-    nextScheduledUpdate   DateTime?
-    totalEmbeddingsCount  Int       @default(0)
-    lastEmbeddingVersion  String?
+    updateCycleDays      Int       @default(10) // 3, 5, 10 days
+    lastUpdatedAt        DateTime?
+    nextScheduledUpdate  DateTime?
+    totalEmbeddingsCount Int       @default(0)
+    lastEmbeddingVersion String?
 
     // API Settings
     apiKey         String?  @unique
@@ -143,8 +143,8 @@ model KnowMeProfile {
     onboardingStartedAt DateTime @default(now())
 
     // AI Configuration
-    aiPersonality  String? @db.Text // Custom AI personality prompt
-    welcomeMessage String? // Custom welcome message
+    aiPersonality      String?  @db.Text // Custom AI personality prompt
+    welcomeMessage     String? // Custom welcome message
     suggestedQuestions String[] // Custom suggested questions
 
     // Timestamps
@@ -173,7 +173,7 @@ model KnowMeProfile {
 // ============================================
 
 model KnowMePersonalData {
-    id        String @id @default(cuid())
+    id        String        @id @default(cuid())
     profileId String
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -201,7 +201,7 @@ model KnowMePersonalData {
 // PLATFORM CONNECTIONS (GitHub, LeetCode, etc.)
 // ============================================
 model KnowMePlatformConnection {
-    id        String @id @default(cuid())
+    id        String        @id @default(cuid())
     profileId String
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -215,9 +215,9 @@ model KnowMePlatformConnection {
     isConnected      Boolean          @default(false)
 
     // OAuth Tokens (encrypted in production)
-    accessToken      String? @db.Text
-    refreshToken     String? @db.Text
-    tokenExpiresAt   DateTime?
+    accessToken    String?   @db.Text
+    refreshToken   String?   @db.Text
+    tokenExpiresAt DateTime?
 
     // Sync Settings
     syncFrequencyDays Int       @default(10)
@@ -245,9 +245,9 @@ model KnowMePlatformConnection {
 // EXTERNAL DATA (Scraped from platforms)
 // ============================================
 model KnowMeExternalData {
-    id           String @id @default(cuid())
+    id           String                    @id @default(cuid())
     profileId    String
-    profile      KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+    profile      KnowMeProfile             @relation(fields: [profileId], references: [id], onDelete: Cascade)
     connectionId String?
     connection   KnowMePlatformConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
@@ -274,7 +274,7 @@ model KnowMeExternalData {
     isIndexed Boolean @default(false)
 
     // Deduplication
-    isDuplicate             Boolean @default(false)
+    isDuplicate              Boolean @default(false)
     mergedWithCoderProjectId String?
 
     createdAt DateTime @default(now())
@@ -290,7 +290,7 @@ model KnowMeExternalData {
 // EMBEDDINGS (Vector metadata - actual vectors in Upstash)
 // ============================================
 model KnowMeEmbedding {
-    id        String @id @default(cuid())
+    id        String        @id @default(cuid())
     profileId String
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -299,8 +299,8 @@ model KnowMeEmbedding {
     sourceId   String // Reference to source entity
 
     // Chunk Information
-    chunkIndex Int      @default(0)
-    chunkText  String   @db.Text // The text that was embedded
+    chunkIndex Int     @default(0)
+    chunkText  String  @db.Text // The text that was embedded
     chunkHash  String? // Hash to detect changes
 
     // Vector Store Reference
@@ -311,7 +311,7 @@ model KnowMeEmbedding {
     // Embedding Model Info
     embeddingModel   String @default("text-embedding-3-small")
     embeddingVersion Int    @default(1)
-    dimensions       Int    @default(1536)
+    dimensions       Int    @default(1024)
 
     // Metadata for Retrieval
     metadata Json?
@@ -332,7 +332,7 @@ model KnowMeEmbedding {
 // EMBEDDING JOBS (Queue for processing)
 // ============================================
 model KnowMeEmbeddingJob {
-    id        String @id @default(cuid())
+    id        String        @id @default(cuid())
     profileId String
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -345,10 +345,10 @@ model KnowMeEmbeddingJob {
     // { personalData: true, platforms: ['github'], entities: [{type, id}] }
 
     // Progress
-    progress       Int    @default(0) // 0-100
-    totalItems     Int    @default(0)
-    processedItems Int    @default(0)
-    failedItems    Int    @default(0)
+    progress       Int @default(0) // 0-100
+    totalItems     Int @default(0)
+    processedItems Int @default(0)
+    failedItems    Int @default(0)
 
     // Results
     result    Json? // Success/error details
@@ -373,20 +373,20 @@ model KnowMeEmbeddingJob {
 // CHAT SESSIONS
 // ============================================
 model KnowMeChatSession {
-    id            String @id @default(cuid())
-    profileId     String
-    profile       KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-    
+    id        String        @id @default(cuid())
+    profileId String
+    profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
     // Visitor Info
     visitorUserId String? // Null if anonymous
     visitorUser   User?   @relation("KnowMeVisitorSessions", fields: [visitorUserId], references: [id], onDelete: SetNull)
 
-    viewerType      KnowMeViewerType @default(ANONYMOUS)
-    visitorIp       String?
+    viewerType       KnowMeViewerType @default(ANONYMOUS)
+    visitorIp        String?
     visitorUserAgent String?
-    visitorCountry  String?
-    visitorCity     String?
-    visitorReferrer String?
+    visitorCountry   String?
+    visitorCity      String?
+    visitorReferrer  String?
 
     // Session Token (for anonymous users)
     sessionToken String @unique @default(cuid())
@@ -420,7 +420,7 @@ model KnowMeChatSession {
 // CHAT MESSAGES
 // ============================================
 model KnowMeChatMessage {
-    id        String @id @default(cuid())
+    id        String            @id @default(cuid())
     sessionId String
     session   KnowMeChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
@@ -452,21 +452,21 @@ model KnowMeChatMessage {
 // QUESTION ANALYTICS
 // ============================================
 model KnowMeQuestionAnalytics {
-    id        String @id @default(cuid())
+    id        String        @id @default(cuid())
     profileId String
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-    question         String               @db.Text
+    question         String                 @db.Text
     questionCategory KnowMeQuestionCategory @default(OTHER)
     questionKeywords String[]
 
     // Who Asked
     askedByUserId String?
-    askedByUser   User?   @relation("KnowMeQuestionsAsked", fields: [askedByUserId], references: [id], onDelete: SetNull)
+    askedByUser   User?            @relation("KnowMeQuestionsAsked", fields: [askedByUserId], references: [id], onDelete: SetNull)
     askedByType   KnowMeViewerType @default(ANONYMOUS)
 
     // Response Info
-    responseGenerated Boolean @default(true)
+    responseGenerated Boolean  @default(true)
     responseTimeMs    Int?
     responseTokens    Int?
     wasHelpful        Boolean?
@@ -486,7 +486,7 @@ model KnowMeQuestionAnalytics {
 // PROFILE VIEWS
 // ============================================
 model KnowMeProfileView {
-    id        String @id @default(cuid())
+    id        String        @id @default(cuid())
     profileId String
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -499,7 +499,7 @@ model KnowMeProfileView {
 
     // Session Info
     sessionDurationSeconds Int?
-    questionsAsked         Int      @default(0)
+    questionsAsked         Int     @default(0)
     source                 String? // 'direct', 'search', etc.
     referrer               String?
 
@@ -514,7 +514,7 @@ model KnowMeProfileView {
 // API REQUESTS (For external portfolio integration)
 // ============================================
 model KnowMeApiRequest {
-    id        String @id @default(cuid())
+    id        String        @id @default(cuid())
     profileId String
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -546,8 +546,8 @@ model KnowMeApiRequest {
 // PRIVACY SETTINGS
 // ============================================
 model KnowMePrivacySettings {
-    id        String @id @default(cuid())
-    profileId String @unique
+    id        String        @id @default(cuid())
+    profileId String        @unique
     profile   KnowMeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
     // Who Can Access
@@ -556,21 +556,21 @@ model KnowMePrivacySettings {
     allowRecruiters      Boolean @default(true)
 
     // What Can Be Shared
-    shareBasicInfo   Boolean @default(true)
-    shareProjects    Boolean @default(true)
-    shareAssessments Boolean @default(true)
-    shareWorkHistory Boolean @default(false)
-    shareEducation   Boolean @default(true)
-    shareSalary      Boolean @default(false)
+    shareBasicInfo    Boolean @default(true)
+    shareProjects     Boolean @default(true)
+    shareAssessments  Boolean @default(true)
+    shareWorkHistory  Boolean @default(false)
+    shareEducation    Boolean @default(true)
+    shareSalary       Boolean @default(false)
     shareExternalData Json    @default("{\"github\": true, \"leetcode\": true}")
 
     // Rate Limits
-    maxQuestionsPerSession Int     @default(20)
+    maxQuestionsPerSession  Int     @default(20)
     requireAuthForSensitive Boolean @default(true)
 
     // Blocked Entities
-    blockedUserIds    String[]
-    blockedCompanies  String[]
+    blockedUserIds   String[]
+    blockedCompanies String[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -587,7 +587,7 @@ model KnowMeCreditTransaction {
     user   User   @relation("KnowMeCreditTransactions", fields: [userId], references: [id], onDelete: Cascade)
 
     transactionType String // 'manual_update', 'upgrade_cycle', 'api_usage'
-    amount          Int    // Negative for spending
+    amount          Int // Negative for spending
 
     reason String?
 

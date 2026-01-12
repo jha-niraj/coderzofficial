@@ -389,7 +389,7 @@ export default function ProjectGenerateSheet({
                     )
                 }
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
+            <SheetContent side="bottom" className="h-[75vh] overflow-y-auto">
                 <div className="max-w-3xl mx-auto">
                     <SheetHeader className="mb-6">
                         <SheetTitle className="text-2xl flex items-center gap-3">

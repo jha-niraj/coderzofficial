@@ -16,12 +16,21 @@ import type {
 	EmbeddingMetadata, VectorSearchResult
 } from "@/types/knowme";
 
-// Initialize Upstash Vector client
-// These env vars should be set in your .env file
-const vectorIndex = new Index({
-	url: process.env.UPSTASH_VECTOR_REST_URL!,
-	token: process.env.UPSTASH_VECTOR_REST_TOKEN!,
-});
+// Lazy initialization of Upstash Vector client to ensure env vars are available
+let _vectorIndex: Index | null = null;
+
+function getVectorIndex(): Index {
+	if (!_vectorIndex) {
+		if (!process.env.UPSTASH_VECTOR_REST_URL || !process.env.UPSTASH_VECTOR_REST_TOKEN) {
+			throw new Error("UPSTASH_VECTOR_REST_URL and UPSTASH_VECTOR_REST_TOKEN environment variables must be set");
+		}
+		_vectorIndex = new Index({
+			url: process.env.UPSTASH_VECTOR_REST_URL,
+			token: process.env.UPSTASH_VECTOR_REST_TOKEN,
+		});
+	}
+	return _vectorIndex;
+}
 
 // Configuration
 export const VECTOR_CONFIG = {
@@ -45,11 +54,13 @@ export async function upsertVector(
 	namespace: string
 ): Promise<void> {
 	try {
-		await vectorIndex.upsert(
+		await getVectorIndex().upsert(
 			[
 				{
 					id,
 					vector: embedding,
+					// Empty sparse vector for hybrid index compatibility
+					sparseVector: { indices: [], values: [] },
 					metadata: metadata as unknown as Record<string, unknown>,
 				},
 			],
@@ -81,10 +92,12 @@ export async function upsertVectorsBatch(
 		for (let i = 0; i < vectors.length; i += batchSize) {
 			const batch = vectors.slice(i, i + batchSize);
 
-			await vectorIndex.upsert(
+			await getVectorIndex().upsert(
 				batch.map((v) => ({
 					id: v.id,
 					vector: v.embedding,
+					// Empty sparse vector for hybrid index compatibility
+					sparseVector: { indices: [], values: [] },
 					metadata: v.metadata as unknown as Record<string, unknown>,
 				})),
 				{ namespace }
@@ -127,7 +140,7 @@ export async function queryVectors(
 		// Convert filter object to string format if provided
 		const filterString = filter ? JSON.stringify(filter) : undefined;
 
-		const results = await vectorIndex.query(
+		const results = await getVectorIndex().query(
 			{
 				vector: queryEmbedding,
 				topK,
@@ -161,7 +174,7 @@ export async function deleteVector(
 	namespace: string
 ): Promise<void> {
 	try {
-		await vectorIndex.delete([id], { namespace });
+		await getVectorIndex().delete([id], { namespace });
 	} catch (error) {
 		console.error("Error deleting vector:", error);
 		throw new Error("Failed to delete vector");
@@ -183,7 +196,7 @@ export async function deleteVectorsBatch(
 
 		for (let i = 0; i < ids.length; i += batchSize) {
 			const batch = ids.slice(i, i + batchSize);
-			await vectorIndex.delete(batch, { namespace });
+			await getVectorIndex().delete(batch, { namespace });
 		}
 	} catch (error) {
 		console.error("Error deleting vectors batch:", error);
@@ -197,7 +210,7 @@ export async function deleteVectorsBatch(
  */
 export async function deleteNamespace(namespace: string): Promise<void> {
 	try {
-		await vectorIndex.deleteNamespace(namespace);
+		await getVectorIndex().deleteNamespace(namespace);
 	} catch (error) {
 		console.error("Error deleting namespace:", error);
 		throw new Error("Failed to delete namespace");
@@ -215,7 +228,7 @@ export async function getVector(
 	metadata: Record<string, unknown>;
 } | null> {
 	try {
-		const results = await vectorIndex.fetch([id], { namespace });
+		const results = await getVectorIndex().fetch([id], { namespace });
 
 		if (results && results.length > 0) {
 			const result = results[0];
@@ -240,7 +253,7 @@ export async function getNamespaceStats(namespace: string): Promise<{
 	pendingVectorCount: number;
 }> {
 	try {
-		const info = await vectorIndex.info();
+		const info = await getVectorIndex().info();
 
 		// Upstash returns total counts, we'd need to query for namespace-specific
 		return {
@@ -258,7 +271,7 @@ export async function getNamespaceStats(namespace: string): Promise<{
  */
 export async function checkVectorDbConnection(): Promise<boolean> {
 	try {
-		await vectorIndex.info();
+		await getVectorIndex().info();
 		return true;
 	} catch {
 		return false;
@@ -285,9 +298,9 @@ export async function queryByFilter(
 
 		// For filter-only queries, we use a zero vector (not ideal but works)
 		// In production, consider maintaining a list of IDs per namespace
-		const results = await vectorIndex.query(
+		const results = await getVectorIndex().query(
 			{
-				vector: new Array(1536).fill(0), // Placeholder vector
+				vector: new Array(1024).fill(0), // Placeholder vector
 				topK,
 				includeMetadata,
 				filter: filterString,

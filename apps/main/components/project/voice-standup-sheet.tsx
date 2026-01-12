@@ -120,7 +120,8 @@ PREVIOUS STANDUP (${previousStandup.date}):
             - Always ask follow-up questions if answers are vague
             - Help identify potential risks or blockers
             - Encourage the team member when they share accomplishments
-            - Keep the conversation natural and conversational`
+            - Keep the conversation natural and conversational
+        `
     }, [projectTitle, userName, previousStandup])
 
     const generateFirstMessage = useCallback(() => {
