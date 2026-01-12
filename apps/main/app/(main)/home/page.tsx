@@ -90,11 +90,7 @@ export default async function HomePage() {
 					)
 				}
 
-				{/* --- SECTION 3: MAIN DASHBOARD GRID --- */}
-				{/* Using a 12-column grid gives us perfect control over width */}
 				<div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-
-					{/* LEFT COLUMN: Activity & Goals (Spans 12 on Mobile, 7 on Tablet, 8 on Desktop) */}
 					<div className="md:col-span-7 lg:col-span-8 space-y-6 flex flex-col h-full">
 
 						<Suspense fallback={<WeeklyGoalsSkeleton />}>
@@ -117,9 +113,7 @@ export default async function HomePage() {
 						</Suspense>
 					</div>
 
-					{/* RIGHT COLUMN: Widgets & Gamification (Spans 12 on Mobile, 5 on Tablet, 4 on Desktop) */}
 					<div className="md:col-span-5 lg:col-span-4 space-y-6 flex flex-col h-full sticky top-6">
-
 						<Suspense fallback={<QuickActionsSkeleton />}>
 							<QuickActions />
 						</Suspense>
@@ -139,21 +133,17 @@ export default async function HomePage() {
 									currentCredits={user?.credits || 0}
 								/>
 							</Suspense>
-
 							<Suspense fallback={<ReferralsSkeleton />}>
 								<Referrals stats={referralStats} />
 							</Suspense>
 						</div>
 					</div>
 				</div>
-
-				{/* --- SECTION 4: COMMUNITY (Full Width Footer Area) --- */}
 				<div className="pt-4 border-t border-border">
 					<Suspense fallback={<CommunityHighlightsSkeleton />}>
 						<CommunityHighlights posts={communityPosts} />
 					</Suspense>
 				</div>
-
 			</div>
 		</main>
 	);

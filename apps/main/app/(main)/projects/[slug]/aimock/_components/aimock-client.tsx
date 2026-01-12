@@ -92,9 +92,12 @@ export default function AIMockInterviewClient({
     const [feedback, setFeedback] = useState<MockFeedback | null>(null)
 
     const conversationIdRef = useRef<string | null>(null)
+    const intentionalEndRef = useRef(false)
+    const isProcessingRef = useRef(false)
 
     const handleConversationEnd = useCallback(async () => {
-        if (!conversationIdRef.current || !sessionId) return
+        if (!conversationIdRef.current || !sessionId || isProcessingRef.current) return
+        isProcessingRef.current = true
 
         setShowProcessingDialog(true)
         setProcessingStatus('processing')
@@ -118,12 +121,14 @@ export default function AIMockInterviewClient({
             setTimeout(() => {
                 setShowProcessingDialog(false)
                 setStage('results')
+                isProcessingRef.current = false
             }, 1500)
 
         } catch (error) {
             console.error('Error processing conversation:', error)
             setProcessingStatus('error')
             toast.error('Failed to process interview')
+            isProcessingRef.current = false
         }
     }, [sessionId, project.slug])
 
@@ -131,22 +136,24 @@ export default function AIMockInterviewClient({
         micMuted: isMicMuted,
         volume,
         onConnect: () => {
-            console.log('Connected to ElevenLabs')
+            console.log('[AIMock] Connected to ElevenLabs')
             setAgentState('listening')
             toast.success('Interview started!')
         },
         onDisconnect: () => {
-            console.log('Disconnected from ElevenLabs')
+            console.log('[AIMock] Disconnected from ElevenLabs, intentional:', intentionalEndRef.current)
             setAgentState(null)
-            if (hasStarted && conversationIdRef.current) {
+            // Only process end if this was an intentional end
+            if (intentionalEndRef.current && conversationIdRef.current) {
                 handleConversationEnd()
             }
         },
         onModeChange: (mode) => {
+            console.log('[AIMock] Mode changed:', mode.mode)
             setAgentState(mode.mode === 'speaking' ? 'talking' : 'listening')
         },
         onError: (error) => {
-            console.error('Conversation error:', error)
+            console.error('[AIMock] Conversation error:', error)
             toast.error('Connection error. Please try again.')
             setAgentState(null)
         },
@@ -234,6 +241,7 @@ export default function AIMockInterviewClient({
 
     const endInterview = async () => {
         try {
+            intentionalEndRef.current = true
             await conversation.endSession()
             await updateProjectMockSessionStatus(sessionId!, 'COMPLETED', conversationIdRef.current || undefined)
             setAgentState(null)

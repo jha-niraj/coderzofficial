@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState, useRef } from 'react'
+import { use, useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -57,33 +57,69 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
     const [hasStarted, setHasStarted] = useState(false)
 
     const conversationIdRef = useRef<string | null>(null)
+    const intentionalEndRef = useRef(false)
+    const isProcessingRef = useRef(false)
+
+    // Handler for conversation end - defined before useConversation
+    const handleConversationEnd = useCallback(async () => {
+        if (!conversationIdRef.current || isProcessingRef.current) return
+        isProcessingRef.current = true
+
+        setShowProcessingDialog(true)
+        setProcessingStatus('processing')
+
+        try {
+            // Process the conversation and get transcript
+            const result = await processConversationCompletion(
+                resolvedParams.sessionId,
+                conversationIdRef.current
+            )
+
+            if (!result.success) {
+                throw new Error(result.error)
+            }
+
+            setProcessingStatus('success')
+
+            // Wait a moment to show success state
+            setTimeout(() => {
+                router.push(`/mock/voice/results/${resolvedParams.sessionId}`)
+            }, 1500)
+
+        } catch (error) {
+            console.error('Error processing conversation:', error)
+            setProcessingStatus('error')
+            toast.error('Failed to process interview. Please contact support.')
+        }
+    }, [resolvedParams.sessionId, router])
 
     const conversation = useConversation({
         micMuted: isMicMuted,
         volume,
         onConnect: () => {
-            console.log('Connected to ElevenLabs')
+            console.log('[MockInterview] Connected to ElevenLabs')
             setAgentState('listening')
             toast.success('Interview started!')
         },
         onDisconnect: () => {
-            console.log('Disconnected from ElevenLabs')
+            console.log('[MockInterview] Disconnected from ElevenLabs, intentional:', intentionalEndRef.current)
             setAgentState(null)
-            if (hasStarted && conversationIdRef.current) {
+            // Only trigger end processing if this was an intentional end and we have a conversation
+            if (intentionalEndRef.current && conversationIdRef.current) {
                 handleConversationEnd()
             }
         },
         onModeChange: (mode) => {
-            console.log('Mode changed:', mode)
+            console.log('[MockInterview] Mode changed:', mode.mode)
             setAgentState(mode.mode === 'speaking' ? 'talking' : 'listening')
         },
         onError: (error) => {
-            console.error('Conversation error:', error)
+            console.error('[MockInterview] Conversation error:', error)
             toast.error('Connection error. Please try again.')
             setAgentState(null)
         },
         onMessage: (message) => {
-            console.log('Message received:', message)
+            console.log('[MockInterview] Message:', message)
         },
     })
 
@@ -185,8 +221,9 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
         }
     }
 
-    const endInterview = async () => {
+    const endInterview = useCallback(async () => {
         try {
+            intentionalEndRef.current = true
             await conversation.endSession()
             await updateSessionStatus(resolvedParams.sessionId, 'COMPLETED')
             setAgentState(null)
@@ -194,38 +231,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             console.error('Error ending interview:', error)
             toast.error('Failed to end interview properly')
         }
-    }
-
-    const handleConversationEnd = async () => {
-        if (!conversationIdRef.current) return
-
-        setShowProcessingDialog(true)
-        setProcessingStatus('processing')
-
-        try {
-            // Process the conversation and get transcript
-            const result = await processConversationCompletion(
-                resolvedParams.sessionId,
-                conversationIdRef.current
-            )
-
-            if (!result.success) {
-                throw new Error(result.error)
-            }
-
-            setProcessingStatus('success')
-
-            // Wait a moment to show success state
-            setTimeout(() => {
-                router.push(`/mockinterview/voice/results/${resolvedParams.sessionId}`)
-            }, 1500)
-
-        } catch (error) {
-            console.error('Error processing conversation:', error)
-            setProcessingStatus('error')
-            toast.error('Failed to process interview. Please contact support.')
-        }
-    }
+    }, [conversation, resolvedParams.sessionId])
 
     const toggleMic = () => {
         setIsMicMuted(!isMicMuted)

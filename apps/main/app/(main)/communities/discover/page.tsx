@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
 import {
     Search, Users, Plus, Loader2,
     Grid, List
@@ -19,6 +18,7 @@ import {
 } from '@/actions/(main)/community/community.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
+import CreateCommunitySheet from '@/components/community/create-community-sheet'
 
 const CATEGORIES = [
     'All',
@@ -282,12 +282,17 @@ export default function DiscoverPage() {
                             <p className="text-neutral-500 dark:text-neutral-400 mb-6">
                                 {search ? `No results for "${search}"` : 'Be the first to create one!'}
                             </p>
-                            <Link href="/community/create">
-                                <Button className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900">
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Create Community
-                                </Button>
-                            </Link>
+                            <CreateCommunitySheet
+                                trigger={
+                                    <motion.div
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mt-2 cursor-pointer"
+                                        whileHover={{ scale: 1.01 }}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span className="text-sm">Create Community</span>
+                                    </motion.div>
+                                }
+                            />
                         </motion.div>
                     ) : (
                         <>
@@ -341,12 +346,17 @@ export default function DiscoverPage() {
                         <p className="text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
                             Create your own community and bring together people who share your passion.
                         </p>
-                        <Link href="/community/create">
-                            <Button size="lg" className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 h-12 px-8 rounded-xl">
-                                <Plus className="w-5 h-5 mr-2" />
-                                Create Your Community
-                            </Button>
-                        </Link>
+                        <CreateCommunitySheet
+                            trigger={
+                                <motion.div
+                                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mt-2 cursor-pointer"
+                                    whileHover={{ scale: 1.01 }}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span className="text-sm">Create Community</span>
+                                </motion.div>
+                            }
+                        />
                     </motion.div>
                 </div>
             </section>

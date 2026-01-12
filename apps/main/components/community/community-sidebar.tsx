@@ -15,6 +15,7 @@ import {
 } from '@repo/ui/components/ui/collapsible'
 import { cn } from '@repo/ui/lib/utils'
 import { CommunityCardMini } from './community-card'
+import CreateCommunitySheet from './create-community-sheet'
 import Image from 'next/image'
 
 interface CommunitySidebarProps {
@@ -155,15 +156,17 @@ export function CommunitySidebar({
                                     </div>
                                 )
                             }
-                            <Link href="/communities/create">
-                                <motion.div
-                                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mt-2"
-                                    whileHover={{ scale: 1.01 }}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span className="text-sm">Create Community</span>
-                                </motion.div>
-                            </Link>
+                            <CreateCommunitySheet
+                                trigger={
+                                    <motion.div
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mt-2 cursor-pointer"
+                                        whileHover={{ scale: 1.01 }}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span className="text-sm">Create Community</span>
+                                    </motion.div>
+                                }
+                            />
                         </CollapsibleContent>
                     </Collapsible>
                 </div>

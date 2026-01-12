@@ -153,7 +153,7 @@ export default function CreateSpaceSheet({ trigger, onSuccess }: CreateSpaceShee
                     )
                 }
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
+            <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
                 <div className="max-w-2xl mx-auto">
                     <SheetHeader className="mb-6">
                         <SheetTitle className="text-2xl flex items-center gap-2">
