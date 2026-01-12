@@ -330,7 +330,7 @@ function SubmitErrorSheet({
                     Share Error
                 </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[70vh] w-full overflow-y-auto">
+            <SheetContent side="bottom" className="h-[75vh] w-full overflow-y-auto">
                 <section className="w-full max-w-5xl mx-auto">
                     <SheetHeader>
                         <SheetTitle className="flex items-center gap-2">
@@ -381,47 +381,51 @@ function SubmitErrorSheet({
                                 </Select>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="description">What happened? *</Label>
-                            <Textarea
-                                id="description"
-                                placeholder="Describe the error or mistake..."
-                                value={form.description}
-                                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                                rows={3}
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="description">What happened? *</Label>
+                                <Textarea
+                                    id="description"
+                                    placeholder="Describe the error or mistake..."
+                                    value={form.description}
+                                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="solution">How did you fix it? *</Label>
+                                <Textarea
+                                    id="solution"
+                                    placeholder="Explain the solution..."
+                                    value={form.solution}
+                                    onChange={(e) => setForm({ ...form, solution: e.target.value })}
+                                    rows={3}
+                                />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="solution">How did you fix it? *</Label>
-                            <Textarea
-                                id="solution"
-                                placeholder="Explain the solution..."
-                                value={form.solution}
-                                onChange={(e) => setForm({ ...form, solution: e.target.value })}
-                                rows={3}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="errorCode">Problematic Code (optional)</Label>
-                            <Textarea
-                                id="errorCode"
-                                placeholder="Paste the code that caused the issue..."
-                                value={form.errorCode}
-                                onChange={(e) => setForm({ ...form, errorCode: e.target.value })}
-                                rows={3}
-                                className="font-mono text-sm"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="fixedCode">Corrected Code (optional)</Label>
-                            <Textarea
-                                id="fixedCode"
-                                placeholder="Paste the corrected code..."
-                                value={form.fixedCode}
-                                onChange={(e) => setForm({ ...form, fixedCode: e.target.value })}
-                                rows={3}
-                                className="font-mono text-sm"
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="errorCode">Problematic Code (optional)</Label>
+                                <Textarea
+                                    id="errorCode"
+                                    placeholder="Paste the code that caused the issue..."
+                                    value={form.errorCode}
+                                    onChange={(e) => setForm({ ...form, errorCode: e.target.value })}
+                                    rows={3}
+                                    className="font-mono text-sm"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fixedCode">Corrected Code (optional)</Label>
+                                <Textarea
+                                    id="fixedCode"
+                                    placeholder="Paste the corrected code..."
+                                    value={form.fixedCode}
+                                    onChange={(e) => setForm({ ...form, fixedCode: e.target.value })}
+                                    rows={3}
+                                    className="font-mono text-sm"
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="tags">Tags (comma separated)</Label>
@@ -463,7 +467,6 @@ function SubmitErrorSheet({
 // ============================================================================
 // Main Component
 // ============================================================================
-
 export default function ErrorsTab({ projectId, isEnrolled, isCreator }: ErrorsTabProps) {
     const [errors, setErrors] = useState<ProjectError[]>([])
     const [loading, setLoading] = useState(true)

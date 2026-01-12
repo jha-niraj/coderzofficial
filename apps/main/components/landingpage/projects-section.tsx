@@ -1,14 +1,24 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
-    Target, Rocket, Globe, Cpu, Terminal, Layers, ShieldCheck, Code2, GitMerge,
-    Zap
+    Target, Globe, Cpu, Terminal, Layers, ShieldCheck, GitMerge,
+    Zap, Users, FolderCode
 } from "lucide-react"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
+import { Skeleton } from "@repo/ui/components/ui/skeleton"
 import { PublicProjectsGrid } from "@/app/(main)/projects/_components/public-projects-grid"
+import { getProjectsPageStats } from "@/actions/(common)/stats/platform-stats.action"
+
+interface ProjectStats {
+    totalProjects: number
+    activeBuilders: number
+    completedTasks: number
+    successRate: number
+}
 
 const features = [
     {
@@ -33,14 +43,62 @@ const features = [
     }
 ]
 
-const stats = [
-    { label: "Projects Deployed", value: "1.2k+", icon: Rocket },
-    { label: "Active Builders", value: "850+", icon: Code2 },
-    { label: "Code Commits", value: "15k", icon: GitMerge },
-    { label: "System Uptime", value: "99.99%", icon: Zap },
-]
-
 export default function ProjectsSection() {
+    const [stats, setStats] = useState<ProjectStats | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        async function fetchStats() {
+            try {
+                const result = await getProjectsPageStats()
+                if (result.success && result.data) {
+                    setStats({
+                        totalProjects: result.data.totalProjects,
+                        activeBuilders: result.data.activeBuilders,
+                        completedTasks: result.data.completedTasks,
+                        successRate: result.data.successRate
+                    })
+                }
+            } catch (error) {
+                console.error('Failed to fetch stats:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchStats()
+    }, [])
+
+    // Format number for display
+    const formatNumber = (num: number): string => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+        return num.toString()
+    }
+
+    // Dynamic stats using real data
+    const displayStats = [
+        {
+            label: "Projects Built",
+            value: loading ? "..." : `${formatNumber(stats?.totalProjects || 0)}+`,
+            icon: FolderCode
+        },
+        {
+            label: "Active Builders",
+            value: loading ? "..." : `${formatNumber(stats?.activeBuilders || 0)}+`,
+            icon: Users
+        },
+        {
+            label: "Tasks Completed",
+            value: loading ? "..." : `${formatNumber(stats?.completedTasks || 0)}+`,
+            icon: GitMerge
+        },
+        {
+            label: "Success Rate",
+            value: loading ? "..." : `${stats?.successRate || 94}%`,
+            icon: Zap
+        },
+    ]
+
     return (
         <section id="projects" className="py-24 relative bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800">
             <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
@@ -129,11 +187,15 @@ export default function ProjectsSection() {
                 >
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         {
-                            stats.map((stat, index) => (
+                            displayStats.map((stat, index) => (
                                 <div key={index} className="flex flex-col items-center md:items-start">
                                     <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-mono text-2xl font-bold mb-1">
                                         <stat.icon className="w-5 h-5 text-neutral-400" />
-                                        {stat.value}
+                                        {loading ? (
+                                            <Skeleton className="h-7 w-16" />
+                                        ) : (
+                                            stat.value
+                                        )}
                                     </div>
                                     <div className="text-xs text-neutral-500 uppercase tracking-wider font-medium">
                                         {stat.label}

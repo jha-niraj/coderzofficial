@@ -1,9 +1,10 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import {
-	ArrowRight, Sparkles, Star, Users, Brain, Zap, Trophy, CheckCircle2,
-	Rocket, Target, Lightbulb, Award, Briefcase
+	ArrowRight, Sparkles, Users, Brain, Zap, Trophy, CheckCircle2,
+	Rocket, Target, Lightbulb, Briefcase, Star, Award
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
@@ -19,6 +20,24 @@ import {
 } from "@/app/(main)/projects/_components/recent-submissions-grid"
 import SmoothScroll from "@/components/smoothscroll"
 import ProjectGenerateSheet from "@/components/projects/project-generate-sheet"
+import { getProjectsPageStats } from "@/actions/(common)/stats/platform-stats.action"
+
+interface ProjectStats {
+	totalProjects: number
+	totalProjectIdeas: number
+	problemStatements: number
+	technologyIdeas: number
+	byType: {
+		frontend: number
+		fullStack: number
+		backend: number
+		aiAgent: number
+	}
+	totalTasks: number
+	completedTasks: number
+	successRate: number
+	activeBuilders: number
+}
 
 const features = [
 	{
@@ -47,14 +66,26 @@ const features = [
 	}
 ]
 
-const stats = [
-	{ label: "Projects Generated", value: "10,847", icon: Rocket, suffix: "+" },
-	{ label: "Active Builders", value: "5,234", icon: Users, suffix: "+" },
-	{ label: "Tasks Completed", value: "125K", icon: CheckCircle2, suffix: "+" },
-	{ label: "Success Rate", value: "94", icon: Trophy, suffix: "%" },
-]
-
 export default function ProjectsHomePage() {
+	const [stats, setStats] = useState<ProjectStats | null>(null)
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		async function fetchStats() {
+			try {
+				const result = await getProjectsPageStats()
+				if (result.success && result.data) {
+					setStats(result.data as ProjectStats)
+				}
+			} catch (error) {
+				console.error('Failed to fetch stats:', error)
+			} finally {
+				setLoading(false)
+			}
+		}
+		fetchStats()
+	}, [])
+
 	const scrollToProjects = () => {
 		const element = document.getElementById('public-projects-section')
 		if (element) {
@@ -62,10 +93,45 @@ export default function ProjectsHomePage() {
 		}
 	}
 
+	// Format number for display
+	const formatNumber = (num: number): string => {
+		if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+		if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+		return num.toString()
+	}
+
+	// Dynamic stats using real data
+	const displayStats = [
+		{
+			label: "Projects Built",
+			value: loading ? "..." : formatNumber(stats?.totalProjects || 0),
+			icon: Rocket,
+			suffix: "+"
+		},
+		{
+			label: "Active Builders",
+			value: loading ? "..." : formatNumber(stats?.activeBuilders || 0),
+			icon: Users,
+			suffix: "+"
+		},
+		{
+			label: "Tasks Completed",
+			value: loading ? "..." : formatNumber(stats?.completedTasks || 0),
+			icon: CheckCircle2,
+			suffix: "+"
+		},
+		{
+			label: "Success Rate",
+			value: loading ? "..." : `${stats?.successRate || 94}`,
+			icon: Trophy,
+			suffix: "%"
+		},
+	]
+
 	return (
 		<SmoothScroll>
 			<div className="min-h-screen bg-white dark:bg-neutral-950">
-				<section className="relative overflow-hidden py-20 bg-white dark:bg-neutral-950">
+				<section className="relative py-20 bg-white dark:bg-neutral-950">
 					<div className="absolute inset-0 bg-[radial-gradient(circle_at_top_center,_var(--tw-gradient-stops))] from-neutral-100/50 via-white to-white dark:from-neutral-900/50 dark:via-neutral-950 dark:to-neutral-950 -z-10" />
 					<div className="max-w-7xl mx-auto px-6">
 						<motion.div
@@ -163,7 +229,7 @@ export default function ProjectsHomePage() {
 							transition={{ duration: 0.6 }}
 						>
 							{
-								stats.map((stat, index) => {
+								displayStats.map((stat, index) => {
 									const Icon = stat.icon
 									return (
 										<motion.div

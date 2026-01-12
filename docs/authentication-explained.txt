@@ -1,0 +1,295 @@
+# Authentication System Documentation
+
+## Overview
+
+This document explains how the authentication system works in the Coder'z platform, specifically focusing on OAuth providers (Google and GitHub) and how they handle both sign-in and automatic account creation.
+
+---
+
+## Quick Answer: Does it auto-create accounts?
+
+**YES!** When using Google or GitHub sign-in:
+- If the user already has an account → Signs them in directly
+- If the user doesn't have an account → Creates a new account automatically, then signs them in
+
+This is handled by NextAuth.js with the Prisma adapter.
+
+---
+
+## How It Works
+
+### 1. Provider Configuration
+
+The authentication system uses three providers:
+
+```typescript
+providers: [
+    CredentialsProvider({...}),  // Email/Password login
+    GoogleProvider({...}),        // Google OAuth
+    GitHubProvider({...}),        // GitHub OAuth
+]
+```
+
+### 2. The Magic: PrismaAdapter
+
+```typescript
+adapter: PrismaAdapter(prisma),
+```
+
+The `PrismaAdapter` is responsible for:
+- **Automatic User Creation**: When an OAuth user doesn't exist, the adapter automatically creates a new `User` record in the database
+- **Account Linking**: Creates an `Account` record that links the OAuth provider to the user
+- **Session Management**: Creates sessions for the user
+
+### 3. Sign-In Flow
+
+#### Google Sign-In Flow:
+
+```
+User clicks "Sign in with Google"
+         ↓
+Google OAuth popup appears → User authenticates
+         ↓
+Google returns profile data (name, email, image)
+         ↓
+NextAuth receives the callback
+         ↓
+signIn callback checks: Does user with this email exist?
+         ↓
+    [If YES] → Returns true (allow sign-in)
+    [If NO]  → PrismaAdapter creates new user automatically
+         ↓
+signIn callback runs post-creation logic:
+  - Generates referral code
+  - Sets emailVerified = true
+  - Sets onboardingCompleted = false
+  - Processes referral if provided
+  - Creates signup activity
+         ↓
+User is signed in and redirected
+```
+
+#### GitHub Sign-In Flow:
+
+```
+User clicks "Sign in with GitHub"
+         ↓
+GitHub OAuth popup appears → User authorizes
+         ↓
+GitHub returns profile data (name, email, avatar, repos, etc.)
+         ↓
+NextAuth receives the callback
+         ↓
+signIn callback checks: Does user with this email exist?
+         ↓
+    [If YES] → Updates/Creates OSGitHubProfile → Returns true
+    [If NO]  → PrismaAdapter creates new user automatically
+         ↓
+signIn callback runs post-creation logic:
+  - Generates referral code
+  - Sets emailVerified = true
+  - Creates OSGitHubProfile with GitHub data
+  - Processes referral if provided
+         ↓
+User is signed in and redirected
+```
+
+### 4. Code Breakdown
+
+#### signIn Callback (auth.ts lines 217-407)
+
+```typescript
+async signIn({ user, account, profile }) {
+    if (account?.provider === 'google') {
+        const existingUser = await prisma.user.findUnique({
+            where: { email: profile?.email }
+        });
+
+        if (existingUser) {
+            return true;  // User exists, allow sign-in
+        }
+
+        // New user - PrismaAdapter already created the user
+        // We run additional setup in a setTimeout to allow adapter to finish
+        setTimeout(async () => {
+            const newUser = await prisma.user.findUnique({
+                where: { email: profile?.email }
+            });
+
+            if (newUser) {
+                // Set up referral code, verify email, etc.
+                await prisma.user.update({
+                    where: { id: newUser.id },
+                    data: {
+                        referralCode: await generateReferralCode(newUser.name),
+                        emailVerified: true,
+                        onboardingCompleted: false
+                    }
+                });
+            }
+        }, 1000);
+    }
+
+    return true;  // Always allow OAuth sign-in
+}
+```
+
+### 5. Key Differences: OAuth vs Credentials
+
+| Aspect | Credentials (Email/Password) | OAuth (Google/GitHub) |
+|--------|-----------------------------|-----------------------|
+| Account Creation | Manual (via /register page) | Automatic |
+| Email Verification | Required OTP verification | Auto-verified |
+| Password | Required | Not needed |
+| Error on No Account | Yes ("USER_NOT_FOUND") | No, creates account |
+| Can use /signin directly | No (must register first) | Yes |
+
+### 6. Why setTimeout?
+
+```typescript
+setTimeout(async () => {
+    // New user setup logic
+}, 1000);
+```
+
+This is because the PrismaAdapter creates the user in the database AFTER the signIn callback returns. The setTimeout ensures we wait for the adapter to complete before updating the user.
+
+**Note**: This is a common pattern but can be improved with proper async handling.
+
+---
+
+## Database Models Involved
+
+### User Model
+```prisma
+model User {
+    id                  String    @id @default(cuid())
+    name                String?
+    email               String?   @unique
+    emailVerified       DateTime?
+    image               String?
+    hashedPassword      String?           // Only for credentials users
+    role                Role              @default(Student)
+    referralCode        String?
+    onboardingCompleted Boolean?          @default(false)
+    accounts            Account[]         // Linked OAuth accounts
+    osGitHubProfile     OSGitHubProfile?  // GitHub-specific data
+}
+```
+
+### Account Model (Created by PrismaAdapter)
+```prisma
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String  // "google", "github", "credentials"
+    providerAccountId String
+    access_token      String?
+    refresh_token     String?
+    // ... other OAuth tokens
+}
+```
+
+---
+
+## Sign-In Page vs Register Page
+
+### From /signin Page:
+- **Credentials**: User must already have an account → Error if not found
+- **Google/GitHub**: Will auto-create account if not exists → Always works
+
+### From /register Page:
+- **Credentials**: Creates new account with email/password
+- **Google/GitHub**: Same behavior as /signin (auto-creates if needed)
+
+---
+
+## Common Scenarios
+
+### Scenario 1: New User Signs in with Google
+1. User clicks "Sign in with Google" on /signin page
+2. Authenticates with Google
+3. PrismaAdapter creates User record
+4. signIn callback sets up referral code, etc.
+5. User is redirected to /onboarding
+
+### Scenario 2: Existing User Signs in with Google
+1. User clicks "Sign in with Google"
+2. signIn callback finds existing user
+3. Returns true immediately
+4. User is redirected to /home
+
+### Scenario 3: User Tries Email Login Without Account
+1. User enters email/password on /signin
+2. Credentials provider checks database
+3. User not found → throws "USER_NOT_FOUND"
+4. User is shown error: "Account not found"
+5. User must go to /register first
+
+### Scenario 4: GitHub User Wants to Access Open Source Features
+1. User signs in with GitHub
+2. OSGitHubProfile is created/updated with:
+   - GitHub username
+   - Repositories count
+   - Followers/following
+   - Access token for API calls
+3. User can now contribute to open source projects
+
+---
+
+## Security Considerations
+
+1. **Email Verification**
+   - OAuth emails are auto-verified (Google/GitHub verified them)
+   - Credentials emails require OTP verification
+
+2. **Account Linking**
+   - Same email = same user (accounts are linked by email)
+   - If user signs up with Google, they can later sign in with GitHub (same email)
+
+3. **Access Tokens**
+   - GitHub access tokens are stored for API access
+   - Used for repository operations in open source module
+
+---
+
+## Configuration
+
+### Environment Variables Required:
+```env
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_SECRET_ID=xxx
+GITHUB_CLIENT_ID=xxx
+GITHUB_SECRET_ID=xxx
+NEXTAUTH_SECRET=xxx
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### OAuth Scopes:
+
+**Google**:
+- `userinfo.email` - Get user's email
+- `userinfo.profile` - Get user's name and picture
+- `calendar.events` - Calendar integration (optional)
+
+**GitHub**:
+- `read:user` - Read user profile
+- `user:email` - Read user email
+- `repo` - Access to repositories
+
+---
+
+## Summary
+
+The authentication system is designed for seamless onboarding:
+
+1. **OAuth users can sign up from anywhere** - signIn page, signUp page, or any protected route
+2. **Account creation is automatic** for OAuth providers
+3. **Credentials users must register first** with email verification
+4. **All sign-in methods end up with the same user experience**
+
+This dual approach allows for:
+- Quick onboarding with social login (most users)
+- Traditional email/password for users who prefer it
+- Account linking for users who want both

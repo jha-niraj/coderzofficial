@@ -209,7 +209,7 @@ export default function BlueprintFlowchart({
     progressPercentage = 0,
     onTaskClick
 }: BlueprintFlowchartProps) {
-    const [isExpanded, setIsExpanded] = useState(true)
+    const [isExpanded, setIsExpanded] = useState(false)
 
     // Generate nodes and edges from tasks
     const { initialNodes, initialEdges } = useMemo(() => {

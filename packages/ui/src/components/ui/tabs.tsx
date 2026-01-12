@@ -49,7 +49,7 @@ const TabsTrigger = React.forwardRef<
 		className={cn(
 			`
       flex-1
-      py-3
+      py-3 rounded-2xl
       text-center text-sm font-semibold
       cursor-pointer
       transition-colors

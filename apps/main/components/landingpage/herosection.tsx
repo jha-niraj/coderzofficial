@@ -1,17 +1,50 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
-    Terminal, Cpu, Network, ShieldCheck, Zap
+    Terminal, Network, ShieldCheck, Zap, Users, Rocket, FolderCode, 
+    CheckCircle2, GitCompare
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { useSession } from '@repo/auth/client'
 import { useRouter } from "next/navigation"
 import { cn } from "@repo/ui/lib/utils"
 import { motion, Variants } from "framer-motion"
+import { getPlatformStats } from "@/actions/(common)/stats/platform-stats.action"
+import { Skeleton } from "@repo/ui/components/ui/skeleton"
+
+interface PlatformStats {
+    totalUsers: number
+    totalProjects: number
+    completedTasks: number
+    successRate: number
+    totalOpenSourceProjects: number
+    totalEvents: number
+    totalMockSessions: number
+    totalProjectIdeas: number
+}
 
 export default function HeroSection() {
     const { data: session } = useSession()
     const router = useRouter()
+    const [stats, setStats] = useState<PlatformStats | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        async function fetchStats() {
+            try {
+                const result = await getPlatformStats()
+                if (result.success && result.data) {
+                    setStats(result.data as unknown as PlatformStats)
+                }
+            } catch (error) {
+                console.error('Failed to fetch stats:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchStats()
+    }, [])
 
     const handleAuthenticatedAction = (targetUrl: string) => {
         if (session) {
@@ -25,13 +58,20 @@ export default function HeroSection() {
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
     }
 
+    // Format number for display
+    const formatNumber = (num: number): string => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+        return num.toString()
+    }
+
     // Animation Variants
     const containerVariants: Variants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.1, // Stagger effect between children
+                staggerChildren: 0.1,
                 delayChildren: 0.2,
             }
         }
@@ -58,6 +98,58 @@ export default function HeroSection() {
             transition: { type: "spring", stiffness: 100 }
         }
     }
+
+    // Dynamic stats using real data
+    const displayStats = [
+        {
+            label: "Active Developers",
+            value: loading ? "..." : formatNumber(stats?.totalUsers || 0),
+            icon: Users,
+            suffix: "+"
+        },
+        {
+            label: "Projects Built",
+            value: loading ? "..." : formatNumber(stats?.totalProjects || 0),
+            icon: FolderCode,
+            suffix: "+"
+        },
+        {
+            label: "Tasks Completed",
+            value: loading ? "..." : formatNumber(stats?.completedTasks || 0),
+            icon: CheckCircle2,
+            suffix: "+"
+        },
+        {
+            label: "Success Rate",
+            value: loading ? "..." : `${stats?.successRate || 94}`,
+            icon: Rocket,
+            suffix: "%"
+        },
+        {
+            label: "OS Contributions",
+            value: loading ? "..." : formatNumber(stats?.totalOpenSourceProjects || 0),
+            icon: GitCompare,
+            suffix: "+"
+        },
+        {
+            label: "Events Hosted",
+            value: loading ? "..." : formatNumber(stats?.totalEvents || 0),
+            icon: Network,
+            suffix: "+"
+        },
+        {
+            label: "Mock Interviews",
+            value: loading ? "..." : formatNumber(stats?.totalMockSessions || 0),
+            icon: ShieldCheck,
+            suffix: "+"
+        },
+        {
+            label: "Project Ideas",
+            value: loading ? "..." : formatNumber(stats?.totalProjectIdeas || 0),
+            icon: Zap,
+            suffix: "+"
+        },
+    ]
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-white dark:bg-black selection:bg-orange-100 dark:selection:bg-orange-900/30 flex items-center justify-center transition-colors duration-500">
@@ -90,7 +182,7 @@ export default function HeroSection() {
             </div>
             <div className="relative z-10 w-full px-6 pt-24 lg:px-8">
                 <motion.div
-                    className="mx-auto max-w-4xl text-center"
+                    className="mx-auto max-w-5xl text-center"
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
@@ -133,7 +225,7 @@ export default function HeroSection() {
                             <Button
                                 onClick={() => handleAuthenticatedAction("/home")}
                                 className={cn(
-                                    "cursor-pointer h-14 px-8 text-base rounded-2xl font-bold transition-all duration-300", // Removed hover:scale-105 here as motion handles it
+                                    "cursor-pointer h-14 px-8 text-base rounded-2xl font-bold transition-all duration-300",
                                     "bg-neutral-900 text-white hover:bg-neutral-800 shadow-xl shadow-neutral-900/10",
                                     "dark:bg-white dark:text-black dark:hover:bg-neutral-200 dark:shadow-[0_0_40px_-10px_rgba(255,150,100,0.2)]"
                                 )}
@@ -156,39 +248,38 @@ export default function HeroSection() {
                             </Button>
                         </motion.div>
                     </motion.div>
+
+                    {/* 8 Stats Grid - Real Data */}
                     <motion.div
                         variants={containerVariants}
                         className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto"
                     >
-                        {
-                            [
-                                { label: "Active Nodes", value: "2.4k", icon: Network },
-                                { label: "Code Reviews", value: "15k+", icon: ShieldCheck },
-                                { label: "Latency", value: "<50ms", icon: Zap },
-                                { label: "Uptime", value: "99.9%", icon: Cpu },
-                            ].map((stat, i) => (
-                                <motion.div
-                                    key={i}
-                                    variants={statItemVariants}
-                                    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                                    className={cn(
-                                        "group flex flex-col items-center p-6 rounded-2xl transition-all duration-300",
-                                        "bg-white/60 border border-orange-100/50 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-100/50",
-                                        "dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 dark:hover:border-white/10 dark:hover:shadow-none"
-                                    )}
-                                >
-                                    <div className="p-3 rounded-full mb-3 group-hover:scale-110 transition-transform bg-orange-50 dark:bg-white/5">
-                                        <stat.icon className="w-5 h-5 text-orange-800/70 dark:text-neutral-300" />
+                        {displayStats.map((stat, i) => (
+                            <motion.div
+                                key={i}
+                                variants={statItemVariants}
+                                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                                className={cn(
+                                    "group flex flex-col items-center p-5 rounded-2xl transition-all duration-300",
+                                    "bg-white/60 border border-orange-100/50 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-100/50",
+                                    "dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 dark:hover:border-white/10 dark:hover:shadow-none"
+                                )}
+                            >
+                                <div className="p-2.5 rounded-full mb-2 group-hover:scale-110 transition-transform bg-orange-50 dark:bg-white/5">
+                                    <stat.icon className="w-4 h-4 text-orange-800/70 dark:text-neutral-300" />
+                                </div>
+                                {loading ? (
+                                    <Skeleton className="h-8 w-16 mb-1" />
+                                ) : (
+                                    <div className="text-2xl font-bold font-mono tracking-tight text-neutral-900 dark:text-white">
+                                        {stat.value}{stat.suffix}
                                     </div>
-                                    <div className="text-3xl font-bold font-mono tracking-tight text-neutral-900 dark:text-white">
-                                        {stat.value}
-                                    </div>
-                                    <div className="text-xs uppercase tracking-widest mt-2 font-medium text-neutral-600 dark:text-neutral-500">
-                                        {stat.label}
-                                    </div>
-                                </motion.div>
-                            ))
-                        }
+                                )}
+                                <div className="text-[10px] uppercase tracking-widest mt-1 font-medium text-neutral-600 dark:text-neutral-500">
+                                    {stat.label}
+                                </div>
+                            </motion.div>
+                        ))}
                     </motion.div>
                 </motion.div>
             </div>

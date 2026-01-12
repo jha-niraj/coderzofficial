@@ -17,13 +17,16 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import {
-    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+    SheetFooter
 } from '@repo/ui/components/ui/sheet'
 import { categories, type Category } from './data/categories'
 import {
     SubmitProjectIdeaSheet
 } from '@/components/projects/submit-project-idea-sheet'
-import { getProblemStatements } from '@/actions/(main)/projects/project-ideas.action'
+import {
+    getProblemStatements
+} from '@/actions/(main)/projects/project-ideas.action'
 import toast from '@repo/ui/components/ui/sonner'
 import ProjectGenerateSheet from '@/components/projects/project-generate-sheet'
 
@@ -174,72 +177,69 @@ export default function ProjectIdeasPage() {
                         </Button>
                     </div>
                 </motion.div>
-
-                {/* Two-Tab Layout */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="w-full max-w-md mx-auto mb-12 bg-white dark:bg-neutral-900 rounded-xl p-1 border border-neutral-200 dark:border-neutral-800 shadow-sm">
                         <TabsTrigger
                             value="technology"
-                            className="flex-1 rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black py-3"
                         >
-                            <Code2 className="w-4 h-4 mr-2" />
-                            Technology Based
+                            <div className="flex items-center justify-center gap-2">
+                                <Code2 className="w-4 h-4 mr-2" />
+                                Technology Based
+                            </div>
                         </TabsTrigger>
                         <TabsTrigger
                             value="problem"
-                            className="flex-1 rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black py-3"
                         >
-                            <Target className="w-4 h-4 mr-2" />
-                            Problem First
+                            <div className="flex items-center justify-center gap-2">
+                                <Target className="w-4 h-4 mr-2" />
+                                Problem First
+                            </div>
                         </TabsTrigger>
                     </TabsList>
-
-                    {/* Technology Based Tab */}
                     <TabsContent value="technology">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {categories.map((category, index) => {
-                                const Icon = category.icon
-                                return (
-                                    <motion.div
-                                        key={category.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                    >
-                                        <div
-                                            onClick={() => handleCategoryClick(category)}
-                                            className="group h-full bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
+                            {
+                                categories.map((category, index) => {
+                                    const Icon = category.icon
+                                    return (
+                                        <motion.div
+                                            key={category.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.05 }}
                                         >
-                                            <div>
-                                                <div className="flex items-start justify-between mb-6">
-                                                    <div className={`p-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700 transition-colors duration-300`}>
-                                                        <Icon className="w-6 h-6" />
+                                            <div
+                                                onClick={() => handleCategoryClick(category)}
+                                                className="group h-full bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
+                                            >
+                                                <div>
+                                                    <div className="flex items-start justify-between mb-6">
+                                                        <div className={`p-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700 transition-colors duration-300`}>
+                                                            <Icon className="w-6 h-6" />
+                                                        </div>
+                                                        <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 border border-neutral-100 dark:border-neutral-800 px-2 py-1 rounded-md">
+                                                            {category.technologies.length} Stacks
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 border border-neutral-100 dark:border-neutral-800 px-2 py-1 rounded-md">
-                                                        {category.technologies.length} Stacks
-                                                    </span>
+                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">
+                                                        {category.name}
+                                                    </h3>
+                                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed mb-6">
+                                                        {category.description}
+                                                    </p>
                                                 </div>
-                                                <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">
-                                                    {category.name}
-                                                </h3>
-                                                <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed mb-6">
-                                                    {category.description}
-                                                </p>
+                                                <div className="flex items-center text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
+                                                    Explore Projects
+                                                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                                                </div>
                                             </div>
-                                            <div className="flex items-center text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
-                                                Explore Projects
-                                                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )
-                            })}
+                                        </motion.div>
+                                    )
+                                })
+                            }
                         </div>
                     </TabsContent>
-
-                    {/* Problem First Tab */}
                     <TabsContent value="problem">
-                        {/* Filters */}
                         <div className="flex flex-col sm:flex-row gap-4 mb-8">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -265,111 +265,120 @@ export default function ProjectIdeasPage() {
                             </Select>
                         </div>
 
-                        {/* Problem Statements Grid */}
-                        {loadingProblems ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {[1, 2, 3, 4, 5, 6].map((i) => (
-                                    <div key={i} className="bg-white dark:bg-neutral-900 rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 animate-pulse">
-                                        <div className="h-6 w-24 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
-                                        <div className="h-8 w-3/4 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
-                                        <div className="space-y-2 mb-6">
-                                            <div className="h-4 w-full bg-neutral-100 dark:bg-neutral-800 rounded" />
-                                            <div className="h-4 w-5/6 bg-neutral-100 dark:bg-neutral-800 rounded" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : problemStatements.length === 0 ? (
-                            <div className="text-center py-20 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50/50 dark:bg-neutral-900/50">
-                                <Target className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">No problem statements found</h3>
-                                <p className="text-neutral-500 dark:text-neutral-400 mb-6">Be the first to submit a technology-agnostic challenge!</p>
-                                <Button onClick={() => setSubmitSheetOpen(true)}>
-                                    <Lightbulb className="w-4 h-4 mr-2" />
-                                    Submit a Problem Statement
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {problemStatements.map((problem, index) => (
-                                    <motion.div
-                                        key={problem.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        className="group bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1 flex flex-col"
-                                    >
-                                        <div className="flex items-center justify-between mb-4">
-                                            <Badge className={getDifficultyStyle(problem.difficulty)}>
-                                                {problem.difficulty}
-                                            </Badge>
-                                            <div className="flex items-center gap-3 text-sm text-neutral-400">
-                                                <div className="flex items-center gap-1">
-                                                    <Eye className="w-3.5 h-3.5" />
-                                                    <span>{problem.views || 0}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <Heart className="w-3.5 h-3.5" />
-                                                    <span>{problem.upvotes || 0}</span>
+                        {
+                            loadingProblems ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {
+                                        [1, 2, 3, 4, 5, 6].map((i) => (
+                                            <div key={i} className="bg-white dark:bg-neutral-900 rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 animate-pulse">
+                                                <div className="h-6 w-24 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
+                                                <div className="h-8 w-3/4 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
+                                                <div className="space-y-2 mb-6">
+                                                    <div className="h-4 w-full bg-neutral-100 dark:bg-neutral-800 rounded" />
+                                                    <div className="h-4 w-5/6 bg-neutral-100 dark:bg-neutral-800 rounded" />
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                            {problem.projectTitle}
-                                        </h3>
-
-                                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-3 flex-grow">
-                                            {problem.overview || problem.projectDescription}
-                                        </p>
-
-                                        {/* Core Requirements Preview */}
-                                        {problem.coreRequirements && problem.coreRequirements.length > 0 && (
-                                            <div className="mb-4">
-                                                <div className="flex flex-wrap gap-2">
-                                                    {problem.coreRequirements.slice(0, 2).map((req, i) => (
-                                                        <div key={i} className="flex items-center gap-1 text-xs text-neutral-500">
-                                                            <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                                            <span className="truncate max-w-[120px]">{req}</span>
+                                        ))
+                                    }
+                                </div>
+                            ) : problemStatements.length === 0 ? (
+                                <div className="text-center py-20 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50/50 dark:bg-neutral-900/50">
+                                    <Target className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
+                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">No problem statements found</h3>
+                                    <p className="text-neutral-500 dark:text-neutral-400 mb-6">Be the first to submit a technology-agnostic challenge!</p>
+                                    <Button onClick={() => setSubmitSheetOpen(true)}>
+                                        <Lightbulb className="w-4 h-4 mr-2" />
+                                        Submit a Problem Statement
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {
+                                        problemStatements.map((problem, index) => (
+                                            <motion.div
+                                                key={problem.id}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: index * 0.05 }}
+                                                className="group bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                                            >
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <Badge className={getDifficultyStyle(problem.difficulty)}>
+                                                        {problem.difficulty}
+                                                    </Badge>
+                                                    <div className="flex items-center gap-3 text-sm text-neutral-400">
+                                                        <div className="flex items-center gap-1">
+                                                            <Eye className="w-3.5 h-3.5" />
+                                                            <span>{problem.views || 0}</span>
                                                         </div>
-                                                    ))}
-                                                    {problem.coreRequirements.length > 2 && (
-                                                        <span className="text-xs text-neutral-400">+{problem.coreRequirements.length - 2} more</span>
-                                                    )}
+                                                        <div className="flex items-center gap-1">
+                                                            <Heart className="w-3.5 h-3.5" />
+                                                            <span>{problem.upvotes || 0}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
 
-                                        {/* Stats */}
-                                        {problem.buildCount > 0 && (
-                                            <p className="text-xs text-neutral-500 mb-4">
-                                                👥 {problem.buildCount} devs built this
-                                            </p>
-                                        )}
+                                                <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    {problem.projectTitle}
+                                                </h3>
 
-                                        <div className="grid grid-cols-2 gap-3 mt-auto">
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => handleViewProblem(problem)}
-                                                className="h-10 rounded-lg"
-                                            >
-                                                View Details
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleStartBuilding(problem)}
-                                                className="h-10 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200"
-                                            >
-                                                Start Building
-                                            </Button>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
+                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-3 flex-grow">
+                                                    {problem.overview || problem.projectDescription}
+                                                </p>
+
+                                                {
+                                                    problem.coreRequirements && problem.coreRequirements.length > 0 && (
+                                                        <div className="mb-4">
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {
+                                                                    problem.coreRequirements.slice(0, 2).map((req, i) => (
+                                                                        <div key={i} className="flex items-center gap-1 text-xs text-neutral-500">
+                                                                            <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                                                            <span className="truncate max-w-[120px]">{req}</span>
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                                {
+                                                                    problem.coreRequirements.length > 2 && (
+                                                                        <span className="text-xs text-neutral-400">+{problem.coreRequirements.length - 2} more</span>
+                                                                    )
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+
+                                                {
+                                                    problem.buildCount > 0 && (
+                                                        <p className="text-xs text-neutral-500 mb-4">
+                                                            👥 {problem.buildCount} devs built this
+                                                        </p>
+                                                    )
+                                                }
+
+                                                <div className="grid grid-cols-2 gap-3 mt-auto">
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => handleViewProblem(problem)}
+                                                        className="h-10 rounded-lg"
+                                                    >
+                                                        View Details
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleStartBuilding(problem)}
+                                                        className="h-10 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200"
+                                                    >
+                                                        Start Building
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
                     </TabsContent>
                 </Tabs>
-
-                {/* Missing category section */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

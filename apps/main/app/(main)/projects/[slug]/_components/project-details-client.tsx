@@ -582,7 +582,6 @@ export default function ProjectDetailsClient({
                                                     50% discount for public projects!
                                                 </p>
 
-                                                {/* Fork option */}
                                                 <div className="relative my-4">
                                                     <div className="absolute inset-0 flex items-center">
                                                         <span className="w-full border-t border-neutral-200 dark:border-neutral-800" />
@@ -651,7 +650,6 @@ export default function ProjectDetailsClient({
                         </motion.div>
                     )
                 }
-
                 {
                     hasStarted && (
                         <motion.div
@@ -776,7 +774,7 @@ export default function ProjectDetailsClient({
                                                 project.learningObjectives.map((objective: string, index: number) => (
                                                     <li key={index} className="flex items-start gap-2">
                                                         <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                                        <span className="text-neutral-700 dark:text-neutral-300 text-sm">{objective}</span>
+                                                        <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{objective}</span>
                                                     </li>
                                                 ))
                                             }
@@ -812,7 +810,7 @@ export default function ProjectDetailsClient({
                                                 project.coreFeatures.map((feature: string, index: number) => (
                                                     <li key={index} className="flex items-start gap-2">
                                                         <Code2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                                                        <span className="text-neutral-700 dark:text-neutral-300 text-sm">{feature}</span>
+                                                        <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{feature}</span>
                                                     </li>
                                                 ))
                                             }
@@ -830,7 +828,7 @@ export default function ProjectDetailsClient({
                                                 project.advancedFeatures.map((feature: string, index: number) => (
                                                     <li key={index} className="flex items-start gap-2">
                                                         <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                                                        <span className="text-neutral-700 dark:text-neutral-300 text-sm">{feature}</span>
+                                                        <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{feature}</span>
                                                     </li>
                                                 ))
                                             }
@@ -915,7 +913,7 @@ export default function ProjectDetailsClient({
                                         }
                                     </div>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
+                                <CardContent className="space-y-4 mt-4">
                                     <ResourcesList
                                         projectId={project.id}
                                         currentUserId={currentUserId}
