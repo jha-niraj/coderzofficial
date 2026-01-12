@@ -264,8 +264,19 @@ export default function OnboardingPage() {
 
             // Upload resume if provided
             if (resumeFile) {
-                const uploadResult = await uploadResume(resumeFile, resumeText || undefined)
-                resumeUrl = uploadResult.url
+                try {
+                    const uploadResult = await uploadResume(resumeFile, resumeText || undefined)
+                    resumeUrl = uploadResult.url
+
+                    // Show message if there's additional info from upload
+                    if (uploadResult.message) {
+                        toast.info(uploadResult.message)
+                    }
+                } catch (uploadError) {
+                    console.error('Resume upload failed:', uploadError)
+                    // Don't block onboarding if resume upload fails
+                    toast.warning('Resume upload failed, but we will continue with onboarding. You can upload later from your profile.')
+                }
             }
 
             // Complete onboarding with all collected data
@@ -776,19 +787,21 @@ export default function OnboardingPage() {
                                                                     </CommandEmpty>
                                                                     <CommandGroup className="max-h-64 overflow-auto">
                                                                         {
-                                                                            companies.map((company) => (
-                                                                                <CommandItem
-                                                                                    key={company}
-                                                                                    value={company}
-                                                                                    onSelect={(currentValue) => {
-                                                                                        addCompany(currentValue)
-                                                                                        setOpenCompanyPicker(false)
-                                                                                    }}
-                                                                                    className="text-white"
-                                                                                >
-                                                                                    {company}
-                                                                                </CommandItem>
-                                                                            ))
+                                                                            companies
+                                                                                .filter(company => !targetCompanies.includes(company))
+                                                                                .map((company) => (
+                                                                                    <CommandItem
+                                                                                        key={company}
+                                                                                        value={company}
+                                                                                        onSelect={(currentValue) => {
+                                                                                            addCompany(currentValue)
+                                                                                            setOpenCompanyPicker(false)
+                                                                                        }}
+                                                                                        className="text-white"
+                                                                                    >
+                                                                                        {company}
+                                                                                    </CommandItem>
+                                                                                ))
                                                                         }
                                                                     </CommandGroup>
                                                                 </Command>

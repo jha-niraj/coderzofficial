@@ -119,12 +119,7 @@ export const authOptions: AuthOptions = {
         }),
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",
-            clientSecret: process.env.GOOGLE_SECRET_ID || "",
-            authorization: {
-                params: {
-                    scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar.events",
-                },
-            },
+            clientSecret: process.env.GOOGLE_SECRET_ID || ""
         }),
         GitHubProvider({
             clientId: process.env.GITHUB_CLIENT_ID || "",
@@ -135,13 +130,14 @@ export const authOptions: AuthOptions = {
                 },
             },
             profile(profile: GitHubProfile) {
+                // Note: githubUsername is NOT stored on User - it's stored in OSGitHubProfile
+                // which is created/updated in the signIn callback
                 return {
                     id: String(profile.id),
                     name: profile.name || profile.login || "GitHub User",
                     email: profile.email || "",
                     image: profile.avatar_url || null,
                     role: Role.Student,
-                    githubUsername: profile.login || null,
                 }
             },
         }),
@@ -152,7 +148,7 @@ export const authOptions: AuthOptions = {
                 token.id = user.id!;
                 token.role = user.role;
                 token.emailVerified = user.emailVerified;
-                token.githubUsername = (user as { githubUsername?: string }).githubUsername;
+                // githubUsername is fetched from osGitHubProfile below
 
                 try {
                     const dbUser = await prisma.user.findUnique({
@@ -169,7 +165,7 @@ export const authOptions: AuthOptions = {
                         }
                     });
                     token.onboardingCompleted = dbUser?.onboardingCompleted || false;
-                    token.githubUsername = dbUser?.osGitHubProfile?.githubUsername || token.githubUsername;
+                    token.githubUsername = dbUser?.osGitHubProfile?.githubUsername || null;
                 } catch (error) {
                     token.onboardingCompleted = false;
                 }

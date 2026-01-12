@@ -3,8 +3,8 @@
 import { auth } from '@repo/auth'
 import { revalidatePath } from "next/cache"
 import prisma from "@repo/prisma"
-import { 
-    S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand 
+import {
+    S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
@@ -29,15 +29,37 @@ export async function uploadResume(file: File, resumeText?: string) {
 
     const userId = session.user.id
 
+    // Check if S3 is properly configured
+    if (!process.env.SUPABASE_STORAGE_ENDPOINT ||
+        !process.env.SUPABASE_ACCESS_KEY_ID ||
+        !process.env.SUPABASE_SECRET_ACCESS_KEY) {
+        console.warn("S3/Supabase storage is not configured. Saving resume text only.")
+
+        // Save resume text to database without file upload
+        if (resumeText) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    hasResume: true,
+                    resumeText: resumeText,
+                },
+            })
+            revalidatePath("/profile")
+            return { success: true, url: undefined, message: "Resume text saved (file upload disabled)" }
+        }
+
+        return { success: false, url: undefined, message: "Storage not configured and no resume text provided" }
+    }
+
     try {
         // Convert file to buffer
-    const buffer = await file.arrayBuffer()
+        const buffer = await file.arrayBuffer()
         const uint8Buffer = new Uint8Array(buffer)
-        
+
         // Generate unique filename
         const timestamp = Date.now()
         const fileName = `${userId}-${timestamp}-${file.name}`
-        
+
         // Upload to Supabase Storage S3
         const uploadCommand = new PutObjectCommand({
             Bucket: BUCKET_NAME,
@@ -52,7 +74,7 @@ export async function uploadResume(file: File, resumeText?: string) {
         })
 
         await s3Client.send(uploadCommand)
-        
+
         console.log("Resume uploaded successfully:", fileName)
 
         // Update user record in database with FILE PATH (not signed URL)
@@ -74,7 +96,29 @@ export async function uploadResume(file: File, resumeText?: string) {
 
     } catch (error) {
         console.error("Resume upload failed:", error)
-        throw new Error("Failed to upload resume. Please try again.")
+
+        // If upload fails but we have resume text, save that at least
+        if (resumeText) {
+            try {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: {
+                        hasResume: true,
+                        resumeText: resumeText,
+                    },
+                })
+                revalidatePath("/profile")
+                return {
+                    success: true,
+                    url: undefined,
+                    message: "Resume text saved but file upload failed. Please check storage configuration."
+                }
+            } catch (dbError) {
+                console.error("Failed to save resume text:", dbError)
+            }
+        }
+
+        throw new Error("Failed to upload resume. Please try again or contact support if the issue persists.")
     }
 }
 
@@ -85,7 +129,7 @@ async function generateSignedUrl(fileName: string, expiresIn: number = 7 * 24 * 
             Bucket: BUCKET_NAME,
             Key: fileName,
         })
-        
+
         const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn })
         return signedUrl
     } catch (error) {
@@ -117,14 +161,14 @@ export async function deleteResume() {
             try {
                 // user.resume now contains the file path directly
                 const fileName = user.resume
-                
-                    const deleteCommand = new DeleteObjectCommand({
-                        Bucket: BUCKET_NAME,
-                        Key: fileName,
-                    })
-                    
-                    await s3Client.send(deleteCommand)
-                    console.log("Resume deleted from S3:", fileName)
+
+                const deleteCommand = new DeleteObjectCommand({
+                    Bucket: BUCKET_NAME,
+                    Key: fileName,
+                })
+
+                await s3Client.send(deleteCommand)
+                console.log("Resume deleted from S3:", fileName)
             } catch (error) {
                 console.error("Failed to delete resume from S3:", error)
                 // Continue with database update even if S3 deletion fails
@@ -173,7 +217,7 @@ export async function getResume() {
 
         // Generate a fresh signed URL (7 days expiration)
         const signedUrl = await generateSignedUrl(user.resume, 7 * 24 * 60 * 60)
-        
+
         // Extract original filename from the stored path
         const originalName = user.resume.split('-').slice(2).join('-') || 'resume.pdf'
 
@@ -212,13 +256,13 @@ export async function getResumeSignedUrl(expiresIn: number = 7 * 24 * 60 * 60) {
 
         // user.resume now contains the file path (not URL)
         const fileName = user.resume
-        
+
         // Generate a fresh signed URL
         const signedUrl = await generateSignedUrl(fileName, expiresIn)
-        
+
         // Extract original filename
         const originalName = fileName.split('-').slice(2).join('-') || 'resume.pdf'
-        
+
         return {
             url: signedUrl,
             name: originalName
