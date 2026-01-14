@@ -31,6 +31,12 @@ export type UserProfile = {
     occupation?: string
     creditsShared?: number | null
     maxCreditsShared?: number | null
+    semester?: string
+    careerGoals?: string[]
+    targetCompanies?: string[]
+    expectedSalary?: string | null
+    noticePeriod?: string | null
+    workExperience?: string | null
 }
 
 export type UserSkill = {

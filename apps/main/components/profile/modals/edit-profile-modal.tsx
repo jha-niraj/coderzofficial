@@ -13,13 +13,25 @@ import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs";
 import {
-    User, Camera, Briefcase, MapPin, Globe, Loader2, Check, ImageIcon, Sparkles
+    User, Camera, Briefcase, MapPin, Globe, Loader2, Check, ImageIcon, Sparkles,
+    Building, Target, GraduationCap, X, Plus
 } from "lucide-react";
 import toast from "@repo/ui/components/ui/sonner";
 import { useUserStore } from "@/app/store/useUserStore";
 import { updateProfileSettings } from "@/actions/(main)/user/profile.action";
+import { getCompanies } from "@/actions/(main)/user/college.action";
 import Image from "next/image";
 import { cn } from "@repo/ui/lib/utils";
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@repo/ui/components/ui/select";
+import {
+    Command, CommandEmpty, CommandGroup, CommandInput, CommandItem
+} from "@repo/ui/components/ui/command";
+import {
+    Popover, PopoverContent, PopoverTrigger
+} from "@repo/ui/components/ui/popover";
+import { Badge } from "@repo/ui/components/ui/badge";
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -40,6 +52,13 @@ interface EditProfileModalProps {
             tagline: string | null;
             theme: string;
         } | null;
+        careerGoals?: string[];
+        targetCompanies?: string[];
+        expectedSalary?: string | null;
+        noticePeriod?: string | null;
+        workExperience?: string | null;
+        semester?: string | null;
+        university?: string | null;
     };
     onUpdate?: () => void;
 }
@@ -51,6 +70,41 @@ const THEME_OPTIONS = [
     { id: "FOREST_GREEN", name: "Forest", gradient: "from-emerald-600 via-green-500 to-lime-400" },
     { id: "PURPLE_DREAM", name: "Purple Dream", gradient: "from-purple-600 via-violet-500 to-pink-400" },
     { id: "DARK_MODE", name: "Dark", gradient: "from-gray-800 via-gray-700 to-gray-600" },
+];
+
+const SEMESTERS = [
+    "1st Semester", "2nd Semester", "3rd Semester", "4th Semester",
+    "5th Semester", "6th Semester", "7th Semester", "8th Semester",
+    "Graduate", "Post-Graduate", "Other"
+];
+
+const JOB_PREFERENCES = [
+    { id: 'frontend', label: 'Frontend Developer' },
+    { id: 'backend', label: 'Backend Developer' },
+    { id: 'fullstack', label: 'Full Stack Developer' },
+    { id: 'mobile', label: 'Mobile Developer' },
+    { id: 'data-science', label: 'Data Scientist' },
+    { id: 'ml-engineer', label: 'ML Engineer' },
+    { id: 'devops', label: 'DevOps Engineer' },
+    { id: 'other', label: 'Other' },
+];
+
+const WORK_EXPERIENCE = [
+    "Fresher (0 years)",
+    "0-1 years",
+    "1-2 years",
+    "2-3 years",
+    "3-5 years",
+    "5+ years"
+];
+
+const NOTICE_PERIODS = [
+    "Immediate",
+    "15 days",
+    "1 month",
+    "2 months",
+    "3 months",
+    "Serving Notice"
 ];
 
 export function EditProfileModal({
@@ -75,10 +129,48 @@ export function EditProfileModal({
         occupation: user.occupation || "",
         website: user.website || "",
         theme: user.userProfile?.theme || "OCEAN_BLUE",
+        // Career fields
+        university: user.university || "",
+        semester: user.semester || "",
+        careerGoals: user.careerGoals?.[0] || "", // Assuming single choice for input
+        targetCompanies: user.targetCompanies || [] as string[],
+        expectedSalary: user.expectedSalary || "",
+        noticePeriod: user.noticePeriod || "",
+        workExperience: user.workExperience || "",
+    });
+
+    const [companies, setCompanies] = useState<string[]>([]);
+    const [openCompanyPicker, setOpenCompanyPicker] = useState(false);
+    const [companyInput, setCompanyInput] = useState("");
+
+    // Fetch companies
+    useState(() => {
+        getCompanies().then(result => {
+            if (result.success) {
+                setCompanies(result.companies);
+            }
+        });
     });
 
     const handleChange = (field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const addCompany = (company: string) => {
+        if (company && !formData.targetCompanies.includes(company)) {
+            setFormData(prev => ({
+                ...prev,
+                targetCompanies: [...prev.targetCompanies, company]
+            }));
+            setCompanyInput('');
+        }
+    };
+
+    const removeCompany = (company: string) => {
+        setFormData(prev => ({
+            ...prev,
+            targetCompanies: prev.targetCompanies.filter(c => c !== company)
+        }));
     };
 
     const handleSubmit = async () => {
@@ -92,6 +184,14 @@ export function EditProfileModal({
                 company: formData.company,
                 occupation: formData.occupation,
                 website: formData.website,
+                // Career fields
+                university: formData.university,
+                semester: formData.semester,
+                careerGoals: formData.careerGoals ? [formData.careerGoals] : [],
+                targetCompanies: formData.targetCompanies,
+                expectedSalary: formData.expectedSalary,
+                noticePeriod: formData.noticePeriod,
+                workExperience: formData.workExperience,
             });
 
             // Update profile settings (tagline, theme)
@@ -144,6 +244,12 @@ export function EditProfileModal({
                                 className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
                             >
                                 Work & Education
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="career"
+                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
+                            >
+                                Career Goals
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="basic" className="px-6 py-4 space-y-5 mt-0">
@@ -329,10 +435,183 @@ export function EditProfileModal({
                                     placeholder="Where do you work?"
                                 />
                             </div>
-                            <div className="pt-4 border-t">
-                                <p className="text-sm text-muted-foreground">
-                                    To add detailed work experience and education, visit the Resume tab on your profile.
-                                </p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="university" className="flex items-center gap-2">
+                                        <GraduationCap className="w-4 h-4" />
+                                        University
+                                    </Label>
+                                    <Input
+                                        id="university"
+                                        value={formData.university}
+                                        onChange={(e) => handleChange("university", e.target.value)}
+                                        placeholder="University Name"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="semester">Semester</Label>
+                                    <Select
+                                        value={formData.semester}
+                                        onValueChange={(val) => handleChange("semester", val)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select semester" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {
+                                            SEMESTERS.map((sem) => (
+                                                <SelectItem key={sem} value={sem}>{sem}</SelectItem>
+                                            ))
+                                            }
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="career" className="px-6 py-4 space-y-5 mt-0">
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Target className="w-4 h-4" />
+                                    Dream Job
+                                </Label>
+                                <Select
+                                    value={formData.careerGoals}
+                                    onValueChange={(val) => handleChange("careerGoals", val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select your target role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {
+                                        JOB_PREFERENCES.map((job) => (
+                                            <SelectItem key={job.id} value={job.id}>{job.label}</SelectItem>
+                                        ))
+                                        }
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Total Experience</Label>
+                                    <Select
+                                        value={formData.workExperience}
+                                        onValueChange={(val) => handleChange("workExperience", val)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select experience" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {
+                                            WORK_EXPERIENCE.map((exp) => (
+                                                <SelectItem key={exp} value={exp}>{exp}</SelectItem>
+                                            ))
+                                            }
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Expected Salary (LPA)</Label>
+                                    <Input
+                                        value={formData.expectedSalary}
+                                        onChange={(e) => handleChange("expectedSalary", e.target.value)}
+                                        placeholder="e.g. 8-12 LPA"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Notice Period</Label>
+                                <Select
+                                    value={formData.noticePeriod}
+                                    onValueChange={(val) => handleChange("noticePeriod", val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select notice period" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {
+                                        NOTICE_PERIODS.map((period) => (
+                                            <SelectItem key={period} value={period}>{period}</SelectItem>
+                                        ))
+                                        }
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Building className="w-4 h-4" />
+                                    Target Companies
+                                </Label>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                    {
+                                    formData.targetCompanies.map((company) => (
+                                        <Badge key={company} variant="secondary" className="gap-1 pl-2 pr-1">
+                                            {company}
+                                            <button
+                                                onClick={() => removeCompany(company)}
+                                                className="hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-full p-0.5"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </Badge>
+                                    ))
+                                    }
+                                </div>
+                                <Popover open={openCompanyPicker} onOpenChange={setOpenCompanyPicker}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className="w-full justify-between"
+                                        >
+                                            {companyInput || "Add a target company..."}
+                                            <Plus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[400px] p-0" align="start">
+                                        <Command>
+                                            <CommandInput
+                                                placeholder="Search company..."
+                                                value={companyInput}
+                                                onValueChange={setCompanyInput}
+                                            />
+                                            <CommandEmpty className="p-2">
+                                                <button
+                                                    onClick={() => {
+                                                        addCompany(companyInput);
+                                                        setOpenCompanyPicker(false);
+                                                    }}
+                                                    className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                                                >
+                                                    Add &quot;{companyInput}&quot;
+                                                </button>
+                                            </CommandEmpty>
+                                            <CommandGroup className="max-h-64 overflow-auto">
+                                                {
+                                                companies
+                                                    .filter(company => !formData.targetCompanies.includes(company))
+                                                    .map((company) => (
+                                                        <CommandItem
+                                                            key={company}
+                                                            value={company}
+                                                            onSelect={(currentValue) => {
+                                                                addCompany(currentValue);
+                                                                setOpenCompanyPicker(false);
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    formData.targetCompanies.includes(company) ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {company}
+                                                        </CommandItem>
+                                                    ))
+                                                    }
+                                            </CommandGroup>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </TabsContent>
                     </Tabs>

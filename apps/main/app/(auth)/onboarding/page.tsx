@@ -23,7 +23,7 @@ import {
 import {
     Loader2, CheckCircle2, XCircle, Upload, ArrowRight, ArrowLeft,
     Sparkles, Code, Briefcase, Target, TrendingUp, LogOut, ChevronsUpDown,
-    Check, AlertCircle, Plus, X as XIcon, Cloud, ShieldCheck, Database,
+    Check, AlertCircle, Cloud, ShieldCheck, Database,
     Gamepad2, Palette, Server, Smartphone, Globe, Cpu, Blocks, TestTube2,
     Layers, BrainCircuit
 } from 'lucide-react'
@@ -32,7 +32,7 @@ import toast from '@repo/ui/components/ui/sonner'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { cn } from '@repo/ui/lib/utils'
 import {
-    getColleges, getCompanies
+    getColleges
 } from '@/actions/(main)/user/college.action'
 import {
     checkUsernameAvailability, completeOnboarding
@@ -75,37 +75,9 @@ const LEARNING_GOALS = [
     { id: 'technical-writing', label: 'Technical Writing', icon: Code },
 ]
 
-const JOB_PREFERENCES = [
-    { id: 'frontend', label: 'Frontend Developer' },
-    { id: 'backend', label: 'Backend Developer' },
-    { id: 'fullstack', label: 'Full Stack Developer' },
-    { id: 'mobile', label: 'Mobile Developer' },
-    { id: 'data-science', label: 'Data Scientist' },
-    { id: 'ml-engineer', label: 'ML Engineer' },
-    { id: 'devops', label: 'DevOps Engineer' },
-    { id: 'other', label: 'Other' },
-]
-
-const WORK_EXPERIENCE = [
-    "Fresher (0 years)",
-    "0-1 years",
-    "1-2 years",
-    "2-3 years",
-    "3-5 years",
-    "5+ years"
-]
-
-const NOTICE_PERIODS = [
-    "Immediate",
-    "15 days",
-    "1 month",
-    "2 months",
-    "3 months",
-    "Serving Notice"
-]
+// Removed unused constants (JOB_PREFERENCES, WORK_EXPERIENCE, NOTICE_PERIODS)
 
 export default function OnboardingPage() {
-    // const _router = useRouter() // Removed unused
     const { update, data: session } = useSession()
     const [currentStep, setCurrentStep] = useState(0)
     const [loading, setLoading] = useState(false)
@@ -122,19 +94,8 @@ export default function OnboardingPage() {
     const [colleges, setColleges] = useState<string[]>([])
     const [openCollegePicker, setOpenCollegePicker] = useState(false)
 
-    // Preferences  
+    // Preferences
     const [learningGoals, setLearningGoals] = useState<string[]>([])
-    const [jobPreference, setJobPreference] = useState('')
-
-    // Career Details
-    const [targetCompanies, setTargetCompanies] = useState<string[]>([])
-    const [companyInput, setCompanyInput] = useState('')
-    const [companies, setCompanies] = useState<string[]>([])
-    const [openCompanyPicker, setOpenCompanyPicker] = useState(false)
-    const [expectedSalary, setExpectedSalary] = useState('')
-    const [noticePeriod, setNoticePeriod] = useState('')
-    const [workExperience, setWorkExperience] = useState('')
-    const [location, setLocation] = useState('')
 
     // Username validation
     const [usernameCheck, setUsernameCheck] = useState<{
@@ -154,11 +115,6 @@ export default function OnboardingPage() {
         getColleges().then(result => {
             if (result.success) {
                 setColleges(result.colleges)
-            }
-        })
-        getCompanies().then(result => {
-            if (result.success) {
-                setCompanies(result.companies)
             }
         })
     }, [])
@@ -237,17 +193,6 @@ export default function OnboardingPage() {
         }
     }
 
-    const addCompany = (company: string) => {
-        if (company && !targetCompanies.includes(company)) {
-            setTargetCompanies([...targetCompanies, company])
-            setCompanyInput('')
-        }
-    }
-
-    const removeCompany = (company: string) => {
-        setTargetCompanies(targetCompanies.filter(c => c !== company))
-    }
-
     const canProceed = () => {
         if (currentStep === 0) {
             return username.length >= 3 && usernameCheck.available
@@ -287,12 +232,6 @@ export default function OnboardingPage() {
                 resume: resumeUrl,
                 resumeText: resumeText || undefined,
                 learningPreferences: learningGoals,
-                careerGoals: jobPreference ? [jobPreference] : [],
-                targetCompanies,
-                expectedSalary: expectedSalary || undefined,
-                noticePeriod: noticePeriod || undefined,
-                workExperience: workExperience || undefined,
-                location: location || undefined,
             })
 
             toast.success('Welcome to TheCoderz! 🎉')
@@ -324,7 +263,6 @@ export default function OnboardingPage() {
     const steps = [
         { title: 'Basic Info', description: 'Tell us about yourself' },
         { title: 'Learning Goals', description: 'What do you want to learn?' },
-        { title: 'Career Goals', description: 'Where do you see yourself?' },
     ]
 
     return (
@@ -663,195 +601,7 @@ export default function OnboardingPage() {
                                         </motion.div>
                                     )
                                 }
-                                {
-                                    currentStep === 2 && (
-                                        <motion.div
-                                            key="step-2"
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            className="w-full mx-auto space-y-6"
-                                        >
-                                            <div>
-                                                <h2 className="text-2xl font-bold text-white mb-2">What&apos;s your dream job?</h2>
-                                                <p className="text-neutral-400">Help us personalize your learning journey</p>
-                                            </div>
-                                            <div className="grid md:grid-cols-2 gap-6 w-full">
-                                                <div className="space-y-2">
-                                                    <Label className="flex items-start text-white text-base">Preferred Job Role</Label>
-                                                    <Select value={jobPreference} onValueChange={setJobPreference}>
-                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 w-full">
-                                                            <SelectValue placeholder="Select your target role" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="bg-neutral-900 border-neutral-700">
-                                                            {
-                                                                JOB_PREFERENCES.map((job) => (
-                                                                    <SelectItem key={job.id} value={job.id} className="text-white focus:bg-neutral-800 focus:text-white">{job.label}</SelectItem>
-                                                                ))
-                                                            }
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="flex items-start text-white text-base">
-                                                        Work Experience <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
-                                                    </Label>
-                                                    <Select value={workExperience} onValueChange={setWorkExperience}>
-                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 w-full">
-                                                            <SelectValue placeholder="Select experience" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="bg-neutral-900 border-neutral-700">
-                                                            {
-                                                                WORK_EXPERIENCE.map((exp) => (
-                                                                    <SelectItem key={exp} value={exp} className="text-white focus:bg-neutral-800 focus:text-white">{exp}</SelectItem>
-                                                                ))
-                                                            }
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="location" className="flex items-start text-white text-base">
-                                                        Preferred Location <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
-                                                    </Label>
-                                                    <Input
-                                                        id="location"
-                                                        placeholder="e.g., Bangalore, Remote"
-                                                        value={location}
-                                                        onChange={(e) => setLocation(e.target.value)}
-                                                        className="bg-neutral-800 border-neutral-700 text-white w-full"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="salary" className="flex items-start text-white text-base">
-                                                        Expected Salary (LPA) <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
-                                                    </Label>
-                                                    <Input
-                                                        id="salary"
-                                                        placeholder="e.g., 8-12 LPA"
-                                                        value={expectedSalary}
-                                                        onChange={(e) => setExpectedSalary(e.target.value)}
-                                                        className="bg-neutral-800 border-neutral-700 text-white w-full"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="flex items-start text-white text-base">
-                                                        Notice Period <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
-                                                    </Label>
-                                                    <Select value={noticePeriod} onValueChange={setNoticePeriod}>
-                                                        <SelectTrigger className="bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 w-full">
-                                                            <SelectValue placeholder="Select notice period" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="bg-neutral-900 border-neutral-700">
-                                                            {
-                                                                NOTICE_PERIODS.map((period) => (
-                                                                    <SelectItem key={period} value={period} className="text-white focus:bg-neutral-800 focus:text-white">{period}</SelectItem>
-                                                                ))
-                                                            }
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="flex items-start text-white text-base">
-                                                        Target Companies <span className="text-neutral-500 text-sm font-normal">(Optional)</span>
-                                                    </Label>
-                                                    <div className="flex gap-2 w-full">
-                                                        <Popover open={openCompanyPicker} onOpenChange={setOpenCompanyPicker}>
-                                                            <PopoverTrigger asChild>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    role="combobox"
-                                                                    className="flex-1 justify-between bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700 hover:text-white"
-                                                                >
-                                                                    {companyInput || "Select or type company name"}
-                                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                </Button>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-[min(400px,calc(100vw-2rem))] p-0 bg-neutral-900 border-neutral-700">
-                                                                <Command className="bg-neutral-900">
-                                                                    <CommandInput
-                                                                        placeholder="Search or type company..."
-                                                                        className="text-white"
-                                                                        value={companyInput}
-                                                                        onValueChange={setCompanyInput}
-                                                                    />
-                                                                    <CommandEmpty className="text-neutral-400 p-4">
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                addCompany(companyInput)
-                                                                                setOpenCompanyPicker(false)
-                                                                            }}
-                                                                            className="text-sm text-blue-400 hover:underline"
-                                                                        >
-                                                                            Add &quot;{companyInput}&quot;
-                                                                        </button>
-                                                                    </CommandEmpty>
-                                                                    <CommandGroup className="max-h-64 overflow-auto">
-                                                                        {
-                                                                            companies
-                                                                                .filter(company => !targetCompanies.includes(company))
-                                                                                .map((company) => (
-                                                                                    <CommandItem
-                                                                                        key={company}
-                                                                                        value={company}
-                                                                                        onSelect={(currentValue) => {
-                                                                                            addCompany(currentValue)
-                                                                                            setOpenCompanyPicker(false)
-                                                                                        }}
-                                                                                        className="text-white"
-                                                                                    >
-                                                                                        {company}
-                                                                                    </CommandItem>
-                                                                                ))
-                                                                        }
-                                                                    </CommandGroup>
-                                                                </Command>
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                        <Button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                addCompany(companyInput)
-                                                            }}
-                                                            disabled={!companyInput}
-                                                            className="bg-blue-600 hover:bg-blue-700"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                        </Button>
-                                                    </div>
-                                                    {
-                                                        targetCompanies.length > 0 && (
-                                                            <div className="flex flex-wrap gap-2 mt-2">
-                                                                {
-                                                                    targetCompanies.map((company) => (
-                                                                        <Badge
-                                                                            key={company}
-                                                                            variant="secondary"
-                                                                            className="bg-blue-500/20 text-blue-400 border-blue-500/30 pr-1"
-                                                                        >
-                                                                            {company}
-                                                                            <button
-                                                                                onClick={() => removeCompany(company)}
-                                                                                className="ml-2 hover:bg-blue-500/30 rounded-full p-0.5"
-                                                                            >
-                                                                                <XIcon className="w-3 h-3" />
-                                                                            </button>
-                                                                        </Badge>
-                                                                    ))
-                                                                }
-                                                            </div>
-                                                        )
-                                                    }
-                                                    <p className="text-xs text-neutral-500">Select from existing or add your own</p>
-                                                </div>
-                                            </div>
-                                            <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                                <p className="text-blue-400 text-sm text-center">
-                                                    🎉 You&apos;re all set! Click finish to start your learning journey
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    )
-                                }
+
                             </AnimatePresence>
                             <div className="flex justify-between mt-8 pt-6 border-t border-neutral-800">
                                 <Button

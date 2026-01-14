@@ -7,8 +7,9 @@ import {
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
-	User, Mail, Phone, MapPin, Calendar, Globe, Briefcase, GraduationCap, Target, 
-	Heart, Building, Edit2, ExternalLink, Github, Linkedin, Twitter, Instagram, Youtube
+	User, Mail, Phone, MapPin, Calendar, Globe, Briefcase, GraduationCap, Target,
+	Heart, Building, Edit2, ExternalLink, Github, Linkedin, Twitter, Instagram, Youtube,
+	Banknote, Clock
 } from "lucide-react";
 import Link from "next/link";
 
@@ -259,6 +260,32 @@ export function AboutTab({ user, isOwnProfile, onEditProfile }: AboutTabProps) {
 										<div>
 											<p className="text-xs text-muted-foreground">Experience</p>
 											<p className="font-medium">{user.workExperience}</p>
+										</div>
+									</div>
+								)
+							}
+							{
+								isOwnProfile && user.expectedSalary && (
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+											<Banknote className="w-5 h-5 text-emerald-500" />
+										</div>
+										<div>
+											<p className="text-xs text-muted-foreground">Expected Salary</p>
+											<p className="font-medium">{user.expectedSalary}</p>
+										</div>
+									</div>
+								)
+							}
+							{
+								isOwnProfile && user.noticePeriod && (
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+											<Clock className="w-5 h-5 text-red-500" />
+										</div>
+										<div>
+											<p className="text-xs text-muted-foreground">Notice Period</p>
+											<p className="font-medium">{user.noticePeriod}</p>
 										</div>
 									</div>
 								)

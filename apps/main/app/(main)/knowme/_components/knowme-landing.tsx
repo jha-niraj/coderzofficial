@@ -220,9 +220,7 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
     return (
         <>
             <div className="min-h-screen bg-white dark:bg-black overflow-hidden">
-                {/* Hero Section */}
                 <section className="relative py-20 lg:py-32">
-                    {/* Background effects - Monochromatic */}
                     <div className="absolute inset-0 overflow-hidden">
                         <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
                         <div
@@ -243,7 +241,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                             )}
                         />
                     </div>
-
                     <div className="container mx-auto px-4 max-w-7xl relative">
                         <div className="text-center max-w-4xl mx-auto">
                             <motion.div
@@ -261,7 +258,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                     </span>
                                 </div>
                             </motion.div>
-
                             <motion.h1
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -277,7 +273,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                     Your AI Portfolio Assistant
                                 </span>
                             </motion.h1>
-
                             <motion.p
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -288,7 +283,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                 professional profile. Let recruiters and visitors discover your
                                 skills, projects, and experience through natural conversation.
                             </motion.p>
-
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -337,7 +331,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                     </Button>
                                 </motion.div>
                             </motion.div>
-
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -358,8 +351,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                 </div>
                             </motion.div>
                         </div>
-
-                        {/* Chat Preview */}
                         <motion.div
                             initial={{ opacity: 0, y: 40 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -419,7 +410,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                         </div>
                                     </div>
                                 </div>
-
                                 <motion.div
                                     animate={{ y: [0, -10, 0] }}
                                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -430,7 +420,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                         <span className="text-neutral-600 dark:text-neutral-300">Always available</span>
                                     </div>
                                 </motion.div>
-
                                 <motion.div
                                     animate={{ y: [0, 10, 0] }}
                                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -445,8 +434,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                         </motion.div>
                     </div>
                 </section>
-
-                {/* Features Section */}
                 <section className="py-20 bg-neutral-50 dark:bg-neutral-900/50">
                     <div className="container mx-auto px-4 max-w-7xl">
                         <motion.div
@@ -468,7 +455,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                 an intelligent assistant that represents you perfectly.
                             </p>
                         </motion.div>
-
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {
                                 features.map((feature, index) => (
@@ -496,8 +482,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                         </div>
                     </div>
                 </section>
-
-                {/* How It Works Section */}
                 <section className="py-20 bg-white dark:bg-black">
                     <div className="container mx-auto px-4 max-w-7xl">
                         <motion.div
@@ -518,7 +502,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                 Getting started is simple. Just connect your data and let AI do the rest.
                             </p>
                         </motion.div>
-
                         <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
                             {
                                 howItWorks.map((step, index) => (
@@ -555,8 +538,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                         </div>
                     </div>
                 </section>
-
-                {/* CTA Section */}
                 <section className="py-20 bg-neutral-900 dark:bg-white relative overflow-hidden">
                     <div className="absolute inset-0 opacity-10">
                         <div
@@ -597,11 +578,9 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                 </section>
             </div>
 
-            {/* Onboarding Sheet */}
             <Sheet open={onboardingOpen!} onOpenChange={setOnboardingOpen}>
                 <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
                     <div className="max-w-2xl mx-auto py-6">
-                        {/* Header */}
                         <SheetHeader className="text-center mb-6">
                             <div className="flex items-center justify-center gap-3 mb-2">
                                 <div className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-white flex items-center justify-center">
@@ -613,8 +592,6 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                                 Create your AI-powered portfolio assistant
                             </p>
                         </SheetHeader>
-
-                        {/* Progress */}
                         <div className="space-y-2 mb-6">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-neutral-600 dark:text-neutral-400">
@@ -626,91 +603,98 @@ export default function KnowMeLandingPage({ isLoggedIn, profile }: KnowMeLanding
                             </div>
                             <Progress value={progress} className="h-2" />
                         </div>
-
-                        {/* Step Content */}
                         <div className="bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 mb-6 overflow-y-auto max-h-[calc(85vh-280px)]">
-                            {currentStep === 1 && (
-                                <WelcomeStep onNext={handleNext} isLoading={isLoading} />
-                            )}
-                            {currentStep === 2 && (
-                                <DataSourcesStep
-                                    includePersonalData={includePersonalData}
-                                    setIncludePersonalData={setIncludePersonalData}
-                                    includeProjects={includeProjects}
-                                    setIncludeProjects={setIncludeProjects}
-                                    includeAssessments={includeAssessments}
-                                    setIncludeAssessments={setIncludeAssessments}
-                                />
-                            )}
-                            {currentStep === 3 && (
-                                <PlatformsStep
-                                    includePlatformData={includePlatformData}
-                                    setIncludePlatformData={setIncludePlatformData}
-                                />
-                            )}
-                            {currentStep === 4 && (
-                                <PrivacyStep
-                                    selectedPrivacy={selectedPrivacy}
-                                    setSelectedPrivacy={setSelectedPrivacy}
-                                />
-                            )}
+                            {
+                                currentStep === 1 && (
+                                    <WelcomeStep onNext={handleNext} isLoading={isLoading} />
+                                )
+                            }
+                            {
+                                currentStep === 2 && (
+                                    <DataSourcesStep
+                                        includePersonalData={includePersonalData}
+                                        setIncludePersonalData={setIncludePersonalData}
+                                        includeProjects={includeProjects}
+                                        setIncludeProjects={setIncludeProjects}
+                                        includeAssessments={includeAssessments}
+                                        setIncludeAssessments={setIncludeAssessments}
+                                    />
+                                )
+                            }
+                            {
+                                currentStep === 3 && (
+                                    <PlatformsStep
+                                        includePlatformData={includePlatformData}
+                                        setIncludePlatformData={setIncludePlatformData}
+                                    />
+                                )
+                            }
+                            {
+                                currentStep === 4 && (
+                                    <PrivacyStep
+                                        selectedPrivacy={selectedPrivacy}
+                                        setSelectedPrivacy={setSelectedPrivacy}
+                                    />
+                                )
+                            }
                         </div>
 
-                        {/* Navigation */}
-                        {currentStep > 1 && (
-                            <div className="flex items-center justify-between">
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleBack}
-                                    disabled={isLoading || isProcessing}
-                                    className="gap-2"
-                                >
-                                    <ChevronRight className="w-4 h-4 rotate-180" />
-                                    Back
-                                </Button>
+                        {
+                            currentStep > 1 && (
+                                <div className="flex items-center justify-between">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handleBack}
+                                        disabled={isLoading || isProcessing}
+                                        className="gap-2"
+                                    >
+                                        <ChevronRight className="w-4 h-4 rotate-180" />
+                                        Back
+                                    </Button>
 
-                                {
-                                    currentStep < TOTAL_STEPS ? (
-                                        <Button
-                                            onClick={handleNext}
-                                            disabled={isLoading}
-                                            className="gap-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900"
-                                        >
-                                            {
-                                                isLoading ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        Continue
-                                                        <ChevronRight className="w-4 h-4" />
-                                                    </>
-                                                )
-                                            }
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            onClick={handleCreateAI}
-                                            disabled={isProcessing}
-                                            className="gap-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900"
-                                        >
-                                            {
-                                                isProcessing ? (
-                                                    <>
+                                    {
+                                        currentStep < TOTAL_STEPS ? (
+                                            <Button
+                                                onClick={handleNext}
+                                                disabled={isLoading}
+                                                className="gap-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900"
+                                            >
+                                                {
+                                                    isLoading ? (
                                                         <Loader2 className="w-4 h-4 animate-spin" />
-                                                        Creating AI...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Sparkles className="w-4 h-4" />
-                                                        Create My AI
-                                                    </>
-                                                )
-                                            }
-                                        </Button>
-                                    )
-                                }
-                            </div>
-                        )}
+                                                    ) : (
+                                                        <>
+                                                            Continue
+                                                            <ChevronRight className="w-4 h-4" />
+                                                        </>
+                                                    )
+                                                }
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={handleCreateAI}
+                                                disabled={isProcessing}
+                                                className="gap-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900"
+                                            >
+                                                {
+                                                    isProcessing ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            Creating AI...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Sparkles className="w-4 h-4" />
+                                                            Create My AI
+                                                        </>
+                                                    )
+                                                }
+                                            </Button>
+                                        )
+                                    }
+                                </div>
+                            )
+                        }
                     </div>
                 </SheetContent>
             </Sheet>

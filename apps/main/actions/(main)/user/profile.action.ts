@@ -395,7 +395,7 @@ export async function getProfileCompletion() {
 
         // Calculate completion percentage based on 6 key items shown in dialog
         let completed = 0;
-        const total = 6;
+        const total = 7;
 
         const defaultImage = "https://tse4.mm.bing.net/th?id=OIP.-BS8Y2nH1k93GJiitUVBCAHaHa&pid=Api&P=0";
 
@@ -423,6 +423,10 @@ export async function getProfileCompletion() {
         const hasSkills = user.skills && user.skills.length > 0;
         if (hasSkills) completed++;
 
+        // 7. Career Details
+        const hasCareerDetails = !!(user.careerGoals?.length > 0 || user.targetCompanies?.length > 0 || user.expectedSalary);
+        if (hasCareerDetails) completed++;
+
         const completionPercentage = Math.round((completed / total) * 100);
 
         return {
@@ -434,7 +438,8 @@ export async function getProfileCompletion() {
                 hasExperience,
                 hasProjects,
                 hasSocials,
-                hasSkills
+                hasSkills,
+                hasCareerDetails
             }
         };
     } catch (error) {
@@ -1131,27 +1136,30 @@ export async function calculateNewProfileCompletion(userId: string) {
 
         let score = 0;
 
-        // Basic info (30 points)
+        // Basic info (25 points)
         if (user.name) score += 5;
-        if (user.username) score += 5;
         if (user.image) score += 5;
         if (user.bio) score += 10;
         if (user.location) score += 5;
 
-        // Profile customization (15 points)
+        // Profile customization (10 points)
         if (user.userProfile?.coverImage || user.userProfile?.coverGradient)
             score += 5;
-        if (user.userProfile?.tagline) score += 5;
-        if (user.userProfile?.theme) score += 5;
+        if (user.userProfile?.tagline) score += 3;
+        if (user.userProfile?.theme) score += 2;
+
+        // Career Details (15 points)
+        if (user.careerGoals && user.careerGoals.length > 0) score += 5;
+        if (user.targetCompanies && user.targetCompanies.length > 0) score += 5;
+        if (user.expectedSalary) score += 5;
 
         // Skills (15 points)
         if (user.skills.length > 0) score += 5;
         if (user.skills.length >= 5) score += 5;
         if (user.skills.length >= 10) score += 5;
 
-        // Experience (15 points)
+        // Experience (10 points)
         if (user.experiences.length > 0) score += 10;
-        if (user.company) score += 5;
 
         // Education & Certifications (10 points)
         if (user.university) score += 5;

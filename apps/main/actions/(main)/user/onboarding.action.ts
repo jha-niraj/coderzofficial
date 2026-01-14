@@ -55,12 +55,6 @@ export async function completeOnboarding(data: {
     resume?: string
     resumeText?: string
     learningPreferences?: string[]
-    careerGoals?: string[]
-    targetCompanies?: string[]
-    expectedSalary?: string
-    noticePeriod?: string
-    workExperience?: string
-    location?: string
 }) {
     const session = await auth()
     if (!session?.user?.id) {
@@ -87,12 +81,6 @@ export async function completeOnboarding(data: {
                 resumeText: data.resumeText || null,
                 hasResume: data.resume ? true : false,
                 learningPreferences: data.learningPreferences || [],
-                careerGoals: data.careerGoals || [],
-                targetCompanies: data.targetCompanies || [],
-                expectedSalary: data.expectedSalary || null,
-                noticePeriod: data.noticePeriod || null,
-                workExperience: data.workExperience || null,
-                location: data.location || null,
                 onboardingCompleted: true,
             },
         })

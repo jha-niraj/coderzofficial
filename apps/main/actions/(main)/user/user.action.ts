@@ -4,8 +4,8 @@ import { prisma } from "@repo/prisma"
 import { auth } from '@repo/auth'
 import { revalidatePath } from "next/cache"
 import { SkillCategory } from "@repo/prisma/client"
-import { 
-    ContactInfo, UserCertification, UserProfile, UserSkill 
+import {
+    ContactInfo, UserCertification, UserProfile, UserSkill
 } from "@/types/user"
 
 export async function getUserProfile() {
@@ -46,6 +46,12 @@ export async function getUserProfile() {
         createdAt: user?.createdAt,
         occupation: user?.occupation || "",
         website: user?.website || "",
+        semester: user?.semester || "",
+        careerGoals: user?.careerGoals || [],
+        targetCompanies: user?.targetCompanies || [],
+        expectedSalary: user?.expectedSalary || null,
+        noticePeriod: user?.noticePeriod || null,
+        workExperience: user?.workExperience || null,
         socials: user.socials as any || {},
         skills: user.skills.map(skill => ({
             id: skill.id,
@@ -90,6 +96,12 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
         location: data.location,
         website: data.website,
         image: data.image,
+        semester: data.semester,
+        careerGoals: data.careerGoals,
+        targetCompanies: data.targetCompanies,
+        expectedSalary: data.expectedSalary,
+        noticePeriod: data.noticePeriod,
+        workExperience: data.workExperience,
         socials: data.socials as any
     }
 
@@ -144,7 +156,13 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
             phone: updatedUser?.phone,
             gender: updatedUser?.gender,
             yearofbirth: updatedUser?.yearofbirth
-        } as ContactInfo
+        } as ContactInfo,
+        semester: updatedUser.semester || "",
+        careerGoals: updatedUser.careerGoals || [],
+        targetCompanies: updatedUser.targetCompanies || [],
+        expectedSalary: updatedUser.expectedSalary || null,
+        noticePeriod: updatedUser.noticePeriod || null,
+        workExperience: updatedUser.workExperience || null,
     }
 }
 export async function updateUserSkills(skills: UserSkill[]) {
@@ -479,10 +497,10 @@ export async function updateUserResume(file: File) {
         // In a production app, you'd want to upload to cloud storage
         const formData = new FormData()
         formData.append('file', file)
-        
+
         // Simple mock upload - in reality you'd upload to S3/Cloudinary/etc
         const mockUrl = `https://example.com/resumes/${session.user.id}/${file.name}`
-        
+
         await prisma.user.update({
             where: { id: session.user.id },
             data: {
@@ -495,7 +513,7 @@ export async function updateUserResume(file: File) {
 
         revalidatePath('/profile')
         revalidatePath('/ai/jobinterviewassistant')
-        
+
         return { success: true }
     } catch (error) {
         console.error("Error updating resume:", error)
