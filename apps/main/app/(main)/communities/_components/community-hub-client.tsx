@@ -24,13 +24,14 @@ import {
 } from '@/actions/(main)/community/community.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { useInView } from 'react-intersection-observer'
+import CreateCommunitySheet from '@/components/community/create-community-sheet'
 
 // Type for PostCard to avoid 'as any' casts
 type PostCardPost = Parameters<typeof PostCard>[0]['post']
 
 interface CommunityHubClientProps {
     user: {
-        id: string
+        id: string | null
         name: string | null
         image: string | null
     }
@@ -271,7 +272,7 @@ export function CommunityHubClient({
             <div className="flex">
                 <CommunitySidebar userCommunities={userCommunities} />
                 <main className="flex-1 min-w-0">
-                    <div className="max-w-3xl mx-auto px-4 py-6">
+                    <div className="w-full px-4 py-6">
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -292,18 +293,33 @@ export function CommunityHubClient({
                                 Refresh
                             </Button>
                         </div>
-                        <Tabs defaultValue="for-you" onValueChange={handleTabChange} className="mb-6">
-                            <TabsList className="grid w-full max-w-xs grid-cols-2">
-                                <TabsTrigger value="for-you" className="gap-2">
-                                    <Home className="w-4 h-4" />
-                                    For You
+                        <Tabs
+                            defaultValue="for-you"
+                            onValueChange={handleTabChange}
+                            className="mb-6"
+                        >
+                            <TabsList className="flex w-fit items-center gap-2 rounded-xl border bg-muted/40 p-1">
+                                <TabsTrigger
+                                    value="for-you"
+                                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm data-[state=active]:bg-background data-[state=active]:shadow"
+                                >
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted">
+                                        <Home className="h-4 w-4" />
+                                    </span>
+                                    <span>For You</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="following" className="gap-2">
-                                    <UserCheck className="w-4 h-4" />
-                                    Following
+                                <TabsTrigger
+                                    value="following"
+                                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm data-[state=active]:bg-background data-[state=active]:shadow"
+                                >
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted">
+                                        <UserCheck className="h-4 w-4" />
+                                    </span>
+                                    <span>Following</span>
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
+
                         {
                             userCommunities.length < 3 && featuredCommunities.length > 0 && (
                                 <motion.div
@@ -318,7 +334,7 @@ export function CommunityHubClient({
                                                 Suggested Communities
                                             </h2>
                                         </div>
-                                        <Link href="/community/discover">
+                                        <Link href="/communities/discover">
                                             <Button variant="ghost" size="sm" className="text-neutral-500 gap-1">
                                                 See all
                                                 <ChevronRight className="w-4 h-4" />
@@ -372,7 +388,7 @@ export function CommunityHubClient({
                                                     <p className="text-neutral-500 dark:text-neutral-400 mb-6 max-w-md mx-auto">
                                                         Join some communities to see posts from fellow developers!
                                                     </p>
-                                                    <Link href="/community/discover">
+                                                    <Link href="/communities/discover">
                                                         <Button className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900">
                                                             <Users className="w-4 h-4 mr-2" />
                                                             Discover Communities
@@ -438,7 +454,7 @@ export function CommunityHubClient({
                                                     <p className="text-neutral-500 dark:text-neutral-400 mb-6 max-w-md mx-auto">
                                                         Follow some users to see their posts here!
                                                     </p>
-                                                    <Link href="/community/discover">
+                                                    <Link href="/communities/discover">
                                                         <Button className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900">
                                                             <Users className="w-4 h-4 mr-2" />
                                                             Discover People
@@ -473,9 +489,11 @@ export function CommunityHubClient({
                                                         onClick={loadMoreFollowing}
                                                         disabled={isLoading}
                                                     >
-                                                        {isLoading ? (
-                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                        ) : null}
+                                                        {
+                                                            isLoading ? (
+                                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                            ) : null
+                                                        }
                                                         Load More
                                                     </Button>
                                                 </div>
@@ -495,7 +513,7 @@ export function CommunityHubClient({
                     </div>
                 </main>
                 <aside className="w-80 flex-shrink-0 hidden xl:block border-l border-neutral-200 dark:border-neutral-800">
-                    <div className="sticky top-20 p-4 space-y-6">
+                    <div className="sticky p-4 space-y-6">
                         <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                             <div className="flex items-center gap-2 mb-4">
                                 <TrendingUp className="w-5 h-5 text-blue-500" />
@@ -506,7 +524,7 @@ export function CommunityHubClient({
                                     ['#react', '#nextjs', '#typescript', '#dsa', '#interview'].map((tag) => (
                                         <Link
                                             key={tag}
-                                            href={`/community/search?q=${tag}`}
+                                            href={`/communities/discover?q=${tag}`}
                                             className="flex items-center justify-between group"
                                         >
                                             <span className="text-sm text-neutral-600 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
@@ -530,18 +548,23 @@ export function CommunityHubClient({
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <Link href="/community/discover">
+                            <Link href="/communities/discover">
                                 <Button variant="outline" className="w-full justify-start gap-2">
                                     <Users className="w-4 h-4" />
                                     Discover Communities
                                 </Button>
                             </Link>
-                            <Link href="/community/create">
-                                <Button variant="outline" className="w-full justify-start gap-2">
-                                    <Plus className="w-4 h-4" />
-                                    Create Community
-                                </Button>
-                            </Link>
+                            <CreateCommunitySheet
+                                trigger={
+                                    <motion.div
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mt-2 cursor-pointer"
+                                        whileHover={{ scale: 1.01 }}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span className="text-sm">Create Community</span>
+                                    </motion.div>
+                                }
+                            />
                         </div>
                     </div>
                 </aside>

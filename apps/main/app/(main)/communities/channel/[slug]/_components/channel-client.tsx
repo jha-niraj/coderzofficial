@@ -9,7 +9,7 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { CommunitySidebar } from '@/components/community/community-sidebar'
 import { PostCard } from '@/components/community/post-card'
-import { ChannelPostComposer } from './channel-post-composer'
+import { PostComposer } from '@/components/community/post-composer'
 import { getChannelPosts } from '@/actions/(main)/community/channel.action'
 import toast from '@repo/ui/components/ui/sonner'
 import { useInView } from 'react-intersection-observer'
@@ -181,11 +181,12 @@ export function ChannelPageClient({
                                         exit={{ opacity: 0, height: 0 }}
                                         className="mb-6"
                                     >
-                                        <ChannelPostComposer
-                                            channel={channel.slug}
+                                        <PostComposer
+                                            communityId=""
+                                            channelSlug={channel.slug}
                                             user={user}
-                                            onSuccess={handlePostCreated}
-                                            onCancel={() => setShowComposer(false)}
+                                            onPostCreated={handlePostCreated}
+                                            compact
                                         />
                                     </motion.div>
                                 )

@@ -60,7 +60,7 @@ export function CommunitySidebar({
     const [channelsOpen, setChannelsOpen] = useState(true)
 
     return (
-        <aside className="w-64 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 h-[calc(100vh-64px)] sticky top-16">
+        <aside className="w-64 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 h-screen sticky">
             <ScrollArea className="h-full">
                 <div className="p-4 space-y-6">
                     <nav className="space-y-1">
@@ -90,7 +90,7 @@ export function CommunitySidebar({
                     <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
                     <Collapsible open={channelsOpen} onOpenChange={setChannelsOpen}>
                         <CollapsibleTrigger asChild>
-                            <button className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">
+                            <button className="cursor-pointer flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">
                                 <span>Official Channels</span>
                                 <ChevronDown className={cn(
                                     "w-4 h-4 transition-transform",
@@ -119,7 +119,7 @@ export function CommunitySidebar({
                     <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
                     <Collapsible open={myCommunitiesOpen} onOpenChange={setMyCommunitiesOpen}>
                         <CollapsibleTrigger asChild>
-                            <button className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">
+                            <button className="cursor-pointer flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">
                                 <span>My Communities</span>
                                 <div className="flex items-center gap-2">
                                     <Badge variant="secondary" className="text-xs">

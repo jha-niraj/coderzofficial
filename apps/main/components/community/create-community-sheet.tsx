@@ -412,7 +412,7 @@ export default function CreateCommunitySheet({ trigger, onSuccess }: CreateCommu
                 if (onSuccess) {
                     onSuccess(result.data.slug)
                 } else {
-                    router.push(`/community/${result.data.slug}`)
+                    router.push(`/communities/${result.data.slug}`)
                 }
             } else {
                 toast.error(result.error || 'Failed to create community')
@@ -434,12 +434,14 @@ export default function CreateCommunitySheet({ trigger, onSuccess }: CreateCommu
             }
         }}>
             <SheetTrigger asChild>
-                {trigger || (
-                    <Button className="gap-2">
-                        <Plus className="w-4 h-4" />
-                        Create Community
-                    </Button>
-                )}
+                {
+                    trigger || (
+                        <Button className="gap-2 w-fit">
+                            <Plus className="w-4 h-4" />
+                            Create Community
+                        </Button>
+                    )
+                }
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
                 <div className="max-w-2xl mx-auto h-full flex flex-col">

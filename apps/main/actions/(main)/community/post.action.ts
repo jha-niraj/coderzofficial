@@ -10,6 +10,7 @@ import { CommunityPostType, CommunityRole } from "@repo/prisma/client"
 export interface CreatePostInput {
     communityId: string
     channelId?: string
+    officialChannel?: string
     title?: string
     content: string
     type?: CommunityPostType
@@ -17,8 +18,15 @@ export interface CreatePostInput {
         type: string
         url: string
         name?: string
+        description?: string
+        code?: string
+        language?: string
     }[]
     embeds?: Record<string, unknown>[]
+    codeBlocks?: {
+        code: string
+        language: string
+    }[]
     tags?: string[]
 }
 
@@ -38,7 +46,42 @@ export async function createPost(input: CreatePostInput) {
             return { success: false, error: "Unauthorized" }
         }
 
-        // Check if user is a member
+        // Official channel posts (global posts without community)
+        if (input.officialChannel && !input.communityId) {
+            const post = await prisma.communityPost.create({
+                data: {
+                    communityId: null,
+                    channelId: null,
+                    authorId: session.user.id,
+                    title: input.title,
+                    content: input.content,
+                    type: input.type || 'DISCUSSION',
+                    officialChannel: input.officialChannel,
+                    attachments: input.attachments as unknown as object | undefined,
+                    embeds: input.embeds as unknown as object | undefined,
+                    codeBlocks: input.codeBlocks as unknown as object | undefined,
+                    tags: input.tags || []
+                },
+                include: {
+                    author: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            image: true
+                        }
+                    },
+                    _count: {
+                        select: { likes: true, comments: true }
+                    }
+                }
+            })
+
+            revalidatePath(`/communities/channel/${input.officialChannel}`)
+            return { success: true, data: post }
+        }
+
+        // Community posts - require membership
         const membership = await prisma.communityMember.findUnique({
             where: {
                 communityId_userId: {
@@ -74,8 +117,9 @@ export async function createPost(input: CreatePostInput) {
                 title: input.title,
                 content: input.content,
                 type: input.type || 'DISCUSSION',
-                attachments: input.attachments as any || undefined,
-                embeds: input.embeds as any || undefined,
+                attachments: input.attachments as unknown as object | undefined,
+                embeds: input.embeds as unknown as object | undefined,
+                codeBlocks: input.codeBlocks as unknown as object | undefined,
                 tags: input.tags || []
             },
             include: {

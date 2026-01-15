@@ -166,7 +166,6 @@ export default function DiscoverPage() {
                             <Users className="w-4 h-4 mr-2" />
                             {total.toLocaleString()} Communities
                         </Badge>
-
                         <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4 tracking-tight">
                             Discover Communities
                         </h1>
@@ -282,17 +281,19 @@ export default function DiscoverPage() {
                             <p className="text-neutral-500 dark:text-neutral-400 mb-6">
                                 {search ? `No results for "${search}"` : 'Be the first to create one!'}
                             </p>
-                            <CreateCommunitySheet
-                                trigger={
-                                    <motion.div
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mt-2 cursor-pointer"
-                                        whileHover={{ scale: 1.01 }}
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                        <span className="text-sm">Create Community</span>
-                                    </motion.div>
-                                }
-                            />
+                            <section className='w-fit'>
+                                <CreateCommunitySheet
+                                    trigger={
+                                        <motion.div
+                                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mt-2 cursor-pointer"
+                                            whileHover={{ scale: 1.01 }}
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            <span className="text-sm">Create Community</span>
+                                        </motion.div>
+                                    }
+                                />
+                            </section>
                         </motion.div>
                     ) : (
                         <>

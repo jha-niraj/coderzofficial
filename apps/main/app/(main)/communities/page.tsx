@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import { getServerSession } from '@repo/auth'
 import { authOptions } from '@repo/auth'
-import { redirect } from 'next/navigation'
 import { CommunityHubClient } from './_components/community-hub-client'
 import {
     getUserCommunities, getFeaturedCommunities
@@ -16,10 +15,6 @@ export const metadata = {
 
 export default async function CommunityPage() {
     const session = await getServerSession(authOptions)
-
-    if (!session?.user) {
-        redirect('/signin?callbackUrl=/community')
-    }
 
     // Fetch initial data in parallel
     const [
@@ -45,9 +40,9 @@ export default async function CommunityPage() {
         }>
             <CommunityHubClient
                 user={{
-                    id: session.user.id,
-                    name: session.user.name ?? null,
-                    image: session.user.image ?? null
+                    id: session?.user?.id ?? null,
+                    name: session?.user?.name ?? null,
+                    image: session?.user?.image ?? null
                 }}
                 userCommunities={userCommunities}
                 featuredCommunities={featuredCommunities}
