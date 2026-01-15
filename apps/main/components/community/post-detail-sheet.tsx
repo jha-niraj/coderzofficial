@@ -154,7 +154,20 @@ export function PostDetailSheet({
 
         setIsLoadingComments(true)
         try {
-            const result = await getPost(post.id)
+            // Check if already viewed in this session
+            const storageKey = `viewed_post_${post.id}`
+            const hasViewed = typeof window !== 'undefined' && sessionStorage.getItem(storageKey)
+
+            // If not viewed, we'll increment. If viewed, we skip increment.
+            // Note: getPost defaults to true, so we pass !hasViewed
+            const shouldIncrement = !hasViewed
+
+            const result = await getPost(post.id, shouldIncrement)
+
+            if (shouldIncrement && typeof window !== 'undefined') {
+                sessionStorage.setItem(storageKey, 'true')
+            }
+
             if (result.success && result.data?.comments) {
                 setComments(result.data.comments as Comment[])
             }

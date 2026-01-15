@@ -712,7 +712,35 @@ export function PostComposer({
                                 </div>
                                 <Button
                                     className="w-full gap-2"
-                                    onClick={handleGenerateQuiz}
+                                    onClick={async () => {
+                                        if (!quizTitle.trim()) {
+                                            toast.error('Please enter a quiz title')
+                                            return
+                                        }
+
+                                        setIsGeneratingQuiz(true)
+                                        try {
+                                            const { generateQuiz } = await import('@/actions/(main)/community/post.action')
+                                            const result = await generateQuiz({
+                                                title: quizTitle,
+                                                description: quizDescription,
+                                                questionCount: parseInt(quizQuestionCount),
+                                                level: quizLevel as 'EASY' | 'MEDIUM' | 'HARD' 
+                                            })
+
+                                            if (!result.success || !result?.data?.questions) {
+                                                throw new Error(result.error || 'Failed to generate quiz')
+                                            }
+
+                                            setGeneratedQuiz(result.data.questions as QuizQuestion[])
+                                            toast.success('Quiz generated!')
+                                        } catch (error) {
+                                            console.error(error)
+                                            toast.error('Failed to generate quiz')
+                                        } finally {
+                                            setIsGeneratingQuiz(false)
+                                        }
+                                    }}
                                     disabled={isGeneratingQuiz || !quizTitle.trim()}
                                 >
                                     {isGeneratingQuiz ? (
@@ -726,7 +754,7 @@ export function PostComposer({
                         ) : (
                             <div className="space-y-4">
                                 <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 mb-3">
                                         <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
                                             <FileQuestion className="w-5 h-5 text-green-600 dark:text-green-400" />
                                         </div>
@@ -738,6 +766,25 @@ export function PostComposer({
                                                 {generatedQuiz.length} questions generated
                                             </p>
                                         </div>
+                                    </div>
+
+                                    <div className="max-h-60 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                                        {generatedQuiz.map((q, i) => (
+                                            <div key={i} className="bg-white dark:bg-neutral-900 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 text-sm">
+                                                <p className="font-medium mb-2">{i + 1}. {q.text}</p>
+                                                <div className="grid grid-cols-1 gap-1 pl-2 border-l-2 border-neutral-100 dark:border-neutral-800">
+                                                    {q.options.map((opt, optI) => (
+                                                        <div key={optI} className={cn(
+                                                            "px-2 py-1 rounded text-xs",
+                                                            opt.isCorrect && "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium"
+                                                        )}>
+                                                            {opt.text}
+                                                            {opt.isCorrect && " ✓"}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
@@ -753,12 +800,13 @@ export function PostComposer({
                                     </Button>
                                 </div>
                             </div>
-                        )}
+                        )
+                        }
 
                         <Button variant="ghost" className="w-full" onClick={() => setCurrentStep('main')}>
                             Back
                         </Button>
-                    </div>
+                    </div >
                 )
 
             default:

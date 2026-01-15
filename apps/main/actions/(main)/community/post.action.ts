@@ -248,7 +248,7 @@ export async function getCommunityPosts(communityId: string, options?: {
 }
 
 // Get single post with comments
-export async function getPost(postId: string) {
+export async function getPost(postId: string, shouldIncrementView: boolean = true) {
     try {
         const session = await getServerSession(authOptions)
 
@@ -324,11 +324,13 @@ export async function getPost(postId: string) {
             return { success: false, error: "Post not found" }
         }
 
-        // Increment view count
-        await prisma.communityPost.update({
-            where: { id: postId },
-            data: { viewCount: { increment: 1 } }
-        })
+        // Increment view count if requested
+        if (shouldIncrementView) {
+            await prisma.communityPost.update({
+                where: { id: postId },
+                data: { viewCount: { increment: 1 } }
+            })
+        }
 
         // Check if user liked the post
         let isLiked = false
@@ -348,6 +350,18 @@ export async function getPost(postId: string) {
     } catch (error) {
         console.error('Error fetching post:', error)
         return { success: false, error: "Failed to fetch post" }
+    }
+}
+
+export async function incrementPostView(postId: string) {
+    try {
+        await prisma.communityPost.update({
+            where: { id: postId },
+            data: { viewCount: { increment: 1 } }
+        })
+        return { success: true }
+    } catch {
+        return { success: false }
     }
 }
 

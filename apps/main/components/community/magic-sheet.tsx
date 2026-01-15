@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import {
     Plus, Users, Mic, GraduationCap, Code2, Video, Lightbulb, Rocket, ChevronRight,
     ExternalLink, Loader2, Share2, ArrowLeft, Briefcase, BookOpen,
-    Palette, Presentation, Zap, UserPlus
+    Palette, Presentation, Zap, UserPlus, Search, RefreshCw, Layers, Sparkles
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
@@ -22,8 +22,16 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
+import ProjectGenerateSheet from '@/components/projects/project-generate-sheet'
+
+// Actions
+import { getUserProjects } from '@/actions/(main)/projects/project.action'
+import { getUserSpaces } from '@/actions/(main)/space/space.action'
+import { getMyStudios } from '@/actions/(main)/studios/studio.action'
+import { getUserCreatedMocks } from '@/actions/(main)/mockvoice/voice.action'
 
 // ==================== TYPES ====================
 interface ShareableItem {
@@ -42,6 +50,17 @@ interface MagicSheetProps {
     onShare?: (item: ShareableItem) => void
 }
 
+interface UserItem {
+    id: string
+    title: string
+    description?: string
+    imageUrl?: string
+    type: string
+    createdAt: Date
+    url: string
+    metadata?: any
+}
+
 // ==================== PLATFORM FEATURES ====================
 const PLATFORM_FEATURES = [
     {
@@ -49,63 +68,14 @@ const PLATFORM_FEATURES = [
         description: 'Practice and share interview experiences',
         items: [
             {
-                id: 'peer-interview',
-                icon: Users,
-                label: 'Peer Mock Interview',
-                description: 'Practice with peers in real-time',
-                color: 'bg-gradient-to-br from-violet-500 to-purple-600',
-                href: '/peer-session/create',
-                isCreatable: true
-            },
-            {
-                id: 'sde-interview',
-                icon: Briefcase,
-                label: 'SDE Interview',
-                description: 'Software Developer interview prep',
-                color: 'bg-gradient-to-br from-blue-500 to-cyan-600',
-                href: '/interview/sde',
-                isCreatable: true
-            },
-            {
                 id: 'mock-interview',
                 icon: Mic,
-                label: 'AI Mock Interview',
+                label: 'Voice Mock Interview',
                 description: 'Practice with AI interviewer',
                 color: 'bg-gradient-to-br from-orange-500 to-pink-600',
-                href: '/mock-interview',
-                isCreatable: true
-            },
-        ]
-    },
-    {
-        category: 'Learning & Practice',
-        description: 'Educational content and challenges',
-        items: [
-            {
-                id: 'quiz',
-                icon: GraduationCap,
-                label: 'Quiz',
-                description: 'Create and share quizzes',
-                color: 'bg-gradient-to-br from-green-500 to-emerald-600',
-                isCreatable: true
-            },
-            {
-                id: 'challenge',
-                icon: Zap,
-                label: 'Coding Challenge',
-                description: 'Challenge the community',
-                color: 'bg-gradient-to-br from-amber-500 to-orange-600',
-                href: '/challenges/create',
-                isCreatable: true
-            },
-            {
-                id: 'concept',
-                icon: BookOpen,
-                label: 'Concept Explainer',
-                description: 'Share a concept visually',
-                color: 'bg-gradient-to-br from-teal-500 to-cyan-600',
-                href: '/concepts/create',
-                isCreatable: true
+                isFetchable: true,
+                fetchType: 'MOCK_INTERVIEW',
+                createUrl: '/mockinterview'
             },
         ]
     },
@@ -119,8 +89,9 @@ const PLATFORM_FEATURES = [
                 label: 'Project',
                 description: 'Showcase your project',
                 color: 'bg-gradient-to-br from-pink-500 to-rose-600',
-                href: '/projects',
-                isShareable: true
+                isFetchable: true,
+                fetchType: 'PROJECT',
+                createAction: 'PROJECT_GENERATE'
             },
             {
                 id: 'space',
@@ -128,8 +99,9 @@ const PLATFORM_FEATURES = [
                 label: 'Space',
                 description: 'Collaborative workspace',
                 color: 'bg-gradient-to-br from-indigo-500 to-violet-600',
-                href: '/spaces',
-                isShareable: true
+                isFetchable: true,
+                fetchType: 'SPACE',
+                createUrl: '/space/create' // Placeholder or direct action
             },
             {
                 id: 'studio',
@@ -137,314 +109,274 @@ const PLATFORM_FEATURES = [
                 label: 'Studio',
                 description: 'Creative studio project',
                 color: 'bg-gradient-to-br from-fuchsia-500 to-purple-600',
-                href: '/studio',
-                isShareable: true
+                isFetchable: true,
+                fetchType: 'STUDIO',
+                createUrl: '/studio' // Placeholder
             },
         ]
-    },
-    {
-        category: 'Live Sessions',
-        description: 'Real-time interactive sessions',
-        items: [
-            {
-                id: 'code-review',
-                icon: Code2,
-                label: 'Code Review Request',
-                description: 'Get your code reviewed',
-                color: 'bg-gradient-to-br from-red-500 to-rose-600',
-                isCreatable: true
-            },
-            {
-                id: 'live-help',
-                icon: Lightbulb,
-                label: 'Live Help Session',
-                description: 'Get or give real-time help',
-                color: 'bg-gradient-to-br from-yellow-500 to-amber-600',
-                isCreatable: true
-            },
-            {
-                id: 'screen-share',
-                icon: Video,
-                label: 'Screen Share',
-                description: 'Quick collaboration session',
-                color: 'bg-gradient-to-br from-sky-500 to-blue-600',
-                isCreatable: true
-            },
-        ]
-    },
+    }
 ]
 
-// ==================== PEER INTERVIEW FORM ====================
-function PeerInterviewForm({
-    onSubmit,
-    onCancel,
-    isSubmitting
+
+
+// ==================== CONFIRM SHARE MODAL ====================
+function ConfirmShareDialog({
+    isOpen,
+    onClose,
+    onConfirm,
+    item
 }: {
-    onSubmit: (data: { title: string; description: string; role: string; level: string }) => void
-    onCancel: () => void
-    isSubmitting: boolean
+    isOpen: boolean
+    onClose: () => void
+    onConfirm: () => void
+    item: UserItem | null
 }) {
-    const [title, setTitle] = useState('')
-    const [description, setDescription] = useState('')
-    const [role, setRole] = useState('sde')
-    const [level, setLevel] = useState('mid')
+    if (!item) return null
 
     return (
-        <div className="space-y-6 p-4">
-            <div className="flex items-center gap-3 mb-6">
-                <Button variant="ghost" size="icon" onClick={onCancel}>
-                    <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <div>
-                    <h3 className="text-xl font-bold">Create Peer Interview</h3>
-                    <p className="text-sm text-neutral-500">Set up a mock interview session</p>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="title">Session Title</Label>
-                    <Input
-                        id="title"
-                        placeholder="e.g., Frontend Developer Mock Interview"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={onClose}
                     />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                        id="description"
-                        placeholder="What topics will be covered? Any specific requirements?"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={3}
-                    />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label>Role</Label>
-                        <Select value={role} onValueChange={setRole}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="sde">Software Developer</SelectItem>
-                                <SelectItem value="frontend">Frontend Developer</SelectItem>
-                                <SelectItem value="backend">Backend Developer</SelectItem>
-                                <SelectItem value="fullstack">Full Stack Developer</SelectItem>
-                                <SelectItem value="data">Data Engineer</SelectItem>
-                                <SelectItem value="ml">ML Engineer</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Level</Label>
-                        <Select value={level} onValueChange={setLevel}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="intern">Intern</SelectItem>
-                                <SelectItem value="junior">Junior (0-2 yrs)</SelectItem>
-                                <SelectItem value="mid">Mid (2-5 yrs)</SelectItem>
-                                <SelectItem value="senior">Senior (5+ yrs)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
-                    <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                            <Users className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <p className="font-medium text-violet-900 dark:text-violet-100">
-                                Share to Find a Partner
-                            </p>
-                            <p className="text-sm text-violet-600 dark:text-violet-300">
-                                This will be shared to the community. Members can accept your request.
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-neutral-200 dark:border-neutral-800 relative z-[70]"
+                    >
+                        <div className="flex flex-col items-center text-center mb-6">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4 shadow-lg">
+                                <Share2 className="w-8 h-8 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+                                Share to Community?
+                            </h3>
+                            <p className="text-neutral-500 dark:text-neutral-400">
+                                You are about to share <strong>{item.title}</strong> with the community.
                             </p>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <div className="flex gap-3 pt-4">
-                <Button variant="outline" className="flex-1" onClick={onCancel}>
-                    Cancel
-                </Button>
-                <Button
-                    className="flex-1 gap-2"
-                    onClick={() => onSubmit({ title, description, role, level })}
-                    disabled={!title.trim() || isSubmitting}
-                >
-                    {isSubmitting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <Share2 className="w-4 h-4" />
-                    )}
-                    Share to Community
-                </Button>
-            </div>
-        </div>
+                        <div className="flex gap-3">
+                            <Button variant="outline" className="flex-1" onClick={onClose}>
+                                Cancel
+                            </Button>
+                            <Button className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={onConfirm}>
+                                <Share2 className="w-4 h-4" />
+                                Share Now
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
     )
 }
 
-// ==================== PROJECT SHARE FORM ====================
-function ProjectShareForm({
-    onSubmit,
-    onCancel,
-    isSubmitting
-}: {
-    onSubmit: (data: { url: string; title: string; description: string }) => void
-    onCancel: () => void
-    isSubmitting: boolean
-}) {
-    const [url, setUrl] = useState('')
-    const [title, setTitle] = useState('')
-    const [description, setDescription] = useState('')
-
-    return (
-        <div className="space-y-6 p-4">
-            <div className="flex items-center gap-3 mb-6">
-                <Button variant="ghost" size="icon" onClick={onCancel}>
-                    <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <div>
-                    <h3 className="text-xl font-bold">Share Project</h3>
-                    <p className="text-sm text-neutral-500">Share your project with the community</p>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="projectUrl">Project URL</Label>
-                    <Input
-                        id="projectUrl"
-                        placeholder="https://your-project.com or /projects/your-project"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="projectTitle">Title</Label>
-                    <Input
-                        id="projectTitle"
-                        placeholder="Project name"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="projectDescription">Description</Label>
-                    <Textarea
-                        id="projectDescription"
-                        placeholder="Tell us about your project..."
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={3}
-                    />
-                </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-                <Button variant="outline" className="flex-1" onClick={onCancel}>
-                    Cancel
-                </Button>
-                <Button
-                    className="flex-1 gap-2"
-                    onClick={() => onSubmit({ url, title, description })}
-                    disabled={!url.trim() || !title.trim() || isSubmitting}
-                >
-                    {isSubmitting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <Share2 className="w-4 h-4" />
-                    )}
-                    Share Project
-                </Button>
-            </div>
-        </div>
-    )
-}
 
 // ==================== MAIN COMPONENT ====================
 export function MagicSheet({ communityId: _communityId, communitySlug: _communitySlug, onShare }: MagicSheetProps) {
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
+    const [view, setView] = useState<'CATEGORIES' | 'LIST' | 'FORM'>('CATEGORIES')
+    const [activeCategory, setActiveCategory] = useState<any>(null)
     const [activeForm, setActiveForm] = useState<string | null>(null)
+
+    // Data Loading
+    const [isLoading, setIsLoading] = useState(false)
+    const [items, setItems] = useState<UserItem[]>([])
+    const [selectedItem, setSelectedItem] = useState<UserItem | null>(null)
+    const [showConfirmShare, setShowConfirmShare] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Project Generate Sheet
+    const [showProjectGenerate, setShowProjectGenerate] = useState(false)
 
     // Reserved for future use
     void _communityId
     void _communitySlug
 
-    const handleFeatureClick = useCallback((item: typeof PLATFORM_FEATURES[0]['items'][0]) => {
-        if ('isCreatable' in item && item.isCreatable) {
-            setActiveForm(item.id)
-        } else if ('href' in item && item.href) {
-            router.push(item.href)
+    // Reset when closing
+    useEffect(() => {
+        if (!isOpen) {
+            setTimeout(() => {
+                setView('CATEGORIES')
+                setActiveCategory(null)
+                setActiveForm(null)
+                setItems([])
+            }, 300)
+        }
+    }, [isOpen])
+
+    const fetchItems = async (type: string) => {
+        setIsLoading(true)
+        setItems([])
+        try {
+            let data: UserItem[] = []
+
+            if (type === 'PROJECT') {
+                const res = await getUserProjects(1, 100)
+                if (res.success && res.data?.projects) {
+                    data = res.data.projects.map((p: any) => ({
+                        id: p.id,
+                        title: p.title,
+                        description: p.shortDescription || p.description,
+                        type: 'project',
+                        createdAt: new Date(p.createdAt),
+                        url: `/projects/${p.slug}`,
+                        metadata: { slug: p.slug, technologies: p.technologies }
+                    }))
+                }
+            } else if (type === 'SPACE') {
+                const res = await getUserSpaces()
+                if (res.success && res.data?.spaces) {
+                    data = res.data.spaces.map((s: any) => ({
+                        id: s.id,
+                        title: s.title,
+                        description: s.description,
+                        imageUrl: s.coverImage,
+                        type: 'space',
+                        createdAt: new Date(s.createdAt),
+                        url: `/space/${s.slug}`,
+                        metadata: { slug: s.slug, emoji: s.emoji }
+                    }))
+                }
+            } else if (type === 'STUDIO') {
+                const res = await getMyStudios()
+                if (res.studios) {
+                    data = res.studios.map((s: any) => ({
+                        id: s.id,
+                        title: s.title,
+                        description: s.description,
+                        type: 'studio',
+                        createdAt: new Date(s.updatedAt),
+                        url: `/studio/${s.slug || s.id}`,
+                        metadata: { category: s.category }
+                    }))
+                }
+            } else if (type === 'MOCK_INTERVIEW') {
+                const res = await getUserCreatedMocks()
+                if (res.success && res.mocks) {
+                    data = res.mocks.map((m: any) => ({
+                        id: m.id,
+                        title: m.title,
+                        description: m.description,
+                        type: 'mock-interview',
+                        createdAt: new Date(m.createdAt),
+                        url: `/mockinterview/${m.id}`, // Placeholder
+                        metadata: { level: m.level, duration: m.duration }
+                    }))
+                }
+            }
+
+            setItems(data)
+        } catch (error) {
+            console.error(error)
+            toast.error('Failed to load items')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleItemClick = (feature: any) => {
+        if (feature.isAction) {
+            setActiveForm(feature.actionView)
+            setView('FORM')
+        } else if (feature.isFetchable) {
+            setActiveCategory(feature)
+            setView('LIST')
+            fetchItems(feature.fetchType)
+        } else if (feature.createUrl) {
+            router.push(feature.createUrl)
             setIsOpen(false)
         }
-    }, [router])
+    }
 
-    const handleSubmit = useCallback(async (type: string, data: Record<string, unknown>) => {
+    const handleCreateNew = () => {
+        if (!activeCategory) return
+
+        if (activeCategory.createAction === 'PROJECT_GENERATE') {
+            setShowProjectGenerate(true)
+            setIsOpen(false)
+        } else if (activeCategory.createUrl) {
+            router.push(activeCategory.createUrl)
+            setIsOpen(false)
+        } else {
+            // Fallback for types not implemented
+            toast.info('Create feature coming soon!')
+        }
+    }
+
+    const handleShareItem = (item: UserItem) => {
+        setSelectedItem(item)
+        setShowConfirmShare(true)
+    }
+
+    const confirmShare = async () => {
+        if (!selectedItem) return
+
         setIsSubmitting(true)
         try {
-            // Create shareable post
             const shareableItem: ShareableItem = {
                 id: crypto.randomUUID(),
-                type: type as ShareableItem['type'],
-                title: data.title as string,
-                description: data.description as string,
-                metadata: data
+                type: selectedItem.type as any,
+                title: selectedItem.title,
+                description: selectedItem.description,
+                url: selectedItem.url,
+                metadata: selectedItem.metadata,
+                thumbnail: selectedItem.imageUrl
             }
 
             onShare?.(shareableItem)
-
             toast.success('Shared to community!')
-            setActiveForm(null)
+            setShowConfirmShare(false)
+            setIsOpen(false)
+        } catch (error) {
+            toast.error('Failed to share')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleFormSubmit = async (type: string, data: any) => {
+        setIsSubmitting(true)
+        try {
+            const shareableItem: ShareableItem = {
+                id: crypto.randomUUID(),
+                type: 'interview', // Map to correct type
+                title: data.title,
+                description: data.description,
+                metadata: data
+            }
+            onShare?.(shareableItem)
+            toast.success('Shared to community!')
             setIsOpen(false)
         } catch {
             toast.error('Failed to share')
         } finally {
             setIsSubmitting(false)
         }
-    }, [onShare])
-
-    const renderForm = () => {
-        switch (activeForm) {
-            case 'peer-interview':
-            case 'sde-interview':
-            case 'mock-interview':
-                return (
-                    <PeerInterviewForm
-                        onSubmit={(data) => handleSubmit('interview', data)}
-                        onCancel={() => setActiveForm(null)}
-                        isSubmitting={isSubmitting}
-                    />
-                )
-            case 'project':
-                return (
-                    <ProjectShareForm
-                        onSubmit={(data) => handleSubmit('project', data)}
-                        onCancel={() => setActiveForm(null)}
-                        isSubmitting={isSubmitting}
-                    />
-                )
-            default:
-                return null
-        }
     }
 
     return (
         <>
+            <ProjectGenerateSheet
+                isOpen={showProjectGenerate}
+                onOpenChange={setShowProjectGenerate}
+            />
+
+            <ConfirmShareDialog
+                isOpen={showConfirmShare}
+                onClose={() => setShowConfirmShare(false)}
+                onConfirm={confirmShare}
+                item={selectedItem}
+            />
+
             {/* Floating Action Button */}
             <motion.div
                 className="fixed bottom-6 right-6 z-50"
@@ -452,50 +384,48 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             >
-                <Sheet open={isOpen} onOpenChange={(open) => { setIsOpen(open); setActiveForm(null) }}>
+                <Sheet open={isOpen} onOpenChange={setIsOpen}>
                     <SheetTrigger asChild>
                         <Button
                             size="lg"
                             className={cn(
-                                "w-14 h-14 rounded-full shadow-2xl transition-all duration-300",
+                                "w-14 h-14 rounded-full shadow-2xl transition-all duration-500 hover:scale-105",
                                 isOpen
-                                    ? "bg-neutral-900 dark:bg-white rotate-45"
-                                    : "bg-gradient-to-br from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                    ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rotate-90"
+                                    : "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white animate-in zoom-in"
                             )}
                         >
-                            <Plus className="w-6 h-6 text-white dark:text-neutral-900" />
+                            {isOpen ? (
+                                <Plus className="w-6 h-6 rotate-45" />
+                            ) : (
+                                <Sparkles className="w-6 h-6 animate-pulse" />
+                            )}
                         </Button>
                     </SheetTrigger>
 
                     <SheetContent
                         side="bottom"
-                        className="h-[85vh] rounded-t-3xl p-0 overflow-hidden"
+                        className="h-[85vh] rounded-t-3xl p-0 overflow-hidden outline-none border-t-0"
                     >
-                        <div className="max-w-5xl mx-auto h-full flex flex-col">
+                        <div className="max-w-5xl mx-auto h-full flex flex-col bg-white dark:bg-neutral-950">
                             {/* Handle */}
                             <div className="flex justify-center pt-4 pb-2">
-                                <div className="w-12 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                                <div className="w-12 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800" />
                             </div>
 
-                            {activeForm ? (
-                                <div className="flex-1 overflow-y-auto">
-                                    {renderForm()}
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Header */}
-                                    <SheetHeader className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0">
+                            {view === 'CATEGORIES' && (
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    <SheetHeader className="px-6 py-4 flex-shrink-0">
                                         <SheetTitle className="text-2xl font-bold text-neutral-900 dark:text-white">
                                             Share with Community
                                         </SheetTitle>
                                         <SheetDescription className="text-neutral-600 dark:text-neutral-400">
-                                            Create and share platform features with the community
+                                            Pick a tool to create or share content
                                         </SheetDescription>
                                     </SheetHeader>
 
-                                    {/* Content */}
-                                    <div className="flex-1 overflow-y-auto p-6">
-                                        <div className="space-y-8">
+                                    <ScrollArea className="flex-1 px-6">
+                                        <div className="pb-10 space-y-8">
                                             {PLATFORM_FEATURES.map((section) => (
                                                 <div key={section.category}>
                                                     <div className="mb-4">
@@ -512,7 +442,7 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                                                             return (
                                                                 <motion.button
                                                                     key={item.id}
-                                                                    onClick={() => handleFeatureClick(item)}
+                                                                    onClick={() => handleItemClick(item)}
                                                                     className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-lg transition-all duration-200 text-left bg-white dark:bg-neutral-900 group"
                                                                     whileHover={{ scale: 1.02, y: -2 }}
                                                                     whileTap={{ scale: 0.98 }}
@@ -539,9 +469,122 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                </>
+                                    </ScrollArea>
+                                </div>
                             )}
+
+                            {view === 'LIST' && activeCategory && (
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-4 flex-shrink-0">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setView('CATEGORIES')}
+                                            className="-ml-2"
+                                        >
+                                            <ArrowLeft className="w-5 h-5" />
+                                        </Button>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                                                My {activeCategory.label}s
+                                            </h3>
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                                Select an item to share or create new
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 overflow-hidden relative">
+                                        {isLoading ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+                                                <p className="text-sm text-neutral-500">Loading your items...</p>
+                                            </div>
+                                        ) : items.length === 0 ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                                                <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+                                                    <activeCategory.icon className="w-8 h-8 text-neutral-400" />
+                                                </div>
+                                                <h4 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
+                                                    No {activeCategory.label}s found
+                                                </h4>
+                                                <p className="text-sm text-neutral-500 mb-6 max-w-xs">
+                                                    You haven&apos;t created any {activeCategory.label.toLowerCase()}s yet.
+                                                </p>
+                                                <Button onClick={handleCreateNew}>
+                                                    Create your first {activeCategory.label}
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <ScrollArea className="h-full px-6 py-4">
+                                                <div className="space-y-3 pb-24">
+                                                    {items.map((item) => (
+                                                        <motion.div
+                                                            key={item.id}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-blue-300 dark:hover:border-blue-700 transition-all group"
+                                                        >
+                                                            <div className={cn(
+                                                                "w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0",
+                                                                activeCategory.color
+                                                            )}>
+                                                                {item.imageUrl ? (
+                                                                    <Image
+                                                                        src={item.imageUrl}
+                                                                        alt={item.title}
+                                                                        width={48}
+                                                                        height={48}
+                                                                        className="w-full h-full object-cover rounded-lg"
+                                                                    />
+                                                                ) : (
+                                                                    <activeCategory.icon className="w-6 h-6 text-white" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-semibold text-neutral-900 dark:text-white truncate">
+                                                                    {item.title}
+                                                                </h4>
+                                                                <p className="text-sm text-neutral-500 truncate">
+                                                                    {item.description || "No description"}
+                                                                </p>
+                                                                <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
+                                                                    <span>{item.type}</span>
+                                                                    <span>•</span>
+                                                                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                                                </div>
+                                                            </div>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="gap-2 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:border-blue-200 dark:group-hover:border-blue-800"
+                                                                onClick={() => handleShareItem(item)}
+                                                            >
+                                                                <Share2 className="w-4 h-4" />
+                                                                Share
+                                                            </Button>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
+                                        )}
+                                    </div>
+
+                                    {/* Footer Create Action */}
+                                    <div className="p-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex-shrink-0">
+                                        <Button
+                                            size="lg"
+                                            className="w-full gap-2 shadow-lg"
+                                            onClick={handleCreateNew}
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                            Create New {activeCategory.label}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+
                         </div>
                     </SheetContent>
                 </Sheet>
@@ -560,126 +603,5 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                 )}
             </AnimatePresence>
         </>
-    )
-}
-
-// Export preview cards for different share types
-export function SharedInterviewCard({
-    title,
-    description,
-    role,
-    level,
-    author,
-    onAccept
-}: {
-    title: string
-    description?: string
-    role: string
-    level: string
-    author: { name: string; image?: string }
-    onAccept?: () => void
-}) {
-    return (
-        <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border border-violet-200 dark:border-violet-800">
-            <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <Users className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">
-                            Peer Interview
-                        </Badge>
-                    </div>
-                    <h4 className="font-semibold text-lg text-neutral-900 dark:text-white mb-1">
-                        {title}
-                    </h4>
-                    {description && (
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                            {description}
-                        </p>
-                    )}
-                    <div className="flex items-center gap-2 text-sm text-neutral-500 mb-4">
-                        <Badge variant="outline">{role}</Badge>
-                        <Badge variant="outline">{level}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
-                                {author.image && (
-                                    <Image src={author.image} alt={author.name} width={24} height={24} />
-                                )}
-                            </div>
-                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                                {author.name}
-                            </span>
-                        </div>
-                        {onAccept && (
-                            <Button size="sm" className="gap-2" onClick={onAccept}>
-                                <UserPlus className="w-4 h-4" />
-                                Accept Request
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-export function SharedProjectCard({
-    title,
-    description,
-    url,
-    thumbnail,
-    author
-}: {
-    title: string
-    description?: string
-    url: string
-    thumbnail?: string
-    author: { name: string; image?: string }
-}) {
-    return (
-        <div className="rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-            {thumbnail && (
-                <div className="aspect-video relative">
-                    <Image src={thumbnail} alt={title} fill className="object-cover" />
-                </div>
-            )}
-            <div className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300">
-                        Project
-                    </Badge>
-                </div>
-                <h4 className="font-semibold text-lg text-neutral-900 dark:text-white mb-1">
-                    {title}
-                </h4>
-                {description && (
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                        {description}
-                    </p>
-                )}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
-                            {author.image && (
-                                <Image src={author.image} alt={author.name} width={24} height={24} />
-                            )}
-                        </div>
-                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                            {author.name}
-                        </span>
-                    </div>
-                    <Button asChild size="sm" variant="outline" className="gap-2">
-                        <Link href={url} target="_blank">
-                            <ExternalLink className="w-4 h-4" />
-                            Visit
-                        </Link>
-                    </Button>
-                </div>
-            </div>
-        </div>
     )
 }

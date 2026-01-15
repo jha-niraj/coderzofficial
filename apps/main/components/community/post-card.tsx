@@ -25,6 +25,30 @@ import { CommunityPostType } from '@repo/prisma/client'
 import { togglePostLike } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
 
+import { SharedInterviewCard, SharedProjectCard } from '@/components/community/shared-items'
+import { useUserStore } from '@/app/store/useUserStore'
+
+export interface PostEmbed {
+    itemType: 'interview' | 'project' | 'space' | 'studio' | 'quiz' | string
+    type?: string
+    title: string
+    description?: string
+    url?: string
+    thumbnail?: string
+    metadata?: {
+        role?: string
+        level?: string
+        [key: string]: any
+    }
+}
+
+export interface PostAttachment {
+    type: 'link' | 'image' | 'file' | string
+    url: string
+    title?: string
+    description?: string
+}
+
 interface PostCardProps {
     post: {
         id: string
@@ -62,15 +86,17 @@ interface PostCardProps {
             comments: number
         }
         isLiked?: boolean
-        attachments?: unknown
+        attachments?: PostAttachment[] | unknown
         codeBlocks?: unknown
+        embeds?: PostEmbed[] | unknown
     }
     showCommunity?: boolean
     compact?: boolean
-    onLikeChange?: (liked: boolean) => void
+    onLikeChange?: (postId: string, liked: boolean, count: number) => void
+    onClick?: () => void
 }
 
-const POST_TYPE_CONFIG: Record<string, { icon: LucideIcon; label: string; color: string }> = {
+const POST_TYPES: Record<string, { icon: LucideIcon; label: string; color: string }> = {
     DISCUSSION: { icon: MessageCircle, label: 'Discussion', color: 'text-blue-500' },
     QUESTION: { icon: HelpCircle, label: 'Question', color: 'text-orange-500' },
     RESOURCE: { icon: FileText, label: 'Resource', color: 'text-green-500' },
@@ -85,13 +111,16 @@ export function PostCard({
     post,
     showCommunity = false,
     compact = false,
-    onLikeChange
-}: PostCardProps) {
-    const [isLiked, setIsLiked] = useState(post.isLiked ?? false)
-    const [likeCount, setLikeCount] = useState(post._count?.likes ?? post.likeCount)
+    onLikeChange,
+    onClick
+}: PostCardProps
+) {
+    const { user } = useUserStore()
+    const [isLiked, setIsLiked] = useState(post.isLiked)
+    const [likeCount, setLikeCount] = useState(post.likeCount)
     const [isLiking, setIsLiking] = useState(false)
 
-    const typeConfig = POST_TYPE_CONFIG[post.type] || POST_TYPE_CONFIG.DISCUSSION
+    const typeConfig = POST_TYPES[post.type as keyof typeof POST_TYPES] || POST_TYPES.DISCUSSION
     const TypeIcon = typeConfig?.icon ?? MessageCircle
 
     const handleLike = async (e: React.MouseEvent) => {
@@ -99,28 +128,75 @@ export function PostCard({
         e.stopPropagation()
 
         if (isLiking) return
+
+        if (!user) {
+            toast.error('Please login to like posts')
+            return
+        }
+
         setIsLiking(true)
 
-        setIsLiked(!isLiked)
-        setLikeCount(prev => isLiked ? prev - 1 : prev + 1)
+        const newLiked = !isLiked
+        const newCount = newLiked ? likeCount + 1 : likeCount - 1
+
+        setIsLiked(newLiked)
+        setLikeCount(newCount)
+
+        // Optimistic update
+        onLikeChange?.(post.id, newLiked, newCount)
 
         try {
             const result = await togglePostLike(post.id)
-            if (result.success) {
-                onLikeChange?.(result.liked ?? false)
-            } else {
-                // Revert on error
-                setIsLiked(isLiked)
-                setLikeCount(prev => isLiked ? prev + 1 : prev - 1)
+            if (!result.success) {
+                // Revert on failure
+                setIsLiked(!newLiked)
+                setLikeCount(newLiked ? newCount - 1 : newCount + 1)
+                onLikeChange?.(post.id, !newLiked, newLiked ? newCount - 1 : newCount + 1)
                 toast.error(result.error)
             }
         } catch {
-            setIsLiked(isLiked)
-            setLikeCount(prev => isLiked ? prev + 1 : prev - 1)
+            setIsLiked(!newLiked)
+            setLikeCount(newLiked ? newCount - 1 : newCount + 1)
+            onLikeChange?.(post.id, !newLiked, newLiked ? newCount - 1 : newCount + 1)
             toast.error('Failed to like post')
         } finally {
             setIsLiking(false)
         }
+    }
+
+    // Safe accessors for array props
+    const embeds = Array.isArray(post.embeds) ? (post.embeds as PostEmbed[]) : []
+    const attachments = Array.isArray(post.attachments) ? (post.attachments as PostAttachment[]) : []
+    const codeBlocks = Array.isArray(post.codeBlocks) ? (post.codeBlocks as { code: string; language: string }[]) : []
+
+    const hasQuiz = embeds.some(e => e.itemType === 'quiz' || e.type === 'quiz')
+    const hasCode = codeBlocks.length > 0
+    const hasLink = attachments.some(a => a.type === 'link')
+
+    const CardContentWrapper = ({ children }: { children: React.ReactNode }) => {
+        // If an onClick handler is provided, use it on a div.
+        // This is typically used to open a details sheet.
+        if (onClick) {
+            return (
+                <div
+                    onClick={onClick}
+                    className="block hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                    {children}
+                </div>
+            )
+        }
+
+        // Fallback: If no onClick is provided, we use Link for robustness.
+        const linkHref = `/communities/${post.community?.slug || 'global'}/post/${post.id}`
+        return (
+            <Link
+                href={linkHref}
+                className="block hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors"
+            >
+                {children}
+            </Link>
+        )
     }
 
     return (
@@ -128,12 +204,12 @@ export function PostCard({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
         >
-            <Link href={`/community/${post.community?.slug}/post/${post.id}`}>
-                <Card className={cn(
-                    "group border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-200 bg-white dark:bg-neutral-900",
-                    post.isPinned && "border-l-4 border-l-blue-500",
-                    compact && "shadow-none"
-                )}>
+            <Card className={cn(
+                "group border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-200 bg-white dark:bg-neutral-900 overflow-hidden",
+                post.isPinned && "border-l-4 border-l-blue-500",
+                compact && "shadow-none"
+            )}>
+                <CardContentWrapper>
                     <CardHeader className={cn("pb-2", compact && "py-3")}>
                         <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
@@ -218,6 +294,22 @@ export function PostCard({
                                 <TypeIcon className="w-3 h-3 mr-1" />
                                 {typeConfig?.label ?? 'Discussion'}
                             </Badge>
+                            {hasQuiz && (
+                                <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                                    <HelpCircle className="w-3 h-3 mr-1" /> Quiz
+                                </Badge>
+                            )}
+                            {hasCode && (
+                                <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400">
+                                    <Code2 className="w-3 h-3 mr-1" /> Code
+                                </Badge>
+                            )}
+                            {hasLink && (
+                                <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                                    <Share2 className="w-3 h-3 mr-1" /> Link
+                                </Badge>
+                            )}
+
                             {
                                 post.type === 'QUESTION' && post.isAnswered && (
                                     <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
@@ -240,6 +332,40 @@ export function PostCard({
                         )}>
                             {post.content}
                         </p>
+
+                        {embeds.length > 0 && (
+                            <div className="mt-4">
+                                {embeds.map((embed, index) => {
+                                    if (embed.itemType === 'interview') {
+                                        return (
+                                            <SharedInterviewCard
+                                                key={index}
+                                                title={embed.title}
+                                                description={embed.description}
+                                                role={embed.metadata?.role || 'Developer'}
+                                                level={embed.metadata?.level || 'Mid'}
+                                                author={{ name: post.author.name || 'User', image: post.author.image || undefined }}
+                                                onAccept={() => toast.info('Feature coming soon!')}
+                                            />
+                                        )
+                                    }
+                                    if (embed.itemType === 'project' || embed.itemType === 'space' || embed.itemType === 'studio') {
+                                        return (
+                                            <SharedProjectCard
+                                                key={index}
+                                                title={embed.title}
+                                                description={embed.description}
+                                                url={embed.url}
+                                                thumbnail={embed.thumbnail}
+                                                author={{ name: post.author.name || 'User', image: post.author.image || undefined }}
+                                            />
+                                        )
+                                    }
+                                    return null
+                                })}
+                            </div>
+                        )}
+
                         {
                             post.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-3">
@@ -265,51 +391,52 @@ export function PostCard({
                             )
                         }
                     </CardContent>
-                    <CardFooter className={cn(
-                        "border-t border-neutral-100 dark:border-neutral-800 pt-3",
-                        compact && "py-2"
-                    )}>
-                        <div className="flex items-center gap-4">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn(
-                                    "h-8 px-2 gap-1.5 text-neutral-600 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-500",
-                                    isLiked && "text-red-500 dark:text-red-500"
-                                )}
-                                onClick={handleLike}
-                            >
-                                <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
-                                <span className="text-xs">{likeCount}</span>
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2 gap-1.5 text-neutral-600 dark:text-neutral-400 hover:text-blue-500 dark:hover:text-blue-500"
-                            >
-                                <MessageCircle className="w-4 h-4" />
-                                <span className="text-xs">{post._count?.comments ?? post.commentCount}</span>
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2 text-neutral-600 dark:text-neutral-400 hover:text-green-500 dark:hover:text-green-500"
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    navigator.clipboard.writeText(window.location.origin + `/community/${post.community?.slug}/post/${post.id}`)
-                                    toast.success('Link copied!')
-                                }}
-                            >
-                                <Share2 className="w-4 h-4" />
-                            </Button>
-                            <span className="text-xs text-neutral-400 ml-auto">
-                                {post.viewCount} views
-                            </span>
-                        </div>
-                    </CardFooter>
-                </Card>
-            </Link>
+                </CardContentWrapper>
+
+                <CardFooter className={cn(
+                    "border-t border-neutral-100 dark:border-neutral-800 pt-3",
+                    compact && "py-2"
+                )}>
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                                "h-8 px-2 gap-1.5 text-neutral-600 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-500",
+                                isLiked && "text-red-500 dark:text-red-500"
+                            )}
+                            onClick={handleLike}
+                        >
+                            <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
+                            <span className="text-xs">{likeCount}</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 gap-1.5 text-neutral-600 dark:text-neutral-400 hover:text-blue-500 dark:hover:text-blue-500"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-xs">{post._count?.comments ?? post.commentCount}</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-neutral-600 dark:text-neutral-400 hover:text-green-500 dark:hover:text-green-500"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                navigator.clipboard.writeText(window.location.origin + `/community/${post.community?.slug}/post/${post.id}`)
+                                toast.success('Link copied!')
+                            }}
+                        >
+                            <Share2 className="w-4 h-4" />
+                        </Button>
+                        <span className="text-xs text-neutral-400 ml-auto">
+                            {post.viewCount} views
+                        </span>
+                    </div>
+                </CardFooter>
+            </Card>
         </motion.div>
     )
 }
