@@ -38,7 +38,7 @@ export interface PostEmbed {
     metadata?: {
         role?: string
         level?: string
-        [key: string]: any
+        [key: string]: unknown
     }
 }
 

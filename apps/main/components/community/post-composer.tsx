@@ -456,6 +456,8 @@ export function PostComposer({
         setCodeContent('')
         setCodeLanguage('javascript')
         setCurrentStep('main')
+        setCodeLanguage('javascript')
+        setCurrentStep('main')
         toast.success('Code snippet added!')
     }
 
@@ -467,43 +469,29 @@ export function PostComposer({
 
         setIsGeneratingQuiz(true)
         try {
-            // Call your quiz generation API here
-            const response = await fetch('/api/ai/generate-quiz', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: quizTitle,
-                    description: quizDescription,
-                    questionCount: parseInt(quizQuestionCount),
-                    level: quizLevel
-                })
+            const { generateQuiz } = await import('@/actions/(main)/community/post.action')
+            const result = await generateQuiz({
+                title: quizTitle,
+                description: quizDescription,
+                questionCount: parseInt(quizQuestionCount),
+                level: quizLevel as 'EASY' | 'MEDIUM' | 'HARD'
             })
 
-            if (!response.ok) throw new Error('Failed to generate quiz')
+            if (!result.success || !result?.data?.questions) {
+                throw new Error(result.error || 'Failed to generate quiz')
+            }
 
-            const data = await response.json()
-            setGeneratedQuiz(data.questions)
+            setGeneratedQuiz(result.data.questions as QuizQuestion[])
             toast.success('Quiz generated!')
-        } catch {
-            // Create mock quiz for demo
-            const mockQuestions: QuizQuestion[] = Array.from({ length: parseInt(quizQuestionCount) }, (_, i) => ({
-                id: `q-${i + 1}`,
-                text: `Sample question ${i + 1} about ${quizTitle}`,
-                type: 'single',
-                options: [
-                    { id: 'a', text: 'Option A', isCorrect: i === 0 },
-                    { id: 'b', text: 'Option B', isCorrect: i === 1 },
-                    { id: 'c', text: 'Option C', isCorrect: i === 2 },
-                    { id: 'd', text: 'Option D', isCorrect: i === 3 },
-                ],
-                difficulty: quizLevel as 'EASY' | 'MEDIUM' | 'HARD'
-            }))
-            setGeneratedQuiz(mockQuestions)
-            toast.success('Quiz generated! (Demo mode)')
+        } catch (error) {
+            console.error(error)
+            toast.error('Failed to generate quiz')
         } finally {
             setIsGeneratingQuiz(false)
         }
     }
+
+    // handleGenerateQuiz removed as it was unused and replaced by inline handler
 
     const handleAddQuiz = () => {
         if (!generatedQuiz || generatedQuiz.length === 0) {
@@ -712,42 +700,16 @@ export function PostComposer({
                                 </div>
                                 <Button
                                     className="w-full gap-2"
-                                    onClick={async () => {
-                                        if (!quizTitle.trim()) {
-                                            toast.error('Please enter a quiz title')
-                                            return
-                                        }
-
-                                        setIsGeneratingQuiz(true)
-                                        try {
-                                            const { generateQuiz } = await import('@/actions/(main)/community/post.action')
-                                            const result = await generateQuiz({
-                                                title: quizTitle,
-                                                description: quizDescription,
-                                                questionCount: parseInt(quizQuestionCount),
-                                                level: quizLevel as 'EASY' | 'MEDIUM' | 'HARD' 
-                                            })
-
-                                            if (!result.success || !result?.data?.questions) {
-                                                throw new Error(result.error || 'Failed to generate quiz')
-                                            }
-
-                                            setGeneratedQuiz(result.data.questions as QuizQuestion[])
-                                            toast.success('Quiz generated!')
-                                        } catch (error) {
-                                            console.error(error)
-                                            toast.error('Failed to generate quiz')
-                                        } finally {
-                                            setIsGeneratingQuiz(false)
-                                        }
-                                    }}
+                                    onClick={handleGenerateQuiz}
                                     disabled={isGeneratingQuiz || !quizTitle.trim()}
                                 >
-                                    {isGeneratingQuiz ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Sparkles className="w-4 h-4" />
-                                    )}
+                                    {
+                                        isGeneratingQuiz ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4" />
+                                        )
+                                    }
                                     Generate Quiz with AI
                                 </Button>
                             </div>

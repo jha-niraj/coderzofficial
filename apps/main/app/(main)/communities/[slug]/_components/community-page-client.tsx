@@ -8,7 +8,7 @@ import {
     Users, MessageSquare, FileText, Calendar, Trophy, Settings, Bell,
     Share2, CheckCircle2, Lock, Globe, UserPlus, LogOut, Loader2, ChevronDown,
     HelpCircle, Briefcase, Code2, CircleHelp, Mail, RefreshCw, Plus,
-    Send, Trash, ArrowLeft, LayoutGrid, Compass
+    Trash, LayoutGrid, Compass
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -26,7 +26,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu'
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
-    DialogTitle, DialogTrigger
+    DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
@@ -37,8 +37,12 @@ import { PostDetailSheet } from '@/components/community/post-detail-sheet'
 import { CommunityInfoSidebar } from '@/components/community/community-sidebar'
 import { MagicSheet } from '@/components/community/magic-sheet'
 import { CommunityLeaderboard } from '@/components/community/community-leaderboard'
-import { getCommunityPosts, createPost } from '@/actions/(main)/community/post.action'
-import { joinCommunity, leaveCommunity } from '@/actions/(main)/community/community.action'
+import { 
+    getCommunityPosts, createPost 
+} from '@/actions/(main)/community/post.action'
+import { 
+    joinCommunity, leaveCommunity 
+} from '@/actions/(main)/community/community.action'
 import {
     createCommunityInvite, getCommunityInvites, cancelCommunityInvite,
     resendCommunityInvite
@@ -54,6 +58,16 @@ interface PostAuthor {
     name: string | null
     username: string | null
     image: string | null
+}
+
+interface ShareableItem {
+    id: string
+    type: 'interview' | 'project' | 'space' | 'studio' | 'concept' | 'quiz' | 'challenge'
+    title: string
+    description?: string
+    thumbnail?: string
+    url?: string
+    metadata?: Record<string, unknown>
 }
 
 interface CommunityPost {
@@ -409,7 +423,7 @@ export function CommunityPageClient({
         await refreshPosts()
     }
 
-    const handleShare = async (item: any) => {
+    const handleShare = async (item: ShareableItem) => {
         try {
             const result = await createPost({
                 communityId: community.id,
@@ -433,7 +447,7 @@ export function CommunityPageClient({
             } else {
                 toast.error(result.error || 'Failed to share')
             }
-        } catch (error) {
+        } catch {
             toast.error('Something went wrong')
         }
     }
@@ -452,16 +466,6 @@ export function CommunityPageClient({
             default:
                 return <Globe className="w-4 h-4" />
         }
-    }
-
-    const getInviteStatusBadge = (invite: CommunityInvite) => {
-        if (invite.isUsed) {
-            return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Accepted</Badge>
-        }
-        if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
-            return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Expired</Badge>
-        }
-        return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Pending</Badge>
     }
 
     // Render section content based on type

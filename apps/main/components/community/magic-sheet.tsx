@@ -1,27 +1,19 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
-    Plus, Users, Mic, GraduationCap, Code2, Video, Lightbulb, Rocket, ChevronRight,
-    ExternalLink, Loader2, Share2, ArrowLeft, Briefcase, BookOpen,
-    Palette, Presentation, Zap, UserPlus, Search, RefreshCw, Layers, Sparkles
+    Plus, Mic, Rocket, ChevronRight,
+    Loader2, Share2, ArrowLeft,
+    Palette, Presentation, Sparkles, LucideIcon
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
-import { Input } from '@repo/ui/components/ui/input'
-import { Textarea } from '@repo/ui/components/ui/textarea'
-import { Label } from '@repo/ui/components/ui/label'
-import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
     SheetTrigger
 } from '@repo/ui/components/ui/sheet'
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@repo/ui/components/ui/select'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
@@ -58,11 +50,29 @@ interface UserItem {
     type: string
     createdAt: Date
     url: string
-    metadata?: any
+    metadata?: Record<string, unknown>
+}
+
+interface PlatformFeatureItem {
+    id: string
+    icon: LucideIcon
+    label: string
+    description: string
+    color: string
+    isFetchable?: boolean
+    fetchType?: string
+    createUrl?: string
+    createAction?: string
+}
+
+interface PlatformFeatureCategory {
+    category: string
+    description: string
+    items: PlatformFeatureItem[]
 }
 
 // ==================== PLATFORM FEATURES ====================
-const PLATFORM_FEATURES = [
+const PLATFORM_FEATURES: PlatformFeatureCategory[] = [
     {
         category: 'Interviews',
         description: 'Practice and share interview experiences',
@@ -183,16 +193,14 @@ function ConfirmShareDialog({
 export function MagicSheet({ communityId: _communityId, communitySlug: _communitySlug, onShare }: MagicSheetProps) {
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
-    const [view, setView] = useState<'CATEGORIES' | 'LIST' | 'FORM'>('CATEGORIES')
-    const [activeCategory, setActiveCategory] = useState<any>(null)
-    const [activeForm, setActiveForm] = useState<string | null>(null)
+    const [view, setView] = useState<'CATEGORIES' | 'LIST'>('CATEGORIES')
+    const [activeCategory, setActiveCategory] = useState<PlatformFeatureItem | null>(null)
 
     // Data Loading
     const [isLoading, setIsLoading] = useState(false)
     const [items, setItems] = useState<UserItem[]>([])
     const [selectedItem, setSelectedItem] = useState<UserItem | null>(null)
     const [showConfirmShare, setShowConfirmShare] = useState(false)
-    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Project Generate Sheet
     const [showProjectGenerate, setShowProjectGenerate] = useState(false)
@@ -207,7 +215,6 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             setTimeout(() => {
                 setView('CATEGORIES')
                 setActiveCategory(null)
-                setActiveForm(null)
                 setItems([])
             }, 300)
         }
@@ -222,6 +229,7 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             if (type === 'PROJECT') {
                 const res = await getUserProjects(1, 100)
                 if (res.success && res.data?.projects) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     data = res.data.projects.map((p: any) => ({
                         id: p.id,
                         title: p.title,
@@ -235,6 +243,7 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             } else if (type === 'SPACE') {
                 const res = await getUserSpaces()
                 if (res.success && res.data?.spaces) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     data = res.data.spaces.map((s: any) => ({
                         id: s.id,
                         title: s.title,
@@ -249,6 +258,7 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             } else if (type === 'STUDIO') {
                 const res = await getMyStudios()
                 if (res.studios) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     data = res.studios.map((s: any) => ({
                         id: s.id,
                         title: s.title,
@@ -262,13 +272,14 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             } else if (type === 'MOCK_INTERVIEW') {
                 const res = await getUserCreatedMocks()
                 if (res.success && res.mocks) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     data = res.mocks.map((m: any) => ({
                         id: m.id,
                         title: m.title,
                         description: m.description,
                         type: 'mock-interview',
                         createdAt: new Date(m.createdAt),
-                        url: `/mockinterview/${m.id}`, // Placeholder
+                        url: `/mockinterview/${m.id}`,
                         metadata: { level: m.level, duration: m.duration }
                     }))
                 }
@@ -283,11 +294,8 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
         }
     }
 
-    const handleItemClick = (feature: any) => {
-        if (feature.isAction) {
-            setActiveForm(feature.actionView)
-            setView('FORM')
-        } else if (feature.isFetchable) {
+    const handleItemClick = (feature: PlatformFeatureItem) => {
+        if (feature.isFetchable && feature.fetchType) {
             setActiveCategory(feature)
             setView('LIST')
             fetchItems(feature.fetchType)
@@ -320,10 +328,10 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
     const confirmShare = async () => {
         if (!selectedItem) return
 
-        setIsSubmitting(true)
         try {
             const shareableItem: ShareableItem = {
                 id: crypto.randomUUID(),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 type: selectedItem.type as any,
                 title: selectedItem.title,
                 description: selectedItem.description,
@@ -336,30 +344,8 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             toast.success('Shared to community!')
             setShowConfirmShare(false)
             setIsOpen(false)
-        } catch (error) {
-            toast.error('Failed to share')
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
-
-    const handleFormSubmit = async (type: string, data: any) => {
-        setIsSubmitting(true)
-        try {
-            const shareableItem: ShareableItem = {
-                id: crypto.randomUUID(),
-                type: 'interview', // Map to correct type
-                title: data.title,
-                description: data.description,
-                metadata: data
-            }
-            onShare?.(shareableItem)
-            toast.success('Shared to community!')
-            setIsOpen(false)
         } catch {
             toast.error('Failed to share')
-        } finally {
-            setIsSubmitting(false)
         }
     }
 
