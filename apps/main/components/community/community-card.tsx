@@ -370,7 +370,7 @@ export function CommunityCardMini({
     isActive?: boolean
 }) {
     return (
-        <Link href={`/community/${community.slug}`}>
+        <Link href={`/communities/${community.slug}`}>
             <motion.div
                 className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",

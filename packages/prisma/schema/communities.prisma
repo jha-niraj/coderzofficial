@@ -105,6 +105,19 @@ model Community {
     tags            String[]
     settings        Json? // Additional settings JSON
 
+    // Join questions (for restricted communities)
+    joinQuestions String[]
+
+    // Social Links
+    websiteUrl   String?
+    contactEmail String?
+    twitterUrl   String?
+    instagramUrl String?
+    discordUrl   String?
+    githubUrl    String?
+    linkedinUrl  String?
+    youtubeUrl   String?
+
     // Counts (denormalized for performance)
     memberCount Int @default(0)
     postCount   Int @default(0)
@@ -118,13 +131,14 @@ model Community {
     creator   User   @relation("CommunityCreator", fields: [creatorId], references: [id])
 
     // Relations
-    members    CommunityMember[]       @relation("CommunityMembers")
-    channels   CommunityChannel[]      @relation("CommunityChannels")
-    posts      CommunityPost[]         @relation("CommunityPosts")
-    resources  CommunityResource[]     @relation("CommunityResources")
-    events     CommunityEvent[]        @relation("CommunityEvents")
-    challenges CommunityChallengeNew[] @relation("CommunityChallenges")
-    invites    CommunityInvite[]       @relation("CommunityInvites")
+    members     CommunityMember[]       @relation("CommunityMembers")
+    channels    CommunityChannel[]      @relation("CommunityChannels")
+    posts       CommunityPost[]         @relation("CommunityPosts")
+    resources   CommunityResource[]     @relation("CommunityResources")
+    events      CommunityEvent[]        @relation("CommunityEvents")
+    challenges  CommunityChallengeNew[] @relation("CommunityChallenges")
+    invites     CommunityInvite[]       @relation("CommunityInvites")
+    leaderboard CommunityLeaderboard[]  @relation("CommunityLeaderboard")
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -547,4 +561,69 @@ model CommunityTag {
 
     @@index([slug])
     @@index([usageCount])
+}
+
+// Community Leaderboard - tracks member points for activities
+model CommunityLeaderboard {
+    id String @id @default(cuid())
+
+    communityId String
+    community   Community @relation("CommunityLeaderboard", fields: [communityId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation("CommunityLeaderboards", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Points breakdown
+    totalPoints    Int @default(0)
+    postPoints     Int @default(0)
+    commentPoints  Int @default(0)
+    quizPoints     Int @default(0)
+    peerMockPoints Int @default(0)
+    helpPoints     Int @default(0)
+
+    // Activity counts
+    postsCount         Int @default(0)
+    commentsCount      Int @default(0)
+    quizzesCompleted   Int @default(0)
+    questionsCorrect   Int @default(0)
+    peerSessionsCount  Int @default(0)
+    helpRequestsSolved Int @default(0)
+
+    // Ranking (calculated)
+    rank Int?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([communityId, userId])
+    @@index([communityId])
+    @@index([userId])
+    @@index([totalPoints])
+    @@index([rank])
+}
+
+// Quiz Attempt - tracks quiz attempts in community posts
+model CommunityQuizAttempt {
+    id String @id @default(cuid())
+
+    postId String // The post containing the quiz
+    userId String
+    user   User   @relation("CommunityQuizAttempts", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Quiz results
+    totalQuestions   Int
+    correctAnswers   Int
+    scorePercentage  Int
+    pointsEarned     Int
+    timeTakenSeconds Int?
+
+    // Answers given (for review)
+    answers Json?
+
+    completedAt DateTime @default(now())
+
+    @@unique([postId, userId])
+    @@index([postId])
+    @@index([userId])
+    @@index([completedAt])
 }

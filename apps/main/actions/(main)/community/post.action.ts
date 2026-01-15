@@ -137,7 +137,7 @@ export async function createPost(input: CreatePostInput) {
             }
         })
 
-        // Update counts
+        // Update counts and leaderboard
         await Promise.all([
             prisma.community.update({
                 where: { id: input.communityId },
@@ -148,6 +148,9 @@ export async function createPost(input: CreatePostInput) {
                 data: { postCount: { increment: 1 } }
             })
         ])
+
+        // Update leaderboard points (non-blocking)
+        updateLeaderboardPoints(input.communityId, session.user.id, 'post', 1).catch(console.error)
 
         revalidatePath(`/community/${membership.community.slug}`)
         return { success: true, data: post }
@@ -593,6 +596,11 @@ export async function createComment(postId: string, content: string, parentId?: 
             data: { commentCount: { increment: 1 } }
         })
 
+        // Update leaderboard points if in a community
+        if (post.communityId) {
+            updateLeaderboardPoints(post.communityId, session.user.id, 'comment', 1).catch(console.error)
+        }
+
         return { success: true, data: comment }
     } catch (error) {
         console.error('Error creating comment:', error)
@@ -983,3 +991,438 @@ export async function getGlobalFeed(options?: {
         return { success: false, error: "Failed to fetch feed" }
     }
 }
+
+// ==================== QUIZ GENERATION ====================
+interface GenerateQuizInput {
+    title: string
+    description?: string
+    questionCount: number
+    level: 'EASY' | 'MEDIUM' | 'HARD'
+}
+
+interface QuizQuestion {
+    id: string
+    text: string
+    type: 'single' | 'multiple'
+    options: Array<{
+        id: string
+        text: string
+        isCorrect: boolean
+    }>
+    explanation?: string
+    difficulty: string
+}
+
+export async function generateQuiz(input: GenerateQuizInput) {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        const { title, description, questionCount, level } = input
+
+        if (!title) {
+            return { success: false, error: "Title is required" }
+        }
+
+        // Import OpenAI dynamically
+        const OpenAI = (await import('openai')).default
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY
+        })
+
+        const prompt = `Generate a quiz about "${title}"${description ? ` (${description})` : ''}.
+        
+Requirements:
+- Generate exactly ${questionCount || 5} multiple choice questions
+- Difficulty level: ${level || 'MEDIUM'}
+- Each question should have 4 options with exactly 1 correct answer
+- Include a brief explanation for each answer
+
+Return the response as a JSON array with the following structure for each question:
+{
+    "id": "q1",
+    "text": "Question text here?",
+    "type": "single",
+    "options": [
+        { "id": "a", "text": "Option A", "isCorrect": false },
+        { "id": "b", "text": "Option B", "isCorrect": true },
+        { "id": "c", "text": "Option C", "isCorrect": false },
+        { "id": "d", "text": "Option D", "isCorrect": false }
+    ],
+    "explanation": "Brief explanation of why the correct answer is correct",
+    "difficulty": "${level}"
+}
+
+Only return the JSON array, no additional text.`
+
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: 'You are a helpful assistant that generates quiz questions. Always return valid JSON arrays.'
+                },
+                {
+                    role: 'user',
+                    content: prompt
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 4000
+        })
+
+        const content = completion.choices[0]?.message?.content || '[]'
+
+        // Parse the response
+        let questions: QuizQuestion[]
+        try {
+            const cleanedContent = content
+                .replace(/```json\n?/g, '')
+                .replace(/```\n?/g, '')
+                .trim()
+            questions = JSON.parse(cleanedContent)
+        } catch {
+            return { success: false, error: "Failed to parse quiz questions" }
+        }
+
+        if (!Array.isArray(questions) || questions.length === 0) {
+            return { success: false, error: "No questions generated" }
+        }
+
+        // Add IDs if missing
+        questions = questions.map((q, index) => ({
+            ...q,
+            id: q.id || `q${index + 1}`,
+            difficulty: q.difficulty || level
+        }))
+
+        return { success: true, data: { questions } }
+    } catch (error) {
+        console.error('Quiz generation error:', error)
+        return { success: false, error: "Failed to generate quiz" }
+    }
+}
+
+// ==================== LEADERBOARD ====================
+
+// Point values for different activities
+const POINT_VALUES = {
+    POST: 1,
+    COMMENT: 1,
+    QUIZ_BASE: 0, // Quizzes give points based on correct answers
+    QUIZ_CORRECT_ANSWER: 1,
+    PEER_MOCK: 2,
+    HELP_RESOLVED: 2
+}
+
+// Helper function to update or create leaderboard entry
+async function updateLeaderboardPoints(
+    communityId: string,
+    userId: string,
+    pointType: 'post' | 'comment' | 'quiz' | 'peer_mock' | 'help',
+    points: number = 1,
+    extraData?: { questionsCorrect?: number, quizzesCompleted?: number }
+) {
+    try {
+        const existing = await prisma.communityLeaderboard.findUnique({
+            where: {
+                communityId_userId: {
+                    communityId,
+                    userId
+                }
+            }
+        })
+
+        if (existing) {
+            // Update existing entry
+            const updateData: Record<string, unknown> = {
+                totalPoints: { increment: points }
+            }
+
+            switch (pointType) {
+                case 'post':
+                    updateData.postPoints = { increment: points }
+                    updateData.postsCount = { increment: 1 }
+                    break
+                case 'comment':
+                    updateData.commentPoints = { increment: points }
+                    updateData.commentsCount = { increment: 1 }
+                    break
+                case 'quiz':
+                    updateData.quizPoints = { increment: points }
+                    if (extraData?.quizzesCompleted) {
+                        updateData.quizzesCompleted = { increment: extraData.quizzesCompleted }
+                    }
+                    if (extraData?.questionsCorrect) {
+                        updateData.questionsCorrect = { increment: extraData.questionsCorrect }
+                    }
+                    break
+                case 'peer_mock':
+                    updateData.peerMockPoints = { increment: points }
+                    updateData.peerSessionsCount = { increment: 1 }
+                    break
+                case 'help':
+                    updateData.helpPoints = { increment: points }
+                    updateData.helpRequestsSolved = { increment: 1 }
+                    break
+            }
+
+            await prisma.communityLeaderboard.update({
+                where: { id: existing.id },
+                data: updateData
+            })
+        } else {
+            // Create new entry
+            const createData: Record<string, unknown> = {
+                communityId,
+                userId,
+                totalPoints: points
+            }
+
+            switch (pointType) {
+                case 'post':
+                    createData.postPoints = points
+                    createData.postsCount = 1
+                    break
+                case 'comment':
+                    createData.commentPoints = points
+                    createData.commentsCount = 1
+                    break
+                case 'quiz':
+                    createData.quizPoints = points
+                    createData.quizzesCompleted = extraData?.quizzesCompleted || 1
+                    createData.questionsCorrect = extraData?.questionsCorrect || 0
+                    break
+                case 'peer_mock':
+                    createData.peerMockPoints = points
+                    createData.peerSessionsCount = 1
+                    break
+                case 'help':
+                    createData.helpPoints = points
+                    createData.helpRequestsSolved = 1
+                    break
+            }
+
+            await prisma.communityLeaderboard.create({
+                data: createData as {
+                    communityId: string
+                    userId: string
+                    totalPoints: number
+                    postPoints?: number
+                    commentPoints?: number
+                    quizPoints?: number
+                    peerMockPoints?: number
+                    helpPoints?: number
+                    postsCount?: number
+                    commentsCount?: number
+                    quizzesCompleted?: number
+                    questionsCorrect?: number
+                    peerSessionsCount?: number
+                    helpRequestsSolved?: number
+                }
+            })
+        }
+    } catch (error) {
+        console.error('Error updating leaderboard points:', error)
+    }
+}
+
+// Get community leaderboard
+export async function getCommunityLeaderboard(
+    communityId: string,
+    options?: {
+        limit?: number
+        page?: number
+    }
+) {
+    try {
+        const session = await getServerSession(authOptions)
+        const { limit = 100, page = 1 } = options || {}
+
+        const [leaderboard, total] = await Promise.all([
+            prisma.communityLeaderboard.findMany({
+                where: { communityId },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            image: true
+                        }
+                    }
+                },
+                orderBy: { totalPoints: 'desc' },
+                take: limit,
+                skip: (page - 1) * limit
+            }),
+            prisma.communityLeaderboard.count({ where: { communityId } })
+        ])
+
+        // Add rank to each entry
+        const rankedLeaderboard = leaderboard.map((entry, index) => ({
+            ...entry,
+            rank: (page - 1) * limit + index + 1
+        }))
+
+        // Get current user's position if logged in
+        let currentUserEntry = null
+        if (session?.user?.id) {
+            const userEntry = await prisma.communityLeaderboard.findUnique({
+                where: {
+                    communityId_userId: {
+                        communityId,
+                        userId: session.user.id
+                    }
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            image: true
+                        }
+                    }
+                }
+            })
+
+            if (userEntry) {
+                // Calculate rank
+                const rank = await prisma.communityLeaderboard.count({
+                    where: {
+                        communityId,
+                        totalPoints: { gt: userEntry.totalPoints }
+                    }
+                })
+                currentUserEntry = { ...userEntry, rank: rank + 1 }
+            }
+        }
+
+        return {
+            success: true,
+            data: {
+                leaderboard: rankedLeaderboard,
+                total,
+                currentPage: page,
+                totalPages: Math.ceil(total / limit),
+                currentUser: currentUserEntry
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error)
+        return { success: false, error: "Failed to fetch leaderboard" }
+    }
+}
+
+// Submit quiz attempt and award points
+export async function submitQuizAttempt(
+    postId: string,
+    answers: { questionId: string, answer: string | string[], isCorrect: boolean }[],
+    totalTimeTaken: number
+) {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        // Get the post to find community
+        const post = await prisma.communityPost.findUnique({
+            where: { id: postId },
+            select: { communityId: true }
+        })
+
+        if (!post) {
+            return { success: false, error: "Post not found" }
+        }
+
+        // Check if already attempted
+        const existingAttempt = await prisma.communityQuizAttempt.findUnique({
+            where: {
+                postId_userId: {
+                    postId,
+                    userId: session.user.id
+                }
+            }
+        })
+
+        if (existingAttempt) {
+            return { success: false, error: "You have already attempted this quiz" }
+        }
+
+        // Calculate results
+        const totalQuestions = answers.length
+        const correctAnswers = answers.filter(a => a.isCorrect).length
+        const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100)
+        const pointsEarned = correctAnswers * POINT_VALUES.QUIZ_CORRECT_ANSWER
+
+        // Create quiz attempt
+        const attempt = await prisma.communityQuizAttempt.create({
+            data: {
+                postId,
+                userId: session.user.id,
+                totalQuestions,
+                correctAnswers,
+                scorePercentage,
+                pointsEarned,
+                timeTakenSeconds: totalTimeTaken,
+                answers: answers as unknown as object
+            }
+        })
+
+        // Update leaderboard if in a community
+        if (post.communityId) {
+            await updateLeaderboardPoints(
+                post.communityId,
+                session.user.id,
+                'quiz',
+                pointsEarned,
+                { questionsCorrect: correctAnswers, quizzesCompleted: 1 }
+            )
+        }
+
+        return {
+            success: true,
+            data: {
+                attempt,
+                pointsEarned,
+                correctAnswers,
+                totalQuestions,
+                scorePercentage
+            }
+        }
+    } catch (error) {
+        console.error('Error submitting quiz attempt:', error)
+        return { success: false, error: "Failed to submit quiz" }
+    }
+}
+
+// Get quiz attempt for a post
+export async function getQuizAttempt(postId: string) {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        const attempt = await prisma.communityQuizAttempt.findUnique({
+            where: {
+                postId_userId: {
+                    postId,
+                    userId: session.user.id
+                }
+            }
+        })
+
+        return { success: true, data: attempt }
+    } catch (error) {
+        console.error('Error getting quiz attempt:', error)
+        return { success: false, error: "Failed to get quiz attempt" }
+    }
+}
+
+// Note: updateLeaderboardPoints is an internal helper function, not exported
+// POINT_VALUES is also internal - 'use server' files can only export async functions

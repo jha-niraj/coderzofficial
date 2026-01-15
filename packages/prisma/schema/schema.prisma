@@ -500,6 +500,8 @@ model User {
     communityChallengesCreated    CommunityChallengeNew[]        @relation("CommunityChallengeCreator")
     communityChallengeSubmissions CommunityChallengeSubmission[] @relation("CommunityChallengeSubmissions")
     communityInvitesSent          CommunityInvite[]              @relation("CommunityInviter")
+    communityLeaderboards         CommunityLeaderboard[]         @relation("CommunityLeaderboards")
+    communityQuizAttempts         CommunityQuizAttempt[]         @relation("CommunityQuizAttempts")
 
     // Follow System
     following UserFollow[] @relation("UserFollowing")
@@ -564,17 +566,17 @@ model User {
     // ===============================================
     // SPACES MODULE RELATIONS
     // ===============================================
-    createdSpaces          Space[]              @relation("SpaceCreator")
-    spaceMemberships       SpaceMember[]        @relation("SpaceMembers")
-    spaceStepCompletions   SpaceStepCompletion[] @relation("SpaceStepCompletions")
-    spaceBranches          SpaceBranch[]        @relation("SpaceBranchCreator")
-    spaceActivities        SpaceActivity[]      @relation("SpaceActivities")
-    spaceComments          SpaceComment[]       @relation("SpaceComments")
-    spaceLikes             SpaceLike[]          @relation("SpaceLikes")
-    spaceAIChats           SpaceAIChat[]        @relation("SpaceAIChats")
-    spaceAccessCodeShares  SpaceAccessCodeShare[] @relation("SpaceAccessCodeSharer")
-    spaceInvitationsSent   SpaceInvitation[]    @relation("SpaceInviter")
-    spaceInvitationsReceived SpaceInvitation[]  @relation("SpaceInvitee")
+    createdSpaces            Space[]                @relation("SpaceCreator")
+    spaceMemberships         SpaceMember[]          @relation("SpaceMembers")
+    spaceStepCompletions     SpaceStepCompletion[]  @relation("SpaceStepCompletions")
+    spaceBranches            SpaceBranch[]          @relation("SpaceBranchCreator")
+    spaceActivities          SpaceActivity[]        @relation("SpaceActivities")
+    spaceComments            SpaceComment[]         @relation("SpaceComments")
+    spaceLikes               SpaceLike[]            @relation("SpaceLikes")
+    spaceAIChats             SpaceAIChat[]          @relation("SpaceAIChats")
+    spaceAccessCodeShares    SpaceAccessCodeShare[] @relation("SpaceAccessCodeSharer")
+    spaceInvitationsSent     SpaceInvitation[]      @relation("SpaceInviter")
+    spaceInvitationsReceived SpaceInvitation[]      @relation("SpaceInvitee")
 
     // ===============================================
     // UNIFIED BOOKMARKS SYSTEM RELATIONS
@@ -609,9 +611,9 @@ model User {
     // Stats & Earnings
     osStats                UserOSStats?            @relation("UserOSStats")
     osEarningsTransactions OSEarningsTransaction[] @relation("OSEarningsTransactions")
-    
+
     // GitHub Integration
-    osGitHubProfile        OSGitHubProfile?        @relation("OSGitHubProfile")
+    osGitHubProfile OSGitHubProfile? @relation("OSGitHubProfile")
 
     // ===============================================
     // ASSESSMENTS MODULE RELATIONS

@@ -45,9 +45,9 @@ const OFFICIAL_CHANNELS = [
 ]
 
 const NAV_ITEMS = [
-    { icon: Home, label: 'Feed', href: '/community' },
-    { icon: TrendingUp, label: 'Trending', href: '/community/trending' },
-    { icon: Users, label: 'Discover', href: '/community/discover' },
+    { icon: Home, label: 'Feed', href: '/communities' },
+    { icon: TrendingUp, label: 'Trending', href: '/communities/trending' },
+    { icon: Users, label: 'Discover', href: '/communities/discover' },
 ]
 
 export function CommunitySidebar({
@@ -101,7 +101,7 @@ export function CommunitySidebar({
                         <CollapsibleContent className="space-y-1 mt-1">
                             {
                                 officialChannels.map((channel) => (
-                                    <Link key={channel.id} href={`/community/channel/${channel.slug}`}>
+                                    <Link key={channel.id} href={`/communities/channel/${channel.slug}`}>
                                         <motion.div
                                             className={cn(
                                                 "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"

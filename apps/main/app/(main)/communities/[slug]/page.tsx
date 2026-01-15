@@ -8,7 +8,9 @@ import {
 } from '@/actions/(main)/community/community.action'
 import { getCommunityPosts } from '@/actions/(main)/community/post.action'
 import { getCommunityResources } from '@/actions/(main)/community/resource.action'
-import { Loader2 } from 'lucide-react'
+import { 
+    Loader2 
+} from 'lucide-react'
 
 interface CommunityPageProps {
     params: Promise<{ slug: string }>

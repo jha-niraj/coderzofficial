@@ -37,6 +37,15 @@ export interface UpdateCommunityInput {
     rules?: string[]
     tags?: string[]
     settings?: Record<string, unknown>
+    joinQuestions?: string[]
+    websiteUrl?: string
+    contactEmail?: string
+    twitterUrl?: string
+    instagramUrl?: string
+    discordUrl?: string
+    githubUrl?: string
+    linkedinUrl?: string
+    youtubeUrl?: string
 }
 
 // ==================== COMMUNITY CRUD ====================
