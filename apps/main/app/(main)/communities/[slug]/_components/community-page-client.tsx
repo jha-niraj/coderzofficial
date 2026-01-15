@@ -36,6 +36,7 @@ import { PostComposer } from '@/components/community/post-composer'
 import { PostDetailSheet } from '@/components/community/post-detail-sheet'
 import { CommunityInfoSidebar } from '@/components/community/community-sidebar'
 import { MagicSheet } from '@/components/community/magic-sheet'
+import { CommunityLeaderboard } from '@/components/community/community-leaderboard'
 import { getCommunityPosts } from '@/actions/(main)/community/post.action'
 import { joinCommunity, leaveCommunity } from '@/actions/(main)/community/community.action'
 import {
@@ -208,7 +209,8 @@ const SECTION_CONFIG: Record<string, SectionConfig> = {
     CHALLENGES: { label: 'Challenges', icon: Trophy, description: 'Weekly/monthly challenges' },
     JOBS: { label: 'Jobs', icon: Briefcase, description: 'Job postings and referrals' },
     HELP: { label: 'Help Room', icon: CircleHelp, description: 'Real-time help requests', postType: 'HELP_REQUEST' },
-    CODE_REVIEW: { label: 'Code Review', icon: Code2, description: 'Request code reviews' }
+    CODE_REVIEW: { label: 'Code Review', icon: Code2, description: 'Request code reviews' },
+    LEADERBOARD: { label: 'Leaderboard', icon: Trophy, description: 'Top contributors ranking' }
 }
 
 export function CommunityPageClient({
@@ -542,6 +544,14 @@ export function CommunityPageClient({
                     />
                 )
 
+            case 'LEADERBOARD':
+                return (
+                    <CommunityLeaderboard
+                        communityId={community.id}
+                        communitySlug={community.slug}
+                    />
+                )
+
             default:
                 return null
         }
@@ -650,6 +660,13 @@ export function CommunityPageClient({
                                             )}
                                             Join Community
                                         </Button>
+                                    )}
+                                    {/* MagicSheet for sharing platform content */}
+                                    {isMember && (
+                                        <MagicSheet
+                                            communityId={community.id}
+                                            communitySlug={community.slug}
+                                        />
                                     )}
                                     <Button
                                         variant="outline"
