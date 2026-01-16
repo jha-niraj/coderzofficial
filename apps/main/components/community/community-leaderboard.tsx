@@ -97,15 +97,12 @@ function PodiumCard({
             transition={{ delay: position * 0.1 }}
             className={cn("flex flex-col items-center", className)}
         >
-            {/* Position badge */}
             <div className={cn(
                 "mb-3 p-2 rounded-full bg-gradient-to-br shadow-lg",
                 config.gradient
             )}>
                 <Icon className="w-5 h-5 text-white" />
             </div>
-
-            {/* Avatar */}
             <Link href={`/profile/${entry.user.username || entry.user.id}`} className="group">
                 <div className={cn(
                     "relative rounded-full p-1 ring-4",
@@ -126,8 +123,6 @@ function PodiumCard({
                     </div>
                 </div>
             </Link>
-
-            {/* User info */}
             <div className="mt-4 text-center">
                 <p className="font-semibold text-neutral-900 dark:text-white truncate max-w-[120px]">
                     {entry.user.name || 'Anonymous'}
@@ -136,16 +131,12 @@ function PodiumCard({
                     @{entry.user.username || 'user'}
                 </p>
             </div>
-
-            {/* Points */}
             <div className="mt-2 flex items-center gap-1">
                 <Star className="w-4 h-4 text-yellow-500" />
                 <span className="font-bold text-lg text-neutral-900 dark:text-white">
                     {entry.totalPoints.toLocaleString()}
                 </span>
             </div>
-
-            {/* Podium base */}
             <div className={cn(
                 "mt-3 w-full rounded-t-lg bg-gradient-to-b",
                 config.bgGlow,
@@ -175,7 +166,6 @@ function LeaderboardRow({
                 "hover:shadow-md hover:border-primary/30 transition-all"
             )}
         >
-            {/* Rank */}
             <div className={cn(
                 "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold",
                 entry.rank <= 3
@@ -184,8 +174,6 @@ function LeaderboardRow({
             )}>
                 {entry.rank}
             </div>
-
-            {/* User */}
             <Link href={`/profile/${entry.user.username || entry.user.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                 <Avatar className="w-10 h-10">
                     <AvatarImage src={entry.user.image || undefined} />
@@ -202,8 +190,6 @@ function LeaderboardRow({
                     </p>
                 </div>
             </Link>
-
-            {/* Stats */}
             <div className="hidden md:flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
                     <MessageSquare className="w-4 h-4" />
@@ -214,8 +200,6 @@ function LeaderboardRow({
                     <span>{entry.quizzesCompleted}</span>
                 </div>
             </div>
-
-            {/* Points */}
             <div className="flex items-center gap-1">
                 <Star className="w-5 h-5 text-yellow-500" />
                 <span className="font-bold text-neutral-900 dark:text-white">
@@ -303,7 +287,6 @@ export function CommunityLeaderboard({ communityId }: CommunityLeaderboardProps)
 
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div className="text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 mb-4">
                     <Sparkles className="w-4 h-4 text-yellow-500" />
@@ -317,88 +300,90 @@ export function CommunityLeaderboard({ communityId }: CommunityLeaderboardProps)
                 </p>
             </div>
 
-            {/* Podium for top 3 */}
-            {top3.length >= 3 && top3[0] && top3[1] && top3[2] && (
-                <div className="flex items-end justify-center gap-4 md:gap-8 py-8">
-                    {/* 2nd place - left */}
-                    <PodiumCard entry={top3[1]} position={2} />
-                    {/* 1st place - center */}
-                    <PodiumCard entry={top3[0]} position={1} className="-mt-8" />
-                    {/* 3rd place - right */}
-                    <PodiumCard entry={top3[2]} position={3} />
-                </div>
-            )}
+            {
+                top3.length >= 3 && top3[0] && top3[1] && top3[2] && (
+                    <div className="flex items-end justify-center gap-4 md:gap-8 py-8">
+                        <PodiumCard entry={top3[1]} position={2} />
+                        <PodiumCard entry={top3[0]} position={1} className="-mt-8" />
+                        <PodiumCard entry={top3[2]} position={3} />
+                    </div>
+                )
+            }
 
-            {/* Current user position */}
-            {currentUser && currentUser.rank > 3 && (
-                <Card className="bg-gradient-to-r from-primary/5 to-purple-500/5 border-primary/20">
-                    <CardContent className="py-4">
-                        <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
-                                #{currentUser.rank}
+            {
+                currentUser && currentUser.rank > 3 && (
+                    <Card className="bg-gradient-to-r from-primary/5 to-purple-500/5 border-primary/20">
+                        <CardContent className="py-4">
+                            <div className="flex items-center gap-4">
+                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
+                                    #{currentUser.rank}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-neutral-900 dark:text-white">Your Position</p>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                        Keep contributing to climb higher!
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <Star className="w-5 h-5 text-yellow-500" />
+                                    <span className="font-bold text-lg text-neutral-900 dark:text-white">
+                                        {currentUser.totalPoints.toLocaleString()}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-neutral-900 dark:text-white">Your Position</p>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                    Keep contributing to climb higher!
-                                </p>
+                        </CardContent>
+                    </Card>
+                )
+            }
+
+            {
+                remainingEntries.length > 0 && (
+                    <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                            <Users className="w-5 h-5" />
+                            All Members
+                        </h3>
+                        <ScrollArea className="h-[500px]">
+                            <div className="space-y-2 pr-4">
+                                {
+                                    remainingEntries.map((entry, index) => (
+                                        <LeaderboardRow key={entry.id} entry={entry} index={index} />
+                                    ))
+                                }
                             </div>
-                            <div className="flex items-center gap-1">
-                                <Star className="w-5 h-5 text-yellow-500" />
-                                <span className="font-bold text-lg text-neutral-900 dark:text-white">
-                                    {currentUser.totalPoints.toLocaleString()}
-                                </span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+                        </ScrollArea>
+                    </div>
+                )
+            }
 
-            {/* Remaining entries */}
-            {remainingEntries.length > 0 && (
-                <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-                        <Users className="w-5 h-5" />
-                        All Members
-                    </h3>
-                    <ScrollArea className="h-[500px]">
-                        <div className="space-y-2 pr-4">
-                            {remainingEntries.map((entry, index) => (
-                                <LeaderboardRow key={entry.id} entry={entry} index={index} />
-                            ))}
-                        </div>
-                    </ScrollArea>
-                </div>
-            )}
+            {
+                totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="w-4 h-4 mr-1" />
+                            Previous
+                        </Button>
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                            <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                    </div>
+                )
+            }
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Previous
-                    </Button>
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
-                        <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                </div>
-            )}
-
-            {/* Points legend */}
             <Card className="bg-neutral-50 dark:bg-neutral-800/50">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-neutral-600 dark:text-neutral-300">

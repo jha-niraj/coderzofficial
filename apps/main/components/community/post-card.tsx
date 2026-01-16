@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import {
     Heart, MessageCircle, Share2, MoreHorizontal, Pin, Lock, CheckCircle,
-    Code2, HelpCircle, Image as ImageIcon, FileText, Bookmark, LucideIcon, BarChart2
+    Code2, HelpCircle, Image as ImageIcon, FileText, Bookmark, LucideIcon,
+    BarChart2
 } from 'lucide-react'
 import {
     Card, CardContent, CardFooter, CardHeader
@@ -307,21 +308,27 @@ export function PostCard({
                                 <TypeIcon className="w-3 h-3 mr-1" />
                                 {typeConfig?.label ?? 'Discussion'}
                             </Badge>
-                            {hasQuiz && (
-                                <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
-                                    <HelpCircle className="w-3 h-3 mr-1" /> Quiz
-                                </Badge>
-                            )}
-                            {hasCode && (
-                                <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400">
-                                    <Code2 className="w-3 h-3 mr-1" /> Code
-                                </Badge>
-                            )}
-                            {hasLink && (
-                                <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                                    <Share2 className="w-3 h-3 mr-1" /> Link
-                                </Badge>
-                            )}
+                            {
+                                hasQuiz && (
+                                    <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                                        <HelpCircle className="w-3 h-3 mr-1" /> Quiz
+                                    </Badge>
+                                )
+                            }
+                            {
+                                hasCode && (
+                                    <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400">
+                                        <Code2 className="w-3 h-3 mr-1" /> Code
+                                    </Badge>
+                                )
+                            }
+                            {
+                                hasLink && (
+                                    <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                                        <Share2 className="w-3 h-3 mr-1" /> Link
+                                    </Badge>
+                                )
+                            }
 
                             {
                                 post.type === 'QUESTION' && post.isAnswered && (
@@ -346,96 +353,106 @@ export function PostCard({
                             {post.content}
                         </p>
 
-                        {post.poll && (
-                            <div className="mt-4 space-y-3 border rounded-xl p-4 bg-neutral-50 dark:bg-neutral-900/50" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{post.poll.question}</h3>
-                                    <div className="text-xs text-neutral-500">
-                                        {post.poll.endDate && new Date() > new Date(post.poll.endDate) ? 'Closed' : 'Open'} • {post.poll.votes?.length || 0} votes
+                        {
+                            post.poll && (
+                                <div className="mt-4 space-y-3 border rounded-xl p-4 bg-neutral-50 dark:bg-neutral-900/50" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{post.poll.question}</h3>
+                                        <div className="text-xs text-neutral-500">
+                                            {post.poll.endDate && new Date() > new Date(post.poll.endDate) ? 'Closed' : 'Open'} • {post.poll.votes?.length || 0} votes
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {
+                                            ((post.poll.options as string[]) || []).map((option, idx) => {
+                                                const totalVotes = post.poll?.votes?.length || 0
+                                                const optionVotes = post.poll?.votes?.filter(v => v.optionIndex === idx).length || 0
+                                                const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
+                                                const userVote = post.poll?.votes?.find(v => v.userId === user?.id)
+                                                const isVoted = !!userVote
+                                                const isSelected = userVote?.optionIndex === idx
+                                                const isClosed = post.poll?.endDate && new Date() > new Date(post.poll.endDate)
+
+                                                return (
+                                                    <div key={idx} className="relative">
+                                                        {
+                                                            isVoted || isClosed ? (
+                                                                <div className="relative h-10 w-full rounded-lg bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                                                                    <div
+                                                                        className={cn("absolute inset-y-0 left-0 bg-blue-100 dark:bg-blue-900/30 transition-all duration-500", isSelected && "bg-blue-200 dark:bg-blue-900/50")}
+                                                                        style={{ width: `${percentage}%` }}
+                                                                    />
+                                                                    <div className="absolute inset-0 flex items-center justify-between px-3">
+                                                                        <span className="text-sm font-medium z-10 flex items-center gap-2">
+                                                                            {option}
+                                                                            {isSelected && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                                                                        </span>
+                                                                        <span className="text-sm text-neutral-500 z-10">
+                                                                            {percentage}%
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className="w-full justify-start h-10 px-3 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault()
+                                                                        e.stopPropagation()
+                                                                        if (post.poll) voteOnPoll(post.poll.id, idx)
+                                                                        if (!user) toast.error('Please login to vote')
+                                                                        else toast.success('Vote submitted')
+                                                                    }}
+                                                                >
+                                                                    {option}
+                                                                </Button>
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            })
+                                        }
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    {((post.poll.options as string[]) || []).map((option, idx) => {
-                                        const totalVotes = post.poll?.votes?.length || 0
-                                        const optionVotes = post.poll?.votes?.filter(v => v.optionIndex === idx).length || 0
-                                        const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
-                                        const userVote = post.poll?.votes?.find(v => v.userId === user?.id)
-                                        const isVoted = !!userVote
-                                        const isSelected = userVote?.optionIndex === idx
-                                        const isClosed = post.poll?.endDate && new Date() > new Date(post.poll.endDate)
+                            )
+                        }
 
-                                        return (
-                                            <div key={idx} className="relative">
-                                                {isVoted || isClosed ? (
-                                                    <div className="relative h-10 w-full rounded-lg bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                                                        <div
-                                                            className={cn("absolute inset-y-0 left-0 bg-blue-100 dark:bg-blue-900/30 transition-all duration-500", isSelected && "bg-blue-200 dark:bg-blue-900/50")}
-                                                            style={{ width: `${percentage}%` }}
-                                                        />
-                                                        <div className="absolute inset-0 flex items-center justify-between px-3">
-                                                            <span className="text-sm font-medium z-10 flex items-center gap-2">
-                                                                {option}
-                                                                {isSelected && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-                                                            </span>
-                                                            <span className="text-sm text-neutral-500 z-10">
-                                                                {percentage}%
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <Button
-                                                        variant="outline"
-                                                        className="w-full justify-start h-10 px-3 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                        onClick={(e) => {
-                                                            e.preventDefault()
-                                                            e.stopPropagation()
-                                                            if (post.poll) voteOnPoll(post.poll.id, idx)
-                                                            if (!user) toast.error('Please login to vote')
-                                                            else toast.success('Vote submitted')
-                                                        }}
-                                                    >
-                                                        {option}
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        )
-                                    })}
+                        {
+                            embeds.length > 0 && (
+                                <div className="mt-4">
+                                    {
+                                        embeds.map((embed, index) => {
+                                            if (embed.itemType === 'interview') {
+                                                return (
+                                                    <SharedInterviewCard
+                                                        key={index}
+                                                        title={embed.title}
+                                                        description={embed.description}
+                                                        role={embed.metadata?.role || 'Developer'}
+                                                        level={embed.metadata?.level || 'Mid'}
+                                                        author={{ name: post.author.name || 'User', image: post.author.image || undefined }}
+                                                        onAccept={() => toast.info('Feature coming soon!')}
+                                                    />
+                                                )
+                                            }
+                                            if (embed.itemType === 'project' || embed.itemType === 'space' || embed.itemType === 'studio') {
+                                                return (
+                                                    <SharedProjectCard
+                                                        key={index}
+                                                        title={embed.title}
+                                                        description={embed.description}
+                                                        url={embed.url}
+                                                        thumbnail={embed.thumbnail}
+                                                        author={{ name: post.author.name || 'User', image: post.author.image || undefined }}
+                                                    />
+                                                )
+                                            }
+                                            return null
+                                        })
+                                    }
                                 </div>
-                            </div>
-                        )}
-
-                        {embeds.length > 0 && (
-                            <div className="mt-4">
-                                {embeds.map((embed, index) => {
-                                    if (embed.itemType === 'interview') {
-                                        return (
-                                            <SharedInterviewCard
-                                                key={index}
-                                                title={embed.title}
-                                                description={embed.description}
-                                                role={embed.metadata?.role || 'Developer'}
-                                                level={embed.metadata?.level || 'Mid'}
-                                                author={{ name: post.author.name || 'User', image: post.author.image || undefined }}
-                                                onAccept={() => toast.info('Feature coming soon!')}
-                                            />
-                                        )
-                                    }
-                                    if (embed.itemType === 'project' || embed.itemType === 'space' || embed.itemType === 'studio') {
-                                        return (
-                                            <SharedProjectCard
-                                                key={index}
-                                                title={embed.title}
-                                                description={embed.description}
-                                                url={embed.url}
-                                                thumbnail={embed.thumbnail}
-                                                author={{ name: post.author.name || 'User', image: post.author.image || undefined }}
-                                            />
-                                        )
-                                    }
-                                    return null
-                                })}
-                            </div>
-                        )}
+                            )
+                        }
 
                         {
                             post.tags.length > 0 && (

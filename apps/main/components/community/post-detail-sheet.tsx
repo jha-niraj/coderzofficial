@@ -440,63 +440,68 @@ export function PostDetailSheet({
                                 <p className="whitespace-pre-wrap">{post.content}</p>
                             </div>
 
-                            {/* Poll Rendering */}
-                            {post.poll && (
-                                <div className="mt-4 space-y-3 border rounded-xl p-4 bg-neutral-50 dark:bg-neutral-900/50">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{post.poll.question}</h3>
-                                        <div className="text-xs text-neutral-500">
-                                            {post.poll.endDate && new Date() > new Date(post.poll.endDate) ? 'Closed' : 'Open'} • {post.poll.votes?.length || 0} votes
+                            {
+                                post.poll && (
+                                    <div className="mt-4 space-y-3 border rounded-xl p-4 bg-neutral-50 dark:bg-neutral-900/50">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{post.poll.question}</h3>
+                                            <div className="text-xs text-neutral-500">
+                                                {post.poll.endDate && new Date() > new Date(post.poll.endDate) ? 'Closed' : 'Open'} • {post.poll.votes?.length || 0} votes
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {
+                                                ((post.poll.options as string[]) || []).map((option, idx) => {
+                                                    const totalVotes = post.poll?.votes?.length || 0
+                                                    const optionVotes = post.poll?.votes?.filter(v => v.optionIndex === idx).length || 0
+                                                    const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
+                                                    const userVote = post.poll?.votes?.find(v => v.userId === currentUserId)
+                                                    const isVoted = !!userVote
+                                                    const isSelected = userVote?.optionIndex === idx
+                                                    const isClosed = post.poll?.endDate && new Date() > new Date(post.poll.endDate)
+
+                                                    return (
+                                                        <div key={idx} className="relative">
+                                                            {
+                                                                isVoted || isClosed ? (
+                                                                    <div className="relative h-10 w-full rounded-lg bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                                                                        <div
+                                                                            className={cn("absolute inset-y-0 left-0 bg-blue-100 dark:bg-blue-900/30 transition-all duration-500", isSelected && "bg-blue-200 dark:bg-blue-900/50")}
+                                                                            style={{ width: `${percentage}%` }}
+                                                                        />
+                                                                        <div className="absolute inset-0 flex items-center justify-between px-3">
+                                                                            <span className="text-sm font-medium z-10 flex items-center gap-2">
+                                                                                {option}
+                                                                                {isSelected && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                                                                            </span>
+                                                                            <span className="text-sm text-neutral-500 z-10">
+                                                                                {percentage}%
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        className="w-full justify-start h-10 px-3 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                                        onClick={async () => {
+                                                                            if (post.poll) await voteOnPoll(post.poll.id, idx)
+                                                                            if (!currentUserId) toast.error('Please login to vote')
+                                                                            else toast.success('Vote submitted')
+                                                                            if (onPostUpdated) onPostUpdated()
+                                                                        }}
+                                                                    >
+                                                                        {option}
+                                                                    </Button>
+                                                                )
+                                                            }
+                                                        </div>
+                                                    )
+                                                })
+                                            }
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        {((post.poll.options as string[]) || []).map((option, idx) => {
-                                            const totalVotes = post.poll?.votes?.length || 0
-                                            const optionVotes = post.poll?.votes?.filter(v => v.optionIndex === idx).length || 0
-                                            const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
-                                            const userVote = post.poll?.votes?.find(v => v.userId === currentUserId)
-                                            const isVoted = !!userVote
-                                            const isSelected = userVote?.optionIndex === idx
-                                            const isClosed = post.poll?.endDate && new Date() > new Date(post.poll.endDate)
-
-                                            return (
-                                                <div key={idx} className="relative">
-                                                    {isVoted || isClosed ? (
-                                                        <div className="relative h-10 w-full rounded-lg bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                                                            <div 
-                                                                className={cn("absolute inset-y-0 left-0 bg-blue-100 dark:bg-blue-900/30 transition-all duration-500", isSelected && "bg-blue-200 dark:bg-blue-900/50")}
-                                                                style={{ width: `${percentage}%` }}
-                                                            />
-                                                            <div className="absolute inset-0 flex items-center justify-between px-3">
-                                                                <span className="text-sm font-medium z-10 flex items-center gap-2">
-                                                                    {option}
-                                                                    {isSelected && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-                                                                </span>
-                                                                <span className="text-sm text-neutral-500 z-10">
-                                                                    {percentage}%
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <Button
-                                                            variant="outline"
-                                                            className="w-full justify-start h-10 px-3 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                            onClick={async () => {
-                                                                if (post.poll) await voteOnPoll(post.poll.id, idx)
-                                                                if (!currentUserId) toast.error('Please login to vote')
-                                                                else toast.success('Vote submitted')
-                                                                if (onPostUpdated) onPostUpdated()
-                                                            }}
-                                                        >
-                                                            {option}
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            )}
+                                )
+                            }
 
                             {
                                 imageAttachments.length > 0 && (
@@ -882,7 +887,6 @@ export function PostDetailSheet({
                                                                     }
                                                                 </AnimatePresence>
 
-                                                                {/* Replies */}
                                                                 {
                                                                     comment.replies && comment.replies.length > 0 && (
                                                                         <div className="mt-3 ml-4 pl-4 border-l-2 border-neutral-100 dark:border-neutral-800 space-y-3">
