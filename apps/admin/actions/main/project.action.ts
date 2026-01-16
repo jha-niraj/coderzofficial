@@ -4,8 +4,8 @@ import { prisma } from "@repo/prisma"
 import { getServerSession } from "@repo/auth"
 import { authOptions } from "@repo/auth"
 import { revalidatePath } from "next/cache"
-import { 
-    hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel 
+import {
+    hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel
 } from "@/lib/navigation"
 
 interface Response<T = unknown> {
@@ -86,7 +86,6 @@ export async function getAllProjects(params?: {
                         select: {
                             progress: true,
                             submissions: true,
-                            tasks: true,
                         }
                     }
                 },
@@ -132,14 +131,17 @@ export async function getProjectById(id: string): Promise<Response> {
                         image: true,
                     }
                 },
-                tasks: true,
+                sprints: {
+                    include: {
+                        tasks: true
+                    }
+                },
                 progress: true,
                 submissions: true,
                 _count: {
                     select: {
                         progress: true,
                         submissions: true,
-                        tasks: true,
                     }
                 }
             }
