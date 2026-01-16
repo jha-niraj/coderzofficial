@@ -92,14 +92,16 @@ export async function getProjectBySlug(slug: string): Promise<ActionResponse> {
                 pages: {
                     orderBy: { orderIndex: 'asc' },
                 },
-                tasks: {
+                // Tasks are now fetched THROUGH sprints
+                sprints: {
                     orderBy: { orderIndex: 'asc' },
-                    select: {
-                        id: true,
-                        title: true,
-                        difficulty: true,
-                        badges: true,
-                        tags: true,
+                    include: {
+                        tasks: {
+                            orderBy: { orderIndex: 'asc' },
+                            include: {
+                                taskDetail: true, // Include task details for resources/links
+                            },
+                        },
                     },
                 },
                 quiz: {
@@ -142,9 +144,16 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
+        // Fetch project with sprints and their tasks
         const project = await prisma.projectV2.findUnique({
             where: { id: projectId },
-            include: { tasks: true },
+            include: {
+                sprints: {
+                    include: {
+                        tasks: true,
+                    },
+                },
+            },
         });
 
         if (!project) {
@@ -160,29 +169,34 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
             return { success: true, data: existing };
         }
 
+        // Flatten tasks from all sprints
+        const allTasks = project.sprints.flatMap(sprint => sprint.tasks);
+
         // Create progress record
         const progress = await prisma.userProjectV2Progress.create({
             data: {
                 userId: user.id,
                 projectId,
                 status: "IN_PROGRESS",
-                totalTasks: project.tasks.length,
+                totalTasks: allTasks.length,
                 startedAt: new Date(),
             }
         });
 
         // Create task statuses (all TO_DO initially)
-        const taskStatuses = project.tasks.map((task: any) => ({
-            userId: user.id,
-            projectId,
-            taskId: task.id,
-            progressId: progress.id,
-            status: "TO_DO" as const,
-        }));
+        if (allTasks.length > 0) {
+            const taskStatuses = allTasks.map((task) => ({
+                userId: user.id,
+                projectId,
+                taskId: task.id,
+                progressId: progress.id,
+                status: "TO_DO" as const,
+            }));
 
-        await prisma.userTaskV2Status.createMany({
-            data: taskStatuses,
-        });
+            await prisma.userTaskV2Status.createMany({
+                data: taskStatuses,
+            });
+        }
 
         // Increment project started count
         await prisma.projectV2.update({
@@ -193,8 +207,9 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
         revalidatePath(`/projects/${project.slug}`);
 
         return { success: true, data: progress };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -206,9 +221,27 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
+        // Get project with sprints and tasks
         const project = await prisma.projectV2.findUnique({
             where: { slug },
-            select: { id: true, title: true },
+            select: {
+                id: true,
+                title: true,
+                sprints: {
+                    orderBy: { orderIndex: 'asc' },
+                    include: {
+                        tasks: {
+                            orderBy: { orderIndex: 'asc' },
+                            include: {
+                                UserTaskV2Status: {
+                                    where: { userId: user.id },
+                                },
+                                taskDetail: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
 
         if (!project) {
@@ -224,44 +257,75 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
             return { success: false, error: "Project not started. Please start the project first." };
         }
 
-        // Get all tasks with user status
-        const tasks = await prisma.projectV2Task.findMany({
-            where: { projectId: project.id },
-            orderBy: { orderIndex: 'asc' },
-            include: {
-                UserTaskV2Status: {
-                    where: { userId: user.id },
-                },
-            },
-        });
-
-        // Map to kanban format
-        const tasksWithStatus = tasks.map((task: any) => ({
-            id: task.id,
-            title: task.title,
-            description: task.description,
-            criteria: task.criteria,
-            hints: task.hints,
-            badges: task.badges,
-            tags: task.tags,
-            difficulty: task.difficulty,
-            terminalCommand: task.terminalCommand,
-            status: task.UserTaskV2Status[0]?.status || "TO_DO",
-            completedAt: task.UserTaskV2Status[0]?.completedAt,
-            notes: task.UserTaskV2Status[0]?.notes,
-        }));
+        // Flatten tasks from all sprints and add status
+        const allTasksWithStatus = project.sprints.flatMap(sprint =>
+            sprint.tasks.map((task) => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                criteria: task.criteria,
+                hints: task.hints,
+                badges: task.badges,
+                tags: task.tags,
+                difficulty: task.difficulty,
+                terminalCommand: task.terminalCommand,
+                category: task.category,
+                estimatedTime: task.estimatedTime,
+                checkpoints: task.checkpoints,
+                relatedPages: task.relatedPages,
+                dependencies: task.dependencies,
+                sprintId: task.sprintId,
+                sprintName: sprint.name,
+                sprintNumber: sprint.sprintNumber,
+                taskDetail: task.taskDetail,
+                status: task.UserTaskV2Status[0]?.status || "TO_DO",
+                completedAt: task.UserTaskV2Status[0]?.completedAt,
+                notes: task.UserTaskV2Status[0]?.notes,
+            }))
+        );
 
         // Group by status for kanban
         const columns = {
-            todo: tasksWithStatus.filter((t: any) => t.status === "TO_DO"),
-            inProgress: tasksWithStatus.filter((t: any) => t.status === "IN_PROGRESS"),
-            completed: tasksWithStatus.filter((t: any) => t.status === "COMPLETED"),
+            todo: allTasksWithStatus.filter((t) => t.status === "TO_DO"),
+            inProgress: allTasksWithStatus.filter((t) => t.status === "IN_PROGRESS"),
+            completed: allTasksWithStatus.filter((t) => t.status === "COMPLETED"),
         };
+
+        // Also return sprint-organized structure
+        const sprintsWithTasks = project.sprints.map(sprint => ({
+            id: sprint.id,
+            sprintNumber: sprint.sprintNumber,
+            name: sprint.name,
+            goal: sprint.goal,
+            duration: sprint.duration,
+            tasks: sprint.tasks.map(task => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                criteria: task.criteria,
+                hints: task.hints,
+                badges: task.badges,
+                tags: task.tags,
+                difficulty: task.difficulty,
+                terminalCommand: task.terminalCommand,
+                category: task.category,
+                estimatedTime: task.estimatedTime,
+                checkpoints: task.checkpoints,
+                relatedPages: task.relatedPages,
+                dependencies: task.dependencies,
+                taskDetail: task.taskDetail,
+                status: task.UserTaskV2Status[0]?.status || "TO_DO",
+                completedAt: task.UserTaskV2Status[0]?.completedAt,
+            })),
+            completedTasks: sprint.tasks.filter(t => t.UserTaskV2Status[0]?.status === "COMPLETED").length,
+            totalTasks: sprint.tasks.length,
+        }));
 
         return {
             success: true,
             data: {
                 columns,
+                sprints: sprintsWithTasks,
                 progress: {
                     totalTasks: progress.totalTasks,
                     completedTasks: progress.tasksCompleted,
@@ -270,8 +334,9 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
                 projectTitle: project.title,
             }
         };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -282,17 +347,24 @@ export async function updateTaskStatus(
     try {
         const user = await getCurrentUser();
 
+        // Task now belongs to Sprint, so we get projectId through sprint
         const task = await prisma.projectV2Task.findUnique({
             where: { id: taskId },
-            select: { id: true, projectId: true },
+            include: {
+                sprint: {
+                    select: { projectId: true },
+                },
+            },
         });
 
-        if (!task) {
+        if (!task || !task.sprint) {
             return { success: false, error: "Task not found" };
         }
 
+        const projectId = task.sprint.projectId;
+
         const progress = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId: task.projectId } }
+            where: { userId_projectId: { userId: user.id, projectId } }
         });
 
         if (!progress) {
@@ -308,7 +380,7 @@ export async function updateTaskStatus(
             },
             create: {
                 userId: user.id,
-                projectId: task.projectId,
+                projectId,
                 taskId,
                 progressId: progress.id,
                 status: newStatus,
@@ -316,19 +388,28 @@ export async function updateTaskStatus(
             },
         });
 
-        // Recalculate progress
+        // Recalculate progress - count completed tasks for this user in this project
         const completedCount = await prisma.userTaskV2Status.count({
             where: {
                 userId: user.id,
-                projectId: task.projectId,
+                projectId,
                 status: "COMPLETED",
             },
         });
 
-        const totalTasks = await prisma.projectV2Task.count({
-            where: { projectId: task.projectId },
+        // Get total tasks through sprints
+        const project = await prisma.projectV2.findUnique({
+            where: { id: projectId },
+            include: {
+                sprints: {
+                    include: {
+                        tasks: { select: { id: true } },
+                    },
+                },
+            },
         });
 
+        const totalTasks = project?.sprints.reduce((acc, sprint) => acc + sprint.tasks.length, 0) || 0;
         const progressPercentage = totalTasks > 0 ? (completedCount / totalTasks) * 100 : 0;
 
         // Update progress
@@ -344,23 +425,23 @@ export async function updateTaskStatus(
         });
 
         // If project completed, increment counter
-        if (completedCount === totalTasks) {
+        if (completedCount === totalTasks && totalTasks > 0) {
             await prisma.projectV2.update({
-                where: { id: task.projectId },
+                where: { id: projectId },
                 data: { totalCompleted: { increment: 1 } },
             });
         }
 
         // Update score if task was completed
         if (newStatus === "COMPLETED") {
-            // Import at top of file: import { updateProjectScore } from "./projects/leaderboard.action"
             const { updateProjectScore } = await import("./leaderboard.action");
-            await updateProjectScore(task.projectId);
+            await updateProjectScore(projectId);
         }
 
         return { success: true, data: { completedCount, totalTasks, progressPercentage } };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -1005,8 +1086,12 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
         const project = await prisma.projectV2.findUnique({
             where: { id: projectId },
             include: {
-                tasks: {
-                    orderBy: { orderIndex: 'asc' }
+                sprints: {
+                    select: {
+                        tasks: {
+                            orderBy: { orderIndex: 'asc' }
+                        },
+                    }
                 },
                 creator: {
                     select: { id: true, name: true }
@@ -1072,19 +1157,24 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
                 }
             });
 
+            // Flatten tasks from all sprints
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const allTasks = project.sprints.flatMap((s: any) => s.tasks)
+
             // 3. Create user progress
             const progress = await tx.userProjectV2Progress.create({
                 data: {
                     userId: user.id,
                     projectId,
                     status: "IN_PROGRESS",
-                    totalTasks: project.tasks.length,
+                    totalTasks: allTasks.length,
                     startedAt: new Date(),
                 }
             });
 
             // 4. Create task progress for all tasks (snapshot)
-            const taskStatuses = project.tasks.map((task: any) => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const taskStatuses = allTasks.map((task: any) => ({
                 userId: user.id,
                 projectId,
                 taskId: task.id,
@@ -1114,7 +1204,9 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
             data: {
                 progress: result,
                 creditsSpent: enrollmentCost,
-                tasksCount: project.tasks.length,
+                // We don't have allTasks here in scope but we can get it from result if we return it or just use similar logic
+                // But for simplicity, we assume result is the progress object which has totalTasks
+                tasksCount: result.totalTasks,
                 projectTitle: project.title,
                 projectSlug: project.slug
             }
@@ -1148,12 +1240,17 @@ export async function forkProject(
     try {
         const user = await getCurrentUser();
 
-        // Get the source project with ALL related data
+        // Get the source project with ALL related data (tasks through sprints)
         const sourceProject = await prisma.projectV2.findUnique({
             where: { id: projectId },
             include: {
-                tasks: {
-                    orderBy: { orderIndex: 'asc' }
+                sprints: {
+                    orderBy: { orderIndex: 'asc' },
+                    include: {
+                        tasks: {
+                            orderBy: { orderIndex: 'asc' },
+                        },
+                    },
                 },
                 pages: {
                     orderBy: { orderIndex: 'asc' }
@@ -1191,8 +1288,8 @@ export async function forkProject(
         }
 
         // Create the forked project in a transaction
-        const result = await prisma.$transaction(async (tx: any) => {
-            // 1. Create the forked project
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Create the forked project with new fields
             const forkedProject = await tx.projectV2.create({
                 data: {
                     slug: finalSlug,
@@ -1206,14 +1303,21 @@ export async function forkProject(
                     visibility: 'PRIVATE', // Forked projects start as private
                     estimatedHours: sourceProject.estimatedHours,
                     includeAssessment: sourceProject.includeAssessment,
+                    // New fields
                     blueprintOverview: sourceProject.blueprintOverview,
-                    learningObjectives: sourceProject.learningObjectives,
-                    prerequisites: sourceProject.prerequisites,
-                    coreFeatures: sourceProject.coreFeatures,
-                    advancedFeatures: sourceProject.advancedFeatures,
-                    stacks: sourceProject.stacks,
-                    assistantEcho: sourceProject.assistantEcho,
-                    assistantRaw: sourceProject.assistantRaw,
+                    vision: sourceProject.vision,
+                    targetAudience: sourceProject.targetAudience,
+                    problemSolution: sourceProject.problemSolution,
+                    estimatedDuration: sourceProject.estimatedDuration,
+                    keyOutcomes: sourceProject.keyOutcomes,
+                    features: sourceProject.features ?? undefined,
+                    technicalRequirements: sourceProject.technicalRequirements ?? undefined,
+                    dataArchitecture: sourceProject.dataArchitecture ?? undefined,
+                    projectStructure: sourceProject.projectStructure ?? undefined,
+                    setupGuide: sourceProject.setupGuide ?? undefined,
+                    stacks: sourceProject.stacks ?? {},
+                    assistantEcho: sourceProject.assistantEcho ?? {},
+                    assistantRaw: sourceProject.assistantRaw ?? {},
                     createdBy: user.id,
                     // Fork tracking
                     isFork: true,
@@ -1221,27 +1325,56 @@ export async function forkProject(
                 }
             });
 
-            // 2. Copy all pages
+            // 2. Copy all pages with new fields
             if (sourceProject.pages.length > 0) {
                 await tx.projectV2Page.createMany({
-                    data: sourceProject.pages.map((page: any) => ({
+                    data: sourceProject.pages.map((page) => ({
                         projectId: forkedProject.id,
                         name: page.name,
                         difficulty: page.difficulty,
                         coreFeatures: page.coreFeatures,
                         recommendedComponents: page.recommendedComponents,
                         orderIndex: page.orderIndex,
+                        // New fields
+                        route: page.route,
+                        purpose: page.purpose,
+                        estimatedTime: page.estimatedTime,
+                        layout: page.layout ?? undefined,
+                        components: page.components ?? undefined,
+                        userInteractions: page.userInteractions,
+                        dataNeeded: page.dataNeeded,
                     }))
                 });
             }
 
-            // 3. Copy all tasks (including any custom tasks added by owner)
-            const newTasks: any[] = [];
-            if (sourceProject.tasks.length > 0) {
-                for (const task of sourceProject.tasks) {
-                    const newTask = await tx.projectV2Task.create({
+            // 3. Copy all sprints first (to get new IDs for task mapping)
+            const sprintIdMap: Record<string, string> = {};
+            if (sourceProject.sprints.length > 0) {
+                for (const sprint of sourceProject.sprints) {
+                    const newSprint = await tx.projectV2Sprint.create({
                         data: {
                             projectId: forkedProject.id,
+                            sprintNumber: sprint.sprintNumber,
+                            name: sprint.name,
+                            goal: sprint.goal,
+                            duration: sprint.duration,
+                            orderIndex: sprint.orderIndex,
+                        }
+                    });
+                    sprintIdMap[sprint.id] = newSprint.id;
+                }
+            }
+
+            // 4. Copy all tasks through sprints (tasks now belong to sprints)
+            const newTasks: { id: string }[] = [];
+            for (const sprint of sourceProject.sprints) {
+                const newSprintId = sprintIdMap[sprint.id];
+                if (!newSprintId) continue;
+
+                for (const task of sprint.tasks) {
+                    const newTask = await tx.projectV2Task.create({
+                        data: {
+                            sprintId: newSprintId, // Tasks belong to sprints now
                             title: task.title,
                             description: task.description,
                             criteria: task.criteria,
@@ -1251,6 +1384,11 @@ export async function forkProject(
                             difficulty: task.difficulty,
                             terminalCommand: task.terminalCommand,
                             orderIndex: task.orderIndex,
+                            category: task.category,
+                            estimatedTime: task.estimatedTime,
+                            checkpoints: task.checkpoints,
+                            relatedPages: task.relatedPages,
+                            dependencies: task.dependencies,
                         }
                     });
                     newTasks.push(newTask);

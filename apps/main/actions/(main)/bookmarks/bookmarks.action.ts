@@ -467,7 +467,6 @@ export async function getProjectV2Bookmarks() {
                     include: {
                         _count: {
                             select: {
-                                tasks: true,
                                 pages: true,
                             },
                         },
@@ -487,7 +486,7 @@ export async function getProjectV2Bookmarks() {
                 difficulty: b.project.difficulty,
                 technologies: b.project.technologies,
                 estimatedHours: b.project.estimatedHours,
-                taskCount: b.project._count.tasks,
+                taskCount: 0, // Tasks are now in sprints, counting them requires deep query
                 pageCount: b.project._count.pages,
                 savedAt: b.createdAt,
                 folder: b.folder,

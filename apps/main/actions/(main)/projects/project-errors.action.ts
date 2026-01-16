@@ -91,7 +91,7 @@ export async function getProjectErrors(
         }
 
         const isOwnerOrAdmin = project.createdBy === user.id || user.role === "Admin";
-        
+
         // Build where clause
         const where: any = {
             projectId,
@@ -228,9 +228,9 @@ export async function getErrorById(errorId: string): Promise<ActionResponse> {
         }
 
         // Check visibility - only approved or owner/admin can see
-        const isOwnerOrAdmin = error.project.createdBy === user.id || 
-                               error.submittedById === user.id ||
-                               user.role === "Admin";
+        const isOwnerOrAdmin = error.project.createdBy === user.id ||
+            error.submittedById === user.id ||
+            user.role === "Admin";
 
         if (error.status !== "APPROVED" && !isOwnerOrAdmin) {
             return { success: false, error: "Error not found" };
@@ -288,9 +288,9 @@ export async function createProjectError(
         // Owner or enrolled user can submit
         const isOwner = project.createdBy === user.id;
         if (!isOwner && !progress) {
-            return { 
-                success: false, 
-                error: "You must be enrolled in this project to submit errors" 
+            return {
+                success: false,
+                error: "You must be enrolled in this project to submit errors"
             };
         }
 
@@ -299,7 +299,9 @@ export async function createProjectError(
             const task = await prisma.projectV2Task.findFirst({
                 where: {
                     id: validated.taskId,
-                    projectId: validated.projectId
+                    sprint: {
+                        projectId: validated.projectId
+                    }
                 }
             });
 
@@ -381,8 +383,8 @@ export async function updateProjectError(
 
         // Only submitter, project owner, or admin can update
         const canUpdate = existingError.submittedById === user.id ||
-                          existingError.project.createdBy === user.id ||
-                          user.role === "Admin";
+            existingError.project.createdBy === user.id ||
+            user.role === "Admin";
 
         if (!canUpdate) {
             return { success: false, error: "Unauthorized" };
@@ -441,8 +443,8 @@ export async function deleteProjectError(errorId: string): Promise<ActionRespons
 
         // Only submitter, project owner, or admin can delete
         const canDelete = error.submittedById === user.id ||
-                          error.project.createdBy === user.id ||
-                          user.role === "Admin";
+            error.project.createdBy === user.id ||
+            user.role === "Admin";
 
         if (!canDelete) {
             return { success: false, error: "Unauthorized" };

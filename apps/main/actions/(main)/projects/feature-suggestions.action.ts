@@ -94,7 +94,7 @@ export async function createFeatureSuggestion(formData: FormData) {
             // If creator doesn't have progress yet, create it
             if (!userProgress && isCreator) {
                 const taskCount = await prisma.projectV2Task.count({
-                    where: { projectId }
+                    where: { sprint: { projectId } }
                 })
 
                 userProgress = await prisma.userProjectV2Progress.create({
@@ -115,15 +115,36 @@ export async function createFeatureSuggestion(formData: FormData) {
                 }
             }
 
+            // Find a sprint to add the task to (use first sprint or create one)
+            const firstSprint = await prisma.projectV2Sprint.findFirst({
+                where: { projectId },
+                orderBy: { orderIndex: 'asc' }
+            })
+
+            let sprintId = firstSprint?.id;
+            if (!sprintId) {
+                const newSprint = await prisma.projectV2Sprint.create({
+                    data: {
+                        projectId,
+                        name: "General",
+                        sprintNumber: 1,
+                        duration: "2 weeks",
+                        goal: "General tasks",
+                        orderIndex: 0
+                    }
+                })
+                sprintId = newSprint.id;
+            }
+
             // Get the current task count for order index
             const taskCount = await prisma.projectV2Task.count({
-                where: { projectId }
+                where: { sprint: { projectId } }
             })
 
             // Create the task
             const task = await prisma.projectV2Task.create({
                 data: {
-                    projectId,
+                    sprintId,
                     title,
                     description: [
                         description,
@@ -467,14 +488,35 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
                 where: { id: suggestion.taskId }
             })
         } else {
+            // Find a sprint to add the task to
+            const firstSprint = await prisma.projectV2Sprint.findFirst({
+                where: { projectId: project.id },
+                orderBy: { orderIndex: 'asc' }
+            })
+
+            let sprintId = firstSprint?.id;
+            if (!sprintId) {
+                const newSprint = await prisma.projectV2Sprint.create({
+                    data: {
+                        projectId: project.id,
+                        name: "General",
+                        sprintNumber: 1,
+                        duration: "2 weeks",
+                        goal: "General tasks",
+                        orderIndex: 0
+                    }
+                })
+                sprintId = newSprint.id;
+            }
+
             // Create the task from the visitor suggestion
             const taskCount = await prisma.projectV2Task.count({
-                where: { projectId: project.id }
+                where: { sprint: { projectId: project.id } }
             })
 
             task = await prisma.projectV2Task.create({
                 data: {
-                    projectId: project.id,
+                    sprintId,
                     title: suggestion.title,
                     description: [
                         suggestion.description,
@@ -590,15 +632,36 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
             return { success: false, message: "This suggestion has already been added to tasks" }
         }
 
+        // Find a sprint to add the task to
+        const firstSprint = await prisma.projectV2Sprint.findFirst({
+            where: { projectId: suggestion.project.id },
+            orderBy: { orderIndex: 'asc' }
+        })
+
+        let sprintId = firstSprint?.id;
+        if (!sprintId) {
+            const newSprint = await prisma.projectV2Sprint.create({
+                data: {
+                    projectId: suggestion.project.id,
+                    name: "General",
+                    sprintNumber: 1,
+                    duration: "2 weeks",
+                    goal: "General tasks",
+                    orderIndex: 0
+                }
+            })
+            sprintId = newSprint.id;
+        }
+
         // Get the current task count for order index
         const taskCount = await prisma.projectV2Task.count({
-            where: { projectId: suggestion.project.id }
+            where: { sprint: { projectId: suggestion.project.id } }
         })
 
         // Create a new task from the suggestion
         const task = await prisma.projectV2Task.create({
             data: {
-                projectId: suggestion.project.id,
+                sprintId,
                 title: suggestion.title,
                 description: [
                     suggestion.description,
@@ -633,7 +696,7 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
         // If creator doesn't have progress yet, create it
         if (!creatorProgress) {
             const totalTasks = await prisma.projectV2Task.count({
-                where: { projectId: suggestion.project.id }
+                where: { sprint: { projectId: suggestion.project.id } }
             })
 
             creatorProgress = await prisma.userProjectV2Progress.create({

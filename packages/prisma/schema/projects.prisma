@@ -105,12 +105,22 @@ model ProjectV2 {
     estimatedHours             Int                 @default(20)
     includeAssessment          Boolean             @default(false)
 
-    // Blueprint fields
-    blueprintOverview  String   @db.Text
-    learningObjectives String[]
-    prerequisites      String[]
-    coreFeatures       String[]
-    advancedFeatures   String[]
+    // Project Overview & Context
+    blueprintOverview String   @db.Text // Detailed project summary
+    vision            String?  @db.Text // Why this project exists
+    targetAudience    String? // Who is this for
+    problemSolution   String?  @db.Text // What problem it solves
+    estimatedDuration String? // "2-3 weeks", "1 month"
+    keyOutcomes       String[] // Specific things user will have built
+
+    // Features with priority/complexity
+    features Json? // Array of {name, description, priority, complexity}
+
+    // Technical Documentation
+    technicalRequirements Json? // {database, authentication, hosting, thirdPartyAPIs}
+    dataArchitecture      Json? // {models[], endpoints[]}
+    projectStructure      Json? // {description, tree, keyFolders[]}
+    setupGuide            Json? // {prerequisites, envVars, installationSteps, verificationSteps}
 
     // Stacks and assistant payloads
     stacks        Json // normalized from echo.stacks
@@ -131,8 +141,9 @@ model ProjectV2 {
     updatedAt DateTime @default(now()) @updatedAt
 
     // Relations
+    // NOTE: Tasks now go through Sprints (project.sprints[].tasks)
     pages              ProjectV2Page[]
-    tasks              ProjectV2Task[]
+    sprints            ProjectV2Sprint[] // Tasks are nested within sprints
     quiz               ProjectV2Quiz?
     knowledge          ProjectV2KnowledgeBase?
     progress           UserProjectV2Progress[]
@@ -160,8 +171,9 @@ model ProjectV2 {
     bookmarks ProjectV2Bookmark[] @relation("ProjectV2Bookmarks")
 
     // Space relation
-    spaceId String?
-    space   Space?  @relation("SpaceProjects", fields: [spaceId], references: [id], onDelete: SetNull)
+    spaceId        String?
+    space          Space?          @relation("SpaceProjects", fields: [spaceId], references: [id], onDelete: SetNull)
+    projectV2Tasks ProjectV2Task[]
 
     @@index([createdBy])
     @@index([visibility])
@@ -183,14 +195,28 @@ model ProjectV2Page {
     recommendedComponents String[]
     orderIndex            Int                 @default(0)
 
+    // Enhanced Page Specifications (NEW)
+    route            String? // Route path e.g., "/", "/dashboard"
+    purpose          String?  @db.Text // Why this page exists
+    estimatedTime    String? // Time to build e.g., "3-4 hours"
+    layout           Json? // {type, sections[]}
+    components       Json? // Array of {name, type, description, interactivity[]}
+    userInteractions String[] // User actions on this page
+    dataNeeded       String[] // Data required for this page
+
     @@index([projectId])
     @@index([orderIndex])
 }
 
 model ProjectV2Task {
-    id              String              @id @default(cuid())
-    projectId       String
-    project         ProjectV2           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    id String @id @default(cuid())
+
+    // Task now belongs to Sprint (which belongs to Project)
+    // This is a key architectural change - tasks go through sprints
+    sprintId String
+    sprint   ProjectV2Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+    // Core Task Fields
     title           String
     description     String[] // array of step strings (3-7 steps, no code)
     criteria        String[] // completion criteria (3-5 items)
@@ -201,19 +227,32 @@ model ProjectV2Task {
     orderIndex      Int                 @default(0)
     terminalCommand String?
 
-    createdAt        DateTime           @default(now())
-    updatedAt        DateTime           @updatedAt
-    UserTaskV2Status UserTaskV2Status[]
+    // Enhanced Task Metadata
+    category      String? // setup, frontend, backend, database, testing, deployment, integration
+    estimatedTime String? // e.g., "2-3 hours"
+    checkpoints   String[] // Clear success criteria/checkpoints
+    relatedPages  String[] // Related page names
+    dependencies  String[] // Task dependencies (task titles)
 
-    // Task Detail Relation
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Task Detail (for additional resources, images, links)
     taskDetail ProjectV2TaskDetail?
 
-    // Related errors
-    errors ProjectV2Error[] @relation("TaskErrors")
+    // User progress tracking
+    UserTaskV2Status UserTaskV2Status[]
 
-    @@index([projectId])
+    // Related errors
+    errors      ProjectV2Error[] @relation("TaskErrors")
+    projectV2   ProjectV2?       @relation(fields: [projectV2Id], references: [id])
+    projectV2Id String?
+
+    @@index([sprintId])
     @@index([orderIndex])
     @@index([difficulty])
+    @@index([category])
+    @@index([sprintId, orderIndex])
 }
 
 model UserProjectV2Progress {
@@ -692,7 +731,7 @@ model ProjectIdea {
     categories                 String[]
     technology                 String?
 
-    ideaType IdeaType @default(TECHNOLOGY_SPECIFIC)
+    ideaType               IdeaType @default(TECHNOLOGY_SPECIFIC)
     overview               String?  @db.Text
     coreRequirements       String[]
     engineeringConstraints String[]
@@ -832,4 +871,30 @@ model ProjectV2ErrorVote {
     @@unique([errorId, userId, voteType])
     @@index([errorId])
     @@index([userId])
+}
+
+// ===============================================
+// PROJECT V2 SPRINT - Sprint-based Task Organization
+// ===============================================
+
+model ProjectV2Sprint {
+    id        String    @id @default(cuid())
+    projectId String
+    project   ProjectV2 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    sprintNumber Int // 1, 2, 3, etc.
+    name         String // "Sprint 1: Foundation & Setup"
+    goal         String @db.Text // What this sprint achieves
+    duration     String // Time estimate e.g., "3-5 days", "1 week"
+    orderIndex   Int    @default(0)
+
+    tasks ProjectV2Task[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([projectId, sprintNumber])
+    @@index([projectId])
+    @@index([orderIndex])
+    @@index([projectId, orderIndex])
 }

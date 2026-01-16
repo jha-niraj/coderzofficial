@@ -1,0 +1,1316 @@
+================================================================================
+                    PROJECTS MODULE ENHANCEMENT PLAN
+                    ================================
+                    Comprehensive Blueprint for Industry-Grade Project Generation
+================================================================================
+
+Document Created: 2026-01-16
+Purpose: Complete roadmap for transforming the Projects Module into an industry-grade 
+         project-based learning platform that helps students build real portfolios.
+
+================================================================================
+                    TABLE OF CONTENTS
+================================================================================
+
+1. EXECUTIVE SUMMARY
+2. CURRENT STATE ANALYSIS
+3. IDENTIFIED GAPS & IMPROVEMENTS
+4. PHASE 1: SCHEMA ENHANCEMENTS
+5. PHASE 2: AI GENERATION IMPROVEMENTS
+6. PHASE 3: UI/UX ENHANCEMENTS
+7. PHASE 4: NEW FEATURES
+8. IMPLEMENTATION ROADMAP
+9. TECHNICAL SPECIFICATIONS
+
+================================================================================
+                    1. EXECUTIVE SUMMARY
+================================================================================
+
+GOAL: Transform the current projects module from a basic AI-generated task list 
+into a comprehensive, industry-grade project builder that provides:
+
+✅ Detailed Product Requirements Documents (PRD)
+✅ Sprint-based Implementation Roadmaps
+✅ Comprehensive Page Specifications with component details
+✅ Data Architecture Documentation
+✅ Project Folder Structure Guidance
+✅ Setup & Environment Configuration
+✅ Enhanced Assessment System (Quiz + Mock Interviews)
+✅ Better engagement features (Daily Standup, Leaderboard)
+✅ Community features (Resources, Errors, Suggestions, Forking)
+
+CURRENT GENERATION TIME: ~70 seconds
+- This is acceptable given the comprehensive output
+- Will implement progressive disclosure for better UX
+
+================================================================================
+                    2. CURRENT STATE ANALYSIS
+================================================================================
+
+2.1 EXISTING DATABASE SCHEMA (projects.prisma)
+----------------------------------------------
+
+Current Models:
+├── ProjectV2 (Main Project)
+│   ├── Basic Info: title, slug, description, shortDescription
+│   ├── Blueprint: blueprintOverview, learningObjectives, prerequisites
+│   ├── Features: coreFeatures[], advancedFeatures[]
+│   ├── Meta: technologies[], stacks (JSON), difficulty, visibility
+│   ├── Stats: totalStarted, totalCompleted, totalSubmissions, totalViews
+│   └── Relations: pages, tasks, quiz, knowledge, progress, etc.
+│
+├── ProjectV2Page
+│   ├── name, difficulty, orderIndex
+│   ├── coreFeatures[], recommendedComponents[]
+│   └── [MISSING: route, layout, purpose, components detail]
+│
+├── ProjectV2Task
+│   ├── title, description[], criteria[], hints[]
+│   ├── badges[], tags[], difficulty, terminalCommand
+│   └── [MISSING: sprint grouping, category, estimated time, dependencies]
+│
+├── ProjectV2Quiz & Questions
+│   ├── Basic quiz structure with questions
+│   ├── difficulty levels, options, correctAnswer
+│   └── User attempt tracking
+│
+├── ProjectV2KnowledgeBase
+│   ├── points[], mockKnowledgeBase, mockQuestionsData
+│   └── [NEEDS: Better structured concepts with relations]
+│
+├── Supporting Features:
+│   ├── ProjectV2TaskDetail (Sub-task generation ✅)
+│   ├── ProjectV2StandupConfig (Daily standup ✅)
+│   ├── ProjectV2FeatureSuggestion (Community suggestions ✅)
+│   ├── ProjectV2Resource (Resource library ✅)
+│   ├── ProjectV2Error (Error/Solutions ✅)
+│   ├── ProjectV2Leaderboard (Ranking ✅)
+│   └── Fork tracking (isFork, forkedFromId ✅)
+
+
+2.2 EXISTING SERVER ACTIONS (project.action.ts)
+------------------------------------------------
+
+Current Actions:
+├── getProjectBySlug() - Full project with relations ✅
+├── startProject() - Initialize user progress ✅
+├── getProjectTasks() - Get tasks with kanban status ✅
+├── updateTaskStatus() - Move task between columns ✅
+├── updateTaskNotes() - Add notes to tasks ✅
+├── submitProject() - Submit completed project ✅
+├── getUserProjects() - List user's projects ✅
+├── deleteProject() - Delete own project ✅
+├── getPublicProjects() - Discover page ✅
+├── getAllPublicProjects() - Paginated list ✅
+├── searchSimilarProjects() - Find related projects ✅
+├── enrollInProject() - Purchase/enroll in public project ✅
+└── forkProject() - Copy project to user's space ✅
+
+
+2.3 CURRENT AI GENERATION (project-generator.ts)
+-------------------------------------------------
+
+Current Generation Flow:
+1. Create OpenAI thread
+2. Send user input (title, description, stacks, etc.)
+3. Run assistant with pre-configured assistant_id
+4. Poll for completion (~70 seconds)
+5. Parse JSON response
+6. Save to database:
+   - ProjectV2 (main record)
+   - ProjectV2Page[] (basic pages)
+   - ProjectV2Task[] (flat task list)
+   - ProjectV2Quiz (if includeAssessment)
+   - ProjectV2KnowledgeBase (if includeAssessment)
+
+ISSUES WITH CURRENT GENERATION:
+-------------------------------
+❌ learningObjectives - Too generic, users skip these
+❌ prerequisites - Usually obvious from tech stack
+❌ coreFeatures vs advancedFeatures - Artificial distinction
+❌ Pages lack depth - No route, layout, component specs
+❌ Tasks are flat - No sprint grouping or dependencies
+❌ No PRD document for project context
+❌ No data architecture (models, APIs)
+❌ No folder structure guidance
+❌ No setup/environment guide
+
+
+2.4 EXISTING FEATURES ALREADY IMPLEMENTED
+------------------------------------------
+
+✅ Daily Standup (standup.action.ts)
+   - Weekly standup scheduling with credits
+   - Text-based standup submission
+   - AI voice standup (standup-voice.action.ts)
+
+✅ Task Details / Sub-tasks (task-details.action.ts)
+   - Generate detailed sub-tasks for any task
+   - Common errors & pitfalls
+   - Related practice tasks
+   - Credit-based access system
+
+✅ Quiz System (projectv2-quiz.action.ts)
+   - Quiz attempts and scoring
+   - Answer tracking with explanations
+
+✅ Mock Interview (AI Mock integrated)
+   - ElevenLabs agent integration
+   - Technical scoring
+
+✅ Resources (resources.action.ts)
+   - Add links to helpful resources
+   - Helpful voting system
+
+✅ Errors & Solutions (project-errors.action.ts)
+   - Submit common errors with solutions
+   - Severity and category classification
+   - Moderation system
+
+✅ Feature Suggestions (feature-suggestions.action.ts)
+   - Community suggestions
+   - Approval workflow
+   - Convert to tasks
+
+✅ Project Forking (project.action.ts)
+   - Complete project copy
+   - Fork tracking and attribution
+
+✅ Leaderboard (leaderboard.action.ts)
+   - Per-project leaderboard
+   - Global leaderboard
+   - Score calculation (tasks + quiz + mock)
+
+================================================================================
+                    3. IDENTIFIED GAPS & IMPROVEMENTS
+================================================================================
+
+3.1 FIELDS TO REMOVE/REFACTOR
+-----------------------------
+
+REMOVE (currently generated but not useful):
+├── learningObjectives[] - Replace with keyOutcomes[]
+├── prerequisites[] - Move to setupGuide.prerequisites
+└── advancedFeatures[] - Merge into features[] with priority
+
+KEEP BUT ENHANCE:
+├── coreFeatures[] → features[] with {name, priority, complexity}
+├── blueprintOverview → More detailed, product-focused
+└── pages[] → Add layout, route, components, interactions
+
+
+3.2 NEW FIELDS TO ADD TO ProjectV2
+----------------------------------
+
+// Project Vision & Context
+vision: String                     // Why this project exists
+targetAudience: String             // Who is this for  
+problemSolution: String            // What problem does it solve
+estimatedDuration: String          // "2-3 weeks", "1 month"
+keyOutcomes: String[]              // What user will have built
+
+// Enhanced Features Structure
+features: Json                     // Array of {name, priority, complexity, description}
+
+// Technical Requirements
+technicalRequirements: Json {
+  database: string,
+  authentication: string,
+  hosting: string,
+  thirdPartyAPIs: string[]
+}
+
+// Data Architecture
+dataArchitecture: Json {
+  models: Array<{
+    name: string,
+    purpose: string,
+    fields: Array<{name, type, required, description}>,
+    relationships: string[]
+  }>,
+  endpoints: Array<{
+    method: string,
+    path: string,
+    purpose: string,
+    requiresAuth: boolean,
+    requestExample?: string,
+    responseExample?: string
+  }>
+}
+
+// Project Structure
+projectStructure: Json {
+  description: string,
+  tree: string,               // ASCII tree representation
+  keyFolders: Array<{
+    path: string,
+    purpose: string,
+    exampleFiles: string[]
+  }>
+}
+
+// Setup Guide
+setupGuide: Json {
+  prerequisites: string[],
+  environmentVariables: Array<{
+    name: string,
+    purpose: string,
+    required: boolean,
+    exampleValue: string
+  }>,
+  installationSteps: string[],
+  verificationSteps: string[]
+}
+
+
+3.3 NEW FIELDS TO ADD TO ProjectV2Page
+--------------------------------------
+
+route: String                      // "/", "/dashboard", "/profile"
+purpose: String                    // Why this page exists
+estimatedTime: String              // "3-4 hours"
+
+layout: Json {
+  type: "single-column" | "two-column" | "dashboard" | "split" | "marketing-landing",
+  sections: Array<{
+    name: string,                  // "Header", "Hero", "Features", "Footer"
+    purpose: string,
+    priority: number               // 1 = most important
+  }>
+}
+
+components: Json                   // Array of detailed components:
+// Array<{
+//   name: string,                 // "LoginForm", "UserTable", "ChatWidget"
+//   type: "form" | "table" | "card" | "navigation" | "modal" | "list",
+//   description: string,
+//   interactivity: string[]       // ["Submit form", "Validate input", "Show errors"]
+// }>
+
+userInteractions: String[]         // ["Click login", "Fill form", "Submit"]
+dataNeeded: String[]               // ["User data", "Session token"]
+
+
+3.4 NEW MODEL: ProjectV2Sprint
+------------------------------
+
+model ProjectV2Sprint {
+  id: String @id @default(cuid())
+  projectId: String
+  project: ProjectV2 @relation(fields: [projectId])
+  
+  sprintNumber: Int
+  name: String                     // "Sprint 1: Foundation & Setup"
+  goal: String                     // "Get the basic structure running"
+  duration: String                 // "3-5 days"
+  orderIndex: Int
+  
+  tasks: ProjectV2Task[]
+  
+  createdAt: DateTime @default(now())
+  updatedAt: DateTime @updatedAt
+}
+
+
+3.5 ENHANCEMENTS TO ProjectV2Task
+---------------------------------
+
+ADD FIELDS:
+├── sprintId: String?              // Link to sprint
+├── category: String               // "setup" | "frontend" | "backend" | "database" | "testing" | "deployment"
+├── estimatedTime: String          // "2-3 hours"
+├── checkpoints: String[]          // Replace criteria with clearer checkpoints
+├── relatedPages: String[]         // ["Homepage", "Dashboard"]
+├── dependencies: String[]         // ["Complete task 1", "Install dependencies"]
+
+
+3.6 ENHANCEMENTS TO ProjectV2KnowledgeBase
+------------------------------------------
+
+RESTRUCTURE TO:
+concepts: Json                     // Array of:
+// {
+//   name: string,
+//   category: string,             // "Frontend", "Backend", "Database"
+//   difficulty: string,
+//   explanation: string,
+//   importance: "critical" | "important" | "good-to-know",
+//   relatedTasks: string[]        // Which tasks use this concept
+// }
+
+mockQuestions: Json                // Array of:
+// {
+//   question: string,
+//   category: string,
+//   difficulty: string,
+//   sampleAnswer: string
+// }
+
+
+================================================================================
+                    4. PHASE 1: SCHEMA ENHANCEMENTS
+================================================================================
+
+4.1 PRISMA SCHEMA UPDATES
+-------------------------
+
+// Add to ProjectV2 model:
+
+model ProjectV2 {
+    // ... existing fields ...
+    
+    // NEW: Project Vision & Context
+    vision              String?   @db.Text
+    targetAudience      String?
+    problemSolution     String?   @db.Text
+    estimatedDuration   String?
+    keyOutcomes         String[]
+    
+    // NEW: Enhanced Features (replaces flat coreFeatures)
+    features            Json?     // Array of {name, description, priority, complexity}
+    
+    // NEW: Technical Documentation
+    technicalRequirements Json?   // {database, authentication, hosting, thirdPartyAPIs}
+    dataArchitecture      Json?   // {models[], endpoints[]}
+    projectStructure      Json?   // {description, tree, keyFolders[]}
+    setupGuide            Json?   // {prerequisites, envVars, steps}
+    
+    // Relations
+    sprints             ProjectV2Sprint[]
+}
+
+
+// Add new model:
+
+model ProjectV2Sprint {
+    id            String              @id @default(cuid())
+    projectId     String
+    project       ProjectV2           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    
+    sprintNumber  Int
+    name          String
+    goal          String              @db.Text
+    duration      String
+    orderIndex    Int                 @default(0)
+    
+    tasks         ProjectV2Task[]
+    
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    
+    @@index([projectId])
+    @@index([orderIndex])
+}
+
+
+// Update ProjectV2Page:
+
+model ProjectV2Page {
+    // ... existing fields ...
+    
+    // NEW: Enhanced page specification
+    route              String?
+    purpose            String?    @db.Text
+    estimatedTime      String?
+    layout             Json?      // {type, sections[]}
+    components         Json?      // Array of detailed component specs
+    userInteractions   String[]
+    dataNeeded         String[]
+}
+
+
+// Update ProjectV2Task:
+
+model ProjectV2Task {
+    // ... existing fields ...
+    
+    // NEW: Sprint-based organization
+    sprintId        String?
+    sprint          ProjectV2Sprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+    
+    // NEW: Enhanced task metadata
+    category        String?        // setup, frontend, backend, database, testing, deployment
+    estimatedTime   String?
+    checkpoints     String[]       // Clearer than criteria
+    relatedPages    String[]
+    dependencies    String[]
+    
+    @@index([sprintId])
+}
+
+
+4.2 MIGRATION STRATEGY
+----------------------
+
+Step 1: Add new nullable columns to existing models
+Step 2: Create ProjectV2Sprint model
+Step 3: Update task relation to include sprint
+Step 4: Keep old fields (learningObjectives, prerequisites) for backward compatibility
+Step 5: New generations use new fields, old data still works
+
+
+================================================================================
+                    5. PHASE 2: AI GENERATION IMPROVEMENTS
+================================================================================
+
+5.1 UPDATED OPENAI PROMPT TEMPLATE
+----------------------------------
+
+const ENHANCED_PROJECT_PROMPT = `
+Generate a comprehensive project blueprint for: {projectTitle}
+
+Description: {description}
+Tech Stack: {stacksList}
+Difficulty: {difficulty}
+Include Assessment: {includeAssessment}
+
+IMPORTANT: Provide a detailed, industry-grade project specification.
+
+=== SECTION 1: PROJECT OVERVIEW ===
+
+Provide:
+- title: Project title
+- shortDescription: 1-2 sentence summary (max 150 chars)
+- description: Detailed 2-3 paragraph description
+- technologies: Array of technology names used
+
+- vision: Why this project matters (1-2 sentences)
+- targetAudience: Who will use this (e.g., "Freelancers, small teams, startups")
+- problemSolution: What problem it solves (1-2 sentences)
+- estimatedDuration: Realistic time estimate (e.g., "2-3 weeks", "1 month")
+- keyOutcomes: Array of 4-6 specific things the user will have built
+  Example: ["User authentication with JWT", "Real-time notifications", "Payment integration"]
+
+
+=== SECTION 2: BLUEPRINT ===
+
+Provide:
+- overview: Detailed project summary (3-5 paragraphs covering architecture, user flows, key features)
+
+- features: Array of feature objects, each with:
+  - name: Feature name
+  - description: What this feature does
+  - priority: "must-have" | "should-have" | "nice-to-have"
+  - complexity: "low" | "medium" | "high"
+
+- technicalRequirements: Object with:
+  - database: Which database to use and why
+  - authentication: Auth approach (JWT, OAuth, sessions)
+  - hosting: Recommended hosting platform
+  - thirdPartyAPIs: Array of external APIs needed
+
+
+=== SECTION 3: DATA ARCHITECTURE ===
+
+Provide dataArchitecture object with:
+
+- models: Array of database models, each with:
+  - name: Model name (e.g., "User", "Post", "Comment")
+  - purpose: What this model stores
+  - fields: Array of:
+    - name: Field name
+    - type: "string" | "number" | "boolean" | "Date" | "relation"
+    - required: true | false
+    - description: What this field is for
+  - relationships: Array of relationship descriptions
+    Example: ["User has many Posts", "Post belongs to User"]
+
+- endpoints: Array of API endpoints, each with:
+  - method: "GET" | "POST" | "PUT" | "DELETE"
+  - path: API route (e.g., "/api/users", "/api/posts/:id")
+  - purpose: What this endpoint does
+  - requiresAuth: true | false
+  - requestExample: JSON string example (for POST/PUT)
+  - responseExample: JSON string example
+
+
+=== SECTION 4: PROJECT STRUCTURE ===
+
+Provide projectStructure object with:
+
+- description: Overview of folder organization approach
+- tree: ASCII tree representation of folder structure, example:
+  src/
+  ├── app/
+  │   ├── (auth)/
+  │   ├── (main)/
+  │   └── api/
+  ├── components/
+  ├── lib/
+  └── utils/
+
+- keyFolders: Array of:
+  - path: Folder path (e.g., "/src/components")
+  - purpose: What goes in this folder
+  - exampleFiles: Array of example file names
+
+
+=== SECTION 5: SETUP GUIDE ===
+
+Provide setupGuide object with:
+
+- prerequisites: Array of required software (e.g., "Node.js 18+", "PostgreSQL 14+")
+
+- environmentVariables: Array of:
+  - name: Variable name (e.g., "DATABASE_URL", "JWT_SECRET")
+  - purpose: What this variable is for
+  - required: true | false
+  - exampleValue: Example value (use placeholders for secrets)
+
+- installationSteps: Array of step-by-step setup instructions
+- verificationSteps: Array of steps to verify setup is working
+
+
+=== SECTION 6: PAGES (UI Screens) ===
+
+For each page/screen in the application, provide:
+
+- name: Page name (e.g., "Homepage", "Dashboard", "Login")
+- route: Route path (e.g., "/", "/dashboard", "/auth/login")
+- purpose: Why this page exists (1-2 sentences)
+- difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
+- estimatedTime: Time to build (e.g., "3-4 hours")
+
+- layout: Object with:
+  - type: "single-column" | "two-column" | "dashboard" | "split" | "marketing-landing"
+  - sections: Array of:
+    - name: Section name (e.g., "Header", "Hero", "Features")
+    - purpose: What this section does
+    - priority: 1 (highest) to 5 (lowest)
+
+- coreFeatures: Array of key features this page implements
+- userInteractions: Array of user actions on this page
+- dataNeeded: Array of data required for this page
+
+- components: Array of UI components, each with:
+  - name: Component name (e.g., "LoginForm", "UserTable")
+  - type: "form" | "table" | "card" | "navigation" | "modal" | "list" | "section"
+  - description: What this component does
+  - interactivity: Array of interactions (e.g., ["Form validation", "Submit handler"])
+
+
+=== SECTION 7: ROADMAP (Sprint-based Tasks) ===
+
+Organize all tasks into sprints for structured implementation.
+
+Provide roadmap object with:
+- totalSprints: Number of sprints
+- estimatedDuration: Total project duration
+
+- sprints: Array of sprint objects, each with:
+  - sprintNumber: 1, 2, 3, etc.
+  - name: Sprint title (e.g., "Sprint 1: Foundation & Setup")
+  - goal: What this sprint achieves (1-2 sentences)
+  - duration: Time estimate (e.g., "3-5 days", "1 week")
+  
+  - tasks: Array of task objects, each with:
+    - title: Clear, action-oriented task title
+    - description: Array of 3-7 step descriptions (NO CODE)
+    - category: "setup" | "frontend" | "backend" | "database" | "testing" | "deployment"
+    - difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
+    - estimatedTime: Time to complete (e.g., "2-3 hours")
+    
+    - checkpoints: Array of clear success criteria (what to verify when done)
+    - hints: Array of helpful tips (2-4 items)
+    - relatedPages: Array of page names this task relates to
+    - dependencies: Array of tasks that must be done first
+    
+    - tags: Array of concept tags (e.g., ["authentication", "jwt", "middleware"])
+    - badges: Array of context badges (e.g., ["Backend", "Security"])
+    - terminalCommand: Terminal command if applicable, or null
+
+
+${includeAssessment ? `
+=== SECTION 8: ASSESSMENT ===
+
+Generate comprehensive assessment content:
+
+quiz:
+  - questions: Array of 10-15 quiz questions, each with:
+    - prompt: Clear question text
+    - options: Exactly 4 answer choices
+    - correctAnswer: Index of correct answer (0-3)
+    - difficulty: "EASY" | "MEDIUM" | "HARD"
+    - explanation: Why the answer is correct
+    - relatedConcept: Which concept this tests
+
+knowledgeBase:
+  - concepts: Array of key concepts, each with:
+    - name: Concept name
+    - category: "Frontend" | "Backend" | "Database" | "DevOps" | "General"
+    - difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
+    - explanation: Clear explanation (2-4 sentences, NO CODE)
+    - importance: "critical" | "important" | "good-to-know"
+    - relatedTasks: Array of task titles that use this concept
+    
+  - mockQuestions: Array of mock interview questions, each with:
+    - question: Interview question
+    - category: Question type (e.g., "Technical", "Behavioral", "System Design")
+    - difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
+    - sampleAnswer: Example answer structure (key points, not full script)
+` : ''}
+
+
+=== OUTPUT FORMAT ===
+
+Return ONLY valid JSON with this structure:
+{
+  "project": {
+    "title": "...",
+    "shortDescription": "...",
+    "description": "...",
+    "technologies": [...],
+    "difficulty": "...",
+    "vision": "...",
+    "targetAudience": "...",
+    "problemSolution": "...",
+    "estimatedDuration": "...",
+    "keyOutcomes": [...]
+  },
+  "blueprint": {
+    "overview": "...",
+    "features": [...],
+    "technicalRequirements": {...}
+  },
+  "dataArchitecture": {
+    "models": [...],
+    "endpoints": [...]
+  },
+  "projectStructure": {
+    "description": "...",
+    "tree": "...",
+    "keyFolders": [...]
+  },
+  "setupGuide": {
+    "prerequisites": [...],
+    "environmentVariables": [...],
+    "installationSteps": [...],
+    "verificationSteps": [...]
+  },
+  "pages": [...],
+  "roadmap": {
+    "totalSprints": ...,
+    "estimatedDuration": "...",
+    "sprints": [...]
+  }
+  ${includeAssessment ? `,
+  "assessment": {
+    "quiz": {...},
+    "knowledgeBase": {...}
+  }` : ''}
+}
+
+
+=== IMPORTANT GUIDELINES ===
+
+1. Be specific and actionable in all descriptions
+2. For sprints: organize tasks logically (setup → core features → polish)
+3. For pages: describe exact UI components needed with purpose and interactions
+4. For tasks: provide clear checkpoints that can be verified
+5. For data models: include all necessary fields and relationships for a working app
+6. Estimate times realistically based on difficulty level
+7. Link related concepts across sections (tasks → pages → concepts)
+8. NO CODE in any field - this is a blueprint, not implementation
+9. Focus on WHAT to build, not HOW to code it
+`;
+
+
+5.2 UPDATED project-generator.ts SAVE LOGIC
+--------------------------------------------
+
+The save logic needs to be updated to:
+
+1. Extract and save new ProjectV2 fields (vision, targetAudience, etc.)
+2. Create ProjectV2Sprint records for each sprint
+3. Link tasks to their sprints
+4. Save enhanced page specifications
+5. Save data architecture, project structure, setup guide as JSON
+
+
+// Key changes to saving logic:
+
+// 1. Save ProjectV2 with new fields
+const project = await prisma.projectV2.create({
+    data: {
+        // ... existing fields ...
+        
+        // New fields from enhanced generation
+        vision: projectData.vision || null,
+        targetAudience: projectData.targetAudience || null,
+        problemSolution: projectData.problemSolution || null,
+        estimatedDuration: projectData.estimatedDuration || null,
+        keyOutcomes: projectData.keyOutcomes || [],
+        
+        // Enhanced structure fields
+        features: blueprintData.features || null,
+        technicalRequirements: blueprintData.technicalRequirements || null,
+        dataArchitecture: assistantResponse.dataArchitecture || null,
+        projectStructure: assistantResponse.projectStructure || null,
+        setupGuide: assistantResponse.setupGuide || null,
+        
+        // ... rest of creation ...
+    }
+});
+
+
+// 2. Create sprints and link tasks
+const roadmapData = assistantResponse.roadmap;
+if (roadmapData && roadmapData.sprints) {
+    for (const sprint of roadmapData.sprints) {
+        const createdSprint = await prisma.projectV2Sprint.create({
+            data: {
+                projectId: project.id,
+                sprintNumber: sprint.sprintNumber,
+                name: sprint.name,
+                goal: sprint.goal,
+                duration: sprint.duration,
+                orderIndex: sprint.sprintNumber - 1,
+            }
+        });
+        
+        // Create tasks linked to this sprint
+        for (let i = 0; i < sprint.tasks.length; i++) {
+            const task = sprint.tasks[i];
+            await prisma.projectV2Task.create({
+                data: {
+                    projectId: project.id,
+                    sprintId: createdSprint.id,  // Link to sprint
+                    title: task.title,
+                    description: task.description || [],
+                    criteria: task.checkpoints || [],  // Use checkpoints
+                    checkpoints: task.checkpoints || [],
+                    hints: task.hints || [],
+                    badges: task.badges || [],
+                    tags: task.tags || [],
+                    difficulty: mapDifficulty(task.difficulty),
+                    orderIndex: globalTaskIndex++,
+                    category: task.category || null,
+                    estimatedTime: task.estimatedTime || null,
+                    relatedPages: task.relatedPages || [],
+                    dependencies: task.dependencies || [],
+                    terminalCommand: task.terminalCommand || null,
+                }
+            });
+        }
+    }
+}
+
+
+// 3. Save enhanced pages
+for (const page of pagesData) {
+    await prisma.projectV2Page.create({
+        data: {
+            projectId: project.id,
+            name: page.name,
+            route: page.route || null,
+            purpose: page.purpose || null,
+            difficulty: mapDifficulty(page.difficulty),
+            estimatedTime: page.estimatedTime || null,
+            layout: page.layout || null,
+            coreFeatures: page.coreFeatures || [],
+            components: page.components || null,
+            userInteractions: page.userInteractions || [],
+            dataNeeded: page.dataNeeded || [],
+            recommendedComponents: page.recommendedComponents || [],
+            orderIndex: i,
+        }
+    });
+}
+
+
+================================================================================
+                    6. PHASE 3: UI/UX ENHANCEMENTS
+================================================================================
+
+6.1 PROJECT DETAILS PAGE TABS (project-details-client.tsx)
+----------------------------------------------------------
+
+Current Tabs:
+├── Overview (basic info)
+├── Pages (list of pages)
+├── Tasks (kanban board)
+├── Quiz (if assessment)
+├── Resources (community resources)
+├── Suggestions (feature suggestions)
+└── Errors (common errors)
+
+ENHANCED Tab Structure:
+├── Overview
+│   ├── Project Vision & Goals (NEW)
+│   ├── Key Outcomes (NEW)
+│   ├── Technical Requirements (NEW)
+│   ├── Creator Info
+│   └── Project Stats
+│
+├── Blueprint (NEW - replaces basic overview)
+│   ├── PRD Summary
+│   ├── Features with Priority/Complexity
+│   ├── Data Architecture Diagram (models + relationships)
+│   └── API Endpoints List
+│
+├── Setup Guide (NEW)
+│   ├── Prerequisites Checklist
+│   ├── Environment Variables Table
+│   ├── Installation Steps (with copy buttons)
+│   └── Verification Checklist
+│
+├── Project Structure (NEW)
+│   ├── Folder Tree Visualization
+│   ├── Key Folders Explanation
+│   └── File Naming Conventions
+│
+├── Pages (ENHANCED)
+│   ├── Visual Page Cards with Route
+│   ├── Layout Type Badge
+│   ├── Section Breakdown
+│   ├── Component List with Types
+│   └── Click to expand full spec
+│
+├── Roadmap (NEW - Sprint View)
+│   ├── Sprint Progress Tracker
+│   ├── Sprint Cards with Goals
+│   ├── Tasks grouped by Sprint
+│   ├── Dependency Visualization
+│   └── Time Estimates
+│
+├── Tasks (Keep Kanban)
+│   ├── Same kanban functionality
+│   ├── Add category filter
+│   ├── Add sprint filter
+│   └── Show estimated time
+│
+├── Assessment
+│   ├── Quiz Tab
+│   ├── Knowledge Base (Enhanced)
+│   ├── Mock Interview
+│   └── Concept Explorer (NEW)
+│
+├── Resources (Keep)
+├── Suggestions (Keep)
+└── Errors (Keep)
+
+
+6.2 PROJECT CARD ENHANCEMENTS
+-----------------------------
+
+Current Card Shows:
+- Title, description, difficulty badge
+- Tech stack badges
+- Creator info
+- Fork count
+
+Enhanced Card Should Show:
+- Vision statement (truncated)
+- Estimated duration
+- Sprint count / Task count
+- Key outcomes preview (2-3 items)
+- Progress bar (if enrolled)
+- "Includes PRD" badge (NEW)
+- "Sprint-based" badge (NEW)
+
+
+6.3 SPRINT VIEW COMPONENT
+-------------------------
+
+New Component: <SprintRoadmap />
+
+Features:
+- Timeline visualization of sprints
+- Progress indicator per sprint
+- Expand/collapse sprint tasks
+- Visual dependencies between tasks
+- Sprint goal display
+- Duration and time estimates
+
+
+6.4 DATA ARCHITECTURE VIEWER
+----------------------------
+
+New Component: <DataArchitectureViewer />
+
+Features:
+- Interactive database model cards
+- Field list with types
+- Relationship arrows/connections
+- API endpoint list with method badges
+- Click to expand model details
+- Search/filter endpoints
+
+
+6.5 SETUP GUIDE INTERACTIVE CHECKLIST
+--------------------------------------
+
+New Component: <SetupGuideChecklist />
+
+Features:
+- Checkbox for each step
+- Copy button for commands
+- Environment variable table with copy
+- Expandable sections
+- Progress tracking
+- "Mark all complete" option
+
+
+================================================================================
+                    7. PHASE 4: NEW FEATURES
+================================================================================
+
+7.1 CONCEPT EXPLORER (Enhancement to Knowledge Base)
+-----------------------------------------------------
+
+Purpose: Interactive way to explore project concepts
+
+Features:
+- Visual concept map
+- Category grouping (Frontend, Backend, Database)
+- Importance indicators (Critical, Important, Nice-to-know)
+- Link to related tasks
+- Difficulty levels
+- Search and filter
+
+UI:
+- Card-based layout
+- Expandable explanations
+- Related tasks clickable
+- Progress tracking (which concepts reviewed)
+
+
+7.2 DEPENDENCY VISUALIZATION
+-----------------------------
+
+Purpose: Show task dependencies clearly
+
+Features:
+- DAG (Directed Acyclic Graph) visualization
+- Click node to see task details
+- Color coding by status
+- Sprint boundaries visible
+- Critical path highlighting
+
+
+7.3 ENHANCED PROGRESS ANALYTICS
+--------------------------------
+
+Purpose: Better progress insights
+
+Current:
+- Basic task completion percentage
+- Quiz score
+
+Enhanced:
+- Sprint-by-sprint progress
+- Time tracking (optional)
+- Comparison to estimated times
+- Concept coverage (from knowledge base)
+- Mock interview scores over time
+- Standup completion rate
+- Streak tracking
+
+
+7.4 AI PROJECT ASSISTANT (Chat Context)
+---------------------------------------
+
+Purpose: Context-aware help while building
+
+Features:
+- Chat interface within project page
+- Knows current task user is working on
+- Can explain concepts from knowledge base
+- Can suggest next steps
+- Can help debug errors (reference error tab)
+- Can generate sub-tasks on demand
+- Chat history saved per project
+
+
+7.5 PROJECT TEMPLATES
+---------------------
+
+Purpose: Quick-start with pre-generated blueprints
+
+Features:
+- Curated list of popular project types
+- Pre-filled description and tech stack
+- Faster generation (parts pre-computed)
+- Community voting on templates
+- Clone and customize
+
+
+7.6 COLLABORATIVE PROJECTS (Future)
+------------------------------------
+
+Purpose: Team-based project building
+
+Features:
+- Invite team members
+- Assign tasks to members
+- Team standup feed
+- Shared error board
+- Real-time progress sync
+- Comments on tasks
+
+
+================================================================================
+                    8. IMPLEMENTATION ROADMAP
+================================================================================
+
+PHASE 1: Schema & Backend (Week 1-2)
+------------------------------------
+□ Day 1-2: Update Prisma schema
+  - Add new fields to ProjectV2
+  - Add new fields to ProjectV2Page
+  - Add new fields to ProjectV2Task
+  - Create ProjectV2Sprint model
+  - Run migration
+
+□ Day 3-4: Update OpenAI Assistant
+  - Create new assistant with enhanced prompt
+  - Test generation with new schema
+  - Validate JSON output structure
+
+□ Day 5-7: Update project-generator.ts
+  - Parse enhanced response
+  - Save new fields to database
+  - Create sprints with linked tasks
+  - Error handling for backward compatibility
+
+□ Day 8-10: Update server actions
+  - getProjectBySlug() - include new relations
+  - Add getProjectSprints() action
+  - Add getProjectBlueprint() action
+  - Update progress calculation
+
+
+PHASE 2: UI Enhancements (Week 3-4)
+-----------------------------------
+□ Week 3:
+  - Create SprintRoadmap component
+  - Create DataArchitectureViewer component
+  - Create SetupGuideChecklist component
+  - Create ProjectStructureTree component
+  - Create ConceptExplorer component
+
+□ Week 4:
+  - Redesign project-details-client.tsx tabs
+  - Implement new tab structure
+  - Add sprint view to tasks page
+  - Enhance project cards
+  - Mobile responsiveness
+
+
+PHASE 3: Polish & Testing (Week 5)
+----------------------------------
+□ End-to-end testing of generation
+□ Performance optimization
+□ Error handling improvements
+□ Documentation updates
+□ User feedback collection
+
+
+PHASE 4: Advanced Features (Week 6+)
+------------------------------------
+□ AI Project Assistant chat
+□ Dependency visualization
+□ Enhanced analytics dashboard
+□ Project templates
+□ Collaborative features (if applicable)
+
+
+================================================================================
+                    9. TECHNICAL SPECIFICATIONS
+================================================================================
+
+9.1 ASSISTANT CONFIGURATION
+---------------------------
+
+Create new OpenAI Assistant with:
+- Name: "CoderzHQ Project Blueprint Generator V2"
+- Model: gpt-4o (or gpt-4-turbo for cost efficiency)
+- Instructions: Enhanced prompt template (Section 5.1)
+- Response format: JSON mode enabled
+- Temperature: 0.7 (for creativity in features/descriptions)
+
+
+9.2 DATABASE INDEXES
+--------------------
+
+Add indexes for performance:
+
+@@index([projectId, sprintNumber]) on ProjectV2Sprint
+@@index([sprintId, orderIndex]) on ProjectV2Task
+@@index([projectId, category]) on ProjectV2Task
+
+
+9.3 API RATE LIMITING
+---------------------
+
+Consider for generation endpoint:
+- Max 1 concurrent generation per user
+- Rate limit: 5 generations per hour
+- Progress updates via WebSocket (already implemented)
+
+
+9.4 CACHING STRATEGY
+--------------------
+
+Cache frequently accessed data:
+- Project overview (5 min TTL)
+- Sprint list (5 min TTL)
+- Data architecture (30 min TTL, rarely changes)
+- Knowledge base concepts (30 min TTL)
+
+
+9.5 BACKWARD COMPATIBILITY
+--------------------------
+
+Ensure existing projects work:
+- All new fields are nullable
+- UI checks for null/undefined before rendering new sections
+- Old projects show "Blueprint not available" message
+- Option to "Regenerate Blueprint" for old projects
+
+
+================================================================================
+                    10. SUCCESS METRICS
+================================================================================
+
+Track these metrics to measure improvement:
+
+1. Generation Quality:
+   - Completion rate (100% vs partial generation)
+   - User edits after generation (less = better)
+   - Feature usage (which new sections get viewed)
+
+2. User Engagement:
+   - Time on project page
+   - Sprint completion rate
+   - Tasks started vs completed
+   - Quiz attempts and scores
+   - Mock interview participation
+
+3. Learning Outcomes:
+   - Portfolio submissions
+   - GitHub repository quality
+   - Time to complete projects
+   - Concept mastery (quiz scores)
+
+4. Platform Growth:
+   - Public project creation rate
+   - Fork rate for public projects
+   - Resource contributions
+   - Error solutions added
+
+
+================================================================================
+                    11. ADDITIONAL IMPROVEMENTS FROM ANALYSIS
+================================================================================
+
+11.1 STANDUP ENHANCEMENTS
+-------------------------
+
+Current: Basic text-based standup with scheduling
+
+Improvements:
+- AI analysis of standup patterns
+- Blocker detection and suggestions
+- Progress velocity calculation
+- Weekly summary reports
+- Streak rewards and gamification
+
+
+11.2 QUIZ SYSTEM IMPROVEMENTS
+-----------------------------
+
+Current: Basic quiz with score tracking
+
+Improvements:
+- Adaptive difficulty (start easy, adjust based on answers)
+- Retry with different questions
+- Concept-linked questions
+- Spaced repetition for review
+- Mini-quizzes after each sprint
+
+
+11.3 LEADERBOARD ENHANCEMENTS
+-----------------------------
+
+Current: Score-based ranking
+
+Improvements:
+- Streak-based bonuses
+- Community contribution points
+- Speed bonuses (within estimate)
+- Quality bonuses (GitHub stars, etc.)
+- Weekly/monthly leaderboards
+
+
+11.4 ERROR BOARD IMPROVEMENTS
+-----------------------------
+
+Current: Basic error submission
+
+Improvements:
+- AI-powered solution suggestions
+- Link errors to specific tasks
+- "This worked for me" voting
+- Stack-specific error filtering
+- Error frequency analytics
+
+
+11.5 RESOURCES TAB IMPROVEMENTS
+-------------------------------
+
+Current: Link sharing with voting
+
+Improvements:
+- Auto-categorization by type
+- Official vs community marking
+- Task-specific resources
+- Expiration/freshness tracking
+- Video preview embeds
+
+
+================================================================================
+                    12. ESTIMATED CREDITS/COSTS
+================================================================================
+
+Current Generation Cost:
+- ~70 seconds of GPT-4 processing
+- Estimated: $0.05-0.10 per generation
+
+Enhanced Generation Cost:
+- Larger prompt = more tokens
+- Estimated: $0.15-0.25 per generation
+- Additional value justifies cost increase
+
+User Credit Model:
+- Keep current credit system
+- Optionally increase generation cost from 10 to 15 credits
+- Or keep same and absorb cost for better product
+
+
+================================================================================
+                    CONCLUSION
+================================================================================
+
+This comprehensive enhancement plan transforms the Projects Module from a 
+basic AI-generated task list into an industry-grade project-based learning 
+platform. The key improvements are:
+
+1. **Better AI Generation**: PRD, data architecture, setup guides, sprint-based tasks
+2. **Enhanced UI**: Sprint roadmap, architecture viewer, concept explorer
+3. **Better UX**: Clearer progress tracking, dependency visualization
+4. **Industry Alignment**: Matches real software development workflows
+
+The phased approach allows for iterative development and user feedback 
+integration while maintaining backward compatibility with existing projects.
+
+By implementing these changes, students will have:
+- Clear project vision and goals
+- Structured sprint-based learning path
+- Deep understanding of architecture and design
+- Professional-grade project documentation
+- Better portfolio presentation
+
+================================================================================
+                    END OF DOCUMENT
+================================================================================

@@ -112,20 +112,23 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
             return { success: false, error: "Insufficient credits. You need 1 credit to generate task details." };
         }
 
-        // Get task and project details
+        // Get task and project details (task belongs to sprint, sprint belongs to project)
         const task = await prisma.projectV2Task.findUnique({
             where: { id: taskId },
             include: {
-                project: {
-                    select: {
-                        id: true,
-                        title: true,
-                        description: true,
-                        technologies: true,
-                        generationType: true,
-                        primaryLanguageOrFramework: true,
-                        learningObjectives: true,
-                        prerequisites: true,
+                sprint: {
+                    include: {
+                        project: {
+                            select: {
+                                id: true,
+                                title: true,
+                                description: true,
+                                technologies: true,
+                                generationType: true,
+                                primaryLanguageOrFramework: true,
+                                keyOutcomes: true,
+                            },
+                        },
                     },
                 },
             },
@@ -133,6 +136,12 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
 
         if (!task) {
             return { success: false, error: "Task not found" };
+        }
+
+        // Get project from sprint (task belongs to sprint which belongs to project)
+        const project = (task as any).sprint?.project;
+        if (!project) {
+            return { success: false, error: "Project not found for this task" };
         }
 
         // Check if detail already exists (created by another user)
@@ -203,10 +212,10 @@ Your goal is to provide detailed, actionable guidance WITHOUT giving away the ac
 IMPORTANT: DO NOT provide actual code implementations. Guide the student's learning process instead.`;
 
         const userPrompt = `Project Context:
-Title: ${task.project.title}
-Type: ${task.project.generationType}
-Tech Stack: ${task.project.technologies.join(', ')}
-Primary: ${task.project.primaryLanguageOrFramework || 'N/A'}
+Title: ${project.title}
+Type: ${project.generationType}
+Tech Stack: ${project.technologies.join(', ')}
+Primary: ${project.primaryLanguageOrFramework || 'N/A'}
 
 Task to Break Down:
 Title: ${task.title}

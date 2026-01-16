@@ -375,20 +375,33 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                         <Button
                             size="lg"
                             className={cn(
-                                "w-14 h-14 rounded-full shadow-2xl transition-all duration-500 hover:scale-105",
+                                "group flex items-center gap-3 rounded-full px-5 py-3 shadow-xl transition-all duration-300",
                                 isOpen
-                                    ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rotate-90"
-                                    : "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white animate-in zoom-in"
+                                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                                    : "bg-neutral-800 text-white hover:bg-neutral-700 dark:bg-neutral-200 dark:text-neutral-900 dark:hover:bg-neutral-300"
                             )}
                         >
-                            {
-                                isOpen ? (
-                                    <Plus className="w-6 h-6 rotate-45" />
-                                ) : (
-                                    <Sparkles className="w-6 h-6 animate-pulse" />
-                                )
-                            }
+                            <span
+                                className={cn(
+                                    "flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-300",
+                                    isOpen
+                                        ? "bg-neutral-700 dark:bg-neutral-300 rotate-45"
+                                        : "bg-neutral-700 dark:bg-neutral-300"
+                                )}
+                            >
+                                {
+                                    isOpen ? (
+                                        <Plus className="h-5 w-5" />
+                                    ) : (
+                                        <Sparkles className="h-5 w-5" />
+                                    )
+                                }
+                            </span>
+                            <span className="text-sm font-medium whitespace-nowrap">
+                                {isOpen ? "Close Tools" : "Magic Tools"}
+                            </span>
                         </Button>
+
                     </SheetTrigger>
                     <SheetContent
                         side="bottom"

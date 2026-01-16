@@ -33,20 +33,26 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
             return { success: false, error: "Not authenticated" }
         }
 
-        // Get project with tasks and knowledge base
+        // Get project with sprints/tasks and knowledge base
         const project = await prisma.projectV2.findUnique({
             where: { slug: projectSlug },
             include: {
-                tasks: {
-                    include: {
-                        taskDetail: {
-                            select: {
-                                subTasks: true
-                            }
-                        }
-                    },
+                sprints: {
                     orderBy: { orderIndex: 'asc' },
-                    take: 10
+                    take: 3,
+                    include: {
+                        tasks: {
+                            include: {
+                                taskDetail: {
+                                    select: {
+                                        subTasks: true
+                                    }
+                                }
+                            },
+                            orderBy: { orderIndex: 'asc' },
+                            take: 5
+                        }
+                    }
                 },
                 knowledge: true
             }
@@ -84,7 +90,9 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
 
         // Build project context for AI (concise to save tokens)
         const stacks = project.stacks as any
-        const taskSummary = project.tasks.slice(0, 10).map(t => {
+        // Flatten tasks from sprints
+        const allTasks = project.sprints.flatMap(s => s.tasks)
+        const taskSummary = allTasks.slice(0, 10).map(t => {
             const subtasksData = (t.taskDetail?.subTasks as any[]) || []
             return {
                 title: t.title,

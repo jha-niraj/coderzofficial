@@ -45,10 +45,236 @@ import { EnrollmentDialog } from './enrollment-dialog'
 import ResourcesList from '@/components/projects/resources-list'
 import AddResourceSheet from '@/components/projects/add-resource-sheet'
 import DailyStandupSheet from './daily-standup-sheet'
-import BlueprintFlowchart from '@/components/projects/blueprint-flowchart'
 import TaskListProgress, { TaskItem } from '@/components/projects/task-list-progress'
 import ErrorsTab from '@/components/projects/errors-tab'
 import { cn } from '@repo/ui/lib/utils'
+import BlueprintFlowchart from '@/components/projects/blueprintflowchart'
+
+// ============================================================================
+// Page Overview Card Component with Bottom Sheet
+// ============================================================================
+
+interface PageOverviewCardProps {
+    page: ProjectV2Page
+    difficultyColors: Record<string, string>
+}
+
+function PageOverviewCard({ page, difficultyColors }: PageOverviewCardProps) {
+    const [isSheetOpen, setIsSheetOpen] = useState(false)
+
+    return (
+        <>
+            <Card
+                className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all duration-200 group"
+                onClick={() => setIsSheetOpen(true)}
+            >
+                <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                                {page.orderIndex !== undefined ? page.orderIndex + 1 : '#'}
+                            </div>
+                            <CardTitle className="text-base group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{page.name}</CardTitle>
+                        </div>
+                        <Badge className={difficultyColors[page.difficulty as keyof typeof difficultyColors] || ''}>
+                            {page.difficulty}
+                        </Badge>
+                    </div>
+                    {page.route && (
+                        <code className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded mt-1 inline-block">
+                            {page.route}
+                        </code>
+                    )}
+                </CardHeader>
+                <CardContent className="pt-0">
+                    {page.purpose && (
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-3">
+                            {page.purpose}
+                        </p>
+                    )}
+                    <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                        <span>{page.coreFeatures?.length || 0} features</span>
+                        <span>{page.recommendedComponents?.length || 0} components</span>
+                        {page.estimatedTime && <span>{page.estimatedTime}</span>}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Page Details Bottom Sheet */}
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+                    <SheetHeader className="text-left pb-6 border-b border-neutral-200 dark:border-neutral-800">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
+                                {page.orderIndex !== undefined ? page.orderIndex + 1 : '#'}
+                            </div>
+                            <div>
+                                <SheetTitle className="text-xl">{page.name}</SheetTitle>
+                                {page.route && (
+                                    <code className="text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+                                        {page.route}
+                                    </code>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 mt-3">
+                            <Badge className={difficultyColors[page.difficulty as keyof typeof difficultyColors] || ''}>
+                                {page.difficulty}
+                            </Badge>
+                            {page.estimatedTime && (
+                                <Badge variant="outline" className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {page.estimatedTime}
+                                </Badge>
+                            )}
+                        </div>
+                    </SheetHeader>
+
+                    <div className="py-6 space-y-6">
+                        {/* Purpose */}
+                        {page.purpose && (
+                            <div>
+                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                    <Target className="w-4 h-4" />
+                                    Purpose
+                                </h4>
+                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                    {page.purpose}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Layout */}
+                        {page.layout && (
+                            <div>
+                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                    <Layers className="w-4 h-4" />
+                                    Layout
+                                </h4>
+                                <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
+                                    <Badge variant="secondary" className="mb-3">
+                                        {page.layout.type || 'Standard'}
+                                    </Badge>
+                                    {page.layout.sections && page.layout.sections.length > 0 && (
+                                        <div className="space-y-2">
+                                            {page.layout.sections.map((section, idx: number) => (
+                                                <div key={idx} className="flex items-center justify-between text-sm">
+                                                    <span className="text-neutral-700 dark:text-neutral-300">{section.name}</span>
+                                                    <span className="text-neutral-500 dark:text-neutral-400 text-xs">{section.purpose}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Core Features */}
+                        {page.coreFeatures && page.coreFeatures.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Core Features
+                                </h4>
+                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {page.coreFeatures.map((feature: string, idx: number) => (
+                                        <li key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                            <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                            {feature}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Components */}
+                        {page.components && page.components.length > 0 ? (
+                            <div>
+                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                    <Code2 className="w-4 h-4" />
+                                    Components to Build
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {page.components.map((comp, idx: number) => (
+                                        <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="font-medium text-neutral-900 dark:text-white text-sm">{comp.name}</span>
+                                                <Badge variant="outline" className="text-xs">{comp.type}</Badge>
+                                            </div>
+                                            <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">{comp.description}</p>
+                                            {comp.interactivity && comp.interactivity.length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {comp.interactivity.map((action: string, aIdx: number) => (
+                                                        <span key={aIdx} className="text-[10px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">
+                                                            {action}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : page.recommendedComponents && page.recommendedComponents.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                    <Code2 className="w-4 h-4" />
+                                    Recommended Components
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {page.recommendedComponents.map((comp: string, idx: number) => (
+                                        <Badge key={idx} variant="outline">{comp}</Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* User Interactions */}
+                        {page.userInteractions && page.userInteractions.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                    <Users className="w-4 h-4" />
+                                    User Interactions
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {page.userInteractions.map((interaction: string, idx: number) => (
+                                        <Badge key={idx} variant="secondary" className="text-xs">
+                                            {interaction}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Data Needed */}
+                        {page.dataNeeded && page.dataNeeded.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                    <Layers className="w-4 h-4" />
+                                    Data Requirements
+                                </h4>
+                                <ul className="space-y-1">
+                                    {page.dataNeeded.map((data: string, idx: number) => (
+                                        <li key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                            {data}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+
+                    <SheetFooter className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                        <Button variant="outline" onClick={() => setIsSheetOpen(false)}>
+                            Close
+                        </Button>
+                    </SheetFooter>
+                </SheetContent>
+            </Sheet>
+        </>
+    )
+}
 
 function MilestoneTracker({ progressPercentage }: { progressPercentage: number, includeAssessment?: boolean }) {
     const milestones = [
@@ -251,36 +477,67 @@ export default function ProjectDetailsClient({
     const isCreator = currentUserId === project?.creator?.id
     const isPublic = project.visibility === 'PUBLIC'
 
-    // Transform tasks for components
+    // Calculate total tasks from sprints (tasks are now nested in sprints)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const totalTasks = useMemo(() => {
+        if (!project.sprints) return 0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return project.sprints.reduce((acc: number, sprint: any) => {
+            return acc + (sprint.tasks?.length || 0)
+        }, 0)
+    }, [project.sprints])
+
+    // Transform tasks for components (tasks are now nested in sprints)
     const tasksWithStatus: TaskItem[] = useMemo(() => {
-        if (!project.tasks) return []
+        if (!project.sprints || project.sprints.length === 0) return []
 
         // Cast to access taskStatuses which may exist on the actual data
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const progressData = userProgress as any
         const taskStatuses = progressData?.taskStatuses || []
 
+        // Flatten tasks from all sprints
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return project.tasks.map((task: any, index: number) => {
+        const allTasks: TaskItem[] = []
+        let globalIndex = 0
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const sprint of project.sprints as any[]) {
+            const sprintTasks = sprint.tasks || []
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const statusEntry = taskStatuses.find((s: any) => s.taskId === task.id)
-            return {
-                id: task.id,
-                title: task.title,
-                description: task.description || [],
-                criteria: task.criteria || [],
-                hints: task.hints || [],
-                badges: task.badges || [],
-                tags: task.tags || [],
-                difficulty: task.difficulty as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
-                terminalCommand: task.terminalCommand || null,
-                status: (statusEntry?.status || 'TO_DO') as 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED',
-                completedAt: statusEntry?.completedAt || null,
-                notes: statusEntry?.notes || null,
-                orderIndex: task.orderIndex ?? index,
+            for (const task of sprintTasks) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const statusEntry = taskStatuses.find((s: any) => s.taskId === task.id)
+                allTasks.push({
+                    id: task.id,
+                    title: task.title,
+                    description: task.description || [],
+                    criteria: task.criteria || [],
+                    hints: task.hints || [],
+                    badges: task.badges || [],
+                    tags: task.tags || [],
+                    difficulty: task.difficulty as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
+                    terminalCommand: task.terminalCommand || null,
+                    status: (statusEntry?.status || 'TO_DO') as 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED',
+                    completedAt: statusEntry?.completedAt || null,
+                    notes: statusEntry?.notes || null,
+                    orderIndex: task.orderIndex ?? globalIndex,
+                    // Add sprint info
+                    sprintId: sprint.id,
+                    sprintName: sprint.name,
+                    sprintNumber: sprint.sprintNumber,
+                    category: task.category,
+                    estimatedTime: task.estimatedTime,
+                    checkpoints: task.checkpoints || [],
+                    relatedPages: task.relatedPages || [],
+                    dependencies: task.dependencies || [],
+                })
+                globalIndex++
             }
-        })
-    }, [project.tasks, userProgress])
+        }
+
+        return allTasks
+    }, [project.sprints, userProgress])
 
     useEffect(() => {
         const fetchSuggestions = async () => {
@@ -452,7 +709,7 @@ export default function ProjectDetailsClient({
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <ListChecks className="w-4 h-4" />
-                                    <span>{project.tasks.length} tasks</span>
+                                    <span>{totalTasks} tasks</span>
                                 </div>
                                 {
                                     isPublic && (
@@ -485,7 +742,7 @@ export default function ProjectDetailsClient({
                                                     </div>
                                                     <Progress value={progressPercentage} className="h-3" />
                                                     <p className="text-xs text-neutral-500 mt-1">
-                                                        {userProgress?.tasksCompleted || 0} of {userProgress?.totalTasks || project.tasks.length} tasks
+                                                        {userProgress?.tasksCompleted || 0} of {userProgress?.totalTasks || totalTasks} tasks
                                                     </p>
                                                 </div>
                                                 <Button
@@ -612,7 +869,7 @@ export default function ProjectDetailsClient({
                                                     }
                                                 </Button>
                                                 <p className="text-xs text-center text-neutral-500">
-                                                    Get your own copy with all {project.tasks.length} tasks
+                                                    Get your own copy with all {totalTasks} tasks
                                                 </p>
                                             </>
                                         ) : null
@@ -765,76 +1022,101 @@ export default function ProjectDetailsClient({
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
                                             <Target className="w-5 h-5" />
-                                            Learning Objectives
+                                            Key Outcomes
                                         </CardTitle>
+                                        <CardDescription>What you&apos;ll build in this project</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                                             {
-                                                project.learningObjectives.map((objective: string, index: number) => (
+                                                (project.keyOutcomes || []).map((outcome: string, index: number) => (
                                                     <li key={index} className="flex items-start gap-2">
                                                         <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                                        <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{objective}</span>
+                                                        <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{outcome}</span>
                                                     </li>
                                                 ))
                                             }
                                         </ul>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Lightbulb className="w-5 h-5" />
-                                            Prerequisites
-                                        </CardTitle>
-                                        <CardDescription>What you should know before starting</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                                            {
-                                                project.prerequisites.map((prereq: string, index: number) => (
-                                                    <Badge key={index} variant="outline">{prereq}</Badge>
-                                                ))
-                                            }
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                    <CardHeader>
-                                        <CardTitle className="text-left">Core Features</CardTitle>
-                                        <CardDescription className="text-left">Main features you&apos;ll implement</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                                            {
-                                                project.coreFeatures.map((feature: string, index: number) => (
-                                                    <li key={index} className="flex items-start gap-2">
-                                                        <Code2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                                                        <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{feature}</span>
-                                                    </li>
-                                                ))
-                                            }
-                                        </ul>
-                                    </CardContent>
-                                </Card>
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                    <CardHeader>
-                                        <CardTitle className="text-left">Advanced Features</CardTitle>
-                                        <CardDescription className="text-left">Optional enhancements for extra learning</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {
-                                                project.advancedFeatures.map((feature: string, index: number) => (
-                                                    <li key={index} className="flex items-start gap-2">
-                                                        <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                                                        <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{feature}</span>
-                                                    </li>
-                                                ))
-                                            }
-                                        </ul>
-                                    </CardContent>
-                                </Card>
+                                {
+                                    project.vision && (
+                                        <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                            <CardHeader>
+                                                <CardTitle className="flex items-center gap-2">
+                                                    <Lightbulb className="w-5 h-5" />
+                                                    Vision & Purpose
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <p className="text-left text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                                    {project.vision}
+                                                </p>
+                                                {project.targetAudience && (
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">Target Audience</p>
+                                                        <p className="text-sm text-neutral-700 dark:text-neutral-300">{project.targetAudience}</p>
+                                                    </div>
+                                                )}
+                                                {project.problemSolution && (
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">Problem Solved</p>
+                                                        <p className="text-sm text-neutral-700 dark:text-neutral-300">{project.problemSolution}</p>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    )
+                                }
+                                {
+                                    project.features && project.features.length > 0 && (
+                                        <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 lg:col-span-2">
+                                            <CardHeader>
+                                                <CardTitle className="text-left flex items-center gap-2">
+                                                    <Code2 className="w-5 h-5" />
+                                                    Features
+                                                </CardTitle>
+                                                <CardDescription className="text-left">Main features you&apos;ll implement</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    {
+                                                        project.features.map((feature, index: number) => (
+                                                            <div key={index} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+                                                                <div className="flex items-start justify-between mb-2">
+                                                                    <h4 className="font-medium text-neutral-900 dark:text-white text-sm">{feature.name}</h4>
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className={cn(
+                                                                            "text-xs",
+                                                                            feature.priority === 'must-have' && "border-red-300 text-red-700 dark:text-red-400",
+                                                                            feature.priority === 'should-have' && "border-amber-300 text-amber-700 dark:text-amber-400",
+                                                                            feature.priority === 'nice-to-have' && "border-green-300 text-green-700 dark:text-green-400"
+                                                                        )}
+                                                                    >
+                                                                        {feature.priority}
+                                                                    </Badge>
+                                                                </div>
+                                                                <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">{feature.description}</p>
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className={cn(
+                                                                        "text-xs",
+                                                                        feature.complexity === 'low' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                                                                        feature.complexity === 'medium' && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+                                                                        feature.complexity === 'high' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                                                    )}
+                                                                >
+                                                                    {feature.complexity} complexity
+                                                                </Badge>
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )
+                                }
                             </div>
                         </TabsContent>
                         {
@@ -845,50 +1127,20 @@ export default function ProjectDetailsClient({
                                         projectSlug={project.slug}
                                         progressPercentage={progressPercentage}
                                         tasksCompleted={userProgress?.tasksCompleted || 0}
-                                        totalTasks={userProgress?.totalTasks || project.tasks.length}
+                                        totalTasks={userProgress?.totalTasks || totalTasks}
                                     />
                                 </TabsContent>
                             )
                         }
                         <TabsContent value="pages" className="mt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {
                                     project.pages.map((page: ProjectV2Page) => (
-                                        <Card key={page.id} className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                            <CardHeader>
-                                                <div className="flex items-center justify-between">
-                                                    <CardTitle className="text-lg">{page.name}</CardTitle>
-                                                    <Badge className={difficultyColors[page.difficulty as keyof typeof difficultyColors]}>
-                                                        {page.difficulty}
-                                                    </Badge>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="space-y-4">
-                                                <div>
-                                                    <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-2">Core Features:</p>
-                                                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                        {
-                                                            page.coreFeatures.map((feature: string, idx: number) => (
-                                                                <li key={idx} className="text-sm text-neutral-700 dark:text-neutral-300 flex items-start gap-2">
-                                                                    <CheckCircle2 className="w-3 h-3 text-green-600 mt-1 flex-shrink-0" />
-                                                                    {feature}
-                                                                </li>
-                                                            ))
-                                                        }
-                                                    </ul>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-2">Components:</p>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                                                        {
-                                                            page.recommendedComponents.map((comp: string, idx: number) => (
-                                                                <Badge key={idx} variant="outline" className="text-xs">{comp}</Badge>
-                                                            ))
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
+                                        <PageOverviewCard
+                                            key={page.id}
+                                            page={page}
+                                            difficultyColors={difficultyColors}
+                                        />
                                     ))
                                 }
                             </div>
@@ -986,7 +1238,7 @@ export default function ProjectDetailsClient({
                 projectId={project.id}
                 projectTitle={project.title}
                 projectSlug={project.slug}
-                tasksCount={project.tasks.length}
+                tasksCount={totalTasks}
                 userCredits={userCredits}
             />
             <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>

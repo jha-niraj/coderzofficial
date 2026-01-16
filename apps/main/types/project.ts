@@ -19,12 +19,116 @@ export interface ProjectV2Stack {
     deployment?: string | null
 }
 
+// Enhanced Feature interface
+export interface ProjectV2Feature {
+    name: string
+    description: string
+    priority: 'must-have' | 'should-have' | 'nice-to-have'
+    complexity: 'low' | 'medium' | 'high'
+}
+
+// Technical Requirements interface
+export interface ProjectV2TechnicalRequirements {
+    database: string
+    authentication: string
+    hosting: string
+    thirdPartyAPIs: string[]
+}
+
+// Data Architecture interfaces
+export interface ProjectV2DataModel {
+    name: string
+    purpose: string
+    fields: Array<{
+        name: string
+        type: string
+        required: boolean
+        description: string
+    }>
+    relationships: string[]
+}
+
+export interface ProjectV2Endpoint {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+    path: string
+    purpose: string
+    requiresAuth: boolean
+    requestExample?: string
+    responseExample?: string
+}
+
+export interface ProjectV2DataArchitecture {
+    models: ProjectV2DataModel[]
+    endpoints: ProjectV2Endpoint[]
+}
+
+// Project Structure interface
+export interface ProjectV2ProjectStructure {
+    description: string
+    tree: string  // ASCII tree representation
+    keyFolders: Array<{
+        path: string
+        purpose: string
+        exampleFiles: string[]
+    }>
+}
+
+// Setup Guide interface
+export interface ProjectV2SetupGuide {
+    prerequisites: string[]
+    environmentVariables: Array<{
+        name: string
+        purpose: string
+        required: boolean
+        exampleValue: string
+    }>
+    installationSteps: string[]
+    verificationSteps: string[]
+}
+
+// Sprint interface
+export interface ProjectV2Sprint {
+    id: string
+    sprintNumber: number
+    name: string
+    goal: string
+    duration: string
+    orderIndex: number
+    tasks?: ProjectV2Task[]
+}
+
+// Page Layout interfaces
+export interface ProjectV2PageLayout {
+    type: 'single-column' | 'two-column' | 'dashboard' | 'split' | 'marketing-landing'
+    sections: Array<{
+        name: string
+        purpose: string
+        priority: number
+    }>
+}
+
+export interface ProjectV2PageComponent {
+    name: string
+    type: 'form' | 'table' | 'card' | 'navigation' | 'modal' | 'list' | 'section'
+    description: string
+    interactivity: string[]
+}
+
 export interface ProjectV2Page {
     id: string
     name: string
     difficulty: string
     coreFeatures: string[]
     recommendedComponents: string[]
+    orderIndex?: number
+    // Enhanced fields
+    route?: string | null
+    purpose?: string | null
+    estimatedTime?: string | null
+    layout?: ProjectV2PageLayout | null
+    components?: ProjectV2PageComponent[] | null
+    userInteractions?: string[]
+    dataNeeded?: string[]
 }
 
 export interface ProjectV2Creator {
@@ -75,14 +179,25 @@ export interface ProjectV2Basic {
 
 export interface ProjectV2Full extends ProjectV2Basic {
     blueprintOverview: string
-    learningObjectives: string[]
-    prerequisites: string[]
-    coreFeatures: string[]
-    advancedFeatures: string[]
+    // Enhanced Project Context
+    vision?: string | null
+    targetAudience?: string | null
+    problemSolution?: string | null
+    estimatedDuration?: string | null
+    keyOutcomes: string[]
+    // Features with priority/complexity
+    features?: ProjectV2Feature[] | null
+    // Technical Documentation
+    technicalRequirements?: ProjectV2TechnicalRequirements | null
+    dataArchitecture?: ProjectV2DataArchitecture | null
+    projectStructure?: ProjectV2ProjectStructure | null
+    setupGuide?: ProjectV2SetupGuide | null
+    // Relations
     pages: ProjectV2Page[]
     creator: ProjectV2Creator
     progress?: ProjectV2Progress[]
-    tasks: ProjectV2Task[]
+    // Tasks are now accessed THROUGH sprints (Sprint → Tasks)
+    sprints: ProjectV2Sprint[] // Required - tasks are nested in sprints
 }
 
 // ============================================================================
@@ -107,6 +222,18 @@ export interface ProjectV2Task {
     difficulty: string
     order: number
     userProgress?: ProjectV2TaskProgress
+    // Sprint-based organization
+    sprintId?: string | null
+    category?: string | null
+    estimatedTime?: string | null
+    checkpoints?: string[]
+    relatedPages?: string[]
+    dependencies?: string[]
+    badges?: string[]
+    tags?: string[]
+    terminalCommand?: string | null
+    orderIndex?: number
+    criteria?: string[]
 }
 
 export interface TasksColumns {

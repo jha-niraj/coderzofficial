@@ -67,11 +67,14 @@ async function getUserProfile(username: string) {
                         select: {
                             id: true,
                             title: true,
-                            projectId: true,
-                            project: {
+                            sprint: {
                                 select: {
-                                    slug: true,
-                                    title: true
+                                    project: {
+                                        select: {
+                                            slug: true,
+                                            title: true
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -141,16 +144,19 @@ export default async function UserProfileLeaderboardPage({
     }
 
     // Calculate stats
-    const totalProjects = userProfile.UserProjectV2Progress.length
-    const completedProjects = userProfile.UserProjectV2Progress.filter((p: { status: string }) => p.status === 'COMPLETED').length
-    const inProgressProjects = userProfile.UserProjectV2Progress.filter((p: { status: string }) => p.status === 'IN_PROGRESS').length
-    const totalTasksCompleted = userProfile.UserProjectV2Progress.reduce((sum: number, p: { tasksCompleted: number }) => sum + p.tasksCompleted, 0)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const profileData = userProfile as any
+    const totalProjects = profileData.UserProjectV2Progress.length
+    const completedProjects = profileData.UserProjectV2Progress.filter((p: { status: string }) => p.status === 'COMPLETED').length
+    const inProgressProjects = profileData.UserProjectV2Progress.filter((p: { status: string }) => p.status === 'IN_PROGRESS').length
+    const totalTasksCompleted = profileData.UserProjectV2Progress.reduce((sum: number, p: { tasksCompleted: number }) => sum + p.tasksCompleted, 0)
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                 <UserProfileLeaderboardClient
-                    userProfile={userProfile}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    userProfile={userProfile as any}
                     stats={{
                         totalProjects,
                         completedProjects,

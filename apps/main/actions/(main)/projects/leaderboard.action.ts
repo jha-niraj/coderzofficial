@@ -5,9 +5,9 @@ import {
     calculateTaskScoring, calculateQuizScore, calculateMockScore, calculateTotalScore
 } from "@/lib/project-scoring"
 import prisma from "@repo/prisma"
-import type { 
-    CompletedTask, ScoreCalculation, LeaderboardEntry, GlobalLeaderboardEntry, 
-    ActionResponse, LeaderboardResponse, GlobalLeaderboardResponse, 
+import type {
+    CompletedTask, ScoreCalculation, LeaderboardEntry, GlobalLeaderboardEntry,
+    ActionResponse, LeaderboardResponse, GlobalLeaderboardResponse,
     UserProjectProgressDetail
 } from "@/types/projectv2"
 
@@ -44,10 +44,14 @@ export async function updateProjectScore(projectId: string, userId?: string) {
                 },
                 project: {
                     include: {
-                        tasks: {
-                            select: {
-                                id: true,
-                                difficulty: true
+                        sprints: {
+                            include: {
+                                tasks: {
+                                    select: {
+                                        id: true,
+                                        difficulty: true
+                                    }
+                                }
                             }
                         },
                         quiz: {
@@ -101,9 +105,13 @@ export async function updateProjectScore(projectId: string, userId?: string) {
         const mockScore = mockSession?.score || null
 
         // Calculate total score
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const projectData = progress.project as any
+        const allTasks = projectData.sprints?.flatMap((s: any) => s.tasks) || []
+
         const scoreCalculation: ScoreCalculation = calculateTotalScore(
             completedTasks,
-            progress.project.tasks,
+            allTasks,
             quizCorrect,
             quizTotal,
             mockScore
