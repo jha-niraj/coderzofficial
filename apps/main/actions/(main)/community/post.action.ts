@@ -28,6 +28,12 @@ export interface CreatePostInput {
         language: string
     }[]
     tags?: string[]
+    pollData?: {
+        question: string
+        options: string[]
+        allowMultiple?: boolean
+        durationDays?: number
+    }
 }
 
 export interface UpdatePostInput {
@@ -60,7 +66,15 @@ export async function createPost(input: CreatePostInput) {
                     attachments: input.attachments as unknown as object | undefined,
                     embeds: input.embeds as unknown as object | undefined,
                     codeBlocks: input.codeBlocks as unknown as object | undefined,
-                    tags: input.tags || []
+                    tags: input.tags || [],
+                    poll: input.pollData ? {
+                        create: {
+                            question: input.pollData.question,
+                            options: input.pollData.options,
+                            allowMultiple: input.pollData.allowMultiple || false,
+                            endDate: input.pollData.durationDays ? new Date(Date.now() + input.pollData.durationDays * 24 * 60 * 60 * 1000) : null
+                        }
+                    } : undefined
                 },
                 include: {
                     author: {
@@ -69,6 +83,11 @@ export async function createPost(input: CreatePostInput) {
                             name: true,
                             username: true,
                             image: true
+                        }
+                    },
+                    poll: {
+                        include: {
+                            votes: true
                         }
                     },
                     _count: {
@@ -120,7 +139,15 @@ export async function createPost(input: CreatePostInput) {
                 attachments: input.attachments as unknown as object | undefined,
                 embeds: input.embeds as unknown as object | undefined,
                 codeBlocks: input.codeBlocks as unknown as object | undefined,
-                tags: input.tags || []
+                tags: input.tags || [],
+                poll: input.pollData ? {
+                    create: {
+                        question: input.pollData.question,
+                        options: input.pollData.options,
+                        allowMultiple: input.pollData.allowMultiple || false,
+                        endDate: input.pollData.durationDays ? new Date(Date.now() + input.pollData.durationDays * 24 * 60 * 60 * 1000) : null
+                    }
+                } : undefined
             },
             include: {
                 author: {
@@ -129,6 +156,11 @@ export async function createPost(input: CreatePostInput) {
                         name: true,
                         username: true,
                         image: true
+                    }
+                },
+                poll: {
+                    include: {
+                        votes: true
                     }
                 },
                 _count: {
@@ -196,12 +228,25 @@ export async function getCommunityPosts(communityId: string, options?: {
                         image: true
                     }
                 },
+                community: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        logo: true
+                    }
+                },
                 channel: {
                     select: {
                         id: true,
                         name: true,
                         slug: true,
                         icon: true
+                    }
+                },
+                poll: {
+                    include: {
+                        votes: true
                     }
                 },
                 _count: {
@@ -278,6 +323,11 @@ export async function getPost(postId: string, shouldIncrementView: boolean = tru
                         name: true,
                         slug: true,
                         logo: true
+                    }
+                },
+                poll: {
+                    include: {
+                        votes: true
                     }
                 },
                 comments: {
@@ -1132,6 +1182,7 @@ const POINT_VALUES = {
 }
 
 // Helper function to update or create leaderboard entry
+// Helper function to update or create leaderboard entry
 async function updateLeaderboardPoints(
     communityId: string,
     userId: string,
@@ -1140,104 +1191,69 @@ async function updateLeaderboardPoints(
     extraData?: { questionsCorrect?: number, quizzesCompleted?: number }
 ) {
     try {
-        const existing = await prisma.communityLeaderboard.findUnique({
+        console.log(`Updating leaderboard for user ${userId} in community ${communityId}. Type: ${pointType}, Points: ${points}`)
+
+        const updateData: Record<string, unknown> = {
+            totalPoints: { increment: points }
+        }
+
+        const createData: Record<string, unknown> = {
+            communityId,
+            userId,
+            totalPoints: points
+        }
+
+        switch (pointType) {
+            case 'post':
+                updateData.postPoints = { increment: points }
+                updateData.postsCount = { increment: 1 }
+                createData.postPoints = points
+                createData.postsCount = 1
+                break
+            case 'comment':
+                updateData.commentPoints = { increment: points }
+                updateData.commentsCount = { increment: 1 }
+                createData.commentPoints = points
+                createData.commentsCount = 1
+                break
+            case 'quiz':
+                updateData.quizPoints = { increment: points }
+                if (extraData?.quizzesCompleted) {
+                    updateData.quizzesCompleted = { increment: extraData.quizzesCompleted }
+                }
+                if (extraData?.questionsCorrect) {
+                    updateData.questionsCorrect = { increment: extraData.questionsCorrect }
+                }
+
+                createData.quizPoints = points
+                createData.quizzesCompleted = extraData?.quizzesCompleted || 1
+                createData.questionsCorrect = extraData?.questionsCorrect || 0
+                break
+            case 'peer_mock':
+                updateData.peerMockPoints = { increment: points }
+                updateData.peerSessionsCount = { increment: 1 }
+                createData.peerMockPoints = points
+                createData.peerSessionsCount = 1
+                break
+            case 'help':
+                updateData.helpPoints = { increment: points }
+                updateData.helpRequestsSolved = { increment: 1 }
+                createData.helpPoints = points
+                createData.helpRequestsSolved = 1
+                break
+        }
+
+        await prisma.communityLeaderboard.upsert({
             where: {
                 communityId_userId: {
                     communityId,
                     userId
                 }
-            }
+            },
+            update: updateData,
+            create: createData as any // Type assertion needed for dynamic create object
         })
-
-        if (existing) {
-            // Update existing entry
-            const updateData: Record<string, unknown> = {
-                totalPoints: { increment: points }
-            }
-
-            switch (pointType) {
-                case 'post':
-                    updateData.postPoints = { increment: points }
-                    updateData.postsCount = { increment: 1 }
-                    break
-                case 'comment':
-                    updateData.commentPoints = { increment: points }
-                    updateData.commentsCount = { increment: 1 }
-                    break
-                case 'quiz':
-                    updateData.quizPoints = { increment: points }
-                    if (extraData?.quizzesCompleted) {
-                        updateData.quizzesCompleted = { increment: extraData.quizzesCompleted }
-                    }
-                    if (extraData?.questionsCorrect) {
-                        updateData.questionsCorrect = { increment: extraData.questionsCorrect }
-                    }
-                    break
-                case 'peer_mock':
-                    updateData.peerMockPoints = { increment: points }
-                    updateData.peerSessionsCount = { increment: 1 }
-                    break
-                case 'help':
-                    updateData.helpPoints = { increment: points }
-                    updateData.helpRequestsSolved = { increment: 1 }
-                    break
-            }
-
-            await prisma.communityLeaderboard.update({
-                where: { id: existing.id },
-                data: updateData
-            })
-        } else {
-            // Create new entry
-            const createData: Record<string, unknown> = {
-                communityId,
-                userId,
-                totalPoints: points
-            }
-
-            switch (pointType) {
-                case 'post':
-                    createData.postPoints = points
-                    createData.postsCount = 1
-                    break
-                case 'comment':
-                    createData.commentPoints = points
-                    createData.commentsCount = 1
-                    break
-                case 'quiz':
-                    createData.quizPoints = points
-                    createData.quizzesCompleted = extraData?.quizzesCompleted || 1
-                    createData.questionsCorrect = extraData?.questionsCorrect || 0
-                    break
-                case 'peer_mock':
-                    createData.peerMockPoints = points
-                    createData.peerSessionsCount = 1
-                    break
-                case 'help':
-                    createData.helpPoints = points
-                    createData.helpRequestsSolved = 1
-                    break
-            }
-
-            await prisma.communityLeaderboard.create({
-                data: createData as {
-                    communityId: string
-                    userId: string
-                    totalPoints: number
-                    postPoints?: number
-                    commentPoints?: number
-                    quizPoints?: number
-                    peerMockPoints?: number
-                    helpPoints?: number
-                    postsCount?: number
-                    commentsCount?: number
-                    quizzesCompleted?: number
-                    questionsCorrect?: number
-                    peerSessionsCount?: number
-                    helpRequestsSolved?: number
-                }
-            })
-        }
+        console.log('Leaderboard updated successfully')
     } catch (error) {
         console.error('Error updating leaderboard points:', error)
     }
@@ -1340,8 +1356,11 @@ export async function submitQuizAttempt(
     try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.id) {
+            console.log('Submit attempt failed: Unauthorized')
             return { success: false, error: "Unauthorized" }
         }
+
+        console.log(`Submitting quiz attempt for Post ${postId} by User ${session.user.id}`)
 
         // Get the post to find community
         const post = await prisma.communityPost.findUnique({
@@ -1350,6 +1369,7 @@ export async function submitQuizAttempt(
         })
 
         if (!post) {
+            console.log('Submit attempt failed: Post not found')
             return { success: false, error: "Post not found" }
         }
 
@@ -1363,39 +1383,71 @@ export async function submitQuizAttempt(
             }
         })
 
-        if (existingAttempt) {
-            return { success: false, error: "You have already attempted this quiz" }
-        }
-
         // Calculate results
         const totalQuestions = answers.length
         const correctAnswers = answers.filter(a => a.isCorrect).length
-        const scorePercentage = Math.round((correctAnswers / totalQuestions) * 100)
+        const scorePercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0
         const pointsEarned = correctAnswers * POINT_VALUES.QUIZ_CORRECT_ANSWER
 
-        // Create quiz attempt
-        const attempt = await prisma.communityQuizAttempt.create({
-            data: {
-                postId,
-                userId: session.user.id,
-                totalQuestions,
-                correctAnswers,
-                scorePercentage,
-                pointsEarned,
-                timeTakenSeconds: totalTimeTaken,
-                answers: answers as unknown as object
-            }
-        })
+        console.log(`Results: ${correctAnswers}/${totalQuestions} correct (${scorePercentage}%), ${pointsEarned} points`)
 
-        // Update leaderboard if in a community
-        if (post.communityId) {
-            await updateLeaderboardPoints(
-                post.communityId,
-                session.user.id,
-                'quiz',
-                pointsEarned,
-                { questionsCorrect: correctAnswers, quizzesCompleted: 1 }
-            )
+        let attempt;
+
+        if (existingAttempt) {
+            console.log('Updating existing quiz attempt')
+            // Calculate differences for leaderboard
+            const pointsDiff = pointsEarned - existingAttempt.pointsEarned
+            const correctAnswersDiff = correctAnswers - existingAttempt.correctAnswers
+
+            // Update existing attempt
+            attempt = await prisma.communityQuizAttempt.update({
+                where: { id: existingAttempt.id },
+                data: {
+                    totalQuestions,
+                    correctAnswers,
+                    scorePercentage,
+                    pointsEarned,
+                    timeTakenSeconds: totalTimeTaken,
+                    answers: answers as unknown as object
+                }
+            })
+
+            // Update leaderboard if in a community
+            if (post.communityId) {
+                await updateLeaderboardPoints(
+                    post.communityId,
+                    session.user.id,
+                    'quiz',
+                    pointsDiff,
+                    { questionsCorrect: correctAnswersDiff, quizzesCompleted: 0 }
+                )
+            }
+        } else {
+            console.log('Creating new quiz attempt')
+            // Create quiz attempt
+            attempt = await prisma.communityQuizAttempt.create({
+                data: {
+                    postId,
+                    userId: session.user.id,
+                    totalQuestions,
+                    correctAnswers,
+                    scorePercentage,
+                    pointsEarned,
+                    timeTakenSeconds: totalTimeTaken,
+                    answers: answers as unknown as object
+                }
+            })
+
+            // Update leaderboard if in a community
+            if (post.communityId) {
+                await updateLeaderboardPoints(
+                    post.communityId,
+                    session.user.id,
+                    'quiz',
+                    pointsEarned,
+                    { questionsCorrect: correctAnswers, quizzesCompleted: 1 }
+                )
+            }
         }
 
         return {
@@ -1408,6 +1460,7 @@ export async function submitQuizAttempt(
                 scorePercentage
             }
         }
+
     } catch (error) {
         console.error('Error submitting quiz attempt:', error)
         return { success: false, error: "Failed to submit quiz" }
@@ -1431,10 +1484,168 @@ export async function getQuizAttempt(postId: string) {
             }
         })
 
+        if (attempt) {
+            console.log(`Found quiz attempt for Post ${postId}, User ${session.user.id}`)
+        } else {
+            console.log(`No quiz attempt found for Post ${postId}, User ${session.user.id}`)
+        }
+
         return { success: true, data: attempt }
     } catch (error) {
         console.error('Error getting quiz attempt:', error)
         return { success: false, error: "Failed to get quiz attempt" }
+    }
+}
+
+// Vote on a poll
+export async function voteOnPoll(pollId: string, optionIndex: number) {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        const poll = await prisma.communityPoll.findUnique({
+            where: { id: pollId }
+        })
+
+        if (!poll) {
+            return { success: false, error: "Poll not found" }
+        }
+
+        if (poll.endDate && new Date() > poll.endDate) {
+            return { success: false, error: "Poll has ended" }
+        }
+
+        // Check existing vote
+        const existingVote = await prisma.communityPollVote.findFirst({
+            where: {
+                pollId,
+                userId: session.user.id
+            }
+        })
+
+        if (existingVote) {
+            if (!poll.allowMultiple) {
+                // Change vote if not allow multiple
+                if (existingVote.optionIndex === optionIndex) {
+                    // Already voted this option, remove vote (toggle)
+                    await prisma.communityPollVote.delete({
+                        where: { id: existingVote.id }
+                    })
+                    revalidatePath(`/community`)
+                    return { success: true, action: 'removed' }
+                } else {
+                    // Update vote
+                    await prisma.communityPollVote.update({
+                        where: { id: existingVote.id },
+                        data: { optionIndex }
+                    })
+                    revalidatePath(`/community`)
+                    return { success: true, action: 'updated' }
+                }
+            } else {
+                // Multiple allowed - check if already voted this specific option
+                const specificVote = await prisma.communityPollVote.findUnique({
+                    where: {
+                        pollId_userId_optionIndex: {
+                            pollId, // Unnamed constraint, actually Prisma generates `pollId_userId_optionIndex` or similar based on @@unique
+                            // Wait, I defined @@unique([pollId, userId, optionIndex])
+                            // I should check generated client.
+                            // But normally just where: { OR ... } or use unique constraint.
+                            // Prisma client names unique constraints by default as `${field1}_${field2}...`.
+                            // So `pollId_userId_optionIndex` should work.
+                            userId: session.user.id,
+                            optionIndex
+                        }
+                    }
+                })
+
+                // If specificVote not found, it means this option wasn't selected yet.
+                // But wait, existingVote found means user voted AT LEAST ONCE.
+                // So I need to FindUnique for this specific option.
+
+                // Rewriting logic:
+                const voteForOption = await prisma.communityPollVote.findUnique({
+                    where: {
+                        pollId_userId_optionIndex: {
+                            pollId,
+                            userId: session.user.id,
+                            optionIndex
+                        }
+                    }
+                })
+
+                if (voteForOption) {
+                    // Untoggle
+                    await prisma.communityPollVote.delete({
+                        where: { id: voteForOption.id }
+                    })
+                    revalidatePath(`/community`)
+                    return { success: true, action: 'removed' }
+                } else {
+                    // Add vote
+                    await prisma.communityPollVote.create({
+                        data: {
+                            pollId,
+                            userId: session.user.id,
+                            optionIndex
+                        }
+                    })
+                    revalidatePath(`/community`)
+                    return { success: true, action: 'added' }
+                }
+            }
+        } else {
+            // New vote
+            await prisma.communityPollVote.create({
+                data: {
+                    pollId,
+                    userId: session.user.id,
+                    optionIndex
+                }
+            })
+            revalidatePath(`/community`)
+            return { success: true, action: 'added' }
+        }
+
+    } catch (error) {
+        console.error('Error voting on poll:', error)
+        return { success: false, error: "Failed to vote" }
+    }
+}
+
+// Check recent quiz attempts (Admin/Debug utility)
+export async function checkRecentQuizAttempts() {
+    try {
+        console.log("Fetching recent quiz attempts...")
+        const attempts = await prisma.communityQuizAttempt.findMany({
+            orderBy: { completedAt: 'desc' },
+            take: 5,
+            include: {
+                user: {
+                    select: { name: true, email: true }
+                }
+            }
+        })
+
+        if (attempts.length === 0) {
+            console.log("No quiz attempts found.")
+        } else {
+            console.log("Recent Quiz Attempts:")
+            attempts.forEach(a => {
+                console.log(`User: ${a.user.name} (${a.user.email})`)
+                console.log(`Post ID: ${a.postId}`)
+                console.log(`Score: ${a.correctAnswers}/${a.totalQuestions} (${a.pointsEarned} pts)`)
+                console.log(`Completed At: ${a.completedAt}`)
+                console.log("-------------------")
+            })
+        }
+
+        return { success: true, data: attempts }
+    } catch (e) {
+        console.error("Error checking attempts:", e)
+        return { success: false, error: "Failed to check attempts" }
     }
 }
 

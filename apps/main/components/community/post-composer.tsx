@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     MessageCircle, HelpCircle, FileText, Image as ImageIcon, Code2, X,
     Loader2, Plus, Hash, Link as LinkIcon, Send, ExternalLink, ArrowLeft,
-    FileQuestion, Sparkles, Trash2, Clock
+    FileQuestion, Sparkles, Trash2, Clock, BarChart2
 } from 'lucide-react'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
@@ -102,6 +102,7 @@ interface PostDraft {
 const POST_TYPES = [
     { value: 'DISCUSSION', label: 'Discussion', icon: MessageCircle, description: 'Start a conversation' },
     { value: 'QUESTION', label: 'Question', icon: HelpCircle, description: 'Ask the community' },
+    { value: 'POLL', label: 'Poll', icon: BarChart2, description: 'Create a poll' },
     { value: 'RESOURCE', label: 'Resource', icon: FileText, description: 'Share something useful' },
     { value: 'SHOWCASE', label: 'Showcase', icon: ImageIcon, description: 'Show your work' },
     { value: 'HELP_REQUEST', label: 'Need Help', icon: Code2, description: 'Request assistance' },
@@ -211,6 +212,31 @@ export function PostComposer({
     const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false)
     const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[] | null>(null)
 
+    // Poll form
+    const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
+    const [pollAllowMultiple, setPollAllowMultiple] = useState(false)
+    const [pollDuration, setPollDuration] = useState('3')
+
+    const handleAddPollOption = () => {
+        if (pollOptions.length < 10) {
+            setPollOptions([...pollOptions, ''])
+        }
+    }
+
+    const handleRemovePollOption = (index: number) => {
+        if (pollOptions.length > 2) {
+            const newOptions = [...pollOptions]
+            newOptions.splice(index, 1)
+            setPollOptions(newOptions)
+        }
+    }
+
+    const handlePollOptionChange = (index: number, value: string) => {
+        const newOptions = [...pollOptions]
+        newOptions[index] = value
+        setPollOptions(newOptions)
+    }
+
     // Draft management
     const [currentDraftId, setCurrentDraftId] = useState<string | null>(null)
     const [showCancelDialog, setShowCancelDialog] = useState(false)
@@ -276,9 +302,20 @@ export function PostComposer({
     }, [attachments.length, saveImmediately])
 
     const handleSubmit = async () => {
-        if (!content.trim()) {
+        if (!content.trim() && postType !== 'POLL') {
             toast.error('Please write something')
             return
+        }
+
+        if (postType === 'POLL') {
+            if (!title.trim()) {
+                toast.error('Poll question is required')
+                return
+            }
+            if (pollOptions.filter(o => o.trim()).length < 2) {
+                toast.error('At least 2 options are required')
+                return
+            }
         }
 
         setIsSubmitting(true)
@@ -301,7 +338,13 @@ export function PostComposer({
                 })) : undefined,
                 codeBlocks: attachments
                     .filter((a): a is CodeAttachment => a.type === 'code')
-                    .map(c => ({ code: c.code, language: c.language }))
+                    .map(c => ({ code: c.code, language: c.language })),
+                pollData: postType === 'POLL' ? {
+                    question: title,
+                    options: pollOptions.filter(o => o.trim() !== ''),
+                    allowMultiple: pollAllowMultiple,
+                    durationDays: parseInt(pollDuration)
+                } : undefined
             })
 
             if (result.success) {
@@ -887,12 +930,13 @@ export function PostComposer({
                                 )}
 
                                 {/* Title input for certain types */}
-                                {(postType === 'QUESTION' || postType === 'RESOURCE' || postType === 'SHOWCASE') && (
+                                {(postType === 'QUESTION' || postType === 'RESOURCE' || postType === 'SHOWCASE' || postType === 'POLL') && (
                                     <Input
                                         placeholder={
                                             postType === 'QUESTION' ? "What's your question?" :
-                                                postType === 'RESOURCE' ? "Resource title" :
-                                                    "Give your showcase a title"
+                                                postType === 'POLL' ? "Ask a question..." :
+                                                    postType === 'RESOURCE' ? "Resource title" :
+                                                        "Give your showcase a title"
                                         }
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
@@ -912,6 +956,73 @@ export function PostComposer({
                                     rows={4}
                                     className="bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 resize-none"
                                 />
+
+                                {/* Poll Options */}
+                                {postType === 'POLL' && (
+                                    <div className="space-y-4 pt-2">
+                                        <div className="space-y-2">
+                                            <Label>Poll Options</Label>
+                                            {pollOptions.map((option, index) => (
+                                                <div key={index} className="flex gap-2">
+                                                    <Input
+                                                        placeholder={`Option ${index + 1}`}
+                                                        value={option}
+                                                        onChange={(e) => handlePollOptionChange(index, e.target.value)}
+                                                        className="bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
+                                                    />
+                                                    {pollOptions.length > 2 && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleRemovePollOption(index)}
+                                                            className="flex-shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {pollOptions.length < 10 && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={handleAddPollOption}
+                                                    className="w-full border-dashed"
+                                                >
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Add Option
+                                                </Button>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <div className="flex-1 space-y-2">
+                                                <Label>Duration</Label>
+                                                <Select value={pollDuration} onValueChange={setPollDuration}>
+                                                    <SelectTrigger className="bg-neutral-50 dark:bg-neutral-800">
+                                                        <SelectValue placeholder="Select duration" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="1">1 Day</SelectItem>
+                                                        <SelectItem value="3">3 Days</SelectItem>
+                                                        <SelectItem value="7">1 Week</SelectItem>
+                                                        <SelectItem value="14">2 Weeks</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="flex items-center space-x-2 pt-8">
+                                                <input
+                                                    type="checkbox"
+                                                    id="allowMultiple"
+                                                    checked={pollAllowMultiple}
+                                                    onChange={(e) => setPollAllowMultiple(e.target.checked)}
+                                                    className="rounded border-gray-300 text-neutral-900 focus:ring-neutral-900"
+                                                />
+                                                <Label htmlFor="allowMultiple" className="cursor-pointer">Allow multiple answers</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Attachments preview */}
                                 {attachments.length > 0 && (

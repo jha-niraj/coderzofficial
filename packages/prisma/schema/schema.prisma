@@ -502,6 +502,7 @@ model User {
     communityInvitesSent          CommunityInvite[]              @relation("CommunityInviter")
     communityLeaderboards         CommunityLeaderboard[]         @relation("CommunityLeaderboards")
     communityQuizAttempts         CommunityQuizAttempt[]         @relation("CommunityQuizAttempts")
+    communityPollVotes            CommunityPollVote[]            @relation("CommunityPollVotes")
 
     // Follow System
     following UserFollow[] @relation("UserFollowing")

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import {
     Heart, MessageCircle, Share2, MoreHorizontal, Pin, Lock, CheckCircle,
-    Code2, HelpCircle, Image as ImageIcon, FileText, Bookmark, LucideIcon
+    Code2, HelpCircle, Image as ImageIcon, FileText, Bookmark, LucideIcon, BarChart2
 } from 'lucide-react'
 import {
     Card, CardContent, CardFooter, CardHeader
@@ -22,7 +22,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu'
 import { cn } from '@repo/ui/lib/utils'
 import { CommunityPostType } from '@repo/prisma/client'
-import { togglePostLike } from '@/actions/(main)/community/post.action'
+import { togglePostLike, voteOnPoll } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
 
 import { SharedInterviewCard, SharedProjectCard } from '@/components/community/shared-items'
@@ -89,6 +89,18 @@ interface PostCardProps {
         attachments?: PostAttachment[] | unknown
         codeBlocks?: unknown
         embeds?: PostEmbed[] | unknown
+        poll?: {
+            id: string
+            question: string
+            options: unknown // Json
+            allowMultiple: boolean
+            endDate: Date | null
+            votes?: {
+                id: string
+                userId: string
+                optionIndex: number
+            }[]
+        } | null
     }
     showCommunity?: boolean
     compact?: boolean
@@ -98,6 +110,7 @@ interface PostCardProps {
 
 const POST_TYPES: Record<string, { icon: LucideIcon; label: string; color: string }> = {
     DISCUSSION: { icon: MessageCircle, label: 'Discussion', color: 'text-blue-500' },
+    POLL: { icon: BarChart2, label: 'Poll', color: 'text-purple-500' },
     QUESTION: { icon: HelpCircle, label: 'Question', color: 'text-orange-500' },
     RESOURCE: { icon: FileText, label: 'Resource', color: 'text-green-500' },
     SHOWCASE: { icon: ImageIcon, label: 'Showcase', color: 'text-purple-500' },
@@ -332,6 +345,64 @@ export function PostCard({
                         )}>
                             {post.content}
                         </p>
+
+                        {post.poll && (
+                            <div className="mt-4 space-y-3 border rounded-xl p-4 bg-neutral-50 dark:bg-neutral-900/50" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{post.poll.question}</h3>
+                                    <div className="text-xs text-neutral-500">
+                                        {post.poll.endDate && new Date() > new Date(post.poll.endDate) ? 'Closed' : 'Open'} • {post.poll.votes?.length || 0} votes
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    {((post.poll.options as string[]) || []).map((option, idx) => {
+                                        const totalVotes = post.poll?.votes?.length || 0
+                                        const optionVotes = post.poll?.votes?.filter(v => v.optionIndex === idx).length || 0
+                                        const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
+                                        const userVote = post.poll?.votes?.find(v => v.userId === user?.id)
+                                        const isVoted = !!userVote
+                                        const isSelected = userVote?.optionIndex === idx
+                                        const isClosed = post.poll?.endDate && new Date() > new Date(post.poll.endDate)
+
+                                        return (
+                                            <div key={idx} className="relative">
+                                                {isVoted || isClosed ? (
+                                                    <div className="relative h-10 w-full rounded-lg bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                                                        <div
+                                                            className={cn("absolute inset-y-0 left-0 bg-blue-100 dark:bg-blue-900/30 transition-all duration-500", isSelected && "bg-blue-200 dark:bg-blue-900/50")}
+                                                            style={{ width: `${percentage}%` }}
+                                                        />
+                                                        <div className="absolute inset-0 flex items-center justify-between px-3">
+                                                            <span className="text-sm font-medium z-10 flex items-center gap-2">
+                                                                {option}
+                                                                {isSelected && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                                                            </span>
+                                                            <span className="text-sm text-neutral-500 z-10">
+                                                                {percentage}%
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full justify-start h-10 px-3 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                        onClick={(e) => {
+                                                            e.preventDefault()
+                                                            e.stopPropagation()
+                                                            if (post.poll) voteOnPoll(post.poll.id, idx)
+                                                            if (!user) toast.error('Please login to vote')
+                                                            else toast.success('Vote submitted')
+                                                        }}
+                                                    >
+                                                        {option}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {embeds.length > 0 && (
                             <div className="mt-4">

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group";
+import {
+    RadioGroup, RadioGroupItem
+} from "@repo/ui/components/ui/radio-group";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import { Button } from "@repo/ui/components/ui/button";
 import { Label } from "@repo/ui/components/ui/label";
@@ -513,6 +515,9 @@ export default function Quiz({
                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-medium">
                                 {currentIndex + 1}
                             </span>
+                            <h3 className="text-lg font-medium text-foreground leading-relaxed">
+                                {currentQuestion.text}
+                            </h3>
                             {
                                 currentQuestion.category && (
                                     <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-md">
@@ -528,9 +533,6 @@ export default function Quiz({
                                 )
                             }
                         </div>
-                        <h3 className="text-lg font-medium text-foreground mb-4 leading-relaxed">
-                            {currentQuestion.text}
-                        </h3>
                     </div>
                     <div className="flex items-center gap-2">
                         {
@@ -579,7 +581,7 @@ export default function Quiz({
                 </div>
                 {
                     currentQuestion.codeSnippet && (
-                        <CodeEditor 
+                        <CodeEditor
                             placeholder={currentQuestion?.codeSnippet}
                             readOnly={true}
                         />

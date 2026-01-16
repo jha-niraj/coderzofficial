@@ -37,11 +37,11 @@ import { PostDetailSheet } from '@/components/community/post-detail-sheet'
 import { CommunityInfoSidebar } from '@/components/community/community-sidebar'
 import { MagicSheet } from '@/components/community/magic-sheet'
 import { CommunityLeaderboard } from '@/components/community/community-leaderboard'
-import { 
-    getCommunityPosts, createPost 
+import {
+    getCommunityPosts, createPost
 } from '@/actions/(main)/community/post.action'
-import { 
-    joinCommunity, leaveCommunity 
+import {
+    joinCommunity, leaveCommunity
 } from '@/actions/(main)/community/community.action'
 import {
     createCommunityInvite, getCommunityInvites, cancelCommunityInvite,
@@ -75,6 +75,7 @@ interface CommunityPost {
     title?: string | null
     content: string
     createdAt: Date
+    updatedAt: Date
     author: PostAuthor
     _count?: {
         likes: number
@@ -92,22 +93,27 @@ interface CommunityPost {
     commentCount: number
     viewCount: number
     isLiked?: boolean
-    channel?: {
-        id: string
-        name: string
-        slug: string
-        icon?: string | null
-    } | null
     officialChannel?: string | null
-    community?: {
+    community: {
         id: string
         name: string
         slug: string
         logo?: string | null
     } | null
-    attachments?: unknown
-    codeBlocks?: unknown
-    [key: string]: unknown
+    channel: {
+        id: string
+        name: string
+        slug: string
+        icon?: string | null
+    } | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    poll?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    attachments?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    codeBlocks?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    embeds?: any
 }
 
 interface CommunityResource {

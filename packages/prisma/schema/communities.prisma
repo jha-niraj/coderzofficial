@@ -36,6 +36,7 @@ enum CommunityPostType {
     RESOURCE
     SHOWCASE
     EVENT
+    POLL
     CHALLENGE
     HELP_REQUEST
     ANNOUNCEMENT
@@ -272,6 +273,7 @@ model CommunityPost {
     likes     CommunityPostLike[]     @relation("PostLikes")
     comments  CommunityComment[]      @relation("PostComments")
     bookmarks CommunityPostBookmark[] @relation("PostBookmarks")
+    poll      CommunityPoll?          @relation("PostPoll")
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -626,4 +628,44 @@ model CommunityQuizAttempt {
     @@index([postId])
     @@index([userId])
     @@index([completedAt])
+}
+
+// Community Polls
+model CommunityPoll {
+    id String @id @default(cuid())
+
+    postId String        @unique
+    post   CommunityPost @relation("PostPoll", fields: [postId], references: [id], onDelete: Cascade)
+
+    question      String
+    options       Json // Array of strings
+    allowMultiple Boolean   @default(false)
+    endDate       DateTime?
+
+    votes CommunityPollVote[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([postId])
+}
+
+model CommunityPollVote {
+    id String @id @default(cuid())
+
+    pollId String
+    poll   CommunityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation("CommunityPollVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+    optionIndex Int // Index of the option selected
+
+    createdAt DateTime @default(now())
+    // If allowMultiple is true, a user can select multiple options.
+    // So unique constraint should be [pollId, userId, optionIndex] to prevent duplicate votes for same option.
+
+    @@unique([pollId, userId, optionIndex]) // userId per poll? No, user can vote multiple times if allowMultiple?
+    @@index([pollId])
+    @@index([userId])
 }
