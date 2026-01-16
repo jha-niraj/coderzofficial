@@ -36,7 +36,7 @@ import {
     startProject, submitProject, forkProject
 } from '@/actions/(main)/projects/project.action'
 import {
-    ProjectDetailsClientProps, ProjectV2Page
+    ProjectDetailsClientProps, ProjectV2Page, ProjectV2Sprint
 } from '@/types/project'
 import { FeatureSuggestionSheet } from '@/components/projects/feature-suggestion-sheet'
 import { FeatureSuggestionsList } from '@/components/projects/feature-suggestions-list'
@@ -80,18 +80,22 @@ function PageOverviewCard({ page, difficultyColors }: PageOverviewCardProps) {
                             {page.difficulty}
                         </Badge>
                     </div>
-                    {page.route && (
-                        <code className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded mt-1 inline-block">
-                            {page.route}
-                        </code>
-                    )}
+                    {
+                        page.route && (
+                            <code className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded mt-1 inline-block">
+                                {page.route}
+                            </code>
+                        )
+                    }
                 </CardHeader>
                 <CardContent className="pt-0">
-                    {page.purpose && (
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-3">
-                            {page.purpose}
-                        </p>
-                    )}
+                    {
+                        page.purpose && (
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-3">
+                                {page.purpose}
+                            </p>
+                        )
+                    }
                     <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
                         <span>{page.coreFeatures?.length || 0} features</span>
                         <span>{page.recommendedComponents?.length || 0} components</span>
@@ -99,8 +103,6 @@ function PageOverviewCard({ page, difficultyColors }: PageOverviewCardProps) {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Page Details Bottom Sheet */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
                     <SheetHeader className="text-left pb-6 border-b border-neutral-200 dark:border-neutral-800">
@@ -110,161 +112,182 @@ function PageOverviewCard({ page, difficultyColors }: PageOverviewCardProps) {
                             </div>
                             <div>
                                 <SheetTitle className="text-xl">{page.name}</SheetTitle>
-                                {page.route && (
-                                    <code className="text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
-                                        {page.route}
-                                    </code>
-                                )}
+                                {
+                                    page.route && (
+                                        <code className="text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+                                            {page.route}
+                                        </code>
+                                    )
+                                }
                             </div>
                         </div>
                         <div className="flex items-center gap-3 mt-3">
                             <Badge className={difficultyColors[page.difficulty as keyof typeof difficultyColors] || ''}>
                                 {page.difficulty}
                             </Badge>
-                            {page.estimatedTime && (
-                                <Badge variant="outline" className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {page.estimatedTime}
-                                </Badge>
-                            )}
+                            {
+                                page.estimatedTime && (
+                                    <Badge variant="outline" className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {page.estimatedTime}
+                                    </Badge>
+                                )
+                            }
                         </div>
                     </SheetHeader>
-
                     <div className="py-6 space-y-6">
-                        {/* Purpose */}
-                        {page.purpose && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                    <Target className="w-4 h-4" />
-                                    Purpose
-                                </h4>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    {page.purpose}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Layout */}
-                        {page.layout && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                    <Layers className="w-4 h-4" />
-                                    Layout
-                                </h4>
-                                <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
-                                    <Badge variant="secondary" className="mb-3">
-                                        {page.layout.type || 'Standard'}
-                                    </Badge>
-                                    {page.layout.sections && page.layout.sections.length > 0 && (
-                                        <div className="space-y-2">
-                                            {page.layout.sections.map((section, idx: number) => (
-                                                <div key={idx} className="flex items-center justify-between text-sm">
-                                                    <span className="text-neutral-700 dark:text-neutral-300">{section.name}</span>
-                                                    <span className="text-neutral-500 dark:text-neutral-400 text-xs">{section.purpose}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                        {
+                            page.purpose && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                        <Target className="w-4 h-4" />
+                                        Purpose
+                                    </h4>
+                                    <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                        {page.purpose}
+                                    </p>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Core Features */}
-                        {page.coreFeatures && page.coreFeatures.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Core Features
-                                </h4>
-                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {page.coreFeatures.map((feature: string, idx: number) => (
-                                        <li key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                            <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
-                        {/* Components */}
-                        {page.components && page.components.length > 0 ? (
-                            <div>
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-                                    <Code2 className="w-4 h-4" />
-                                    Components to Build
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {page.components.map((comp, idx: number) => (
-                                        <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="font-medium text-neutral-900 dark:text-white text-sm">{comp.name}</span>
-                                                <Badge variant="outline" className="text-xs">{comp.type}</Badge>
-                                            </div>
-                                            <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">{comp.description}</p>
-                                            {comp.interactivity && comp.interactivity.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {comp.interactivity.map((action: string, aIdx: number) => (
-                                                        <span key={aIdx} className="text-[10px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">
-                                                            {action}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : page.recommendedComponents && page.recommendedComponents.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                    <Code2 className="w-4 h-4" />
-                                    Recommended Components
-                                </h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {page.recommendedComponents.map((comp: string, idx: number) => (
-                                        <Badge key={idx} variant="outline">{comp}</Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* User Interactions */}
-                        {page.userInteractions && page.userInteractions.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                    <Users className="w-4 h-4" />
-                                    User Interactions
-                                </h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {page.userInteractions.map((interaction: string, idx: number) => (
-                                        <Badge key={idx} variant="secondary" className="text-xs">
-                                            {interaction}
+                            )
+                        }
+                        {
+                            page.layout && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                        <Layers className="w-4 h-4" />
+                                        Layout
+                                    </h4>
+                                    <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
+                                        <Badge variant="secondary" className="mb-3">
+                                            {page.layout.type || 'Standard'}
                                         </Badge>
-                                    ))}
+                                        {
+                                            page.layout.sections && page.layout.sections.length > 0 && (
+                                                <div className="space-y-2">
+                                                    {
+                                                        page.layout.sections.map((section, idx: number) => (
+                                                            <div key={idx} className="flex items-center justify-between text-sm">
+                                                                <span className="text-neutral-700 dark:text-neutral-300">{section.name}</span>
+                                                                <span className="text-neutral-500 dark:text-neutral-400 text-xs">{section.purpose}</span>
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            )
+                                        }
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Data Needed */}
-                        {page.dataNeeded && page.dataNeeded.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                    <Layers className="w-4 h-4" />
-                                    Data Requirements
-                                </h4>
-                                <ul className="space-y-1">
-                                    {page.dataNeeded.map((data: string, idx: number) => (
-                                        <li key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                            {data}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                            )
+                        }
+                        {
+                            page.coreFeatures && page.coreFeatures.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Core Features
+                                    </h4>
+                                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {
+                                            page.coreFeatures.map((feature: string, idx: number) => (
+                                                <li key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                                    {feature}
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                </div>
+                            )
+                        }
+                        {
+                            page.components && page.components.length > 0 ? (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                        <Code2 className="w-4 h-4" />
+                                        Components to Build
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {
+                                            page.components.map((comp, idx: number) => (
+                                                <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-medium text-neutral-900 dark:text-white text-sm">{comp.name}</span>
+                                                        <Badge variant="outline" className="text-xs">{comp.type}</Badge>
+                                                    </div>
+                                                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">{comp.description}</p>
+                                                    {
+                                                        comp.interactivity && comp.interactivity.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {
+                                                                    comp.interactivity.map((action: string, aIdx: number) => (
+                                                                        <span key={aIdx} className="text-[10px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">
+                                                                            {action}
+                                                                        </span>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        )
+                                                    }
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            ) : page.recommendedComponents && page.recommendedComponents.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                        <Code2 className="w-4 h-4" />
+                                        Recommended Components
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {
+                                            page.recommendedComponents.map((comp: string, idx: number) => (
+                                                <Badge key={idx} variant="outline">{comp}</Badge>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            )
+                        }
+                        {
+                            page.userInteractions && page.userInteractions.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                        <Users className="w-4 h-4" />
+                                        User Interactions
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {
+                                            page.userInteractions.map((interaction: string, idx: number) => (
+                                                <Badge key={idx} variant="secondary" className="text-xs">
+                                                    {interaction}
+                                                </Badge>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            )
+                        }
+                        {
+                            page.dataNeeded && page.dataNeeded.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                        <Layers className="w-4 h-4" />
+                                        Data Requirements
+                                    </h4>
+                                    <ul className="space-y-1">
+                                        {
+                                            page.dataNeeded.map((data: string, idx: number) => (
+                                                <li key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                                    {data}
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                </div>
+                            )
+                        }
                     </div>
-
                     <SheetFooter className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
                         <Button variant="outline" onClick={() => setIsSheetOpen(false)}>
                             Close
@@ -478,11 +501,9 @@ export default function ProjectDetailsClient({
     const isPublic = project.visibility === 'PUBLIC'
 
     // Calculate total tasks from sprints (tasks are now nested in sprints)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const totalTasks = useMemo(() => {
         if (!project.sprints) return 0
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return project.sprints.reduce((acc: number, sprint: any) => {
+        return project.sprints.reduce((acc: number, sprint: ProjectV2Sprint) => {
             return acc + (sprint.tasks?.length || 0)
         }, 0)
     }, [project.sprints])
@@ -491,23 +512,17 @@ export default function ProjectDetailsClient({
     const tasksWithStatus: TaskItem[] = useMemo(() => {
         if (!project.sprints || project.sprints.length === 0) return []
 
-        // Cast to access taskStatuses which may exist on the actual data
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const progressData = userProgress as any
-        const taskStatuses = progressData?.taskStatuses || []
+        // Access taskStatuses directly from userProgress
+        const taskStatuses = userProgress?.taskStatuses || []
 
         // Flatten tasks from all sprints
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const allTasks: TaskItem[] = []
         let globalIndex = 0
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        for (const sprint of project.sprints as any[]) {
+        for (const sprint of project.sprints) {
             const sprintTasks = sprint.tasks || []
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             for (const task of sprintTasks) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const statusEntry = taskStatuses.find((s: any) => s.taskId === task.id)
+                const statusEntry = taskStatuses.find((s) => s.taskId === task.id)
                 allTasks.push({
                     id: task.id,
                     title: task.title,
