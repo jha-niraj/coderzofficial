@@ -1,0 +1,522 @@
+================================================================================
+PROJECT DETAILS PAGE - COMPREHENSIVE REDESIGN PLAN
+================================================================================
+Document Version: 1.0
+Date: 2026-01-17
+Purpose: Complete redesign to support Sprint → Task hierarchy with single-page UX
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. Current State Analysis
+2. Data Model (New Hierarchy)
+3. User Flow Diagram
+4. Page Structure & Layout
+5. Component Breakdown
+6. Sheet/Modal Components
+7. Implementation Phases
+8. Technical Considerations
+
+================================================================================
+1. CURRENT STATE ANALYSIS
+================================================================================
+
+CURRENT DATA FLOW:
+- ProjectV2 → Tasks (direct, flat list)
+- Tasks displayed in a simple list with status (TO_DO, IN_PROGRESS, COMPLETED)
+- No sprint organization
+- SetupGuide data exists but NOT displayed
+
+CURRENT TABS:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Overview  │  Tasks  │  Pages  │  Resources  │  Community  │  Errors       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+ISSUES TO FIX:
+1. SetupGuide not displayed anywhere
+2. Tasks not organized by Sprint
+3. No Sprint-level progress tracking
+4. Task details require separate page navigation
+5. No clear learning path visualization
+
+================================================================================
+2. DATA MODEL (NEW HIERARCHY)
+================================================================================
+
+ProjectV2
+├── title, description, visibility, difficulty
+├── blueprintOverview, vision, targetAudience, problemSolution
+├── estimatedDuration, keyOutcomes
+├── features[] (with priority/complexity)
+├── technicalRequirements (database, auth, hosting, APIs)
+├── dataArchitecture (models[], endpoints[])
+├── projectStructure (tree, keyFolders[])
+├── setupGuide ← NEW TAB NEEDED
+│   ├── prerequisites[]
+│   ├── environmentVariables[]
+│   ├── installationSteps[]
+│   └── verificationSteps[]
+├── pages[] (with route, purpose, layout, components)
+├── sprints[] ← PRIMARY ORGANIZATION
+│   ├── sprintNumber, name, goal, duration
+│   └── tasks[]
+│       ├── title, description[], criteria[]
+│       ├── hints[], badges[], tags[]
+│       ├── difficulty, category, estimatedTime
+│       ├── checkpoints[], relatedPages[], dependencies[]
+│       └── terminalCommand
+├── progress[] (UserProjectV2Progress)
+│   └── taskStatuses[] (UserTaskV2Status)
+└── assessment (optional)
+    ├── quiz → questions[]
+    └── knowledgeBase
+
+================================================================================
+3. USER FLOW DIAGRAM (ASCII FLOWCHART)
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           PROJECT DETAILS PAGE                              │
+│                        (Single Page Experience)                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        ▼                           ▼                           ▼
+┌───────────────┐         ┌───────────────┐         ┌───────────────┐
+│   HEADER      │         │   TAB BAR     │         │  SIDEBAR      │
+│ (Fixed Top)   │         │  (Sticky)     │         │ (Right Side)  │
+│               │         │               │         │               │
+│ • Title       │         │ Overview      │         │ • Progress %  │
+│ • Badges      │         │ Sprints ←NEW  │         │ • Milestones  │
+│ • Creator     │         │ Pages         │         │ • Quick Actions│
+│ • Actions     │         │ Setup ←NEW    │         │ • Share/Fork  │
+│   (Start/     │         │ Resources     │         │               │
+│    Fork)      │         │ Community     │         │               │
+└───────────────┘         └───────────────┘         └───────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+        ┌───────────────────────┐       ┌───────────────────────┐
+        │    OVERVIEW TAB       │       │    SPRINTS TAB        │
+        │                       │       │    (NEW - Main)       │
+        │ • Vision & Goals      │       │                       │
+        │ • Key Outcomes        │       │ ┌───────────────────┐ │
+        │ • Features List       │       │ │ Sprint 1          │ │
+        │ • Tech Requirements   │       │ │ ├─ Task 1.1 ──────┼──► Task Detail Sheet
+        │ • Data Architecture   │       │ │ ├─ Task 1.2       │ │
+        │ • Project Structure   │       │ │ └─ Task 1.3       │ │
+        │                       │       │ └───────────────────┘ │
+        │ [Click Feature]       │       │ ┌───────────────────┐ │
+        │       │               │       │ │ Sprint 2          │ │
+        │       ▼               │       │ │ ├─ Task 2.1       │ │
+        │ Feature Sheet (btm)   │       │ │ └─ Task 2.2       │ │
+        └───────────────────────┘       │ └───────────────────┘ │
+                                        └───────────────────────┘
+                                                    │
+                                                    ▼
+                            ┌───────────────────────────────────────┐
+                            │        TASK DETAIL SHEET              │
+                            │        (Bottom Sheet - 85vh)          │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ HEADER                            │ │
+                            │ │ • Task Title                      │ │
+                            │ │ • Difficulty Badge                │ │
+                            │ │ • Category Badge                  │ │
+                            │ │ • Estimated Time                  │ │
+                            │ │ • Status Selector (dropdown)      │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ DESCRIPTION STEPS                 │ │
+                            │ │ 1. Step one...                    │ │
+                            │ │ 2. Step two...                    │ │
+                            │ │ 3. Step three...                  │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ SUCCESS CRITERIA                  │ │
+                            │ │ ✓ Criterion 1                     │ │
+                            │ │ ✓ Criterion 2                     │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ CHECKPOINTS                       │ │
+                            │ │ □ Checkpoint 1                    │ │
+                            │ │ □ Checkpoint 2                    │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ HINTS (Collapsible)               │ │
+                            │ │ 💡 Hint 1                         │ │
+                            │ │ 💡 Hint 2                         │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ RELATED PAGES                     │ │
+                            │ │ 🔗 /dashboard                     │ │
+                            │ │ 🔗 /auth                          │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ DEPENDENCIES                      │ │
+                            │ │ ← Task 1.1                        │ │
+                            │ │ ← Task 1.2                        │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ TERMINAL COMMAND (if exists)      │ │
+                            │ │ $ npx create-next-app            │ │
+                            │ │         [Copy Button]             │ │
+                            │ └───────────────────────────────────┘ │
+                            │                                       │
+                            │ ┌───────────────────────────────────┐ │
+                            │ │ FOOTER ACTIONS                    │ │
+                            │ │ [Previous Task] [Next Task]       │ │
+                            │ │ [Mark as Complete]                │ │
+                            │ └───────────────────────────────────┘ │
+                            └───────────────────────────────────────┘
+
+================================================================================
+4. PAGE STRUCTURE & LAYOUT
+================================================================================
+
+RESPONSIVE LAYOUT:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              STICKY HEADER                                  │
+│  [← Back]  PROJECT TITLE  [Difficulty]  [Visibility]  [Start/Fork/Share]   │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              TAB NAVIGATION                                 │
+│  Overview │ Sprints │ Pages │ Setup Guide │ Resources │ Community │ Errors  │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┬───────────────────────┐
+│                                                     │                       │
+│                                                     │   PROGRESS SIDEBAR    │
+│                   MAIN CONTENT                      │   (lg: visible)       │
+│                   (Scrollable)                      │   (md: collapsible)   │
+│                                                     │                       │
+│                                                     │   • Circular Progress │
+│                                                     │   • Tasks: X/Y        │
+│                                                     │   • Sprints: A/B      │
+│                                                     │   • Est. Time Left    │
+│                                                     │   • Quick Actions     │
+│                                                     │                       │
+└─────────────────────────────────────────────────────┴───────────────────────┘
+
+NEW TAB ORDER:
+1. Overview    - Vision, features, architecture (existing + improvements)
+2. Sprints     - Sprint cards with nested tasks (NEW - replaces flat Tasks)
+3. Pages       - Page overview cards (existing)
+4. Setup Guide - Prerequisites, env vars, installation (NEW TAB)
+5. Resources   - External resources (existing)
+6. Community   - Suggestions, discussions (existing)
+7. Errors      - Error reporting (existing)
+
+================================================================================
+5. COMPONENT BREAKDOWN
+================================================================================
+
+EXISTING COMPONENTS TO KEEP:
+├── PageOverviewCard (with Sheet) ✓
+├── MilestoneTracker ✓
+├── QuickActions ✓
+├── EnrollmentDialog ✓
+├── FeatureSuggestionSheet ✓
+├── FeatureSuggestionsList ✓
+├── ResourcesList ✓
+├── AddResourceSheet ✓
+├── DailyStandupSheet ✓
+├── TaskListProgress (needs modification) ⚠️
+└── ErrorsTab ✓
+
+NEW COMPONENTS TO CREATE:
+├── SprintCard
+│   ├── Sprint header (name, goal, duration, progress %)
+│   ├── Task list (compact view)
+│   └── Expand/collapse functionality
+│
+├── TaskDetailSheet (Bottom Sheet)
+│   ├── Task header with status/badges
+│   ├── Description steps
+│   ├── Success criteria
+│   ├── Checkpoints (interactive)
+│   ├── Hints (collapsible)
+│   ├── Related pages
+│   ├── Dependencies
+│   ├── Terminal command (copyable)
+│   └── Navigation (prev/next task)
+│
+├── SetupGuideTab (NEW TAB)
+│   ├── Prerequisites list
+│   ├── Environment variables table
+│   ├── Installation steps (numbered)
+│   └── Verification checklist
+│
+├── SprintProgressIndicator
+│   ├── Sprint number badge
+│   ├── Completion percentage
+│   └── Tasks completed / total
+│
+└── TaskCompactCard
+    ├── Task title
+    ├── Status indicator (dot/icon)
+    ├── Difficulty badge
+    ├── Category tag
+    └── Click → Opens TaskDetailSheet
+
+================================================================================
+6. SHEET/MODAL COMPONENTS (Staying on Same Page)
+================================================================================
+
+SHEETS (from bottom, various heights):
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SHEET NAME              │ HEIGHT  │ TRIGGER                                 │
+├─────────────────────────┼─────────┼─────────────────────────────────────────┤
+│ TaskDetailSheet         │ 85vh    │ Click on task in SprintCard             │
+│ PageDetailSheet         │ 85vh    │ Click on PageOverviewCard (existing)    │
+│ FeatureSuggestionSheet  │ 60vh    │ "Suggest Feature" button                │
+│ AddResourceSheet        │ 50vh    │ "Add Resource" button                   │
+│ DailyStandupSheet       │ 70vh    │ "Standup" button                        │
+│ FeatureDetailSheet      │ 40vh    │ Click on feature in Overview (NEW)      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+DIALOGS (centered modals):
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ DIALOG NAME             │ PURPOSE                                           │
+├─────────────────────────┼───────────────────────────────────────────────────┤
+│ EnrollmentDialog        │ Start project confirmation                        │
+│ ForkDialog              │ Fork project confirmation (existing)              │
+│ ShareDialog             │ Share link (existing)                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+7. IMPLEMENTATION PHASES
+================================================================================
+
+PHASE 1: SETUP GUIDE TAB (Priority: HIGH)
+─────────────────────────────────────────
+Files to modify:
+- project-details-client.tsx (add new tab)
+
+Tasks:
+1. Add "Setup Guide" tab after Pages
+2. Create SetupGuideTab component inline
+3. Display:
+   - Prerequisites as checklist
+   - Environment variables as copyable table
+   - Installation steps as numbered list
+   - Verification steps as checklist
+4. Style with existing design system
+
+Estimated time: 2-3 hours
+
+PHASE 2: SPRINTS TAB - SPRINT CARDS (Priority: HIGH)
+─────────────────────────────────────────────────────
+Files to modify:
+- project-details-client.tsx (replace Tasks tab with Sprints tab)
+- components/projects/task-list-progress.tsx (deprecate or refactor)
+
+New components:
+- SprintCard (inline or new file)
+- TaskCompactCard (inline or new file)
+
+Tasks:
+1. Create SprintCard component
+   - Shows sprint name, goal, duration
+   - Shows sprint progress (tasks completed/total)
+   - Expands to show task list
+2. Create TaskCompactCard
+   - Compact task preview with status
+   - Click opens TaskDetailSheet
+3. Replace flat task list with sprint-organized view
+4. Maintain task status tracking per sprint
+
+Estimated time: 4-5 hours
+
+PHASE 3: TASK DETAIL SHEET (Priority: HIGH)
+───────────────────────────────────────────
+Files to modify:
+- project-details-client.tsx (add TaskDetailSheet)
+
+Tasks:
+1. Create TaskDetailSheet component (bottom sheet)
+2. Include all task fields:
+   - Title, difficulty, category, estimated time
+   - Description steps (numbered)
+   - Success criteria (checkmarks)
+   - Checkpoints (interactive checklist)
+   - Hints (collapsible accordion)
+   - Related pages (clickable links)
+   - Dependencies (cross-reference)
+   - Terminal command (copy button)
+3. Add status change functionality
+4. Add prev/next task navigation
+5. Add "Mark Complete" action
+
+Estimated time: 4-5 hours
+
+PHASE 4: OVERVIEW TAB ENHANCEMENTS (Priority: MEDIUM)
+─────────────────────────────────────────────────────
+Files to modify:
+- project-details-client.tsx
+
+Tasks:
+1. Add FeatureDetailSheet for feature clicks
+2. Improve data architecture visualization
+3. Add project structure tree view
+4. Clean up existing overview sections
+
+Estimated time: 2-3 hours
+
+PHASE 5: PROGRESS SIDEBAR IMPROVEMENTS (Priority: MEDIUM)
+─────────────────────────────────────────────────────────
+Files to modify:
+- project-details-client.tsx
+
+Tasks:
+1. Show sprint-level progress breakdown
+2. Add estimated time remaining
+3. Add milestone indicators per sprint
+4. Mobile-responsive sidebar toggle
+
+Estimated time: 2 hours
+
+================================================================================
+8. TECHNICAL CONSIDERATIONS
+================================================================================
+
+DATA FETCHING:
+- project.sprints[].tasks[] already fetched from getProjectBySlug
+- Task status from userProgress.taskStatuses
+- No additional API calls needed for basic display
+
+STATE MANAGEMENT:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ State Variable              │ Type                   │ Purpose              │
+├─────────────────────────────┼────────────────────────┼──────────────────────┤
+│ activeTab                   │ string                 │ Current tab          │
+│ selectedTask                │ TaskItem | null        │ Open in sheet        │
+│ isTaskSheetOpen             │ boolean                │ Sheet visibility     │
+│ expandedSprints             │ Set<string>            │ Which sprints open   │
+│ taskStatuses                │ Map<taskId, status>    │ Local task status    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+TYPES TO UPDATE:
+- TaskItem interface (add sprint info)
+- SprintWithTasks interface (new)
+
+ANIMATIONS:
+- Sprint expand/collapse: Framer Motion accordion
+- Sheet open/close: Radix sheet default
+- Task status change: Subtle pulse animation
+- Progress update: Smooth number transition
+
+ACCESSIBILITY:
+- Keyboard navigation through tasks
+- Screen reader support for progress
+- Focus management in sheets
+- Proper ARIA labels
+
+PERFORMANCE:
+- Lazy load sheets (only render when open)
+- Virtualize long task lists if needed
+- Memoize computed values (totalTasks, progress)
+
+================================================================================
+APPENDIX A: UPDATED OPENAI SCHEMA (ADD ASSESSMENT)
+================================================================================
+
+The current schema is MISSING the assessment object. Add this to the schema:
+
+"assessment": {
+  "type": "object",
+  "properties": {
+    "quiz": {
+      "type": "object",
+      "properties": {
+        "questions": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "properties": {
+              "prompt": { "type": "string" },
+              "options": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": { "type": "string" }
+              },
+              "correctAnswer": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3,
+                "description": "Index of correct option (0-3)"
+              },
+              "explanation": { "type": "string" },
+              "difficulty": {
+                "type": "string",
+                "enum": ["EASY", "MEDIUM", "HARD"]
+              }
+            },
+            "required": ["prompt", "options", "correctAnswer", "explanation", "difficulty"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["questions"],
+      "additionalProperties": false
+    },
+    "knowledgeBase": {
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 20,
+          "items": { "type": "string" },
+          "description": "Key learning points from this project"
+        },
+        "mockKnowledgeBase": {
+          "type": "string",
+          "description": "Comprehensive knowledge summary for mock interviews"
+        },
+        "interviewQuestions": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "expectedPoints": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": ["easy", "medium", "hard"]
+              }
+            },
+            "required": ["question", "expectedPoints", "difficulty"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["points", "mockKnowledgeBase", "interviewQuestions"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["quiz", "knowledgeBase"],
+  "additionalProperties": false
+}
+
+Add "assessment" to the top-level "required" array as well.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

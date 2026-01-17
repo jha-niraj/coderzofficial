@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import {
     ArrowLeft, Sparkles, Clock, Code2, Brain, Trophy, CheckCircle2, Lock,
     Unlock, Play, Users, Target, Lightbulb, Layers, ListChecks, Share2,
-    Coins, BookOpen, Copy, Check, Zap, AlertTriangle, GitFork
+    Coins, BookOpen, Copy, Check, Zap, AlertTriangle, GitFork, Settings
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -36,7 +36,7 @@ import {
     startProject, submitProject, forkProject
 } from '@/actions/(main)/projects/project.action'
 import {
-    ProjectDetailsClientProps, ProjectV2Page, ProjectV2Sprint
+    ProjectDetailsClientProps, ProjectV2Page, ProjectV2Sprint, ProjectV2Task
 } from '@/types/project'
 import { FeatureSuggestionSheet } from '@/components/projects/feature-suggestion-sheet'
 import { FeatureSuggestionsList } from '@/components/projects/feature-suggestions-list'
@@ -50,254 +50,18 @@ import ErrorsTab from '@/components/projects/errors-tab'
 import { cn } from '@repo/ui/lib/utils'
 import BlueprintFlowchart from '@/components/projects/blueprintflowchart'
 
-// ============================================================================
-// Page Overview Card Component with Bottom Sheet
-// ============================================================================
-
-interface PageOverviewCardProps {
-    page: ProjectV2Page
-    difficultyColors: Record<string, string>
-}
-
-function PageOverviewCard({ page, difficultyColors }: PageOverviewCardProps) {
-    const [isSheetOpen, setIsSheetOpen] = useState(false)
-
-    return (
-        <>
-            <Card
-                className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all duration-200 group"
-                onClick={() => setIsSheetOpen(true)}
-            >
-                <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                                {page.orderIndex !== undefined ? page.orderIndex + 1 : '#'}
-                            </div>
-                            <CardTitle className="text-base group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{page.name}</CardTitle>
-                        </div>
-                        <Badge className={difficultyColors[page.difficulty as keyof typeof difficultyColors] || ''}>
-                            {page.difficulty}
-                        </Badge>
-                    </div>
-                    {
-                        page.route && (
-                            <code className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded mt-1 inline-block">
-                                {page.route}
-                            </code>
-                        )
-                    }
-                </CardHeader>
-                <CardContent className="pt-0">
-                    {
-                        page.purpose && (
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-3">
-                                {page.purpose}
-                            </p>
-                        )
-                    }
-                    <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-                        <span>{page.coreFeatures?.length || 0} features</span>
-                        <span>{page.recommendedComponents?.length || 0} components</span>
-                        {page.estimatedTime && <span>{page.estimatedTime}</span>}
-                    </div>
-                </CardContent>
-            </Card>
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-                    <SheetHeader className="text-left pb-6 border-b border-neutral-200 dark:border-neutral-800">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
-                                {page.orderIndex !== undefined ? page.orderIndex + 1 : '#'}
-                            </div>
-                            <div>
-                                <SheetTitle className="text-xl">{page.name}</SheetTitle>
-                                {
-                                    page.route && (
-                                        <code className="text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
-                                            {page.route}
-                                        </code>
-                                    )
-                                }
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 mt-3">
-                            <Badge className={difficultyColors[page.difficulty as keyof typeof difficultyColors] || ''}>
-                                {page.difficulty}
-                            </Badge>
-                            {
-                                page.estimatedTime && (
-                                    <Badge variant="outline" className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {page.estimatedTime}
-                                    </Badge>
-                                )
-                            }
-                        </div>
-                    </SheetHeader>
-                    <div className="py-6 space-y-6">
-                        {
-                            page.purpose && (
-                                <div>
-                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                        <Target className="w-4 h-4" />
-                                        Purpose
-                                    </h4>
-                                    <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                        {page.purpose}
-                                    </p>
-                                </div>
-                            )
-                        }
-                        {
-                            page.layout && (
-                                <div>
-                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                        <Layers className="w-4 h-4" />
-                                        Layout
-                                    </h4>
-                                    <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
-                                        <Badge variant="secondary" className="mb-3">
-                                            {page.layout.type || 'Standard'}
-                                        </Badge>
-                                        {
-                                            page.layout.sections && page.layout.sections.length > 0 && (
-                                                <div className="space-y-2">
-                                                    {
-                                                        page.layout.sections.map((section, idx: number) => (
-                                                            <div key={idx} className="flex items-center justify-between text-sm">
-                                                                <span className="text-neutral-700 dark:text-neutral-300">{section.name}</span>
-                                                                <span className="text-neutral-500 dark:text-neutral-400 text-xs">{section.purpose}</span>
-                                                            </div>
-                                                        ))
-                                                    }
-                                                </div>
-                                            )
-                                        }
-                                    </div>
-                                </div>
-                            )
-                        }
-                        {
-                            page.coreFeatures && page.coreFeatures.length > 0 && (
-                                <div>
-                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        Core Features
-                                    </h4>
-                                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        {
-                                            page.coreFeatures.map((feature: string, idx: number) => (
-                                                <li key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                                    {feature}
-                                                </li>
-                                            ))
-                                        }
-                                    </ul>
-                                </div>
-                            )
-                        }
-                        {
-                            page.components && page.components.length > 0 ? (
-                                <div>
-                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-                                        <Code2 className="w-4 h-4" />
-                                        Components to Build
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {
-                                            page.components.map((comp, idx: number) => (
-                                                <div key={idx} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="font-medium text-neutral-900 dark:text-white text-sm">{comp.name}</span>
-                                                        <Badge variant="outline" className="text-xs">{comp.type}</Badge>
-                                                    </div>
-                                                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">{comp.description}</p>
-                                                    {
-                                                        comp.interactivity && comp.interactivity.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {
-                                                                    comp.interactivity.map((action: string, aIdx: number) => (
-                                                                        <span key={aIdx} className="text-[10px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">
-                                                                            {action}
-                                                                        </span>
-                                                                    ))
-                                                                }
-                                                            </div>
-                                                        )
-                                                    }
-                                                </div>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            ) : page.recommendedComponents && page.recommendedComponents.length > 0 && (
-                                <div>
-                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                        <Code2 className="w-4 h-4" />
-                                        Recommended Components
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {
-                                            page.recommendedComponents.map((comp: string, idx: number) => (
-                                                <Badge key={idx} variant="outline">{comp}</Badge>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            )
-                        }
-                        {
-                            page.userInteractions && page.userInteractions.length > 0 && (
-                                <div>
-                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                        <Users className="w-4 h-4" />
-                                        User Interactions
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {
-                                            page.userInteractions.map((interaction: string, idx: number) => (
-                                                <Badge key={idx} variant="secondary" className="text-xs">
-                                                    {interaction}
-                                                </Badge>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            )
-                        }
-                        {
-                            page.dataNeeded && page.dataNeeded.length > 0 && (
-                                <div>
-                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                        <Layers className="w-4 h-4" />
-                                        Data Requirements
-                                    </h4>
-                                    <ul className="space-y-1">
-                                        {
-                                            page.dataNeeded.map((data: string, idx: number) => (
-                                                <li key={idx} className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                                    {data}
-                                                </li>
-                                            ))
-                                        }
-                                    </ul>
-                                </div>
-                            )
-                        }
-                    </div>
-                    <SheetFooter className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                        <Button variant="outline" onClick={() => setIsSheetOpen(false)}>
-                            Close
-                        </Button>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
-        </>
-    )
-}
+// New extracted components
+import { PageOverviewCard } from './page-overview-card'
+import { SprintCard, SprintData, TaskData, TaskStatusMap } from './sprint-card'
+import { SetupGuideTab } from './setup-guide-tab'
+import { TeamMembersDisplay, TeamCollaborationBadge } from './team-members-display'
+import { SprintGenerationSheet } from './sprint-generation-sheet'
+import { ProjectSettingsTab, TeamMember, ProjectInvitation } from './project-settings-tab'
+import { acceptPersonalSprint, rejectPersonalSprint } from '@/actions/(main)/projects/sprint-generation.action'
+import {
+    inviteToProject, cancelInvitation, removeMember, updateMemberRole,
+    getProjectMembers, getProjectInvitations, updateProjectVisibility
+} from '@/actions/(main)/projects/team-collaboration.action'
 
 function MilestoneTracker({ progressPercentage }: { progressPercentage: number, includeAssessment?: boolean }) {
     const milestones = [
@@ -476,6 +240,13 @@ export default function ProjectDetailsClient({
     currentUser
 }: ProjectDetailsClientProps) {
     const router = useRouter()
+
+    const userProgress = project.progress?.[0]
+    const hasStarted = userProgress && userProgress.status !== 'NOT_STARTED'
+    const progressPercentage = userProgress?.progressPercentage || 0
+    const isCompleted = userProgress?.status === 'COMPLETED'
+    const isCreator = currentUserId === project?.creator?.id
+    const isPublic = project.visibility === 'PUBLIC'
     const [starting, setStarting] = useState(false)
     const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
     const [enrollDialogOpen, setEnrollDialogOpen] = useState(false)
@@ -492,13 +263,122 @@ export default function ProjectDetailsClient({
     const [standupSheetOpen, setStandupSheetOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('overview')
     const [forking, setForking] = useState(false)
+    const [sprintGenerationOpen, setSprintGenerationOpen] = useState(false)
 
-    const userProgress = project.progress?.[0]
-    const hasStarted = userProgress && userProgress.status !== 'NOT_STARTED'
-    const progressPercentage = userProgress?.progressPercentage || 0
-    const isCompleted = userProgress?.status === 'COMPLETED'
-    const isCreator = currentUserId === project?.creator?.id
-    const isPublic = project.visibility === 'PUBLIC'
+    // Project Settings State & Handlers
+    const [projectMembers, setProjectMembers] = useState<TeamMember[]>([])
+    const [projectInvitations, setProjectInvitations] = useState<ProjectInvitation[]>([])
+    const [isTeamMode, setIsTeamMode] = useState(false)
+    const [isSettingsLoading, setIsSettingsLoading] = useState(false)
+
+    // Fetch settings data when tab is active
+    useEffect(() => {
+        if (activeTab === 'settings' && isCreator) {
+            const fetchSettings = async () => {
+                setIsSettingsLoading(true)
+                try {
+                    const [membersRes, invitationsRes] = await Promise.all([
+                        getProjectMembers(project.id),
+                        getProjectInvitations(project.id)
+                    ])
+
+                    if (membersRes.success && membersRes.data) {
+                        setProjectMembers(membersRes.data)
+                        // Enable team mode if there are members other than creator
+                        if (membersRes.data.length > 1) setIsTeamMode(true)
+                    }
+
+                    if (invitationsRes.success && invitationsRes.data) {
+                        setProjectInvitations(invitationsRes.data)
+                        // Enable team mode if there are pending invitations
+                        if (invitationsRes.data.length > 0) setIsTeamMode(true)
+                    }
+                } catch (error) {
+                    console.error('Failed to load settings:', error)
+                    toast.error('Failed to load project settings')
+                } finally {
+                    setIsSettingsLoading(false)
+                }
+            }
+            fetchSettings()
+        }
+    }, [activeTab, isCreator, project.id])
+
+    const handleInviteMember = async (email: string) => {
+        try {
+            const result = await inviteToProject(project.id, email)
+            if (result.success) {
+                const res = await getProjectInvitations(project.id)
+                if (res.success && res.data) setProjectInvitations(res.data)
+                toast.success('Invitation sent')
+            } else {
+                toast.error(result.error || 'Failed to send invitation')
+            }
+        } catch (error) {
+            toast.error('An unexpected error occurred')
+        }
+    }
+
+    const handleRemoveMember = async (memberId: string) => {
+        try {
+            const result = await removeMember(project.id, memberId)
+            if (result.success) {
+                const res = await getProjectMembers(project.id)
+                if (res.success && res.data) setProjectMembers(res.data)
+                toast.success('Member removed')
+            } else {
+                toast.error(result.error || 'Failed to remove member')
+            }
+        } catch (error) {
+            toast.error('Failed to remove member')
+        }
+    }
+
+    const handleUpdateMemberRole = async (memberId: string, role: 'ADMIN' | 'MEMBER') => {
+        try {
+            const result = await updateMemberRole(memberId, role)
+            if (result.success) {
+                const res = await getProjectMembers(project.id)
+                if (res.success && res.data) setProjectMembers(res.data)
+                toast.success('Role updated')
+            } else {
+                toast.error(result.error || 'Failed to update role')
+            }
+        } catch (error) {
+            toast.error('Failed to update role')
+        }
+    }
+
+    const handleCancelInvitation = async (invitationId: string) => {
+        try {
+            const result = await cancelInvitation(invitationId)
+            if (result.success) {
+                const res = await getProjectInvitations(project.id)
+                if (res.success && res.data) setProjectInvitations(res.data)
+                toast.success('Invitation canceled')
+            } else {
+                toast.error(result.error || 'Failed to cancel invitation')
+            }
+        } catch (error) {
+            toast.error('Failed to cancel invitation')
+        }
+    }
+
+    const handleUpdateVisibility = async (visibility: 'PUBLIC' | 'PRIVATE') => {
+        try {
+            const result = await updateProjectVisibility(project.id, visibility)
+            if (result.success) {
+                toast.success(`Project is now ${visibility.toLowerCase()}`)
+                router.refresh()
+            } else {
+                toast.error(result.error || 'Failed to update visibility')
+            }
+        } catch (error) {
+            toast.error('Failed to update visibility')
+        }
+    }
+
+
 
     // Calculate total tasks from sprints (tasks are now nested in sprints)
     const totalTasks = useMemo(() => {
@@ -657,6 +537,26 @@ export default function ProjectDetailsClient({
         INTERMEDIATE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
         ADVANCED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
     }
+
+    const categoryColors: Record<string, string> = {
+        'setup': 'border-green-300 text-green-700 dark:text-green-400',
+        'frontend': 'border-blue-300 text-blue-700 dark:text-blue-400',
+        'backend': 'border-purple-300 text-purple-700 dark:text-purple-400',
+        'database': 'border-amber-300 text-amber-700 dark:text-amber-400',
+        'api': 'border-cyan-300 text-cyan-700 dark:text-cyan-400',
+        'testing': 'border-red-300 text-red-700 dark:text-red-400',
+        'deployment': 'border-indigo-300 text-indigo-700 dark:text-indigo-400',
+    }
+
+    // Build a map of task ID to status for quick lookup
+    const taskStatusMap: TaskStatusMap = useMemo(() => {
+        const statusMap: TaskStatusMap = {}
+        const taskStatuses = userProgress?.taskStatuses || []
+        for (const statusEntry of taskStatuses) {
+            statusMap[statusEntry.taskId] = statusEntry.status as 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED'
+        }
+        return statusMap
+    }, [userProgress])
 
     return (
         <div className="relative min-h-screen w-full bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900">
@@ -950,25 +850,28 @@ export default function ProjectDetailsClient({
                     transition={{ delay: 0.4 }}
                 >
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="w-full lg:w-auto bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-1 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+                        <TabsList className="w-full lg:w-auto bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-1 border border-neutral-200 dark:border-neutral-800 shadow-sm flex-wrap">
                             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
                                 Overview
                             </TabsTrigger>
                             {
                                 hasStarted && (
-                                    <TabsTrigger value="tasks" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
-                                        Tasks ({tasksWithStatus.length})
+                                    <TabsTrigger value="sprints" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
+                                        Sprints ({project.sprints?.length || 0})
                                     </TabsTrigger>
                                 )
                             }
                             <TabsTrigger value="pages">
                                 Pages ({project.pages.length})
                             </TabsTrigger>
+                            <TabsTrigger value="setup">
+                                Setup Guide
+                            </TabsTrigger>
                             <TabsTrigger value="resources">
                                 Resources
                             </TabsTrigger>
                             <TabsTrigger value="suggestions">
-                                Suggestions {suggestions.length > 0 && `(${suggestions.length})`}
+                                Community {suggestions.length > 0 && `(${suggestions.length})`}
                             </TabsTrigger>
                             <TabsTrigger value="errors">
                                 <div className="flex items-center justify-center gap-2">
@@ -976,6 +879,14 @@ export default function ProjectDetailsClient({
                                     <p>Errors</p>
                                 </div>
                             </TabsTrigger>
+                            {
+                                isCreator && (
+                                    <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
+                                        <Settings className="w-4 h-4 mr-1" />
+                                        Settings
+                                    </TabsTrigger>
+                                )
+                            }
                         </TabsList>
                         <TabsContent value="overview" className="mt-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1136,14 +1047,156 @@ export default function ProjectDetailsClient({
                         </TabsContent>
                         {
                             hasStarted && (
-                                <TabsContent value="tasks" className="mt-6">
-                                    <TaskListProgress
-                                        tasks={tasksWithStatus}
-                                        projectSlug={project.slug}
-                                        progressPercentage={progressPercentage}
-                                        tasksCompleted={userProgress?.tasksCompleted || 0}
-                                        totalTasks={userProgress?.totalTasks || totalTasks}
-                                    />
+                                <TabsContent value="sprints" className="mt-6">
+                                    {/* Sprint Header with Generate Button */}
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                                                Project Sprints
+                                            </h3>
+                                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                                {project.sprints?.length || 0} sprints • {totalTasks} total tasks
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={() => setSprintGenerationOpen(true)}
+                                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                                        >
+                                            <Sparkles className="w-4 h-4 mr-2" />
+                                            Generate Sprint
+                                        </Button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {project.sprints && project.sprints.length > 0 ? (
+                                            project.sprints.map((sprint) => {
+                                                // Check if this is a personal sprint (for non-creators) that needs acceptance
+                                                const isPersonalSprint = (sprint as { isPersonal?: boolean }).isPersonal &&
+                                                    !(sprint as { isApproved?: boolean }).isApproved
+                                                const isSprintCreator = (sprint as { createdBy?: string }).createdBy === currentUserId
+
+                                                // Convert sprint tasks to the format SprintCard expects
+                                                const sprintData: SprintData = {
+                                                    id: sprint.id,
+                                                    sprintNumber: sprint.sprintNumber,
+                                                    name: sprint.name,
+                                                    goal: sprint.goal,
+                                                    duration: sprint.duration,
+                                                    orderIndex: sprint.orderIndex,
+                                                    tasks: (sprint.tasks || []).map((task): TaskData => ({
+                                                        id: task.id,
+                                                        title: task.title,
+                                                        description: task.description || [],
+                                                        criteria: task.criteria || task.successCriteria || [],
+                                                        hints: task.hints || [],
+                                                        badges: task.badges || [],
+                                                        tags: task.tags || [],
+                                                        difficulty: task.difficulty as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
+                                                        category: task.category || null,
+                                                        estimatedTime: task.estimatedTime || null,
+                                                        checkpoints: task.checkpoints || [],
+                                                        relatedPages: task.relatedPages || [],
+                                                        dependencies: task.dependencies || [],
+                                                        terminalCommand: task.terminalCommand || null,
+                                                        orderIndex: task.orderIndex || task.order || 0,
+                                                        status: taskStatusMap[task.id] || 'TO_DO'
+                                                    }))
+                                                }
+
+                                                return (
+                                                    <div key={sprint.id}>
+                                                        {/* Show pending banner for personal sprints */}
+                                                        {isPersonalSprint && isSprintCreator && (
+                                                            <div className="mb-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center justify-between">
+                                                                <div className="flex items-center gap-2">
+                                                                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                                                                    <span className="text-sm text-amber-700 dark:text-amber-400">
+                                                                        Accept this sprint to include it in your progress tracking
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={async () => {
+                                                                            const result = await rejectPersonalSprint(sprint.id)
+                                                                            if (result.success) {
+                                                                                toast.success('Sprint removed')
+                                                                                router.refresh()
+                                                                            } else {
+                                                                                toast.error(result.error || 'Failed to remove sprint')
+                                                                            }
+                                                                        }}
+                                                                        className="border-red-300 text-red-600 hover:bg-red-50"
+                                                                    >
+                                                                        Reject
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={async () => {
+                                                                            const result = await acceptPersonalSprint(sprint.id)
+                                                                            if (result.success) {
+                                                                                toast.success('Sprint accepted! It will now count toward your progress.')
+                                                                                router.refresh()
+                                                                            } else {
+                                                                                toast.error(result.error || 'Failed to accept sprint')
+                                                                            }
+                                                                        }}
+                                                                        className="bg-green-600 hover:bg-green-700"
+                                                                    >
+                                                                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                                                                        Accept
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <SprintCard
+                                                            sprint={sprintData}
+                                                            taskStatuses={taskStatusMap}
+                                                            difficultyColors={difficultyColors}
+                                                            categoryColors={categoryColors}
+                                                            isCreator={isCreator}
+                                                            hasStarted={hasStarted}
+                                                            onTaskStatusChange={async (taskId, status) => {
+                                                                // TODO: Implement task status update action
+                                                                console.log('Update task status:', taskId, status)
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )
+                                            })
+                                        ) : (
+                                            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                                <CardContent className="py-12 text-center">
+                                                    <ListChecks className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+                                                    <h3 className="text-lg font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
+                                                        No Sprints Yet
+                                                    </h3>
+                                                    <p className="text-sm text-neutral-500 dark:text-neutral-500 mb-4">
+                                                        Get started by generating your first sprint with AI.
+                                                    </p>
+                                                    <Button
+                                                        onClick={() => setSprintGenerationOpen(true)}
+                                                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                                                    >
+                                                        <Sparkles className="w-4 h-4 mr-2" />
+                                                        Generate Your First Sprint
+                                                    </Button>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </div>
+
+                                    {/* Legacy Task List for backwards compatibility */}
+                                    {tasksWithStatus.length > 0 && (!project.sprints || project.sprints.length === 0) && (
+                                        <TaskListProgress
+                                            tasks={tasksWithStatus}
+                                            projectSlug={project.slug}
+                                            progressPercentage={progressPercentage}
+                                            tasksCompleted={userProgress?.tasksCompleted || 0}
+                                            totalTasks={userProgress?.totalTasks || totalTasks}
+                                        />
+                                    )}
                                 </TabsContent>
                             )
                         }
@@ -1159,6 +1212,16 @@ export default function ProjectDetailsClient({
                                     ))
                                 }
                             </div>
+                        </TabsContent>
+                        <TabsContent value="setup" className="mt-6">
+                            <SetupGuideTab
+                                setupGuide={project.setupGuide ? {
+                                    prerequisites: project.setupGuide.prerequisites || [],
+                                    environmentVariables: project.setupGuide.environmentVariables || [],
+                                    installationSteps: project.setupGuide.installationSteps || [],
+                                    verificationSteps: project.setupGuide.verificationSteps || []
+                                } : null}
+                            />
                         </TabsContent>
                         <TabsContent value="resources" className="mt-6">
                             <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
@@ -1244,6 +1307,27 @@ export default function ProjectDetailsClient({
                                 </CardContent>
                             </Card>
                         </TabsContent>
+                        {
+                            isCreator && (
+                                <TabsContent value="settings" className="mt-6">
+                                    <ProjectSettingsTab
+                                        projectId={project.id}
+                                        projectTitle={project.title}
+                                        isCreator={isCreator}
+                                        visibility={project.visibility as 'PUBLIC' | 'PRIVATE'}
+                                        members={projectMembers}
+                                        pendingInvitations={projectInvitations}
+                                        isTeamProject={isTeamMode}
+                                        onInviteMember={handleInviteMember}
+                                        onRemoveMember={handleRemoveMember}
+                                        onUpdateMemberRole={handleUpdateMemberRole}
+                                        onCancelInvitation={handleCancelInvitation}
+                                        onUpdateVisibility={handleUpdateVisibility}
+                                        onToggleTeamMode={async (enabled) => setIsTeamMode(enabled)}
+                                    />
+                                </TabsContent>
+                            )
+                        }
                     </Tabs>
                 </motion.div>
             </div>
@@ -1345,6 +1429,13 @@ export default function ProjectDetailsClient({
                 projectSlug={project.slug}
                 projectTitle={project.title}
                 userCredits={userCredits}
+            />
+            <SprintGenerationSheet
+                isOpen={sprintGenerationOpen}
+                onClose={() => setSprintGenerationOpen(false)}
+                projectId={project.id}
+                isCreator={isCreator}
+                onSprintAdded={() => router.refresh()}
             />
         </div>
     )

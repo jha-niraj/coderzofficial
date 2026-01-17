@@ -475,6 +475,14 @@ model User {
     submittedProjectErrors     ProjectV2Error[]             @relation("SubmittedProjectErrors")
     projectErrorVotes          ProjectV2ErrorVote[]         @relation("ProjectErrorVotes")
 
+    // Project V2 Team Collaboration
+    projectMemberships         ProjectV2Member[]           @relation("ProjectMemberships")
+    sprintSuggestions          ProjectV2SprintSuggestion[] @relation("SprintSuggestor")
+    sprintReviews              ProjectV2SprintSuggestion[] @relation("SprintReviewer")
+    projectInvitationsReceived ProjectV2Invitation[]       @relation("ReceivedInvitations")
+    projectInvitationsSent     ProjectV2Invitation[]       @relation("SentInvitations")
+    createdSprints             ProjectV2Sprint[]           @relation("SprintCreator")
+
     UserTaskV2DetailAccess UserTaskV2DetailAccess[] @relation("UserTaskDetailAccess")
 
     createdVoiceMocks MockInterviewVoice[] @relation("MockVoiceCreator")

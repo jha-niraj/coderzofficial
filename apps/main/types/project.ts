@@ -408,6 +408,91 @@ export interface QuizDifficultyColor {
 }
 
 // ============================================================================
+// Team Collaboration Types
+// ============================================================================
+
+export type ProjectMemberRole = 'ADMIN' | 'MEMBER'
+export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED'
+export type SprintSuggestionStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface ProjectV2Member {
+    id: string
+    projectId: string
+    userId: string
+    role: ProjectMemberRole
+    joinedAt: Date
+    invitedBy?: string | null
+    user: {
+        id: string
+        name: string | null
+        username: string | null
+        email: string
+        image: string | null
+    }
+}
+
+export interface ProjectV2SprintSuggestion {
+    id: string
+    projectId: string
+    suggestedById: string
+    sprintNumber: number
+    name: string
+    goal: string
+    duration: string
+    suggestedTasks?: ProjectV2Task[] | null
+    status: SprintSuggestionStatus
+    reviewedById?: string | null
+    reviewedAt?: Date | null
+    reviewNote?: string | null
+    createdSprintId?: string | null
+    createdAt: Date
+    updatedAt: Date
+    suggestedBy: {
+        id: string
+        name: string | null
+        username: string | null
+        image: string | null
+    }
+    reviewedBy?: {
+        id: string
+        name: string | null
+        username: string | null
+    } | null
+}
+
+export interface ProjectV2Invitation {
+    id: string
+    projectId: string
+    invitedUserId?: string | null
+    invitedEmail?: string | null
+    invitedById: string
+    role: ProjectMemberRole
+    status: InvitationStatus
+    inviteToken?: string | null
+    expiresAt?: Date | null
+    respondedAt?: Date | null
+    createdAt: Date
+    invitedUser?: {
+        id: string
+        name: string | null
+        username: string | null
+        image: string | null
+    } | null
+    invitedBy: {
+        id: string
+        name: string | null
+        username: string | null
+    }
+}
+
+// Extended ProjectV2Full with team collaboration
+export interface ProjectV2FullWithTeam extends ProjectV2Full {
+    members?: ProjectV2Member[]
+    sprintSuggestions?: ProjectV2SprintSuggestion[]
+    invitations?: ProjectV2Invitation[]
+}
+
+// ============================================================================
 // API Response Types
 // ============================================================================
 

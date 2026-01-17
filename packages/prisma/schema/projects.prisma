@@ -171,9 +171,13 @@ model ProjectV2 {
     bookmarks ProjectV2Bookmark[] @relation("ProjectV2Bookmarks")
 
     // Space relation
-    spaceId        String?
-    space          Space?          @relation("SpaceProjects", fields: [spaceId], references: [id], onDelete: SetNull)
-    projectV2Tasks ProjectV2Task[]
+    spaceId           String?
+    space             Space?                      @relation("SpaceProjects", fields: [spaceId], references: [id], onDelete: SetNull)
+    projectV2Tasks    ProjectV2Task[]
+    // Team Collaboration
+    members           ProjectV2Member[]           @relation("ProjectMembers")
+    sprintSuggestions ProjectV2SprintSuggestion[] @relation("SprintSuggestions")
+    invitations       ProjectV2Invitation[]       @relation("ProjectInvitations")
 
     @@index([createdBy])
     @@index([visibility])
@@ -888,6 +892,13 @@ model ProjectV2Sprint {
     duration     String // Time estimate e.g., "3-5 days", "1 week"
     orderIndex   Int    @default(0)
 
+    // Creator and approval tracking
+    createdBy  String? // User ID who created this sprint
+    creator    User?   @relation("SprintCreator", fields: [createdBy], references: [id])
+    
+    isApproved Boolean @default(true) // Whether this sprint counts toward progress
+    isPersonal Boolean @default(false) // Personal sprint created by non-creator
+
     tasks ProjectV2Task[]
 
     createdAt DateTime @default(now())
@@ -897,4 +908,117 @@ model ProjectV2Sprint {
     @@index([projectId])
     @@index([orderIndex])
     @@index([projectId, orderIndex])
+    @@index([createdBy])
+}
+
+// ===============================================
+// PROJECT V2 TEAM COLLABORATION
+// ===============================================
+
+enum ProjectV2MemberRole {
+    ADMIN // Project creator or promoted member
+    MEMBER // Regular team member with task access
+}
+
+enum ProjectV2InvitationStatus {
+    PENDING
+    ACCEPTED
+    DECLINED
+    EXPIRED
+}
+
+enum SprintSuggestionStatus {
+    PENDING // Awaiting creator approval
+    APPROVED // Creator approved, sprint created
+    REJECTED // Creator rejected
+}
+
+// Team Members - for collaborative projects
+model ProjectV2Member {
+    id        String    @id @default(cuid())
+    projectId String
+    project   ProjectV2 @relation("ProjectMembers", fields: [projectId], references: [id], onDelete: Cascade)
+    userId    String
+    user      User      @relation("ProjectMemberships", fields: [userId], references: [id], onDelete: Cascade)
+
+    role      ProjectV2MemberRole @default(MEMBER)
+    joinedAt  DateTime            @default(now())
+    invitedBy String? // User ID who invited them
+
+    @@unique([projectId, userId])
+    @@index([projectId])
+    @@index([userId])
+}
+
+// Sprint Suggestions - for users suggesting new sprints
+model ProjectV2SprintSuggestion {
+    id        String    @id @default(cuid())
+    projectId String
+    project   ProjectV2 @relation("SprintSuggestions", fields: [projectId], references: [id], onDelete: Cascade)
+
+    // Suggested by
+    suggestedById String
+    suggestedBy   User   @relation("SprintSuggestor", fields: [suggestedById], references: [id], onDelete: Cascade)
+
+    // Sprint details (same structure as ProjectV2Sprint)
+    sprintNumber Int
+    name         String
+    goal         String @db.Text
+    duration     String
+
+    // Tasks to be created with this sprint (JSON array)
+    suggestedTasks Json? // Array of task definitions
+
+    status SprintSuggestionStatus @default(PENDING)
+
+    // Review
+    reviewedById String?
+    reviewedBy   User?     @relation("SprintReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+    reviewedAt   DateTime?
+    reviewNote   String?   @db.Text
+
+    // If approved, link to created sprint
+    createdSprintId String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([projectId])
+    @@index([suggestedById])
+    @@index([status])
+}
+
+// Project Invitations - for inviting users to collaborate
+model ProjectV2Invitation {
+    id        String    @id @default(cuid())
+    projectId String
+    project   ProjectV2 @relation("ProjectInvitations", fields: [projectId], references: [id], onDelete: Cascade)
+
+    // Invited user (can be by email or user ID)
+    invitedUserId String?
+    invitedUser   User?   @relation("ReceivedInvitations", fields: [invitedUserId], references: [id], onDelete: Cascade)
+    invitedEmail  String? // For inviting users not yet registered
+
+    // Inviter
+    invitedById String
+    invitedBy   User   @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+
+    role   ProjectV2MemberRole       @default(MEMBER)
+    status ProjectV2InvitationStatus @default(PENDING)
+
+    // Token for email-based invitations
+    inviteToken String?   @unique
+    expiresAt   DateTime?
+
+    respondedAt DateTime?
+
+    createdAt DateTime @default(now())
+
+    @@unique([projectId, invitedUserId])
+    @@unique([projectId, invitedEmail])
+    @@index([projectId])
+    @@index([invitedUserId])
+    @@index([invitedEmail])
+    @@index([inviteToken])
+    @@index([status])
 }
