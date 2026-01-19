@@ -3,9 +3,6 @@
 
 export { PageOverviewCard } from './page-overview-card'
 
-export { SprintCard } from './sprint-card'
-export type { SprintData, TaskData, TaskStatusMap } from './sprint-card'
-
 export { SetupGuideTab } from './setup-guide-tab'
 
 export { ProjectSettingsTab } from './project-settings-tab'

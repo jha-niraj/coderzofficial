@@ -484,6 +484,7 @@ model User {
     createdSprints             ProjectV2Sprint[]           @relation("SprintCreator")
 
     UserTaskV2DetailAccess UserTaskV2DetailAccess[] @relation("UserTaskDetailAccess")
+    UserTaskV2Assessments  UserTaskV2Assessment[]   @relation("UserTaskAssessments")
 
     createdVoiceMocks MockInterviewVoice[] @relation("MockVoiceCreator")
     voiceSessions     MockVoiceSession[]   @relation("MockVoiceSessions")

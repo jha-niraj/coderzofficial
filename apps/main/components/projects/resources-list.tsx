@@ -20,6 +20,7 @@ import {
 import { ResourceType } from '@repo/prisma/client'
 import toast from '@repo/ui/components/ui/sonner'
 import { formatDistanceToNow } from 'date-fns'
+import AddResourceSheet from './add-resource-sheet'
 
 const RESOURCE_TYPES = [
     { value: 'ALL', label: 'All Resources', icon: FileText },
@@ -177,32 +178,39 @@ export default function ResourcesList({ projectId, currentUserId, isCreator }: R
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-wrap gap-2">
-                {
-                    RESOURCE_TYPES.map((type) => {
-                        const Icon = type.icon
-                        const count = type.value === 'ALL' ? resources.length : (typeCounts[type.value] || 0)
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-2 flex-1">
+                    {
+                        RESOURCE_TYPES.map((type) => {
+                            const Icon = type.icon
+                            const count = type.value === 'ALL' ? resources.length : (typeCounts[type.value] || 0)
 
-                        return (
-                            <Button
-                                key={type.value}
-                                variant={selectedType === type.value ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setSelectedType(type.value)}
-                                className="gap-2"
-                            >
-                                <Icon className="w-4 h-4" />
-                                {type.label}
-                                {
-                                    count > 0 && (
-                                        <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
-                                            {count}
-                                        </Badge>
-                                    )
-                                }
-                            </Button>
-                        )
-                    })
+                            return (
+                                <Button
+                                    key={type.value}
+                                    variant={selectedType === type.value ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setSelectedType(type.value)}
+                                    className="gap-2"
+                                >
+                                    <Icon className="w-4 h-4" />
+                                    {type.label}
+                                    {
+                                        count > 0 && (
+                                            <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                                                {count}
+                                            </Badge>
+                                        )
+                                    }
+                                </Button>
+                            )
+                        })
+                    }
+                </div>
+                {
+                    (currentUserId || isCreator) && (
+                        <AddResourceSheet projectId={projectId} />
+                    )
                 }
             </div>
             {

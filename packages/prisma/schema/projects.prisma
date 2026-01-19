@@ -91,6 +91,19 @@ enum IdeaType {
     TECHNOLOGY_SPECIFIC // Current behavior - specific tech stack
 }
 
+// Type of assessment for a task
+enum TaskAssessmentType {
+    QUIZ // Multiple choice questions about concepts
+    CODE // User writes code that is validated
+    NONE // No assessment required (optional tasks)
+}
+
+// Type of mock session (project-level final or sprint checkpoint)
+enum MockSessionType {
+    PROJECT_FINAL // Final mock interview for entire project
+    SPRINT_REVIEW // Mock interview after completing a sprint
+}
+
 model ProjectV2 {
     id                         String              @id @default(cuid())
     slug                       String              @unique
@@ -238,6 +251,12 @@ model ProjectV2Task {
     relatedPages  String[] // Related page names
     dependencies  String[] // Task dependencies (task titles)
 
+    // ========== NEW: Learning Concepts & Assessment ==========
+    // Concepts the user should understand before/after this task
+    concepts       Json? // Array of {title: string, description: string, links?: string[]}
+    // What kind of assessment is best for this task
+    assessmentType TaskAssessmentType @default(QUIZ)
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -252,11 +271,15 @@ model ProjectV2Task {
     projectV2   ProjectV2?       @relation(fields: [projectV2Id], references: [id])
     projectV2Id String?
 
+    // Task Assessment attempts by users
+    taskAssessments UserTaskV2Assessment[]
+
     @@index([sprintId])
     @@index([orderIndex])
     @@index([difficulty])
     @@index([category])
     @@index([sprintId, orderIndex])
+    @@index([assessmentType])
 }
 
 model UserProjectV2Progress {
@@ -433,13 +456,19 @@ model ProjectV2QuizAnswer {
     @@index([isCorrect])
 }
 
-// AI Mock Interview Sessions
+// AI Mock Interview Sessions (Project-level or Sprint-level)
 model ProjectV2MockSession {
     id        String    @id @default(cuid())
     userId    String
     user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
     projectId String
     project   ProjectV2 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    // ========== NEW: Session Type ==========
+    sessionType MockSessionType  @default(PROJECT_FINAL)
+    // If sprint review, link to specific sprint
+    sprintId    String?
+    sprint      ProjectV2Sprint? @relation(fields: [sprintId], references: [id], onDelete: Cascade)
 
     // Session details
     agentId        String? // ElevenLabs agent ID
@@ -469,8 +498,59 @@ model ProjectV2MockSession {
 
     @@index([userId])
     @@index([projectId])
+    @@index([sprintId])
     @@index([status])
     @@index([completedAt])
+    @@index([sessionType])
+}
+
+// ===============================================
+// TASK-LEVEL ASSESSMENTS (Quiz or Code Challenge)
+// ===============================================
+// User's attempt at a task assessment (quiz or code)
+model UserTaskV2Assessment {
+    id     String        @id @default(cuid())
+    
+    userId String
+    user   User          @relation("UserTaskAssessments", fields: [userId], references: [id], onDelete: Cascade)
+    
+    taskId String
+    task   ProjectV2Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+    // Assessment type (mirrors the task's assessmentType)
+    assessmentType TaskAssessmentType
+
+    // ========== Quiz Assessment Fields ==========
+    // Questions are generated on the fly, stored here after generation
+    quizQuestions  Json? // Array of {prompt, options[], correctAnswer, explanation}
+    quizAnswers    Json? // Array of {questionIndex, selectedAnswer, isCorrect}
+    quizScore      Int? // Score out of 100
+    correctAnswers Int   @default(0)
+    totalQuestions Int   @default(0)
+
+    // ========== Code Assessment Fields ==========
+    // Code submitted by the user
+    codeSubmission String? @db.Text
+    codeLanguage   String?
+    // Validation result (AI-powered)
+    codeValidation Json? // {passed: boolean, feedback: string, suggestions: string[]}
+    codeScore      Int? // Score out of 100
+
+    // Overall
+    passed    Boolean @default(false)
+    attempts  Int     @default(1)
+    timeSpent Int? // Time in seconds
+
+    startedAt   DateTime  @default(now())
+    completedAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    @@unique([userId, taskId]) // One active assessment per user per task
+    @@index([userId])
+    @@index([taskId])
+    @@index([assessmentType])
+    @@index([passed])
 }
 
 // Feature Suggestions for Projects
@@ -893,16 +973,17 @@ model ProjectV2Sprint {
     orderIndex   Int    @default(0)
 
     // Creator and approval tracking
-    createdBy  String? // User ID who created this sprint
-    creator    User?   @relation("SprintCreator", fields: [createdBy], references: [id])
-    
+    createdBy String? // User ID who created this sprint
+    creator   User?   @relation("SprintCreator", fields: [createdBy], references: [id])
+
     isApproved Boolean @default(true) // Whether this sprint counts toward progress
     isPersonal Boolean @default(false) // Personal sprint created by non-creator
 
     tasks ProjectV2Task[]
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt             DateTime               @default(now())
+    updatedAt             DateTime               @updatedAt
+    projectV2MockSessions ProjectV2MockSession[]
 
     @@unique([projectId, sprintNumber])
     @@index([projectId])

@@ -6,7 +6,8 @@ import Link from 'next/link'
 import {
     ChevronLeft, Plus, CheckCircle2, Clock,
     LayoutList, Sparkles, Loader2, Book, Users, AlertTriangle,
-    Coffee, Brain, Lock, MonitorPlay
+    Coffee, Brain, Lock, MonitorPlay, FileText, Target, Code2,
+    Lightbulb, ChevronDown, Terminal, Copy, Check
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
@@ -23,22 +24,58 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@repo/ui/components/ui/tabs"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@repo/ui/components/ui/collapsible'
 import { toast } from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 
-import { TaskDetailSheet, TaskData } from '../../_components/task-detail-sheet'
 import { SprintGenerationSheet } from '../../_components/sprint-generation-sheet'
 import DailyStandupSheet from '../../_components/daily-standup-sheet'
+import SprintMockInterview from '../../_components/sprint-mock-interview'
 import ResourcesList from '@/components/projects/resources-list'
 import { FeatureSuggestionsList } from '@/components/projects/feature-suggestions-list'
 import ErrorsTab from '@/components/projects/errors-tab'
+import Quiz, { QuizQuestion, QuizResult } from '@/components/main/quiz'
+import CodeEditor from '@/components/main/code-editor'
 
 import {
     addTaskToSprint, updateTaskStatus
 } from '@/actions/(main)/projects/tasks.action'
 import { getFeatureSuggestions } from '@/actions/(main)/projects/feature-suggestions.action'
+import {
+    generateTaskQuizQuestions,
+    submitTaskQuizAnswers,
+    getCodeChallengeInstructions,
+    submitCodeForValidation,
+} from '@/actions/(main)/projects/projectassessments.action'
 import { Suggestion } from '@/types/project'
 
+
+interface TaskConcept {
+    title: string
+    description: string
+    links?: string[]
+}
+
+interface TaskData {
+    id: string
+    title: string
+    description: string[]
+    criteria?: string[]
+    hints?: string[]
+    badges?: string[]
+    tags?: string[]
+    difficulty: string
+    category?: string | null
+    estimatedTime?: string | null
+    checkpoints?: string[]
+    relatedPages?: string[]
+    dependencies?: string[]
+    terminalCommand?: string | null
+    orderIndex: number
+    status?: string
+    concepts?: TaskConcept[] | null
+    assessmentType?: 'QUIZ' | 'CODE' | 'NONE'
+}
 
 interface Sprint {
     id: string
@@ -100,16 +137,38 @@ export default function SprintsPageClient({
     const [addToSuggestions, setAddToSuggestions] = useState(false)
     const [isSubmittingTask, setIsSubmittingTask] = useState(false)
 
-    // Task Detail Sheet State
+    // Selected Task - for Task Details tab
     const [selectedTask, setSelectedTask] = useState<TaskData | null>(null)
-    const [isTaskSheetOpen, setIsTaskSheetOpen] = useState(false)
+
+    // Right Panel Tab State
+    const [activeTab, setActiveTab] = useState('resources')
 
     // Assistant State
-    const [activeAssistantTab, setActiveAssistantTab] = useState('resources')
     const [suggestions, setSuggestions] = useState<Suggestion[]>([])
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loadingSuggestions, setLoadingSuggestions] = useState(false)
     const [isStandupOpen, setIsStandupOpen] = useState(false)
+
+    // Mock Interview State - when a sprint mock is selected
+    const [selectedMockSprintId, setSelectedMockSprintId] = useState<string | null>(null)
+
+    // Task Details UI State
+    const [copied, setCopied] = useState(false)
+    const [hintsOpen, setHintsOpen] = useState(false)
+
+    // Quiz/Code Assessment State
+    const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
+    const [isLoadingAssessment, setIsLoadingAssessment] = useState(false)
+    const [codeInstructions, setCodeInstructions] = useState('')
+
+    const [codeLanguage, setCodeLanguage] = useState('javascript')
+    const [userCode, setUserCode] = useState('')
+    const [codeResult, setCodeResult] = useState<{
+        passed: boolean
+        score: number
+        feedback: string
+        suggestions: string[]
+    } | null>(null)
 
     const isCreator = project.createdBy === currentUserId
     // As per requirement, assume enrolled is true for now or handled by parent page
@@ -136,17 +195,16 @@ export default function SprintsPageClient({
         }
     }, [project.progress])
 
-    // Fetch suggestions
     useEffect(() => {
         const fetchSuggestions = async () => {
             setLoadingSuggestions(true)
             try {
-                const res = await getFeatureSuggestions(project.id)
-                if (res.success && res.data) {
-                    setSuggestions(res.data)
+                const result = await getFeatureSuggestions(project.id)
+                if (result.success && result.data) {
+                    setSuggestions(result.data as unknown as Suggestion[])
                 }
-            } catch (e) {
-                console.error("Failed to fetch suggestions", e)
+            } catch (error) {
+                console.error('Error fetching suggestions:', error)
             } finally {
                 setLoadingSuggestions(false)
             }
@@ -154,27 +212,23 @@ export default function SprintsPageClient({
         fetchSuggestions()
     }, [project.id])
 
-    // Calculate Progress
-    const totalTasks = project.sprints?.reduce((acc, s) => acc + s.tasks.length, 0) || 0
-    const completedTasks = Object.values(taskStatuses).filter(s => s === 'COMPLETED').length
-    const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
-    const hasStarted = completedTasks > 0
+    // Calculate progress
+    const allTasks = project.sprints?.flatMap(s => s.tasks) || []
+    const completedTasks = allTasks.filter(t => taskStatuses[t.id] === 'COMPLETED').length
+    const progressPercent = allTasks.length > 0 ? Math.round((completedTasks / allTasks.length) * 100) : 0
+    const hasStarted = completedTasks > 0 || Object.keys(taskStatuses).length > 0
 
     const handleTaskStatusChange = async (taskId: string, newStatus: 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED') => {
-        // Optimistic update
         setTaskStatuses(prev => ({ ...prev, [taskId]: newStatus }))
-
         try {
-            await updateTaskStatus(taskId, newStatus, `/projects/${project.slug}/sprints`)
-            router.refresh()
+            await updateTaskStatus(taskId, newStatus)
         } catch {
-            toast.error('Failed to update status')
+            toast.error('Failed to update task status')
         }
     }
 
     const handleAddTask = async () => {
         if (!newTaskTitle.trim() || !selectedSprintId) return
-
         setIsSubmittingTask(true)
         try {
             const result = await addTaskToSprint(
@@ -183,20 +237,20 @@ export default function SprintsPageClient({
                 {
                     title: newTaskTitle,
                     description: newTaskDesc,
-                    difficulty: newTaskDiff,
-                    estimatedTime: newTaskTime,
-                    category: newTaskCategory
+                    difficulty: newTaskDiff as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
+                    estimatedTime: newTaskTime || undefined,
+                    category: newTaskCategory || undefined
                 },
-                addToSuggestions,
-                `/projects/${project.slug}/sprints`
+                addToSuggestions
             )
-
             if (result.success) {
                 toast.success('Task added successfully')
                 setIsTaskDialogOpen(false)
-                // Reset form
                 setNewTaskTitle('')
                 setNewTaskDesc('')
+                setNewTaskDiff('BEGINNER')
+                setNewTaskTime('')
+                setNewTaskCategory('')
                 setAddToSuggestions(false)
                 router.refresh()
             } else {
@@ -211,25 +265,133 @@ export default function SprintsPageClient({
 
     const handleTaskClick = (task: TaskData) => {
         setSelectedTask(task)
-        setIsTaskSheetOpen(true)
+        setSelectedMockSprintId(null)
+        setActiveTab('taskDetails')
+        // Reset assessment state
+        setQuizQuestions([])
+        setCodeInstructions('')
+        setCodeResult(null)
+        setUserCode('')
+    }
+
+    const handleCopyCommand = () => {
+        if (selectedTask?.terminalCommand) {
+            navigator.clipboard.writeText(selectedTask.terminalCommand)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
+    }
+
+    const handleStartAssessment = () => {
+        if (!selectedTask) return
+        setActiveTab('assessment')
+        if (selectedTask.assessmentType === 'QUIZ') {
+            loadQuizQuestions()
+        } else if (selectedTask.assessmentType === 'CODE') {
+            loadCodeChallenge()
+        }
+    }
+
+    const loadQuizQuestions = async () => {
+        if (!selectedTask) return
+        setIsLoadingAssessment(true)
+        try {
+            const result = await generateTaskQuizQuestions(selectedTask.id)
+            if (result.success && result.data) {
+                // Convert to Quiz component format
+                const formatted: QuizQuestion[] = result.data.map((q, idx) => ({
+                    id: `q-${idx}`,
+                    text: q.prompt,
+                    type: 'single' as const,
+                    options: q.options.map((opt, oidx) => ({
+                        id: `opt-${oidx}`,
+                        text: opt,
+                        isCorrect: oidx === q.correctAnswer
+                    })),
+                    explanation: q.explanation,
+                    correctAnswer: q.correctAnswer
+                }))
+                setQuizQuestions(formatted)
+            } else {
+                toast.error(result.error || 'Failed to load quiz')
+            }
+        } catch {
+            toast.error('Error loading quiz')
+        } finally {
+            setIsLoadingAssessment(false)
+        }
+    }
+
+    const loadCodeChallenge = async () => {
+        if (!selectedTask) return
+        setIsLoadingAssessment(true)
+        try {
+            const result = await getCodeChallengeInstructions(selectedTask.id)
+            if (result.success && result.data) {
+                setCodeInstructions(result.data.instructions)
+
+                setCodeLanguage(result.data.language)
+                setUserCode(result.data.starterCode)
+            } else {
+                toast.error(result.error || 'Failed to load challenge')
+            }
+        } catch {
+            toast.error('Error loading challenge')
+        } finally {
+            setIsLoadingAssessment(false)
+        }
+    }
+
+    const handleQuizComplete = async (result: QuizResult) => {
+        if (!selectedTask) return
+        try {
+            const answers = result.answers.map((a, idx) => ({
+                questionIndex: idx,
+                selectedAnswer: typeof a.selectedAnswer === 'string'
+                    ? parseInt(a.selectedAnswer.replace('opt-', ''))
+                    : 0
+            }))
+            await submitTaskQuizAnswers(selectedTask.id, answers)
+
+            if (result.scorePercentage >= 70) {
+                toast.success(`Quiz passed with ${result.scorePercentage}%!`)
+                handleTaskStatusChange(selectedTask.id, 'COMPLETED')
+            } else {
+                toast.info(`Score: ${result.scorePercentage}%. Need 70% to pass.`)
+            }
+
+            // Go back to task details
+            setActiveTab('taskDetails')
+            setQuizQuestions([])
+        } catch {
+            toast.error('Error submitting quiz')
+        }
+    }
+
+    const handleSubmitCode = async () => {
+        if (!selectedTask || !userCode.trim()) return
+        setIsLoadingAssessment(true)
+        try {
+            const result = await submitCodeForValidation(selectedTask.id, userCode, codeLanguage)
+            if (result.success && result.data) {
+                setCodeResult(result.data)
+                if (result.data.passed) {
+                    toast.success(`Code passed with ${result.data.score}%!`)
+                    handleTaskStatusChange(selectedTask.id, 'COMPLETED')
+                } else {
+                    toast.info(`Score: ${result.data.score}%. ${result.data.feedback}`)
+                }
+            } else {
+                toast.error(result.error || 'Failed to validate code')
+            }
+        } catch {
+            toast.error('Error validating code')
+        } finally {
+            setIsLoadingAssessment(false)
+        }
     }
 
     const activeSprint = project.sprints?.find((s: Sprint) => s.id === selectedSprintId)
-
-    const handleNavigate = (direction: 'prev' | 'next') => {
-        if (!selectedTask || !activeSprint) return
-
-        const currentIndex = activeSprint.tasks.findIndex((t: TaskData) => t.id === selectedTask.id)
-        if (currentIndex === -1) return
-
-        if (direction === 'prev' && currentIndex > 0) {
-            const prevTask = activeSprint.tasks[currentIndex - 1]
-            if (prevTask) setSelectedTask(prevTask)
-        } else if (direction === 'next' && currentIndex < activeSprint.tasks.length - 1) {
-            const nextTask = activeSprint.tasks[currentIndex + 1]
-            if (nextTask) setSelectedTask(nextTask)
-        }
-    }
 
     const handleQuiz = () => {
         if (progressPercent > 50) {
@@ -243,9 +405,22 @@ export default function SprintsPageClient({
         }
     }
 
+    const statusOptions = [
+        { value: 'TO_DO', label: 'To Do', color: 'text-neutral-500 bg-neutral-100' },
+        { value: 'IN_PROGRESS', label: 'In Progress', color: 'text-yellow-600 bg-yellow-100' },
+        { value: 'COMPLETED', label: 'Completed', color: 'text-green-600 bg-green-100' }
+    ] as const
+
+    const difficultyColors: Record<string, string> = {
+        BEGINNER: 'text-green-600 bg-green-50 dark:bg-green-950/30',
+        INTERMEDIATE: 'text-blue-600 bg-blue-50 dark:bg-blue-950/30',
+        ADVANCED: 'text-purple-600 bg-purple-50 dark:bg-purple-950/30'
+    }
+
     return (
         <div className="flex h-screen w-full bg-white dark:bg-neutral-950 overflow-hidden">
-            <div className="hidden md:flex w-80 border-r border-neutral-200 dark:border-neutral-800 flex-col bg-neutral-50/50 dark:bg-neutral-900/20">
+            {/* Left Sidebar - Sprint List */}
+            <div className="hidden md:flex w-72 border-r border-neutral-200 dark:border-neutral-800 flex-col bg-neutral-50/50 dark:bg-neutral-900/20">
                 <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                     <Link
                         href={`/projects/${project.slug}`}
@@ -264,40 +439,88 @@ export default function SprintsPageClient({
                 <ScrollArea className="flex-1 w-full px-3">
                     <div className="space-y-2 py-2">
                         {
-                            project.sprints?.map((sprint: Sprint) => (
-                                <button
-                                    key={sprint.id}
-                                    onClick={() => setSelectedSprintId(sprint.id)}
-                                    className={cn(
-                                        "w-full text-left p-3 rounded-xl transition-all border border-transparent",
-                                        selectedSprintId === sprint.id
-                                            ? "bg-white dark:bg-neutral-900 shadow-sm border-neutral-200 dark:border-neutral-800 ring-1 ring-neutral-200 dark:ring-neutral-800"
-                                            : "hover:bg-neutral-100 dark:hover:bg-neutral-900/50 text-neutral-600 dark:text-neutral-400"
-                                    )}
-                                >
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className={cn(
-                                            "text-xs font-bold uppercase tracking-wider",
-                                            selectedSprintId === sprint.id ? "text-indigo-600 dark:text-indigo-400" : "text-neutral-500"
+                            project.sprints?.map((sprint: Sprint, index: number) => (
+                                <div key={sprint.id}>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedSprintId(sprint.id)
+                                            setSelectedMockSprintId(null)
+                                            setSelectedTask(null)
+                                            setActiveTab('resources')
+                                        }}
+                                        className={cn(
+                                            "w-full text-left p-3 rounded-xl transition-all border border-transparent",
+                                            selectedSprintId === sprint.id && !selectedMockSprintId
+                                                ? "bg-white dark:bg-neutral-900 shadow-sm border-neutral-200 dark:border-neutral-800 ring-1 ring-neutral-200 dark:ring-neutral-800"
+                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-900/50 text-neutral-600 dark:text-neutral-400"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className={cn(
+                                                "text-xs font-bold uppercase tracking-wider",
+                                                selectedSprintId === sprint.id && !selectedMockSprintId ? "text-indigo-600 dark:text-indigo-400" : "text-neutral-500"
+                                            )}>
+                                                Sprint {sprint.sprintNumber}
+                                            </span>
+                                        </div>
+                                        <h3 className={cn(
+                                            "font-semibold text-sm line-clamp-1 mb-1",
+                                            selectedSprintId === sprint.id && !selectedMockSprintId ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-neutral-300"
                                         )}>
-                                            Sprint {sprint.sprintNumber}
-                                        </span>
-                                    </div>
-                                    <h3 className={cn(
-                                        "font-semibold text-sm line-clamp-1 mb-1",
-                                        selectedSprintId === sprint.id ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-neutral-300"
-                                    )}>
-                                        {sprint.name}
-                                    </h3>
-                                    <div className="flex items-center gap-2 text-xs text-neutral-500">
-                                        <span className="flex items-center">
-                                            <Clock className="w-3 h-3 mr-1" />
-                                            {sprint.duration}
-                                        </span>
-                                        <span>•</span>
-                                        <span>{sprint.tasks?.length} tasks</span>
-                                    </div>
-                                </button>
+                                            {sprint.name}
+                                        </h3>
+                                        <div className="flex items-center gap-2 text-xs text-neutral-500">
+                                            <span className="flex items-center">
+                                                <Clock className="w-3 h-3 mr-1" />
+                                                {sprint.duration}
+                                            </span>
+                                            <span>•</span>
+                                            <span>{sprint.tasks?.length} tasks</span>
+                                        </div>
+                                    </button>
+
+                                    {/* Mock Interview Card after each sprint (except last) */}
+                                    {index < (project.sprints?.length || 0) - 1 && (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedMockSprintId(sprint.id)
+                                                setSelectedSprintId(sprint.id)
+                                                setSelectedTask(null)
+                                                setActiveTab('assessment')
+                                            }}
+                                            className={cn(
+                                                "w-full text-left p-2 mt-1 rounded-lg transition-all border",
+                                                selectedMockSprintId === sprint.id
+                                                    ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800"
+                                                    : "bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <div className={cn(
+                                                    "w-6 h-6 rounded-full flex items-center justify-center",
+                                                    selectedMockSprintId === sprint.id
+                                                        ? "bg-indigo-500 text-white"
+                                                        : "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600"
+                                                )}>
+                                                    <Brain className="w-3 h-3" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={cn(
+                                                        "text-xs font-medium truncate",
+                                                        selectedMockSprintId === sprint.id
+                                                            ? "text-indigo-800 dark:text-indigo-300"
+                                                            : "text-neutral-700 dark:text-neutral-300"
+                                                    )}>
+                                                        Mock Interview
+                                                    </p>
+                                                    <p className="text-[10px] text-neutral-500 truncate">
+                                                        Sprints 1-{sprint.sprintNumber}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    )}
+                                </div>
                             ))
                         }
                     </div>
@@ -314,7 +537,8 @@ export default function SprintsPageClient({
             </div>
 
             <div className="flex-1 flex flex-col h-full bg-white dark:bg-neutral-950 relative">
-                <div className="h-16 px-6 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-white/50 dark:bg-neutral-950/50 backdrop-blur-sm sticky top-0 z-10 shrink-0">
+                {/* Header */}
+                <div className="h-14 px-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-white/50 dark:bg-neutral-950/50 backdrop-blur-sm sticky top-0 z-10 shrink-0">
                     <div className="flex items-center gap-4 overflow-hidden">
                         <Link href={`/projects/${project.slug}`} className="md:hidden">
                             <ChevronLeft className="w-5 h-5 text-neutral-500" />
@@ -322,32 +546,30 @@ export default function SprintsPageClient({
                         {
                             activeSprint ? (
                                 <div className="min-w-0">
-                                    <h1 className="text-xl font-bold text-neutral-900 dark:text-white truncate">
+                                    <h1 className="text-lg font-bold text-neutral-900 dark:text-white truncate">
                                         {activeSprint.name}
                                     </h1>
                                 </div>
                             ) : (
-                                <h1 className="text-xl font-bold">Select a Sprint</h1>
+                                <h1 className="text-lg font-bold">Select a Sprint</h1>
                             )
                         }
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <Button
-                            variant="outline"
-                            size="sm"
-                            className="hidden sm:flex gap-2"
-                            onClick={() => setIsStandupOpen(true)}
+                            variant="ghost" size="sm" onClick={() => setIsStandupOpen(true)}
+                            className="hidden lg:flex gap-2"
                         >
                             <Coffee className="w-4 h-4 text-amber-600" />
                             Daily Standup
                         </Button>
 
                         {
-                            activeSprint && (
+                            (isCreator || isEnrolled) && activeSprint && (
                                 <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" className="bg-black text-white dark:bg-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200">
-                                            <Plus className="w-4 h-4 mr-2" />
+                                        <Button variant="outline" size="sm" className="hidden lg:flex gap-1">
+                                            <Plus className="w-4 h-4" />
                                             Add Task
                                         </Button>
                                     </DialogTrigger>
@@ -450,116 +672,97 @@ export default function SprintsPageClient({
                     </div>
                 </div>
 
+                {/* Main Content - Two Column Layout */}
                 <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-                    <div className="flex-1 lg:w-1/2 flex flex-col border-r border-neutral-200 dark:border-neutral-800">
+                    {/* Task List Column - Reduced Width */}
+                    <div className="w-full lg:w-[320px] shrink-0 flex flex-col border-r border-neutral-200 dark:border-neutral-800">
                         <ScrollArea className="flex-1 w-full relative">
-                            <div className="w-full px-6 py-8 space-y-6">
+                            <div className="w-full p-4 space-y-3">
                                 {
                                     activeSprint ? (
                                         activeSprint.tasks?.length > 0 ? (
                                             activeSprint.tasks.map((task: TaskData) => {
                                                 const status = taskStatuses[task.id] || 'TO_DO'
                                                 const isCompleted = status === 'COMPLETED'
+                                                const isSelected = selectedTask?.id === task.id
 
                                                 return (
                                                     <div
                                                         key={task.id}
                                                         onClick={() => handleTaskClick(task)}
                                                         className={cn(
-                                                            "group relative p-5 bg-white dark:bg-neutral-900 rounded-xl border transition-all duration-200 cursor-pointer",
-                                                            isCompleted
-                                                                ? "border-green-200 dark:border-green-900/30 bg-green-50/10"
-                                                                : "border-neutral-200 dark:border-neutral-800 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-sm hover:shadow-md"
+                                                            "group relative p-4 rounded-xl border transition-all duration-200 cursor-pointer",
+                                                            isSelected
+                                                                ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-300 dark:border-indigo-700 ring-1 ring-indigo-300 dark:ring-indigo-700"
+                                                                : isCompleted
+                                                                    ? "bg-green-50/50 dark:bg-green-950/10 border-green-200 dark:border-green-900/30"
+                                                                    : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-300 dark:hover:border-indigo-700"
                                                         )}
                                                     >
-                                                        <div className="flex items-start gap-4">
+                                                        <div className="flex items-start gap-3">
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation()
-                                                                    handleTaskStatusChange(task.id, isCompleted ? 'TO_DO' : 'COMPLETED')
+                                                                    handleTaskStatusChange(
+                                                                        task.id,
+                                                                        isCompleted ? 'TO_DO' : 'COMPLETED'
+                                                                    )
                                                                 }}
                                                                 className={cn(
-                                                                    "mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                                                                    "mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
                                                                     isCompleted
                                                                         ? "bg-green-500 border-green-500 text-white"
                                                                         : "border-neutral-300 dark:border-neutral-600 hover:border-indigo-500 text-transparent"
                                                                 )}
                                                             >
-                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                <CheckCircle2 className="w-3 h-3" />
                                                             </button>
-                                                            <div className="flex-1 space-y-2">
-                                                                <div className="flex items-start justify-between">
-                                                                    <h3 className={cn(
-                                                                        "text-base font-semibold transition-all",
-                                                                        isCompleted ? "text-neutral-500 line-through" : "text-neutral-900 dark:text-white"
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className={cn(
+                                                                    "text-sm font-semibold transition-all truncate",
+                                                                    isCompleted ? "text-neutral-500 line-through" : "text-neutral-900 dark:text-white"
+                                                                )}>
+                                                                    {task.title}
+                                                                </h3>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <Badge variant="secondary" className={cn(
+                                                                        "text-[10px] font-medium uppercase",
+                                                                        difficultyColors[task.difficulty] || ''
                                                                     )}>
-                                                                        {task.title}
-                                                                    </h3>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Badge variant="secondary" className={cn(
-                                                                            "text-xs font-medium uppercase",
-                                                                            task.difficulty === 'BEGINNER' ? "text-green-600 bg-green-50 dark:bg-green-950/30" :
-                                                                                task.difficulty === 'INTERMEDIATE' ? "text-blue-600 bg-blue-50 dark:bg-blue-950/30" :
-                                                                                    "text-purple-600 bg-purple-50 dark:bg-purple-950/30"
-                                                                        )}>
-                                                                            {task.difficulty}
+                                                                        {task.difficulty}
+                                                                    </Badge>
+                                                                    {task.assessmentType && task.assessmentType !== 'NONE' && (
+                                                                        <Badge variant="outline" className="text-[10px]">
+                                                                            {task.assessmentType === 'QUIZ' ? '📝 Quiz' : '💻 Code'}
                                                                         </Badge>
-                                                                        {
-                                                                            task.estimatedTime && (
-                                                                                <Badge variant="outline" className="text-xs">
-                                                                                    {task.estimatedTime}
-                                                                                </Badge>
-                                                                            )
-                                                                        }
-                                                                    </div>
+                                                                    )}
                                                                 </div>
-
-                                                                {
-                                                                    task.description && task.description.length > 0 && (
-                                                                        <div className="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-400 text-sm">
-                                                                            {
-                                                                                task.description.map((line, i) => (
-                                                                                    <p key={i}>{line}</p>
-                                                                                ))
-                                                                            }
-                                                                        </div>
-                                                                    )
-                                                                }
-
-                                                                {
-                                                                    task.category && (
-                                                                        <div className="flex items-center gap-2 pt-2">
-                                                                            <Badge variant="outline" className="text-xs bg-neutral-50 dark:bg-neutral-900">
-                                                                                {task.category}
-                                                                            </Badge>
-                                                                        </div>
-                                                                    )
-                                                                }
                                                             </div>
                                                         </div>
                                                     </div>
                                                 )
                                             })
                                         ) : (
-                                            <div className="text-center py-20 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700">
-                                                <LayoutList className="w-12 h-12 mx-auto text-neutral-300 mb-4" />
-                                                <h3 className="text-lg font-medium text-neutral-900 dark:text-white">No tasks yet</h3>
-                                                <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mt-2">
-                                                    This sprint is empty. Generate tasks with AI or add them manually.
+                                            <div className="text-center py-16 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700">
+                                                <LayoutList className="w-10 h-10 mx-auto text-neutral-300 mb-3" />
+                                                <h3 className="text-sm font-medium text-neutral-900 dark:text-white">No tasks yet</h3>
+                                                <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-[200px] mx-auto mt-1">
+                                                    Generate tasks with AI or add them manually.
                                                 </p>
                                                 <Button
                                                     variant="outline"
+                                                    size="sm"
                                                     onClick={() => setIsTaskDialogOpen(true)}
-                                                    className="mt-6"
+                                                    className="mt-4"
                                                 >
-                                                    <Plus className="w-4 h-4 mr-2" />
-                                                    Add First Task
+                                                    <Plus className="w-4 h-4 mr-1" />
+                                                    Add Task
                                                 </Button>
                                             </div>
                                         )
                                     ) : (
                                         <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
-                                            <p>Select a sprint from the sidebar to view details</p>
+                                            <p className="text-sm">Select a sprint from the sidebar</p>
                                         </div>
                                     )
                                 }
@@ -567,34 +770,53 @@ export default function SprintsPageClient({
                         </ScrollArea>
                     </div>
 
-                    <div className="flex-1 lg:w-1/2 flex flex-col bg-neutral-50/30 dark:bg-neutral-900/10">
-                        <Tabs value={activeAssistantTab} onValueChange={setActiveAssistantTab} className="flex-1 flex flex-col">
-                            <div className="px-6 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-950/50 backdrop-blur-sm">
-                                <TabsList className="bg-transparent p-0 h-auto gap-4">
+                    {/* Right Panel - Tabs */}
+                    <div className="flex-1 flex flex-col bg-neutral-50/30 dark:bg-neutral-900/10 overflow-hidden">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                            <div className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-950/50 backdrop-blur-sm shrink-0">
+                                <TabsList className="flex bg-transparent p-0 h-auto gap-1">
                                     <TabsTrigger
                                         value="resources"
-                                        className="data-[state=active]:bg-transparent data-[state=active]:text-blue-600 data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-2 py-3 border-transparent border-b-2 transition-all"
+                                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800"
                                     >
-                                        <Book className="w-4 h-4 mr-2" />
-                                        Resources
+                                        <Book className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Resources</span>
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="suggestions"
-                                        className="data-[state=active]:bg-transparent data-[state=active]:text-indigo-600 data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 rounded-none px-2 py-3 border-transparent border-b-2 transition-all"
+                                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800"
                                     >
-                                        <Users className="w-4 h-4 mr-2" />
-                                        Suggestions
+                                        <Users className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Suggestions</span>
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="errors"
-                                        className="data-[state=active]:bg-transparent data-[state=active]:text-amber-600 data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-amber-600 rounded-none px-2 py-3 border-transparent border-b-2 transition-all"
+                                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800"
                                     >
-                                        <AlertTriangle className="w-4 h-4 mr-2" />
-                                        Errors
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Errors</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="taskDetails"
+                                        disabled={!selectedTask}
+                                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Task Details</span>
+                                        {!selectedTask && <Lock className="h-3 w-3" />}
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="assessment"
+                                        disabled={!selectedTask && !selectedMockSprintId}
+                                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <Brain className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Assessment</span>
+                                        {!selectedTask && !selectedMockSprintId && <Lock className="h-3 w-3" />}
                                     </TabsTrigger>
                                 </TabsList>
                             </div>
-                            <div className="flex-1 overflow-hidden relative">
+                            <div className="flex-1 overflow-hidden">
                                 <ScrollArea className="h-full w-full">
                                     <div className="p-6">
                                         <TabsContent value="resources" className="mt-0">
@@ -607,6 +829,7 @@ export default function SprintsPageClient({
                                         <TabsContent value="suggestions" className="mt-0">
                                             <FeatureSuggestionsList
                                                 suggestions={suggestions}
+                                                projectId={project.id}
                                                 projectSlug={project.slug}
                                                 isCreator={isCreator}
                                                 isEnrolled={isEnrolled}
@@ -619,6 +842,336 @@ export default function SprintsPageClient({
                                                 isEnrolled={isEnrolled}
                                                 isCreator={isCreator}
                                             />
+                                        </TabsContent>
+
+                                        {/* Task Details Tab */}
+                                        <TabsContent value="taskDetails" className="mt-0">
+                                            {selectedTask ? (
+                                                <div className="space-y-6">
+                                                    {/* Header */}
+                                                    <div className="pb-4 border-b border-neutral-200 dark:border-neutral-800">
+                                                        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+                                                            {selectedTask.title}
+                                                        </h2>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <Badge className={difficultyColors[selectedTask.difficulty] || ''}>
+                                                                {selectedTask.difficulty}
+                                                            </Badge>
+                                                            {selectedTask.category && (
+                                                                <Badge variant="outline">
+                                                                    {selectedTask.category}
+                                                                </Badge>
+                                                            )}
+                                                            {selectedTask.estimatedTime && (
+                                                                <Badge variant="outline" className="flex items-center gap-1">
+                                                                    <Clock className="w-3 h-3" />
+                                                                    {selectedTask.estimatedTime}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        {selectedTask.tags && selectedTask.tags.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mt-3">
+                                                                {selectedTask.tags.map((tag, idx) => (
+                                                                    <span
+                                                                        key={idx}
+                                                                        className="text-xs px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded"
+                                                                    >
+                                                                        {tag}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Status Control */}
+                                                        <div className="flex items-center gap-2 mt-4">
+                                                            {statusOptions.map((option) => (
+                                                                <Button
+                                                                    key={option.value}
+                                                                    variant={taskStatuses[selectedTask.id] === option.value ? 'default' : 'outline'}
+                                                                    size="sm"
+                                                                    onClick={() => handleTaskStatusChange(selectedTask.id, option.value)}
+                                                                    className={cn(
+                                                                        'gap-1',
+                                                                        taskStatuses[selectedTask.id] === option.value && 'bg-indigo-600 hover:bg-indigo-700'
+                                                                    )}
+                                                                >
+                                                                    {option.label}
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Concepts */}
+                                                    {selectedTask.concepts && selectedTask.concepts.length > 0 && (
+                                                        <div>
+                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                                                <Lightbulb className="w-4 h-4 text-amber-500" />
+                                                                Key Concepts
+                                                            </h4>
+                                                            <div className="grid gap-3">
+                                                                {selectedTask.concepts.map((concept, idx) => (
+                                                                    <div key={idx} className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                                                                        <p className="font-medium text-sm text-amber-800 dark:text-amber-300">{concept.title}</p>
+                                                                        <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{concept.description}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Description Steps */}
+                                                    {selectedTask.description && selectedTask.description.length > 0 && (
+                                                        <div>
+                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                                                <Code2 className="w-4 h-4" />
+                                                                What to Build
+                                                            </h4>
+                                                            <ol className="space-y-3">
+                                                                {selectedTask.description.map((step, idx) => (
+                                                                    <li key={idx} className="flex gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                                                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-medium">
+                                                                            {idx + 1}
+                                                                        </span>
+                                                                        <span className="leading-relaxed pt-0.5">{step}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ol>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Success Criteria */}
+                                                    {selectedTask.criteria && selectedTask.criteria.length > 0 && (
+                                                        <div>
+                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                                                <Target className="w-4 h-4" />
+                                                                Success Criteria
+                                                            </h4>
+                                                            <ul className="space-y-2">
+                                                                {selectedTask.criteria.map((criterion, idx) => (
+                                                                    <li key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                                                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                                                        {criterion}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Hints (Collapsible) */}
+                                                    {selectedTask.hints && selectedTask.hints.length > 0 && (
+                                                        <Collapsible open={hintsOpen} onOpenChange={setHintsOpen}>
+                                                            <CollapsibleTrigger asChild>
+                                                                <Button variant="ghost" className="w-full justify-between p-4 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-xl">
+                                                                    <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                                                                        <Lightbulb className="w-4 h-4" />
+                                                                        {selectedTask.hints.length} Hints Available
+                                                                    </span>
+                                                                    <ChevronDown className={cn('w-4 h-4 transition-transform', hintsOpen && 'rotate-180')} />
+                                                                </Button>
+                                                            </CollapsibleTrigger>
+                                                            <CollapsibleContent>
+                                                                <ul className="mt-3 space-y-2 p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl">
+                                                                    {selectedTask.hints.map((hint, idx) => (
+                                                                        <li key={idx} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+                                                                            <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                                                            {hint}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </CollapsibleContent>
+                                                        </Collapsible>
+                                                    )}
+
+                                                    {/* Terminal Command */}
+                                                    {selectedTask.terminalCommand && (
+                                                        <div>
+                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                                                <Terminal className="w-4 h-4" />
+                                                                Terminal Command
+                                                            </h4>
+                                                            <div className="flex items-center gap-2 p-3 bg-neutral-900 dark:bg-black rounded-xl">
+                                                                <code className="flex-1 text-sm text-green-400 font-mono">
+                                                                    $ {selectedTask.terminalCommand}
+                                                                </code>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={handleCopyCommand}
+                                                                    className="text-neutral-400 hover:text-white"
+                                                                >
+                                                                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Start Assessment Button */}
+                                                    {selectedTask.assessmentType && selectedTask.assessmentType !== 'NONE' && (
+                                                        <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                                            <Button
+                                                                onClick={handleStartAssessment}
+                                                                className={cn(
+                                                                    "w-full",
+                                                                    selectedTask.assessmentType === 'QUIZ'
+                                                                        ? "bg-purple-600 hover:bg-purple-700 text-white"
+                                                                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                                                                )}
+                                                            >
+                                                                {selectedTask.assessmentType === 'QUIZ' ? (
+                                                                    <>
+                                                                        <Brain className="w-4 h-4 mr-2" />
+                                                                        Take Quiz Assessment
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Code2 className="w-4 h-4 mr-2" />
+                                                                        Take Code Challenge
+                                                                    </>
+                                                                )}
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
+                                                    <FileText className="w-12 h-12 text-neutral-300 mb-4" />
+                                                    <p className="text-sm">Select a task to view details</p>
+                                                </div>
+                                            )}
+                                        </TabsContent>
+
+                                        {/* Assessment Tab */}
+                                        <TabsContent value="assessment" className="mt-0">
+                                            {/* Sprint Mock Interview */}
+                                            {selectedMockSprintId && activeSprint ? (
+                                                <SprintMockInterview
+                                                    projectId={project.id}
+                                                    sprintId={selectedMockSprintId}
+                                                    sprintName={activeSprint.name}
+                                                    sprintNumber={activeSprint.sprintNumber}
+                                                    onComplete={(score) => {
+                                                        toast.success(`Mock interview completed with score: ${score}%`)
+                                                        setSelectedMockSprintId(null)
+                                                        setActiveTab('resources')
+                                                    }}
+                                                />
+                                            ) : selectedTask ? (
+                                                /* Task Assessment - Quiz or Code */
+                                                isLoadingAssessment ? (
+                                                    <div className="flex flex-col items-center justify-center h-[50vh]">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
+                                                        <p className="text-sm text-neutral-500">Loading assessment...</p>
+                                                    </div>
+                                                ) : selectedTask.assessmentType === 'QUIZ' && quizQuestions.length > 0 ? (
+                                                    <Quiz
+                                                        quizId={`task-${selectedTask.id}`}
+                                                        questions={quizQuestions}
+                                                        title={`Quiz: ${selectedTask.title}`}
+                                                        mode="assessment"
+                                                        immediateResults={true}
+                                                        allowSkip={false}
+                                                        allowHints={true}
+                                                        onComplete={handleQuizComplete}
+                                                        onExit={() => {
+                                                            setQuizQuestions([])
+                                                            setActiveTab('taskDetails')
+                                                        }}
+                                                    />
+                                                ) : selectedTask.assessmentType === 'CODE' && codeInstructions ? (
+                                                    <div className="space-y-4">
+                                                        <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                                                            <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                                                                Code Challenge: {selectedTask.title}
+                                                            </h3>
+                                                            <p className="text-sm text-blue-700 dark:text-blue-400 whitespace-pre-wrap">
+                                                                {codeInstructions}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+                                                            <CodeEditor
+                                                                code={userCode}
+                                                                language={codeLanguage}
+                                                                height="400px"
+                                                                onChange={(code) => setUserCode(code)}
+                                                                showLanguageSelector={false}
+                                                                showCopyButton={true}
+                                                                showRunButton={false}
+                                                                placeholder="Write your solution here..."
+                                                            />
+                                                        </div>
+
+                                                        {codeResult && (
+                                                            <div className={cn(
+                                                                "p-4 rounded-lg border-2",
+                                                                codeResult.passed
+                                                                    ? "border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20"
+                                                                    : "border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20"
+                                                            )}>
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    {codeResult.passed ? (
+                                                                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                                                    ) : (
+                                                                        <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                                                    )}
+                                                                    <span className="font-semibold">
+                                                                        {codeResult.passed ? 'Challenge Passed!' : 'Not Quite Right'}
+                                                                    </span>
+                                                                    <Badge variant="secondary">Score: {codeResult.score}%</Badge>
+                                                                </div>
+                                                                <p className="text-sm text-neutral-700 dark:text-neutral-300">{codeResult.feedback}</p>
+                                                                {codeResult.suggestions.length > 0 && (
+                                                                    <div className="mt-2">
+                                                                        <p className="text-sm font-medium">Suggestions:</p>
+                                                                        <ul className="list-disc list-inside text-sm text-neutral-600 dark:text-neutral-400">
+                                                                            {codeResult.suggestions.map((s, i) => (
+                                                                                <li key={i}>{s}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                onClick={() => {
+                                                                    setCodeInstructions('')
+                                                                    setCodeResult(null)
+                                                                    setActiveTab('taskDetails')
+                                                                }}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                            <Button
+                                                                onClick={handleSubmitCode}
+                                                                disabled={isLoadingAssessment || !userCode.trim()}
+                                                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                            >
+                                                                {isLoadingAssessment ? (
+                                                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                                                ) : null}
+                                                                Submit Code
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
+                                                        <Brain className="w-12 h-12 text-neutral-300 mb-4" />
+                                                        <p className="text-sm">
+                                                            {selectedTask.assessmentType === 'NONE'
+                                                                ? "This task doesn't require an assessment"
+                                                                : "Click 'Start Assessment' from Task Details to begin"}
+                                                        </p>
+                                                    </div>
+                                                )
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
+                                                    <Brain className="w-12 h-12 text-neutral-300 mb-4" />
+                                                    <p className="text-sm">Select a task or mock interview to view assessments</p>
+                                                </div>
+                                            )}
                                         </TabsContent>
                                     </div>
                                 </ScrollArea>
@@ -633,26 +1186,6 @@ export default function SprintsPageClient({
                 isOpen={isSprintGenOpen}
                 onClose={() => setIsSprintGenOpen(false)}
                 isCreator={isCreator}
-            />
-
-            <TaskDetailSheet
-                task={selectedTask}
-                isOpen={isTaskSheetOpen}
-                onClose={() => {
-                    setIsTaskSheetOpen(false)
-                    setSelectedTask(null)
-                }}
-                onNavigate={handleNavigate}
-                hasPrev={selectedTask && activeSprint ? activeSprint.tasks.findIndex(t => t.id === selectedTask.id) > 0 : false}
-                hasNext={selectedTask && activeSprint ? activeSprint.tasks.findIndex(t => t.id === selectedTask.id) < activeSprint.tasks.length - 1 : false}
-                taskStatus={(selectedTask ? taskStatuses[selectedTask.id] || 'TO_DO' : 'TO_DO') as 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED'}
-                onStatusChange={selectedTask ? (status) => handleTaskStatusChange(selectedTask.id, status) : undefined}
-                hasStarted={true}
-                difficultyColors={{
-                    BEGINNER: "text-green-600 bg-green-50 dark:bg-green-950/30",
-                    INTERMEDIATE: "text-blue-600 bg-blue-50 dark:bg-blue-950/30",
-                    ADVANCED: "text-purple-600 bg-purple-50 dark:bg-purple-950/30"
-                }}
             />
 
             <DailyStandupSheet

@@ -629,7 +629,7 @@ export default function ProjectDetailsClient({
                                                     </p>
                                                 </div>
                                                 <Button
-                                                    onClick={() => setActiveTab('tasks')}
+                                                    onClick={() => router.push(`/projects/${project.slug}/sprints`)}
                                                     className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25"
                                                     size="lg"
                                                 >

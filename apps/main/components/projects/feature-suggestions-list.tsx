@@ -20,9 +20,11 @@ import {
 import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
 import { Suggestion } from "@/types/project"
+import { FeatureSuggestionSheet } from "./feature-suggestion-sheet"
 
 interface FeatureSuggestionsListProps {
     suggestions: Suggestion[]
+    projectId: string
     projectSlug: string
     isCreator: boolean
     isEnrolled: boolean
@@ -31,6 +33,7 @@ interface FeatureSuggestionsListProps {
 
 export function FeatureSuggestionsList({
     suggestions,
+    projectId,
     projectSlug,
     isCreator,
     isEnrolled,
@@ -184,7 +187,22 @@ export function FeatureSuggestionsList({
     }
 
     return (
-        <>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-neutral-500">
+                    {suggestions.length} {suggestions.length === 1 ? 'suggestion' : 'suggestions'}
+                </h3>
+                {
+                    (isEnrolled || isCreator) && (
+                        <FeatureSuggestionSheet
+                            projectId={projectId}
+                            isCreator={isCreator}
+                            isEnrolled={isEnrolled}
+                        />
+                    )
+                }
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
                 {
                     suggestions.map((suggestion) => (
@@ -452,6 +470,6 @@ export function FeatureSuggestionsList({
                     }
                 </SheetContent>
             </Sheet>
-        </>
+        </div>
     )
 }

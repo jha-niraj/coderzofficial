@@ -1,16 +1,16 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { 
-    AlertCircle, ArrowLeft, RefreshCw 
+import {
+    AlertCircle, ArrowLeft, RefreshCw
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@repo/ui/components/ui/button'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 
-export function ProjectDetailsError({ error }: { error?: string }) {
+export function ProjectDetailsError({ }: { error?: string }) {
     return (
         <div className="relative min-h-screen w-full bg-white dark:bg-neutral-950 overflow-hidden p-4">
             <div className="max-w-4xl mx-auto px-6 py-12">
@@ -42,7 +42,7 @@ export function ProjectDetailsError({ error }: { error?: string }) {
                             </div>
                             <CardTitle className="text-2xl">Project Not Found</CardTitle>
                             <CardDescription className="text-base">
-                                {error || "We couldn't load this project. It might have been removed, made private, or there might be a connection issue."}
+                                {"We couldn't load this project. It might have been removed, made private, or there might be a connection issue."}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
