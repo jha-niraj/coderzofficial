@@ -13,7 +13,7 @@ export default async function ProjectSprintsPage({ params }: { params: Promise<{
     console.log(result);
 
     if (!result.success || !result.data) {
-        return <ProjectDetailsError error={result.error} />
+        return <ProjectDetailsError />
     }
 
     const project = result.data

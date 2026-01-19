@@ -10,7 +10,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     const result = await getProjectBySlug(slug)
 
     if (!result.success || !result.data) {
-        return <ProjectDetailsError error={result.error} />
+        return <ProjectDetailsError />
     }
 
     const project = result.data

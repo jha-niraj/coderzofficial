@@ -19,7 +19,7 @@ export default async function TasksPage({
     const tasksResult = await getProjectTasks(slug)
 
     if (!tasksResult.success || !tasksResult.data) {
-        return <ProjectDetailsError error={tasksResult.error || "Unable to load project tasks. Please try again."} />
+        return <ProjectDetailsError />
     }
 
     return (

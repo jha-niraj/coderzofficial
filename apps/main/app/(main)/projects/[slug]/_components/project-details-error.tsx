@@ -10,7 +10,7 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 
-export function ProjectDetailsError({ }: { error?: string }) {
+export function ProjectDetailsError() {
     return (
         <div className="relative min-h-screen w-full bg-white dark:bg-neutral-950 overflow-hidden p-4">
             <div className="max-w-4xl mx-auto px-6 py-12">
