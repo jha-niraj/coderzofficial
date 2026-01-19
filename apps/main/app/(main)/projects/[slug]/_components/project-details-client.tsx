@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import {
     ArrowLeft, Sparkles, Clock, Code2, Brain, Trophy, CheckCircle2, Lock,
     Unlock, Play, Users, Target, Lightbulb, Layers, ListChecks, Share2,
-    Coins, BookOpen, Copy, Check, Zap, AlertTriangle, GitFork, Settings
+    Coins, Copy, Check, Zap, GitFork, Settings
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -36,32 +36,32 @@ import {
     startProject, submitProject, forkProject
 } from '@/actions/(main)/projects/project.action'
 import {
-    ProjectDetailsClientProps, ProjectV2Page, ProjectV2Sprint, ProjectV2Task
+    ProjectDetailsClientProps, ProjectV2Page, ProjectV2Sprint
 } from '@/types/project'
-import { FeatureSuggestionSheet } from '@/components/projects/feature-suggestion-sheet'
-import { FeatureSuggestionsList } from '@/components/projects/feature-suggestions-list'
-import { getFeatureSuggestions } from '@/actions/(main)/projects/feature-suggestions.action'
+
 import { EnrollmentDialog } from './enrollment-dialog'
-import ResourcesList from '@/components/projects/resources-list'
-import AddResourceSheet from '@/components/projects/add-resource-sheet'
+
 import DailyStandupSheet from './daily-standup-sheet'
-import TaskListProgress, { TaskItem } from '@/components/projects/task-list-progress'
-import ErrorsTab from '@/components/projects/errors-tab'
+
 import { cn } from '@repo/ui/lib/utils'
 import BlueprintFlowchart from '@/components/projects/blueprintflowchart'
 
 // New extracted components
+import { ProjectAssistantButtons } from './project-assistant-buttons'
 import { PageOverviewCard } from './page-overview-card'
-import { SprintCard, SprintData, TaskData, TaskStatusMap } from './sprint-card'
 import { SetupGuideTab } from './setup-guide-tab'
-import { TeamMembersDisplay, TeamCollaborationBadge } from './team-members-display'
-import { SprintGenerationSheet } from './sprint-generation-sheet'
+// Team Members components removed
+
+
 import { ProjectSettingsTab, TeamMember, ProjectInvitation } from './project-settings-tab'
-import { acceptPersonalSprint, rejectPersonalSprint } from '@/actions/(main)/projects/sprint-generation.action'
+
 import {
     inviteToProject, cancelInvitation, removeMember, updateMemberRole,
     getProjectMembers, getProjectInvitations, updateProjectVisibility
 } from '@/actions/(main)/projects/team-collaboration.action'
+
+
+import { TaskItem } from '@/components/projects/task-list-progress'
 
 function MilestoneTracker({ progressPercentage }: { progressPercentage: number, includeAssessment?: boolean }) {
     const milestones = [
@@ -136,18 +136,27 @@ function QuickActions({
     progressPercentage,
     includeAssessment,
     isPublic,
+    hasStarted,
 }: {
     projectSlug: string
     progressPercentage: number
     includeAssessment: boolean
     isPublic: boolean
+    hasStarted: boolean
 }) {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Link href={`/projects/${projectSlug}/tasks`}>
-                <Button variant="outline" className="w-full h-auto py-4 flex-col gap-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-300">
-                    <ListChecks className="w-5 h-5 text-indigo-600" />
-                    <span className="text-xs">Full Tasks</span>
+            <Link href={hasStarted ? `/projects/${projectSlug}/sprints` : '#'}>
+                <Button
+                    variant="outline"
+                    className={cn(
+                        "w-full h-auto py-4 flex-col gap-1 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all",
+                        !hasStarted && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={!hasStarted}
+                >
+                    <ListChecks className="w-5 h-5" />
+                    <span className="text-xs">Sprints Board</span>
                 </Button>
             </Link>
 
@@ -209,30 +218,7 @@ function QuickActions({
 // Main Component
 // ============================================================================
 
-export interface Suggestion {
-    id: string
-    title: string
-    description: string
-    type: string
-    tags: string[]
-    imageUrl?: string | null
-    status: string
-    addedToTasks: boolean
-    suggestedBy: "CREATOR" | "ENROLLED_USER" | "VISITOR"
-    addedByUsers: string[]
-    adoptedByCurrentUser?: boolean | null
-    createdAt: Date
-    user: {
-        id: string
-        name?: string | null
-        username?: string | null
-        image?: string | null
-    }
-    task?: {
-        id: string
-        title: string
-    } | null
-}
+
 export default function ProjectDetailsClient({
     project,
     currentUserId,
@@ -257,19 +243,18 @@ export default function ProjectDetailsClient({
         liveUrl: '',
         notes: ''
     })
-    const [suggestions, setSuggestions] = useState<Suggestion[]>([])
-    const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+
     const [copied, setCopied] = useState(false)
     const [standupSheetOpen, setStandupSheetOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('overview')
     const [forking, setForking] = useState(false)
-    const [sprintGenerationOpen, setSprintGenerationOpen] = useState(false)
+
 
     // Project Settings State & Handlers
     const [projectMembers, setProjectMembers] = useState<TeamMember[]>([])
     const [projectInvitations, setProjectInvitations] = useState<ProjectInvitation[]>([])
     const [isTeamMode, setIsTeamMode] = useState(false)
-    const [isSettingsLoading, setIsSettingsLoading] = useState(false)
+    const [, setIsSettingsLoading] = useState(false)
 
     // Fetch settings data when tab is active
     useEffect(() => {
@@ -314,7 +299,7 @@ export default function ProjectDetailsClient({
             } else {
                 toast.error(result.error || 'Failed to send invitation')
             }
-        } catch (error) {
+        } catch {
             toast.error('An unexpected error occurred')
         }
     }
@@ -329,7 +314,7 @@ export default function ProjectDetailsClient({
             } else {
                 toast.error(result.error || 'Failed to remove member')
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to remove member')
         }
     }
@@ -344,7 +329,7 @@ export default function ProjectDetailsClient({
             } else {
                 toast.error(result.error || 'Failed to update role')
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to update role')
         }
     }
@@ -359,7 +344,7 @@ export default function ProjectDetailsClient({
             } else {
                 toast.error(result.error || 'Failed to cancel invitation')
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to cancel invitation')
         }
     }
@@ -367,14 +352,11 @@ export default function ProjectDetailsClient({
     const handleUpdateVisibility = async (visibility: 'PUBLIC' | 'PRIVATE') => {
         try {
             const result = await updateProjectVisibility(project.id, visibility)
-            if (result.success) {
-                toast.success(`Project is now ${visibility.toLowerCase()}`)
-                router.refresh()
-            } else {
+            if (!result.success) {
                 toast.error(result.error || 'Failed to update visibility')
             }
-        } catch (error) {
-            toast.error('Failed to update visibility')
+        } catch {
+            toast.error('Failed to update project visibility')
         }
     }
 
@@ -434,17 +416,7 @@ export default function ProjectDetailsClient({
         return allTasks
     }, [project.sprints, userProgress])
 
-    useEffect(() => {
-        const fetchSuggestions = async () => {
-            setLoadingSuggestions(true)
-            const result = await getFeatureSuggestions(project.id)
-            if (result.success) {
-                setSuggestions(result.data)
-            }
-            setLoadingSuggestions(false)
-        }
-        fetchSuggestions()
-    }, [project.id])
+
 
     const handleStartProject = async () => {
         try {
@@ -538,25 +510,9 @@ export default function ProjectDetailsClient({
         ADVANCED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
     }
 
-    const categoryColors: Record<string, string> = {
-        'setup': 'border-green-300 text-green-700 dark:text-green-400',
-        'frontend': 'border-blue-300 text-blue-700 dark:text-blue-400',
-        'backend': 'border-purple-300 text-purple-700 dark:text-purple-400',
-        'database': 'border-amber-300 text-amber-700 dark:text-amber-400',
-        'api': 'border-cyan-300 text-cyan-700 dark:text-cyan-400',
-        'testing': 'border-red-300 text-red-700 dark:text-red-400',
-        'deployment': 'border-indigo-300 text-indigo-700 dark:text-indigo-400',
-    }
 
-    // Build a map of task ID to status for quick lookup
-    const taskStatusMap: TaskStatusMap = useMemo(() => {
-        const statusMap: TaskStatusMap = {}
-        const taskStatuses = userProgress?.taskStatuses || []
-        for (const statusEntry of taskStatuses) {
-            statusMap[statusEntry.taskId] = statusEntry.status as 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED'
-        }
-        return statusMap
-    }, [userProgress])
+
+
 
     return (
         <div className="relative min-h-screen w-full bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900">
@@ -574,6 +530,18 @@ export default function ProjectDetailsClient({
                         Back to Projects
                     </Link>
                 </motion.div>
+
+                {/* Header Actions including Assistant */}
+                <div className="absolute top-6 right-6 flex items-center gap-2">
+                    <ProjectAssistantButtons
+                        projectId={project.id}
+                        projectSlug={project.slug}
+                        isCreator={isCreator}
+                        isEnrolled={hasStarted || isCreator}
+                        currentUserId={currentUserId}
+                    />
+                </div>
+
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -839,6 +807,7 @@ export default function ProjectDetailsClient({
                                 progressPercentage={progressPercentage}
                                 includeAssessment={project.includeAssessment}
                                 isPublic={isPublic}
+                                hasStarted={hasStarted}
                             />
                         </motion.div>
                     )
@@ -854,30 +823,11 @@ export default function ProjectDetailsClient({
                             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
                                 Overview
                             </TabsTrigger>
-                            {
-                                hasStarted && (
-                                    <TabsTrigger value="sprints" className="rounded-lg data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black">
-                                        Sprints ({project.sprints?.length || 0})
-                                    </TabsTrigger>
-                                )
-                            }
                             <TabsTrigger value="pages">
                                 Pages ({project.pages.length})
                             </TabsTrigger>
                             <TabsTrigger value="setup">
                                 Setup Guide
-                            </TabsTrigger>
-                            <TabsTrigger value="resources">
-                                Resources
-                            </TabsTrigger>
-                            <TabsTrigger value="suggestions">
-                                Community {suggestions.length > 0 && `(${suggestions.length})`}
-                            </TabsTrigger>
-                            <TabsTrigger value="errors">
-                                <div className="flex items-center justify-center gap-2">
-                                    <AlertTriangle className="w-3 h-3" />
-                                    <p>Errors</p>
-                                </div>
                             </TabsTrigger>
                             {
                                 isCreator && (
@@ -890,20 +840,20 @@ export default function ProjectDetailsClient({
                         </TabsList>
                         <TabsContent value="overview" className="mt-6">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                <Card className="bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow duration-300">
                                     <CardHeader>
-                                        <CardTitle className='text-left'>Project Overview</CardTitle>
+                                        <CardTitle className='text-left text-xl'>Project Overview</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <p className="text-left text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                        <p className="text-left text-neutral-700 dark:text-neutral-300 leading-relaxed text-lg">
                                             {project.blueprintOverview}
                                         </p>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                <Card className="bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow duration-300">
                                     <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Layers className="w-5 h-5" />
+                                        <CardTitle className="flex items-center gap-2 text-xl">
+                                            <Layers className="w-5 h-5 text-indigo-500" />
                                             Technology Stack
                                         </CardTitle>
                                     </CardHeader>
@@ -911,52 +861,52 @@ export default function ProjectDetailsClient({
                                         <div className="grid grid-cols-2 gap-4">
                                             {
                                                 project.stacks?.frontend && (
-                                                    <div className="flex gap-4">
-                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Frontend</p>
-                                                        <Badge>{project.stacks.frontend}</Badge>
+                                                    <div className="flex gap-4 items-center">
+                                                        <p className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 w-20">Frontend</p>
+                                                        <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">{project.stacks.frontend}</Badge>
                                                     </div>
                                                 )
                                             }
                                             {
                                                 project.stacks?.backend && (
-                                                    <div className="flex gap-4">
-                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Backend</p>
-                                                        <Badge>{project.stacks.backend}</Badge>
+                                                    <div className="flex gap-4 items-center">
+                                                        <p className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 w-20">Backend</p>
+                                                        <Badge variant="secondary" className="bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">{project.stacks.backend}</Badge>
                                                     </div>
                                                 )
                                             }
                                             {
                                                 project.stacks?.database && (
-                                                    <div className="flex gap-4">
-                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Database</p>
-                                                        <Badge>{project.stacks.database}</Badge>
+                                                    <div className="flex gap-4 items-center">
+                                                        <p className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 w-20">Database</p>
+                                                        <Badge variant="secondary" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{project.stacks.database}</Badge>
                                                     </div>
                                                 )
                                             }
                                             {
                                                 project.stacks?.deployment && (
-                                                    <div className="flex gap-4">
-                                                        <p className="text-left text-sm text-neutral-500 dark:text-neutral-400">Deployment</p>
-                                                        <Badge>{project.stacks.deployment}</Badge>
+                                                    <div className="flex gap-4 items-center">
+                                                        <p className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 w-20">Deployment</p>
+                                                        <Badge variant="secondary" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">{project.stacks.deployment}</Badge>
                                                     </div>
                                                 )
                                             }
                                         </div>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                <Card className="bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow duration-300">
                                     <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Target className="w-5 h-5" />
+                                        <CardTitle className="flex items-center gap-2 text-xl">
+                                            <Target className="w-5 h-5 text-green-500" />
                                             Key Outcomes
                                         </CardTitle>
                                         <CardDescription>What you&apos;ll build in this project</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                                             {
                                                 (project.keyOutcomes || []).map((outcome: string, index: number) => (
-                                                    <li key={index} className="flex items-start gap-2">
+                                                    <li key={index} className="flex items-start gap-3 p-2 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
                                                         <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
                                                         <span className="text-left text-neutral-700 dark:text-neutral-300 text-sm">{outcome}</span>
                                                     </li>
@@ -967,39 +917,41 @@ export default function ProjectDetailsClient({
                                 </Card>
                                 {
                                     project.vision && (
-                                        <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                        <Card className="bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow duration-300">
                                             <CardHeader>
-                                                <CardTitle className="flex items-center gap-2">
-                                                    <Lightbulb className="w-5 h-5" />
+                                                <CardTitle className="flex items-center gap-2 text-xl">
+                                                    <Lightbulb className="w-5 h-5 text-amber-500" />
                                                     Vision & Purpose
                                                 </CardTitle>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
-                                                <p className="text-left text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                                                    {project.vision}
+                                                <p className="text-left text-neutral-700 dark:text-neutral-300 leading-relaxed italic">
+                                                    &quot;{project.vision}&quot;
                                                 </p>
-                                                {project.targetAudience && (
-                                                    <div>
-                                                        <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">Target Audience</p>
-                                                        <p className="text-sm text-neutral-700 dark:text-neutral-300">{project.targetAudience}</p>
-                                                    </div>
-                                                )}
-                                                {project.problemSolution && (
-                                                    <div>
-                                                        <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">Problem Solved</p>
-                                                        <p className="text-sm text-neutral-700 dark:text-neutral-300">{project.problemSolution}</p>
-                                                    </div>
-                                                )}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                                    {project.targetAudience && (
+                                                        <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-lg">
+                                                            <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1 uppercase tracking-wider">Target Audience</p>
+                                                            <p className="text-sm text-neutral-700 dark:text-neutral-300">{project.targetAudience}</p>
+                                                        </div>
+                                                    )}
+                                                    {project.problemSolution && (
+                                                        <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-lg">
+                                                            <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1 uppercase tracking-wider">Problem Solved</p>
+                                                            <p className="text-sm text-neutral-700 dark:text-neutral-300">{project.problemSolution}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </CardContent>
                                         </Card>
                                     )
                                 }
                                 {
                                     project.features && project.features.length > 0 && (
-                                        <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 lg:col-span-2">
+                                        <Card className="bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 border-neutral-200 dark:border-neutral-800 lg:col-span-2 shadow-sm hover:shadow-md transition-shadow duration-300">
                                             <CardHeader>
-                                                <CardTitle className="text-left flex items-center gap-2">
-                                                    <Code2 className="w-5 h-5" />
+                                                <CardTitle className="text-left flex items-center gap-2 text-xl">
+                                                    <Code2 className="w-5 h-5 text-blue-500" />
                                                     Features
                                                 </CardTitle>
                                                 <CardDescription className="text-left">Main features you&apos;ll implement</CardDescription>
@@ -1008,29 +960,29 @@ export default function ProjectDetailsClient({
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                     {
                                                         project.features.map((feature, index: number) => (
-                                                            <div key={index} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+                                                            <div key={index} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 hover:bg-white dark:hover:bg-neutral-900 transition-colors">
                                                                 <div className="flex items-start justify-between mb-2">
                                                                     <h4 className="font-medium text-neutral-900 dark:text-white text-sm">{feature.name}</h4>
                                                                     <Badge
                                                                         variant="outline"
                                                                         className={cn(
-                                                                            "text-xs",
-                                                                            feature.priority === 'must-have' && "border-red-300 text-red-700 dark:text-red-400",
-                                                                            feature.priority === 'should-have' && "border-amber-300 text-amber-700 dark:text-amber-400",
-                                                                            feature.priority === 'nice-to-have' && "border-green-300 text-green-700 dark:text-green-400"
+                                                                            "text-[10px] uppercase",
+                                                                            feature.priority === 'must-have' && "border-red-200 bg-red-50 text-red-700 dark:bg-red-900/20 dark:border-red-900 dark:text-red-400",
+                                                                            feature.priority === 'should-have' && "border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:border-amber-900 dark:text-amber-400",
+                                                                            feature.priority === 'nice-to-have' && "border-green-200 bg-green-50 text-green-700 dark:bg-green-900/20 dark:border-green-900 dark:text-green-400"
                                                                         )}
                                                                     >
-                                                                        {feature.priority}
+                                                                        {feature.priority?.replace('-', ' ')}
                                                                     </Badge>
                                                                 </div>
-                                                                <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">{feature.description}</p>
+                                                                <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-3 leading-relaxed">{feature.description}</p>
                                                                 <Badge
                                                                     variant="secondary"
                                                                     className={cn(
-                                                                        "text-xs",
-                                                                        feature.complexity === 'low' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                                                                        feature.complexity === 'medium' && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-                                                                        feature.complexity === 'high' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                                                        "text-[10px]",
+                                                                        feature.complexity === 'low' && "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                                                                        feature.complexity === 'medium' && "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                                                                        feature.complexity === 'high' && "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                                                                     )}
                                                                 >
                                                                     {feature.complexity} complexity
@@ -1045,161 +997,7 @@ export default function ProjectDetailsClient({
                                 }
                             </div>
                         </TabsContent>
-                        {
-                            hasStarted && (
-                                <TabsContent value="sprints" className="mt-6">
-                                    {/* Sprint Header with Generate Button */}
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                                                Project Sprints
-                                            </h3>
-                                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                                {project.sprints?.length || 0} sprints • {totalTasks} total tasks
-                                            </p>
-                                        </div>
-                                        <Button
-                                            onClick={() => setSprintGenerationOpen(true)}
-                                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                                        >
-                                            <Sparkles className="w-4 h-4 mr-2" />
-                                            Generate Sprint
-                                        </Button>
-                                    </div>
 
-                                    <div className="space-y-4">
-                                        {project.sprints && project.sprints.length > 0 ? (
-                                            project.sprints.map((sprint) => {
-                                                // Check if this is a personal sprint (for non-creators) that needs acceptance
-                                                const isPersonalSprint = (sprint as { isPersonal?: boolean }).isPersonal &&
-                                                    !(sprint as { isApproved?: boolean }).isApproved
-                                                const isSprintCreator = (sprint as { createdBy?: string }).createdBy === currentUserId
-
-                                                // Convert sprint tasks to the format SprintCard expects
-                                                const sprintData: SprintData = {
-                                                    id: sprint.id,
-                                                    sprintNumber: sprint.sprintNumber,
-                                                    name: sprint.name,
-                                                    goal: sprint.goal,
-                                                    duration: sprint.duration,
-                                                    orderIndex: sprint.orderIndex,
-                                                    tasks: (sprint.tasks || []).map((task): TaskData => ({
-                                                        id: task.id,
-                                                        title: task.title,
-                                                        description: task.description || [],
-                                                        criteria: task.criteria || task.successCriteria || [],
-                                                        hints: task.hints || [],
-                                                        badges: task.badges || [],
-                                                        tags: task.tags || [],
-                                                        difficulty: task.difficulty as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
-                                                        category: task.category || null,
-                                                        estimatedTime: task.estimatedTime || null,
-                                                        checkpoints: task.checkpoints || [],
-                                                        relatedPages: task.relatedPages || [],
-                                                        dependencies: task.dependencies || [],
-                                                        terminalCommand: task.terminalCommand || null,
-                                                        orderIndex: task.orderIndex || task.order || 0,
-                                                        status: taskStatusMap[task.id] || 'TO_DO'
-                                                    }))
-                                                }
-
-                                                return (
-                                                    <div key={sprint.id}>
-                                                        {/* Show pending banner for personal sprints */}
-                                                        {isPersonalSprint && isSprintCreator && (
-                                                            <div className="mb-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center justify-between">
-                                                                <div className="flex items-center gap-2">
-                                                                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                                                                    <span className="text-sm text-amber-700 dark:text-amber-400">
-                                                                        Accept this sprint to include it in your progress tracking
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex gap-2">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        onClick={async () => {
-                                                                            const result = await rejectPersonalSprint(sprint.id)
-                                                                            if (result.success) {
-                                                                                toast.success('Sprint removed')
-                                                                                router.refresh()
-                                                                            } else {
-                                                                                toast.error(result.error || 'Failed to remove sprint')
-                                                                            }
-                                                                        }}
-                                                                        className="border-red-300 text-red-600 hover:bg-red-50"
-                                                                    >
-                                                                        Reject
-                                                                    </Button>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={async () => {
-                                                                            const result = await acceptPersonalSprint(sprint.id)
-                                                                            if (result.success) {
-                                                                                toast.success('Sprint accepted! It will now count toward your progress.')
-                                                                                router.refresh()
-                                                                            } else {
-                                                                                toast.error(result.error || 'Failed to accept sprint')
-                                                                            }
-                                                                        }}
-                                                                        className="bg-green-600 hover:bg-green-700"
-                                                                    >
-                                                                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                                                                        Accept
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        <SprintCard
-                                                            sprint={sprintData}
-                                                            taskStatuses={taskStatusMap}
-                                                            difficultyColors={difficultyColors}
-                                                            categoryColors={categoryColors}
-                                                            isCreator={isCreator}
-                                                            hasStarted={hasStarted}
-                                                            onTaskStatusChange={async (taskId, status) => {
-                                                                // TODO: Implement task status update action
-                                                                console.log('Update task status:', taskId, status)
-                                                            }}
-                                                        />
-                                                    </div>
-                                                )
-                                            })
-                                        ) : (
-                                            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                                <CardContent className="py-12 text-center">
-                                                    <ListChecks className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
-                                                    <h3 className="text-lg font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
-                                                        No Sprints Yet
-                                                    </h3>
-                                                    <p className="text-sm text-neutral-500 dark:text-neutral-500 mb-4">
-                                                        Get started by generating your first sprint with AI.
-                                                    </p>
-                                                    <Button
-                                                        onClick={() => setSprintGenerationOpen(true)}
-                                                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                                                    >
-                                                        <Sparkles className="w-4 h-4 mr-2" />
-                                                        Generate Your First Sprint
-                                                    </Button>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </div>
-
-                                    {/* Legacy Task List for backwards compatibility */}
-                                    {tasksWithStatus.length > 0 && (!project.sprints || project.sprints.length === 0) && (
-                                        <TaskListProgress
-                                            tasks={tasksWithStatus}
-                                            projectSlug={project.slug}
-                                            progressPercentage={progressPercentage}
-                                            tasksCompleted={userProgress?.tasksCompleted || 0}
-                                            totalTasks={userProgress?.totalTasks || totalTasks}
-                                        />
-                                    )}
-                                </TabsContent>
-                            )
-                        }
                         <TabsContent value="pages" className="mt-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {
@@ -1222,90 +1020,6 @@ export default function ProjectDetailsClient({
                                     verificationSteps: project.setupGuide.verificationSteps || []
                                 } : null}
                             />
-                        </TabsContent>
-                        <TabsContent value="resources" className="mt-6">
-                            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <CardTitle className="flex items-center gap-2">
-                                                <BookOpen className="w-5 h-5" />
-                                                Learning Resources
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Community-shared resources to help you build
-                                            </CardDescription>
-                                        </div>
-                                        {
-                                            (hasStarted || isCreator) && (
-                                                <AddResourceSheet projectId={project.id} />
-                                            )
-                                        }
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4 mt-4">
-                                    <ResourcesList
-                                        projectId={project.id}
-                                        currentUserId={currentUserId}
-                                        isCreator={isCreator}
-                                    />
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="suggestions" className="mt-6">
-                            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <CardTitle className="flex items-center gap-2">
-                                                <Lightbulb className="w-5 h-5" />
-                                                Feature Suggestions
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Community-driven ideas and improvements
-                                            </CardDescription>
-                                        </div>
-                                        {
-                                            (hasStarted || isCreator) && (
-                                                <FeatureSuggestionSheet
-                                                    projectId={project.id}
-                                                    projectSlug={project.slug}
-                                                    isCreator={isCreator}
-                                                    isEnrolled={hasStarted || isCreator}
-                                                />
-                                            )
-                                        }
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {
-                                        loadingSuggestions ? (
-                                            <div className="flex items-center justify-center py-12">
-                                                <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                            </div>
-                                        ) : (
-                                            <FeatureSuggestionsList
-                                                suggestions={suggestions}
-                                                projectSlug={project.slug}
-                                                isCreator={isCreator}
-                                                isEnrolled={hasStarted || isCreator}
-                                                currentUserId={currentUserId}
-                                            />
-                                        )
-                                    }
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="errors" className="mt-6">
-                            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                <CardContent className="pt-6">
-                                    <ErrorsTab
-                                        projectId={project.id}
-                                        isEnrolled={hasStarted || false}
-                                        isCreator={isCreator}
-                                    />
-                                </CardContent>
-                            </Card>
                         </TabsContent>
                         {
                             isCreator && (
@@ -1330,7 +1044,7 @@ export default function ProjectDetailsClient({
                         }
                     </Tabs>
                 </motion.div>
-            </div>
+            </div >
             <EnrollmentDialog
                 open={enrollDialogOpen}
                 onOpenChange={setEnrollDialogOpen}
@@ -1429,14 +1143,8 @@ export default function ProjectDetailsClient({
                 projectSlug={project.slug}
                 projectTitle={project.title}
                 userCredits={userCredits}
+                hasStarted={!!hasStarted}
             />
-            <SprintGenerationSheet
-                isOpen={sprintGenerationOpen}
-                onClose={() => setSprintGenerationOpen(false)}
-                projectId={project.id}
-                isCreator={isCreator}
-                onSprintAdded={() => router.refresh()}
-            />
-        </div>
+        </div >
     )
 }

@@ -19,7 +19,7 @@ import {
 } from "@/actions/(main)/projects/feature-suggestions.action"
 import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
-import { Suggestion } from "@/app/(main)/projects/[slug]/_components/project-details-client"
+import { Suggestion } from "@/types/project"
 
 interface FeatureSuggestionsListProps {
     suggestions: Suggestion[]

@@ -230,14 +230,12 @@ export async function addSprintToProject(
                     isApproved: true,
                     tasks: {
                         create: sprintData.tasks.map((task, idx) => ({
-                            projectId,
+                            projectV2Id: projectId,
                             title: task.title,
                             description: task.description,
-                            successCriteria: task.successCriteria,
                             hints: task.hints,
                             estimatedMinutes: task.estimatedMinutes,
                             difficulty: task.difficulty,
-                            order: idx,
                             orderIndex: idx,
                             category: task.category,
                             estimatedTime: task.estimatedTime,
@@ -271,14 +269,12 @@ export async function addSprintToProject(
                     isPersonal: true,
                     tasks: {
                         create: sprintData.tasks.map((task, idx) => ({
-                            projectId,
+                            projectV2Id: projectId,
                             title: task.title,
                             description: task.description,
-                            successCriteria: task.successCriteria,
                             hints: task.hints,
                             estimatedMinutes: task.estimatedMinutes,
                             difficulty: task.difficulty,
-                            order: idx,
                             orderIndex: idx,
                             category: task.category,
                             estimatedTime: task.estimatedTime,

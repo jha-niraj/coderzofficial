@@ -22,6 +22,7 @@ interface DailyStandupSheetProps {
     projectSlug: string
     projectTitle: string
     userCredits: number
+    hasStarted: boolean
 }
 
 const DAYS = [
@@ -49,7 +50,9 @@ export default function DailyStandupSheet({
     projectId,
     projectSlug,
     projectTitle,
-    userCredits
+    userCredits,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    hasStarted
 }: DailyStandupSheetProps) {
     const [isChecking, setIsChecking] = useState(true)
     const [hasConfig, setHasConfig] = useState(false)

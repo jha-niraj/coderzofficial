@@ -17,7 +17,9 @@ import {
 	Pagination, PaginationContent, PaginationItem, PaginationLink,
 	PaginationNext, PaginationPrevious
 } from "@repo/ui/components/ui/pagination"
-import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
+import { 
+	Tabs, TabsList, TabsTrigger 
+} from "@repo/ui/components/ui/tabs"
 import toast from "@repo/ui/components/ui/sonner";
 import Link from "next/link"
 import { getUserProjects } from "@/actions/(main)/projects/project.action"
@@ -218,17 +220,17 @@ export default function MyProjectsPage() {
 					}
 
 					<Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-						<TabsList className="w-full lg:w-auto bg-white dark:bg-neutral-900 rounded-xl p-2">
-							<TabsTrigger value="all" className="flex-1 lg:flex-initial">
+						<TabsList className="">
+							<TabsTrigger value="all">
 								All Projects ({projects.length})
 							</TabsTrigger>
-							<TabsTrigger value="in-progress" className="flex-1 lg:flex-initial">
+							<TabsTrigger value="in-progress">
 								In Progress ({projects.filter((p: UserProjectWithProgress) => p.progress?.[0]?.status === "IN_PROGRESS").length})
 							</TabsTrigger>
-							<TabsTrigger value="completed" className="flex-1 lg:flex-initial">
+							<TabsTrigger value="completed">
 								Completed ({projects.filter((p: UserProjectWithProgress) => p.progress?.[0]?.status === "COMPLETED").length})
 							</TabsTrigger>
-							<TabsTrigger value="submissions" className="flex-1 lg:flex-initial">
+							<TabsTrigger value="submissions">
 								Submissions ({projects.filter((p: UserProjectWithProgress) => p._count && p._count.submissions > 0).length})
 							</TabsTrigger>
 						</TabsList>

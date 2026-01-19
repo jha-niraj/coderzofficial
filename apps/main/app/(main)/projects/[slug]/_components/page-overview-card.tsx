@@ -6,7 +6,9 @@ import {
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
+import { 
+    Card, CardContent, CardHeader, CardTitle 
+} from '@repo/ui/components/ui/card'
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter
 } from '@repo/ui/components/ui/sheet'
@@ -66,8 +68,8 @@ export function PageOverviewCard({ page, difficultyColors }: PageOverviewCardPro
                 </CardContent>
             </Card>
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="bottom" className="h-[85vh] w-full overflow-y-auto">
-                    <SheetHeader className="text-left pb-6 border-b border-neutral-200 dark:border-neutral-800">
+                <SheetContent side="bottom" className="h-[90vh] w-full overflow-y-auto">
+                    <SheetHeader className="max-w-7xl mx-auto text-left pb-6 border-b border-neutral-200 dark:border-neutral-800">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">
                                 {page.orderIndex !== undefined ? page.orderIndex + 1 : '#'}

@@ -506,3 +506,28 @@ export type ProjectApiResponse = ApiResponse<ProjectV2Full>
 export type TasksApiResponse = ApiResponse<TasksPageData>
 export type QuizApiResponse = ApiResponse<Quiz>
 export type QuizAttemptApiResponse = ApiResponse<QuizResult>
+
+export interface Suggestion {
+    id: string
+    title: string
+    description: string
+    type: string
+    tags: string[]
+    imageUrl?: string | null
+    status: string
+    addedToTasks: boolean
+    suggestedBy: "CREATOR" | "ENROLLED_USER" | "VISITOR"
+    addedByUsers: string[]
+    adoptedByCurrentUser?: boolean | null
+    createdAt: Date
+    user: {
+        id: string
+        name?: string | null
+        username?: string | null
+        image?: string | null
+    }
+    task?: {
+        id: string
+        title: string
+    } | null
+}

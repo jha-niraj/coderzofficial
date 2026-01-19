@@ -126,24 +126,30 @@ export function ProjectCard({ project, showProgress = false }: ProjectCardProps)
                         <Clock className="w-3.5 h-3.5" />
                         <span>{project.estimatedHours}h</span>
                     </div>
-                    {project._count && (
-                        <div className="flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{project._count.progress} enrolled</span>
-                        </div>
-                    )}
-                    {project.totalViews !== undefined && (
-                        <div className="flex items-center gap-1">
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>{project.totalViews}</span>
-                        </div>
-                    )}
-                    {project.includeAssessment && (
-                        <div className="flex items-center gap-1">
-                            <Brain className="w-3.5 h-3.5" />
-                            <span>AI</span>
-                        </div>
-                    )}
+                    {
+                        project._count && (
+                            <div className="flex items-center gap-1">
+                                <Users className="w-3.5 h-3.5" />
+                                <span>{project._count.progress} enrolled</span>
+                            </div>
+                        )
+                    }
+                    {
+                        project.totalViews !== undefined && (
+                            <div className="flex items-center gap-1">
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>{project.totalViews}</span>
+                            </div>
+                        )
+                    }
+                    {
+                        project.includeAssessment && (
+                            <div className="flex items-center gap-1">
+                                <Brain className="w-3.5 h-3.5" />
+                                <span>AI</span>
+                            </div>
+                        )
+                    }
                 </div>
             </CardContent>
             <CardFooter className="pt-3 border-t border-neutral-200 dark:border-neutral-800">
@@ -163,7 +169,7 @@ export function ProjectCard({ project, showProgress = false }: ProjectCardProps)
                             <>
                                 {
                                     userProgress.status === 'IN_PROGRESS' && (
-                                        <Link href={`/projects/${project.slug}/tasks`} className="flex-1">
+                                        <Link href={`/projects/${project.slug}/sprints`} className="flex-1">
                                             <Button size="sm" className="w-full bg-black text-white dark:bg-white dark:text-black hover:opacity-90 rounded-xl">
                                                 <Play className="w-4 h-4 mr-2" />
                                                 Continue
