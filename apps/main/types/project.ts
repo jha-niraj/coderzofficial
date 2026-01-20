@@ -205,6 +205,8 @@ export interface ProjectV2Full extends ProjectV2Basic {
 // ============================================================================
 
 export type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED'
+export type TaskAssessmentType = 'QUIZ' | 'CODE' | 'NONE'
+export type TaskResourceType = 'documentation' | 'article' | 'video' | 'tutorial'
 
 export interface ProjectV2TaskProgress {
     status: TaskStatus
@@ -212,19 +214,38 @@ export interface ProjectV2TaskProgress {
     completedAt: Date | null
 }
 
+// Concept structure for detailed learning content
+export interface TaskConcept {
+    title: string
+    summary: string // 50-100 words
+    keyPoints: string[] // 10-15 detailed bullet points
+    commonMistakes: string[] // 3-5 pitfalls to avoid
+    bestPractices: string[] // 5-8 industry standards
+    realWorldUsage: string // How major companies use this
+    securityConsiderations: string[] // 2-4 security implications
+    relatedConcepts: string[] // 3-5 related concepts
+}
+
+// Resource for external learning materials
+export interface TaskResource {
+    title: string
+    url: string
+    type: TaskResourceType
+}
+
 export interface ProjectV2Task {
     id: string
     title: string
-    description: string[]
+    description: string[] // 3-7 practical steps
     successCriteria: string[]
-    hints: string[]
+    hints: string[] // 2-4 helpful tips
     estimatedMinutes: number
     difficulty: string
     order: number
     userProgress?: ProjectV2TaskProgress
     // Sprint-based organization
     sprintId?: string | null
-    category?: string | null
+    category?: string | null // setup, frontend, backend, database, testing, deployment, integration
     estimatedTime?: string | null
     checkpoints?: string[]
     relatedPages?: string[]
@@ -234,6 +255,13 @@ export interface ProjectV2Task {
     terminalCommand?: string | null
     orderIndex?: number
     criteria?: string[]
+    // NEW: Enhanced learning content
+    learningObjectives?: string[] // 3-5 skills user gains
+    prerequisites?: string[] // Prior knowledge needed
+    resources?: TaskResource[] // Verified external resources
+    testingGuidelines?: string[] // 3-5 things to test
+    concepts?: TaskConcept[] // Detailed learning concepts
+    assessmentType?: TaskAssessmentType
 }
 
 export interface TasksColumns {

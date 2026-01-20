@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Code2, Brain, Rocket,
-    Zap, Globe, Lock, Eye, AlertCircle, Compass, Bell, Clock
+    Zap, Globe, Lock, Eye, AlertCircle, Compass, Bell
 } from 'lucide-react'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
@@ -15,7 +15,6 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Badge } from '@repo/ui/components/ui/badge'
-import { Switch } from '@repo/ui/components/ui/switch'
 import { Label } from '@repo/ui/components/ui/label'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/ui/alert'
@@ -36,6 +35,7 @@ type FormData = z.infer<typeof ProjectEchoSchema>
 const GENERATION_TYPES = [
     { value: 'FULL_STACK', label: 'Full Stack', icon: Code2, color: 'from-blue-500 to-cyan-500', description: 'Complete web application' },
     { value: 'FRONTEND', label: 'Frontend', icon: Brain, color: 'from-purple-500 to-pink-500', description: 'UI-focused project' },
+    { value: 'APP', label: 'Mobile App', icon: Rocket, color: 'from-teal-500 to-cyan-500', description: 'iOS & Android apps' },
     { value: 'PROGRAMS', label: 'Programs', icon: Rocket, color: 'from-orange-500 to-red-500', description: 'CLI tools & scripts' },
     { value: 'AI/ML', label: 'AI/ML', icon: Sparkles, color: 'from-green-500 to-emerald-500', description: 'AI & Machine Learning' },
     { value: 'AI_AGENT', label: 'AI Agent', icon: Zap, color: 'from-yellow-500 to-amber-500', description: 'Autonomous AI systems' },
@@ -53,6 +53,8 @@ const BACKEND_STACKS = ['Node.js/Express', 'Next.js API', 'Python/Flask', 'Pytho
 const DATABASES = ['PostgreSQL', 'MongoDB', 'MySQL', 'SQLite', 'Supabase', 'Firebase']
 const DEPLOYMENTS = ['Vercel', 'Netlify', 'Railway', 'Heroku', 'AWS', 'Docker']
 const AI_PROVIDERS = ['OpenAI', 'Claude (Anthropic)', 'Google Gemini', 'Hugging Face', 'None']
+const APP_FRAMEWORKS = ['React Native', 'React Native (Expo)', 'Flutter', 'Swift (iOS)', 'Kotlin (Android)']
+const APP_BACKENDS = ['Firebase', 'Supabase', 'Node.js/Express', 'Python/FastAPI', 'Appwrite']
 
 interface ProjectGenerateSheetProps {
     trigger?: React.ReactNode
@@ -115,7 +117,7 @@ export default function ProjectGenerateSheet({
             pagesPreset: 'CUSTOM',
         },
         visibility: 'PUBLIC',
-        includeAssessment: true,
+        includeAssessment: false,
     })
 
     const steps = [
@@ -349,8 +351,7 @@ export default function ProjectGenerateSheet({
     }
 
     const baseCost = formData.visibility === "PUBLIC" ? 13 : 25
-    const assessmentCost = formData.includeAssessment ? 30 : 0
-    const totalCost = baseCost + assessmentCost
+    const totalCost = baseCost // Assessment is generated on-demand later, not included in initial cost
 
     const getStatusMessage = () => {
         switch (jobStatus) {
@@ -454,10 +455,10 @@ export default function ProjectGenerateSheet({
                                 <div className="mt-8 space-y-3 text-sm text-left w-full max-w-md">
                                     {[
                                         { label: 'Analyzing requirements', threshold: 10 },
-                                        { label: 'Generating project structure', threshold: 30 },
-                                        { label: 'Creating tasks and milestones', threshold: 50 },
-                                        { label: 'Generating concepts', threshold: 70 },
-                                        { label: 'Creating assessments', threshold: 85 },
+                                        { label: 'Generating project structure', threshold: 25 },
+                                        { label: 'Creating sprints and tasks', threshold: 45 },
+                                        { label: 'Generating learning concepts', threshold: 65 },
+                                        { label: 'Adding resources and guidelines', threshold: 80 },
                                         { label: 'Finalizing project', threshold: 95 },
                                     ].map((step, idx) => (
                                         <motion.div
@@ -696,6 +697,58 @@ export default function ProjectGenerateSheet({
                                                         </div>
                                                     </div>
                                                 )}
+                                                {formData.generationType === 'APP' && (
+                                                    <>
+                                                        <div className="space-y-2">
+                                                            <Label>Mobile Framework</Label>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {APP_FRAMEWORKS.map((framework) => (
+                                                                    <Button
+                                                                        key={framework}
+                                                                        variant={formData.stacks?.frontend === framework ? "default" : "outline"}
+                                                                        size="sm"
+                                                                        onClick={() => updateStacks('frontend', formData.stacks?.frontend === framework ? '' : framework)}
+                                                                        className="rounded-full"
+                                                                    >
+                                                                        {framework}
+                                                                    </Button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Backend/BaaS</Label>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {APP_BACKENDS.map((backend) => (
+                                                                    <Button
+                                                                        key={backend}
+                                                                        variant={formData.stacks?.backend === backend ? "default" : "outline"}
+                                                                        size="sm"
+                                                                        onClick={() => updateStacks('backend', formData.stacks?.backend === backend ? '' : backend)}
+                                                                        className="rounded-full"
+                                                                    >
+                                                                        {backend}
+                                                                    </Button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Database</Label>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {DATABASES.map((db) => (
+                                                                    <Button
+                                                                        key={db}
+                                                                        variant={formData.stacks?.database === db ? "default" : "outline"}
+                                                                        size="sm"
+                                                                        onClick={() => updateStacks('database', formData.stacks?.database === db ? '' : db)}
+                                                                        className="rounded-full"
+                                                                    >
+                                                                        {db}
+                                                                    </Button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
                                                 <div className="space-y-2">
                                                     <Label>Deployment (Optional)</Label>
                                                     <div className="flex flex-wrap gap-2">
@@ -818,33 +871,19 @@ export default function ProjectGenerateSheet({
                                                     </div>
                                                 </div>
 
-                                                {/* Assessment Toggle */}
-                                                <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-3">
-                                                            <Brain className="w-5 h-5 text-purple-500" />
-                                                            <div>
-                                                                <Label>Generate Quiz & Mock Knowledge</Label>
-                                                                <p className="text-xs text-neutral-500">+30 credits</p>
-                                                            </div>
-                                                        </div>
-                                                        <Switch
-                                                            checked={formData.includeAssessment}
-                                                            onCheckedChange={(checked) => updateFormData('includeAssessment', checked)}
-                                                        />
-                                                    </div>
-                                                    {formData.includeAssessment ? (
-                                                        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                                                            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                                                            <p className="text-xs text-amber-700 dark:text-amber-300">
-                                                                This will take <strong>longer</strong> to generate as it creates comprehensive quiz questions and mock interview knowledge base.
+                                                {/* Info about on-demand assessment */}
+                                                <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                                                    <div className="flex items-start gap-3">
+                                                        <Brain className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                                                        <div>
+                                                            <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                                                                Quiz &amp; Mock Interview
+                                                            </p>
+                                                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                                                Generate assessments on-demand when you&apos;re ready to test your knowledge.
                                                             </p>
                                                         </div>
-                                                    ) : (
-                                                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                                            You can generate quiz and mock interview content later when you need it.
-                                                        </p>
-                                                    )}
+                                                    </div>
                                                 </div>
 
                                                 {/* Cost Summary */}
@@ -883,6 +922,22 @@ export default function ProjectGenerateSheet({
                                                             </div>
                                                         </AlertDescription>
                                                     </Alert>
+                                                )}
+
+                                                {hasSearched && !searchingProjects && similarProjects.length === 0 && (
+                                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                                                        <div className="flex items-start gap-3">
+                                                            <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                                            <div>
+                                                                <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                                                                    No Similar Projects Found
+                                                                </p>
+                                                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                                                    Great news! Your project idea appears to be unique. You&apos;re all set to generate something original!
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
                                         )}

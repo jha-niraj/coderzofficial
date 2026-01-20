@@ -252,10 +252,18 @@ model ProjectV2Task {
     dependencies  String[] // Task dependencies (task titles)
 
     // ========== NEW: Learning Concepts & Assessment ==========
-    // Concepts the user should understand before/after this task
-    concepts       Json? // Array of {title: string, description: string, links?: string[]}
+    // Learning objectives - what skills/knowledge user gains (3-5 items)
+    learningObjectives String[]
+    // Prerequisites - prior knowledge needed before this task
+    prerequisites      String[]
+    // External resources (MDN, W3Schools, YouTube verified) - JSON array of {title, url, type}
+    resources          Json?
+    // Testing guidelines - what to test/verify for this task (3-5 items)
+    testingGuidelines  String[]
+    // Detailed concepts with keyPoints, bestPractices, commonMistakes, etc.
+    concepts           Json? // Array of TaskConcept objects
     // What kind of assessment is best for this task
-    assessmentType TaskAssessmentType @default(QUIZ)
+    assessmentType     TaskAssessmentType @default(QUIZ)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -509,11 +517,11 @@ model ProjectV2MockSession {
 // ===============================================
 // User's attempt at a task assessment (quiz or code)
 model UserTaskV2Assessment {
-    id     String        @id @default(cuid())
-    
+    id String @id @default(cuid())
+
     userId String
-    user   User          @relation("UserTaskAssessments", fields: [userId], references: [id], onDelete: Cascade)
-    
+    user   User   @relation("UserTaskAssessments", fields: [userId], references: [id], onDelete: Cascade)
+
     taskId String
     task   ProjectV2Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 

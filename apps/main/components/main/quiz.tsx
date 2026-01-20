@@ -623,8 +623,9 @@ export default function Quiz({
                                                 key={option.id}
                                                 whileHover={{ scale: showResult ? 1 : 1.01 }}
                                                 whileTap={{ scale: showResult ? 1 : 0.99 }}
+                                                onClick={() => !showResult && handleSingleChoiceChange(option.id)}
                                                 className={cn(
-                                                    "flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors",
+                                                    "flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer",
                                                     !showResult && !isSelected && "border-border hover:border-primary/50 hover:bg-accent",
                                                     !showResult && isSelected && "border-primary bg-primary/10",
                                                     isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20",
@@ -669,8 +670,9 @@ export default function Quiz({
                                                 key={option.id}
                                                 whileHover={{ scale: showResult ? 1 : 1.01 }}
                                                 whileTap={{ scale: showResult ? 1 : 0.99 }}
+                                                onClick={() => !showResult && handleMultipleChoiceChange(option.id, !isSelected)}
                                                 className={cn(
-                                                    "flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors",
+                                                    "flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer",
                                                     !showResult && !isSelected && "border-border hover:border-primary/50 hover:bg-accent",
                                                     !showResult && isSelected && "border-primary bg-primary/10",
                                                     isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20",
@@ -807,16 +809,38 @@ export default function Quiz({
                         }
                         {
                             !showResult ? (
-                                <Button
-                                    onClick={handleSubmitAnswer}
-                                    disabled={
-                                        isSubmitting ||
-                                        !getCurrentAnswer() ||
-                                        (Array.isArray(getCurrentAnswer()) && (getCurrentAnswer() as string[]).length === 0)
-                                    }
-                                >
-                                    {isSubmitting ? "Submitting..." : "Submit Answer"}
-                                </Button>
+                                currentIndex === questions.length - 1 ? (
+                                    // Last question: single "Submit Quiz" button that saves answer and triggers completion
+                                    <Button
+                                        variant="default"
+                                        className="bg-green-600 hover:bg-green-700"
+                                        disabled={
+                                            isSubmitting ||
+                                            !getCurrentAnswer() ||
+                                            (Array.isArray(getCurrentAnswer()) && (getCurrentAnswer() as string[]).length === 0)
+                                        }
+                                        onClick={async () => {
+                                            // First save the answer
+                                            await handleSubmitAnswer();
+                                            // Then show confirmation dialog
+                                            setShowConfirmDialog(true);
+                                        }}
+                                    >
+                                        {isSubmitting ? "Submitting..." : "Submit Quiz"}
+                                    </Button>
+                                ) : (
+                                    // Not last question: normal "Submit Answer" button
+                                    <Button
+                                        onClick={handleSubmitAnswer}
+                                        disabled={
+                                            isSubmitting ||
+                                            !getCurrentAnswer() ||
+                                            (Array.isArray(getCurrentAnswer()) && (getCurrentAnswer() as string[]).length === 0)
+                                        }
+                                    >
+                                        {isSubmitting ? "Submitting..." : "Submit Answer"}
+                                    </Button>
+                                )
                             ) : (
                                 <Button onClick={handleNext}>
                                     {
@@ -829,17 +853,6 @@ export default function Quiz({
                                             "Complete Quiz"
                                         )
                                     }
-                                </Button>
-                            )
-                        }
-                        {
-                            currentIndex === questions.length - 1 && !showResult && (
-                                <Button
-                                    variant="default"
-                                    className="bg-green-600 hover:bg-green-700"
-                                    onClick={() => setShowConfirmDialog(true)}
-                                >
-                                    Submit Quiz
                                 </Button>
                             )
                         }

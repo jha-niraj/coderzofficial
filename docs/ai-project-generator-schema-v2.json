@@ -1,0 +1,636 @@
+{
+    "name": "ai_project_generator_output_v2",
+    "strict": true,
+    "schema": {
+        "type": "object",
+        "properties": {
+            "project": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Project title, descriptive and concise (max 100 chars)"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "description": "Kebab-case, unique project identifier"
+                    },
+                    "shortDescription": {
+                        "type": "string",
+                        "description": "SEO-friendly summary (max 160 chars)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Detailed project description (200-500 words)"
+                    },
+                    "estimatedHours": {
+                        "type": "number",
+                        "description": "Estimated total hours to complete the project"
+                    },
+                    "technologies": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of tech stack items"
+                    },
+                    "primaryLanguage": {
+                        "type": "string",
+                        "description": "Primary programming language or framework"
+                    },
+                    "difficulty": {
+                        "type": "string",
+                        "enum": [
+                            "BEGINNER",
+                            "INTERMEDIATE",
+                            "ADVANCED"
+                        ],
+                        "description": "Overall project difficulty"
+                    },
+                    "vision": {
+                        "type": "string",
+                        "description": "Why this project exists - the vision and purpose"
+                    },
+                    "targetAudience": {
+                        "type": "string",
+                        "description": "Who this project is for"
+                    },
+                    "problemSolution": {
+                        "type": "string",
+                        "description": "What problem this project solves and how"
+                    },
+                    "estimatedDuration": {
+                        "type": "string",
+                        "description": "Overall duration (e.g., '2-3 weeks', '1 month')"
+                    },
+                    "keyOutcomes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Specific things the user will have built after completion"
+                    }
+                },
+                "required": [
+                    "title",
+                    "slug",
+                    "shortDescription",
+                    "description",
+                    "estimatedHours",
+                    "technologies",
+                    "primaryLanguage",
+                    "difficulty",
+                    "vision",
+                    "targetAudience",
+                    "problemSolution",
+                    "estimatedDuration",
+                    "keyOutcomes"
+                ],
+                "additionalProperties": false
+            },
+            "blueprint": {
+                "type": "object",
+                "properties": {
+                    "overview": {
+                        "type": "string",
+                        "description": "What this project teaches (100-200 words)"
+                    },
+                    "features": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "type": "string"
+                                },
+                                "priority": {
+                                    "type": "string",
+                                    "enum": [
+                                        "must-have",
+                                        "should-have",
+                                        "nice-to-have"
+                                    ]
+                                },
+                                "complexity": {
+                                    "type": "string",
+                                    "enum": [
+                                        "low",
+                                        "medium",
+                                        "high"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "description",
+                                "priority",
+                                "complexity"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "description": "Features with priority and complexity"
+                    },
+                    "technicalRequirements": {
+                        "type": "object",
+                        "properties": {
+                            "database": {
+                                "type": "string"
+                            },
+                            "authentication": {
+                                "type": "string"
+                            },
+                            "hosting": {
+                                "type": "string"
+                            },
+                            "thirdPartyAPIs": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": [
+                            "database",
+                            "authentication",
+                            "hosting",
+                            "thirdPartyAPIs"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "required": [
+                    "overview",
+                    "features",
+                    "technicalRequirements"
+                ],
+                "additionalProperties": false
+            },
+            "dataArchitecture": {
+                "type": "object",
+                "properties": {
+                    "models": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "purpose": {
+                                    "type": "string"
+                                },
+                                "fields": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "type": {
+                                                "type": "string"
+                                            },
+                                            "required": {
+                                                "type": "boolean"
+                                            },
+                                            "description": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "type",
+                                            "required",
+                                            "description"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                },
+                                "relationships": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "purpose",
+                                "fields",
+                                "relationships"
+                            ],
+                            "additionalProperties": false
+                        }
+                    },
+                    "endpoints": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "method": {
+                                    "type": "string",
+                                    "enum": [
+                                        "GET",
+                                        "POST",
+                                        "PUT",
+                                        "DELETE",
+                                        "PATCH"
+                                    ]
+                                },
+                                "path": {
+                                    "type": "string"
+                                },
+                                "purpose": {
+                                    "type": "string"
+                                },
+                                "requiresAuth": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "required": [
+                                "method",
+                                "path",
+                                "purpose",
+                                "requiresAuth"
+                            ],
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "required": [
+                    "models",
+                    "endpoints"
+                ],
+                "additionalProperties": false
+            },
+            "projectStructure": {
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string"
+                    },
+                    "tree": {
+                        "type": "string",
+                        "description": "ASCII tree representation of folder structure"
+                    },
+                    "keyFolders": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "path": {
+                                    "type": "string"
+                                },
+                                "purpose": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "path",
+                                "purpose"
+                            ],
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "required": [
+                    "description",
+                    "tree",
+                    "keyFolders"
+                ],
+                "additionalProperties": false
+            },
+            "pages": {
+                "type": "array",
+                "description": "Simplified page definitions for project navigation",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "route": {
+                            "type": "string",
+                            "description": "Route path e.g., '/', '/dashboard'"
+                        },
+                        "purpose": {
+                            "type": "string",
+                            "description": "Brief description of what this page does"
+                        },
+                        "difficulty": {
+                            "type": "string",
+                            "enum": [
+                                "BEGINNER",
+                                "INTERMEDIATE",
+                                "ADVANCED"
+                            ]
+                        },
+                        "estimatedTime": {
+                            "type": "string",
+                            "description": "e.g., '3-4 hours'"
+                        },
+                        "coreFeatures": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "3-5 key features for this page"
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "route",
+                        "purpose",
+                        "difficulty",
+                        "estimatedTime",
+                        "coreFeatures"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "sprints": {
+                "type": "array",
+                "description": "Sprints grouping related tasks chronologically",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "sprintNumber": {
+                            "type": "number"
+                        },
+                        "name": {
+                            "type": "string",
+                            "description": "e.g., 'Sprint 1: Foundation & Setup'"
+                        },
+                        "goal": {
+                            "type": "string",
+                            "description": "What this sprint achieves"
+                        },
+                        "duration": {
+                            "type": "string",
+                            "description": "e.g., '3-5 days', '1 week'"
+                        },
+                        "tasks": {
+                            "type": "array",
+                            "description": "Tasks belonging to this sprint",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "description": "Action-oriented task title (15-80 chars)"
+                                    },
+                                    "description": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "3-7 practical steps to complete this task (NO code)"
+                                    },
+                                    "learningObjectives": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "3-5 specific skills/knowledge the user will gain from this task"
+                                    },
+                                    "criteria": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "3-5 completion/success criteria"
+                                    },
+                                    "hints": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "2-4 helpful tips (NOT solutions)"
+                                    },
+                                    "concepts": {
+                                        "type": "array",
+                                        "description": "Detailed learning concepts for this task - theory, best practices, industry standards",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string",
+                                                    "description": "Concept name (e.g., 'Password Hashing with bcrypt')"
+                                                },
+                                                "summary": {
+                                                    "type": "string",
+                                                    "description": "Brief 50-100 word explanation of what this concept is and why it matters"
+                                                },
+                                                "keyPoints": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "10-15 detailed bullet points covering theory, best practices, and implementation considerations"
+                                                },
+                                                "commonMistakes": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "3-5 common mistakes or pitfalls to avoid"
+                                                },
+                                                "bestPractices": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "5-8 industry best practices and standards"
+                                                },
+                                                "realWorldUsage": {
+                                                    "type": "string",
+                                                    "description": "How major companies (FAANG, startups) implement this in production"
+                                                },
+                                                "securityConsiderations": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "2-4 security implications and safeguards"
+                                                },
+                                                "relatedConcepts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "3-5 related concepts the user should also understand"
+                                                }
+                                            },
+                                            "required": [
+                                                "title",
+                                                "summary",
+                                                "keyPoints",
+                                                "commonMistakes",
+                                                "bestPractices",
+                                                "realWorldUsage",
+                                                "securityConsiderations",
+                                                "relatedConcepts"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "prerequisites": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "Knowledge or skills needed before starting this task"
+                                    },
+                                    "resources": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string"
+                                                },
+                                                "url": {
+                                                    "type": "string"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "documentation",
+                                                        "article",
+                                                        "video",
+                                                        "tutorial"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "title",
+                                                "url",
+                                                "type"
+                                            ],
+                                            "additionalProperties": false
+                                        },
+                                        "description": "ONLY use verified resources: MDN Web Docs (developer.mozilla.org), W3Schools (w3schools.com), official framework docs (react.dev, nextjs.org, nodejs.org, prisma.io), and verified YouTube channels (Traversy Media, Fireship, Web Dev Simplified, The Net Ninja). Never use broken or unverified URLs."
+                                    },
+                                    "testingGuidelines": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "3-5 things to test and verify for this task"
+                                    },
+                                    "assessmentType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "QUIZ",
+                                            "CODE",
+                                            "NONE"
+                                        ],
+                                        "description": "Type of assessment for this task"
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "difficulty": {
+                                        "type": "string",
+                                        "enum": [
+                                            "BEGINNER",
+                                            "INTERMEDIATE",
+                                            "ADVANCED"
+                                        ]
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "setup",
+                                            "frontend",
+                                            "backend",
+                                            "database",
+                                            "testing",
+                                            "deployment",
+                                            "integration"
+                                        ]
+                                    },
+                                    "estimatedTime": {
+                                        "type": "string",
+                                        "description": "e.g., '2-3 hours'"
+                                    },
+                                    "checkpoints": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "Clear success criteria/checkpoints"
+                                    },
+                                    "relatedPages": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "Related page names"
+                                    },
+                                    "dependencies": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "Task titles this task depends on"
+                                    },
+                                    "terminalCommand": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "title",
+                                    "description",
+                                    "learningObjectives",
+                                    "criteria",
+                                    "hints",
+                                    "concepts",
+                                    "prerequisites",
+                                    "resources",
+                                    "testingGuidelines",
+                                    "assessmentType",
+                                    "tags",
+                                    "difficulty",
+                                    "category",
+                                    "estimatedTime",
+                                    "checkpoints",
+                                    "relatedPages",
+                                    "dependencies",
+                                    "terminalCommand"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "required": [
+                        "sprintNumber",
+                        "name",
+                        "goal",
+                        "duration",
+                        "tasks"
+                    ],
+                    "additionalProperties": false
+                }
+            }
+        },
+        "required": [
+            "project",
+            "blueprint",
+            "dataArchitecture",
+            "projectStructure",
+            "pages",
+            "sprints"
+        ],
+        "additionalProperties": false
+    }
+}
