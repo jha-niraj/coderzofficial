@@ -180,8 +180,15 @@ Respond in JSON format:
  */
 export async function submitTaskQuizAnswers(
     taskId: string,
-    answers: Array<{ questionIndex: number; selectedAnswer: number }>
-): Promise<ActionResponse<{ passed: boolean; score: number; correctAnswers: number }>> {
+    answers: Array<{
+        questionIndex: number;
+        selectedAnswer: number
+    }>
+): Promise<ActionResponse<{
+    passed: boolean;
+    scorePercentage: number;
+    correctAnswers: number
+}>> {
     try {
         const user = await getCurrentUser();
 
@@ -225,8 +232,20 @@ export async function submitTaskQuizAnswers(
 
         // Get task for path revalidation
         const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            include: { sprint: { include: { project: { select: { slug: true } } } } },
+            where: {
+                id: taskId
+            },
+            include: {
+                sprint: {
+                    include: {
+                        project: {
+                            select: {
+                                slug: true
+                            }
+                        }
+                    }
+                }
+            },
         });
 
         if (task) {
@@ -235,7 +254,11 @@ export async function submitTaskQuizAnswers(
 
         return {
             success: true,
-            data: { passed, score, correctAnswers: correctCount },
+            data: {
+                passed,
+                scorePercentage: score,
+                correctAnswers: correctCount
+            }
         };
     } catch (error) {
         console.error("[SUBMIT QUIZ ERROR]:", error);
@@ -483,8 +506,6 @@ export async function prepareSprintMockKnowledge(
     sprintId: string
 ): Promise<ActionResponse<{ knowledgeBase: string; topics: string[] }>> {
     try {
-        const user = await getCurrentUser();
-
         // Get the sprint and all previous sprints
         const targetSprint = await prisma.projectV2Sprint.findUnique({
             where: { id: sprintId },
@@ -904,6 +925,158 @@ export async function saveSprintMockResult(
         return {
             success: false,
             error: error instanceof Error ? error.message : "Failed to save mock result",
+        };
+    }
+}
+
+// ========================================
+// SPRINT COMPLETION STATUS (FOR LOCKING)
+// ========================================
+
+interface SprintCompletionStatus {
+    isFullyCompleted: boolean;
+    tasksCompleted: boolean;
+    allAssessmentsPassed: boolean;
+    mockInterviewCompleted: boolean;
+    taskStats: {
+        total: number;
+        completed: number;
+    };
+    assessmentStats: {
+        total: number;
+        passed: number;
+    };
+    mockStatus: {
+        required: boolean;
+        completed: boolean;
+        score: number | null;
+    };
+}
+
+/**
+ * Get comprehensive sprint completion status for determining if next sprint should be unlocked.
+ * A sprint is fully completed when:
+ * 1. All tasks are marked as COMPLETED
+ * 2. All task assessments (QUIZ/CODE) are passed
+ * 3. Sprint mock interview is completed (if not the last sprint)
+ */
+export async function getSprintCompletionStatus(
+    projectId: string,
+    sprintId: string,
+    isLastSprint: boolean = false
+): Promise<ActionResponse<SprintCompletionStatus>> {
+    try {
+        const user = await getCurrentUser();
+
+        // Get sprint with all its tasks
+        const sprint = await prisma.projectV2Sprint.findUnique({
+            where: { id: sprintId },
+            include: {
+                tasks: {
+                    select: {
+                        id: true,
+                        assessmentType: true,
+                    },
+                },
+            },
+        });
+
+        if (!sprint) {
+            return { success: false, error: "Sprint not found" };
+        }
+
+        // Get user's progress for this project
+        const userProgress = await prisma.userProjectV2Progress.findFirst({
+            where: {
+                userId: user.id,
+                projectId,
+            },
+            select: {
+                taskStatuses: true,
+            },
+        });
+
+        // Parse task statuses
+        const taskStatuses = (userProgress?.taskStatuses as Array<{ taskId: string; status: string }>) || [];
+        const taskStatusMap = new Map(taskStatuses.map(ts => [ts.taskId, ts.status]));
+
+        // Check task completion
+        const totalTasks = sprint.tasks.length;
+        const completedTasks = sprint.tasks.filter(t => taskStatusMap.get(t.id) === 'COMPLETED').length;
+        const tasksCompleted = totalTasks === 0 || completedTasks === totalTasks;
+
+        // Get task assessments that require completion (QUIZ or CODE type)
+        const tasksWithAssessments = sprint.tasks.filter(t => t.assessmentType !== 'NONE');
+
+        // Get user's assessment results for these tasks
+        const userAssessments = await prisma.userTaskV2Assessment.findMany({
+            where: {
+                userId: user.id,
+                taskId: { in: tasksWithAssessments.map(t => t.id) },
+            },
+            select: {
+                taskId: true,
+                passed: true,
+            },
+        });
+
+        const assessmentMap = new Map(userAssessments.map(a => [a.taskId, a.passed]));
+        const totalAssessments = tasksWithAssessments.length;
+        const passedAssessments = tasksWithAssessments.filter(t => assessmentMap.get(t.id) === true).length;
+        const allAssessmentsPassed = totalAssessments === 0 || passedAssessments === totalAssessments;
+
+        // Check mock interview completion (not required for last sprint)
+        let mockInterviewCompleted = true;
+        let mockScore: number | null = null;
+        const mockRequired = !isLastSprint;
+
+        if (mockRequired) {
+            const mockSession = await prisma.projectV2MockSession.findFirst({
+                where: {
+                    userId: user.id,
+                    projectId,
+                    sprintId,
+                    status: "COMPLETED",
+                },
+                orderBy: { completedAt: "desc" },
+                select: {
+                    score: true,
+                },
+            });
+
+            mockInterviewCompleted = !!mockSession;
+            mockScore = mockSession?.score || null;
+        }
+
+        const isFullyCompleted = tasksCompleted && allAssessmentsPassed && mockInterviewCompleted;
+
+        return {
+            success: true,
+            data: {
+                isFullyCompleted,
+                tasksCompleted,
+                allAssessmentsPassed,
+                mockInterviewCompleted,
+                taskStats: {
+                    total: totalTasks,
+                    completed: completedTasks,
+                },
+                assessmentStats: {
+                    total: totalAssessments,
+                    passed: passedAssessments,
+                },
+                mockStatus: {
+                    required: mockRequired,
+                    completed: mockInterviewCompleted,
+                    score: mockScore,
+                },
+            },
+        };
+    } catch (error) {
+        console.error("[GET SPRINT COMPLETION STATUS ERROR]:", error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to get sprint completion status",
         };
     }
 }

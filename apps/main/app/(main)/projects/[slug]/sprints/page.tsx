@@ -10,8 +10,6 @@ export default async function ProjectSprintsPage({ params }: { params: Promise<{
     const { slug } = await params
     const result = await getProjectBySlug(slug)
 
-    console.log(result);
-
     if (!result.success || !result.data) {
         return <ProjectDetailsError />
     }

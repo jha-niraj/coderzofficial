@@ -6,8 +6,8 @@ import Link from 'next/link'
 import {
     ChevronLeft, Plus, CheckCircle2, Clock,
     LayoutList, Sparkles, Loader2, Book, Users, AlertTriangle,
-    Coffee, Brain, Lock, MonitorPlay, FileText, Target, Code2,
-    Lightbulb, ChevronDown, Terminal, Copy, Check
+    Brain, Lock, MonitorPlay, FileText, Target, Code2,
+    Lightbulb, ChevronDown, Terminal, Copy, Check, Mic
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
@@ -23,30 +23,32 @@ import { Checkbox } from '@repo/ui/components/ui/checkbox'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@repo/ui/components/ui/tabs"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@repo/ui/components/ui/collapsible'
+import {
+    Tabs, TabsList, TabsTrigger, TabsContent
+} from "@repo/ui/components/ui/tabs"
+import {
+    Collapsible, CollapsibleContent, CollapsibleTrigger
+} from '@repo/ui/components/ui/collapsible'
 import { toast } from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
-
 import { SprintGenerationSheet } from '../../_components/sprint-generation-sheet'
-import DailyStandupSheet from '../../_components/daily-standup-sheet'
+import DailyStandupTab from '../../_components/daily-standup-tab'
 import SprintMockInterview from '../../_components/sprint-mock-interview'
 import ResourcesList from '@/components/projects/resources-list'
 import { FeatureSuggestionsList } from '@/components/projects/feature-suggestions-list'
 import ErrorsTab from '@/components/projects/errors-tab'
 import Quiz, { QuizQuestion, QuizResult } from '@/components/main/quiz'
 import CodeEditor from '@/components/main/code-editor'
-
 import {
     addTaskToSprint, updateTaskStatus
 } from '@/actions/(main)/projects/tasks.action'
-import { getFeatureSuggestions } from '@/actions/(main)/projects/feature-suggestions.action'
 import {
-    generateTaskQuizQuestions,
-    submitTaskQuizAnswers,
-    getCodeChallengeInstructions,
-    submitCodeForValidation,
-    getTaskAssessmentStatus,
+    getFeatureSuggestions
+} from '@/actions/(main)/projects/feature-suggestions.action'
+import {
+    generateTaskQuizQuestions, submitTaskQuizAnswers,
+    getCodeChallengeInstructions, submitCodeForValidation,
+    getTaskAssessmentStatus, getSprintCompletionStatus,
 } from '@/actions/(main)/projects/projectassessments.action'
 import { Suggestion } from '@/types/project'
 
@@ -157,13 +159,12 @@ export default function SprintsPageClient({
     const [selectedTask, setSelectedTask] = useState<TaskData | null>(null)
 
     // Right Panel Tab State
-    const [activeTab, setActiveTab] = useState('resources')
+    const [activeTab, setActiveTab] = useState('taskDetails')
 
     // Assistant State
     const [suggestions, setSuggestions] = useState<Suggestion[]>([])
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loadingSuggestions, setLoadingSuggestions] = useState(false)
-    const [isStandupOpen, setIsStandupOpen] = useState(false)
 
     // Mock Interview State - when a sprint mock is selected
     const [selectedMockSprintId, setSelectedMockSprintId] = useState<string | null>(null)
@@ -197,27 +198,92 @@ export default function SprintsPageClient({
         attempts: number
     }>>({})
 
+    // Sprint Completion Status - tracks full completion including assessments and mocks
+    const [sprintCompletionStatus, setSprintCompletionStatus] = useState<Record<string, {
+        isFullyCompleted: boolean
+        tasksCompleted: boolean
+        allAssessmentsPassed: boolean
+        mockInterviewCompleted: boolean
+    }>>({})
+
+    // Fetch sprint completion status for all sprints
+    useEffect(() => {
+        const fetchSprintCompletionStatuses = async () => {
+            if (!project.sprints || project.sprints.length === 0) return
+
+            const totalSprints = project.sprints.length
+
+            for (const sprint of project.sprints) {
+                // Skip if already fetched
+                if (sprintCompletionStatus[sprint.id]) continue
+
+                const isLastSprint = sprint.sprintNumber === totalSprints
+
+                try {
+                    const result = await getSprintCompletionStatus(project.id, sprint.id, isLastSprint)
+                    if (result.success && result.data) {
+                        setSprintCompletionStatus(prev => ({
+                            ...prev,
+                            [sprint.id]: {
+                                isFullyCompleted: result.data?.isFullyCompleted ?? false,
+                                tasksCompleted: result.data?.tasksCompleted ?? false,
+                                allAssessmentsPassed: result.data?.allAssessmentsPassed ?? false,
+                                mockInterviewCompleted: result.data?.mockInterviewCompleted ?? true,
+                            }
+                        }))
+                    }
+                } catch (error) {
+                    console.error('Error fetching sprint completion status:', error)
+                }
+            }
+        }
+
+        fetchSprintCompletionStatuses()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [project.id, project.sprints])
+
     // Helper: Check if a sprint is unlocked
-    // A sprint is unlocked if it's the first sprint OR all tasks in previous sprint are completed
+    // A sprint is unlocked if it's the first sprint OR previous sprint is fully completed
+    // (all tasks completed + all assessments passed + mock interview completed)
     const isSprintUnlocked = (sprintNumber: number): boolean => {
         // First sprint is always unlocked
         if (sprintNumber === 1) return true
 
-        // Creators and ownerscan access all sprints
-        if (isCreator) return true
+        // Creators can access all sprints
+        // if (isCreator) return true
 
         // Find the previous sprint
         const previousSprint = project.sprints?.find(s => s.sprintNumber === sprintNumber - 1)
         if (!previousSprint) return true // If no previous sprint, unlock
 
-        // Check if all tasks in previous sprint are completed
+        // No tasks in previous sprint means unlocked
         const previousTasks = previousSprint.tasks || []
-        if (previousTasks.length === 0) return true // No tasks means unlocked
+        if (previousTasks.length === 0) return true
 
-        const allCompleted = previousTasks.every(task =>
+        // Check comprehensive completion status
+        const completionStatus = sprintCompletionStatus[previousSprint.id]
+        if (completionStatus) {
+            return completionStatus.isFullyCompleted
+        }
+
+        // Fallback: Check if all tasks in previous sprint are at least marked as completed
+        const allTasksCompleted = previousTasks.every(task =>
             taskStatuses[task.id] === 'COMPLETED'
         )
-        return allCompleted
+        return allTasksCompleted
+    }
+
+    // Helper: Get what's missing to unlock the next sprint
+    const getSprintUnlockRequirements = (sprintId: string): string[] => {
+        const status = sprintCompletionStatus[sprintId]
+        if (!status) return []
+
+        const requirements: string[] = []
+        if (!status.tasksCompleted) requirements.push('Complete all tasks')
+        if (!status.allAssessmentsPassed) requirements.push('Pass all assessments')
+        if (!status.mockInterviewCompleted) requirements.push('Complete mock interview')
+
+        return requirements
     }
 
     // Get completion percentage for a sprint
@@ -297,7 +363,6 @@ export default function SprintsPageClient({
     const allTasks = project.sprints?.flatMap(s => s.tasks) || []
     const completedTasks = allTasks.filter(t => taskStatuses[t.id] === 'COMPLETED').length
     const progressPercent = allTasks.length > 0 ? Math.round((completedTasks / allTasks.length) * 100) : 0
-    const hasStarted = completedTasks > 0 || Object.keys(taskStatuses).length > 0
 
     const handleTaskStatusChange = async (taskId: string, newStatus: 'TO_DO' | 'IN_PROGRESS' | 'COMPLETED') => {
         setTaskStatuses(prev => ({ ...prev, [taskId]: newStatus }))
@@ -525,113 +590,144 @@ export default function SprintsPageClient({
 
                                 return (
                                     <div key={sprint.id}>
-                                        <button
-                                            onClick={() => {
-                                                if (!unlocked) {
-                                                    toast.error('Complete the previous sprint to unlock this one')
-                                                    return
-                                                }
-                                                setSelectedSprintId(sprint.id)
-                                                setSelectedMockSprintId(null)
-                                                setSelectedTask(null)
-                                                setActiveTab('resources')
-                                            }}
-                                            className={cn(
-                                                "w-full text-left p-3 rounded-xl transition-all border border-transparent relative",
-                                                !unlocked && "opacity-60 cursor-not-allowed",
-                                                selectedSprintId === sprint.id && !selectedMockSprintId && unlocked
-                                                    ? "bg-white dark:bg-neutral-900 shadow-sm border-neutral-200 dark:border-neutral-800 ring-1 ring-neutral-200 dark:ring-neutral-800"
-                                                    : unlocked ? "hover:bg-neutral-100 dark:hover:bg-neutral-900/50 text-neutral-600 dark:text-neutral-400" : ""
-                                            )}
-                                        >
-                                            {!unlocked && (
-                                                <div className="absolute top-2 right-2">
-                                                    <Lock className="w-4 h-4 text-neutral-400" />
-                                                </div>
-                                            )}
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className={cn(
-                                                    "text-xs font-bold uppercase tracking-wider",
-                                                    selectedSprintId === sprint.id && !selectedMockSprintId ? "text-indigo-600 dark:text-indigo-400" : "text-neutral-500"
-                                                )}>
-                                                    Sprint {sprint.sprintNumber}
-                                                </span>
-                                                {unlocked && completionPct > 0 && (
-                                                    <span className={cn(
-                                                        "text-xs font-medium",
-                                                        completionPct === 100 ? "text-green-600 dark:text-green-400" : "text-indigo-600 dark:text-indigo-400"
-                                                    )}>
-                                                        {completionPct}%
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <h3 className={cn(
-                                                "font-semibold text-sm line-clamp-1 mb-1",
-                                                selectedSprintId === sprint.id && !selectedMockSprintId ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-neutral-300"
-                                            )}>
-                                                {sprint.name}
-                                            </h3>
-                                            <div className="flex items-center gap-2 text-xs text-neutral-500">
-                                                <span className="flex items-center">
-                                                    <Clock className="w-3 h-3 mr-1" />
-                                                    {sprint.duration}
-                                                </span>
-                                                <span>•</span>
-                                                <span>{sprint.tasks?.length} tasks</span>
-                                            </div>
-                                            {/* Progress bar */}
-                                            {unlocked && completionPct > 0 && completionPct < 100 && (
-                                                <div className="mt-2 h-1 w-full bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-indigo-500 rounded-full transition-all"
-                                                        style={{ width: `${completionPct}%` }}
-                                                    />
-                                                </div>
-                                            )}
-                                        </button>
-
-                                        {
-                                            index < (project.sprints?.length || 0) - 1 && (
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedMockSprintId(sprint.id)
-                                                        setSelectedSprintId(sprint.id)
+                                        <div className="relative group">
+                                            <button
+                                                onClick={() => {
+                                                    if (!unlocked) {
+                                                        return // Prevent click on locked sprints
+                                                    }
+                                                    setSelectedSprintId(sprint.id)
+                                                    setSelectedMockSprintId(null)
+                                                    // Auto-select first task if available
+                                                    const firstTask = sprint.tasks?.[0]
+                                                    if (firstTask) {
+                                                        setSelectedTask(firstTask)
+                                                        setActiveTab('taskDetails')
+                                                    } else {
                                                         setSelectedTask(null)
-                                                        setActiveTab('assessment')
-                                                    }}
-                                                    className={cn(
-                                                        "w-full text-left p-2 mt-1 rounded-lg transition-all border",
-                                                        selectedMockSprintId === sprint.id
-                                                            ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800"
-                                                            : "bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                                                    )}
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={cn(
-                                                            "w-6 h-6 rounded-full flex items-center justify-center",
-                                                            selectedMockSprintId === sprint.id
-                                                                ? "bg-indigo-500 text-white"
-                                                                : "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600"
-                                                        )}>
-                                                            <Brain className="w-3 h-3" />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={cn(
-                                                                "text-xs font-medium truncate",
-                                                                selectedMockSprintId === sprint.id
-                                                                    ? "text-indigo-800 dark:text-indigo-300"
-                                                                    : "text-neutral-700 dark:text-neutral-300"
+                                                        setActiveTab('resources')
+                                                    }
+                                                }}
+                                                disabled={!unlocked}
+                                                className={cn(
+                                                    "w-full text-left p-3 rounded-xl transition-all border border-transparent relative",
+                                                    !unlocked && "opacity-50 cursor-not-allowed",
+                                                    selectedSprintId === sprint.id && !selectedMockSprintId && unlocked
+                                                        ? "bg-white dark:bg-neutral-900 shadow-sm border-neutral-200 dark:border-neutral-800 ring-1 ring-neutral-200 dark:ring-neutral-800"
+                                                        : unlocked ? "hover:bg-neutral-100 dark:hover:bg-neutral-900/50 text-neutral-600 dark:text-neutral-400" : ""
+                                                )}
+                                            >
+                                                {
+                                                    !unlocked && (() => {
+                                                        const prevSprint = project.sprints?.find(s => s.sprintNumber === sprint.sprintNumber - 1)
+                                                        const requirements = prevSprint ? getSprintUnlockRequirements(prevSprint.id) : []
+                                                        return (
+                                                            <div className="absolute top-2 right-2 group/tooltip">
+                                                                <Lock className="w-4 h-4 text-neutral-400" />
+                                                                {
+                                                                requirements.length > 0 && (
+                                                                    <div className="absolute right-0 top-6 w-48 p-2 bg-neutral-900 dark:bg-neutral-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-50 pointer-events-none">
+                                                                        <p className="font-semibold mb-1">To unlock:</p>
+                                                                        <ul className="list-disc list-inside space-y-0.5">
+                                                                            {
+                                                                            requirements.map((req, idx) => (
+                                                                                <li key={idx}>{req}</li>
+                                                                            ))
+                                                                            }
+                                                                        </ul>
+                                                                    </div>
+                                                                )
+                                                                }
+                                                            </div>
+                                                        )
+                                                    })()
+                                                }
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={cn(
+                                                        "text-xs font-bold uppercase tracking-wider",
+                                                        selectedSprintId === sprint.id && !selectedMockSprintId ? "text-indigo-600 dark:text-indigo-400" : "text-neutral-500"
+                                                    )}>
+                                                        Sprint {sprint.sprintNumber}
+                                                    </span>
+                                                    {
+                                                        unlocked && completionPct > 0 && (
+                                                            <span className={cn(
+                                                                "text-xs font-medium",
+                                                                completionPct === 100 ? "text-green-600 dark:text-green-400" : "text-indigo-600 dark:text-indigo-400"
                                                             )}>
-                                                                Mock Interview
-                                                            </p>
-                                                            <p className="text-[10px] text-neutral-500 truncate">
-                                                                Sprints 1-{sprint.sprintNumber}
-                                                            </p>
+                                                                {completionPct}%
+                                                            </span>
+                                                        )
+                                                    }
+                                                </div>
+                                                <h3 className={cn(
+                                                    "font-semibold text-sm line-clamp-1 mb-1",
+                                                    selectedSprintId === sprint.id && !selectedMockSprintId ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-neutral-300"
+                                                )}>
+                                                    {sprint.name}
+                                                </h3>
+                                                <div className="flex items-center gap-2 text-xs text-neutral-500">
+                                                    <span className="flex items-center">
+                                                        <Clock className="w-3 h-3 mr-1" />
+                                                        {sprint.duration}
+                                                    </span>
+                                                    <span>•</span>
+                                                    <span>{sprint.tasks?.length} tasks</span>
+                                                </div>
+                                                {
+                                                    unlocked && completionPct > 0 && completionPct < 100 && (
+                                                        <div className="mt-2 h-1 w-full bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-indigo-500 rounded-full transition-all"
+                                                                style={{ width: `${completionPct}%` }}
+                                                            />
                                                         </div>
-                                                    </div>
-                                                </button>
-                                            )
-                                        }
+                                                    )
+                                                }
+                                            </button>
+
+                                            {
+                                                index < (project.sprints?.length || 0) - 1 && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedMockSprintId(sprint.id)
+                                                            setSelectedSprintId(sprint.id)
+                                                            setSelectedTask(null)
+                                                            setActiveTab('assessment')
+                                                        }}
+                                                        className={cn(
+                                                            "w-full text-left p-2 mt-1 rounded-lg transition-all border",
+                                                            selectedMockSprintId === sprint.id
+                                                                ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800"
+                                                                : "bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={cn(
+                                                                "w-6 h-6 rounded-full flex items-center justify-center",
+                                                                selectedMockSprintId === sprint.id
+                                                                    ? "bg-indigo-500 text-white"
+                                                                    : "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600"
+                                                            )}>
+                                                                <Brain className="w-3 h-3" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className={cn(
+                                                                    "text-xs font-medium truncate",
+                                                                    selectedMockSprintId === sprint.id
+                                                                        ? "text-indigo-800 dark:text-indigo-300"
+                                                                        : "text-neutral-700 dark:text-neutral-300"
+                                                                )}>
+                                                                    Mock Interview
+                                                                </p>
+                                                                <p className="text-[10px] text-neutral-500 truncate">
+                                                                    Sprints 1-{sprint.sprintNumber}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                )}
+                                        </div>
                                     </div>
                                 )
                             })
@@ -667,14 +763,6 @@ export default function SprintsPageClient({
                         }
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        <Button
-                            variant="ghost" size="sm" onClick={() => setIsStandupOpen(true)}
-                            className="hidden lg:flex gap-2"
-                        >
-                            <Coffee className="w-4 h-4 text-amber-600" />
-                            Daily Standup
-                        </Button>
-
                         {
                             (isCreator || isEnrolled) && activeSprint && (
                                 <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
@@ -768,7 +856,7 @@ export default function SprintsPageClient({
                             className={cn("hidden lg:flex gap-2", progressPercent <= 50 && "opacity-50 cursor-not-allowed")}
                         >
                             <Brain className="w-4 h-4 text-purple-600" />
-                            Quiz
+                            Final Quiz
                             {progressPercent <= 50 && <Lock className="w-3 h-3 ml-1" />}
                         </Button>
                         <Button
@@ -777,7 +865,7 @@ export default function SprintsPageClient({
                             className={cn("hidden lg:flex gap-2", progressPercent <= 75 && "opacity-50 cursor-not-allowed")}
                         >
                             <MonitorPlay className="w-4 h-4 text-blue-600" />
-                            Mock Interview
+                            Final Mock Interview
                             {progressPercent <= 75 && <Lock className="w-3 h-3 ml-1" />}
                         </Button>
                     </div>
@@ -839,11 +927,13 @@ export default function SprintsPageClient({
                                                                     )}>
                                                                         {task.difficulty}
                                                                     </Badge>
-                                                                    {task.assessmentType && task.assessmentType !== 'NONE' && (
-                                                                        <Badge variant="outline" className="text-[10px]">
-                                                                            {task.assessmentType === 'QUIZ' ? '📝 Quiz' : '💻 Code'}
-                                                                        </Badge>
-                                                                    )}
+                                                                    {
+                                                                        task.assessmentType && task.assessmentType !== 'NONE' && (
+                                                                            <Badge variant="outline" className="text-[10px]">
+                                                                                {task.assessmentType === 'QUIZ' ? '📝 Quiz' : '💻 Code'}
+                                                                            </Badge>
+                                                                        )
+                                                                    }
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -880,7 +970,28 @@ export default function SprintsPageClient({
                     <div className="flex-1 flex flex-col bg-neutral-50/30 dark:bg-neutral-900/10 overflow-hidden">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                             <div className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-950/50 backdrop-blur-sm shrink-0">
-                                <TabsList className="flex bg-transparent p-0 h-auto gap-1">
+                                <TabsList className="flex bg-transparent p-0 h-auto gap-1 flex-wrap">
+                                    <TabsTrigger
+                                        value="taskDetails"
+                                        className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Task Details</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="assessment"
+                                        className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800"
+                                    >
+                                        <Brain className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Assessment</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="standup"
+                                        className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800"
+                                    >
+                                        <Mic className="h-4 w-4 text-amber-600" />
+                                        <span className="hidden sm:inline">Daily Standup</span>
+                                    </TabsTrigger>
                                     <TabsTrigger
                                         value="resources"
                                         className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800"
@@ -902,29 +1013,478 @@ export default function SprintsPageClient({
                                         <AlertTriangle className="h-4 w-4" />
                                         <span className="hidden sm:inline">Errors</span>
                                     </TabsTrigger>
-                                    <TabsTrigger
-                                        value="taskDetails"
-                                        disabled={!selectedTask}
-                                        className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <FileText className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Task Details</span>
-                                        {!selectedTask && <Lock className="h-3 w-3" />}
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="assessment"
-                                        disabled={!selectedTask && !selectedMockSprintId}
-                                        className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <Brain className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Assessment</span>
-                                        {!selectedTask && !selectedMockSprintId && <Lock className="h-3 w-3" />}
-                                    </TabsTrigger>
                                 </TabsList>
                             </div>
                             <div className="flex-1 overflow-hidden">
                                 <ScrollArea className="h-full w-full">
                                     <div className="p-6">
+                                        <TabsContent value="taskDetails" className="mt-0">
+                                            {
+                                                selectedTask ? (
+                                                    <div className="space-y-6">
+                                                        <div className="pb-4 border-b border-neutral-200 dark:border-neutral-800">
+                                                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+                                                                {selectedTask.title}
+                                                            </h2>
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <Badge className={difficultyColors[selectedTask.difficulty] || ''}>
+                                                                    {selectedTask.difficulty}
+                                                                </Badge>
+                                                                {
+                                                                    selectedTask.category && (
+                                                                        <Badge variant="outline">
+                                                                            {selectedTask.category}
+                                                                        </Badge>
+                                                                    )
+                                                                }
+                                                                {
+                                                                    selectedTask.estimatedTime && (
+                                                                        <Badge variant="outline" className="flex items-center gap-1">
+                                                                            <Clock className="w-3 h-3" />
+                                                                            {selectedTask.estimatedTime}
+                                                                        </Badge>
+                                                                    )
+                                                                }
+                                                            </div>
+                                                            {
+                                                                selectedTask.tags && selectedTask.tags.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-1 mt-3">
+                                                                        {
+                                                                            selectedTask.tags.map((tag, idx) => (
+                                                                                <span
+                                                                                    key={idx}
+                                                                                    className="text-xs px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded"
+                                                                                >
+                                                                                    {tag}
+                                                                                </span>
+                                                                            ))
+                                                                        }
+                                                                    </div>
+                                                                )
+                                                            }
+
+                                                            <div className="flex items-center gap-2 mt-4">
+                                                                {
+                                                                    statusOptions.map((option) => (
+                                                                        <Button
+                                                                            key={option.value}
+                                                                            variant={taskStatuses[selectedTask.id] === option.value ? 'default' : 'outline'}
+                                                                            size="sm"
+                                                                            onClick={() => handleTaskStatusChange(selectedTask.id, option.value)}
+                                                                            className={cn(
+                                                                                'gap-1',
+                                                                                taskStatuses[selectedTask.id] === option.value && 'bg-indigo-600 hover:bg-indigo-700'
+                                                                            )}
+                                                                        >
+                                                                            {option.label}
+                                                                        </Button>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+
+                                                        {
+                                                            selectedTask.concepts && selectedTask.concepts.length > 0 && (
+                                                                <div>
+                                                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                                                        <Lightbulb className="w-4 h-4 text-amber-500" />
+                                                                        Key Concepts
+                                                                    </h4>
+                                                                    <div className="space-y-3">
+                                                                        {
+                                                                            selectedTask.concepts.map((concept, idx) => (
+                                                                                <Collapsible key={idx}>
+                                                                                    <CollapsibleTrigger asChild>
+                                                                                        <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-950/30 transition-colors">
+                                                                                            <div className="flex items-center justify-between">
+                                                                                                <p className="font-medium text-sm text-amber-800 dark:text-amber-300">{concept.title}</p>
+                                                                                                <ChevronDown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                                                                            </div>
+                                                                                            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{concept.summary}</p>
+                                                                                        </div>
+                                                                                    </CollapsibleTrigger>
+                                                                                    <CollapsibleContent>
+                                                                                        <div className="mt-2 p-3 bg-amber-50/50 dark:bg-amber-950/10 rounded-lg space-y-3 text-sm">
+                                                                                            {
+                                                                                                concept.keyPoints && concept.keyPoints.length > 0 && (
+                                                                                                    <div>
+                                                                                                        <p className="font-medium text-amber-800 dark:text-amber-300 text-xs mb-1">Key Points:</p>
+                                                                                                        <ul className="list-disc list-inside text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                                                                                                            {
+                                                                                                                concept.keyPoints.slice(0, 5).map((point, pidx) => (
+                                                                                                                    <li key={pidx}>{point}</li>
+                                                                                                                ))
+                                                                                                            }
+                                                                                                        </ul>
+                                                                                                    </div>
+                                                                                                )
+                                                                                            }
+                                                                                            {
+                                                                                                concept.bestPractices && concept.bestPractices.length > 0 && (
+                                                                                                    <div>
+                                                                                                        <p className="font-medium text-green-800 dark:text-green-300 text-xs mb-1">Best Practices:</p>
+                                                                                                        <ul className="list-disc list-inside text-xs text-green-700 dark:text-green-400 space-y-1">
+                                                                                                            {
+                                                                                                                concept.bestPractices.slice(0, 3).map((practice, pidx) => (
+                                                                                                                    <li key={pidx}>{practice}</li>
+                                                                                                                ))
+                                                                                                            }
+                                                                                                        </ul>
+                                                                                                    </div>
+                                                                                                )
+                                                                                            }
+                                                                                            {
+                                                                                                concept.commonMistakes && concept.commonMistakes.length > 0 && (
+                                                                                                    <div>
+                                                                                                        <p className="font-medium text-red-800 dark:text-red-300 text-xs mb-1">Common Mistakes:</p>
+                                                                                                        <ul className="list-disc list-inside text-xs text-red-700 dark:text-red-400 space-y-1">
+                                                                                                            {
+                                                                                                                concept.commonMistakes.slice(0, 3).map((mistake, midx) => (
+                                                                                                                    <li key={midx}>{mistake}</li>
+                                                                                                                ))
+                                                                                                            }
+                                                                                                        </ul>
+                                                                                                    </div>
+                                                                                                )
+                                                                                            }
+                                                                                        </div>
+                                                                                    </CollapsibleContent>
+                                                                                </Collapsible>
+                                                                            ))
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            selectedTask.description && selectedTask.description.length > 0 && (
+                                                                <div>
+                                                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                                                        <Code2 className="w-4 h-4" />
+                                                                        What to Build
+                                                                    </h4>
+                                                                    <ol className="space-y-3">
+                                                                        {
+                                                                            selectedTask.description.map((step, idx) => (
+                                                                                <li key={idx} className="flex gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                                                                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-medium">
+                                                                                        {idx + 1}
+                                                                                    </span>
+                                                                                    <span className="leading-relaxed pt-0.5">{step}</span>
+                                                                                </li>
+                                                                            ))
+                                                                        }
+                                                                    </ol>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            selectedTask.criteria && selectedTask.criteria.length > 0 && (
+                                                                <div>
+                                                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                                                                        <Target className="w-4 h-4" />
+                                                                        Success Criteria
+                                                                    </h4>
+                                                                    <ul className="space-y-2">
+                                                                        {
+                                                                            selectedTask.criteria.map((criterion, idx) => (
+                                                                                <li key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                                                                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                                                                    {criterion}
+                                                                                </li>
+                                                                            ))
+                                                                        }
+                                                                    </ul>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            selectedTask.hints && selectedTask.hints.length > 0 && (
+                                                                <Collapsible open={hintsOpen} onOpenChange={setHintsOpen}>
+                                                                    <CollapsibleTrigger asChild>
+                                                                        <Button variant="ghost" className="w-full justify-between p-4 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-xl">
+                                                                            <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                                                                                <Lightbulb className="w-4 h-4" />
+                                                                                {selectedTask.hints.length} Hints Available
+                                                                            </span>
+                                                                            <ChevronDown className={cn('w-4 h-4 transition-transform', hintsOpen && 'rotate-180')} />
+                                                                        </Button>
+                                                                    </CollapsibleTrigger>
+                                                                    <CollapsibleContent>
+                                                                        <ul className="mt-3 space-y-2 p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl">
+                                                                            {
+                                                                                selectedTask.hints.map((hint, idx) => (
+                                                                                    <li key={idx} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+                                                                                        <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                                                                        {hint}
+                                                                                    </li>
+                                                                                ))
+                                                                            }
+                                                                        </ul>
+                                                                    </CollapsibleContent>
+                                                                </Collapsible>
+                                                            )
+                                                        }
+                                                        {
+                                                            selectedTask.terminalCommand && (
+                                                                <div>
+                                                                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                                                                        <Terminal className="w-4 h-4" />
+                                                                        Terminal Command
+                                                                    </h4>
+                                                                    <div className="flex items-center gap-2 p-3 bg-neutral-900 dark:bg-black rounded-xl">
+                                                                        <code className="flex-1 text-sm text-green-400 font-mono">
+                                                                            $ {selectedTask.terminalCommand}
+                                                                        </code>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={handleCopyCommand}
+                                                                            className="text-neutral-400 hover:text-white"
+                                                                        >
+                                                                            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            selectedTask.assessmentType && selectedTask.assessmentType !== 'NONE' && (() => {
+                                                                const assessmentStatus = taskAssessmentStatus[selectedTask.id]
+                                                                const hasAttempted = assessmentStatus && assessmentStatus.attempts > 0
+
+                                                                return (
+                                                                    <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
+                                                                        {
+                                                                            hasAttempted && (
+                                                                                <div className={cn(
+                                                                                    "p-3 rounded-lg border",
+                                                                                    assessmentStatus.passed
+                                                                                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                                                                                        : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
+                                                                                )}>
+                                                                                    <div className="flex items-center justify-between">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            {
+                                                                                                assessmentStatus.passed ? (
+                                                                                                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                                                                                ) : (
+                                                                                                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                                                                                )
+                                                                                            }
+                                                                                            <span className={cn(
+                                                                                                "font-medium text-sm",
+                                                                                                assessmentStatus.passed
+                                                                                                    ? "text-green-800 dark:text-green-300"
+                                                                                                    : "text-amber-800 dark:text-amber-300"
+                                                                                            )}>
+                                                                                                {assessmentStatus.passed ? "Assessment Passed!" : "Not Passed Yet"}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="text-right">
+                                                                                            <p className={cn(
+                                                                                                "text-lg font-bold",
+                                                                                                assessmentStatus.passed
+                                                                                                    ? "text-green-600 dark:text-green-400"
+                                                                                                    : "text-amber-600 dark:text-amber-400"
+                                                                                            )}>
+                                                                                                {assessmentStatus.score ?? 0}%
+                                                                                            </p>
+                                                                                            <p className="text-xs text-neutral-500">
+                                                                                                {assessmentStatus.attempts} attempt{assessmentStatus.attempts !== 1 ? 's' : ''}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )
+                                                                        }
+                                                                        <Button
+                                                                            onClick={handleStartAssessment}
+                                                                            className={cn(
+                                                                                "w-full",
+                                                                                selectedTask.assessmentType === 'QUIZ'
+                                                                                    ? "bg-purple-600 hover:bg-purple-700 text-white"
+                                                                                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                                                                            )}
+                                                                        >
+                                                                            {
+                                                                                selectedTask.assessmentType === 'QUIZ' ? (
+                                                                                    <>
+                                                                                        <Brain className="w-4 h-4 mr-2" />
+                                                                                        {hasAttempted ? 'Retake Quiz' : 'Take Quiz Assessment'}
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <Code2 className="w-4 h-4 mr-2" />
+                                                                                        {hasAttempted ? 'Retry Code Challenge' : 'Take Code Challenge'}
+                                                                                    </>
+                                                                                )
+                                                                            }
+                                                                        </Button>
+                                                                    </div>
+                                                                )
+                                                            })()
+                                                        }
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
+                                                        <FileText className="w-12 h-12 text-neutral-300 mb-4" />
+                                                        <p className="text-sm">Select a task to view details</p>
+                                                    </div>
+                                                )
+                                            }
+                                        </TabsContent>
+                                        <TabsContent value="assessment" className="mt-0">
+                                            {
+                                                selectedMockSprintId && activeSprint ? (
+                                                    <SprintMockInterview
+                                                        projectId={project.id}
+                                                        sprintId={selectedMockSprintId}
+                                                        sprintName={activeSprint.name}
+                                                        sprintNumber={activeSprint.sprintNumber}
+                                                        onComplete={(score) => {
+                                                            toast.success(`Mock interview completed with score: ${score}%`)
+                                                            setSelectedMockSprintId(null)
+                                                            setActiveTab('resources')
+                                                        }}
+                                                    />
+                                                ) : selectedTask ? (
+                                                    isLoadingAssessment ? (
+                                                        <div className="flex flex-col items-center justify-center h-[50vh]">
+                                                            <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
+                                                            <p className="text-sm text-neutral-500">Loading assessment...</p>
+                                                        </div>
+                                                    ) : selectedTask.assessmentType === 'QUIZ' && quizQuestions.length > 0 ? (
+                                                        <Quiz
+                                                            quizId={`task-${selectedTask.id}`}
+                                                            questions={quizQuestions}
+                                                            title={`Quiz: ${selectedTask.title}`}
+                                                            mode="assessment"
+                                                            immediateResults={true}
+                                                            allowSkip={false}
+                                                            allowHints={true}
+                                                            onComplete={handleQuizComplete}
+                                                            onExit={() => {
+                                                                setQuizQuestions([])
+                                                                setActiveTab('taskDetails')
+                                                            }}
+                                                        />
+                                                    ) : selectedTask.assessmentType === 'CODE' && codeInstructions ? (
+                                                        <div className="space-y-4">
+                                                            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                                                                <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                                                                    Code Challenge: {selectedTask.title}
+                                                                </h3>
+                                                                <p className="text-sm text-blue-700 dark:text-blue-400 whitespace-pre-wrap">
+                                                                    {codeInstructions}
+                                                                </p>
+                                                            </div>
+                                                            <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+                                                                <CodeEditor
+                                                                    code={userCode}
+                                                                    language={codeLanguage}
+                                                                    height="400px"
+                                                                    onChange={(code) => setUserCode(code)}
+                                                                    showLanguageSelector={false}
+                                                                    showCopyButton={true}
+                                                                    showRunButton={false}
+                                                                    placeholder="Write your solution here..."
+                                                                />
+                                                            </div>
+
+                                                            {
+                                                                codeResult && (
+                                                                    <div className={cn(
+                                                                        "p-4 rounded-lg border-2",
+                                                                        codeResult.passed
+                                                                            ? "border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20"
+                                                                            : "border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20"
+                                                                    )}>
+                                                                        <div className="flex items-center gap-2 mb-2">
+                                                                            {
+                                                                                codeResult.passed ? (
+                                                                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                                                                ) : (
+                                                                                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                                                                )
+                                                                            }
+                                                                            <span className="font-semibold">
+                                                                                {codeResult.passed ? 'Challenge Passed!' : 'Not Quite Right'}
+                                                                            </span>
+                                                                            <Badge variant="secondary">Score: {codeResult.score}%</Badge>
+                                                                        </div>
+                                                                        <p className="text-sm text-neutral-700 dark:text-neutral-300">{codeResult.feedback}</p>
+                                                                        {
+                                                                            codeResult.suggestions.length > 0 && (
+                                                                                <div className="mt-2">
+                                                                                    <p className="text-sm font-medium">Suggestions:</p>
+                                                                                    <ul className="list-disc list-inside text-sm text-neutral-600 dark:text-neutral-400">
+                                                                                        {
+                                                                                            codeResult.suggestions.map((s, i) => (
+                                                                                                <li key={i}>{s}</li>
+                                                                                            ))
+                                                                                        }
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )
+                                                                        }
+                                                                    </div>
+                                                                )
+                                                            }
+
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    onClick={() => {
+                                                                        setCodeInstructions('')
+                                                                        setCodeResult(null)
+                                                                        setActiveTab('taskDetails')
+                                                                    }}
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                                <Button
+                                                                    onClick={handleSubmitCode}
+                                                                    disabled={isLoadingAssessment || !userCode.trim()}
+                                                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                                >
+                                                                    {
+                                                                        isLoadingAssessment ? (
+                                                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                                                        ) : null
+                                                                    }
+                                                                    Submit Code
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
+                                                            <Brain className="w-12 h-12 text-neutral-300 mb-4" />
+                                                            <p className="text-sm">
+                                                                {
+                                                                    selectedTask.assessmentType === 'NONE'
+                                                                        ? "This task doesn't require an assessment"
+                                                                        : "Click 'Start Assessment' from Task Details to begin"
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
+                                                        <Brain className="w-12 h-12 text-neutral-300 mb-4" />
+                                                        <p className="text-sm">Select a task or mock interview to view assessments</p>
+                                                    </div>
+                                                )
+                                            }
+                                        </TabsContent>
+                                        <TabsContent value="standup" className="mt-0">
+                                            <DailyStandupTab
+                                                projectId={project.id}
+                                                projectSlug={project.slug}
+                                                projectTitle={project.title}
+                                                userCredits={userCredits}
+                                            />
+                                        </TabsContent>
                                         <TabsContent value="resources" className="mt-0">
                                             <ResourcesList
                                                 projectId={project.id}
@@ -949,422 +1509,6 @@ export default function SprintsPageClient({
                                                 isCreator={isCreator}
                                             />
                                         </TabsContent>
-
-                                        {/* Task Details Tab */}
-                                        <TabsContent value="taskDetails" className="mt-0">
-                                            {selectedTask ? (
-                                                <div className="space-y-6">
-                                                    {/* Header */}
-                                                    <div className="pb-4 border-b border-neutral-200 dark:border-neutral-800">
-                                                        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
-                                                            {selectedTask.title}
-                                                        </h2>
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <Badge className={difficultyColors[selectedTask.difficulty] || ''}>
-                                                                {selectedTask.difficulty}
-                                                            </Badge>
-                                                            {selectedTask.category && (
-                                                                <Badge variant="outline">
-                                                                    {selectedTask.category}
-                                                                </Badge>
-                                                            )}
-                                                            {selectedTask.estimatedTime && (
-                                                                <Badge variant="outline" className="flex items-center gap-1">
-                                                                    <Clock className="w-3 h-3" />
-                                                                    {selectedTask.estimatedTime}
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        {selectedTask.tags && selectedTask.tags.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 mt-3">
-                                                                {selectedTask.tags.map((tag, idx) => (
-                                                                    <span
-                                                                        key={idx}
-                                                                        className="text-xs px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded"
-                                                                    >
-                                                                        {tag}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Status Control */}
-                                                        <div className="flex items-center gap-2 mt-4">
-                                                            {statusOptions.map((option) => (
-                                                                <Button
-                                                                    key={option.value}
-                                                                    variant={taskStatuses[selectedTask.id] === option.value ? 'default' : 'outline'}
-                                                                    size="sm"
-                                                                    onClick={() => handleTaskStatusChange(selectedTask.id, option.value)}
-                                                                    className={cn(
-                                                                        'gap-1',
-                                                                        taskStatuses[selectedTask.id] === option.value && 'bg-indigo-600 hover:bg-indigo-700'
-                                                                    )}
-                                                                >
-                                                                    {option.label}
-                                                                </Button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Concepts */}
-                                                    {selectedTask.concepts && selectedTask.concepts.length > 0 && (
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-                                                                <Lightbulb className="w-4 h-4 text-amber-500" />
-                                                                Key Concepts
-                                                            </h4>
-                                                            <div className="space-y-3">
-                                                                {selectedTask.concepts.map((concept, idx) => (
-                                                                    <Collapsible key={idx}>
-                                                                        <CollapsibleTrigger asChild>
-                                                                            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-950/30 transition-colors">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <p className="font-medium text-sm text-amber-800 dark:text-amber-300">{concept.title}</p>
-                                                                                    <ChevronDown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                                                                                </div>
-                                                                                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{concept.summary}</p>
-                                                                            </div>
-                                                                        </CollapsibleTrigger>
-                                                                        <CollapsibleContent>
-                                                                            <div className="mt-2 p-3 bg-amber-50/50 dark:bg-amber-950/10 rounded-lg space-y-3 text-sm">
-                                                                                {concept.keyPoints && concept.keyPoints.length > 0 && (
-                                                                                    <div>
-                                                                                        <p className="font-medium text-amber-800 dark:text-amber-300 text-xs mb-1">Key Points:</p>
-                                                                                        <ul className="list-disc list-inside text-xs text-amber-700 dark:text-amber-400 space-y-1">
-                                                                                            {concept.keyPoints.slice(0, 5).map((point, pidx) => (
-                                                                                                <li key={pidx}>{point}</li>
-                                                                                            ))}
-                                                                                        </ul>
-                                                                                    </div>
-                                                                                )}
-                                                                                {concept.bestPractices && concept.bestPractices.length > 0 && (
-                                                                                    <div>
-                                                                                        <p className="font-medium text-green-800 dark:text-green-300 text-xs mb-1">Best Practices:</p>
-                                                                                        <ul className="list-disc list-inside text-xs text-green-700 dark:text-green-400 space-y-1">
-                                                                                            {concept.bestPractices.slice(0, 3).map((practice, pidx) => (
-                                                                                                <li key={pidx}>{practice}</li>
-                                                                                            ))}
-                                                                                        </ul>
-                                                                                    </div>
-                                                                                )}
-                                                                                {concept.commonMistakes && concept.commonMistakes.length > 0 && (
-                                                                                    <div>
-                                                                                        <p className="font-medium text-red-800 dark:text-red-300 text-xs mb-1">Common Mistakes:</p>
-                                                                                        <ul className="list-disc list-inside text-xs text-red-700 dark:text-red-400 space-y-1">
-                                                                                            {concept.commonMistakes.slice(0, 3).map((mistake, midx) => (
-                                                                                                <li key={midx}>{mistake}</li>
-                                                                                            ))}
-                                                                                        </ul>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </CollapsibleContent>
-                                                                    </Collapsible>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Description Steps */}
-                                                    {selectedTask.description && selectedTask.description.length > 0 && (
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-                                                                <Code2 className="w-4 h-4" />
-                                                                What to Build
-                                                            </h4>
-                                                            <ol className="space-y-3">
-                                                                {selectedTask.description.map((step, idx) => (
-                                                                    <li key={idx} className="flex gap-3 text-sm text-neutral-600 dark:text-neutral-400">
-                                                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-medium">
-                                                                            {idx + 1}
-                                                                        </span>
-                                                                        <span className="leading-relaxed pt-0.5">{step}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ol>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Success Criteria */}
-                                                    {selectedTask.criteria && selectedTask.criteria.length > 0 && (
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-                                                                <Target className="w-4 h-4" />
-                                                                Success Criteria
-                                                            </h4>
-                                                            <ul className="space-y-2">
-                                                                {selectedTask.criteria.map((criterion, idx) => (
-                                                                    <li key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                                                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                                                        {criterion}
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Hints (Collapsible) */}
-                                                    {selectedTask.hints && selectedTask.hints.length > 0 && (
-                                                        <Collapsible open={hintsOpen} onOpenChange={setHintsOpen}>
-                                                            <CollapsibleTrigger asChild>
-                                                                <Button variant="ghost" className="w-full justify-between p-4 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-xl">
-                                                                    <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                                                                        <Lightbulb className="w-4 h-4" />
-                                                                        {selectedTask.hints.length} Hints Available
-                                                                    </span>
-                                                                    <ChevronDown className={cn('w-4 h-4 transition-transform', hintsOpen && 'rotate-180')} />
-                                                                </Button>
-                                                            </CollapsibleTrigger>
-                                                            <CollapsibleContent>
-                                                                <ul className="mt-3 space-y-2 p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-xl">
-                                                                    {selectedTask.hints.map((hint, idx) => (
-                                                                        <li key={idx} className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
-                                                                            <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                                                            {hint}
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </CollapsibleContent>
-                                                        </Collapsible>
-                                                    )}
-
-                                                    {/* Terminal Command */}
-                                                    {selectedTask.terminalCommand && (
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
-                                                                <Terminal className="w-4 h-4" />
-                                                                Terminal Command
-                                                            </h4>
-                                                            <div className="flex items-center gap-2 p-3 bg-neutral-900 dark:bg-black rounded-xl">
-                                                                <code className="flex-1 text-sm text-green-400 font-mono">
-                                                                    $ {selectedTask.terminalCommand}
-                                                                </code>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    onClick={handleCopyCommand}
-                                                                    className="text-neutral-400 hover:text-white"
-                                                                >
-                                                                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Start Assessment Button */}
-                                                    {selectedTask.assessmentType && selectedTask.assessmentType !== 'NONE' && (() => {
-                                                        const assessmentStatus = taskAssessmentStatus[selectedTask.id]
-                                                        const hasAttempted = assessmentStatus && assessmentStatus.attempts > 0
-
-                                                        return (
-                                                            <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
-                                                                {/* Show assessment status if already attempted */}
-                                                                {hasAttempted && (
-                                                                    <div className={cn(
-                                                                        "p-3 rounded-lg border",
-                                                                        assessmentStatus.passed
-                                                                            ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
-                                                                            : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
-                                                                    )}>
-                                                                        <div className="flex items-center justify-between">
-                                                                            <div className="flex items-center gap-2">
-                                                                                {assessmentStatus.passed ? (
-                                                                                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                                                                ) : (
-                                                                                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                                                                                )}
-                                                                                <span className={cn(
-                                                                                    "font-medium text-sm",
-                                                                                    assessmentStatus.passed
-                                                                                        ? "text-green-800 dark:text-green-300"
-                                                                                        : "text-amber-800 dark:text-amber-300"
-                                                                                )}>
-                                                                                    {assessmentStatus.passed ? "Assessment Passed!" : "Not Passed Yet"}
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="text-right">
-                                                                                <p className={cn(
-                                                                                    "text-lg font-bold",
-                                                                                    assessmentStatus.passed
-                                                                                        ? "text-green-600 dark:text-green-400"
-                                                                                        : "text-amber-600 dark:text-amber-400"
-                                                                                )}>
-                                                                                    {assessmentStatus.score ?? 0}%
-                                                                                </p>
-                                                                                <p className="text-xs text-neutral-500">
-                                                                                    {assessmentStatus.attempts} attempt{assessmentStatus.attempts !== 1 ? 's' : ''}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                                <Button
-                                                                    onClick={handleStartAssessment}
-                                                                    className={cn(
-                                                                        "w-full",
-                                                                        selectedTask.assessmentType === 'QUIZ'
-                                                                            ? "bg-purple-600 hover:bg-purple-700 text-white"
-                                                                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                                                                    )}
-                                                                >
-                                                                    {selectedTask.assessmentType === 'QUIZ' ? (
-                                                                        <>
-                                                                            <Brain className="w-4 h-4 mr-2" />
-                                                                            {hasAttempted ? 'Retake Quiz' : 'Take Quiz Assessment'}
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Code2 className="w-4 h-4 mr-2" />
-                                                                            {hasAttempted ? 'Retry Code Challenge' : 'Take Code Challenge'}
-                                                                        </>
-                                                                    )}
-                                                                </Button>
-                                                            </div>
-                                                        )
-                                                    })()}
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
-                                                    <FileText className="w-12 h-12 text-neutral-300 mb-4" />
-                                                    <p className="text-sm">Select a task to view details</p>
-                                                </div>
-                                            )}
-                                        </TabsContent>
-
-                                        {/* Assessment Tab */}
-                                        <TabsContent value="assessment" className="mt-0">
-                                            {/* Sprint Mock Interview */}
-                                            {selectedMockSprintId && activeSprint ? (
-                                                <SprintMockInterview
-                                                    projectId={project.id}
-                                                    sprintId={selectedMockSprintId}
-                                                    sprintName={activeSprint.name}
-                                                    sprintNumber={activeSprint.sprintNumber}
-                                                    onComplete={(score) => {
-                                                        toast.success(`Mock interview completed with score: ${score}%`)
-                                                        setSelectedMockSprintId(null)
-                                                        setActiveTab('resources')
-                                                    }}
-                                                />
-                                            ) : selectedTask ? (
-                                                /* Task Assessment - Quiz or Code */
-                                                isLoadingAssessment ? (
-                                                    <div className="flex flex-col items-center justify-center h-[50vh]">
-                                                        <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
-                                                        <p className="text-sm text-neutral-500">Loading assessment...</p>
-                                                    </div>
-                                                ) : selectedTask.assessmentType === 'QUIZ' && quizQuestions.length > 0 ? (
-                                                    <Quiz
-                                                        quizId={`task-${selectedTask.id}`}
-                                                        questions={quizQuestions}
-                                                        title={`Quiz: ${selectedTask.title}`}
-                                                        mode="assessment"
-                                                        immediateResults={true}
-                                                        allowSkip={false}
-                                                        allowHints={true}
-                                                        onComplete={handleQuizComplete}
-                                                        onExit={() => {
-                                                            setQuizQuestions([])
-                                                            setActiveTab('taskDetails')
-                                                        }}
-                                                    />
-                                                ) : selectedTask.assessmentType === 'CODE' && codeInstructions ? (
-                                                    <div className="space-y-4">
-                                                        <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                                                            <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">
-                                                                Code Challenge: {selectedTask.title}
-                                                            </h3>
-                                                            <p className="text-sm text-blue-700 dark:text-blue-400 whitespace-pre-wrap">
-                                                                {codeInstructions}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-                                                            <CodeEditor
-                                                                code={userCode}
-                                                                language={codeLanguage}
-                                                                height="400px"
-                                                                onChange={(code) => setUserCode(code)}
-                                                                showLanguageSelector={false}
-                                                                showCopyButton={true}
-                                                                showRunButton={false}
-                                                                placeholder="Write your solution here..."
-                                                            />
-                                                        </div>
-
-                                                        {codeResult && (
-                                                            <div className={cn(
-                                                                "p-4 rounded-lg border-2",
-                                                                codeResult.passed
-                                                                    ? "border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20"
-                                                                    : "border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20"
-                                                            )}>
-                                                                <div className="flex items-center gap-2 mb-2">
-                                                                    {codeResult.passed ? (
-                                                                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                                                    ) : (
-                                                                        <AlertTriangle className="w-5 h-5 text-amber-600" />
-                                                                    )}
-                                                                    <span className="font-semibold">
-                                                                        {codeResult.passed ? 'Challenge Passed!' : 'Not Quite Right'}
-                                                                    </span>
-                                                                    <Badge variant="secondary">Score: {codeResult.score}%</Badge>
-                                                                </div>
-                                                                <p className="text-sm text-neutral-700 dark:text-neutral-300">{codeResult.feedback}</p>
-                                                                {codeResult.suggestions.length > 0 && (
-                                                                    <div className="mt-2">
-                                                                        <p className="text-sm font-medium">Suggestions:</p>
-                                                                        <ul className="list-disc list-inside text-sm text-neutral-600 dark:text-neutral-400">
-                                                                            {codeResult.suggestions.map((s, i) => (
-                                                                                <li key={i}>{s}</li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                onClick={() => {
-                                                                    setCodeInstructions('')
-                                                                    setCodeResult(null)
-                                                                    setActiveTab('taskDetails')
-                                                                }}
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                            <Button
-                                                                onClick={handleSubmitCode}
-                                                                disabled={isLoadingAssessment || !userCode.trim()}
-                                                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                                                            >
-                                                                {isLoadingAssessment ? (
-                                                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                                                ) : null}
-                                                                Submit Code
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
-                                                        <Brain className="w-12 h-12 text-neutral-300 mb-4" />
-                                                        <p className="text-sm">
-                                                            {selectedTask.assessmentType === 'NONE'
-                                                                ? "This task doesn't require an assessment"
-                                                                : "Click 'Start Assessment' from Task Details to begin"}
-                                                        </p>
-                                                    </div>
-                                                )
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center h-[50vh] text-neutral-500">
-                                                    <Brain className="w-12 h-12 text-neutral-300 mb-4" />
-                                                    <p className="text-sm">Select a task or mock interview to view assessments</p>
-                                                </div>
-                                            )}
-                                        </TabsContent>
                                     </div>
                                 </ScrollArea>
                             </div>
@@ -1378,16 +1522,6 @@ export default function SprintsPageClient({
                 isOpen={isSprintGenOpen}
                 onClose={() => setIsSprintGenOpen(false)}
                 isCreator={isCreator}
-            />
-
-            <DailyStandupSheet
-                isOpen={isStandupOpen}
-                onClose={() => setIsStandupOpen(false)}
-                projectId={project.id}
-                projectSlug={project.slug}
-                projectTitle={project.title}
-                userCredits={userCredits}
-                hasStarted={hasStarted}
             />
         </div>
     )

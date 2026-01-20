@@ -136,6 +136,7 @@ export async function getProjectBySlug(slug: string): Promise<ActionResponse> {
 
         return { success: true, data: project };
     } catch (error: any) {
+        console.log(error);
         return { success: false, error: error.message };
     }
 }

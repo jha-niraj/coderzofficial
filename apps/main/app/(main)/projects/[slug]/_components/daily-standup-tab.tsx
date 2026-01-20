@@ -1,0 +1,614 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import {
+    Calendar, Clock, Loader2, CheckCircle2, AlertCircle, Trophy, Play,
+    Mic
+} from 'lucide-react'
+import { Button } from '@repo/ui/components/ui/button'
+import { Badge } from '@repo/ui/components/ui/badge'
+import { Label } from '@repo/ui/components/ui/label'
+import { toast } from '@repo/ui/components/ui/sonner'
+import {
+    checkStandupConfig, createStandupConfig, getUpcomingStandups, submitStandup
+} from '@/actions/(main)/projects/standup.action'
+import { cn } from '@repo/ui/lib/utils'
+import { Voice, VoiceConfig } from '@/components/main/voice'
+
+interface DailyStandupTabProps {
+    projectId: string
+    projectSlug: string
+    projectTitle: string
+    userCredits: number
+}
+
+const DAYS = [
+    { value: 0, label: 'Sun', full: 'Sunday' },
+    { value: 1, label: 'Mon', full: 'Monday' },
+    { value: 2, label: 'Tue', full: 'Tuesday' },
+    { value: 3, label: 'Wed', full: 'Wednesday' },
+    { value: 4, label: 'Thu', full: 'Thursday' },
+    { value: 5, label: 'Fri', full: 'Friday' },
+    { value: 6, label: 'Sat', full: 'Saturday' },
+]
+
+interface StandupConfig {
+    daysPerWeek: number
+    standupTime: string
+    durationMinutes: number
+    selectedDays: number[]
+    completedStandups?: number
+    totalStandups?: number
+}
+
+interface StandupEntry {
+    id: string
+    scheduledFor: Date
+    status: 'SCHEDULED' | 'SUBMITTED' | 'MISSED'
+    whatDidYesterday?: string
+    whatDoingToday?: string
+    anyBlockers?: string
+}
+
+// ElevenLabs Agent ID for Daily Standups
+const STANDUP_AGENT_ID = process.env.NEXT_PUBLIC_ELEVENLABS_STANDUP_AGENT_ID || ''
+
+export default function DailyStandupTab({
+    projectId,
+    projectSlug,
+    projectTitle,
+    userCredits,
+}: DailyStandupTabProps) {
+    const [isChecking, setIsChecking] = useState(true)
+    const [hasConfig, setHasConfig] = useState(false)
+    const [config, setConfig] = useState<StandupConfig | null>(null)
+    const [upcomingStandups, setUpcomingStandups] = useState<StandupEntry[]>([])
+    const [activeStandup, setActiveStandup] = useState<StandupEntry | null>(null)
+
+    // Configuration state
+    const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]) // Mon-Fri default
+    const [standupTime, setStandupTime] = useState('09:00')
+    const [durationMinutes, setDurationMinutes] = useState(10)
+    const [isCreating, setIsCreating] = useState(false)
+
+    // Voice session state
+    const [processingStatus, setProcessingStatus] = useState<'processing' | 'success' | 'error'>('processing')
+
+    const checkConfig = useCallback(async () => {
+        setIsChecking(true)
+        try {
+            const result = await checkStandupConfig(projectId)
+            if (result.success && result.data) {
+                setHasConfig(result.data.exists)
+                setConfig(result.data.config)
+
+                // If config exists, fetch upcoming standups
+                if (result.data.exists) {
+                    const standupResult = await getUpcomingStandups(projectId)
+                    if (standupResult.success && standupResult.data) {
+                        setUpcomingStandups(standupResult.data.upcomingStandups || [])
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error checking config:', error)
+        } finally {
+            setIsChecking(false)
+        }
+    }, [projectId])
+
+    useEffect(() => {
+        checkConfig()
+    }, [checkConfig])
+
+    const toggleDay = (day: number) => {
+        if (selectedDays.includes(day)) {
+            if (selectedDays.length > 4) {
+                setSelectedDays(selectedDays.filter(d => d !== day))
+            } else {
+                toast.error('You must select at least 4 days per week')
+            }
+        } else {
+            if (selectedDays.length < 7) {
+                setSelectedDays([...selectedDays, day].sort())
+            }
+        }
+    }
+
+    const handleCreateConfig = async () => {
+        if (selectedDays.length < 4) {
+            toast.error('Please select at least 4 days per week')
+            return
+        }
+
+        const weeklyCredits = selectedDays.length * 5
+        if (userCredits < weeklyCredits) {
+            toast.error(`Insufficient credits. You need ${weeklyCredits} credits for this week.`)
+            return
+        }
+
+        setIsCreating(true)
+        try {
+            const result = await createStandupConfig({
+                projectId,
+                projectSlug,
+                daysPerWeek: selectedDays.length,
+                standupTime,
+                durationMinutes,
+                selectedDays
+            })
+
+            if (result.success) {
+                toast.success('Daily Standup configured successfully!', {
+                    description: `${weeklyCredits} credits deducted for this week`
+                })
+                setHasConfig(true)
+                setConfig(result.data)
+                checkConfig() // Refresh to get upcoming standups
+            } else {
+                toast.error(result.error || 'Failed to configure standup')
+            }
+        } catch (error) {
+            toast.error('Something went wrong: ' + error)
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
+    const handleStandupEnd = async (conversationId: string) => {
+        if (!activeStandup) return
+
+        setProcessingStatus('processing')
+
+        try {
+            // Submit standup with the conversation ID
+            const result = await submitStandup({
+                entryId: activeStandup.id,
+                whatDidYesterday: 'Voice standup completed',
+                whatDoingToday: 'Voice standup completed',
+                anyBlockers: "",
+                recordingUrl: conversationId
+            }, projectSlug)
+
+            if (result.success) {
+                setProcessingStatus('success')
+                toast.success('Standup submitted successfully!')
+                setTimeout(() => {
+                    setActiveStandup(null)
+                    checkConfig() // Refresh
+                }, 2000)
+            } else {
+                setProcessingStatus('error')
+                toast.error(result.error || 'Failed to submit standup')
+            }
+        } catch (error) {
+            setProcessingStatus('error')
+            toast.error('Something went wrong: ' + error)
+        }
+    }
+
+    const weeklyCredits = selectedDays.length * 5
+
+    // Voice configuration for standup
+    const voiceConfig: VoiceConfig = {
+        agentId: STANDUP_AGENT_ID,
+        title: 'Daily Standup',
+        subtitle: `${projectTitle} - ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`,
+        orbColors: ['#f59e0b', '#f97316'],
+        knowledgeBase: `You are a friendly AI assistant conducting a daily standup for the project "${projectTitle}". 
+Your job is to ask the developer three questions:
+1. What did you work on yesterday?
+2. What are you planning to work on today?
+3. Do you have any blockers or challenges?
+
+Be encouraging, professional, and keep the conversation focused. After they answer all three questions, thank them and end the standup.
+Keep responses brief and natural.`,
+        firstMessage: `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}! Let's do your daily standup for ${projectTitle}. What did you work on yesterday?`,
+        stateLabels: {
+            idle: { title: 'Ready for Standup', subtitle: 'Click Start to begin your voice standup' },
+            connecting: { title: 'Connecting...', subtitle: 'Setting up your standup session' },
+            listening: { title: 'Listening...', subtitle: 'Share your update' },
+            talking: { title: 'AI Responding...', subtitle: 'Listen to the next question' },
+            processing: { title: 'Processing...', subtitle: 'Saving your standup' },
+            completed: { title: 'Standup Complete!', subtitle: 'Great job staying accountable!' },
+            error: { title: 'Error', subtitle: 'Something went wrong' }
+        },
+        buttonLabels: {
+            start: 'Start Voice Standup',
+            end: 'End Standup'
+        }
+    }
+
+    if (isChecking) {
+        return (
+            <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+            </div>
+        )
+    }
+
+    // Active standup voice session view
+    if (activeStandup) {
+        return (
+            <div className="space-y-6 max-w-2xl mx-auto py-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                            <Trophy className="w-5 h-5 text-amber-500" />
+                            Daily Standup
+                        </h2>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {new Date(activeStandup.scheduledFor).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                month: 'long',
+                                day: 'numeric'
+                            })}
+                        </p>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        onClick={() => setActiveStandup(null)}
+                        size="sm"
+                    >
+                        Cancel
+                    </Button>
+                </div>
+
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-2xl p-8 border border-amber-200 dark:border-amber-800">
+                    <Voice
+                        config={voiceConfig}
+                        callbacks={{
+                            onEnd: handleStandupEnd,
+                            onError: (error) => {
+                                console.error('Standup error:', error)
+                                toast.error('Voice session error. Please try again.')
+                            }
+                        }}
+                        orbSize="lg"
+                        showProcessingDialog={true}
+                        processingStatus={processingStatus}
+                    />
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                        <Mic className="w-4 h-4" />
+                        Tips for a Great Standup
+                    </h4>
+                    <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                        <li>• Be specific about what you worked on</li>
+                        <li>• Mention any challenges or blockers</li>
+                        <li>• Keep it concise (2-3 minutes)</li>
+                    </ul>
+                </div>
+            </div>
+        )
+    }
+
+    // Has config - show status and upcoming standups
+    if (hasConfig && config) {
+        const todayEntry = upcomingStandups.find(s => {
+            const scheduledDate = new Date(s.scheduledFor)
+            const today = new Date()
+            return scheduledDate.toDateString() === today.toDateString() && s.status === 'SCHEDULED'
+        })
+
+        return (
+            <div className="space-y-6">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-900/30 rounded-xl p-5">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                                Daily Standup Active
+                            </h3>
+                            <p className="text-sm text-green-800 dark:text-green-200">
+                                Your voice standup schedule for {projectTitle} is active.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Days/Week</p>
+                        <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                            {config.daysPerWeek}
+                        </p>
+                    </div>
+                    <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Time</p>
+                        <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                            {config.standupTime}
+                        </p>
+                    </div>
+                    <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Duration</p>
+                        <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                            {config.durationMinutes}min
+                        </p>
+                    </div>
+                    <div className="bg-neutral-50 dark:bg-neutral-900/50 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Completed</p>
+                        <p className="text-xl font-bold text-neutral-900 dark:text-white">
+                            {config.completedStandups || 0}/{config.totalStandups || 0}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Selected days */}
+                <div>
+                    <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-3 text-sm">
+                        Scheduled Days
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                        {DAYS.map(day => (
+                            <Badge
+                                key={day.value}
+                                variant={config.selectedDays.includes(day.value) ? 'default' : 'outline'}
+                                className={cn(
+                                    "px-3 py-1",
+                                    config.selectedDays.includes(day.value)
+                                        ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                        : "opacity-50"
+                                )}
+                            >
+                                {day.label}
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Today's standup or upcoming */}
+                {todayEntry ? (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                                    <Mic className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-amber-900 dark:text-amber-100">
+                                        Today&apos;s Voice Standup Ready
+                                    </h4>
+                                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                                        Share your daily progress via voice
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={() => setActiveStandup(todayEntry)}
+                                className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white gap-2"
+                            >
+                                <Play className="w-4 h-4" />
+                                Start Voice Standup
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                                <Clock className="w-5 h-5 text-neutral-500" />
+                            </div>
+                            <div>
+                                <h4 className="font-medium text-neutral-700 dark:text-neutral-300">
+                                    No Standup Scheduled Today
+                                </h4>
+                                <p className="text-sm text-neutral-500">
+                                    Your next standup is on a scheduled day
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Upcoming standups list */}
+                {upcomingStandups.length > 0 && (
+                    <div>
+                        <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-3 text-sm">
+                            Upcoming Standups
+                        </h4>
+                        <div className="space-y-2">
+                            {upcomingStandups.slice(0, 5).map(standup => (
+                                <div
+                                    key={standup.id}
+                                    className={cn(
+                                        "flex items-center justify-between p-3 rounded-lg border",
+                                        standup.status === 'SUBMITTED'
+                                            ? "bg-green-50/50 dark:bg-green-950/10 border-green-200 dark:border-green-900/30"
+                                            : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        {standup.status === 'SUBMITTED' ? (
+                                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                        ) : (
+                                            <Calendar className="w-4 h-4 text-neutral-400" />
+                                        )}
+                                        <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                                            {new Date(standup.scheduledFor).toLocaleDateString('en-US', {
+                                                weekday: 'short',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            })}
+                                        </span>
+                                    </div>
+                                    <Badge
+                                        variant="secondary"
+                                        className={cn(
+                                            "text-xs",
+                                            standup.status === 'SUBMITTED'
+                                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                                : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                                        )}
+                                    >
+                                        {standup.status === 'SUBMITTED' ? 'Completed' : 'Scheduled'}
+                                    </Badge>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
+    // No config - show setup UI
+    return (
+        <div className="space-y-6 max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-2xl flex items-center justify-center mb-4">
+                    <Mic className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
+                    Voice Daily Standup
+                </h2>
+                <p className="text-neutral-500 dark:text-neutral-400">
+                    Build professional habits with AI-powered voice standups
+                </p>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-xl p-4">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                    🎙️ Voice-Powered Standups
+                </h3>
+                <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                    Practice real-world standup meetings with our AI interviewer. Just like in a real team!
+                </p>
+                <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                    <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>Talk through what you worked on yesterday</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>Discuss your plans for today</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>Identify and communicate blockers</span>
+                    </li>
+                </ul>
+            </div>
+
+            {/* Day selection */}
+            <div>
+                <label className="block font-semibold text-neutral-900 dark:text-white mb-3">
+                    <Calendar className="w-4 h-4 inline mr-2" />
+                    Select Days (minimum 4)
+                </label>
+                <div className="grid grid-cols-7 gap-2">
+                    {DAYS.map(day => (
+                        <button
+                            key={day.value}
+                            onClick={() => toggleDay(day.value)}
+                            className={cn(
+                                "p-3 rounded-lg border-2 transition-all",
+                                selectedDays.includes(day.value)
+                                    ? "border-amber-500 bg-amber-50 dark:bg-amber-900/20"
+                                    : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
+                            )}
+                        >
+                            <div className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                                {day.label}
+                            </div>
+                            {selectedDays.includes(day.value) && (
+                                <CheckCircle2 className="w-4 h-4 text-amber-600 mx-auto mt-1" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                    {selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'} selected
+                </p>
+            </div>
+
+            {/* Time selection */}
+            <div>
+                <Label className="block font-semibold text-neutral-900 dark:text-white mb-3">
+                    <Clock className="w-4 h-4 inline mr-2" />
+                    Preferred Time
+                </Label>
+                <input
+                    type="time"
+                    value={standupTime}
+                    onChange={(e) => setStandupTime(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white"
+                />
+            </div>
+
+            {/* Duration selection */}
+            <div>
+                <Label className="block font-semibold text-neutral-900 dark:text-white mb-3">
+                    Duration: {durationMinutes} minutes
+                </Label>
+                <input
+                    type="range"
+                    min="5"
+                    max="10"
+                    step="1"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(parseInt(e.target.value))}
+                    className="w-full"
+                />
+                <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    <span>5 min</span>
+                    <span>10 min</span>
+                </div>
+            </div>
+
+            {/* Cost display */}
+            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-amber-900 dark:text-amber-100">
+                        Weekly Cost
+                    </span>
+                    <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                        {weeklyCredits} credits
+                    </span>
+                </div>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                    {selectedDays.length} days × 5 credits/day = {weeklyCredits} credits/week
+                </p>
+            </div>
+
+            {userCredits < weeklyCredits && (
+                <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="font-medium text-red-900 dark:text-red-100 mb-1">
+                                Insufficient Credits
+                            </p>
+                            <p className="text-sm text-red-800 dark:text-red-200">
+                                You have {userCredits} credits but need {weeklyCredits} credits.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <Button
+                onClick={handleCreateConfig}
+                disabled={isCreating || userCredits < weeklyCredits}
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white gap-2"
+            >
+                {isCreating ? (
+                    <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Setting up...
+                    </>
+                ) : (
+                    <>
+                        <Mic className="w-4 h-4" />
+                        Start Voice Standups ({weeklyCredits} credits)
+                    </>
+                )}
+            </Button>
+        </div>
+    )
+}
