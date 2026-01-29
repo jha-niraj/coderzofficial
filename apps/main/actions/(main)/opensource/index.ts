@@ -81,7 +81,16 @@ export {
     validateExamAnswer,
     validateExamSubmission,
     checkExamEligibility,
-    saveExamResult
+    saveExamResult,
+    // 3-phase exam functions
+    generateThreePhaseExam,
+    validateQuizPhase,
+    validateCodingPhase,
+    saveVoicePhaseScore,
+    completeThreePhaseExam,
+    // Exam history and leaderboard
+    getUserExamHistory,
+    getExamLeaderboard
 } from './exam.action'
 
 export type {
@@ -90,5 +99,9 @@ export type {
     ScenarioQuestion,
     ExamQuestion,
     ExamValidationResult,
-    GeneratedExamResult
+    GeneratedExamResult,
+    // 3-phase exam types
+    ThreePhaseQuizQuestion,
+    ThreePhaseCodingQuestion,
+    ThreePhaseExam
 } from './exam.action'

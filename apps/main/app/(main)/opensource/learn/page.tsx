@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import {
     ArrowRight, BookOpen, CheckCircle, Clock, Code, GitBranch, GitMerge,
-    GitPullRequest, GraduationCap, Lock, Rocket, Trophy, ArrowLeft,
+    GitPullRequest, GraduationCap, Rocket, Trophy, ArrowLeft,
     Terminal, MessageSquare, Shield, Award, Loader2
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -94,11 +94,10 @@ export default function OpenSourceLearnPage() {
         fetchModules()
     }, [user])
 
-    const isModuleUnlocked = (module: Module, index: number) => {
-        if (index === 0) return true
-        // Check if previous module is completed
-        const previousModule = modules[index - 1]
-        return previousModule?.userProgress?.isCompleted ?? false
+    // All modules are now unlocked - users can access any module
+    // Progress is still tracked for each module
+    const isModuleUnlocked = () => {
+        return true // All modules accessible
     }
 
     const getModuleProgress = (module: Module) => {
@@ -240,7 +239,7 @@ export default function OpenSourceLearnPage() {
                                     const Icon = iconMap[iconName] || BookOpen
                                     const colorKey = slugColorMap[module.slug] || 'purple'
                                     const colors = colorClasses[colorKey]
-                                    const unlocked = isModuleUnlocked(module, index)
+                                    isModuleUnlocked() // All modules accessible
                                     const moduleProgress = getModuleProgress(module)
                                     const isComplete = module.userProgress?.isCompleted ?? false
 
@@ -251,11 +250,7 @@ export default function OpenSourceLearnPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.1 }}
                                         >
-                                            <Card className={cn(
-                                                "relative overflow-hidden transition-all",
-                                                !unlocked && "opacity-60",
-                                                unlocked && "hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-700"
-                                            )}>
+                                            <Card className="relative overflow-hidden transition-all hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-700 cursor-pointer">
                                                 <CardContent className="p-6">
                                                     <div className="flex items-start gap-6">
                                                         <div className={cn(
@@ -279,14 +274,6 @@ export default function OpenSourceLearnPage() {
                                                                                 </Badge>
                                                                             )
                                                                         }
-                                                                        {
-                                                                            !unlocked && (
-                                                                                <Badge variant="outline" className="text-neutral-500">
-                                                                                    <Lock className="w-3 h-3 mr-1" />
-                                                                                    Locked
-                                                                                </Badge>
-                                                                            )
-                                                                        }
                                                                     </div>
                                                                     <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">
                                                                         {module.title}
@@ -295,12 +282,11 @@ export default function OpenSourceLearnPage() {
                                                                         {module.description}
                                                                     </p>
                                                                 </div>
-                                                                <Link href={unlocked ? `/opensource/learn/${module.slug}` : '#'}>
+                                                        <Link href={`/opensource/learn/${module.slug}`}>
                                                                     <Button
-                                                                        disabled={!unlocked}
                                                                         className={cn(
-                                                                            "gap-2",
-                                                                            unlocked && "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900"
+                                                                            "gap-2 cursor-pointer",
+                                                                            "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900"
                                                                         )}
                                                                     >
                                                                         {isComplete ? 'Review' : moduleProgress > 0 ? 'Continue' : 'Start'}
@@ -326,8 +312,8 @@ export default function OpenSourceLearnPage() {
                                                                     )
                                                                 }
                                                             </div>
-                                                            {
-                                                                unlocked && moduleProgress > 0 && (
+                                            {
+                                                moduleProgress > 0 && (
                                                                     <div className="mt-4">
                                                                         <div className="flex items-center justify-between text-xs mb-1">
                                                                             <span className="text-neutral-600 dark:text-neutral-400">
@@ -338,15 +324,6 @@ export default function OpenSourceLearnPage() {
                                                                             </span>
                                                                         </div>
                                                                         <Progress value={moduleProgress} className="h-1.5" />
-                                                                    </div>
-                                                                )
-                                                            }
-                                                            {
-                                                                !unlocked && index > 0 && (
-                                                                    <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                                                        <p className="text-sm text-amber-800 dark:text-amber-300">
-                                                                            🔒 Complete &quot;{modules[index - 1]?.title}&quot; to unlock
-                                                                        </p>
                                                                     </div>
                                                                 )
                                                             }

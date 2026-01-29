@@ -1,0 +1,1421 @@
+================================================================================
+           GIT COMMAND VISUALIZER - LEARNING MODULE STRATEGY DOCUMENT
+================================================================================
+
+Created: January 29, 2026
+Author: CoderzHQ Development Team
+Version: 1.0
+
+================================================================================
+                              TABLE OF CONTENTS
+================================================================================
+
+1. EXECUTIVE SUMMARY
+2. LEARNING PHILOSOPHY
+3. MODULE STRUCTURE OVERVIEW
+4. CONTENT BREAKDOWN BY SECTION
+5. LEARNING FLOW ARCHITECTURE
+6. COMPONENT INTEGRATION STRATEGY
+7. ASSESSMENT & PRACTICE STRATEGY
+8. DATABASE CONTENT STRUCTURE
+9. USER PROGRESSION SYSTEM
+10. IMPLEMENTATION TIMELINE
+
+================================================================================
+                          1. EXECUTIVE SUMMARY
+================================================================================
+
+PURPOSE:
+--------
+Create an interactive, hands-on Git learning experience that transforms 
+beginners into confident Git users through a combination of:
+- Visual explanations
+- Interactive code editors
+- Terminal simulations
+- Knowledge assessments (quizzes)
+- Voice-based mock interviews
+- Real practice projects
+
+GOAL:
+-----
+Users should be able to understand, practice, and master Git commands
+in a progressive manner, moving from basic to advanced concepts while
+actively practicing each command they learn.
+
+KEY DIFFERENTIATORS:
+-------------------
+✓ Learn by DOING, not just reading
+✓ Interactive terminal simulations
+✓ Visual representations of Git concepts
+✓ AI-powered mock interviews for final assessment
+✓ Real-world scenario-based learning
+✓ Progress tracking with certificates
+
+================================================================================
+                         2. LEARNING PHILOSOPHY
+================================================================================
+
+CORE PRINCIPLES:
+----------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         LEARNING PYRAMID                                     │
+│                                                                              │
+│                            ┌───────┐                                         │
+│                           /   DO    \   ──── 90% Retention                   │
+│                          /─────────────\                                     │
+│                         /   PRACTICE    \  ──── 75% Retention                │
+│                        /─────────────────\                                   │
+│                       /    DEMONSTRATE    \  ──── 50% Retention              │
+│                      /─────────────────────\                                 │
+│                     /      DISCUSSION       \  ──── 30% Retention            │
+│                    /─────────────────────────\                               │
+│                   /        READING            \  ──── 10% Retention          │
+│                  ───────────────────────────────                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+APPROACH FOR EACH LESSON:
+-------------------------
+1. EXPLAIN → Brief concept explanation (2-3 minutes read)
+2. VISUALIZE → Show what happens under the hood
+3. DEMONSTRATE → Show the command in action
+4. PRACTICE → Let user try the command themselves
+5. QUIZ → Test understanding
+6. APPLY → Use in real scenario
+
+================================================================================
+                      3. MODULE STRUCTURE OVERVIEW
+================================================================================
+
+Based on the Git Command Visualizer screenshots, here is the complete
+module structure:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    COMPLETE GIT LEARNING PATH                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 1: GETTING STARTED                              ~45 mins    │   │
+│  │  ├── 1.1 git init                                                    │   │
+│  │  ├── 1.2 git clone                                                   │   │
+│  │  └── 1.3 git config                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 2: BASIC OPERATIONS                             ~60 mins    │   │
+│  │  ├── 2.1 git status                                                  │   │
+│  │  ├── 2.2 git add                                                     │   │
+│  │  ├── 2.3 git rm                                                      │   │
+│  │  ├── 2.4 git mv                                                      │   │
+│  │  ├── 2.5 git commit                                                  │   │
+│  │  └── 2.6 git commit --amend                                          │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 3: INSPECTING HISTORY                           ~45 mins    │   │
+│  │  ├── 3.1 git log                                                     │   │
+│  │  ├── 3.2 git log --oneline                                           │   │
+│  │  ├── 3.3 git diff                                                    │   │
+│  │  └── 3.4 git show                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 4: BRANCHING AND MERGING                        ~90 mins    │   │
+│  │  ├── 4.1 git branch                                                  │   │
+│  │  ├── 4.2 git branch -d                                               │   │
+│  │  ├── 4.3 git branch -D                                               │   │
+│  │  ├── 4.4 git checkout                                                │   │
+│  │  ├── 4.5 git checkout -b                                             │   │
+│  │  ├── 4.6 git switch                                                  │   │
+│  │  ├── 4.7 git switch -c                                               │   │
+│  │  ├── 4.8 git merge                                                   │   │
+│  │  ├── 4.9 git rebase                                                  │   │
+│  │  ├── 4.10 git rebase -i                                              │   │
+│  │  └── 4.11 git cherry-pick                                            │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 5: STASHING                                     ~30 mins    │   │
+│  │  ├── 5.1 git stash                                                   │   │
+│  │  ├── 5.2 git stash list                                              │   │
+│  │  ├── 5.3 git stash apply                                             │   │
+│  │  └── 5.4 git stash pop                                               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 6: TAGGING                                      ~20 mins    │   │
+│  │  ├── 6.1 git tag                                                     │   │
+│  │  └── 6.2 git tag -d                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 7: REMOTE OPERATIONS                            ~60 mins    │   │
+│  │  ├── 7.1 git push                                                    │   │
+│  │  ├── 7.2 git push -u origin main                                     │   │
+│  │  ├── 7.3 git push origin --delete                                    │   │
+│  │  ├── 7.4 git pull                                                    │   │
+│  │  ├── 7.5 git fetch                                                   │   │
+│  │  ├── 7.6 git remote                                                  │   │
+│  │  ├── 7.7 git remote -v                                               │   │
+│  │  ├── 7.8 git remote add origin                                       │   │
+│  │  └── 7.9 git remote remove                                           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 8: UNDOING CHANGES                              ~45 mins    │   │
+│  │  ├── 8.1 git reset                                                   │   │
+│  │  ├── 8.2 git reset --hard                                            │   │
+│  │  ├── 8.3 git reset --soft                                            │   │
+│  │  ├── 8.4 git revert                                                  │   │
+│  │  ├── 8.5 git restore                                                 │   │
+│  │  └── 8.6 git clean                                                   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  MODULE 9: ADVANCED TOPICS                              ~60 mins    │   │
+│  │  ├── 9.1 git blame                                                   │   │
+│  │  ├── 9.2 git grep                                                    │   │
+│  │  ├── 9.3 git reflog                                                  │   │
+│  │  ├── 9.4 git shortlog                                                │   │
+│  │  └── 9.5 git describe                                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  FINAL ASSESSMENT                                       ~30 mins    │   │
+│  │  ├── Written Quiz (quiz.tsx)                                         │   │
+│  │  ├── Practical Coding Test (code-editor.tsx)                         │   │
+│  │  └── Voice Mock Interview (voice.tsx)                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│                          ┌─────────────┐                                     │
+│                          │ CERTIFICATE │                                     │
+│                          └─────────────┘                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+TOTAL ESTIMATED TIME: ~8-10 hours
+
+================================================================================
+                    4. CONTENT BREAKDOWN BY SECTION
+================================================================================
+
+Each lesson will have the following components:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         LESSON CONTENT STRUCTURE                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  1. EXPLANATION (2-3 min read)                                       │   │
+│  │     ├── What is this command?                                        │   │
+│  │     ├── Why do we need it?                                           │   │
+│  │     └── When to use it?                                              │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  2. UNDER THE HOOD (Visual)                                          │   │
+│  │     ├── What happens in .git directory                               │   │
+│  │     ├── Visual diagram of the process                                │   │
+│  │     └── Before/After state visualization                             │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  3. USAGE SYNTAX                                                     │   │
+│  │     ├── Basic syntax                                                 │   │
+│  │     ├── Common options/flags                                         │   │
+│  │     └── Examples                                                     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  4. INTERACTIVE TERMINAL (code-editor.tsx)                           │   │
+│  │     ├── Pre-configured scenario                                      │   │
+│  │     ├── User types and executes commands                             │   │
+│  │     ├── Real-time output simulation                                  │   │
+│  │     └── Validation of correct command                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  5. KEY CONCEPTS & TIPS                                              │   │
+│  │     ├── Best practices                                               │   │
+│  │     ├── Pro tips                                                     │   │
+│  │     └── Common mistakes to avoid                                     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  6. COMMON USAGE SCENARIOS                                           │   │
+│  │     ├── Scenario 1: [Real-world example]                             │   │
+│  │     ├── Scenario 2: [Real-world example]                             │   │
+│  │     └── Scenario 3: [Real-world example]                             │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  7. POTENTIAL PITFALLS (Warning Section)                             │   │
+│  │     ├── Common errors                                                │   │
+│  │     ├── What NOT to do                                               │   │
+│  │     └── Recovery tips                                                │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  8. MINI QUIZ (quiz.tsx - 3-5 questions)                             │   │
+│  │     ├── Single choice questions                                      │   │
+│  │     ├── Multiple choice questions                                    │   │
+│  │     └── Immediate feedback with explanations                         │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  9. PRACTICE CHALLENGE (Optional)                                    │   │
+│  │     └── A mini coding challenge using the learned command            │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                      5. LEARNING FLOW ARCHITECTURE
+================================================================================
+
+USER JOURNEY FLOWCHART:
+-----------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         USER LEARNING JOURNEY                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                         ┌──────────────────┐
+                         │   USER STARTS    │
+                         │   LEARNING PATH  │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                    ┌─────────────────────────────┐
+                    │  SELECT MODULE              │
+                    │  (e.g., Getting Started)    │
+                    └─────────────┬───────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────────────┐
+              │           SELECT LESSON                    │
+              │           (e.g., git init)                 │
+              └───────────────────┬───────────────────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+                    ▼                           ▼
+        ┌───────────────────┐       ┌───────────────────┐
+        │  READ EXPLANATION │       │  WATCH VIDEO      │
+        │  (Markdown)       │       │  (If available)   │
+        └─────────┬─────────┘       └─────────┬─────────┘
+                  │                           │
+                  └─────────────┬─────────────┘
+                                │
+                                ▼
+                  ┌─────────────────────────────┐
+                  │  VIEW VISUALIZATION         │
+                  │  (Under the Hood diagram)   │
+                  └─────────────┬───────────────┘
+                                │
+                                ▼
+                  ┌─────────────────────────────┐
+                  │  INTERACTIVE TERMINAL       │
+                  │  (code-editor.tsx)          │
+                  │                             │
+                  │  ┌───────────────────────┐  │
+                  │  │ $ git init            │  │
+                  │  │ Initialized empty Git │  │
+                  │  │ repository in ...     │  │
+                  │  └───────────────────────┘  │
+                  │                             │
+                  │  [Run] [Reset] [Help]       │
+                  └─────────────┬───────────────┘
+                                │
+                                ▼
+                        ┌───────────────┐
+                        │ Command       │
+                        │ Correct?      │
+                        └───────┬───────┘
+                                │
+                    ┌───────────┴───────────┐
+                    │ YES                   │ NO
+                    ▼                       ▼
+        ┌───────────────────┐   ┌───────────────────┐
+        │  SUCCESS!         │   │  SHOW HINT        │
+        │  +10 XP           │   │  Try Again        │
+        └─────────┬─────────┘   └─────────┬─────────┘
+                  │                       │
+                  │                       │ (Loop back)
+                  │                       └──────────────┐
+                  │                                      │
+                  ▼                                      │
+        ┌───────────────────┐                           │
+        │  MINI QUIZ        │◄──────────────────────────┘
+        │  (quiz.tsx)       │
+        │  3-5 questions    │
+        └─────────┬─────────┘
+                  │
+                  ▼
+          ┌───────────────┐
+          │ Score >= 70%  │
+          │     ?         │
+          └───────┬───────┘
+                  │
+        ┌─────────┴─────────┐
+        │ YES               │ NO
+        ▼                   ▼
+┌───────────────┐   ┌───────────────┐
+│  LESSON       │   │  REVIEW       │
+│  COMPLETE!    │   │  CONTENT      │
+│  +50 XP       │   │  Retry Quiz   │
+└───────┬───────┘   └───────────────┘
+        │
+        ▼
+┌───────────────────┐
+│  NEXT LESSON      │────────► (Repeat for each lesson)
+│  OR               │
+│  MODULE QUIZ      │
+└───────┬───────────┘
+        │
+        ▼
+┌───────────────────────────────────────┐
+│  MODULE COMPLETION QUIZ               │
+│  (More comprehensive)                  │
+│  15-20 questions covering all lessons │
+└───────────────┬───────────────────────┘
+                │
+                ▼
+        ┌───────────────┐
+        │ Score >= 80%  │
+        │     ?         │
+        └───────┬───────┘
+                │
+      ┌─────────┴─────────┐
+      │ YES               │ NO
+      ▼                   ▼
+┌──────────────┐   ┌───────────────┐
+│ MODULE       │   │ REVIEW &      │
+│ COMPLETE!    │   │ RETRY         │
+│ UNLOCK NEXT  │   │ (3 attempts)  │
+│ +200 XP      │   └───────────────┘
+└──────┬───────┘
+       │
+       ▼
+┌──────────────────────────────────────┐
+│  ALL MODULES COMPLETE?               │
+└──────────────┬───────────────────────┘
+               │
+     ┌─────────┴─────────┐
+     │ YES               │ NO
+     ▼                   ▼
+┌──────────────┐   ┌───────────────┐
+│ FINAL        │   │ CONTINUE TO   │
+│ ASSESSMENT   │   │ NEXT MODULE   │
+└──────┬───────┘   └───────────────┘
+       │
+       ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                          FINAL ASSESSMENT                                  │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │  PART 1: WRITTEN QUIZ (quiz.tsx)                        ~15 min    │   │
+│  │  ├── 30 questions covering all modules                             │   │
+│  │  ├── Mixed difficulty (Easy/Medium/Hard)                           │   │
+│  │  └── Pass: 80%                                                     │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                       │
+│                                    ▼                                       │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │  PART 2: PRACTICAL TEST (code-editor.tsx)               ~10 min    │   │
+│  │  ├── 5 real-world scenarios                                        │   │
+│  │  ├── User must write correct Git commands                          │   │
+│  │  └── Pass: 4/5 correct                                             │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                       │
+│                                    ▼                                       │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │  PART 3: VOICE MOCK INTERVIEW (voice.tsx)               ~10 min    │   │
+│  │  ├── AI-powered voice interview                                    │   │
+│  │  ├── 5 scenario-based questions                                    │   │
+│  │  ├── User explains their Git workflow verbally                     │   │
+│  │  └── AI evaluates understanding and communication                  │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                                                            │
+└───────────────────────────────────┬───────────────────────────────────────┘
+                                    │
+                                    ▼
+                            ┌───────────────┐
+                            │ Overall Score │
+                            │   >= 80% ?    │
+                            └───────┬───────┘
+                                    │
+                          ┌─────────┴─────────┐
+                          │ YES               │ NO
+                          ▼                   ▼
+                  ┌───────────────┐   ┌───────────────┐
+                  │ CERTIFICATE   │   │ RETRY AFTER   │
+                  │ AWARDED!      │   │ 24 HOURS      │
+                  │               │   │ (3 attempts)  │
+                  │ ┌───────────┐ │   └───────────────┘
+                  │ │ CERTIFIED │ │
+                  │ │ GIT USER  │ │
+                  │ └───────────┘ │
+                  │               │
+                  │ Can now       │
+                  │ contribute to │
+                  │ real projects │
+                  └───────────────┘
+
+================================================================================
+                   6. COMPONENT INTEGRATION STRATEGY
+================================================================================
+
+We will use three main components for interactive learning:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      COMPONENT USAGE MATRIX                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │  1. CODE-EDITOR.TSX (Monaco Editor)                                    │ │
+│  │                                                                         │ │
+│  │  USE CASES:                                                             │ │
+│  │  ├── Interactive Terminal Simulation                                   │ │
+│  │  │   └── User types Git commands, sees simulated output                │ │
+│  │  │                                                                      │ │
+│  │  ├── Code File Editing Scenarios                                       │ │
+│  │  │   └── User edits files to understand staging/commits                │ │
+│  │  │                                                                      │ │
+│  │  ├── Diff Visualization                                                │ │
+│  │  │   └── Show before/after of file changes                             │ │
+│  │  │                                                                      │ │
+│  │  └── Practical Assessment                                              │ │
+│  │       └── User writes correct Git commands for scenarios               │ │
+│  │                                                                         │ │
+│  │  CONFIGURATION:                                                         │ │
+│  │  {                                                                      │ │
+│  │    language: "shell",                                                  │ │
+│  │    showLanguageSelector: false,                                         │ │
+│  │    showRunButton: true,                                                 │ │
+│  │    showSubmitButton: true,                                              │ │
+│  │    enableExecution: true, // Connect to custom Git simulator           │ │
+│  │  }                                                                      │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │  2. QUIZ.TSX (Interactive Quiz)                                        │ │
+│  │                                                                         │ │
+│  │  USE CASES:                                                             │ │
+│  │  ├── Mini Lesson Quiz (3-5 questions per lesson)                       │ │
+│  │  │   └── Immediate feedback, explanations                              │ │
+│  │  │                                                                      │ │
+│  │  ├── Module Completion Quiz (15-20 questions)                          │ │
+│  │  │   └── Comprehensive review of module content                        │ │
+│  │  │                                                                      │ │
+│  │  └── Final Assessment Quiz (30 questions)                              │ │
+│  │       └── Timed, covers all modules                                    │ │
+│  │                                                                         │ │
+│  │  QUESTION TYPES:                                                        │ │
+│  │  ├── Single Choice (What command does X?)                              │ │
+│  │  ├── Multiple Choice (Which are valid flags?)                          │ │
+│  │  └── Code-based (What's the output of this command?)                   │ │
+│  │                                                                         │ │
+│  │  CONFIGURATION:                                                         │ │
+│  │  {                                                                      │ │
+│  │    mode: "practice", // or "exam" for final                            │ │
+│  │    immediateResults: true, // false for exams                          │ │
+│  │    allowHints: true, // false for exams                                │ │
+│  │    allowSkip: false,                                                    │ │
+│  │    timeLimit: 600, // 10 minutes for mini, 30 for final                │ │
+│  │  }                                                                      │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │  3. VOICE.TSX (AI Voice Interview)                                     │ │
+│  │                                                                         │ │
+│  │  USE CASES:                                                             │ │
+│  │  └── Final Assessment Voice Interview                                  │ │
+│  │       ├── AI asks scenario-based questions                             │ │
+│  │       ├── User explains their approach verbally                        │ │
+│  │       ├── AI evaluates understanding and clarity                       │ │
+│  │       └── Tests real-world communication skills                        │ │
+│  │                                                                         │ │
+│  │  SAMPLE QUESTIONS:                                                      │ │
+│  │  ├── "You're working on a feature and your colleague needs help.      │ │
+│  │  │    How would you share your uncommitted changes?"                   │ │
+│  │  ├── "You accidentally committed sensitive data. Walk me through      │ │
+│  │  │    how you would remove it from Git history."                       │ │
+│  │  └── "Explain how you would resolve a merge conflict in a file."      │ │
+│  │                                                                         │ │
+│  │  CONFIGURATION:                                                         │ │
+│  │  {                                                                      │ │
+│  │    agentId: "git-interview-agent",                                     │ │
+│  │    title: "Git Mastery Interview",                                     │ │
+│  │    subtitle: "Demonstrate your Git knowledge",                         │ │
+│  │    orbColors: ["#6366f1", "#8b5cf6"],                                  │ │
+│  │    stateLabels: {                                                       │ │
+│  │      idle: { title: "Ready to Begin?", subtitle: "..." },              │ │
+│  │      listening: { title: "Your Turn", subtitle: "..." },               │ │
+│  │      talking: { title: "Interviewer", subtitle: "..." },               │ │
+│  │    }                                                                    │ │
+│  │  }                                                                      │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                   7. ASSESSMENT & PRACTICE STRATEGY
+================================================================================
+
+ASSESSMENT DISTRIBUTION:
+------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         ASSESSMENT BREAKDOWN                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  PER LESSON:                                                                 │
+│  ├── Interactive Terminal Practice: REQUIRED                                │
+│  │   └── User must successfully execute the command                        │
+│  │                                                                          │
+│  └── Mini Quiz (3-5 questions): REQUIRED                                   │
+│      └── Pass: 70% (2-3 correct minimum)                                   │
+│                                                                              │
+│  PER MODULE:                                                                 │
+│  └── Module Completion Quiz (15-20 questions): REQUIRED                    │
+│      └── Pass: 80% to unlock next module                                   │
+│                                                                              │
+│  FINAL CERTIFICATION:                                                        │
+│  ├── Part 1: Written Quiz (30 questions) - 40% weight                      │
+│  ├── Part 2: Practical Test (5 scenarios) - 40% weight                     │
+│  └── Part 3: Voice Interview (5 questions) - 20% weight                    │
+│      └── Overall Pass: 80%                                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+QUESTION TYPE DISTRIBUTION:
+---------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         QUESTION TYPES                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. CONCEPTUAL (30%)                                                         │
+│     ├── What is the purpose of [command]?                                   │
+│     ├── When would you use [command]?                                       │
+│     └── What happens when [command] is executed?                            │
+│                                                                              │
+│  2. SYNTAX/USAGE (25%)                                                       │
+│     ├── What is the correct syntax for [action]?                            │
+│     ├── Which flag does [effect]?                                           │
+│     └── Identify the error in this command                                  │
+│                                                                              │
+│  3. OUTPUT PREDICTION (20%)                                                  │
+│     ├── Given this repo state, what will [command] output?                  │
+│     ├── What will the working directory look like after [command]?          │
+│     └── How many commits will be affected by [command]?                     │
+│                                                                              │
+│  4. SCENARIO-BASED (25%)                                                     │
+│     ├── You need to [scenario]. What commands would you use?                │
+│     ├── A colleague did [action]. How do you fix it?                        │
+│     └── What is the best approach to [situation]?                           │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+PRACTICE PROJECT IDEAS:
+-----------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      PRACTICE SCENARIOS                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  SCENARIO 1: "The New Developer"                                             │
+│  ├── Clone a repository                                                     │
+│  ├── Create a feature branch                                                │
+│  ├── Make changes and commit                                                │
+│  └── Push and create PR                                                     │
+│                                                                              │
+│  SCENARIO 2: "The Bug Fix"                                                   │
+│  ├── Find the bug using git blame                                           │
+│  ├── Create a hotfix branch                                                 │
+│  ├── Fix and commit with meaningful message                                 │
+│  └── Cherry-pick to release branch                                          │
+│                                                                              │
+│  SCENARIO 3: "The Merge Conflict"                                            │
+│  ├── Pull latest changes                                                    │
+│  ├── Resolve merge conflicts                                                │
+│  ├── Complete the merge                                                     │
+│  └── Push the resolved code                                                 │
+│                                                                              │
+│  SCENARIO 4: "The Undo"                                                      │
+│  ├── Accidentally committed to main                                         │
+│  ├── Reset the commit                                                       │
+│  ├── Create proper branch                                                   │
+│  └── Commit correctly                                                       │
+│                                                                              │
+│  SCENARIO 5: "The Cleanup"                                                   │
+│  ├── Squash multiple commits                                                │
+│  ├── Reword commit messages                                                 │
+│  ├── Clean up branches                                                      │
+│  └── Push force with lease                                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    8. DATABASE CONTENT STRUCTURE
+================================================================================
+
+Based on the existing Prisma schema (opensource.prisma), here's how content
+will be structured:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       DATABASE SCHEMA MAPPING                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  OSLearnModule (Per section like "Getting Started")                          │
+│  {                                                                           │
+│    id: "clxxx...",                                                          │
+│    slug: "getting-started",                                                 │
+│    title: "Getting Started",                                                │
+│    description: "Learn the fundamentals of Git...",                         │
+│    icon: "GitBranch",                                                       │
+│    coverImage: "/images/modules/getting-started.png",                       │
+│    orderIndex: 1,                                                           │
+│    isRequired: true,                                                        │
+│    estimatedMinutes: 45,                                                    │
+│    isActive: true                                                           │
+│  }                                                                          │
+│                                                                              │
+│  OSLearnLesson (Per command like "git init")                                 │
+│  {                                                                           │
+│    id: "clyyyy...",                                                         │
+│    moduleId: "clxxx...",                                                    │
+│    title: "git init",                                                       │
+│    description: "Initialize a new Git repository",                          │
+│    type: "INTERACTIVE",                                                     │
+│    content: "# git init\n\n## Explanation\n...",  // Markdown               │
+│    interactiveData: {                                                       │
+│      terminalScenario: {                                                    │
+│        initialState: { ... },                                               │
+│        expectedCommands: ["git init"],                                      │
+│        expectedOutput: "Initialized empty Git...",                          │
+│        hints: ["Try typing 'git init'..."]                                  │
+│      }                                                                       │
+│    },                                                                        │
+│    quizQuestions: [                                                          │
+│      {                                                                       │
+│        id: "q1",                                                            │
+│        text: "What does git init create?",                                  │
+│        type: "single",                                                      │
+│        options: [                                                            │
+│          { id: "a", text: ".git directory", isCorrect: true },              │
+│          { id: "b", text: ".gitignore file", isCorrect: false },            │
+│          ...                                                                 │
+│        ],                                                                    │
+│        explanation: "git init creates a hidden .git directory...",          │
+│        hint: "Think about where Git stores repository data..."             │
+│      },                                                                      │
+│      ...                                                                     │
+│    ],                                                                        │
+│    orderIndex: 1,                                                           │
+│    estimatedMinutes: 10,                                                    │
+│    isRequired: true                                                         │
+│  }                                                                          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+CONTENT JSON STRUCTURES:
+------------------------
+
+1. INTERACTIVE DATA (for terminal simulation):
+
+{
+  "terminalScenario": {
+    "title": "Initialize Your First Repository",
+    "description": "Create a new Git repository in the current directory",
+    "initialState": {
+      "currentDirectory": "~/project",
+      "files": ["README.md", "index.html"],
+      "isGitRepo": false
+    },
+    "steps": [
+      {
+        "instruction": "Initialize a Git repository",
+        "expectedCommands": ["git init"],
+        "expectedOutput": "Initialized empty Git repository in /home/user/project/.git/",
+        "hints": [
+          "The command to initialize is 'git init'",
+          "You don't need any flags for basic initialization"
+        ],
+        "validation": {
+          "type": "exact",
+          "successMessage": "Great! You've created your first Git repository!"
+        }
+      }
+    ],
+    "finalState": {
+      "currentDirectory": "~/project",
+      "files": ["README.md", "index.html", ".git/"],
+      "isGitRepo": true
+    }
+  }
+}
+
+2. QUIZ QUESTIONS JSON:
+
+{
+  "questions": [
+    {
+      "id": "git-init-q1",
+      "text": "What does the 'git init' command do?",
+      "type": "single",
+      "difficulty": "EASY",
+      "category": "Getting Started",
+      "options": [
+        {
+          "id": "a",
+          "text": "Creates a new .git directory to track version history",
+          "isCorrect": true
+        },
+        {
+          "id": "b",
+          "text": "Downloads a repository from GitHub",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "Initializes a new remote repository",
+          "isCorrect": false
+        },
+        {
+          "id": "d",
+          "text": "Installs Git on your computer",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "git init creates a new .git directory in your project folder, which contains all the necessary files and data structures Git needs to track your project's version history.",
+      "hint": "Think about where Git stores all its tracking information locally."
+    },
+    {
+      "id": "git-init-q2",
+      "text": "What happens if you run 'git init' in an existing Git repository?",
+      "type": "single",
+      "difficulty": "MEDIUM",
+      "options": [
+        {
+          "id": "a",
+          "text": "It will delete all existing history",
+          "isCorrect": false
+        },
+        {
+          "id": "b",
+          "text": "It will create a new repository, erasing the old one",
+          "isCorrect": false
+        },
+        {
+          "id": "c",
+          "text": "It will safely reinitialize without destroying anything",
+          "isCorrect": true
+        },
+        {
+          "id": "d",
+          "text": "Git will show an error and refuse to run",
+          "isCorrect": false
+        }
+      ],
+      "explanation": "Running 'git init' in an existing repository is safe. Git will simply reinitialize and won't overwrite existing data.",
+      "hint": "Git is designed to be safe and non-destructive by default."
+    }
+  ]
+}
+
+3. VOICE INTERVIEW CONFIGURATION:
+
+{
+  "interviewConfig": {
+    "agentId": "git-mastery-interview",
+    "totalQuestions": 5,
+    "timePerQuestion": 120,
+    "scenarios": [
+      {
+        "id": "scenario-1",
+        "prompt": "You're starting a new project and want to use Git for version control. Walk me through the steps you would take to set up Git and make your first commit.",
+        "evaluationCriteria": [
+          "Mentions git init",
+          "Mentions git add",
+          "Mentions git commit with message",
+          "Shows understanding of staging area"
+        ],
+        "followUpPrompts": [
+          "What happens if you forget to add a file before committing?",
+          "How would you check the status of your changes?"
+        ]
+      },
+      {
+        "id": "scenario-2",
+        "prompt": "You've been working on a feature but need to switch to another branch urgently. You have uncommitted changes. What would you do?",
+        "evaluationCriteria": [
+          "Mentions git stash",
+          "Or mentions committing changes",
+          "Shows understanding of branch switching",
+          "Demonstrates knowledge of stash apply/pop"
+        ]
+      }
+    ]
+  }
+}
+
+================================================================================
+                     9. USER PROGRESSION SYSTEM
+================================================================================
+
+XP AND REWARDS:
+---------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         XP REWARD SYSTEM                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  LESSON COMPLETION:                                                          │
+│  ├── Reading content: +5 XP                                                 │
+│  ├── Interactive terminal success: +15 XP                                   │
+│  ├── Mini quiz 100%: +25 XP                                                 │
+│  └── Mini quiz 70-99%: +15 XP                                               │
+│                                                                              │
+│  MODULE COMPLETION:                                                          │
+│  └── Complete all lessons + module quiz: +200 XP                            │
+│                                                                              │
+│  FINAL CERTIFICATION:                                                        │
+│  ├── Pass all three parts: +500 XP                                          │
+│  └── Perfect score (100%): +1000 XP (bonus)                                 │
+│                                                                              │
+│  STREAKS:                                                                    │
+│  ├── Daily learning streak (3 days): +50 XP                                 │
+│  ├── Weekly streak (7 days): +150 XP                                        │
+│  └── Monthly streak (30 days): +500 XP                                      │
+│                                                                              │
+│  BADGES:                                                                     │
+│  ├── "Git Beginner" - Complete Module 1                                     │
+│  ├── "Branch Master" - Complete Module 4                                    │
+│  ├── "Git Ninja" - Complete all modules                                     │
+│  ├── "Perfect Score" - 100% on any module quiz                              │
+│  ├── "Quick Learner" - Complete module in under estimated time              │
+│  └── "Git Certified" - Pass final certification                             │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+PROGRESS TRACKING:
+------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PROGRESS STATES                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  MODULE STATE:                                                               │
+│  ├── 🔒 LOCKED - Previous module not completed                              │
+│  ├── 🔓 UNLOCKED - Available to start                                       │
+│  ├── 🔄 IN_PROGRESS - Currently working on                                  │
+│  └── ✅ COMPLETED - All lessons and quiz passed                             │
+│                                                                              │
+│  LESSON STATE:                                                               │
+│  ├── ⬜ NOT_STARTED - Haven't begun                                          │
+│  ├── 🔄 IN_PROGRESS - Started but not completed                             │
+│  └── ✅ COMPLETED - All requirements met                                    │
+│                                                                              │
+│  CERTIFICATE STATE:                                                          │
+│  ├── 🔒 LOCKED - Not all modules completed                                  │
+│  ├── 📝 AVAILABLE - Ready to take exam                                      │
+│  ├── 🔄 IN_PROGRESS - Currently taking exam                                 │
+│  ├── ❌ FAILED - Did not pass (can retry)                                   │
+│  └── ✅ CERTIFIED - Passed and certified                                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                     10. IMPLEMENTATION TIMELINE
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      IMPLEMENTATION PHASES                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  PHASE 1: CONTENT CREATION (Week 1-2)                                        │
+│  ├── Create all module and lesson records in database                       │
+│  ├── Write explanation content for all 40+ commands                         │
+│  ├── Create visualization diagrams                                          │
+│  └── Prepare terminal simulation scenarios                                  │
+│                                                                              │
+│  PHASE 2: QUIZ CONTENT (Week 2-3)                                            │
+│  ├── Write 3-5 quiz questions per lesson (~150 questions)                   │
+│  ├── Write module completion quizzes (~80 questions)                        │
+│  └── Write final certification quiz (30 questions)                          │
+│                                                                              │
+│  PHASE 3: INTERACTIVE COMPONENTS (Week 3-4)                                  │
+│  ├── Build terminal simulator component                                     │
+│  ├── Integrate code-editor.tsx for Git commands                             │
+│  ├── Create command validation logic                                        │
+│  └── Build visual Git state diagrams                                        │
+│                                                                              │
+│  PHASE 4: VOICE INTERVIEW (Week 4-5)                                         │
+│  ├── Create ElevenLabs agent for Git interviews                             │
+│  ├── Write interview scenarios and prompts                                  │
+│  ├── Build evaluation rubric                                                │
+│  └── Integrate voice.tsx with scoring                                       │
+│                                                                              │
+│  PHASE 5: TESTING & POLISH (Week 5-6)                                        │
+│  ├── User testing and feedback                                              │
+│  ├── Bug fixes and improvements                                             │
+│  ├── Performance optimization                                               │
+│  └── Content review and corrections                                         │
+│                                                                              │
+│  PHASE 6: LAUNCH (Week 6)                                                    │
+│  ├── Soft launch to beta users                                              │
+│  ├── Gather feedback                                                        │
+│  └── Full launch                                                            │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                            CONTENT QUANTITY SUMMARY
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CONTENT NUMBERS                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  MODULES: 9 (+ Final Assessment)                                            │
+│                                                                              │
+│  LESSONS: 42 total                                                           │
+│  ├── Module 1 (Getting Started): 3 lessons                                  │
+│  ├── Module 2 (Basic Operations): 6 lessons                                 │
+│  ├── Module 3 (Inspecting History): 4 lessons                               │
+│  ├── Module 4 (Branching & Merging): 11 lessons                             │
+│  ├── Module 5 (Stashing): 4 lessons                                         │
+│  ├── Module 6 (Tagging): 2 lessons                                          │
+│  ├── Module 7 (Remote Operations): 9 lessons                                │
+│  ├── Module 8 (Undoing Changes): 6 lessons                                  │
+│  └── Module 9 (Advanced Topics): 5 lessons                                  │
+│                                                                              │
+│  QUIZ QUESTIONS:                                                             │
+│  ├── Mini Quizzes: ~170 questions (4 per lesson avg)                        │
+│  ├── Module Quizzes: ~140 questions (15 per module avg)                     │
+│  └── Final Assessment: 30 questions                                         │
+│  └── TOTAL: ~340 questions                                                  │
+│                                                                              │
+│  INTERACTIVE SCENARIOS:                                                      │
+│  ├── Terminal Simulations: 42 (one per lesson)                              │
+│  └── Practice Projects: 5 end-to-end scenarios                              │
+│                                                                              │
+│  VOICE INTERVIEW:                                                            │
+│  └── 5 scenario-based questions with follow-ups                             │
+│                                                                              │
+│  ESTIMATED TOTAL LEARNING TIME: 8-10 hours                                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                     11. EXISTING CODEBASE ALIGNMENT
+================================================================================
+
+The following components and infrastructure ALREADY EXIST and should be used:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       EXISTING PRISMA SCHEMA                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  OSLearnModule - Already supports our module structure                       │
+│  ├── slug, title, description, icon, coverImage                             │
+│  ├── orderIndex, isRequired, estimatedMinutes                               │
+│  ├── totalEnrolled, totalCompleted, averageScore (stats)                    │
+│  └── isActive                                                               │
+│                                                                              │
+│  OSLearnLesson - Already has all needed fields                              │
+│  ├── title, description                                                     │
+│  ├── type: VIDEO | READING | INTERACTIVE | QUIZ | PROJECT                   │
+│  ├── content (String @db.Text) - For Markdown content                       │
+│  ├── videoUrl (String) - For video lessons                                  │
+│  ├── interactiveData (Json) - For terminal/interactive exercises            │
+│  ├── codeLab (Json) - For code writing exercises                            │
+│  ├── terminalLab (Json) - For Git command exercises                         │
+│  ├── quizQuestions (Json) - For quiz content                                │
+│  ├── passingScore (Int, default 70)                                         │
+│  ├── orderIndex, estimatedMinutes, isRequired                               │
+│  └── Relations: completions[]                                               │
+│                                                                              │
+│  OSLearnProgress - Module-level progress tracking                           │
+│  ├── lessonsCompleted, totalLessons, progressPercent                        │
+│  ├── quizScore, quizAttempts                                                │
+│  └── isCompleted, completedAt                                               │
+│                                                                              │
+│  OSLessonCompletion - Lesson-level tracking                                 │
+│  ├── score, timeSpent, commandsRun (Json)                                   │
+│  └── isCompleted, completedAt                                               │
+│                                                                              │
+│  OSCertificationExam - Exam system                                          │
+│  ├── quizScore, codeScore, scenarioScore, totalScore                        │
+│  ├── quizQuestions, codeExercises, scenarioQuestions (Json)                 │
+│  ├── quizAnswers, codeAnswers, scenarioAnswers (Json)                       │
+│  └── status: NOT_STARTED | IN_PROGRESS | PASSED | FAILED                    │
+│                                                                              │
+│  OSCertification - Certificate records                                      │
+│  └── certificateId, score, issuedAt, expiresAt, verificationUrl             │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       EXISTING COMPONENTS                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. LearnCodeEditor (components/opensource/learn-code-editor.tsx)           │
+│     ├── Code mode: Monaco editor with syntax highlighting                   │
+│     ├── Terminal mode: Simulated terminal with command input                │
+│     ├── Validation result display (correct/incorrect with feedback)         │
+│     ├── Hints system with progressive reveal                                │
+│     ├── Reset, Copy, Run/Check buttons                                      │
+│     ├── onRun callback for AI validation                                    │
+│     └── onTerminalCommand callback for command simulation                   │
+│                                                                              │
+│  2. Quiz Component (components/main/quiz.tsx)                               │
+│     ├── Single/Multiple choice question types                               │
+│     ├── Practice, Exam, Assessment modes                                    │
+│     ├── Timer support                                                       │
+│     ├── Immediate results with explanations                                 │
+│     ├── Question navigator                                                  │
+│     ├── Flag for review                                                     │
+│     ├── Code snippet support (uses code-editor.tsx)                         │
+│     └── Full progress tracking                                              │
+│                                                                              │
+│  3. Voice Component (components/main/voice.tsx)                             │
+│     ├── ElevenLabs integration                                              │
+│     ├── Orb visualization                                                   │
+│     ├── State management (idle, connecting, listening, talking)             │
+│     └── Processing dialog for evaluation                                    │
+│                                                                              │
+│  4. Exam Page (app/(main)/opensource/exam/page.tsx)                         │
+│     ├── AI-generated questions (quiz, code, scenario types)                 │
+│     ├── 30-minute time limit, 70% passing score                             │
+│     ├── 10 questions per exam                                               │
+│     ├── Eligibility checking (modules completed, cooldown)                  │
+│     └── Certificate generation on pass                                      │
+│                                                                              │
+│  5. Learn Page (app/(main)/opensource/learn/page.tsx)                       │
+│     ├── Module listing with progress                                        │
+│     ├── Sequential unlocking                                                │
+│     └── Stats display                                                       │
+│                                                                              │
+│  6. Module Page (app/(main)/opensource/learn/[moduleId]/page.tsx)           │
+│     ├── Lesson sidebar navigation                                           │
+│     ├── Markdown content rendering                                          │
+│     └── Mark as complete functionality                                      │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       EXISTING SERVER ACTIONS                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Learn Actions (learn.action.ts):                                           │
+│  ├── getLearnModules() - Get all modules with user progress                 │
+│  ├── getLearnModule(slug) - Get single module with lessons                  │
+│  ├── getLesson(lessonId) - Get single lesson                                │
+│  ├── completeLesson(lessonId, data) - Mark lesson complete                  │
+│  ├── getLearningProgress() - Get user's progress across modules             │
+│  ├── updateLessonProgress(lessonId, data) - Update progress                 │
+│  └── getNextLesson(moduleSlug, currentLessonId) - Get next lesson           │
+│                                                                              │
+│  AI Validation Actions (ai-validation.action.ts):                           │
+│  ├── validateCode(input) - Validate code exercises                          │
+│  ├── validateTerminalCommand(input) - Validate Git commands                 │
+│  ├── validateQuizAnswer(input) - Validate quiz answers                      │
+│  └── simulateGitSession(commands) - Simulate Git workflow                   │
+│                                                                              │
+│  Exam Actions (exam.action.ts):                                             │
+│  ├── generateExamQuestions(count) - AI-generated exam                       │
+│  ├── validateExamAnswer(question, answer) - Validate single answer          │
+│  ├── validateExamSubmission(questions, answers) - Validate full exam        │
+│  ├── checkExamEligibility() - Check if user can take exam                   │
+│  └── saveExamResult(data) - Save exam result & create certificate           │
+│                                                                              │
+│  Certification Actions (certification.action.ts):                           │
+│  ├── canTakeCertificationExam() - Check eligibility                         │
+│  ├── getUserCertificationStatus() - Get certification status                │
+│  └── verifyCertification(certificateId) - Verify certificate                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                     12. REQUIRED MODIFICATIONS
+================================================================================
+
+Based on the existing codebase, here's what needs to be done:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       PHASE 1: DATABASE SEEDING                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Create seed script: packages/prisma/seed/opensource-learn.ts               │
+│                                                                              │
+│  Seed data for 9 modules with 42 lessons:                                   │
+│  ├── Module records (OSLearnModule)                                         │
+│  │   └── slug, title, description, icon, orderIndex, estimatedMinutes       │
+│  │                                                                          │
+│  └── Lesson records (OSLearnLesson) with:                                   │
+│      ├── type: READING for explanation content                              │
+│      │   └── content: Markdown explaining the command                       │
+│      │                                                                      │
+│      ├── type: INTERACTIVE for terminal practice                            │
+│      │   └── terminalLab: JSON with scenario, commands, validation          │
+│      │                                                                      │
+│      └── type: QUIZ for knowledge check                                     │
+│          └── quizQuestions: JSON array of quiz questions                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       PHASE 2: MODULE PAGE ENHANCEMENT                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Update: apps/main/app/(main)/opensource/learn/[moduleId]/page.tsx          │
+│                                                                              │
+│  Add conditional rendering based on lesson.type:                            │
+│                                                                              │
+│  if (lesson.type === 'READING') {                                           │
+│      // Existing: Show Markdown content                                     │
+│      <ReactMarkdown>{lesson.content}</ReactMarkdown>                        │
+│  }                                                                          │
+│                                                                              │
+│  if (lesson.type === 'INTERACTIVE') {                                       │
+│      // NEW: Show LearnCodeEditor in terminal mode                          │
+│      <LearnCodeEditor                                                       │
+│          mode="terminal"                                                    │
+│          onTerminalCommand={handleTerminalCommand}                          │
+│          hints={lesson.terminalLab?.hints}                                  │
+│          taskDescription={lesson.terminalLab?.task}                         │
+│      />                                                                     │
+│  }                                                                          │
+│                                                                              │
+│  if (lesson.type === 'QUIZ') {                                              │
+│      // NEW: Show Quiz component                                            │
+│      <Quiz                                                                  │
+│          quizId={lesson.id}                                                 │
+│          questions={lesson.quizQuestions}                                   │
+│          mode="practice"                                                    │
+│          immediateResults={true}                                            │
+│          onComplete={handleQuizComplete}                                    │
+│      />                                                                     │
+│  }                                                                          │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       PHASE 3: GIT SIMULATION ENGINE                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Create: apps/main/lib/git-simulator.ts                                     │
+│                                                                              │
+│  A client-side Git state simulator that:                                    │
+│  ├── Maintains virtual Git state (working directory, staging, commits)      │
+│  ├── Parses and executes simulated Git commands                             │
+│  ├── Returns realistic output                                               │
+│  ├── Validates commands against expected answers                            │
+│  └── Tracks command history for scoring                                     │
+│                                                                              │
+│  Commands to simulate:                                                       │
+│  ├── git init, git status, git add, git commit                              │
+│  ├── git branch, git checkout, git switch, git merge                        │
+│  ├── git log, git diff, git show                                            │
+│  ├── git stash, git stash pop/apply                                         │
+│  ├── git remote, git push, git pull, git fetch                              │
+│  ├── git reset, git revert, git restore                                     │
+│  └── git tag, git blame, git reflog                                         │
+│                                                                              │
+│  Example simulation flow:                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Input: "git init"                                                   │   │
+│  │  State Change: { isGitRepo: true, branch: 'main', commits: [] }     │   │
+│  │  Output: "Initialized empty Git repository in /project/.git/"       │   │
+│  │  Validation: expectedCommand === "git init" ? PASS : FAIL           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       PHASE 4: FINAL EXAM VOICE INTERVIEW                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Update: apps/main/app/(main)/opensource/exam/page.tsx                      │
+│                                                                              │
+│  Add PART 3: Voice Interview section using Voice component                  │
+│                                                                              │
+│  Create ElevenLabs Agent:                                                    │
+│  ├── Agent ID: git-certification-interviewer                                │
+│  ├── System Prompt: Git expert conducting certification interview           │
+│  ├── 5 scenario-based questions                                             │
+│  └── Evaluation rubric for scoring responses                                │
+│                                                                              │
+│  Interview Flow:                                                             │
+│  1. Written Quiz (current) → 40% weight                                     │
+│  2. Code Exercises (current) → 40% weight                                   │
+│  3. Voice Interview (NEW) → 20% weight                                      │
+│     ├── User starts voice session                                           │
+│     ├── AI asks scenario questions                                          │
+│     ├── User responds verbally                                              │
+│     ├── AI evaluates and scores                                             │
+│     └── Combined score determines pass/fail                                 │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                       13. JSON CONTENT STRUCTURES
+================================================================================
+
+The following JSON structures should be used when seeding lesson data:
+
+1. TERMINAL LAB (terminalLab field for INTERACTIVE lessons):
+
+{
+  "title": "Initialize Your First Repository",
+  "task": "Create a new Git repository in the current directory",
+  "scenario": {
+    "currentDirectory": "~/my-project",
+    "existingFiles": ["index.html", "style.css"],
+    "isGitRepo": false
+  },
+  "steps": [
+    {
+      "instruction": "Initialize a Git repository",
+      "expectedCommands": ["git init"],
+      "alternativeCommands": ["git init ."],
+      "expectedOutput": "Initialized empty Git repository in ~/my-project/.git/",
+      "hints": [
+        "Use the 'git init' command",
+        "No additional flags needed for basic initialization"
+      ],
+      "xpReward": 10
+    }
+  ],
+  "completionCriteria": {
+    "allStepsComplete": true,
+    "maxAttempts": 5
+  }
+}
+
+2. QUIZ QUESTIONS (quizQuestions field for QUIZ lessons):
+
+[
+  {
+    "id": "git-init-q1",
+    "text": "What does the 'git init' command create?",
+    "type": "single",
+    "difficulty": "EASY",
+    "category": "Getting Started",
+    "points": 10,
+    "options": [
+      { "id": "a", "text": "A hidden .git directory", "isCorrect": true },
+      { "id": "b", "text": "A .gitignore file", "isCorrect": false },
+      { "id": "c", "text": "A README.md file", "isCorrect": false },
+      { "id": "d", "text": "A remote repository", "isCorrect": false }
+    ],
+    "explanation": "git init creates a hidden .git directory that contains all the version control data for your repository.",
+    "hint": "Think about where Git stores its tracking information."
+  },
+  {
+    "id": "git-init-q2",
+    "text": "Is it safe to run 'git init' in an existing Git repository?",
+    "type": "single",
+    "difficulty": "MEDIUM",
+    "options": [
+      { "id": "a", "text": "No, it will delete all history", "isCorrect": false },
+      { "id": "b", "text": "No, Git will show an error", "isCorrect": false },
+      { "id": "c", "text": "Yes, it safely reinitializes", "isCorrect": true },
+      { "id": "d", "text": "Yes, but only on empty repos", "isCorrect": false }
+    ],
+    "explanation": "Running git init in an existing repository is safe - it will reinitialize without destroying any existing data."
+  }
+]
+
+3. CODE LAB (codeLab field for code-based exercises):
+
+{
+  "title": "Write a Commit Message",
+  "language": "git",
+  "starterCode": "git commit -m \"",
+  "task": "Write a proper commit message for adding user authentication",
+  "expectedOutput": "[main abc1234] Add user authentication feature",
+  "validationRules": {
+    "mustContain": ["git commit", "-m"],
+    "messageFormat": "imperative",
+    "minLength": 10,
+    "maxLength": 72
+  },
+  "hints": [
+    "Use imperative mood (Add, not Added)",
+    "Keep it under 72 characters",
+    "Be specific about what was changed"
+  ],
+  "solution": "git commit -m \"Add user authentication feature\""
+}
+
+================================================================================
+                              NEXT STEPS
+================================================================================
+
+After approval of this strategy document:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  IMPLEMENTATION ORDER                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  STEP 1: Create Database Seed Script (Week 1)                               │
+│  ├── Create packages/prisma/seed/opensource-learn.ts                        │
+│  ├── Seed Module 1: Getting Started (git init, clone, config)               │
+│  ├── Seed Module 2: Basic Operations (status, add, commit, etc.)            │
+│  └── Run seed: pnpm db:seed                                                 │
+│                                                                              │
+│  STEP 2: Build Git Simulator (Week 1-2)                                     │
+│  ├── Create apps/main/lib/git-simulator.ts                                  │
+│  ├── Implement core command parsing                                         │
+│  ├── Build state management (working dir, staging, commits)                 │
+│  └── Add output generation for each command                                 │
+│                                                                              │
+│  STEP 3: Enhance Module Page (Week 2)                                       │
+│  ├── Add lesson type detection                                              │
+│  ├── Integrate LearnCodeEditor for INTERACTIVE lessons                      │
+│  ├── Integrate Quiz component for QUIZ lessons                              │
+│  └── Connect Git simulator to terminal commands                             │
+│                                                                              │
+│  STEP 4: Seed Remaining Modules (Week 2-3)                                  │
+│  ├── Modules 3-5 (Inspecting History, Branching, Stashing)                  │
+│  ├── Modules 6-9 (Tagging, Remote Ops, Undoing, Advanced)                   │
+│  └── All quiz questions and terminal exercises                              │
+│                                                                              │
+│  STEP 5: Voice Interview Integration (Week 3-4)                             │
+│  ├── Create ElevenLabs agent for Git interviews                             │
+│  ├── Update exam page to include voice section                              │
+│  └── Build scoring integration                                              │
+│                                                                              │
+│  STEP 6: Testing & Polish (Week 4)                                          │
+│  ├── End-to-end testing of full learning path                               │
+│  ├── Content review and corrections                                         │
+│  ├── Performance optimization                                               │
+│  └── User feedback collection                                               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                         END OF DOCUMENT
+================================================================================
