@@ -7,17 +7,19 @@ import {
     Brain, Terminal, Mic, CheckCircle2, XCircle, Trophy,
     Loader2, ArrowLeft, Send, Award, Home
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@repo/ui/components/ui/card'
+import {
+    Card, CardContent, CardHeader, CardTitle, CardDescription
+} from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from '@repo/ui/components/ui/tabs'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
 import {
-    validateQuizPhase,
-    validateCodingPhase,
-    completeThreePhaseExam,
+    validateQuizPhase, validateCodingPhase, completeThreePhaseExam,
     type ThreePhaseExam
 } from '@/actions/(main)/opensource'
 
@@ -48,18 +50,18 @@ interface PhaseResults {
 export default function ExamClient({ exam }: ExamClientProps) {
     const router = useRouter()
     const [activeTab, setActiveTab] = useState('quiz')
-    
+
     // Answers state
     const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({})
     const [codingAnswers, setCodingAnswers] = useState<Record<string, string>>({})
-    
+
     // Phase completion state
     const [phaseResults, setPhaseResults] = useState<PhaseResults>({
         quiz: null,
         coding: null,
         voice: null
     })
-    
+
     // Submission state
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isCompleted, setIsCompleted] = useState(false)
@@ -183,7 +185,7 @@ export default function ExamClient({ exam }: ExamClientProps) {
                     breakdown: result.breakdown
                 })
                 setIsCompleted(true)
-                
+
                 if (result.passed) {
                     toast.success('🎉 Congratulations! You passed the certification exam!')
                 } else {
@@ -223,24 +225,26 @@ export default function ExamClient({ exam }: ExamClientProps) {
                                             : "bg-gradient-to-br from-red-500/20 to-orange-500/20"
                                     )}
                                 >
-                                    {finalResult.passed ? (
-                                        <Trophy className="h-16 w-16 text-green-400" />
-                                    ) : (
-                                        <XCircle className="h-16 w-16 text-red-400" />
-                                    )}
+                                    {
+                                        finalResult.passed ? (
+                                            <Trophy className="h-16 w-16 text-green-400" />
+                                        ) : (
+                                            <XCircle className="h-16 w-16 text-red-400" />
+                                        )
+                                    }
                                 </motion.div>
                                 <CardTitle className="text-3xl text-white">
                                     {finalResult.passed ? '🎉 Congratulations!' : 'Keep Learning!'}
                                 </CardTitle>
                                 <CardDescription className="text-lg mt-2 text-white/70">
-                                    {finalResult.passed
-                                        ? "You've earned your Git Certification!"
-                                        : "You need 80% to pass. Try again after reviewing the material."}
+                                    {
+                                        finalResult.passed
+                                            ? "You've earned your Git Certification!"
+                                            : "You need 80% to pass. Try again after reviewing the material."
+                                    }
                                 </CardDescription>
                             </CardHeader>
-
                             <CardContent className="space-y-8">
-                                {/* Total Score */}
                                 <div className="text-center">
                                     <div className={cn(
                                         "text-7xl font-bold mb-2",
@@ -257,8 +261,6 @@ export default function ExamClient({ exam }: ExamClientProps) {
                                         )}
                                     />
                                 </div>
-
-                                {/* Score Breakdown */}
                                 <div className="grid md:grid-cols-3 gap-4">
                                     <Card className="bg-blue-500/10 border-blue-500/30">
                                         <CardContent className="pt-6 text-center">
@@ -298,44 +300,47 @@ export default function ExamClient({ exam }: ExamClientProps) {
                                     </Card>
                                 </div>
 
-                                {/* Certificate or Retry */}
-                                {finalResult.passed ? (
-                                    <div className="p-6 rounded-lg bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-transparent border border-green-500/30 text-center">
-                                        <Award className="h-12 w-12 mx-auto mb-4 text-green-400" />
-                                        <h3 className="text-xl font-semibold text-green-300 mb-2">
-                                            Certificate Earned!
-                                        </h3>
-                                        {finalResult.certificateId && (
-                                            <p className="text-sm text-white/40 mb-4">
-                                                Certificate ID: {finalResult.certificateId}
-                                            </p>
-                                        )}
-                                        <Button
-                                            onClick={() => router.push('/opensource')}
-                                            className="bg-gradient-to-r from-green-500 to-emerald-500 cursor-pointer"
-                                        >
-                                            Start Contributing
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-4 justify-center">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => router.push('/opensource/learn')}
-                                            className="cursor-pointer"
-                                        >
-                                            Review Lessons
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => router.push('/opensource')}
-                                            className="cursor-pointer"
-                                        >
-                                            <Home className="w-4 h-4 mr-2" />
-                                            Back to Hub
-                                        </Button>
-                                    </div>
-                                )}
+                                {
+                                    finalResult.passed ? (
+                                        <div className="p-6 rounded-lg bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-transparent border border-green-500/30 text-center">
+                                            <Award className="h-12 w-12 mx-auto mb-4 text-green-400" />
+                                            <h3 className="text-xl font-semibold text-green-300 mb-2">
+                                                Certificate Earned!
+                                            </h3>
+                                            {
+                                                finalResult.certificateId && (
+                                                    <p className="text-sm text-white/40 mb-4">
+                                                        Certificate ID: {finalResult.certificateId}
+                                                    </p>
+                                                )
+                                            }
+                                            <Button
+                                                onClick={() => router.push('/opensource')}
+                                                className="bg-gradient-to-r from-green-500 to-emerald-500 cursor-pointer"
+                                            >
+                                                Start Contributing
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-4 justify-center">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => router.push('/opensource/learn')}
+                                                className="cursor-pointer"
+                                            >
+                                                Review Lessons
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => router.push('/opensource')}
+                                                className="cursor-pointer"
+                                            >
+                                                <Home className="w-4 h-4 mr-2" />
+                                                Back to Hub
+                                            </Button>
+                                        </div>
+                                    )
+                                }
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -345,8 +350,7 @@ export default function ExamClient({ exam }: ExamClientProps) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900">
-            {/* Header */}
+        <div className="min-h-screen bg-gradient-to-br from-black via-neutral-950 to-black">
             <div className="sticky top-0 z-50 bg-black/50 backdrop-blur-xl border-b border-white/10">
                 <div className="container max-w-6xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
@@ -364,8 +368,6 @@ export default function ExamClient({ exam }: ExamClientProps) {
                                 <p className="text-sm text-white/60">Complete all 3 phases to finish</p>
                             </div>
                         </div>
-                        
-                        {/* Phase Status Indicators */}
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                                 <div className={cn(
@@ -392,11 +394,8 @@ export default function ExamClient({ exam }: ExamClientProps) {
                     </div>
                 </div>
             </div>
-
-            {/* Main Content */}
             <div className="container max-w-5xl mx-auto px-4 py-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    {/* Tab Triggers */}
                     <TabsList className="grid w-full grid-cols-3 bg-neutral-900/50 p-1 h-auto">
                         <TabsTrigger
                             value="quiz"
@@ -408,11 +407,13 @@ export default function ExamClient({ exam }: ExamClientProps) {
                             <Brain className="w-4 h-4" />
                             <span className="hidden sm:inline">Quiz</span>
                             <Badge variant="outline" className="text-xs">
-                                {phaseResults.quiz ? (
-                                    <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                ) : (
-                                    `${Object.keys(quizAnswers).length}/${exam.quizPhase.questions.length}`
-                                )}
+                                {
+                                    phaseResults.quiz ? (
+                                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                    ) : (
+                                        `${Object.keys(quizAnswers).length}/${exam.quizPhase.questions.length}`
+                                    )
+                                }
                             </Badge>
                         </TabsTrigger>
                         <TabsTrigger
@@ -425,11 +426,13 @@ export default function ExamClient({ exam }: ExamClientProps) {
                             <Terminal className="w-4 h-4" />
                             <span className="hidden sm:inline">Coding</span>
                             <Badge variant="outline" className="text-xs">
-                                {phaseResults.coding ? (
-                                    <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                ) : (
-                                    `${Object.values(codingAnswers).filter(a => a.trim()).length}/${exam.codingPhase.questions.length}`
-                                )}
+                                {
+                                    phaseResults.coding ? (
+                                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                    ) : (
+                                        `${Object.values(codingAnswers).filter(a => a.trim()).length}/${exam.codingPhase.questions.length}`
+                                    )
+                                }
                             </Badge>
                         </TabsTrigger>
                         <TabsTrigger
@@ -442,16 +445,16 @@ export default function ExamClient({ exam }: ExamClientProps) {
                             <Mic className="w-4 h-4" />
                             <span className="hidden sm:inline">Voice</span>
                             <Badge variant="outline" className="text-xs">
-                                {phaseResults.voice !== null ? (
-                                    <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                ) : (
-                                    '0/1'
-                                )}
+                                {
+                                    phaseResults.voice !== null ? (
+                                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                    ) : (
+                                        '0/1'
+                                    )
+                                }
                             </Badge>
                         </TabsTrigger>
                     </TabsList>
-
-                    {/* Quiz Phase Content */}
                     <TabsContent value="quiz" className="space-y-6">
                         <QuizPhase
                             questions={exam.quizPhase.questions}
@@ -460,44 +463,45 @@ export default function ExamClient({ exam }: ExamClientProps) {
                             isSubmitted={phaseResults.quiz !== null}
                             results={phaseResults.quiz?.results}
                         />
-                        
-                        {/* Submit Button */}
-                        {phaseResults.quiz === null && (
-                            <div className="flex justify-end">
-                                <Button
-                                    onClick={submitQuizPhase}
-                                    disabled={isSubmitting || Object.keys(quizAnswers).length < exam.quizPhase.questions.length}
-                                    className="bg-blue-600 hover:bg-blue-700 gap-2 cursor-pointer"
-                                >
-                                    {isSubmitting ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Send className="w-4 h-4" />
-                                    )}
-                                    Submit Quiz
-                                </Button>
-                            </div>
-                        )}
 
-                        {/* Result Summary */}
-                        {phaseResults.quiz && (
-                            <Card className="border-blue-500/30 bg-blue-500/10">
-                                <CardContent className="py-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <CheckCircle2 className="w-5 h-5 text-blue-400" />
-                                            <span className="font-medium text-blue-300">Quiz Phase Completed</span>
+                        {
+                            phaseResults.quiz === null && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        onClick={submitQuizPhase}
+                                        disabled={isSubmitting || Object.keys(quizAnswers).length < exam.quizPhase.questions.length}
+                                        className="bg-blue-600 hover:bg-blue-700 gap-2 cursor-pointer"
+                                    >
+                                        {
+                                            isSubmitting ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Send className="w-4 h-4" />
+                                            )
+                                        }
+                                        Submit Quiz
+                                    </Button>
+                                </div>
+                            )
+                        }
+                        {
+                            phaseResults.quiz && (
+                                <Card className="border-blue-500/30 bg-blue-500/10">
+                                    <CardContent className="py-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle2 className="w-5 h-5 text-blue-400" />
+                                                <span className="font-medium text-blue-300">Quiz Phase Completed</span>
+                                            </div>
+                                            <Badge className="bg-blue-500/20 text-blue-300">
+                                                Score: {phaseResults.quiz.percentage}%
+                                            </Badge>
                                         </div>
-                                        <Badge className="bg-blue-500/20 text-blue-300">
-                                            Score: {phaseResults.quiz.percentage}%
-                                        </Badge>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                                    </CardContent>
+                                </Card>
+                            )
+                        }
                     </TabsContent>
-
-                    {/* Coding Phase Content */}
                     <TabsContent value="coding" className="space-y-6">
                         <CodingPhase
                             questions={exam.codingPhase.questions}
@@ -506,44 +510,45 @@ export default function ExamClient({ exam }: ExamClientProps) {
                             isSubmitted={phaseResults.coding !== null}
                             results={phaseResults.coding?.results}
                         />
-                        
-                        {/* Submit Button */}
-                        {phaseResults.coding === null && (
-                            <div className="flex justify-end">
-                                <Button
-                                    onClick={submitCodingPhase}
-                                    disabled={isSubmitting || Object.values(codingAnswers).filter(a => a.trim()).length < exam.codingPhase.questions.length}
-                                    className="bg-green-600 hover:bg-green-700 gap-2 cursor-pointer"
-                                >
-                                    {isSubmitting ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Send className="w-4 h-4" />
-                                    )}
-                                    Submit Coding
-                                </Button>
-                            </div>
-                        )}
 
-                        {/* Result Summary */}
-                        {phaseResults.coding && (
-                            <Card className="border-green-500/30 bg-green-500/10">
-                                <CardContent className="py-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <CheckCircle2 className="w-5 h-5 text-green-400" />
-                                            <span className="font-medium text-green-300">Coding Phase Completed</span>
+                        {
+                            phaseResults.coding === null && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        onClick={submitCodingPhase}
+                                        disabled={isSubmitting || Object.values(codingAnswers).filter(a => a.trim()).length < exam.codingPhase.questions.length}
+                                        className="bg-green-600 hover:bg-green-700 gap-2 cursor-pointer"
+                                    >
+                                        {
+                                            isSubmitting ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Send className="w-4 h-4" />
+                                            )
+                                        }
+                                        Submit Coding
+                                    </Button>
+                                </div>
+                            )
+                        }
+                        {
+                            phaseResults.coding && (
+                                <Card className="border-green-500/30 bg-green-500/10">
+                                    <CardContent className="py-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                                <span className="font-medium text-green-300">Coding Phase Completed</span>
+                                            </div>
+                                            <Badge className="bg-green-500/20 text-green-300">
+                                                Score: {phaseResults.coding.percentage}%
+                                            </Badge>
                                         </div>
-                                        <Badge className="bg-green-500/20 text-green-300">
-                                            Score: {phaseResults.coding.percentage}%
-                                        </Badge>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                                    </CardContent>
+                                </Card>
+                            )
+                        }
                     </TabsContent>
-
-                    {/* Voice Phase Content */}
                     <TabsContent value="voice" className="space-y-6">
                         <VoicePhase
                             voicePrompt={exam.voicePhase.prompt}
@@ -555,38 +560,41 @@ export default function ExamClient({ exam }: ExamClientProps) {
                     </TabsContent>
                 </Tabs>
 
-                {/* Complete Exam Button */}
-                {allPhasesComplete && !isCompleted && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-8"
-                    >
-                        <Card className="border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
-                            <CardContent className="py-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-white">All Phases Completed!</h3>
-                                        <p className="text-sm text-white/60">Click to submit your exam and see your final score</p>
+                {
+                    allPhasesComplete && !isCompleted && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-8"
+                        >
+                            <Card className="border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+                                <CardContent className="py-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-white">All Phases Completed!</h3>
+                                            <p className="text-sm text-white/60">Click to submit your exam and see your final score</p>
+                                        </div>
+                                        <Button
+                                            onClick={completeExam}
+                                            disabled={isSubmitting}
+                                            size="lg"
+                                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-2 cursor-pointer"
+                                        >
+                                            {
+                                                isSubmitting ? (
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                ) : (
+                                                    <Trophy className="w-5 h-5" />
+                                                )
+                                            }
+                                            Complete Exam
+                                        </Button>
                                     </div>
-                                    <Button
-                                        onClick={completeExam}
-                                        disabled={isSubmitting}
-                                        size="lg"
-                                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-2 cursor-pointer"
-                                    >
-                                        {isSubmitting ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                        ) : (
-                                            <Trophy className="w-5 h-5" />
-                                        )}
-                                        Complete Exam
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    )
+                }
             </div>
         </div>
     )

@@ -1,7 +1,8 @@
 import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Users, Trophy, Video, Brain, Cable, LayoutDashboard,
-    Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon
+    Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon,
+    Building2, Search, Heart, ClipboardCheck
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -195,6 +196,47 @@ export const mainNavigation: NavigationConfig = {
                     path: 'companywise', 
                     icon: Trophy, 
                     comingSoon: true 
+                }
+            ]
+        },
+        {
+            name: "Jobs",
+            path: "jobs",
+            icon: Briefcase,
+            status: "active",
+            children: [
+                { 
+                    name: 'Browse Jobs', 
+                    path: 'jobs', 
+                    icon: Search 
+                },
+                { 
+                    name: 'My Applications', 
+                    path: 'jobs/applications', 
+                    icon: ClipboardCheck 
+                },
+                { 
+                    name: 'Saved Jobs', 
+                    path: 'jobs/saved', 
+                    icon: Heart 
+                }
+            ]
+        },
+        {
+            name: "Companies",
+            path: "companies",
+            icon: Building2,
+            status: "active",
+            children: [
+                { 
+                    name: 'Browse Companies', 
+                    path: 'companies', 
+                    icon: Search 
+                },
+                { 
+                    name: 'Following', 
+                    path: 'companies/following', 
+                    icon: Heart 
                 }
             ]
         },

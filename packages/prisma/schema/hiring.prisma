@@ -3,12 +3,18 @@
 // Models for Company/HR side of the platform
 // ============================================
 
-// Role type for recruiters within a company
-// HEAD: Full admin access (CEO, CTO, Co-founder, VP Engineering, HR Head)
+// Role type for members within a company
+// FOUNDER: First person to register - full admin access
+// ADMIN: Full admin access (can do everything except remove founder)
+// HIRING_MANAGER: Can post jobs, manage candidates, conduct interviews
 // RECRUITER: Standard recruiter access (can post jobs, review candidates)
+// INTERVIEWER: Can only view assigned candidates and submit feedback
 enum CompanyMemberRole {
-    HEAD // Leadership/Admin role - full control over company workspace
-    RECRUITER // Standard recruiter role - can manage jobs and candidates
+    FOUNDER // First registrant - cannot be removed, full control
+    ADMIN // Full admin access (almost like founder)
+    HIRING_MANAGER // Department-level hiring authority
+    RECRUITER // Standard recruiter role
+    INTERVIEWER // Limited access - only for interviews
 }
 
 // Job Title for the user in the company (for display purposes)
@@ -17,10 +23,14 @@ enum CompanyMemberJobTitle {
     CTO
     COFOUNDER
     VP_ENGINEERING
+    ENGINEERING_MANAGER
     HR_HEAD
     HR_MANAGER
+    TALENT_ACQUISITION
     RECRUITER
     HIRING_MANAGER
+    TECH_LEAD
+    INTERVIEWER
     OTHER
 }
 
@@ -45,6 +55,19 @@ model Company {
     country String?
     pincode String?
 
+    // Company Culture & Benefits
+    culture     String? @db.Text
+    benefits    Json? // Array of benefits
+    techStack   Json? // Array of technologies used
+    mediaGallery Json? // Array of image URLs
+
+    // Company Stats (for transparency)
+    responseRatePercent   Float? // % of applications that get responses
+    avgTimeToHireDays     Int?   // Average days from apply to offer
+    interviewToOfferPercent Float? // % that get offers after interview
+    totalHired            Int    @default(0)
+    totalApplications     Int    @default(0)
+
     // Verification (for platform trust)
     verificationStatus CompanyVerificationStatus @default(PENDING)
     verifiedAt         DateTime?
@@ -56,11 +79,19 @@ model Company {
     // The User who created/registered the company
     createdByUserId String? // Links to User.id from main schema
 
+    // Interview Process Configuration Status
+    hasInterviewProcess Boolean @default(false)
+
     // Relations
     members            CompanyMember[]
     jobs               Job[]
     companyInvitations CompanyInvitation[]
     memberInvitations  MemberInvitation[]
+    followers          CompanyFollower[]
+    
+    // Interview Process Relations (from jobmock.prisma)
+    interviewProcesses InterviewProcess[]
+    jobMockSessions    JobMockSession[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -68,6 +99,20 @@ model Company {
     @@index([slug])
     @@index([verificationStatus])
     @@index([createdByUserId])
+}
+
+// Company Followers (students following companies for job alerts)
+model CompanyFollower {
+    id        String   @id @default(cuid())
+    userId    String
+    companyId String
+    createdAt DateTime @default(now())
+
+    company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, companyId])
+    @@index([userId])
+    @@index([companyId])
 }
 
 enum CompanyVerificationStatus {

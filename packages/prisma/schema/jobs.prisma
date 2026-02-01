@@ -40,6 +40,8 @@ model Job {
     assignmentProjectId    String? // Template project for cloning
     assignmentDeadlineDays Int? // Days after application to complete
     evaluationCriteria     Json? // { codeQuality: 25, functionality: 30, etc }
+    assignmentDetails      Json? // { title, description, requirements[], resources[], deliverables[] }
+    assignmentInstructions String? @db.Text // Detailed instructions for assignment
 
     // Job Status
     status     JobStatus     @default(DRAFT)
@@ -53,6 +55,9 @@ model Job {
     // Smart Matching
     matchingCriteria Json? // For smart recommendations
 
+    // Interview Process (for transparency)
+    interviewProcessId String? // Links to company's interview process
+
     // Dates
     expiresAt   DateTime?
     publishedAt DateTime?
@@ -60,10 +65,12 @@ model Job {
     updatedAt   DateTime  @updatedAt
 
     // Relations
-    company         Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-    postedBy        CompanyMember       @relation("PostedBy", fields: [postedById], references: [id])
-    applications    JobApplication[]
-    recommendations JobRecommendation[]
+    company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    postedBy           CompanyMember       @relation("PostedBy", fields: [postedById], references: [id])
+    applications       JobApplication[]
+    recommendations    JobRecommendation[]
+    interviewProcess   InterviewProcess?   @relation("JobInterviewProcess", fields: [interviewProcessId], references: [id])
+    mockSessions       JobMockSession[]    @relation("JobMockSessions")
 
     @@index([companyId])
     @@index([slug])
@@ -108,6 +115,7 @@ model JobApplication {
 
     // Application Status
     status ApplicationStatus @default(INTERESTED)
+    currentStage Int? // Current interview round number (1, 2, 3...)
 
     // Preparation Tracking
     preparationStatus Json    @default("{\"profile_complete\": false, \"resume_reviewed\": false, \"mock_interview_done\": false, \"concepts_reviewed\": false, \"assignment_started\": false, \"assignment_completed\": false}")
@@ -138,6 +146,7 @@ model JobApplication {
 
     // Cover letter / notes from candidate
     coverLetter String? @db.Text
+    resumeUrl   String? // Link to resume file
 
     // Timestamps
     appliedAt DateTime?
@@ -145,9 +154,10 @@ model JobApplication {
     updatedAt DateTime  @updatedAt
 
     // Relations
-    job        Job                   @relation(fields: [jobId], references: [id], onDelete: Cascade)
-    reviewedBy CompanyMember?        @relation("ReviewedBy", fields: [reviewedById], references: [id])
-    activities ApplicationActivity[]
+    job          Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+    reviewedBy   CompanyMember?          @relation("ReviewedBy", fields: [reviewedById], references: [id])
+    activities   ApplicationActivity[]
+    prepProgress InterviewPrepProgress?  // Preparation progress for this application
 
     @@unique([jobId, userId])
     @@index([jobId])
