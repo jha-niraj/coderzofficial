@@ -1,0 +1,46 @@
+import { Suspense } from "react"
+import { Loader2 } from "lucide-react"
+import { notFound } from "next/navigation"
+import { getCompanyBySlug } from "@/actions/companies"
+import { getCompanyMockHub } from "@/actions/companies/mock"
+import { CompanyMockHubContent } from "./mock-hub-content"
+
+export const metadata = {
+    title: "Mock Interview Hub | CodeDot.AI",
+    description: "Practice AI mock interviews for this company's interview process"
+}
+
+interface Props {
+    params: Promise<{ slug: string }>
+}
+
+export default async function CompanyMockHubPage({ params }: Props) {
+    const { slug } = await params
+    
+    const [companyResult, mockHubResult] = await Promise.all([
+        getCompanyBySlug(slug),
+        getCompanyMockHub(slug)
+    ])
+
+    if (!companyResult.success || !companyResult.data) {
+        notFound()
+    }
+
+    const company = companyResult.data
+    const mockHub = mockHubResult.success ? mockHubResult.data : null
+
+    return (
+        <Suspense 
+            fallback={
+                <div className="min-h-full flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                </div>
+            }
+        >
+            <CompanyMockHubContent 
+                company={company}
+                mockHub={mockHub}
+            />
+        </Suspense>
+    )
+}

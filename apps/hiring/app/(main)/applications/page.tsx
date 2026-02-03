@@ -1,7 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Search, Filter, FileText } from "lucide-react"
+import { 
+    Search, Filter, FileText 
+} from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 

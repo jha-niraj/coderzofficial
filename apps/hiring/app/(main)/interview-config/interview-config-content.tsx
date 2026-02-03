@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Plus, Search, ListChecks, ChevronRight, Clock, Users, Mic,
-    MoreVertical, Star, Edit2, Trash2, Copy, Eye, CheckCircle2, AlertCircle
+    MoreVertical, Star, Edit2, Trash2, Copy, Eye, CheckCircle2, AlertCircle,
+    Sparkles, FileStack
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
@@ -23,8 +24,18 @@ import {
     SheetTitle,
     SheetDescription,
 } from "@repo/ui/components/ui/sheet"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@repo/ui/components/ui/dialog"
 import { InterviewProcessForm } from "./components/interview-process-form"
 import { InterviewProcessDetail } from "./components/interview-process-detail"
+import { cloneInterviewProcess, deleteInterviewProcess, getRoundTemplates } from "@/actions/interview-config"
+import { toast } from "sonner"
 
 interface InterviewRound {
     id: string
@@ -76,12 +87,17 @@ const roundTypeColors: Record<string, string> = {
 }
 
 export function InterviewConfigContent({ initialProcesses, initialStats }: InterviewConfigContentProps) {
-    const [processes] = useState<InterviewProcess[]>(initialProcesses)
-    const [stats] = useState<Stats>(initialStats)
+    const [processes, setProcesses] = useState<InterviewProcess[]>(initialProcesses)
+    const [stats, setStats] = useState<Stats>(initialStats)
     const [searchQuery, setSearchQuery] = useState("")
     const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false)
     const [selectedProcess, setSelectedProcess] = useState<InterviewProcess | null>(null)
     const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
+    const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
+    const [cloneDialogOpen, setCloneDialogOpen] = useState(false)
+    const [processToClone, setProcessToClone] = useState<InterviewProcess | null>(null)
+    const [cloneName, setCloneName] = useState("")
+    const [isPending, startTransition] = useTransition()
 
     const filteredProcesses = processes.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,6 +108,74 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
         setSelectedProcess(process)
         setIsDetailSheetOpen(true)
     }
+
+    const handleCloneClick = (process: InterviewProcess, e: React.MouseEvent) => {
+        e.stopPropagation()
+        setProcessToClone(process)
+        setCloneName(`${process.name} (Copy)`)
+        setCloneDialogOpen(true)
+    }
+
+    const handleClone = async () => {
+        if (!processToClone) return
+        
+        startTransition(async () => {
+            const result = await cloneInterviewProcess(processToClone.id, cloneName)
+            if (result.success && result.data) {
+                setProcesses(prev => [...prev, result.data as InterviewProcess])
+                setStats(prev => ({ ...prev, processCount: prev.processCount + 1 }))
+                toast.success("Process cloned successfully")
+                setCloneDialogOpen(false)
+            } else {
+                toast.error(result.error || "Failed to clone process")
+            }
+        })
+    }
+
+    const handleDelete = async (process: InterviewProcess, e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (!confirm(`Are you sure you want to delete "${process.name}"?`)) return
+        
+        startTransition(async () => {
+            const result = await deleteInterviewProcess(process.id)
+            if (result.success) {
+                setProcesses(prev => prev.filter(p => p.id !== process.id))
+                setStats(prev => ({ ...prev, processCount: prev.processCount - 1 }))
+                toast.success("Process deleted")
+            } else {
+                toast.error(result.error || "Failed to delete process")
+            }
+        })
+    }
+
+    // Role-based templates
+    const roleTemplates = [
+        { 
+            name: "Software Engineer", 
+            description: "Technical coding + system design focus",
+            rounds: ["Phone Screen", "Technical Coding", "System Design", "Behavioral", "Hiring Manager"]
+        },
+        { 
+            name: "Product Manager", 
+            description: "Strategy and communication focus",
+            rounds: ["Recruiter Screen", "Product Sense", "Execution Case", "Behavioral", "Leadership"]
+        },
+        { 
+            name: "Data Scientist", 
+            description: "Analytics and ML focus",
+            rounds: ["Phone Screen", "Technical Assessment", "ML Deep Dive", "Business Case", "Culture Fit"]
+        },
+        { 
+            name: "Designer", 
+            description: "Portfolio and design thinking focus",
+            rounds: ["Portfolio Review", "Design Challenge", "Whiteboard Session", "Team Fit"]
+        },
+        { 
+            name: "Intern", 
+            description: "Simplified process for interns",
+            rounds: ["Resume Screen", "Technical Interview", "Manager Chat"]
+        },
+    ]
 
     return (
         <div className="min-h-full p-6 lg:p-8">
@@ -105,13 +189,23 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
                         Configure transparent interview processes for candidates
                     </p>
                 </div>
-                <Button 
-                    onClick={() => setIsCreateSheetOpen(true)}
-                    className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Process
-                </Button>
+                <div className="flex gap-3">
+                    <Button 
+                        variant="outline"
+                        onClick={() => setIsTemplatesOpen(true)}
+                        className="rounded-xl"
+                    >
+                        <FileStack className="w-4 h-4 mr-2" />
+                        Templates
+                    </Button>
+                    <Button 
+                        onClick={() => setIsCreateSheetOpen(true)}
+                        className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Process
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -298,16 +392,20 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
                                                 <Eye className="w-4 h-4" />
                                                 View Details
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="gap-2">
+                                            <DropdownMenuItem className="gap-2" onClick={(e) => e.stopPropagation()}>
                                                 <Edit2 className="w-4 h-4" />
                                                 Edit Process
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="gap-2">
+                                            <DropdownMenuItem className="gap-2" onClick={(e) => handleCloneClick(process, e)}>
                                                 <Copy className="w-4 h-4" />
                                                 Duplicate
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
-                                            <DropdownMenuItem className="gap-2 text-red-600 dark:text-red-400">
+                                            <DropdownMenuItem 
+                                                className="gap-2 text-red-600 dark:text-red-400"
+                                                onClick={(e) => handleDelete(process, e)}
+                                                disabled={isPending}
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                                 Delete
                                             </DropdownMenuItem>
@@ -374,6 +472,93 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
                     </div>
                 </SheetContent>
             </Sheet>
+
+            {/* Clone Dialog */}
+            <Dialog open={cloneDialogOpen} onOpenChange={setCloneDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Clone Interview Process</DialogTitle>
+                        <DialogDescription>
+                            Create a copy of "{processToClone?.name}" with a new name.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                            New Process Name
+                        </label>
+                        <Input
+                            value={cloneName}
+                            onChange={(e) => setCloneName(e.target.value)}
+                            placeholder="Enter name for cloned process"
+                            className="rounded-xl"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCloneDialogOpen(false)} className="rounded-xl">
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleClone} 
+                            disabled={isPending || !cloneName.trim()}
+                            className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black"
+                        >
+                            <Copy className="w-4 h-4 mr-2" />
+                            {isPending ? "Cloning..." : "Clone Process"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Role Templates Dialog */}
+            <Dialog open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-purple-500" />
+                            Role-Based Templates
+                        </DialogTitle>
+                        <DialogDescription>
+                            Start with a pre-configured template for common roles and customize it.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        {roleTemplates.map((template, i) => (
+                            <motion.div
+                                key={template.name}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition-all cursor-pointer group"
+                                onClick={() => {
+                                    setIsTemplatesOpen(false)
+                                    setIsCreateSheetOpen(true)
+                                    // TODO: Pre-fill form with template data
+                                    toast.success(`Selected ${template.name} template - customize it now!`)
+                                }}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400">
+                                            {template.name}
+                                        </h3>
+                                        <p className="text-sm text-neutral-500 mt-1">{template.description}</p>
+                                        <div className="flex flex-wrap gap-2 mt-3">
+                                            {template.rounds.map((round, j) => (
+                                                <Badge key={j} variant="outline" className="text-xs">
+                                                    {j + 1}. {round}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <Button size="sm" variant="ghost" className="rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Use Template
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

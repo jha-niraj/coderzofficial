@@ -1,15 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Search, Filter, Users, MoreVertical, Mail, Calendar, Briefcase,
     ChevronRight, CheckCircle2, XCircle, Clock, Eye, MessageSquare,
-    FileText, Award, TrendingUp, Loader2
+    FileText, Award, TrendingUp, Loader2, LayoutGrid, List, 
+    Columns, CheckSquare, Square, ArrowRight
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Badge } from "@repo/ui/components/ui/badge"
+import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import {
     Sheet,
     SheetContent,
@@ -31,6 +33,8 @@ import {
     DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
 import { CandidateDetailSheet } from "./components/candidate-detail-sheet"
+import { updateCandidateStatus } from "@/actions/candidates"
+import { toast } from "sonner"
 
 interface Candidate {
     id: string
@@ -102,13 +106,67 @@ const statusLabels: Record<string, string> = {
     WITHDRAWN: "Withdrawn",
 }
 
+// Kanban columns
+const kanbanColumns = [
+    { key: "APPLIED", label: "Applied", color: "border-t-blue-500" },
+    { key: "UNDER_REVIEW", label: "Reviewing", color: "border-t-yellow-500" },
+    { key: "SHORTLISTED", label: "Shortlisted", color: "border-t-purple-500" },
+    { key: "INTERVIEW_SCHEDULED", label: "Interviewing", color: "border-t-orange-500" },
+    { key: "OFFER_EXTENDED", label: "Offered", color: "border-t-emerald-500" },
+    { key: "HIRED", label: "Hired", color: "border-t-green-500" },
+]
+
 export function CandidatesContent({ initialCandidates, stats, jobs }: CandidatesContentProps) {
-    const [candidates] = useState<Candidate[]>(initialCandidates)
+    const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedJob, setSelectedJob] = useState<string>("all")
     const [selectedStatus, setSelectedStatus] = useState<string>("all")
     const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
     const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
+    const [viewMode, setViewMode] = useState<"list" | "kanban">("list")
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const [isPending, startTransition] = useTransition()
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }
+
+    const selectAll = () => {
+        if (selectedIds.size === filteredCandidates.length) {
+            setSelectedIds(new Set())
+        } else {
+            setSelectedIds(new Set(filteredCandidates.map(c => c.id)))
+        }
+    }
+
+    const handleBulkAction = async (action: string) => {
+        if (selectedIds.size === 0) return
+        
+        startTransition(async () => {
+            const ids = Array.from(selectedIds)
+            let successCount = 0
+            
+            for (const id of ids) {
+                const result = await updateCandidateStatus(id, action)
+                if (result.success) {
+                    successCount++
+                    setCandidates(prev => prev.map(c => 
+                        c.id === id ? { ...c, status: action } : c
+                    ))
+                }
+            }
+            
+            if (successCount > 0) {
+                toast.success(`Updated ${successCount} candidate(s)`)
+                setSelectedIds(new Set())
+            }
+        })
+    }
 
     const filteredCandidates = candidates.filter(candidate => {
         if (searchQuery) {
@@ -192,7 +250,7 @@ export function CandidatesContent({ initialCandidates, stats, jobs }: Candidates
                 </div>
             )}
 
-            {/* Filters */}
+            {/* Filters & View Toggle */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -229,12 +287,152 @@ export function CandidatesContent({ initialCandidates, stats, jobs }: Candidates
                         ))}
                     </SelectContent>
                 </Select>
+                {/* View Toggle */}
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-100 dark:bg-neutral-900">
+                    <Button
+                        variant={viewMode === "list" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("list")}
+                        className="rounded-lg"
+                    >
+                        <List className="w-4 h-4" />
+                    </Button>
+                    <Button
+                        variant={viewMode === "kanban" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("kanban")}
+                        className="rounded-lg"
+                    >
+                        <Columns className="w-4 h-4" />
+                    </Button>
+                </div>
             </div>
 
-            {/* Candidates List */}
+            {/* Bulk Actions Toolbar */}
+            {selectedIds.size > 0 && viewMode === "list" && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-4 p-4 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl"
+                >
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                        {selectedIds.size} selected
+                    </span>
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleBulkAction("SHORTLISTED")}
+                            disabled={isPending}
+                            className="rounded-lg text-green-600 border-green-300 hover:bg-green-50"
+                        >
+                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                            Shortlist
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleBulkAction("REJECTED")}
+                            disabled={isPending}
+                            className="rounded-lg text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Reject
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedIds(new Set())}
+                            className="rounded-lg"
+                        >
+                            Clear
+                        </Button>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Kanban View */}
+            {viewMode === "kanban" && (
+                <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6">
+                    {kanbanColumns.map((column) => {
+                        const columnCandidates = filteredCandidates.filter(c => c.status === column.key)
+                        return (
+                            <div 
+                                key={column.key}
+                                className={`flex-shrink-0 w-72 bg-neutral-50 dark:bg-neutral-900 rounded-xl border-t-4 ${column.color}`}
+                            >
+                                <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-semibold text-neutral-900 dark:text-white">
+                                            {column.label}
+                                        </h3>
+                                        <Badge variant="outline">{columnCandidates.length}</Badge>
+                                    </div>
+                                </div>
+                                <div className="p-2 space-y-2 max-h-[600px] overflow-y-auto">
+                                    {columnCandidates.map((candidate) => (
+                                        <motion.div
+                                            key={candidate.id}
+                                            layout
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            className="bg-white dark:bg-neutral-950 rounded-lg p-3 border border-neutral-200 dark:border-neutral-800 cursor-pointer hover:shadow-md transition-shadow"
+                                            onClick={() => handleViewCandidate(candidate)}
+                                        >
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden">
+                                                    {candidate.image ? (
+                                                        <img src={candidate.image} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
+                                                            {candidate.name.charAt(0)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium text-sm text-neutral-900 dark:text-white truncate">
+                                                        {candidate.name}
+                                                    </p>
+                                                </div>
+                                                {candidate.matchScore && (
+                                                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
+                                                        {candidate.matchScore}%
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-neutral-500 truncate mb-1">
+                                                {candidate.jobTitle}
+                                            </p>
+                                            <p className="text-xs text-neutral-400">
+                                                {formatDate(candidate.appliedAt)}
+                                            </p>
+                                        </motion.div>
+                                    ))}
+                                    {columnCandidates.length === 0 && (
+                                        <div className="text-center py-8 text-neutral-400 text-sm">
+                                            No candidates
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
+            {/* List View */}
+            {viewMode === "list" && (
             <AnimatePresence mode="popLayout">
                 {filteredCandidates.length > 0 ? (
                     <div className="space-y-3">
+                        {/* Select All Header */}
+                        <div className="flex items-center gap-3 px-4 py-2">
+                            <Checkbox
+                                checked={selectedIds.size === filteredCandidates.length && filteredCandidates.length > 0}
+                                onCheckedChange={selectAll}
+                            />
+                            <span className="text-sm text-neutral-500">Select all</span>
+                        </div>
                         {filteredCandidates.map((candidate, index) => (
                             <motion.div
                                 key={candidate.id}
@@ -243,89 +441,98 @@ export function CandidatesContent({ initialCandidates, stats, jobs }: Candidates
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: index * 0.02 }}
                                 className="group bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 hover:shadow-lg hover:border-neutral-300 dark:hover:border-neutral-700 transition-all cursor-pointer"
-                                onClick={() => handleViewCandidate(candidate)}
                             >
                                 <div className="flex items-center gap-4">
+                                    {/* Checkbox */}
+                                    <Checkbox
+                                        checked={selectedIds.has(candidate.id)}
+                                        onCheckedChange={() => toggleSelect(candidate.id)}
+                                    />
                                     {/* Avatar */}
-                                    <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden shrink-0">
-                                        {candidate.image ? (
-                                            <img src={candidate.image} alt={candidate.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-lg font-bold text-neutral-600 dark:text-neutral-400">
-                                                {candidate.name.charAt(0).toUpperCase()}
-                                            </span>
+                                    <div 
+                                        className="flex items-center gap-4 flex-1 min-w-0"
+                                        onClick={() => handleViewCandidate(candidate)}
+                                    >
+                                        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden shrink-0">
+                                            {candidate.image ? (
+                                                <img src={candidate.image} alt={candidate.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-lg font-bold text-neutral-600 dark:text-neutral-400">
+                                                    {candidate.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    {candidate.name}
+                                                </h3>
+                                                <Badge className={statusColors[candidate.status]}>
+                                                    {statusLabels[candidate.status]}
+                                                </Badge>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-sm text-neutral-500 mt-1">
+                                                <div className="flex items-center gap-1">
+                                                    <Mail className="w-3.5 h-3.5" />
+                                                    <span className="truncate">{candidate.email}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <Briefcase className="w-3.5 h-3.5" />
+                                                    <span>{candidate.jobTitle}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <Calendar className="w-3.5 h-3.5" />
+                                                    <span>{formatDate(candidate.appliedAt)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Match Score */}
+                                        {candidate.matchScore && (
+                                            <div className="text-center px-4">
+                                                <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                                                    {candidate.matchScore}%
+                                                </div>
+                                                <div className="text-xs text-neutral-500">Match</div>
+                                            </div>
                                         )}
+
+                                        {/* Actions */}
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                                <Button variant="ghost" size="icon" className="shrink-0 rounded-xl">
+                                                    <MoreVertical className="w-4 h-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewCandidate(candidate); }}>
+                                                    <Eye className="w-4 h-4 mr-2" />
+                                                    View Profile
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem>
+                                                    <MessageSquare className="w-4 h-4 mr-2" />
+                                                    Send Message
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem>
+                                                    <Calendar className="w-4 h-4 mr-2" />
+                                                    Schedule Interview
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem>
+                                                    <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
+                                                    Shortlist
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-red-600 dark:text-red-400">
+                                                    <XCircle className="w-4 h-4 mr-2" />
+                                                    Reject
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+                                        <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors shrink-0" />
                                     </div>
-
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                {candidate.name}
-                                            </h3>
-                                            <Badge className={statusColors[candidate.status]}>
-                                                {statusLabels[candidate.status]}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-sm text-neutral-500 mt-1">
-                                            <div className="flex items-center gap-1">
-                                                <Mail className="w-3.5 h-3.5" />
-                                                <span className="truncate">{candidate.email}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Briefcase className="w-3.5 h-3.5" />
-                                                <span>{candidate.jobTitle}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                <span>{formatDate(candidate.appliedAt)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Match Score */}
-                                    {candidate.matchScore && (
-                                        <div className="text-center px-4">
-                                            <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                                                {candidate.matchScore}%
-                                            </div>
-                                            <div className="text-xs text-neutral-500">Match</div>
-                                        </div>
-                                    )}
-
-                                    {/* Actions */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                            <Button variant="ghost" size="icon" className="shrink-0 rounded-xl">
-                                                <MoreVertical className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewCandidate(candidate); }}>
-                                                <Eye className="w-4 h-4 mr-2" />
-                                                View Profile
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <MessageSquare className="w-4 h-4 mr-2" />
-                                                Send Message
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                <Calendar className="w-4 h-4 mr-2" />
-                                                Schedule Interview
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem>
-                                                <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
-                                                Shortlist
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-600 dark:text-red-400">
-                                                <XCircle className="w-4 h-4 mr-2" />
-                                                Reject
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-
-                                    <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors shrink-0" />
                                 </div>
                             </motion.div>
                         ))}
@@ -352,6 +559,7 @@ export function CandidatesContent({ initialCandidates, stats, jobs }: Candidates
                     </motion.div>
                 )}
             </AnimatePresence>
+            )}
 
             {/* Candidate Detail Sheet */}
             <Sheet open={isDetailSheetOpen} onOpenChange={setIsDetailSheetOpen}>
