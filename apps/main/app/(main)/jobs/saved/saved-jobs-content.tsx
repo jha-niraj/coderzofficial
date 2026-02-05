@@ -4,14 +4,14 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     ArrowLeft, Heart, Building2, MapPin, Clock, Briefcase,
-    ChevronRight, TrendingUp, Users, CheckCircle2, Mic, Trash2,
-    Calendar
+    ChevronRight, TrendingUp, Trash2, Calendar
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { unsaveJob } from "@/actions/jobs"
+import Image from "next/image"
 
 interface SavedJob {
     id: string
@@ -142,7 +142,13 @@ export function SavedJobsContent({ savedJobs: initialSavedJobs }: SavedJobsConte
                                     <Link href={`/jobs/${job.slug}`}>
                                         <div className="w-14 h-14 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center overflow-hidden shrink-0">
                                             {job.company.logoUrl ? (
-                                                <img src={job.company.logoUrl} alt={job.company.name} className="w-full h-full object-cover" />
+                                                <Image
+                                                    src={job.company.logoUrl}
+                                                    alt={job.company.name}
+                                                    className="w-full h-full object-cover"
+                                                    height={32}
+                                                    width={32}
+                                                />
                                             ) : (
                                                 <Building2 className="w-7 h-7 text-neutral-400" />
                                             )}
@@ -158,9 +164,9 @@ export function SavedJobsContent({ savedJobs: initialSavedJobs }: SavedJobsConte
                                                 </h3>
                                                 <p className="text-neutral-500">{job.company.name}</p>
                                             </Link>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 className="shrink-0 rounded-xl text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                                                 onClick={() => handleRemove(job.id)}
                                                 disabled={removingId === job.id}

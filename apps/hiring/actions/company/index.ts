@@ -92,7 +92,7 @@ export async function updateCompanyProfile(data: {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        if (member.role !== "HEAD") {
+        if (member.role !== "FOUNDER") {
             return { success: false, error: "Only company heads can update the profile" }
         }
 
@@ -130,7 +130,7 @@ export async function updateCompanyLogo(logoUrl: string) {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        if (member.role !== "HEAD") {
+        if (member.role !== "FOUNDER") {
             return { success: false, error: "Only company heads can update the logo" }
         }
 
@@ -153,7 +153,7 @@ export async function updateCompanyCover(coverUrl: string) {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        if (member.role !== "HEAD") {
+        if (member.role !== "FOUNDER") {
             return { success: false, error: "Only company heads can update the cover" }
         }
 

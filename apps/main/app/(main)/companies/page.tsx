@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
-import { browseCompanies, getFeaturedCompanies } from "@/actions/companies"
+import { browseCompanies, getFeaturedCompanies, getFollowedCompanyIds } from "@/actions/companies"
 import { CompaniesContent } from "./companies-content"
 
 export const metadata = {
@@ -9,9 +9,10 @@ export const metadata = {
 }
 
 export default async function CompaniesPage() {
-    const [companiesResult, featuredResult] = await Promise.all([
+    const [companiesResult, featuredResult, followedResult] = await Promise.all([
         browseCompanies({}, 1, 20),
-        getFeaturedCompanies()
+        getFeaturedCompanies(),
+        getFollowedCompanyIds()
     ])
 
     const companies = companiesResult.success && companiesResult.data 
@@ -21,6 +22,7 @@ export default async function CompaniesPage() {
         ? companiesResult.data.pagination
         : { page: 1, limit: 20, total: 0, totalPages: 0 }
     const featuredCompanies = featuredResult.success ? featuredResult.data || [] : []
+    const followedCompanyIds = followedResult.success ? followedResult.data || [] : []
 
     return (
         <Suspense 
@@ -34,6 +36,7 @@ export default async function CompaniesPage() {
                 initialCompanies={companies}
                 initialPagination={pagination}
                 featuredCompanies={featuredCompanies}
+                followedCompanyIds={followedCompanyIds}
             />
         </Suspense>
     )

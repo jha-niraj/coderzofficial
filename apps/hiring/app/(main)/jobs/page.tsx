@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
-import { getJobs, getJobStats } from "@/actions/jobs"
+import { getJobs, getOverallJobStats } from "@/actions/jobs"
 import { getInterviewProcesses } from "@/actions/interview-config"
 import { JobsContent } from "./jobs-content"
 
@@ -12,7 +12,7 @@ export const metadata = {
 export default async function JobsPage() {
     const [jobsResult, statsResult, processesResult] = await Promise.all([
         getJobs(),
-        getJobStats(),
+        getOverallJobStats(),
         getInterviewProcesses()
     ])
 

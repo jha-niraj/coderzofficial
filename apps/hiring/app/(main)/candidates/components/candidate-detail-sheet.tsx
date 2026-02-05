@@ -3,9 +3,8 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    X, Mail, Calendar, Briefcase, MapPin, ExternalLink, CheckCircle2, XCircle,
-    Clock, MessageSquare, FileText, Award, TrendingUp, Loader2, Star,
-    ChevronRight, User, Phone, Code, Layout, Users
+    X, Calendar, Briefcase, ExternalLink, XCircle,
+    MessageSquare, FileText, Loader2, User, TrendingUp
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
@@ -19,6 +18,7 @@ import {
     SelectValue,
 } from "@repo/ui/components/ui/select"
 import { updateCandidateStatus, rejectCandidate } from "@/actions/candidates"
+import Image from "next/image"
 
 interface Candidate {
     id: string
@@ -143,9 +143,9 @@ export function CandidateDetailSheet({ candidate, onClose }: CandidateDetailShee
             <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 p-6">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden">
+                        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden relative">
                             {candidate.image ? (
-                                <img src={candidate.image} alt={candidate.name} className="w-full h-full object-cover" />
+                                <Image src={candidate.image} alt={candidate.name} fill className="object-cover" />
                             ) : (
                                 <span className="text-2xl font-bold text-neutral-600 dark:text-neutral-400">
                                     {candidate.name.charAt(0).toUpperCase()}

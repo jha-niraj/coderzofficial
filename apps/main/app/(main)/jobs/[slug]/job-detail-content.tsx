@@ -5,15 +5,18 @@ import { motion } from "framer-motion"
 import {
     ArrowLeft, MapPin, Clock, ExternalLink, Mic, CheckCircle2,
     ChevronRight, Play, Heart, Share2, TrendingUp, Users, FileText,
-    Phone, Layout, MessageSquare, Star, Loader2, Calendar, Globe, 
-    Award, Zap, Target, BookOpen, Code, Building2, Briefcase, Video
+    Phone, Layout, MessageSquare, Star, Loader2, Calendar, Globe,
+    Award, Zap, Target, BookOpen, Code, Building2, LucideIcon
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Separator } from "@repo/ui/components/ui/separator"
 import Link from "next/link"
-import { showInterest, saveJob, unsaveJob } from "@/actions/jobs"
+import {
+    showInterest, saveJob, unsaveJob
+} from "@/actions/jobs"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 interface Job {
     id: string
@@ -88,7 +91,7 @@ const employmentTypeLabels: Record<string, string> = {
     FREELANCE: "Freelance"
 }
 
-const roundTypeIcons: Record<string, React.ElementType> = {
+const roundTypeIcons: Record<string, LucideIcon> = {
     PHONE_SCREEN: Phone,
     TECHNICAL_CODING: Code,
     SYSTEM_DESIGN: Layout,
@@ -208,7 +211,6 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
 
     return (
         <div className="min-h-full">
-            {/* Header */}
             <div className="sticky top-0 z-20 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex items-center justify-between">
@@ -243,23 +245,27 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
                     </div>
                 </div>
             </div>
-
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Main Content */}
                     <div className="lg:col-span-2 space-y-8">
-                        {/* Job Header */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="flex items-start gap-4"
                         >
                             <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center overflow-hidden shrink-0">
-                                {job.company.logoUrl ? (
-                                    <img src={job.company.logoUrl} alt={job.company.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <Building2 className="w-10 h-10 text-neutral-400" />
-                                )}
+                                {
+                                    job.company.logoUrl ? (
+                                        <Image
+                                            src={job.company.logoUrl}
+                                            alt={job.company.name}
+                                            className="w-full h-full object-cover"
+                                            fill
+                                        />
+                                    ) : (
+                                        <Building2 className="w-10 h-10 text-neutral-400" />
+                                    )
+                                }
                             </div>
                             <div className="flex-1">
                                 <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white">
@@ -270,9 +276,11 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
                                     className="text-lg text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
                                 >
                                     {job.company.name}
-                                    {job.company.verificationStatus === "VERIFIED" && (
-                                        <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                                    )}
+                                    {
+                                        job.company.verificationStatus === "VERIFIED" && (
+                                            <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                                        )
+                                    }
                                 </Link>
                                 <div className="flex flex-wrap items-center gap-2 mt-3">
                                     <Badge variant="secondary" className="text-sm">
@@ -281,56 +289,64 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
                                     <Badge variant="secondary" className="text-sm">
                                         {employmentTypeLabels[job.employmentType]}
                                     </Badge>
-                                    {job.company.industry && (
-                                        <Badge variant="outline" className="text-sm">{job.company.industry}</Badge>
-                                    )}
-                                    {daysAgo !== null && (
-                                        <span className="text-sm text-neutral-500">
-                                            Posted {daysAgo === 0 ? "today" : daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`}
-                                        </span>
-                                    )}
+                                    {
+                                        job.company.industry && (
+                                            <Badge variant="outline" className="text-sm">{job.company.industry}</Badge>
+                                        )
+                                    }
+                                    {
+                                        daysAgo !== null && (
+                                            <span className="text-sm text-neutral-500">
+                                                Posted {daysAgo === 0 ? "today" : daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`}
+                                            </span>
+                                        )
+                                    }
                                 </div>
                             </div>
                         </motion.div>
-
-                        {/* Quick Stats */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
                             className="grid grid-cols-2 md:grid-cols-4 gap-4"
                         >
-                            {job.location && (
-                                <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-                                    <MapPin className="w-5 h-5 text-neutral-500" />
-                                    <div>
-                                        <p className="text-xs text-neutral-500">Location</p>
-                                        <p className="font-medium text-neutral-900 dark:text-white text-sm">{job.location}</p>
+                            {
+                                job.location && (
+                                    <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                                        <MapPin className="w-5 h-5 text-neutral-500" />
+                                        <div>
+                                            <p className="text-xs text-neutral-500">Location</p>
+                                            <p className="font-medium text-neutral-900 dark:text-white text-sm">{job.location}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                            {formatExperience(job.experienceMin, job.experienceMax) && (
-                                <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-                                    <Clock className="w-5 h-5 text-neutral-500" />
-                                    <div>
-                                        <p className="text-xs text-neutral-500">Experience</p>
-                                        <p className="font-medium text-neutral-900 dark:text-white text-sm">
-                                            {formatExperience(job.experienceMin, job.experienceMax)}
-                                        </p>
+                                )
+                            }
+                            {
+                                formatExperience(job.experienceMin, job.experienceMax) && (
+                                    <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                                        <Clock className="w-5 h-5 text-neutral-500" />
+                                        <div>
+                                            <p className="text-xs text-neutral-500">Experience</p>
+                                            <p className="font-medium text-neutral-900 dark:text-white text-sm">
+                                                {formatExperience(job.experienceMin, job.experienceMax)}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                            {job.salaryDisclosed && formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency) && (
-                                <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                                    <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                    <div>
-                                        <p className="text-xs text-green-600 dark:text-green-400">Salary</p>
-                                        <p className="font-medium text-green-700 dark:text-green-300 text-sm">
-                                            {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}
-                                        </p>
+                                )
+                            }
+                            {
+                                job.salaryDisclosed && formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency) && (
+                                    <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                                        <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                        <div>
+                                            <p className="text-xs text-green-600 dark:text-green-400">Salary</p>
+                                            <p className="font-medium text-green-700 dark:text-green-300 text-sm">
+                                                {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )
+                            }
                             <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                                 <Users className="w-5 h-5 text-neutral-500" />
                                 <div>
@@ -340,23 +356,23 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
                             </div>
                         </motion.div>
 
-                        {/* Description */}
-                        {job.description && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">
-                                    About This Role
-                                </h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-line">
-                                    {job.description}
-                                </p>
-                            </motion.div>
-                        )}
+                        {
+                            job.description && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">
+                                        About This Role
+                                    </h2>
+                                    <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-line">
+                                        {job.description}
+                                    </p>
+                                </motion.div>
+                            )
+                        }
 
-                        {/* Skills */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -366,321 +382,342 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
                                 Required Skills
                             </h2>
                             <div className="flex flex-wrap gap-2">
-                                {job.skillsRequired.map((skill, i) => (
-                                    <Badge key={i} variant="secondary" className="px-3 py-1.5 text-sm">
-                                        {skill}
-                                    </Badge>
-                                ))}
+                                {
+                                    job.skillsRequired.map((skill, i) => (
+                                        <Badge key={i} variant="secondary" className="px-3 py-1.5 text-sm">
+                                            {skill}
+                                        </Badge>
+                                    ))
+                                }
                             </div>
                         </motion.div>
 
-                        {/* Responsibilities */}
-                        {job.responsibilities.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4 }}
-                            >
-                                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                                    <Target className="w-5 h-5 text-blue-500" />
-                                    Responsibilities
-                                </h2>
-                                <ul className="space-y-2">
-                                    {job.responsibilities.map((item, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-neutral-600 dark:text-neutral-400">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </motion.div>
-                        )}
-
-                        {/* Requirements */}
-                        {job.requirements.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                                    <Award className="w-5 h-5 text-purple-500" />
-                                    Requirements
-                                </h2>
-                                <ul className="space-y-2">
-                                    {job.requirements.map((item, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-neutral-600 dark:text-neutral-400">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </motion.div>
-                        )}
-
-                        {/* Nice to Have */}
-                        {job.niceToHave.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.6 }}
-                            >
-                                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                                    <Zap className="w-5 h-5 text-yellow-500" />
-                                    Nice to Have
-                                </h2>
-                                <ul className="space-y-2">
-                                    {job.niceToHave.map((item, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-neutral-600 dark:text-neutral-400">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 shrink-0" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </motion.div>
-                        )}
-
-                        {/* Benefits */}
-                        {job.benefits.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.7 }}
-                            >
-                                <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                                    <Star className="w-5 h-5 text-green-500" />
-                                    Benefits & Perks
-                                </h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {job.benefits.map((benefit, i) => (
-                                        <div 
-                                            key={i}
-                                            className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 shrink-0" />
-                                            <span className="text-sm">{benefit}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        )}
+                        {
+                            job.responsibilities.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                >
+                                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <Target className="w-5 h-5 text-blue-500" />
+                                        Responsibilities
+                                    </h2>
+                                    <ul className="space-y-2">
+                                        {
+                                            job.responsibilities.map((item, i) => (
+                                                <li key={i} className="flex items-start gap-3 text-neutral-600 dark:text-neutral-400">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                                                    {item}
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                </motion.div>
+                            )
+                        }
+                        {
+                            job.requirements.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.5 }}
+                                >
+                                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <Award className="w-5 h-5 text-purple-500" />
+                                        Requirements
+                                    </h2>
+                                    <ul className="space-y-2">
+                                        {
+                                            job.requirements.map((item, i) => (
+                                                <li key={i} className="flex items-start gap-3 text-neutral-600 dark:text-neutral-400">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                                                    {item}
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                </motion.div>
+                            )
+                        }
+                        {
+                            job.niceToHave.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                >
+                                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <Zap className="w-5 h-5 text-yellow-500" />
+                                        Nice to Have
+                                    </h2>
+                                    <ul className="space-y-2">
+                                        {
+                                            job.niceToHave.map((item, i) => (
+                                                <li key={i} className="flex items-start gap-3 text-neutral-600 dark:text-neutral-400">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 shrink-0" />
+                                                    {item}
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                </motion.div>
+                            )
+                        }
+                        {
+                            job.benefits.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.7 }}
+                                >
+                                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <Star className="w-5 h-5 text-green-500" />
+                                        Benefits & Perks
+                                    </h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {
+                                            job.benefits.map((benefit, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                                                    <span className="text-sm">{benefit}</span>
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </motion.div>
+                            )
+                        }
 
                         <Separator />
 
-                        {/* Interview Process */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.8 }}
                         >
-                            {job.interviewProcess ? (
-                                <div>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
-                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-                                            Interview Process
-                                        </h2>
-                                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                            Transparent
-                                        </Badge>
-                                    </div>
-
-                                    {job.interviewProcess.description && (
-                                        <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-                                            {job.interviewProcess.description}
-                                        </p>
-                                    )}
-
-                                    {job.interviewProcess.estimatedDurationWeeks && (
-                                        <div className="flex items-center gap-2 text-sm text-neutral-500 mb-6">
-                                            <Calendar className="w-4 h-4" />
-                                            <span>Estimated duration: {job.interviewProcess.estimatedDurationWeeks} weeks</span>
+                            {
+                                job.interviewProcess ? (
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                                            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+                                                Interview Process
+                                            </h2>
+                                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                Transparent
+                                            </Badge>
                                         </div>
-                                    )}
 
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-                                        This company has shared their interview process. Practice for each round with AI mock interviews!
-                                    </p>
-
-                                    {/* Interview Rounds */}
-                                    <div className="relative pl-10 space-y-6">
-                                        {/* Timeline line */}
-                                        <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gradient-to-b from-green-500 via-blue-500 to-purple-500" />
-
-                                        {job.interviewProcess.rounds.map((round, index) => {
-                                            const IconComponent = roundTypeIcons[round.roundType as keyof typeof roundTypeIcons] || FileText
-                                            const roundColor = roundTypeColors[round.roundType as keyof typeof roundTypeColors] || "bg-neutral-500"
-                                            return (
-                                                <motion.div
-                                                    key={round.id}
-                                                    initial={{ opacity: 0, x: -20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: 0.9 + index * 0.1 }}
-                                                    className="relative"
-                                                >
-                                                    {/* Timeline Node */}
-                                                    <div className={`absolute -left-6 w-10 h-10 rounded-full ${roundColor} flex items-center justify-center shadow-lg`}>
-                                                        <IconComponent className="w-5 h-5 text-white" />
-                                                    </div>
-
-                                                    {/* Round Card */}
-                                                    <div className="ml-4 p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
-                                                        <div className="flex items-start justify-between gap-4">
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="text-xs font-medium text-neutral-500 px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800">
-                                                                        Round {round.roundNumber}
-                                                                    </span>
-                                                                    {round.format && (
-                                                                        <span className="text-xs text-neutral-500">
-                                                                            • {formatLabels[round.format] || round.format}
-                                                                        </span>
-                                                                    )}
-                                                                    {round.durationMinutes && (
-                                                                        <span className="text-xs text-neutral-500">
-                                                                            • {round.durationMinutes} min
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                                                                    {round.title}
-                                                                </h3>
-                                                                {round.description && (
-                                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                                                                        {round.description}
-                                                                    </p>
-                                                                )}
-                                                                {round.tipsForCandidates && round.tipsForCandidates.length > 0 && (
-                                                                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                                                                        <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                                                                            💡 Tips from the team
-                                                                        </p>
-                                                                        <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
-                                                                            {round.tipsForCandidates.map((tip, i) => (
-                                                                                <li key={i}>• {tip}</li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            {round.hasMockInterview && (
-                                                                <Button
-                                                                    className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 gap-2 shrink-0"
-                                                                    onClick={() => {
-                                                                        // Navigate to mock interview for this round
-                                                                        router.push(`/mock/job/${job.id}?round=${round.id}`)
-                                                                    }}
-                                                                >
-                                                                    <Mic className="w-4 h-4" />
-                                                                    Practice
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            )
-                                        })}
-                                    </div>
-
-                                    <div className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800">
-                                        <div className="flex items-start gap-4">
-                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shrink-0">
-                                                <Mic className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h4 className="font-semibold text-neutral-900 dark:text-white mb-1">
-                                                    Prepare with AI Mock Interviews
-                                                </h4>
-                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                                                    Practice with company-specific mock interviews tailored to each round. 
-                                                    Get real-time feedback and improve your chances of success.
+                                        {
+                                            job.interviewProcess.description && (
+                                                <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+                                                    {job.interviewProcess.description}
                                                 </p>
-                                                <Button
-                                                    className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                                                    onClick={() => router.push(`/mock/job/${job.id}`)}
-                                                >
-                                                    <Play className="w-4 h-4 mr-2" />
-                                                    Start Practicing
-                                                </Button>
+                                            )
+                                        }
+                                        {
+                                            job.interviewProcess.estimatedDurationWeeks && (
+                                                <div className="flex items-center gap-2 text-sm text-neutral-500 mb-6">
+                                                    <Calendar className="w-4 h-4" />
+                                                    <span>Estimated duration: {job.interviewProcess.estimatedDurationWeeks} weeks</span>
+                                                </div>
+                                            )
+                                        }
+
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
+                                            This company has shared their interview process. Practice for each round with AI mock interviews!
+                                        </p>
+                                        <div className="relative pl-10 space-y-6">
+                                            <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gradient-to-b from-green-500 via-blue-500 to-purple-500" />
+
+                                            {
+                                                job.interviewProcess.rounds.map((round, index) => {
+                                                    const IconComponent = roundTypeIcons[round.roundType as keyof typeof roundTypeIcons] || FileText
+                                                    const roundColor = roundTypeColors[round.roundType as keyof typeof roundTypeColors] || "bg-neutral-500"
+                                                    return (
+                                                        <motion.div
+                                                            key={round.id}
+                                                            initial={{ opacity: 0, x: -20 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ delay: 0.9 + index * 0.1 }}
+                                                            className="relative"
+                                                        >
+                                                            <div className={`absolute -left-6 w-10 h-10 rounded-full ${roundColor} flex items-center justify-center shadow-lg`}>
+                                                                <IconComponent className="w-5 h-5 text-white" />
+                                                            </div>
+                                                            <div className="ml-4 p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
+                                                                <div className="flex items-start justify-between gap-4">
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <span className="text-xs font-medium text-neutral-500 px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800">
+                                                                                Round {round.roundNumber}
+                                                                            </span>
+                                                                            {
+                                                                                round.format && (
+                                                                                    <span className="text-xs text-neutral-500">
+                                                                                        • {formatLabels[round.format] || round.format}
+                                                                                    </span>
+                                                                                )
+                                                                            }
+                                                                            {
+                                                                                round.durationMinutes && (
+                                                                                    <span className="text-xs text-neutral-500">
+                                                                                        • {round.durationMinutes} min
+                                                                                    </span>
+                                                                                )
+                                                                            }
+                                                                        </div>
+                                                                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                                                                            {round.title}
+                                                                        </h3>
+                                                                        {
+                                                                            round.description && (
+                                                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                                                                                    {round.description}
+                                                                                </p>
+                                                                            )
+                                                                        }
+                                                                        {
+                                                                            round.tipsForCandidates && round.tipsForCandidates.length > 0 && (
+                                                                                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                                                                    <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                                                                                        💡 Tips from the team
+                                                                                    </p>
+                                                                                    <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+                                                                                        {
+                                                                                            round.tipsForCandidates.map((tip, i) => (
+                                                                                                <li key={i}>• {tip}</li>
+                                                                                            ))
+                                                                                        }
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )
+                                                                        }
+                                                                    </div>
+                                                                    {
+                                                                        round.hasMockInterview && (
+                                                                            <Button
+                                                                                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 gap-2 shrink-0"
+                                                                                onClick={() => {
+                                                                                    // Navigate to mock interview for this round
+                                                                                    router.push(`/mock/job/${job.id}?round=${round.id}`)
+                                                                                }}
+                                                                            >
+                                                                                <Mic className="w-4 h-4" />
+                                                                                Practice
+                                                                            </Button>
+                                                                        )
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </motion.div>
+                                                    )
+                                                })
+                                            }
+                                        </div>
+                                        <div className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shrink-0">
+                                                    <Mic className="w-6 h-6 text-white" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-1">
+                                                        Prepare with AI Mock Interviews
+                                                    </h4>
+                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                                                        Practice with company-specific mock interviews tailored to each round.
+                                                        Get real-time feedback and improve your chances of success.
+                                                    </p>
+                                                    <Button
+                                                        className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                                                        onClick={() => router.push(`/mock/job/${job.id}`)}
+                                                    >
+                                                        <Play className="w-4 h-4 mr-2" />
+                                                        Start Practicing
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="p-8 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center">
-                                    <FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                                        Interview Process Not Disclosed
-                                    </h3>
-                                    <p className="text-neutral-500 max-w-md mx-auto">
-                                        This company hasn&apos;t shared their interview process yet. 
-                                        You can still apply and practice with our general mock interviews.
-                                    </p>
-                                    <Button
-                                        variant="outline"
-                                        className="mt-4 rounded-xl"
-                                        onClick={() => router.push("/mock")}
-                                    >
-                                        <BookOpen className="w-4 h-4 mr-2" />
-                                        Explore Practice Interviews
-                                    </Button>
-                                </div>
-                            )}
+                                ) : (
+                                    <div className="p-8 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center">
+                                        <FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
+                                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                                            Interview Process Not Disclosed
+                                        </h3>
+                                        <p className="text-neutral-500 max-w-md mx-auto">
+                                            This company hasn&apos;t shared their interview process yet.
+                                            You can still apply and practice with our general mock interviews.
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            className="mt-4 rounded-xl"
+                                            onClick={() => router.push("/mock")}
+                                        >
+                                            <BookOpen className="w-4 h-4 mr-2" />
+                                            Explore Practice Interviews
+                                        </Button>
+                                    </div>
+                                )
+                            }
                         </motion.div>
                     </div>
-
-                    {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Apply Card */}
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 }}
                             className="sticky top-24 p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-lg"
                         >
-                            {hasApplied ? (
-                                <>
-                                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-4">
-                                        <CheckCircle2 className="w-5 h-5" />
-                                        <span className="font-semibold">Already Applied</span>
-                                    </div>
-                                    <p className="text-sm text-neutral-500 mb-4">
-                                        You&apos;ve shown interest in this position. Check your applications for status updates.
-                                    </p>
-                                    <Button
-                                        onClick={() => router.push("/jobs/applications")}
-                                        className="w-full rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 h-12"
-                                    >
-                                        View My Applications
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Button
-                                        onClick={handleShowInterest}
-                                        disabled={isApplying}
-                                        className="w-full rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 h-12 mb-4"
-                                    >
-                                        {isApplying ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Processing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Play className="w-4 h-4 mr-2" />
-                                                I&apos;m Interested
-                                            </>
-                                        )}
-                                    </Button>
-                                    <p className="text-xs text-neutral-500 text-center">
-                                        Click to start preparing for this role
-                                    </p>
-                                </>
-                            )}
+                            {
+                                hasApplied ? (
+                                    <>
+                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-4">
+                                            <CheckCircle2 className="w-5 h-5" />
+                                            <span className="font-semibold">Already Applied</span>
+                                        </div>
+                                        <p className="text-sm text-neutral-500 mb-4">
+                                            You&apos;ve shown interest in this position. Check your applications for status updates.
+                                        </p>
+                                        <Button
+                                            onClick={() => router.push("/jobs/applications")}
+                                            className="w-full rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 h-12"
+                                        >
+                                            View My Applications
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button
+                                            onClick={handleShowInterest}
+                                            disabled={isApplying}
+                                            className="w-full rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 h-12 mb-4"
+                                        >
+                                            {
+                                                isApplying ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        Processing...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Play className="w-4 h-4 mr-2" />
+                                                        I&apos;m Interested
+                                                    </>
+                                                )
+                                            }
+                                        </Button>
+                                        <p className="text-xs text-neutral-500 text-center">
+                                            Click to start preparing for this role
+                                        </p>
+                                    </>
+                                )
+                            }
                         </motion.div>
-
-                        {/* Company Card */}
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -695,54 +732,65 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
                                 className="block group"
                             >
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden">
-                                        {job.company.logoUrl ? (
-                                            <img src={job.company.logoUrl} alt={job.company.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <Building2 className="w-6 h-6 text-neutral-400" />
-                                        )}
+                                    <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden relative">
+                                        {
+                                            job.company.logoUrl ? (
+                                                <Image src={job.company.logoUrl} alt={job.company.name} fill className="object-cover" />
+                                            ) : (
+                                                <Building2 className="w-6 h-6 text-neutral-400" />
+                                            )
+                                        }
                                     </div>
                                     <div>
                                         <p className="font-medium text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-1">
                                             {job.company.name}
-                                            {job.company.verificationStatus === "VERIFIED" && (
-                                                <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                                            )}
+                                            {
+                                                job.company.verificationStatus === "VERIFIED" && (
+                                                    <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                                                )
+                                            }
                                         </p>
-                                        {job.company.industry && (
-                                            <p className="text-sm text-neutral-500">{job.company.industry}</p>
-                                        )}
+                                        {
+                                            job.company.industry && (
+                                                <p className="text-sm text-neutral-500">{job.company.industry}</p>
+                                            )
+                                        }
                                     </div>
                                 </div>
                             </Link>
 
-                            {job.company.description && (
-                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-3">
-                                    {job.company.description}
-                                </p>
-                            )}
+                            {
+                                job.company.description && (
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-3">
+                                        {job.company.description}
+                                    </p>
+                                )
+                            }
 
                             <div className="space-y-2">
-                                {job.company.companySize && (
-                                    <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                        <Users className="w-4 h-4" />
-                                        <span>{job.company.companySize} employees</span>
-                                    </div>
-                                )}
-                                {job.company.website && (
-                                    <a
-                                        href={job.company.website}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                                    >
-                                        <Globe className="w-4 h-4" />
-                                        <span>Visit Website</span>
-                                        <ExternalLink className="w-3 h-3" />
-                                    </a>
-                                )}
+                                {
+                                    job.company.companySize && (
+                                        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                            <Users className="w-4 h-4" />
+                                            <span>{job.company.companySize} employees</span>
+                                        </div>
+                                    )
+                                }
+                                {
+                                    job.company.website && (
+                                        <Link
+                                            href={job.company.website}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                        >
+                                            <Globe className="w-4 h-4" />
+                                            <span>Visit Website</span>
+                                            <ExternalLink className="w-3 h-3" />
+                                        </Link>
+                                    )
+                                }
                             </div>
-
                             <Link
                                 href={`/companies/${job.company.slug}`}
                                 className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
@@ -752,25 +800,26 @@ export function JobDetailContent({ job }: JobDetailContentProps) {
                             </Link>
                         </motion.div>
 
-                        {/* Assignment Info */}
-                        {job.hasAssignment && (
-                            <motion.div
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.4 }}
-                                className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
-                            >
-                                <div className="flex items-center gap-2 mb-2">
-                                    <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                                    <h3 className="font-semibold text-amber-900 dark:text-amber-200">
-                                        Take-Home Assignment
-                                    </h3>
-                                </div>
-                                <p className="text-sm text-amber-700 dark:text-amber-400">
-                                    This position includes a take-home assignment as part of the interview process.
-                                </p>
-                            </motion.div>
-                        )}
+                        {
+                            job.hasAssignment && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                                >
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                        <h3 className="font-semibold text-amber-900 dark:text-amber-200">
+                                            Take-Home Assignment
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                                        This position includes a take-home assignment as part of the interview process.
+                                    </p>
+                                </motion.div>
+                            )
+                        }
                     </div>
                 </div>
             </div>

@@ -3,41 +3,30 @@
 import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
-    UserPlus, Users, Shield, Mail, MoreVertical, Briefcase, 
-    CheckCircle, Clock, X, RefreshCw, Trash2, UserMinus, Crown
+    UserPlus, Users, Mail, MoreVertical, Briefcase, CheckCircle, 
+    Clock, X, RefreshCw, UserMinus, Crown
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+    Dialog, DialogContent, DialogDescription, DialogFooter, 
+    DialogHeader, DialogTitle, DialogTrigger
 } from "@repo/ui/components/ui/dialog"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
+    DropdownMenuSeparator, DropdownMenuTrigger
 } from "@repo/ui/components/ui/dropdown-menu"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import { useSession } from "@repo/auth/client"
 import { 
     inviteTeamMember, cancelInvitation, resendInvitation, 
     updateMemberRole, removeTeamMember 
 } from "@/actions/team"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner"
+import Image from "next/image"
 
 interface TeamMember {
     id: string
@@ -100,9 +89,19 @@ export function TeamContent({ initialMembers, initialInvites, stats }: TeamConte
 
         startTransition(async () => {
             const result = await inviteTeamMember(inviteEmail, inviteRole)
-            if (result.success) {
+            if (result.success && result.data) {
                 toast.success("Invitation sent successfully")
-                setInvites(prev => [result.data as PendingInvite, ...prev])
+                // Transform the result to match PendingInvite interface
+                const newInvite: PendingInvite = {
+                    id: result.data.id,
+                    email: result.data.email,
+                    role: inviteRole,
+                    status: result.data.status,
+                    createdAt: result.data.createdAt,
+                    expiresAt: result.data.expiresAt || new Date(),
+                    invitedBy: { name: session?.user?.name || null }
+                }
+                setInvites(prev => [newInvite, ...prev])
                 setInviteDialogOpen(false)
                 setInviteEmail("")
                 setInviteRole("RECRUITER")
@@ -394,9 +393,9 @@ export function TeamContent({ initialMembers, initialInvites, stats }: TeamConte
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden">
+                                            <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden relative">
                                                 {member.user.image ? (
-                                                    <img src={member.user.image} alt={member.user.name || ""} className="w-full h-full object-cover" />
+                                                    <Image src={member.user.image} alt={member.user.name || ""} fill className="object-cover" />
                                                 ) : (
                                                     <span className="text-lg font-bold text-neutral-600 dark:text-neutral-400">
                                                         {member.user.name?.charAt(0) || member.user.email.charAt(0).toUpperCase()}

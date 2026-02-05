@@ -80,7 +80,7 @@ export async function getTeamMembers() {
         return {
             success: true,
             data: teamMembers,
-            isHead: currentMember.role === "HEAD",
+            isHead: currentMember.role === "FOUNDER",
         };
     } catch (error) {
         console.error("Get team members error:", error);
@@ -155,7 +155,7 @@ export async function getTeamMember(memberId: string) {
         return {
             success: true,
             data: teamMember,
-            isHead: currentMember.role === "HEAD",
+            isHead: currentMember.role === "FOUNDER",
         };
     } catch (error) {
         console.error("Get team member error:", error);
@@ -188,7 +188,7 @@ export async function updateTeamMember(memberId: string, payload: UpdateTeamMemb
             return { success: false, error: "Not a member of any company" };
         }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only HEAD can update team members" };
         }
 
@@ -205,7 +205,7 @@ export async function updateTeamMember(memberId: string, payload: UpdateTeamMemb
         }
 
         // Prevent changing own role (prevents lockout)
-        if (targetMember.id === currentMember.id && payload.role && payload.role !== "HEAD") {
+        if (targetMember.id === currentMember.id && payload.role && payload.role !== "FOUNDER") {
             return { success: false, error: "Cannot demote yourself" };
         }
 
@@ -254,7 +254,7 @@ export async function deactivateTeamMember(memberId: string) {
             return { success: false, error: "Not a member of any company" };
         }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only HEAD can deactivate team members" };
         }
 
@@ -307,7 +307,7 @@ export async function reactivateTeamMember(memberId: string) {
             return { success: false, error: "Not a member of any company" };
         }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only HEAD can reactivate team members" };
         }
 
@@ -359,7 +359,7 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
             return { success: false, error: "Not a member of any company" };
         }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only HEAD can invite team members" };
         }
 
@@ -437,7 +437,7 @@ export async function revokeInvitation(inviteId: string) {
             return { success: false, error: "Not a member of any company" };
         }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only HEAD can revoke invitations" };
         }
 
@@ -485,7 +485,7 @@ export async function getPendingInvitations() {
             return { success: false, error: "Not a member of any company" };
         }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only HEAD can view invitations" };
         }
 

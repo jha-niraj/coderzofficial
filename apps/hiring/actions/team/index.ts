@@ -119,13 +119,13 @@ export async function getPendingInvites() {
 }
 
 // Invite a new team member
-export async function inviteTeamMember(email: string, role: "HEAD" | "RECRUITER") {
+export async function inviteTeamMember(email: string, role: "FOUNDER" | "RECRUITER") {
     try {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
         // Check if user is HEAD (only HEAD can invite)
-        if (member.role !== "HEAD") {
+        if (member.role !== "FOUNDER") {
             return { success: false, error: "Only team heads can invite new members" }
         }
 
@@ -185,7 +185,7 @@ export async function cancelInvitation(invitationId: string) {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        if (member.role !== "HEAD") {
+        if (member.role !== "FOUNDER") {
             return { success: false, error: "Only team heads can cancel invitations" }
         }
 
@@ -241,12 +241,12 @@ export async function resendInvitation(invitationId: string) {
 }
 
 // Update member role
-export async function updateMemberRole(memberId: string, newRole: "HEAD" | "RECRUITER") {
+export async function updateMemberRole(memberId: string, newRole: "FOUNDER" | "RECRUITER") {
     try {
         const currentMember = await getUserCompany()
         if (!currentMember) return { success: false, error: "Unauthorized" }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only team heads can change roles" }
         }
 
@@ -282,7 +282,7 @@ export async function removeTeamMember(memberId: string) {
         const currentMember = await getUserCompany()
         if (!currentMember) return { success: false, error: "Unauthorized" }
 
-        if (currentMember.role !== "HEAD") {
+        if (currentMember.role !== "FOUNDER") {
             return { success: false, error: "Only team heads can remove members" }
         }
 

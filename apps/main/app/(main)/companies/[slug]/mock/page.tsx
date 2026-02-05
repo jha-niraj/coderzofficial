@@ -26,8 +26,16 @@ export default async function CompanyMockHubPage({ params }: Props) {
         notFound()
     }
 
-    const company = companyResult.data
-    const mockHub = mockHubResult.success ? mockHubResult.data : null
+    const companyData = companyResult.data
+    const company = {
+        id: companyData.id,
+        name: companyData.name,
+        slug: companyData.slug,
+        logo: companyData.logoUrl,
+        industry: companyData.industry,
+        isVerified: companyData.verificationStatus === "VERIFIED"
+    }
+    const mockHub = mockHubResult.success && mockHubResult.data ? mockHubResult.data : null
 
     return (
         <Suspense 

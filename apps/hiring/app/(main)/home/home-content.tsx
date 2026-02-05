@@ -64,14 +64,15 @@ const StatCard = ({ title, value, change, changeType = "neutral", icon, href }: 
     </Link>
 )
 
-interface ActivityItemProps {
+interface _ActivityItemProps {
     type: "application" | "review" | "interview" | "offer"
     title: string
     subtitle: string
     time: string
 }
 
-const ActivityItem = ({ type, title, subtitle, time }: ActivityItemProps) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _ActivityItem = ({ type, title, subtitle, time }: _ActivityItemProps) => {
     const icons = {
         application: <FileText className="w-4 h-4" />,
         review: <Eye className="w-4 h-4" />,

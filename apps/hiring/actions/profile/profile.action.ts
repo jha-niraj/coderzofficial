@@ -200,7 +200,7 @@ export async function getCompanyDetails() {
         return {
             success: true,
             data: companyDetails,
-            isHead: member.role === "HEAD",
+            isHead: member.role === "FOUNDER",
         };
     } catch (error) {
         console.error("Get company details error:", error);
@@ -333,7 +333,7 @@ export async function updateCompanyDetails(payload: UpdateCompanyPayload) {
             return { success: false, error: "Not a member of any company" };
         }
 
-        if (member.role !== "HEAD") {
+        if (member.role !== "FOUNDER") {
             return { success: false, error: "Only HEAD can update company details" };
         }
 

@@ -3,45 +3,32 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    Mic, Search, Play, Clock, Users, CheckCircle, XCircle,
-    BarChart3, Calendar, TrendingUp, Eye, MoreVertical,
-    Video, MessageSquare, Target, Award, Sparkles
+    Mic, Search, Play, Users, CheckCircle, BarChart3, Calendar,
+    TrendingUp, Eye, MoreVertical, Video, MessageSquare, Target,
+    Award
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Progress } from "@repo/ui/components/ui/progress"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@repo/ui/components/ui/dropdown-menu"
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@repo/ui/components/ui/tabs"
+import Image from "next/image"
 
 interface MockSession {
     id: string
     userId: string
-    userName?: string
-    userEmail?: string
-    userImage?: string
+    userName?: string | null
+    userEmail?: string | null
+    userImage?: string | null
     roundId: string
-    roundTitle?: string
-    roundType?: string
-    jobId?: string
-    jobTitle?: string
+    roundTitle?: string | null
+    roundType?: string | null
+    jobId?: string | null
+    jobTitle?: string | null
     sessionType: string
     status: string
     scheduledFor?: Date | null
@@ -90,7 +77,7 @@ export function MockInterviewsContent({ initialSessions, stats }: MockInterviews
     const filteredSessions = sessions.filter(session => {
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
-            if (!session.userName?.toLowerCase().includes(query) && 
+            if (!session.userName?.toLowerCase().includes(query) &&
                 !session.userEmail?.toLowerCase().includes(query) &&
                 !session.jobTitle?.toLowerCase().includes(query)) {
                 return false
@@ -119,7 +106,6 @@ export function MockInterviewsContent({ initialSessions, stats }: MockInterviews
 
     return (
         <div className="min-h-full p-6 lg:p-8">
-            {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white flex items-center gap-3">
@@ -129,111 +115,110 @@ export function MockInterviewsContent({ initialSessions, stats }: MockInterviews
                         Mock Interviews
                     </h1>
                     <p className="text-neutral-500 mt-1">
-                        AI-powered practice interviews for your company's process
+                        AI-powered practice interviews for your company&apos;s process
                     </p>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            {stats && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
-                    >
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                                <Video className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            {
+                stats && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                                    <Video className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                </div>
                             </div>
-                        </div>
-                        <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalSessions}</p>
-                        <p className="text-xs text-neutral-500">Total Sessions</p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
-                    >
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.totalSessions}</p>
+                            <p className="text-xs text-neutral-500">Total Sessions</p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                </div>
                             </div>
-                        </div>
-                        <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.completedSessions}</p>
-                        <p className="text-xs text-neutral-500">Completed</p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
-                    >
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                                <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.completedSessions}</p>
+                            <p className="text-xs text-neutral-500">Completed</p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                                    <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                </div>
                             </div>
-                        </div>
-                        <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.averageScore}%</p>
-                        <p className="text-xs text-neutral-500">Avg. Score</p>
-                    </motion.div>
+                            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.averageScore}%</p>
+                            <p className="text-xs text-neutral-500">Avg. Score</p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
+                                    <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                                </div>
+                            </div>
+                            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.topPerformers}</p>
+                            <p className="text-xs text-neutral-500">Top Performers (80%+)</p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                                    <TrendingUp className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                </div>
+                            </div>
+                            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.sessionsThisWeek}</p>
+                            <p className="text-xs text-neutral-500">This Week</p>
+                        </motion.div>
+                    </div>
+                )
+            }
 
+            {
+                stats && stats.sessionsByRound.length > 0 && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
+                        className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 mb-8"
                     >
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
-                                <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                            </div>
+                        <h3 className="font-semibold text-neutral-900 dark:text-white mb-4">Sessions by Round Type</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {
+                                stats.sessionsByRound.map((item) => (
+                                    <div key={item.roundType} className="text-center p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800">
+                                        <div className="text-2xl font-bold text-neutral-900 dark:text-white">{item.count}</div>
+                                        <div className="text-xs text-neutral-500 capitalize">{item.roundType.replace(/_/g, ' ').toLowerCase()}</div>
+                                    </div>
+                                ))
+                            }
                         </div>
-                        <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.topPerformers}</p>
-                        <p className="text-xs text-neutral-500">Top Performers (80%+)</p>
                     </motion.div>
+                )
+            }
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800"
-                    >
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                                <TrendingUp className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                            </div>
-                        </div>
-                        <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.sessionsThisWeek}</p>
-                        <p className="text-xs text-neutral-500">This Week</p>
-                    </motion.div>
-                </div>
-            )}
-
-            {/* Round Type Distribution */}
-            {stats && stats.sessionsByRound.length > 0 && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 mb-8"
-                >
-                    <h3 className="font-semibold text-neutral-900 dark:text-white mb-4">Sessions by Round Type</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {stats.sessionsByRound.map((item, i) => (
-                            <div key={item.roundType} className="text-center p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800">
-                                <div className="text-2xl font-bold text-neutral-900 dark:text-white">{item.count}</div>
-                                <div className="text-xs text-neutral-500 capitalize">{item.roundType.replace(/_/g, ' ').toLowerCase()}</div>
-                            </div>
-                        ))}
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -270,121 +255,131 @@ export function MockInterviewsContent({ initialSessions, stats }: MockInterviews
                 </Select>
             </div>
 
-            {/* Sessions List */}
             <AnimatePresence mode="popLayout">
-                {filteredSessions.length > 0 ? (
-                    <div className="space-y-3">
-                        {filteredSessions.map((session, index) => (
-                            <motion.div
-                                key={session.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ delay: index * 0.02 }}
-                                className="group bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 hover:shadow-lg hover:border-neutral-300 dark:hover:border-neutral-700 transition-all"
-                            >
-                                <div className="flex items-center gap-4">
-                                    {/* Avatar */}
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden shrink-0">
-                                        {session.userImage ? (
-                                            <img src={session.userImage} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-lg font-bold text-white">
-                                                {session.userName?.charAt(0) || "?"}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-semibold text-neutral-900 dark:text-white">
-                                                {session.userName || "Unknown Candidate"}
-                                            </h3>
-                                            <Badge className={statusColors[session.status]}>
-                                                {session.status.replace(/_/g, ' ')}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-sm text-neutral-500">
-                                            <span className="flex items-center gap-1">
-                                                {roundTypeIcons[session.roundType || ''] || <Mic className="w-3.5 h-3.5" />}
-                                                {session.roundTitle || session.roundType?.replace(/_/g, ' ')}
-                                            </span>
-                                            {session.jobTitle && (
-                                                <span>• {session.jobTitle}</span>
-                                            )}
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                {formatDate(session.scheduledFor || session.createdAt)}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Score */}
-                                    {session.status === "COMPLETED" && session.overallScore != null && (
-                                        <div className="text-center px-4">
-                                            <div className={`text-xl font-bold ${
-                                                (session.overallScore ?? 0) >= 80 ? "text-green-600 dark:text-green-400" :
-                                                (session.overallScore ?? 0) >= 60 ? "text-yellow-600 dark:text-yellow-400" :
-                                                "text-red-600 dark:text-red-400"
-                                            }`}>
-                                                {session.overallScore}%
+                {
+                    filteredSessions.length > 0 ? (
+                        <div className="space-y-3">
+                            {
+                                filteredSessions.map((session, index) => (
+                                    <motion.div
+                                        key={session.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        transition={{ delay: index * 0.02 }}
+                                        className="group bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 hover:shadow-lg hover:border-neutral-300 dark:hover:border-neutral-700 transition-all"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden shrink-0">
+                                                {
+                                                    session.userImage ? (
+                                                        <Image
+                                                            src={session.userImage}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                            fill
+                                                        />
+                                                    ) : (
+                                                        <span className="text-lg font-bold text-white">
+                                                            {session.userName?.charAt(0) || "?"}
+                                                        </span>
+                                                    )
+                                                }
                                             </div>
-                                            <div className="text-xs text-neutral-500">Score</div>
-                                        </div>
-                                    )}
-
-                                    {/* Duration */}
-                                    {session.durationSeconds && (
-                                        <div className="text-center px-4 hidden md:block">
-                                            <div className="text-lg font-semibold text-neutral-700 dark:text-neutral-300">
-                                                {formatDuration(session.durationSeconds)}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h3 className="font-semibold text-neutral-900 dark:text-white">
+                                                        {session.userName || "Unknown Candidate"}
+                                                    </h3>
+                                                    <Badge className={statusColors[session.status]}>
+                                                        {session.status.replace(/_/g, ' ')}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-4 text-sm text-neutral-500">
+                                                    <span className="flex items-center gap-1">
+                                                        {roundTypeIcons[session.roundType || ''] || <Mic className="w-3.5 h-3.5" />}
+                                                        {session.roundTitle || session.roundType?.replace(/_/g, ' ')}
+                                                    </span>
+                                                    {
+                                                        session.jobTitle && (
+                                                            <span>• {session.jobTitle}</span>
+                                                        )
+                                                    }
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="w-3.5 h-3.5" />
+                                                        {formatDate(session.scheduledFor || session.createdAt)}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-neutral-500">Duration</div>
-                                        </div>
-                                    )}
 
-                                    {/* Actions */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="rounded-xl">
-                                                <MoreVertical className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem>
-                                                <Eye className="w-4 h-4 mr-2" />
-                                                View Details
-                                            </DropdownMenuItem>
-                                            {session.status === "COMPLETED" && (
-                                                <DropdownMenuItem>
-                                                    <Play className="w-4 h-4 mr-2" />
-                                                    View Recording
-                                                </DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                ) : (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-center py-16"
-                    >
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center mx-auto mb-6">
-                            <Mic className="w-10 h-10 text-purple-500" />
+                                            {
+                                                session.status === "COMPLETED" && session.overallScore != null && (
+                                                    <div className="text-center px-4">
+                                                        <div className={`text-xl font-bold ${(session.overallScore ?? 0) >= 80 ? "text-green-600 dark:text-green-400" :
+                                                                (session.overallScore ?? 0) >= 60 ? "text-yellow-600 dark:text-yellow-400" :
+                                                                    "text-red-600 dark:text-red-400"
+                                                            }`}>
+                                                            {session.overallScore}%
+                                                        </div>
+                                                        <div className="text-xs text-neutral-500">Score</div>
+                                                    </div>
+                                                )
+                                            }
+                                            {
+                                                session.durationSeconds && (
+                                                    <div className="text-center px-4 hidden md:block">
+                                                        <div className="text-lg font-semibold text-neutral-700 dark:text-neutral-300">
+                                                            {formatDuration(session.durationSeconds)}
+                                                        </div>
+                                                        <div className="text-xs text-neutral-500">Duration</div>
+                                                    </div>
+                                                )
+                                            }
+
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="rounded-xl">
+                                                        <MoreVertical className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem>
+                                                        <Eye className="w-4 h-4 mr-2" />
+                                                        View Details
+                                                    </DropdownMenuItem>
+                                                    {
+                                                        session.status === "COMPLETED" && (
+                                                            <DropdownMenuItem>
+                                                                <Play className="w-4 h-4 mr-2" />
+                                                                View Recording
+                                                            </DropdownMenuItem>
+                                                        )
+                                                    }
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            }
                         </div>
-                        <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
-                            No mock sessions yet
-                        </h3>
-                        <p className="text-neutral-500 mb-6 max-w-md mx-auto">
-                            Candidates will practice here once you've configured your interview process with AI mock interviews enabled.
-                        </p>
-                    </motion.div>
-                )}
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-center py-16"
+                        >
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center mx-auto mb-6">
+                                <Mic className="w-10 h-10 text-purple-500" />
+                            </div>
+                            <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
+                                No mock sessions yet
+                            </h3>
+                            <p className="text-neutral-500 mb-6 max-w-md mx-auto">
+                                Candidates will practice here once you&apos;ve configured your interview process with AI mock interviews enabled.
+                            </p>
+                        </motion.div>
+                    )
+                }
             </AnimatePresence>
         </div>
     )

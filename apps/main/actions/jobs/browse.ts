@@ -515,7 +515,7 @@ export async function getSavedJobs() {
                     notes: saved.notes
                 }
             })
-            .filter(Boolean)
+            .filter((job): job is NonNullable<typeof job> => job !== null)
 
         return { success: true, data: result }
     } catch (error) {

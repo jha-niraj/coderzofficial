@@ -1,7 +1,7 @@
 import {
     Home, Briefcase, Users, FileText, ClipboardList, UserPlus, BarChart3,
     Building2, CreditCard, Settings, HelpCircle, LayoutDashboard, ListChecks,
-    Plus, Search, Eye, Clock, CheckCircle, XCircle, UserCheck, MessageSquare,
+    Plus, Eye, Clock, CheckCircle, XCircle, UserCheck, MessageSquare,
     Video, Calendar, TrendingUp, PieChart, Activity
 } from "lucide-react"
 

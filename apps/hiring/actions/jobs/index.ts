@@ -4,6 +4,14 @@
 import { prisma } from "@repo/prisma"
 import { auth } from "@repo/auth"
 import { revalidatePath } from "next/cache"
+import type { 
+    CreateJobInput, 
+    JobLocationType, 
+    EmploymentType, 
+    JobVisibility, 
+    JobStatus,
+    AssignmentDetails
+} from "@/types"
 
 // ============================================
 // HELPERS
@@ -34,36 +42,7 @@ function generateSlug(title: string): string {
 // JOB CRUD
 // ============================================
 
-export interface CreateJobInput {
-    title: string
-    description: string
-    requirements?: string[]
-    responsibilities?: string[]
-    benefits?: string[]
-    location?: string
-    locationType: string
-    employmentType: string
-    experienceMin?: number
-    experienceMax?: number
-    salaryMin?: number
-    salaryMax?: number
-    salaryCurrency?: string
-    salaryDisclosed?: boolean
-    skillsRequired?: string[]
-    skillsPreferred?: string[]
-    hasAssignment?: boolean
-    assignmentDetails?: {
-        title: string
-        description: string
-        requirements: string[]
-        resources: string[]
-        deliverables: string[]
-    }
-    assignmentDeadlineDays?: number
-    interviewProcessId?: string
-    visibility?: string
-    status?: string
-}
+// Note: CreateJobInput is imported from @/types
 
 export async function createJob(input: CreateJobInput) {
     try {
@@ -85,8 +64,8 @@ export async function createJob(input: CreateJobInput) {
                 responsibilities: input.responsibilities || [],
                 benefits: input.benefits || [],
                 location: input.location,
-                locationType: input.locationType as any,
-                employmentType: input.employmentType as any,
+                locationType: input.locationType,
+                employmentType: input.employmentType,
                 experienceMin: input.experienceMin,
                 experienceMax: input.experienceMax,
                 salaryMin: input.salaryMin,
@@ -99,8 +78,8 @@ export async function createJob(input: CreateJobInput) {
                 assignmentDetails: input.assignmentDetails,
                 assignmentDeadlineDays: input.assignmentDeadlineDays,
                 interviewProcessId: input.interviewProcessId,
-                visibility: (input.visibility as any) || "PUBLIC",
-                status: (input.status as any) || "DRAFT"
+                visibility: input.visibility || "PUBLIC",
+                status: input.status || "DRAFT"
             }
         })
 
@@ -137,8 +116,8 @@ export async function updateJob(jobId: string, input: Partial<CreateJobInput>) {
                 responsibilities: input.responsibilities,
                 benefits: input.benefits,
                 location: input.location,
-                locationType: input.locationType as any,
-                employmentType: input.employmentType as any,
+                locationType: input.locationType,
+                employmentType: input.employmentType,
                 experienceMin: input.experienceMin,
                 experienceMax: input.experienceMax,
                 salaryMin: input.salaryMin,
@@ -151,8 +130,8 @@ export async function updateJob(jobId: string, input: Partial<CreateJobInput>) {
                 assignmentDetails: input.assignmentDetails,
                 assignmentDeadlineDays: input.assignmentDeadlineDays,
                 interviewProcessId: input.interviewProcessId,
-                visibility: input.visibility as any,
-                status: input.status as any
+                visibility: input.visibility,
+                status: input.status
             }
         })
 
@@ -533,5 +512,60 @@ export async function getJobsOverview() {
     } catch (error) {
         console.error("Error fetching jobs overview:", error)
         return { success: false, error: "Failed to fetch overview" }
+    }
+}
+
+// Get overall job stats for the jobs page
+export async function getOverallJobStats() {
+    try {
+        const member = await getUserCompany()
+        if (!member) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        const jobs = await prisma.job.findMany({
+            where: { companyId: member.companyId },
+            select: {
+                status: true,
+                viewsCount: true,
+                applicationsCount: true
+            }
+        })
+
+        const stats = jobs.reduce((acc, job) => {
+            acc.total++
+            acc.totalViews += job.viewsCount
+            acc.totalApplications += job.applicationsCount
+
+            switch (job.status) {
+                case "ACTIVE":
+                    acc.active++
+                    break
+                case "PAUSED":
+                    acc.paused++
+                    break
+                case "DRAFT":
+                    acc.draft++
+                    break
+                case "CLOSED":
+                    acc.closed++
+                    break
+            }
+
+            return acc
+        }, {
+            total: 0,
+            active: 0,
+            paused: 0,
+            draft: 0,
+            closed: 0,
+            totalViews: 0,
+            totalApplications: 0
+        })
+
+        return { success: true, data: stats }
+    } catch (error) {
+        console.error("Error fetching overall job stats:", error)
+        return { success: false, error: "Failed to fetch stats" }
     }
 }

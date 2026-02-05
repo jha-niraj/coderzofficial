@@ -52,14 +52,6 @@ export async function getCandidates(filters: CandidateFilters = {}) {
         const applications = await prisma.jobApplication.findMany({
             where,
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true
-                    }
-                },
                 job: {
                     select: {
                         id: true,
@@ -71,24 +63,40 @@ export async function getCandidates(filters: CandidateFilters = {}) {
             orderBy: { createdAt: "desc" }
         })
 
+        // Fetch user info separately since User is in a different schema
+        const userIds = [...new Set(applications.map(app => app.userId))]
+        const users = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true
+            }
+        })
+        const userMap = new Map(users.map(u => [u.id, u]))
+
         // Format for UI
-        const candidates = applications.map(app => ({
-            id: app.id,
-            applicationId: app.id,
-            userId: app.userId,
-            name: app.user.name || "Unknown",
-            email: app.user.email || "",
-            image: app.user.image,
-            jobId: app.jobId,
-            jobTitle: app.job.title,
-            jobSlug: app.job.slug,
-            status: app.status,
-            appliedAt: app.appliedAt || app.createdAt,
-            matchScore: app.matchScore,
-            currentStage: app.currentStage,
-            resumeUrl: app.resumeUrl,
-            coverLetter: app.coverLetter
-        }))
+        const candidates = applications.map(app => {
+            const user = userMap.get(app.userId)
+            return {
+                id: app.id,
+                applicationId: app.id,
+                userId: app.userId,
+                name: user?.name || "Unknown",
+                email: user?.email || "",
+                image: user?.image,
+                jobId: app.jobId,
+                jobTitle: app.job.title,
+                jobSlug: app.job.slug,
+                status: app.status,
+                appliedAt: app.appliedAt || app.createdAt,
+                matchScore: app.matchScore,
+                currentStage: app.currentStage,
+                resumeUrl: app.resumeUrl,
+                coverLetter: app.coverLetter
+            }
+        })
 
         return { success: true, data: candidates }
     } catch (error) {
@@ -113,14 +121,6 @@ export async function getCandidateDetails(applicationId: string) {
                 }
             },
             include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true
-                    }
-                },
                 job: {
                     include: {
                         interviewProcess: {
@@ -143,7 +143,24 @@ export async function getCandidateDetails(applicationId: string) {
             return { success: false, error: "Candidate not found" }
         }
 
-        return { success: true, data: application }
+        // Fetch user info separately
+        const user = await prisma.user.findUnique({
+            where: { id: application.userId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true
+            }
+        })
+
+        return { 
+            success: true, 
+            data: {
+                ...application,
+                user
+            }
+        }
     } catch (error) {
         console.error("Error fetching candidate details:", error)
         return { success: false, error: "Failed to fetch candidate details" }
@@ -151,7 +168,11 @@ export async function getCandidateDetails(applicationId: string) {
 }
 
 // Update candidate status
-export async function updateCandidateStatus(applicationId: string, newStatus: string, notes?: string) {
+export async function updateCandidateStatus(
+    applicationId: string, 
+    newStatus: "INTERESTED" | "PREPARING" | "APPLIED" | "UNDER_REVIEW" | "SHORTLISTED" | "ASSIGNMENT_SENT" | "ASSIGNMENT_SUBMITTED" | "INTERVIEW_SCHEDULED" | "INTERVIEWED" | "OFFER_EXTENDED" | "HIRED" | "REJECTED" | "WITHDRAWN", 
+    notes?: string
+) {
     try {
         const member = await getUserCompany()
         if (!member) {
@@ -177,15 +198,9 @@ export async function updateCandidateStatus(applicationId: string, newStatus: st
             where: { id: applicationId },
             data: {
                 status: newStatus,
-                // Create activity log
-                activities: {
-                    create: {
-                        action: "STATUS_CHANGED",
-                        description: `Status changed to ${newStatus}`,
-                        performedById: member.id,
-                        metadata: notes ? { notes } : undefined
-                    }
-                }
+                reviewedById: member.id,
+                reviewedAt: new Date(),
+                hrNotes: notes || undefined
             }
         })
 

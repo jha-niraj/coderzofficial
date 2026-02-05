@@ -161,12 +161,9 @@ export async function getRecruiterPerformance() {
         const members = await prisma.companyMember.findMany({
             where: { companyId: member.companyId },
             include: {
-                user: {
-                    select: { name: true, image: true }
-                },
                 _count: {
                     select: {
-                        jobsPosted: true,
+                        postedJobs: true,
                         reviewedApplications: true
                     }
                 }
@@ -175,10 +172,10 @@ export async function getRecruiterPerformance() {
 
         const performance = members.map(m => ({
             id: m.id,
-            name: m.user.name || "Unknown",
-            image: m.user.image,
+            name: m.displayName || m.email.split("@")[0] || "Unknown",
+            image: null, // CompanyMember doesn't store image, would need separate User lookup
             role: m.role,
-            jobsPosted: m._count.jobsPosted,
+            jobsPosted: m._count.postedJobs,
             applicationsReviewed: m._count.reviewedApplications
         }))
 

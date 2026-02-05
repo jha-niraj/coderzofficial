@@ -65,7 +65,7 @@ export async function completeOnboarding(data: OnboardingData) {
                 companyId: company.id,
                 email: user.email,
                 displayName: user.name,
-                role: isHead ? "HEAD" : "RECRUITER",
+                role: isHead ? "FOUNDER" : "RECRUITER",
                 jobTitle: data.userRole as "CEO" | "CTO" | "COFOUNDER" | "VP_ENGINEERING" | "HR_HEAD" | "HR_MANAGER" | "RECRUITER" | "HIRING_MANAGER" | "OTHER",
                 inviteStatus: "ACCEPTED",
                 acceptedAt: new Date(),

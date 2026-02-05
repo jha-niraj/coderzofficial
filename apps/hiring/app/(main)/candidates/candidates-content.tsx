@@ -3,10 +3,9 @@
 import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    Search, Filter, Users, MoreVertical, Mail, Calendar, Briefcase,
-    ChevronRight, CheckCircle2, XCircle, Clock, Eye, MessageSquare,
-    FileText, Award, TrendingUp, Loader2, LayoutGrid, List, 
-    Columns, CheckSquare, Square, ArrowRight
+    Search, Users, MoreVertical, Mail, Calendar, Briefcase,
+    ChevronRight, CheckCircle2, XCircle, Eye, MessageSquare, List, 
+    Columns
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
@@ -15,9 +14,8 @@ import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import {
     Sheet,
     SheetContent,
-    SheetHeader,
-    SheetTitle,
 } from "@repo/ui/components/ui/sheet"
+import Image from "next/image"
 import {
     Select,
     SelectContent,
@@ -34,7 +32,7 @@ import {
 } from "@repo/ui/components/ui/dropdown-menu"
 import { CandidateDetailSheet } from "./components/candidate-detail-sheet"
 import { updateCandidateStatus } from "@/actions/candidates"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner"
 
 interface Candidate {
     id: string
@@ -380,9 +378,9 @@ export function CandidatesContent({ initialCandidates, stats, jobs }: Candidates
                                             onClick={() => handleViewCandidate(candidate)}
                                         >
                                             <div className="flex items-center gap-2 mb-2">
-                                                <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden">
+                                                <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden relative">
                                                     {candidate.image ? (
-                                                        <img src={candidate.image} alt="" className="w-full h-full object-cover" />
+                                                        <Image src={candidate.image} alt="" fill className="object-cover" />
                                                     ) : (
                                                         <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
                                                             {candidate.name.charAt(0)}
@@ -453,9 +451,9 @@ export function CandidatesContent({ initialCandidates, stats, jobs }: Candidates
                                         className="flex items-center gap-4 flex-1 min-w-0"
                                         onClick={() => handleViewCandidate(candidate)}
                                     >
-                                        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden shrink-0">
+                                        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden shrink-0 relative">
                                             {candidate.image ? (
-                                                <img src={candidate.image} alt={candidate.name} className="w-full h-full object-cover" />
+                                                <Image src={candidate.image} alt={candidate.name} fill className="object-cover" />
                                             ) : (
                                                 <span className="text-lg font-bold text-neutral-600 dark:text-neutral-400">
                                                     {candidate.name.charAt(0).toUpperCase()}

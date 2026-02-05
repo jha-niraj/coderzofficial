@@ -23,6 +23,13 @@ import {
 } from "@/actions/jobs"
 import { toast } from "@repo/ui/components/ui/sonner"
 
+interface InterviewRound {
+    id: string
+    roundNumber: number
+    roundType: string
+    title: string
+}
+
 interface Job {
     id: string
     title: string
@@ -38,7 +45,7 @@ interface Job {
     interviewProcess?: {
         id: string
         name: string
-        rounds: any[]
+        rounds: InterviewRound[]
     } | null
 }
 
@@ -55,7 +62,7 @@ interface JobStats {
 interface InterviewProcess {
     id: string
     name: string
-    rounds: any[]
+    rounds: InterviewRound[]
 }
 
 interface JobsContentProps {
@@ -64,7 +71,8 @@ interface JobsContentProps {
     interviewProcesses: InterviewProcess[]
 }
 
-export function JobsContent({ initialJobs, stats, interviewProcesses }: JobsContentProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function JobsContent({ initialJobs, stats, interviewProcesses: _interviewProcesses }: JobsContentProps) {
     const [jobs, setJobs] = useState(initialJobs)
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")

@@ -1,6 +1,8 @@
 "use server"
 
 import { prisma } from "@repo/prisma"
+import { auth } from "@repo/auth"
+import { revalidatePath } from "next/cache"
 
 export interface CompanyFilters {
     search?: string
@@ -295,5 +297,160 @@ export async function getCompanyJobs(slug: string) {
     } catch (error) {
         console.error("Error fetching company jobs:", error)
         return { success: false, error: "Failed to fetch company jobs" }
+    }
+}
+
+// Follow a company
+export async function followCompany(companyId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: "Please sign in to follow companies" }
+        }
+
+        // Check if already following
+        const existing = await prisma.companyFollower.findUnique({
+            where: {
+                userId_companyId: {
+                    userId: session.user.id,
+                    companyId
+                }
+            }
+        })
+
+        if (existing) {
+            return { success: true, data: existing }
+        }
+
+        const follow = await prisma.companyFollower.create({
+            data: {
+                userId: session.user.id,
+                companyId
+            }
+        })
+
+        revalidatePath("/companies")
+        return { success: true, data: follow }
+    } catch (error) {
+        console.error("Error following company:", error)
+        return { success: false, error: "Failed to follow company" }
+    }
+}
+
+// Unfollow a company
+export async function unfollowCompany(companyId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        await prisma.companyFollower.deleteMany({
+            where: {
+                userId: session.user.id,
+                companyId
+            }
+        })
+
+        revalidatePath("/companies")
+        return { success: true }
+    } catch (error) {
+        console.error("Error unfollowing company:", error)
+        return { success: false, error: "Failed to unfollow company" }
+    }
+}
+
+// Get followed companies for current user
+export async function getFollowedCompanies() {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        const follows = await prisma.companyFollower.findMany({
+            where: { userId: session.user.id },
+            include: {
+                company: {
+                    include: {
+                        jobs: {
+                            where: { status: "ACTIVE" },
+                            select: { id: true }
+                        },
+                        interviewProcesses: {
+                            where: { isActive: true },
+                            select: { id: true }
+                        }
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        })
+
+        return {
+            success: true,
+            data: follows.map(f => ({
+                id: f.company.id,
+                name: f.company.name,
+                slug: f.company.slug,
+                logoUrl: f.company.logoUrl,
+                website: f.company.website,
+                industry: f.company.industry,
+                companySize: f.company.companySize,
+                description: f.company.description,
+                verificationStatus: f.company.verificationStatus,
+                headquarters: f.company.headquarters,
+                activeJobsCount: f.company.jobs.length,
+                hasTransparentProcess: f.company.interviewProcesses.length > 0,
+                followedAt: f.createdAt
+            }))
+        }
+    } catch (error) {
+        console.error("Error fetching followed companies:", error)
+        return { success: false, error: "Failed to fetch followed companies" }
+    }
+}
+
+// Check if user follows a company
+export async function checkFollowStatus(companyId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: true, data: { isFollowing: false } }
+        }
+
+        const follow = await prisma.companyFollower.findUnique({
+            where: {
+                userId_companyId: {
+                    userId: session.user.id,
+                    companyId
+                }
+            }
+        })
+
+        return { success: true, data: { isFollowing: !!follow } }
+    } catch (error) {
+        console.error("Error checking follow status:", error)
+        return { success: false, error: "Failed to check follow status" }
+    }
+}
+
+// Get followed company IDs for current user (for bulk checking)
+export async function getFollowedCompanyIds() {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: true, data: [] }
+        }
+
+        const follows = await prisma.companyFollower.findMany({
+            where: { userId: session.user.id },
+            select: { companyId: true }
+        })
+
+        return { success: true, data: follows.map(f => f.companyId) }
+    } catch (error) {
+        console.error("Error fetching followed company IDs:", error)
+        return { success: false, error: "Failed to fetch followed company IDs" }
     }
 }

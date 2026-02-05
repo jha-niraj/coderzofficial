@@ -3,11 +3,11 @@
 import { motion } from "framer-motion"
 import { 
     BarChart3, Users, Briefcase, Clock, Target, Eye, TrendingUp, 
-    TrendingDown, CheckCircle, XCircle, ArrowRight, Award
+    TrendingDown, CheckCircle, ArrowRight, Award
 } from "lucide-react"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Progress } from "@repo/ui/components/ui/progress"
 import Link from "next/link"
+import Image from "next/image"
 
 interface AnalyticsData {
     overview: {
@@ -309,9 +309,9 @@ export function AnalyticsContent({ analytics, recruiterPerformance }: AnalyticsC
                                 className="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl"
                             >
                                 <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center overflow-hidden">
+                                    <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center overflow-hidden relative">
                                         {recruiter.image ? (
-                                            <img src={recruiter.image} alt={recruiter.name} className="w-full h-full object-cover" />
+                                            <Image src={recruiter.image} alt={recruiter.name} fill className="object-cover" />
                                         ) : (
                                             <span className="font-bold text-neutral-600 dark:text-neutral-400">
                                                 {recruiter.name.charAt(0)}

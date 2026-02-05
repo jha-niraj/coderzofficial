@@ -1,5 +1,7 @@
 import { Suspense } from "react"
-import { Loader2 } from "lucide-react"
+import { 
+    Loader2 
+} from "lucide-react"
 import { getMyApplications } from "@/actions/jobs"
 import { ApplicationsContent } from "./applications-content"
 

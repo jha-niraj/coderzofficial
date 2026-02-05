@@ -2,33 +2,28 @@
 
 import { useState, useTransition } from "react"
 import { motion } from "framer-motion"
-import { 
-    Building2, Globe, MapPin, Users, Calendar, Briefcase, 
-    Camera, Plus, X, Save, ExternalLink, Image, Video,
-    Twitter, Linkedin, Github, Edit2, Check, Sparkles
+import {
+    Building2, Globe, MapPin, Users, Calendar, Briefcase, Camera,
+    Plus, X, Save, ExternalLink, Image as ImageIcon, Video, Twitter, Linkedin,
+    Github, Edit2, Check, Sparkles
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
+    Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs"
-import { 
-    updateCompanyProfile, updateCompanyLogo, updateCompanyCover,
-    addMediaToGallery, removeMediaFromGallery 
+import {
+    updateCompanyProfile, removeMediaFromGallery
 } from "@/actions/company"
-import { toast } from "sonner"
+import toast from "@repo/ui/components/ui/sonner"
+import Link from "next/link"
+import { Label } from "@repo/ui/components/ui/label"
+import Image from "next/image"
 
 interface CompanyProfile {
     id: string
@@ -157,118 +152,122 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
 
     return (
         <div className="min-h-full p-6 lg:p-8">
-            {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white">
                         Company Profile
                     </h1>
                     <p className="text-neutral-500 mt-1">
-                        Manage your company's public profile and branding
+                        Manage your company&apos;s public profile and branding
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    {isEditing ? (
-                        <>
-                            <Button 
-                                variant="outline" 
-                                onClick={() => setIsEditing(false)}
-                                className="rounded-xl"
-                            >
-                                Cancel
-                            </Button>
-                            <Button 
-                                onClick={handleSave}
-                                disabled={isPending}
-                                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                            >
-                                <Save className="w-4 h-4 mr-2" />
-                                {isPending ? "Saving..." : "Save Changes"}
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button 
-                                variant="outline" 
-                                className="rounded-xl"
-                                asChild
-                            >
-                                <a href={`/companies/${profile.slug}`} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="w-4 h-4 mr-2" />
-                                    View Public Page
-                                </a>
-                            </Button>
-                            <Button 
-                                onClick={() => setIsEditing(true)}
-                                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                            >
-                                <Edit2 className="w-4 h-4 mr-2" />
-                                Edit Profile
-                            </Button>
-                        </>
-                    )}
+                    {
+                        isEditing ? (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsEditing(false)}
+                                    className="rounded-xl"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSave}
+                                    disabled={isPending}
+                                    className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                                >
+                                    <Save className="w-4 h-4 mr-2" />
+                                    {isPending ? "Saving..." : "Save Changes"}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    className="rounded-xl"
+                                    asChild
+                                >
+                                    <a href={`/companies/${profile.slug}`} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="w-4 h-4 mr-2" />
+                                        View Public Page
+                                    </a>
+                                </Button>
+                                <Button
+                                    onClick={() => setIsEditing(true)}
+                                    className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                                >
+                                    <Edit2 className="w-4 h-4 mr-2" />
+                                    Edit Profile
+                                </Button>
+                            </>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Cover & Logo */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="relative mb-8"
             >
-                {/* Cover Image */}
                 <div className="h-48 lg:h-64 rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 overflow-hidden relative group">
-                    {profile.coverImage && (
-                        <img 
-                            src={profile.coverImage} 
-                            alt="Cover" 
-                            className="w-full h-full object-cover"
-                        />
-                    )}
-                    {isEditing && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="secondary" className="rounded-xl">
-                                <Camera className="w-4 h-4 mr-2" />
-                                Change Cover
-                            </Button>
-                        </div>
-                    )}
+                    {
+                        profile.coverImage && (
+                            <Image
+                                src={profile.coverImage}
+                                alt="Cover"
+                                className="w-full h-full object-cover"
+                                fill
+                            />
+                        )
+                    }
+                    {
+                        isEditing && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="secondary" className="rounded-xl">
+                                    <Camera className="w-4 h-4 mr-2" />
+                                    Change Cover
+                                </Button>
+                            </div>
+                        )
+                    }
                 </div>
-
-                {/* Logo */}
                 <div className="absolute -bottom-10 left-8 w-28 h-28 rounded-2xl bg-white dark:bg-neutral-900 border-4 border-white dark:border-neutral-900 shadow-xl overflow-hidden group">
-                    {profile.logo ? (
-                        <img 
-                            src={profile.logo} 
-                            alt={profile.name} 
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                            <span className="text-3xl font-bold text-white">
-                                {profile.name.charAt(0)}
-                            </span>
-                        </div>
-                    )}
-                    {isEditing && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Camera className="w-6 h-6 text-white" />
-                        </div>
-                    )}
+                    {
+                        profile.logo ? (
+                            <Image
+                                src={profile.logo}
+                                alt={profile.name}
+                                className="w-full h-full object-cover"
+                                fill
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-3xl font-bold text-white">
+                                    {profile.name.charAt(0)}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        isEditing && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Camera className="w-6 h-6 text-white" />
+                            </div>
+                        )
+                    }
                 </div>
-
-                {/* Verified Badge */}
-                {profile.isVerified && (
-                    <div className="absolute -bottom-10 left-40">
-                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
-                            <Check className="w-3 h-3" />
-                            Verified
-                        </Badge>
-                    </div>
-                )}
+                {
+                    profile.isVerified && (
+                        <div className="absolute -bottom-10 left-40">
+                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                                <Check className="w-3 h-3" />
+                                Verified
+                            </Badge>
+                        </div>
+                    )
+                }
             </motion.div>
-
-            {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 mb-8">
                 <div className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                     <div className="flex items-center gap-3">
@@ -315,8 +314,6 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                     </div>
                 </div>
             </div>
-
-            {/* Profile Tabs */}
             <Tabs defaultValue="basic" className="space-y-6">
                 <TabsList className="bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl">
                     <TabsTrigger value="basic" className="rounded-lg">Basic Info</TabsTrigger>
@@ -324,8 +321,6 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                     <TabsTrigger value="tech" className="rounded-lg">Tech Stack</TabsTrigger>
                     <TabsTrigger value="media" className="rounded-lg">Media Gallery</TabsTrigger>
                 </TabsList>
-
-                {/* Basic Info Tab */}
                 <TabsContent value="basic">
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -335,276 +330,296 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Company Name
-                                    </label>
-                                    {isEditing ? (
-                                        <Input 
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="rounded-xl"
-                                        />
-                                    ) : (
-                                        <p className="text-neutral-900 dark:text-white font-medium">{profile.name}</p>
-                                    )}
+                                    </Label>
+                                    {
+                                        isEditing ? (
+                                            <Input
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                className="rounded-xl"
+                                            />
+                                        ) : (
+                                            <p className="text-neutral-900 dark:text-white font-medium">{profile.name}</p>
+                                        )
+                                    }
                                 </div>
-
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Tagline
-                                    </label>
-                                    {isEditing ? (
-                                        <Input 
-                                            value={formData.tagline}
-                                            onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                                            placeholder="A short description of your company"
-                                            className="rounded-xl"
-                                        />
-                                    ) : (
-                                        <p className="text-neutral-600 dark:text-neutral-400">{profile.tagline || "No tagline set"}</p>
-                                    )}
+                                    </Label>
+                                    {
+                                        isEditing ? (
+                                            <Input
+                                                value={formData.tagline}
+                                                onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
+                                                placeholder="A short description of your company"
+                                                className="rounded-xl"
+                                            />
+                                        ) : (
+                                            <p className="text-neutral-600 dark:text-neutral-400">{profile.tagline || "No tagline set"}</p>
+                                        )
+                                    }
                                 </div>
-
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Website
-                                    </label>
-                                    {isEditing ? (
-                                        <Input 
-                                            value={formData.website}
-                                            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                            placeholder="https://example.com"
-                                            className="rounded-xl"
-                                        />
-                                    ) : (
-                                        <a 
-                                            href={profile.website || "#"} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                        >
-                                            <Globe className="w-4 h-4" />
-                                            {profile.website || "Not set"}
-                                        </a>
-                                    )}
+                                    </Label>
+                                    {
+                                        isEditing ? (
+                                            <Input
+                                                value={formData.website}
+                                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                                placeholder="https://example.com"
+                                                className="rounded-xl"
+                                            />
+                                        ) : (
+                                            <Link
+                                                href={profile.website || "#"}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                            >
+                                                <Globe className="w-4 h-4" />
+                                                {profile.website || "Not set"}
+                                            </Link>
+                                        )
+                                    }
                                 </div>
-
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Industry
-                                    </label>
-                                    {isEditing ? (
-                                        <Select 
-                                            value={formData.industry} 
-                                            onValueChange={(v) => setFormData({ ...formData, industry: v })}
-                                        >
-                                            <SelectTrigger className="rounded-xl">
-                                                <SelectValue placeholder="Select industry" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {industries.map(ind => (
-                                                    <SelectItem key={ind} value={ind}>{ind}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="text-neutral-900 dark:text-white">{profile.industry || "Not set"}</p>
-                                    )}
+                                    </Label>
+                                    {
+                                        isEditing ? (
+                                            <Select
+                                                value={formData.industry}
+                                                onValueChange={(v) => setFormData({ ...formData, industry: v })}
+                                            >
+                                                <SelectTrigger className="rounded-xl">
+                                                    <SelectValue placeholder="Select industry" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {
+                                                        industries.map(ind => (
+                                                            <SelectItem key={ind} value={ind}>{ind}</SelectItem>
+                                                        ))
+                                                    }
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <p className="text-neutral-900 dark:text-white">{profile.industry || "Not set"}</p>
+                                        )
+                                    }
                                 </div>
                             </div>
-
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Company Size
-                                    </label>
-                                    {isEditing ? (
-                                        <Select 
-                                            value={formData.size} 
-                                            onValueChange={(v) => setFormData({ ...formData, size: v })}
-                                        >
-                                            <SelectTrigger className="rounded-xl">
-                                                <SelectValue placeholder="Select size" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {companySizes.map(size => (
-                                                    <SelectItem key={size} value={size}>{size} employees</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="text-neutral-900 dark:text-white">{profile.size ? `${profile.size} employees` : "Not set"}</p>
-                                    )}
+                                    </Label>
+                                    {
+                                        isEditing ? (
+                                            <Select
+                                                value={formData.size}
+                                                onValueChange={(v) => setFormData({ ...formData, size: v })}
+                                            >
+                                                <SelectTrigger className="rounded-xl">
+                                                    <SelectValue placeholder="Select size" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {
+                                                        companySizes.map(size => (
+                                                            <SelectItem key={size} value={size}>{size} employees</SelectItem>
+                                                        ))
+                                                    }
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <p className="text-neutral-900 dark:text-white">{profile.size ? `${profile.size} employees` : "Not set"}</p>
+                                        )
+                                    }
                                 </div>
-
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Founded Year
-                                    </label>
-                                    {isEditing ? (
-                                        <Input 
-                                            type="number"
-                                            value={formData.founded}
-                                            onChange={(e) => setFormData({ ...formData, founded: e.target.value })}
-                                            placeholder="2020"
-                                            className="rounded-xl"
-                                        />
-                                    ) : (
-                                        <p className="text-neutral-900 dark:text-white">{profile.founded || "Not set"}</p>
-                                    )}
+                                    </Label>
+                                    {
+                                        isEditing ? (
+                                            <Input
+                                                type="number"
+                                                value={formData.founded}
+                                                onChange={(e) => setFormData({ ...formData, founded: e.target.value })}
+                                                placeholder="2020"
+                                                className="rounded-xl"
+                                            />
+                                        ) : (
+                                            <p className="text-neutral-900 dark:text-white">{profile.founded || "Not set"}</p>
+                                        )
+                                    }
                                 </div>
-
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Headquarters
-                                    </label>
-                                    {isEditing ? (
-                                        <Input 
-                                            value={formData.headquarters}
-                                            onChange={(e) => setFormData({ ...formData, headquarters: e.target.value })}
-                                            placeholder="City, Country"
-                                            className="rounded-xl"
-                                        />
-                                    ) : (
-                                        <p className="text-neutral-900 dark:text-white flex items-center gap-1">
-                                            <MapPin className="w-4 h-4 text-neutral-400" />
-                                            {profile.headquarters || "Not set"}
-                                        </p>
-                                    )}
+                                    </Label>
+                                    {
+                                        isEditing ? (
+                                            <Input
+                                                value={formData.headquarters}
+                                                onChange={(e) => setFormData({ ...formData, headquarters: e.target.value })}
+                                                placeholder="City, Country"
+                                                className="rounded-xl"
+                                            />
+                                        ) : (
+                                            <p className="text-neutral-900 dark:text-white flex items-center gap-1">
+                                                <MapPin className="w-4 h-4 text-neutral-400" />
+                                                {profile.headquarters || "Not set"}
+                                            </p>
+                                        )
+                                    }
                                 </div>
-
                                 <div>
-                                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Office Locations
-                                    </label>
+                                    </Label>
                                     <div className="flex flex-wrap gap-2">
-                                        {(isEditing ? formData.locations : profile.locations)?.map((loc, i) => (
-                                            <Badge key={i} variant="outline" className="gap-1">
-                                                <MapPin className="w-3 h-3" />
-                                                {loc}
-                                                {isEditing && (
-                                                    <X 
-                                                        className="w-3 h-3 cursor-pointer hover:text-red-500" 
-                                                        onClick={() => removeItem('locations', i)}
+                                        {
+                                            (isEditing ? formData.locations : profile.locations)?.map((loc, i) => (
+                                                <Badge key={i} variant="outline" className="gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {loc}
+                                                    {
+                                                        isEditing && (
+                                                            <X
+                                                                className="w-3 h-3 cursor-pointer hover:text-red-500"
+                                                                onClick={() => removeItem('locations', i)}
+                                                            />
+                                                        )
+                                                    }
+                                                </Badge>
+                                            ))
+                                        }
+                                        {
+                                            isEditing && (
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        value={newLocation}
+                                                        onChange={(e) => setNewLocation(e.target.value)}
+                                                        placeholder="Add location"
+                                                        className="w-32 h-8 text-sm rounded-lg"
+                                                        onKeyDown={(e) => e.key === 'Enter' && addItem('locations', newLocation, setNewLocation)}
                                                     />
-                                                )}
-                                            </Badge>
-                                        ))}
-                                        {isEditing && (
-                                            <div className="flex gap-2">
-                                                <Input 
-                                                    value={newLocation}
-                                                    onChange={(e) => setNewLocation(e.target.value)}
-                                                    placeholder="Add location"
-                                                    className="w-32 h-8 text-sm rounded-lg"
-                                                    onKeyDown={(e) => e.key === 'Enter' && addItem('locations', newLocation, setNewLocation)}
-                                                />
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline"
-                                                    onClick={() => addItem('locations', newLocation, setNewLocation)}
-                                                    className="h-8 rounded-lg"
-                                                >
-                                                    <Plus className="w-3 h-3" />
-                                                </Button>
-                                            </div>
-                                        )}
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => addItem('locations', newLocation, setNewLocation)}
+                                                        className="h-8 rounded-lg"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                    </Button>
+                                                </div>
+                                            )
+                                        }
                                     </div>
                                 </div>
                             </div>
-
                             <div className="md:col-span-2">
-                                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                     About Company
-                                </label>
-                                {isEditing ? (
-                                    <Textarea 
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        placeholder="Tell candidates about your company, culture, and mission..."
-                                        rows={6}
-                                        className="rounded-xl"
-                                    />
-                                ) : (
-                                    <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
-                                        {profile.description || "No description set"}
-                                    </p>
-                                )}
+                                </Label>
+                                {
+                                    isEditing ? (
+                                        <Textarea
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            placeholder="Tell candidates about your company, culture, and mission..."
+                                            rows={6}
+                                            className="rounded-xl"
+                                        />
+                                    ) : (
+                                        <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
+                                            {profile.description || "No description set"}
+                                        </p>
+                                    )
+                                }
                             </div>
-
-                            {/* Social Links */}
                             <div className="md:col-span-2">
-                                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 block">
+                                <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 block">
                                     Social Links
-                                </label>
+                                </Label>
                                 <div className="grid md:grid-cols-3 gap-4">
                                     <div className="flex items-center gap-2">
                                         <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
                                             <Twitter className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
                                         </div>
-                                        {isEditing ? (
-                                            <Input 
-                                                value={formData.socialLinks.twitter}
-                                                onChange={(e) => setFormData({ 
-                                                    ...formData, 
-                                                    socialLinks: { ...formData.socialLinks, twitter: e.target.value }
-                                                })}
-                                                placeholder="Twitter URL"
-                                                className="rounded-xl flex-1"
-                                            />
-                                        ) : (
-                                            <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
-                                                {profile.socialLinks?.twitter || "Not set"}
-                                            </span>
-                                        )}
+                                        {
+                                            isEditing ? (
+                                                <Input
+                                                    value={formData.socialLinks.twitter}
+                                                    onChange={(e) => setFormData({
+                                                        ...formData,
+                                                        socialLinks: { ...formData.socialLinks, twitter: e.target.value }
+                                                    })}
+                                                    placeholder="Twitter URL"
+                                                    className="rounded-xl flex-1"
+                                                />
+                                            ) : (
+                                                <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
+                                                    {profile.socialLinks?.twitter || "Not set"}
+                                                </span>
+                                            )
+                                        }
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
                                             <Linkedin className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
                                         </div>
-                                        {isEditing ? (
-                                            <Input 
-                                                value={formData.socialLinks.linkedin}
-                                                onChange={(e) => setFormData({ 
-                                                    ...formData, 
-                                                    socialLinks: { ...formData.socialLinks, linkedin: e.target.value }
-                                                })}
-                                                placeholder="LinkedIn URL"
-                                                className="rounded-xl flex-1"
-                                            />
-                                        ) : (
-                                            <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
-                                                {profile.socialLinks?.linkedin || "Not set"}
-                                            </span>
-                                        )}
+                                        {
+                                            isEditing ? (
+                                                <Input
+                                                    value={formData.socialLinks.linkedin}
+                                                    onChange={(e) => setFormData({
+                                                        ...formData,
+                                                        socialLinks: { ...formData.socialLinks, linkedin: e.target.value }
+                                                    })}
+                                                    placeholder="LinkedIn URL"
+                                                    className="rounded-xl flex-1"
+                                                />
+                                            ) : (
+                                                <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
+                                                    {profile.socialLinks?.linkedin || "Not set"}
+                                                </span>
+                                            )
+                                        }
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
                                             <Github className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
                                         </div>
-                                        {isEditing ? (
-                                            <Input 
-                                                value={formData.socialLinks.github}
-                                                onChange={(e) => setFormData({ 
-                                                    ...formData, 
-                                                    socialLinks: { ...formData.socialLinks, github: e.target.value }
-                                                })}
-                                                placeholder="GitHub URL"
-                                                className="rounded-xl flex-1"
-                                            />
-                                        ) : (
-                                            <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
-                                                {profile.socialLinks?.github || "Not set"}
-                                            </span>
-                                        )}
+                                        {
+                                            isEditing ? (
+                                                <Input
+                                                    value={formData.socialLinks.github}
+                                                    onChange={(e) => setFormData({
+                                                        ...formData,
+                                                        socialLinks: { ...formData.socialLinks, github: e.target.value }
+                                                    })}
+                                                    placeholder="GitHub URL"
+                                                    className="rounded-xl flex-1"
+                                                />
+                                            ) : (
+                                                <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
+                                                    {profile.socialLinks?.github || "Not set"}
+                                                </span>
+                                            )
+                                        }
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </motion.div>
                 </TabsContent>
-
-                {/* Culture & Benefits Tab */}
                 <TabsContent value="culture">
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -613,54 +628,60 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                     >
                         <div className="space-y-6">
                             <div>
-                                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 block">
+                                <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 block">
                                     Employee Benefits
-                                </label>
+                                </Label>
                                 <div className="flex flex-wrap gap-2">
-                                    {(isEditing ? formData.benefits : profile.benefits)?.map((benefit, i) => (
-                                        <Badge 
-                                            key={i} 
-                                            className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1 px-3 py-1"
-                                        >
-                                            <Sparkles className="w-3 h-3" />
-                                            {benefit}
-                                            {isEditing && (
-                                                <X 
-                                                    className="w-3 h-3 cursor-pointer hover:text-red-500 ml-1" 
-                                                    onClick={() => removeItem('benefits', i)}
-                                                />
-                                            )}
-                                        </Badge>
-                                    ))}
-                                    {isEditing && (
-                                        <div className="flex gap-2">
-                                            <Input 
-                                                value={newBenefit}
-                                                onChange={(e) => setNewBenefit(e.target.value)}
-                                                placeholder="Add benefit"
-                                                className="w-40 h-8 text-sm rounded-lg"
-                                                onKeyDown={(e) => e.key === 'Enter' && addItem('benefits', newBenefit, setNewBenefit)}
-                                            />
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline"
-                                                onClick={() => addItem('benefits', newBenefit, setNewBenefit)}
-                                                className="h-8 rounded-lg"
+                                    {
+                                        (isEditing ? formData.benefits : profile.benefits)?.map((benefit, i) => (
+                                            <Badge
+                                                key={i}
+                                                className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1 px-3 py-1"
                                             >
-                                                <Plus className="w-3 h-3" />
-                                            </Button>
-                                        </div>
-                                    )}
+                                                <Sparkles className="w-3 h-3" />
+                                                {benefit}
+                                                {
+                                                    isEditing && (
+                                                        <X
+                                                            className="w-3 h-3 cursor-pointer hover:text-red-500 ml-1"
+                                                            onClick={() => removeItem('benefits', i)}
+                                                        />
+                                                    )
+                                                }
+                                            </Badge>
+                                        ))
+                                    }
+                                    {
+                                        isEditing && (
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    value={newBenefit}
+                                                    onChange={(e) => setNewBenefit(e.target.value)}
+                                                    placeholder="Add benefit"
+                                                    className="w-40 h-8 text-sm rounded-lg"
+                                                    onKeyDown={(e) => e.key === 'Enter' && addItem('benefits', newBenefit, setNewBenefit)}
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => addItem('benefits', newBenefit, setNewBenefit)}
+                                                    className="h-8 rounded-lg"
+                                                >
+                                                    <Plus className="w-3 h-3" />
+                                                </Button>
+                                            </div>
+                                        )
+                                    }
                                 </div>
-                                {!isEditing && (!profile.benefits || profile.benefits.length === 0) && (
-                                    <p className="text-neutral-500 text-sm">No benefits listed yet</p>
-                                )}
+                                {
+                                    !isEditing && (!profile.benefits || profile.benefits.length === 0) && (
+                                        <p className="text-neutral-500 text-sm">No benefits listed yet</p>
+                                    )
+                                }
                             </div>
                         </div>
                     </motion.div>
                 </TabsContent>
-
-                {/* Tech Stack Tab */}
                 <TabsContent value="tech">
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -668,52 +689,58 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                         className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
                     >
                         <div>
-                            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 block">
+                            <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4 block">
                                 Technologies We Use
-                            </label>
+                            </Label>
                             <div className="flex flex-wrap gap-2">
-                                {(isEditing ? formData.techStack : profile.techStack)?.map((tech, i) => (
-                                    <Badge 
-                                        key={i} 
-                                        className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 gap-1 px-3 py-1"
-                                    >
-                                        {tech}
-                                        {isEditing && (
-                                            <X 
-                                                className="w-3 h-3 cursor-pointer hover:text-red-500 ml-1" 
-                                                onClick={() => removeItem('techStack', i)}
-                                            />
-                                        )}
-                                    </Badge>
-                                ))}
-                                {isEditing && (
-                                    <div className="flex gap-2">
-                                        <Input 
-                                            value={newTech}
-                                            onChange={(e) => setNewTech(e.target.value)}
-                                            placeholder="Add technology"
-                                            className="w-40 h-8 text-sm rounded-lg"
-                                            onKeyDown={(e) => e.key === 'Enter' && addItem('techStack', newTech, setNewTech)}
-                                        />
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            onClick={() => addItem('techStack', newTech, setNewTech)}
-                                            className="h-8 rounded-lg"
+                                {
+                                    (isEditing ? formData.techStack : profile.techStack)?.map((tech, i) => (
+                                        <Badge
+                                            key={i}
+                                            className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 gap-1 px-3 py-1"
                                         >
-                                            <Plus className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                )}
+                                            {tech}
+                                            {
+                                                isEditing && (
+                                                    <X
+                                                        className="w-3 h-3 cursor-pointer hover:text-red-500 ml-1"
+                                                        onClick={() => removeItem('techStack', i)}
+                                                    />
+                                                )
+                                            }
+                                        </Badge>
+                                    ))
+                                }
+                                {
+                                    isEditing && (
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={newTech}
+                                                onChange={(e) => setNewTech(e.target.value)}
+                                                placeholder="Add technology"
+                                                className="w-40 h-8 text-sm rounded-lg"
+                                                onKeyDown={(e) => e.key === 'Enter' && addItem('techStack', newTech, setNewTech)}
+                                            />
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => addItem('techStack', newTech, setNewTech)}
+                                                className="h-8 rounded-lg"
+                                            >
+                                                <Plus className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    )
+                                }
                             </div>
-                            {!isEditing && (!profile.techStack || profile.techStack.length === 0) && (
-                                <p className="text-neutral-500 text-sm">No technologies listed yet</p>
-                            )}
+                            {
+                                !isEditing && (!profile.techStack || profile.techStack.length === 0) && (
+                                    <p className="text-neutral-500 text-sm">No technologies listed yet</p>
+                                )
+                            }
                         </div>
                     </motion.div>
                 </TabsContent>
-
-                {/* Media Gallery Tab */}
                 <TabsContent value="media">
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -725,54 +752,67 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                 <h3 className="font-semibold text-neutral-900 dark:text-white">Media Gallery</h3>
                                 <p className="text-sm text-neutral-500">Showcase your office, team, and events</p>
                             </div>
-                            {isEditing && (
-                                <Button variant="outline" className="rounded-xl">
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add Media
-                                </Button>
-                            )}
+                            {
+                                isEditing && (
+                                    <Button variant="outline" className="rounded-xl">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Add Media
+                                    </Button>
+                                )
+                            }
                         </div>
 
-                        {profile.mediaGallery && profile.mediaGallery.length > 0 ? (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {profile.mediaGallery.map((media: any, i) => (
-                                    <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800">
-                                        {media.type === 'video' ? (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <Video className="w-8 h-8 text-neutral-400" />
+                        {
+                            profile.mediaGallery && profile.mediaGallery.length > 0 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {
+                                        profile.mediaGallery.map((media: any, i) => (
+                                            <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                                                {
+                                                    media.type === 'video' ? (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <Video className="w-8 h-8 text-neutral-400" />
+                                                        </div>
+                                                    ) : (
+                                                        <Image
+                                                            src={media.url}
+                                                            alt={media.caption || "Gallery image"}
+                                                            className="w-full h-full object-cover"
+                                                            fill
+                                                        />
+                                                    )
+                                                }
+                                                {
+                                                    isEditing && (
+                                                        <Button
+                                                            size="icon"
+                                                            variant="destructive"
+                                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-lg"
+                                                            onClick={() => removeMediaFromGallery(media.id)}
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </Button>
+                                                    )
+                                                }
                                             </div>
-                                        ) : (
-                                            <img 
-                                                src={media.url} 
-                                                alt={media.caption || "Gallery image"} 
-                                                className="w-full h-full object-cover"
-                                            />
-                                        )}
-                                        {isEditing && (
-                                            <Button
-                                                size="icon"
-                                                variant="destructive"
-                                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-lg"
-                                                onClick={() => removeMediaFromGallery(media.id)}
-                                            >
-                                                <X className="w-4 h-4" />
+                                        ))
+                                    }
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl">
+                                    <ImageIcon className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+                                    <p className="text-neutral-500">No media added yet</p>
+                                    {
+                                        isEditing && (
+                                            <Button variant="outline" className="mt-4 rounded-xl">
+                                                <Plus className="w-4 h-4 mr-2" />
+                                                Upload Images or Videos
                                             </Button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl">
-                                <Image className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                                <p className="text-neutral-500">No media added yet</p>
-                                {isEditing && (
-                                    <Button variant="outline" className="mt-4 rounded-xl">
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Upload Images or Videos
-                                    </Button>
-                                )}
-                            </div>
-                        )}
+                                        )
+                                    }
+                                </div>
+                            )
+                        }
                     </motion.div>
                 </TabsContent>
             </Tabs>

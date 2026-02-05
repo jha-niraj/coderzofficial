@@ -582,7 +582,7 @@ export async function reorderInterviewRounds(processId: string, roundIds: string
 }
 
 // Get round templates (pre-built templates for common round types)
-export function getRoundTemplates() {
+export async function getRoundTemplates() {
     return {
         success: true,
         data: [

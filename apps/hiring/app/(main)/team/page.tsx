@@ -1,6 +1,10 @@
 import { Suspense } from "react"
-import { Loader2 } from "lucide-react"
-import { getTeamMembers, getPendingInvites, getTeamStats } from "@/actions/team"
+import { 
+    Loader2 
+} from "lucide-react"
+import { 
+    getTeamMembers, getPendingInvites, getTeamStats 
+} from "@/actions/team"
 import { TeamContent } from "./team-content"
 
 export const metadata = {
