@@ -64,6 +64,7 @@ interface FormData {
     responsibilities: string[]
     benefits: string[]
     hasAssignment: boolean
+    assignmentAddLater: boolean // If true, assignment details will be added later
     assignmentTitle: string
     assignmentDescription: string
     assignmentDeadlineDays: string
@@ -308,6 +309,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
         responsibilities: [],
         benefits: [],
         hasAssignment: false,
+        assignmentAddLater: false,
         assignmentTitle: "",
         assignmentDescription: "",
         assignmentDeadlineDays: "7",
@@ -355,14 +357,14 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
             responsibilities: formData.responsibilities,
             benefits: formData.benefits,
             hasAssignment: formData.hasAssignment,
-            assignmentDetails: formData.hasAssignment ? {
+            assignmentDetails: formData.hasAssignment && !formData.assignmentAddLater ? {
                 title: formData.assignmentTitle,
                 description: formData.assignmentDescription,
                 requirements: [],
                 resources: [],
                 deliverables: [],
             } : null,
-            assignmentDeadlineDays: formData.hasAssignment ? parseInt(formData.assignmentDeadlineDays) : null,
+            assignmentDeadlineDays: formData.hasAssignment && !formData.assignmentAddLater ? parseInt(formData.assignmentDeadlineDays) : null,
             interviewProcessId: formData.interviewProcessId || null,
         })
 
@@ -404,14 +406,14 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                 responsibilities: formData.responsibilities,
                 benefits: formData.benefits,
                 hasAssignment: formData.hasAssignment,
-                assignmentDetails: formData.hasAssignment ? {
+                assignmentDetails: formData.hasAssignment && !formData.assignmentAddLater ? {
                     title: formData.assignmentTitle,
                     description: formData.assignmentDescription,
                     requirements: [],
                     resources: [],
                     deliverables: [],
                 } : undefined,
-                assignmentDeadlineDays: formData.hasAssignment ? parseInt(formData.assignmentDeadlineDays) : undefined,
+                assignmentDeadlineDays: formData.hasAssignment && !formData.assignmentAddLater ? parseInt(formData.assignmentDeadlineDays) : undefined,
                 interviewProcessId: formData.interviewProcessId || undefined,
                 status,
             })
@@ -860,46 +862,98 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                             </div>
                             <Switch
                                 checked={formData.hasAssignment}
-                                onCheckedChange={(v) => updateField("hasAssignment", v)}
+                                onCheckedChange={(v) => {
+                                    updateField("hasAssignment", v)
+                                    if (!v) {
+                                        updateField("assignmentAddLater", false)
+                                    }
+                                }}
                             />
                         </div>
 
                         {
                             formData.hasAssignment && (
                                 <div className="space-y-4">
-                                    <div>
-                                        <Label className="text-sm font-medium text-[#0F172A]">Assignment Title *</Label>
-                                        <Input
-                                            value={formData.assignmentTitle}
-                                            onChange={(e) => updateField("assignmentTitle", e.target.value)}
-                                            placeholder="e.g., Build a REST API"
-                                            className="h-11 mt-1"
-                                        />
+                                    {/* Add Now or Later Toggle */}
+                                    <div className="flex items-center gap-2 p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-[#0F172A]">When would you like to add assignment details?</p>
+                                            <p className="text-xs text-[#64748B]">You can always edit this later from the job settings</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-[#E2E8F0]">
+                                            <button
+                                                type="button"
+                                                onClick={() => updateField("assignmentAddLater", false)}
+                                                className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+                                                    !formData.assignmentAddLater
+                                                        ? "bg-[#0F172A] text-white"
+                                                        : "text-[#64748B] hover:text-[#0F172A]"
+                                                }`}
+                                            >
+                                                Add Now
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => updateField("assignmentAddLater", true)}
+                                                className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+                                                    formData.assignmentAddLater
+                                                        ? "bg-[#0F172A] text-white"
+                                                        : "text-[#64748B] hover:text-[#0F172A]"
+                                                }`}
+                                            >
+                                                Add Later
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <Label className="text-sm font-medium text-[#0F172A]">Assignment Description *</Label>
-                                        <Textarea
-                                            value={formData.assignmentDescription}
-                                            onChange={(e) => updateField("assignmentDescription", e.target.value)}
-                                            placeholder="Describe what candidates need to build..."
-                                            rows={4}
-                                            className="mt-1"
-                                        />
-                                    </div>
-                                    <div className="w-48">
-                                        <Label className="text-sm font-medium text-[#0F172A]">Deadline (days)</Label>
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            max="30"
-                                            value={formData.assignmentDeadlineDays}
-                                            onChange={(e) => updateField("assignmentDeadlineDays", e.target.value)}
-                                            className="h-11 mt-1"
-                                        />
-                                    </div>
+
+                                    {/* Assignment Details - Only show if not adding later */}
                                     {
-                                        errors.assignmentDeadlineDays && (
-                                            <p className="text-red-500 text-sm">{errors.assignmentDeadlineDays}</p>
+                                        !formData.assignmentAddLater ? (
+                                            <>
+                                                <div>
+                                                    <Label className="text-sm font-medium text-[#0F172A]">Assignment Title *</Label>
+                                                    <Input
+                                                        value={formData.assignmentTitle}
+                                                        onChange={(e) => updateField("assignmentTitle", e.target.value)}
+                                                        placeholder="e.g., Build a REST API"
+                                                        className="h-11 mt-1"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-sm font-medium text-[#0F172A]">Assignment Description *</Label>
+                                                    <Textarea
+                                                        value={formData.assignmentDescription}
+                                                        onChange={(e) => updateField("assignmentDescription", e.target.value)}
+                                                        placeholder="Describe what candidates need to build..."
+                                                        rows={4}
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+                                                <div className="w-48">
+                                                    <Label className="text-sm font-medium text-[#0F172A]">Deadline (days)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        max="30"
+                                                        value={formData.assignmentDeadlineDays}
+                                                        onChange={(e) => updateField("assignmentDeadlineDays", e.target.value)}
+                                                        className="h-11 mt-1"
+                                                    />
+                                                </div>
+                                                {
+                                                    errors.assignmentDeadlineDays && (
+                                                        <p className="text-red-500 text-sm">{errors.assignmentDeadlineDays}</p>
+                                                    )
+                                                }
+                                            </>
+                                        ) : (
+                                            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                                                <p className="text-sm text-amber-800">
+                                                    <span className="font-medium">Assignment details will be added later.</span>{" "}
+                                                    You can configure the assignment from the job settings after publishing. 
+                                                    Candidates won&apos;t see the assignment until you complete it.
+                                                </p>
+                                            </div>
                                         )
                                     }
                                 </div>

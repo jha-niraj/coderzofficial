@@ -85,9 +85,17 @@ const statusColors: Record<string, string> = {
     INTERESTED: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
     PREPARING: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
     APPLIED: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    UNDER_REVIEW: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
     SCREENING: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
+    SHORTLISTED: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    ASSIGNMENT_SENT: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
+    ASSIGNMENT_SUBMITTED: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
+    INTERVIEW_SCHEDULED: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+    INTERVIEWED: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400",
     INTERVIEWING: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+    OFFER_EXTENDED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     OFFERED: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    HIRED: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
     ACCEPTED: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
     REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
     WITHDRAWN: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400",
@@ -97,9 +105,17 @@ const statusLabels: Record<string, string> = {
     INTERESTED: "Interested",
     PREPARING: "Preparing",
     APPLIED: "Applied",
+    UNDER_REVIEW: "Under Review",
     SCREENING: "Screening",
+    SHORTLISTED: "Shortlisted",
+    ASSIGNMENT_SENT: "Assignment Pending",
+    ASSIGNMENT_SUBMITTED: "Assignment Submitted",
+    INTERVIEW_SCHEDULED: "Interview Scheduled",
+    INTERVIEWED: "Interviewed",
     INTERVIEWING: "Interviewing",
+    OFFER_EXTENDED: "Offer Extended",
     OFFERED: "Offer Received",
+    HIRED: "Hired",
     ACCEPTED: "Accepted",
     REJECTED: "Not Selected",
     WITHDRAWN: "Withdrawn",
@@ -124,8 +140,8 @@ export function ApplicationsContent({ applications: initialApplications }: Appli
 
     const filteredApplications = applications.filter(app => {
         if (activeTab === "all") return true
-        if (activeTab === "active") return ["INTERESTED", "PREPARING", "APPLIED", "SCREENING", "INTERVIEWING"].includes(app.status)
-        if (activeTab === "offers") return ["OFFERED", "ACCEPTED"].includes(app.status)
+        if (activeTab === "active") return ["INTERESTED", "PREPARING", "APPLIED", "UNDER_REVIEW", "SCREENING", "SHORTLISTED", "ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "INTERVIEW_SCHEDULED", "INTERVIEWED", "INTERVIEWING"].includes(app.status)
+        if (activeTab === "offers") return ["OFFERED", "OFFER_EXTENDED", "ACCEPTED", "HIRED"].includes(app.status)
         if (activeTab === "closed") return ["REJECTED", "WITHDRAWN"].includes(app.status)
         return true
     })
@@ -145,10 +161,20 @@ export function ApplicationsContent({ applications: initialApplications }: Appli
                 return <Target className="w-4 h-4" />
             case "APPLIED":
             case "SCREENING":
+            case "UNDER_REVIEW":
                 return <Loader2 className="w-4 h-4" />
+            case "SHORTLISTED":
+                return <CheckCircle2 className="w-4 h-4" />
+            case "ASSIGNMENT_SENT":
+            case "ASSIGNMENT_SUBMITTED":
+                return <FileText className="w-4 h-4" />
+            case "INTERVIEW_SCHEDULED":
+            case "INTERVIEWED":
             case "INTERVIEWING":
                 return <Mic className="w-4 h-4" />
+            case "OFFER_EXTENDED":
             case "OFFERED":
+            case "HIRED":
             case "ACCEPTED":
                 return <CheckCircle2 className="w-4 h-4" />
             case "REJECTED":
@@ -160,10 +186,10 @@ export function ApplicationsContent({ applications: initialApplications }: Appli
     }
 
     const activeCount = applications.filter(app =>
-        ["INTERESTED", "PREPARING", "APPLIED", "SCREENING", "INTERVIEWING"].includes(app.status)
+        ["INTERESTED", "PREPARING", "APPLIED", "UNDER_REVIEW", "SCREENING", "SHORTLISTED", "ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "INTERVIEW_SCHEDULED", "INTERVIEWED", "INTERVIEWING"].includes(app.status)
     ).length
     const offersCount = applications.filter(app =>
-        ["OFFERED", "ACCEPTED"].includes(app.status)
+        ["OFFERED", "OFFER_EXTENDED", "ACCEPTED", "HIRED"].includes(app.status)
     ).length
     const closedCount = applications.filter(app =>
         ["REJECTED", "WITHDRAWN"].includes(app.status)
@@ -391,6 +417,14 @@ export function ApplicationsContent({ applications: initialApplications }: Appli
                                                                         <Eye className="w-4 h-4 mr-2" />
                                                                         View Details
                                                                     </DropdownMenuItem>
+                                                                    {
+                                                                        ["SHORTLISTED", "ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "INTERVIEW_SCHEDULED", "INTERVIEWED", "OFFER_EXTENDED", "HIRED"].includes(application.status) && (
+                                                                            <DropdownMenuItem onClick={() => router.push(`/jobs/applications/${application.id}/interview`)}>
+                                                                                <Play className="w-4 h-4 mr-2" />
+                                                                                Interview Journey
+                                                                            </DropdownMenuItem>
+                                                                        )
+                                                                    }
                                                                     <DropdownMenuItem onClick={() => router.push(`/companies/${application.job.company.slug}/mock`)}>
                                                                         <Mic className="w-4 h-4 mr-2" />
                                                                         Practice Interview
@@ -513,6 +547,18 @@ export function ApplicationsContent({ applications: initialApplications }: Appli
                                                     }
 
                                                     <div className="flex items-center gap-3">
+                                                        {/* Interview Journey button for shortlisted/interviewing statuses */}
+                                                        {
+                                                            ["SHORTLISTED", "ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "INTERVIEW_SCHEDULED", "INTERVIEWED", "OFFER_EXTENDED", "HIRED"].includes(application.status) && (
+                                                                <Button
+                                                                    className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white gap-2"
+                                                                    onClick={() => router.push(`/jobs/applications/${application.id}/interview`)}
+                                                                >
+                                                                    <Play className="w-4 h-4" />
+                                                                    Interview Journey
+                                                                </Button>
+                                                            )
+                                                        }
                                                         {
                                                             ["INTERESTED", "PREPARING"].includes(application.status) && application.job.interviewProcess && (
                                                                 <Button

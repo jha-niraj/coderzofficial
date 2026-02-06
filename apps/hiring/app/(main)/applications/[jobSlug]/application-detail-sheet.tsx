@@ -6,9 +6,9 @@ import { format } from "date-fns"
 import Link from "next/link"
 import {
     X, Mail, Phone, MapPin, Calendar, FileText, ExternalLink,
-    Briefcase, Award, Star, CheckCircle, XCircle,
-    MessageSquare, Mic, MicOff, Sparkles, Loader2, Send, AlertTriangle,
-    Globe, Github, Linkedin
+    Briefcase, Award, Star, CheckCircle, XCircle, MessageSquare, 
+    Mic, MicOff, Sparkles, Loader2, Send, AlertTriangle, Globe, 
+    Github, Linkedin
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
@@ -24,6 +24,7 @@ import {
     rejectApplication, shortlistApplication, scheduleInterview,
     addApplicationNote, makeMessageProfessional
 } from "@/actions/applications"
+import { transcribeAudio } from "@/actions/(common)/speech-to-text"
 import Image from "next/image"
 
 interface ApplicationDetailSheetProps {
@@ -520,6 +521,7 @@ function RejectDialog({
     const [isPending, startTransition] = useTransition()
     const [message, setMessage] = useState("")
     const [isRecording, setIsRecording] = useState(false)
+    const [isTranscribing, setIsTranscribing] = useState(false)
     const [isEnhancing, setIsEnhancing] = useState(false)
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
@@ -539,7 +541,7 @@ function RejectDialog({
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const mediaRecorder = new MediaRecorder(stream)
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
             mediaRecorderRef.current = mediaRecorder
             chunksRef.current = []
 
@@ -550,10 +552,28 @@ function RejectDialog({
             }
 
             mediaRecorder.onstop = async () => {
-                const _audioBlob = new Blob(chunksRef.current, { type: "audio/webm" })
-                // For now, just append a placeholder - would integrate with speech-to-text API
-                setMessage(prev => prev + "\n\n[Voice note recorded - transcription pending]")
+                const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" })
                 stream.getTracks().forEach(track => track.stop())
+                
+                // Convert to base64 and transcribe
+                setIsTranscribing(true)
+                try {
+                    const arrayBuffer = await audioBlob.arrayBuffer()
+                    const base64 = Buffer.from(arrayBuffer).toString("base64")
+                    const result = await transcribeAudio(base64, "audio/webm")
+                    
+                    if (result.success && result.text) {
+                        const transcribedText = result.text
+                        setMessage(prev => prev ? `${prev}\n\n${transcribedText}` : transcribedText)
+                    } else {
+                        setMessage(prev => prev + "\n\n[Voice note - transcription failed]")
+                    }
+                } catch (error) {
+                    console.error("Transcription error:", error)
+                    setMessage(prev => prev + "\n\n[Voice note - transcription failed]")
+                } finally {
+                    setIsTranscribing(false)
+                }
             }
 
             mediaRecorder.start()
@@ -614,9 +634,15 @@ function RejectDialog({
                             size="sm"
                             className={`rounded-lg ${isRecording ? "bg-red-100 border-red-300 text-red-700" : ""}`}
                             onClick={isRecording ? stopRecording : startRecording}
+                            disabled={isTranscribing}
                         >
                             {
-                                isRecording ? (
+                                isTranscribing ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Transcribing...
+                                    </>
+                                ) : isRecording ? (
                                     <>
                                         <MicOff className="w-4 h-4 mr-2" />
                                         Stop Recording
@@ -850,6 +876,7 @@ function AddNoteDialog({
     const [isPending, startTransition] = useTransition()
     const [note, setNote] = useState("")
     const [isRecording, setIsRecording] = useState(false)
+    const [isTranscribing, setIsTranscribing] = useState(false)
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
 
@@ -868,7 +895,7 @@ function AddNoteDialog({
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const mediaRecorder = new MediaRecorder(stream)
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
             mediaRecorderRef.current = mediaRecorder
             chunksRef.current = []
 
@@ -879,8 +906,28 @@ function AddNoteDialog({
             }
 
             mediaRecorder.onstop = async () => {
-                setNote(prev => prev + "\n\n[Voice note recorded]")
+                const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" })
                 stream.getTracks().forEach(track => track.stop())
+                
+                // Convert to base64 and transcribe
+                setIsTranscribing(true)
+                try {
+                    const arrayBuffer = await audioBlob.arrayBuffer()
+                    const base64 = Buffer.from(arrayBuffer).toString("base64")
+                    const result = await transcribeAudio(base64, "audio/webm")
+                    
+                    if (result.success && result.text) {
+                        const transcribedText = result.text
+                        setNote(prev => prev ? `${prev}\n\n${transcribedText}` : transcribedText)
+                    } else {
+                        setNote(prev => prev + "\n\n[Voice note - transcription failed]")
+                    }
+                } catch (error) {
+                    console.error("Transcription error:", error)
+                    setNote(prev => prev + "\n\n[Voice note - transcription failed]")
+                } finally {
+                    setIsTranscribing(false)
+                }
             }
 
             mediaRecorder.start()
@@ -921,9 +968,15 @@ function AddNoteDialog({
                             size="sm"
                             className={`rounded-lg ${isRecording ? "bg-red-100 border-red-300 text-red-700" : ""}`}
                             onClick={isRecording ? stopRecording : startRecording}
+                            disabled={isTranscribing}
                         >
                             {
-                                isRecording ? (
+                                isTranscribing ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Transcribing...
+                                    </>
+                                ) : isRecording ? (
                                     <>
                                         <MicOff className="w-4 h-4 mr-2" />
                                         Stop
