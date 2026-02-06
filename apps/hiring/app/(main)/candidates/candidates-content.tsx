@@ -142,7 +142,7 @@ export function CandidatesContent({ initialCandidates, stats, jobs }: Candidates
         }
     }
 
-    const handleBulkAction = async (action: string) => {
+    const handleBulkAction = async (action: "INTERESTED" | "PREPARING" | "APPLIED" | "UNDER_REVIEW" | "SHORTLISTED" | "ASSIGNMENT_SENT" | "ASSIGNMENT_SUBMITTED" | "INTERVIEW_SCHEDULED" | "INTERVIEWED" | "OFFER_EXTENDED" | "HIRED" | "REJECTED" | "WITHDRAWN") => {
         if (selectedIds.size === 0) return
         
         startTransition(async () => {

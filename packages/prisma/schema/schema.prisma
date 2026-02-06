@@ -663,6 +663,18 @@ model User {
     knowmeProfileViews       KnowMeProfileView[]       @relation("KnowMeProfileViews")
     knowmeCreditTransactions KnowMeCreditTransaction[] @relation("KnowMeCreditTransactions")
 
+    // ===============================================
+    // HIRING PLATFORM RELATIONS
+    // ===============================================
+    companyMemberships     CompanyMember[]         @relation("UserCompanyMemberships")
+    followedCompanies      CompanyFollower[]       @relation("UserFollowedCompanies")
+    jobApplications        JobApplication[]        @relation("UserJobApplications")
+    applicationActivities  ApplicationActivity[]   @relation("UserApplicationActivities")
+    jobRecommendations     JobRecommendation[]     @relation("UserJobRecommendations")
+    savedJobs              SavedJob[]              @relation("UserSavedJobs")
+    jobMockSessions        JobMockSession[]        @relation("UserJobMockSessions")
+    interviewPrepProgress  InterviewPrepProgress[] @relation("UserInterviewPrepProgress")
+
     @@index([username])
     @@index([email])
 }

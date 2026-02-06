@@ -18,6 +18,7 @@ import {
 import {
     createInterviewProcess, InterviewRoundInput, InterviewProcessInput
 } from "@/actions/interview-config"
+import type { InterviewRoundType, InterviewFormat } from "@/types"
 
 // Template data interface for pre-filling
 export interface TemplateRound {
@@ -93,10 +94,10 @@ export function InterviewProcessForm({ onClose, initialTemplate }: InterviewProc
         if (initialTemplate?.rounds && initialTemplate.rounds.length > 0) {
             return initialTemplate.rounds.map((round, index) => ({
                 roundNumber: index + 1,
-                roundType: round.roundType,
+                roundType: round.roundType as InterviewRoundType,
                 title: round.title,
                 durationMinutes: round.durationMinutes,
-                format: round.format,
+                format: round.format as InterviewFormat,
                 description: round.description,
                 hasMockInterview: true,
                 isExpanded: index === 0 // Only first round expanded
@@ -118,10 +119,10 @@ export function InterviewProcessForm({ onClose, initialTemplate }: InterviewProc
             if (initialTemplate.rounds && initialTemplate.rounds.length > 0) {
                 setRounds(initialTemplate.rounds.map((round, index) => ({
                     roundNumber: index + 1,
-                    roundType: round.roundType,
+                    roundType: round.roundType as InterviewRoundType,
                     title: round.title,
                     durationMinutes: round.durationMinutes,
-                    format: round.format,
+                    format: round.format as InterviewFormat,
                     description: round.description,
                     hasMockInterview: true,
                     isExpanded: index === 0
@@ -331,7 +332,7 @@ export function InterviewProcessForm({ onClose, initialTemplate }: InterviewProc
                                                                 onValueChange={(value) => {
                                                                     const type = roundTypes.find(t => t.value === value)
                                                                     updateRound(index, {
-                                                                        roundType: value,
+                                                                        roundType: value as InterviewRoundType,
                                                                         title: type?.label || round.title
                                                                     })
                                                                 }}
@@ -368,7 +369,7 @@ export function InterviewProcessForm({ onClose, initialTemplate }: InterviewProc
                                                             <Label>Format</Label>
                                                             <Select
                                                                 value={round.format}
-                                                                onValueChange={(value) => updateRound(index, { format: value })}
+                                                                onValueChange={(value) => updateRound(index, { format: value as InterviewFormat })}
                                                             >
                                                                 <SelectTrigger className="mt-1.5 rounded-xl">
                                                                     <SelectValue />

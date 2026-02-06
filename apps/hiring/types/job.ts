@@ -50,6 +50,7 @@ export interface AssignmentDetails {
     requirements: string[]
     resources: string[]
     deliverables: string[]
+    [key: string]: string | string[] // Index signature for Prisma JSON compatibility
 }
 
 export interface CreateJobInput {
@@ -168,6 +169,7 @@ export interface RecommendedResource {
     title: string
     url: string
     type: string
+    [key: string]: string // Index signature for Prisma JSON compatibility
 }
 
 export interface PrepProgressData {

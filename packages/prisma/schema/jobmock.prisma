@@ -166,6 +166,7 @@ model JobMockSession {
     creditsUsed Int @default(15)
 
     // Relations
+    user    User           @relation("UserJobMockSessions", fields: [userId], references: [id], onDelete: Cascade)
     round   InterviewRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
     company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
     job     Job?           @relation("JobMockSessions", fields: [jobId], references: [id], onDelete: SetNull)
@@ -223,6 +224,7 @@ model InterviewPrepProgress {
     recommendedResources Json? // Array of resource links
 
     // Relations
+    user        User           @relation("UserInterviewPrepProgress", fields: [userId], references: [id], onDelete: Cascade)
     application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
     createdAt DateTime @default(now())

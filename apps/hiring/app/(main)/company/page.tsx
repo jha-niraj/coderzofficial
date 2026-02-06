@@ -1,6 +1,10 @@
 import { Suspense } from "react"
-import { Loader2 } from "lucide-react"
-import { getCompanyProfile, getCompanyPublicStats } from "@/actions/company"
+import { 
+    Loader2 
+} from "lucide-react"
+import { 
+    getCompanyProfile, getCompanyPublicStats 
+} from "@/actions/company"
 import { CompanyProfileContent } from "./company-content"
 
 export const metadata = {

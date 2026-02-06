@@ -24,8 +24,8 @@ import {
     getTeamMembers, updateTeamMember, deactivateTeamMember,
     reactivateTeamMember, inviteTeamMember, getPendingInvitations,
     revokeInvitation
-} from "@/actions/team/team.action"
-import { getCurrentMember } from "@/actions/profile/profile.action"
+} from "@/actions/team"
+import { getCurrentMember } from "@/actions/profile"
 import type {
     TeamMember, Permission, CompanyMemberRole, CompanyMemberJobTitle,
 } from "@/types"
@@ -36,10 +36,14 @@ const JOB_TITLE_OPTIONS: { value: CompanyMemberJobTitle; label: string }[] = [
     { value: "CTO", label: "CTO" },
     { value: "COFOUNDER", label: "Co-Founder" },
     { value: "VP_ENGINEERING", label: "VP Engineering" },
+    { value: "ENGINEERING_MANAGER", label: "Engineering Manager" },
     { value: "HR_HEAD", label: "HR Head" },
     { value: "HR_MANAGER", label: "HR Manager" },
+    { value: "TALENT_ACQUISITION", label: "Talent Acquisition" },
     { value: "RECRUITER", label: "Recruiter" },
     { value: "HIRING_MANAGER", label: "Hiring Manager" },
+    { value: "TECH_LEAD", label: "Tech Lead" },
+    { value: "INTERVIEWER", label: "Interviewer" },
     { value: "OTHER", label: "Other" },
 ]
 
@@ -48,10 +52,14 @@ const JOB_TITLE_LABELS: Record<CompanyMemberJobTitle, string> = {
     CTO: "CTO",
     COFOUNDER: "Co-Founder",
     VP_ENGINEERING: "VP Engineering",
+    ENGINEERING_MANAGER: "Engineering Manager",
     HR_HEAD: "HR Head",
     HR_MANAGER: "HR Manager",
+    TALENT_ACQUISITION: "Talent Acquisition",
     RECRUITER: "Recruiter",
     HIRING_MANAGER: "Hiring Manager",
+    TECH_LEAD: "Tech Lead",
+    INTERVIEWER: "Interviewer",
     OTHER: "Other",
 }
 
@@ -154,7 +162,7 @@ export default function RolesPermissionsPage() {
                 if (invitationsRes.success && invitationsRes.data) {
                     setInvitations(invitationsRes.data.map(inv => ({
                         ...inv,
-                        createdAt: new Date(inv.createdAt),
+                        createdAt: new Date(inv.invitedAt),
                         expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : null,
                     })))
                 }
@@ -176,7 +184,7 @@ export default function RolesPermissionsPage() {
         setActionMessage(null)
 
         try {
-            const defaultPermissions: Permission[] = newRole === "HEAD"
+            const defaultPermissions: Permission[] = newRole === "FOUNDER"
                 ? ["view_jobs", "post_jobs", "edit_jobs", "delete_jobs", "view_applications", "review_candidates", "manage_assessments", "manage_members", "manage_company", "manage_billing", "view_analytics"]
                 : ["view_jobs", "post_jobs", "view_applications", "review_candidates"]
 
@@ -296,7 +304,7 @@ export default function RolesPermissionsPage() {
                 if (invitationsRes.success && invitationsRes.data) {
                     setInvitations(invitationsRes.data.map(inv => ({
                         ...inv,
-                        createdAt: new Date(inv.createdAt),
+                        createdAt: new Date(inv.invitedAt),
                         expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : null,
                     })))
                 }
@@ -451,9 +459,9 @@ export default function RolesPermissionsPage() {
                         </div>
                         <div>
                             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                {members.filter(m => m.role === "HEAD").length}
+                                {members.filter(m => m.role === "FOUNDER").length}
                             </p>
-                            <p className="text-sm text-neutral-500">Admins (HEAD)</p>
+                            <p className="text-sm text-neutral-500">Admins (FOUNDER)</p>
                         </div>
                     </div>
                 </motion.div>
@@ -565,7 +573,7 @@ export default function RolesPermissionsPage() {
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="relative shrink-0">
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${member.role === "HEAD"
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${member.role === "FOUNDER"
                                                 ? "bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30"
                                                 : "bg-neutral-100 dark:bg-neutral-900"
                                                 }`}>
@@ -573,13 +581,13 @@ export default function RolesPermissionsPage() {
                                                     member.user?.image ? (
                                                         <Image
                                                             src={member.user.image}
-                                                            alt={member.displayName || member.email}
+                                                            alt={member.displayName || member.email || "Team member"}
                                                             width={48}
                                                             height={48}
                                                             className="w-full h-full object-cover rounded-xl"
                                                         />
                                                     ) : (
-                                                        <Users className={`w-5 h-5 ${member.role === "HEAD"
+                                                        <Users className={`w-5 h-5 ${member.role === "FOUNDER"
                                                             ? "text-amber-600 dark:text-amber-400"
                                                             : "text-neutral-400"
                                                             }`} />
@@ -587,7 +595,7 @@ export default function RolesPermissionsPage() {
                                                 }
                                             </div>
                                             {
-                                                member.role === "HEAD" && (
+                                                member.role === "FOUNDER" && (
                                                     <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
                                                         <Crown className="w-2.5 h-2.5 text-white" />
                                                     </div>
@@ -604,7 +612,7 @@ export default function RolesPermissionsPage() {
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <p className="font-medium text-neutral-900 dark:text-white truncate">
-                                                    {member.displayName || member.email.split("@")[0]}
+                                                    {member.displayName || member.email?.split("@")[0] || "Unknown"}
                                                 </p>
                                                 {
                                                     isSelf && (
@@ -618,15 +626,17 @@ export default function RolesPermissionsPage() {
                                                 <span>{member.email}</span>
                                                 <span>•</span>
                                                 <span>
-                                                    {member.jobTitle === "OTHER" && member.jobTitleCustom
+                                                    {
+                                                    member.jobTitle === "OTHER" && member.jobTitleCustom
                                                         ? member.jobTitleCustom
-                                                        : JOB_TITLE_LABELS[member.jobTitle]}
+                                                        : member.jobTitle ? JOB_TITLE_LABELS[member.jobTitle] : "Not set"
+                                                        }
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${member.role === "HEAD"
+                                        <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${member.role === "FOUNDER"
                                             ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                                             : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
                                             }`}>
@@ -670,8 +680,11 @@ export default function RolesPermissionsPage() {
                                                                                 <SelectValue />
                                                                             </SelectTrigger>
                                                                             <SelectContent>
-                                                                                <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
-                                                                                <SelectItem value="RECRUITER">RECRUITER</SelectItem>
+                                                                                <SelectItem value="FOUNDER">Founder (Admin)</SelectItem>
+                                                                                <SelectItem value="ADMIN">Admin</SelectItem>
+                                                                                <SelectItem value="HIRING_MANAGER">Hiring Manager</SelectItem>
+                                                                                <SelectItem value="RECRUITER">Recruiter</SelectItem>
+                                                                                <SelectItem value="INTERVIEWER">Interviewer</SelectItem>
                                                                             </SelectContent>
                                                                         </Select>
                                                                     </div>
@@ -860,8 +873,10 @@ export default function RolesPermissionsPage() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="ADMIN">Admin</SelectItem>
+                                    <SelectItem value="HIRING_MANAGER">Hiring Manager</SelectItem>
                                     <SelectItem value="RECRUITER">Recruiter</SelectItem>
-                                    <SelectItem value="HEAD">HEAD (Admin)</SelectItem>
+                                    <SelectItem value="INTERVIEWER">Interviewer</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

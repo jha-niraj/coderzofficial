@@ -154,6 +154,7 @@ model JobApplication {
     updatedAt DateTime  @updatedAt
 
     // Relations
+    user         User                    @relation("UserJobApplications", fields: [userId], references: [id], onDelete: Cascade)
     job          Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
     reviewedBy   CompanyMember?          @relation("ReviewedBy", fields: [reviewedById], references: [id])
     activities   ApplicationActivity[]
@@ -195,6 +196,7 @@ model ApplicationActivity {
     createdAt     DateTime                @default(now())
 
     // Relations
+    user        User           @relation("UserApplicationActivities", fields: [userId], references: [id], onDelete: Cascade)
     application JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
     @@index([applicationId])
@@ -226,7 +228,8 @@ model JobRecommendation {
     createdAt    DateTime  @default(now())
 
     // Relations
-    job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+    user User @relation("UserJobRecommendations", fields: [userId], references: [id], onDelete: Cascade)
+    job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
     @@unique([userId, jobId])
     @@index([userId])
@@ -241,6 +244,9 @@ model SavedJob {
     jobId     String
     notes     String?  @db.Text // User's personal notes about the job
     createdAt DateTime @default(now())
+
+    // Relations
+    user User @relation("UserSavedJobs", fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([userId, jobId])
     @@index([userId])

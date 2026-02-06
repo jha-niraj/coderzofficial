@@ -4,6 +4,9 @@
 import { prisma } from "@repo/prisma"
 import { auth } from "@repo/auth"
 import { revalidatePath } from "next/cache"
+import type { 
+    CompanySocialLinks, MediaItem, AddMediaInput 
+} from "@/types"
 
 async function getUserCompany() {
     const session = await auth()
@@ -16,27 +19,7 @@ async function getUserCompany() {
     return member
 }
 
-export interface CompanyProfile {
-    id: string
-    name: string
-    slug: string
-    logo: string | null
-    coverImage: string | null
-    tagline: string | null
-    description: string | null
-    website: string | null
-    industry: string | null
-    size: string | null
-    founded: number | null
-    headquarters: string | null
-    locations: string[]
-    techStack: string[]
-    benefits: string[]
-    culture: any
-    mediaGallery: any[]
-    socialLinks: any
-    isVerified: boolean
-}
+// Note: CompanyProfile is imported from @/types
 
 // Get company profile
 export async function getCompanyProfile() {
@@ -75,18 +58,16 @@ export async function getCompanyProfile() {
 // Update company profile
 export async function updateCompanyProfile(data: {
     name?: string
-    tagline?: string
     description?: string
     website?: string
     industry?: string
-    size?: string
-    founded?: number
+    companySize?: string
+    foundedYear?: number
     headquarters?: string
-    locations?: string[]
     techStack?: string[]
     benefits?: string[]
-    culture?: any
-    socialLinks?: any
+    culture?: string
+    socialLinks?: CompanySocialLinks
 }) {
     try {
         const member = await getUserCompany()
@@ -100,14 +81,12 @@ export async function updateCompanyProfile(data: {
             where: { id: member.companyId },
             data: {
                 name: data.name,
-                tagline: data.tagline,
                 description: data.description,
                 website: data.website,
                 industry: data.industry,
-                size: data.size,
-                founded: data.founded,
+                companySize: data.companySize,
+                foundedYear: data.foundedYear,
                 headquarters: data.headquarters,
-                locations: data.locations,
                 techStack: data.techStack,
                 benefits: data.benefits,
                 culture: data.culture,
@@ -135,8 +114,12 @@ export async function updateCompanyLogo(logoUrl: string) {
         }
 
         const updated = await prisma.company.update({
-            where: { id: member.companyId },
-            data: { logo: logoUrl }
+            where: { 
+                id: member.companyId 
+            },
+            data: { 
+                logoUrl: logoUrl 
+            }
         })
 
         revalidatePath("/company")
@@ -147,7 +130,7 @@ export async function updateCompanyLogo(logoUrl: string) {
     }
 }
 
-// Update company cover image
+// Update company cover image - stores in mediaGallery with type "cover"
 export async function updateCompanyCover(coverUrl: string) {
     try {
         const member = await getUserCompany()
@@ -157,9 +140,19 @@ export async function updateCompanyCover(coverUrl: string) {
             return { success: false, error: "Only company heads can update the cover" }
         }
 
+        // Get existing media gallery and update/add cover image
+        const company = await prisma.company.findUnique({ where: { id: member.companyId } })
+        if (!company) return { success: false, error: "Company not found" }
+
+        const existingGallery = (company.mediaGallery as MediaItem[] | null) ?? []
+        
+        // Filter out existing cover and add new one
+        const updatedGallery = existingGallery.filter((item: MediaItem) => item.type !== "cover")
+        updatedGallery.unshift({ url: coverUrl, type: "cover", caption: "Company cover image" })
+
         const updated = await prisma.company.update({
             where: { id: member.companyId },
-            data: { coverImage: coverUrl }
+            data: { mediaGallery: updatedGallery }
         })
 
         revalidatePath("/company")
@@ -171,7 +164,7 @@ export async function updateCompanyCover(coverUrl: string) {
 }
 
 // Add media to gallery
-export async function addMediaToGallery(media: { url: string; type: string; caption?: string }) {
+export async function addMediaToGallery(media: AddMediaInput) {
     try {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
@@ -179,8 +172,9 @@ export async function addMediaToGallery(media: { url: string; type: string; capt
         const company = await prisma.company.findUnique({ where: { id: member.companyId } })
         if (!company) return { success: false, error: "Company not found" }
 
-        const currentGallery = (company.mediaGallery as any[]) || []
-        const newGallery = [...currentGallery, { ...media, id: Date.now().toString() }]
+        const currentGallery = (company.mediaGallery as MediaItem[]) || []
+        const newItem: MediaItem = { ...media, id: Date.now().toString() }
+        const newGallery = [...currentGallery, newItem]
 
         const updated = await prisma.company.update({
             where: { id: member.companyId },
@@ -204,8 +198,8 @@ export async function removeMediaFromGallery(mediaId: string) {
         const company = await prisma.company.findUnique({ where: { id: member.companyId } })
         if (!company) return { success: false, error: "Company not found" }
 
-        const currentGallery = (company.mediaGallery as any[]) || []
-        const newGallery = currentGallery.filter((m: any) => m.id !== mediaId)
+        const currentGallery = (company.mediaGallery as MediaItem[]) || []
+        const newGallery = currentGallery.filter((m) => m.id !== mediaId)
 
         const updated = await prisma.company.update({
             where: { id: member.companyId },

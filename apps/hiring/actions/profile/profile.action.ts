@@ -4,14 +4,9 @@ import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
 import bcrypt from "bcryptjs";
 import type {
-    UserProfile,
-    CompanyDetails,
-    UpdateProfilePayload,
-    ChangePasswordPayload,
-    UpdateCompanyPayload,
-    Permission,
-    CompanySocialLinks,
-    CompanyVerificationStatus,
+    UserProfile, CompanyDetails, UpdateProfilePayload, 
+    ChangePasswordPayload, UpdateCompanyPayload, Permission, 
+    CompanySocialLinks, CompanyVerificationStatus
 } from "../../types";
 
 // ============================================

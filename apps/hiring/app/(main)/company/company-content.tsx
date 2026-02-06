@@ -4,8 +4,8 @@ import { useState, useTransition } from "react"
 import { motion } from "framer-motion"
 import {
     Building2, Globe, MapPin, Users, Calendar, Briefcase, Camera,
-    Plus, X, Save, ExternalLink, Image as ImageIcon, Video, Twitter, Linkedin,
-    Github, Edit2, Check, Sparkles
+    Plus, X, Save, ExternalLink, Image as ImageIcon, Video, Twitter, 
+    Linkedin, Github, Edit2, Check, Sparkles
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
@@ -24,36 +24,7 @@ import toast from "@repo/ui/components/ui/sonner"
 import Link from "next/link"
 import { Label } from "@repo/ui/components/ui/label"
 import Image from "next/image"
-
-interface CompanyProfile {
-    id: string
-    name: string
-    slug: string
-    logo: string | null
-    coverImage: string | null
-    tagline: string | null
-    description: string | null
-    website: string | null
-    industry: string | null
-    size: string | null
-    founded: number | null
-    headquarters: string | null
-    locations: string[]
-    techStack: string[]
-    benefits: string[]
-    culture: any
-    mediaGallery: any[]
-    socialLinks: any
-    isVerified: boolean
-    jobsCount?: number
-    membersCount?: number
-}
-
-interface CompanyStats {
-    activeJobs: number
-    totalHires: number
-    avgTimeToHireDays: number
-}
+import type { CompanyProfile, CompanyStats, MediaItem } from "@/types"
 
 interface CompanyProfileContentProps {
     profile: CompanyProfile | null
@@ -69,24 +40,30 @@ const companySizes = [
     "1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"
 ]
 
+type SocialLinksType = { twitter?: string; linkedin?: string; github?: string };
+
 export function CompanyProfileContent({ profile, stats }: CompanyProfileContentProps) {
     const [isPending, startTransition] = useTransition()
     const [isEditing, setIsEditing] = useState(false)
+    
+    // Type cast JSON fields from Prisma to proper types
+    const socialLinks = (profile?.socialLinks as SocialLinksType) || { twitter: "", linkedin: "", github: "" };
+    const benefits = Array.isArray(profile?.benefits) ? profile.benefits as string[] : [];
+    const techStack = Array.isArray(profile?.techStack) ? profile.techStack as string[] : [];
+    const mediaGallery = Array.isArray(profile?.mediaGallery) ? profile.mediaGallery as MediaItem[] : [];
+    
     const [formData, setFormData] = useState({
         name: profile?.name || "",
-        tagline: profile?.tagline || "",
         description: profile?.description || "",
         website: profile?.website || "",
         industry: profile?.industry || "",
-        size: profile?.size || "",
-        founded: profile?.founded?.toString() || "",
+        size: (profile?.companySize || profile?.size) || "",
+        founded: (profile?.foundedYear || profile?.founded)?.toString() || "",
         headquarters: profile?.headquarters || "",
-        locations: profile?.locations || [],
-        techStack: profile?.techStack || [],
-        benefits: profile?.benefits || [],
-        socialLinks: profile?.socialLinks || { twitter: "", linkedin: "", github: "" }
+        techStack: Array.isArray(profile?.techStack) ? profile.techStack : [],
+        benefits: Array.isArray(profile?.benefits) ? profile.benefits : [],
+        socialLinks
     })
-    const [newLocation, setNewLocation] = useState("")
     const [newTech, setNewTech] = useState("")
     const [newBenefit, setNewBenefit] = useState("")
 
@@ -112,14 +89,12 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
         startTransition(async () => {
             const result = await updateCompanyProfile({
                 name: formData.name,
-                tagline: formData.tagline,
                 description: formData.description,
                 website: formData.website,
                 industry: formData.industry,
-                size: formData.size,
-                founded: formData.founded ? parseInt(formData.founded) : undefined,
+                companySize: formData.size,
+                foundedYear: formData.founded ? parseInt(formData.founded) : undefined,
                 headquarters: formData.headquarters,
-                locations: formData.locations,
                 techStack: formData.techStack,
                 benefits: formData.benefits,
                 socialLinks: formData.socialLinks
@@ -134,7 +109,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
         })
     }
 
-    const addItem = (type: 'locations' | 'techStack' | 'benefits', value: string, setter: (v: string) => void) => {
+    const addItem = (type: 'techStack' | 'benefits', value: string, setter: (v: string) => void) => {
         if (!value.trim()) return
         setFormData(prev => ({
             ...prev,
@@ -143,7 +118,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
         setter("")
     }
 
-    const removeItem = (type: 'locations' | 'techStack' | 'benefits', index: number) => {
+    const removeItem = (type: 'techStack' | 'benefits', index: number) => {
         setFormData(prev => ({
             ...prev,
             [type]: prev[type].filter((_, i) => i !== index)
@@ -188,10 +163,10 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                     className="rounded-xl"
                                     asChild
                                 >
-                                    <a href={`/companies/${profile.slug}`} target="_blank" rel="noopener noreferrer">
+                                    <Link href={`/companies/${profile.slug}`} target="_blank" rel="noopener noreferrer">
                                         <ExternalLink className="w-4 h-4 mr-2" />
                                         View Public Page
-                                    </a>
+                                    </Link>
                                 </Button>
                                 <Button
                                     onClick={() => setIsEditing(true)}
@@ -347,23 +322,6 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                                        Tagline
-                                    </Label>
-                                    {
-                                        isEditing ? (
-                                            <Input
-                                                value={formData.tagline}
-                                                onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                                                placeholder="A short description of your company"
-                                                className="rounded-xl"
-                                            />
-                                        ) : (
-                                            <p className="text-neutral-600 dark:text-neutral-400">{profile.tagline || "No tagline set"}</p>
-                                        )
-                                    }
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                                         Website
                                     </Label>
                                     {
@@ -479,50 +437,6 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                         )
                                     }
                                 </div>
-                                <div>
-                                    <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                                        Office Locations
-                                    </Label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {
-                                            (isEditing ? formData.locations : profile.locations)?.map((loc, i) => (
-                                                <Badge key={i} variant="outline" className="gap-1">
-                                                    <MapPin className="w-3 h-3" />
-                                                    {loc}
-                                                    {
-                                                        isEditing && (
-                                                            <X
-                                                                className="w-3 h-3 cursor-pointer hover:text-red-500"
-                                                                onClick={() => removeItem('locations', i)}
-                                                            />
-                                                        )
-                                                    }
-                                                </Badge>
-                                            ))
-                                        }
-                                        {
-                                            isEditing && (
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        value={newLocation}
-                                                        onChange={(e) => setNewLocation(e.target.value)}
-                                                        placeholder="Add location"
-                                                        className="w-32 h-8 text-sm rounded-lg"
-                                                        onKeyDown={(e) => e.key === 'Enter' && addItem('locations', newLocation, setNewLocation)}
-                                                    />
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => addItem('locations', newLocation, setNewLocation)}
-                                                        className="h-8 rounded-lg"
-                                                    >
-                                                        <Plus className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                            )
-                                        }
-                                    </div>
-                                </div>
                             </div>
                             <div className="md:col-span-2">
                                 <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
@@ -566,7 +480,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                                 />
                                             ) : (
                                                 <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
-                                                    {profile.socialLinks?.twitter || "Not set"}
+                                                    {socialLinks.twitter || "Not set"}
                                                 </span>
                                             )
                                         }
@@ -588,7 +502,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                                 />
                                             ) : (
                                                 <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
-                                                    {profile.socialLinks?.linkedin || "Not set"}
+                                                    {socialLinks.linkedin || "Not set"}
                                                 </span>
                                             )
                                         }
@@ -610,7 +524,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                                 />
                                             ) : (
                                                 <span className="text-neutral-600 dark:text-neutral-400 text-sm truncate">
-                                                    {profile.socialLinks?.github || "Not set"}
+                                                    {socialLinks.github || "Not set"}
                                                 </span>
                                             )
                                         }
@@ -633,7 +547,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                 </Label>
                                 <div className="flex flex-wrap gap-2">
                                     {
-                                        (isEditing ? formData.benefits : profile.benefits)?.map((benefit, i) => (
+                                        (isEditing ? formData.benefits : benefits)?.map((benefit, i) => (
                                             <Badge
                                                 key={i}
                                                 className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1 px-3 py-1"
@@ -674,7 +588,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                     }
                                 </div>
                                 {
-                                    !isEditing && (!profile.benefits || profile.benefits.length === 0) && (
+                                    !isEditing && benefits.length === 0 && (
                                         <p className="text-neutral-500 text-sm">No benefits listed yet</p>
                                     )
                                 }
@@ -694,7 +608,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                             </Label>
                             <div className="flex flex-wrap gap-2">
                                 {
-                                    (isEditing ? formData.techStack : profile.techStack)?.map((tech, i) => (
+                                    (isEditing ? formData.techStack : techStack)?.map((tech, i) => (
                                         <Badge
                                             key={i}
                                             className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 gap-1 px-3 py-1"
@@ -734,7 +648,7 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                 }
                             </div>
                             {
-                                !isEditing && (!profile.techStack || profile.techStack.length === 0) && (
+                                !isEditing && techStack.length === 0 && (
                                     <p className="text-neutral-500 text-sm">No technologies listed yet</p>
                                 )
                             }
@@ -763,10 +677,10 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                         </div>
 
                         {
-                            profile.mediaGallery && profile.mediaGallery.length > 0 ? (
+                            mediaGallery.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {
-                                        profile.mediaGallery.map((media: any, i) => (
+                                        mediaGallery.map((media: MediaItem, i) => (
                                             <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800">
                                                 {
                                                     media.type === 'video' ? (
@@ -776,19 +690,19 @@ export function CompanyProfileContent({ profile, stats }: CompanyProfileContentP
                                                     ) : (
                                                         <Image
                                                             src={media.url}
-                                                            alt={media.caption || "Gallery image"}
+                                                            alt={media.title || "Gallery image"}
                                                             className="w-full h-full object-cover"
                                                             fill
                                                         />
                                                     )
                                                 }
                                                 {
-                                                    isEditing && (
+                                                    isEditing && media.id && (
                                                         <Button
                                                             size="icon"
                                                             variant="destructive"
                                                             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-lg"
-                                                            onClick={() => removeMediaFromGallery(media.id)}
+                                                            onClick={() => removeMediaFromGallery(media.id!)}
                                                         >
                                                             <X className="w-4 h-4" />
                                                         </Button>

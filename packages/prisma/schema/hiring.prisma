@@ -108,6 +108,7 @@ model CompanyFollower {
     companyId String
     createdAt DateTime @default(now())
 
+    user    User    @relation("UserFollowedCompanies", fields: [userId], references: [id], onDelete: Cascade)
     company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
     @@unique([userId, companyId])
@@ -125,6 +126,7 @@ enum CompanyVerificationStatus {
 // This replaces the old "Recruiter" model with a clearer structure
 model CompanyMember {
     id        String @id @default(cuid())
+    
     userId    String // Links to User.id from main schema (SSO)
     companyId String
 
@@ -154,6 +156,7 @@ model CompanyMember {
     lastActiveAt DateTime?
 
     // Relations
+    user                 User             @relation("UserCompanyMemberships", fields: [userId], references: [id], onDelete: Cascade)
     company              Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
     postedJobs           Job[]            @relation("PostedBy")
     reviewedApplications JobApplication[] @relation("ReviewedBy")

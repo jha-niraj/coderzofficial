@@ -3,6 +3,12 @@
 import { prisma } from "@repo/prisma"
 import { auth } from "@repo/auth"
 import { revalidatePath } from "next/cache"
+import type { 
+    CreateMockSessionInput, 
+    MockSessionFilters, 
+    UpdateMockSessionData,
+    JobMockStatus
+} from "@/types"
 
 async function getCompanyMember() {
     const session = await auth()
@@ -12,14 +18,7 @@ async function getCompanyMember() {
     return member
 }
 
-export async function createMockSession(input: {
-    userId: string
-    companyId: string
-    roundId: string
-    jobId?: string
-    sessionType?: string
-    scheduledFor?: Date
-}) {
+export async function createMockSession(input: CreateMockSessionInput) {
     try {
         const member = await getCompanyMember()
         if (!member) return { success: false, error: "Unauthorized" }
@@ -36,7 +35,7 @@ export async function createMockSession(input: {
                 companyId: member.companyId,
                 roundId: input.roundId,
                 jobId: input.jobId,
-                sessionType: input.sessionType as any || "VOICE",
+                sessionType: input.sessionType || "VOICE",
                 scheduledFor: input.scheduledFor,
                 status: "SCHEDULED"
             }
@@ -50,13 +49,13 @@ export async function createMockSession(input: {
     }
 }
 
-export async function listCompanyMockSessions(companyId: string, filters: { userId?: string, status?: string } = {}) {
+export async function listCompanyMockSessions(companyId: string, filters: MockSessionFilters = {}) {
     try {
         const member = await getCompanyMember()
         if (!member) return { success: false, error: "Unauthorized" }
         if (member.companyId !== companyId) return { success: false, error: "Permission denied" }
 
-        const where: any = { companyId }
+        const where: { companyId: string; userId?: string; status?: JobMockStatus } = { companyId }
         if (filters.userId) where.userId = filters.userId
         if (filters.status) where.status = filters.status
 
@@ -92,7 +91,7 @@ export async function getMockSession(sessionId: string) {
     }
 }
 
-export async function updateMockSession(sessionId: string, data: Partial<any>) {
+export async function updateMockSession(sessionId: string, data: UpdateMockSessionData) {
     try {
         const member = await getCompanyMember()
         if (!member) return { success: false, error: "Unauthorized" }

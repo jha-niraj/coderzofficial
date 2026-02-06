@@ -19,10 +19,14 @@ export type CompanyMemberJobTitle =
     | "CTO"
     | "COFOUNDER"
     | "VP_ENGINEERING"
+    | "ENGINEERING_MANAGER"
     | "HR_HEAD"
     | "HR_MANAGER"
+    | "TALENT_ACQUISITION"
     | "RECRUITER"
     | "HIRING_MANAGER"
+    | "TECH_LEAD"
+    | "INTERVIEWER"
     | "OTHER"
 
 export type CompanyVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED"
@@ -40,6 +44,7 @@ export interface CompanySocialLinks {
     twitter?: string
     github?: string
     website?: string
+    [key: string]: string | undefined // Index signature for Prisma JSON compatibility
 }
 
 export interface CompanyCulture {
@@ -47,53 +52,68 @@ export interface CompanyCulture {
     workStyle?: string
     teamSize?: string
     description?: string
+    [key: string]: string | string[] | undefined // Index signature for Prisma JSON compatibility
 }
 
 export interface MediaItem {
-    id: string
-    type: "image" | "video"
+    id?: string
+    type: "image" | "video" | "cover"
     url: string
     title?: string
     description?: string
+    caption?: string
+    [key: string]: string | undefined // Index signature for Prisma JSON compatibility
 }
 
 export interface CompanyProfile {
     id: string
     name: string
     slug: string
-    logo: string | null
-    coverImage: string | null
-    tagline: string | null
+    // Logo field - may be logoUrl in DB
+    logo?: string | null
+    logoUrl?: string | null
+    // Cover image - not in current schema
+    coverImage?: string | null
+    // Tagline - not in current schema
+    tagline?: string | null
     description: string | null
     website: string | null
     industry: string | null
-    size: string | null
-    founded: number | null
+    // Size field - companySize in DB
+    size?: string | null
+    companySize?: string | null
+    // Founded field - foundedYear in DB
+    founded?: number | null
+    foundedYear?: number | null
     headquarters: string | null
-    locations: string[]
-    techStack: string[]
-    benefits: string[]
-    culture: CompanyCulture | null
-    mediaGallery: MediaItem[]
-    socialLinks: CompanySocialLinks | null
-    isVerified: boolean
+    // Locations - not in current schema
+    locations?: string[]
+    techStack?: string[] | unknown
+    benefits?: string[] | unknown
+    culture?: string | CompanyCulture | null
+    mediaGallery?: MediaItem[] | unknown
+    socialLinks?: CompanySocialLinks | unknown
+    // Verification
+    verificationStatus?: CompanyVerificationStatus
+    isVerified?: boolean
+    // Counts
     jobsCount?: number
     membersCount?: number
+    // Allow additional fields from Prisma
+    [key: string]: unknown
 }
 
 export interface UpdateCompanyProfileData {
     name?: string
-    tagline?: string
     description?: string
     website?: string
     industry?: string
-    size?: string
-    founded?: number
+    companySize?: string
+    foundedYear?: number
     headquarters?: string
-    locations?: string[]
     techStack?: string[]
     benefits?: string[]
-    culture?: CompanyCulture
+    culture?: string
     socialLinks?: CompanySocialLinks
 }
 
@@ -107,31 +127,92 @@ export interface CompanyStats {
 // TEAM MEMBER INTERFACES
 // ============================================
 
+export type Permission =
+    // Jobs
+    | "view_jobs"
+    | "post_jobs"
+    | "edit_jobs"
+    | "delete_jobs"
+    | "manage_jobs"
+    // Applications
+    | "view_applications"
+    | "review_candidates"
+    | "manage_candidates"
+    // Assessments
+    | "manage_assessments"
+    // Team
+    | "manage_members"
+    | "manage_team"
+    // Company
+    | "manage_company"
+    | "manage_settings"
+    // Billing
+    | "manage_billing"
+    // Analytics
+    | "view_analytics"
+    // Interviews
+    | "conduct_interviews"
+
 export interface TeamMember {
     id: string
     userId: string
     companyId: string
     role: CompanyMemberRole
-    status: string
+    jobTitle: CompanyMemberJobTitle | null
+    jobTitleCustom: string | null
+    displayName: string | null
+    email: string | null
+    phone: string | null
+    permissions: Permission[]
+    inviteStatus: MemberInviteStatus
+    isActive: boolean
+    lastActiveAt: Date | null
+    createdAt: Date
+    updatedAt: Date
     user: {
         id: string
         name: string | null
         email: string
         image: string | null
     }
-    createdAt: Date
     jobsPosted?: number
+}
+
+export interface UpdateTeamMemberPayload {
+    role?: CompanyMemberRole
+    jobTitle?: CompanyMemberJobTitle
+    jobTitleCustom?: string
+    isActive?: boolean
+    permissions?: Permission[]
+}
+
+export interface InviteTeamMemberPayload {
+    email: string
+    name?: string
+    role?: CompanyMemberRole
+    jobTitle?: CompanyMemberJobTitle
+    permissions?: Permission[]
+    message?: string
 }
 
 export interface PendingInvite {
     id: string
     email: string
+    name: string | null
     role: CompanyMemberRole
-    status: string
-    createdAt: Date
-    expiresAt: Date
+    jobTitle: CompanyMemberJobTitle
+    inviteCode: string
+    status: MemberInviteStatus
+    message: string | null
+    invitedAt: Date
+    expiresAt: Date | null
     invitedBy: {
-        name: string | null
+        id: string
+        displayName: string | null
+        user: {
+            name: string | null
+            email: string
+        }
     }
 }
 
@@ -139,6 +220,7 @@ export interface TeamStats {
     totalMembers: number
     pendingInvites: number
     jobsPosted: number
+    candidatesProcessed?: number
 }
 
 // ============================================

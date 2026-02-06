@@ -2,24 +2,24 @@
 
 import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
-    Plus, Search, MoreVertical, Briefcase, MapPin, Clock, Users, 
-    Eye, Pause, Play, Copy, Trash2, Edit, ExternalLink, 
+import {
+    Plus, Search, MoreVertical, Briefcase, MapPin, Clock, Users,
+    Eye, Pause, Play, Copy, Trash2, Edit, ExternalLink,
     CheckCircle, LayoutGrid, List
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuSeparator, DropdownMenuTrigger
 } from "@repo/ui/components/ui/dropdown-menu"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import Link from "next/link"
-import { 
-    publishJob, pauseJob, duplicateJob, deleteJob 
+import {
+    publishJob, pauseJob, duplicateJob, deleteJob
 } from "@/actions/jobs"
 import { toast } from "@repo/ui/components/ui/sonner"
 
@@ -123,7 +123,7 @@ export function JobsContent({ initialJobs, stats, interviewProcesses: _interview
 
     const handleDelete = async (jobId: string) => {
         if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) return
-        
+
         startTransition(async () => {
             const result = await deleteJob(jobId)
             if (result.success) {
@@ -159,7 +159,6 @@ export function JobsContent({ initialJobs, stats, interviewProcesses: _interview
 
     return (
         <div className="min-h-full p-6 lg:p-8">
-            {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white">
@@ -177,84 +176,84 @@ export function JobsContent({ initialJobs, stats, interviewProcesses: _interview
                 </Link>
             </div>
 
-            {/* Stats Cards */}
-            {stats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <Briefcase className="w-4 h-4 text-neutral-400" />
-                            <span className="text-xs text-neutral-500">Total Jobs</span>
-                        </div>
-                        <span className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total}</span>
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.05 }}
-                        className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span className="text-xs text-neutral-500">Active</span>
-                        </div>
-                        <span className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.active}</span>
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <Pause className="w-4 h-4 text-yellow-500" />
-                            <span className="text-xs text-neutral-500">Paused</span>
-                        </div>
-                        <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.paused}</span>
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <Edit className="w-4 h-4 text-neutral-400" />
-                            <span className="text-xs text-neutral-500">Drafts</span>
-                        </div>
-                        <span className="text-2xl font-bold text-neutral-600 dark:text-neutral-400">{stats.draft}</span>
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <Eye className="w-4 h-4 text-blue-500" />
-                            <span className="text-xs text-neutral-500">Total Views</span>
-                        </div>
-                        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalViews}</span>
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.25 }}
-                        className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <Users className="w-4 h-4 text-purple-500" />
-                            <span className="text-xs text-neutral-500">Applications</span>
-                        </div>
-                        <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalApplications}</span>
-                    </motion.div>
-                </div>
-            )}
+            {
+                stats && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <Briefcase className="w-4 h-4 text-neutral-400" />
+                                <span className="text-xs text-neutral-500">Total Jobs</span>
+                            </div>
+                            <span className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total}</span>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.05 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                <span className="text-xs text-neutral-500">Active</span>
+                            </div>
+                            <span className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.active}</span>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <Pause className="w-4 h-4 text-yellow-500" />
+                                <span className="text-xs text-neutral-500">Paused</span>
+                            </div>
+                            <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.paused}</span>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <Edit className="w-4 h-4 text-neutral-400" />
+                                <span className="text-xs text-neutral-500">Drafts</span>
+                            </div>
+                            <span className="text-2xl font-bold text-neutral-600 dark:text-neutral-400">{stats.draft}</span>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <Eye className="w-4 h-4 text-blue-500" />
+                                <span className="text-xs text-neutral-500">Total Views</span>
+                            </div>
+                            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalViews}</span>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.25 }}
+                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4"
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <Users className="w-4 h-4 text-purple-500" />
+                                <span className="text-xs text-neutral-500">Applications</span>
+                            </div>
+                            <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalApplications}</span>
+                        </motion.div>
+                    </div>
+                )
+            }
 
-            {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -297,152 +296,170 @@ export function JobsContent({ initialJobs, stats, interviewProcesses: _interview
                 </div>
             </div>
 
-            {/* Jobs List/Grid */}
-            {filteredJobs.length > 0 ? (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}
-                >
-                    <AnimatePresence>
-                        {filteredJobs.map((job, index) => (
-                            <motion.div
-                                key={job.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all group"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                            <Link href={`/jobs/${job.slug}/edit`}>
-                                                <h3 className="font-bold text-lg text-neutral-900 dark:text-white hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors truncate">
-                                                    {job.title}
-                                                </h3>
-                                            </Link>
-                                            <Badge className={`${getStatusBadge(job.status)} shrink-0`}>
-                                                {job.status.charAt(0) + job.status.slice(1).toLowerCase()}
-                                            </Badge>
-                                            {job.interviewProcess && (
-                                                <Badge variant="outline" className="shrink-0">
-                                                    {job.interviewProcess.rounds?.length || 0} rounds
-                                                </Badge>
-                                            )}
+            {
+                filteredJobs.length > 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}
+                    >
+                        <AnimatePresence>
+                            {
+                                filteredJobs.map((job, index) => (
+                                    <motion.div
+                                        key={job.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all group"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                                    <Link href={`/jobs/${job.slug}/edit`}>
+                                                        <h3 className="font-bold text-lg text-neutral-900 dark:text-white hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors truncate">
+                                                            {job.title}
+                                                        </h3>
+                                                    </Link>
+                                                    <Badge className={`${getStatusBadge(job.status)} shrink-0`}>
+                                                        {job.status.charAt(0) + job.status.slice(1).toLowerCase()}
+                                                    </Badge>
+                                                    {
+                                                        job.interviewProcess && (
+                                                            <Badge variant="outline" className="shrink-0">
+                                                                {job.interviewProcess.rounds?.length || 0} rounds
+                                                            </Badge>
+                                                        )
+                                                    }
+                                                </div>
+                                                <div className="flex flex-wrap gap-4 text-sm text-neutral-500">
+                                                    {
+                                                        job.location && (
+                                                            <span className="flex items-center gap-1">
+                                                                <MapPin className="w-4 h-4" />
+                                                                {job.location}
+                                                            </span>
+                                                        )
+                                                    }
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock className="w-4 h-4" />
+                                                        {getEmploymentTypeLabel(job.employmentType)}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Eye className="w-4 h-4" />
+                                                        {job.viewsCount} views
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Users className="w-4 h-4" />
+                                                        {job.applicationsCount} applicants
+                                                    </span>
+                                                </div>
+                                                {
+                                                    job.publishedAt && (
+                                                        <p className="text-xs text-neutral-400 mt-2">
+                                                            Published {new Date(job.publishedAt).toLocaleDateString()}
+                                                        </p>
+                                                    )
+                                                }
+                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <MoreVertical className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48">
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/jobs/${job.slug}/edit`} className="flex items-center">
+                                                            <Edit className="w-4 h-4 mr-2" />
+                                                            Edit Job
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/jobs/${job.slug}`} className="flex items-center">
+                                                            <ExternalLink className="w-4 h-4 mr-2" />
+                                                            View Details
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    {
+                                                        job.status === "DRAFT" && (
+                                                            <DropdownMenuItem onClick={() => handlePublish(job.id)} disabled={isPending}>
+                                                                <Play className="w-4 h-4 mr-2" />
+                                                                Publish Job
+                                                            </DropdownMenuItem>
+                                                        )
+                                                    }
+                                                    {
+                                                        job.status === "ACTIVE" && (
+                                                            <DropdownMenuItem onClick={() => handlePause(job.id)} disabled={isPending}>
+                                                                <Pause className="w-4 h-4 mr-2" />
+                                                                Pause Job
+                                                            </DropdownMenuItem>
+                                                        )
+                                                    }
+                                                    {
+                                                        job.status === "PAUSED" && (
+                                                            <DropdownMenuItem onClick={() => handlePublish(job.id)} disabled={isPending}>
+                                                                <Play className="w-4 h-4 mr-2" />
+                                                                Resume Job
+                                                            </DropdownMenuItem>
+                                                        )
+                                                    }
+                                                    <DropdownMenuItem onClick={() => handleDuplicate(job.id)} disabled={isPending}>
+                                                        <Copy className="w-4 h-4 mr-2" />
+                                                        Duplicate
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleDelete(job.id)}
+                                                        disabled={isPending}
+                                                        className="text-red-600 focus:text-red-600"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Delete Job
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
-                                        <div className="flex flex-wrap gap-4 text-sm text-neutral-500">
-                                            {job.location && (
-                                                <span className="flex items-center gap-1">
-                                                    <MapPin className="w-4 h-4" />
-                                                    {job.location}
-                                                </span>
-                                            )}
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="w-4 h-4" />
-                                                {getEmploymentTypeLabel(job.employmentType)}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Eye className="w-4 h-4" />
-                                                {job.viewsCount} views
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Users className="w-4 h-4" />
-                                                {job.applicationsCount} applicants
-                                            </span>
-                                        </div>
-                                        {job.publishedAt && (
-                                            <p className="text-xs text-neutral-400 mt-2">
-                                                Published {new Date(job.publishedAt).toLocaleDateString()}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <MoreVertical className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem asChild>
-                                                <Link href={`/jobs/${job.slug}/edit`} className="flex items-center">
-                                                    <Edit className="w-4 h-4 mr-2" />
-                                                    Edit Job
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem asChild>
-                                                <Link href={`/jobs/${job.slug}`} className="flex items-center">
-                                                    <ExternalLink className="w-4 h-4 mr-2" />
-                                                    View Details
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            {job.status === "DRAFT" && (
-                                                <DropdownMenuItem onClick={() => handlePublish(job.id)} disabled={isPending}>
-                                                    <Play className="w-4 h-4 mr-2" />
-                                                    Publish Job
-                                                </DropdownMenuItem>
-                                            )}
-                                            {job.status === "ACTIVE" && (
-                                                <DropdownMenuItem onClick={() => handlePause(job.id)} disabled={isPending}>
-                                                    <Pause className="w-4 h-4 mr-2" />
-                                                    Pause Job
-                                                </DropdownMenuItem>
-                                            )}
-                                            {job.status === "PAUSED" && (
-                                                <DropdownMenuItem onClick={() => handlePublish(job.id)} disabled={isPending}>
-                                                    <Play className="w-4 h-4 mr-2" />
-                                                    Resume Job
-                                                </DropdownMenuItem>
-                                            )}
-                                            <DropdownMenuItem onClick={() => handleDuplicate(job.id)} disabled={isPending}>
-                                                <Copy className="w-4 h-4 mr-2" />
-                                                Duplicate
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem 
-                                                onClick={() => handleDelete(job.id)} 
-                                                disabled={isPending}
-                                                className="text-red-600 focus:text-red-600"
-                                            >
-                                                <Trash2 className="w-4 h-4 mr-2" />
-                                                Delete Job
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </motion.div>
-            ) : (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center py-16"
-                >
-                    <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
-                        <Briefcase className="w-10 h-10 text-neutral-400" />
-                    </div>
-                    <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
-                        {search || statusFilter !== "all" ? "No jobs match your filters" : "No jobs posted yet"}
-                    </h3>
-                    <p className="text-neutral-500 mb-6 max-w-md mx-auto">
-                        {search || statusFilter !== "all" 
-                            ? "Try adjusting your search or filter criteria"
-                            : "Create your first job listing to start receiving applications from qualified candidates."
+                                    </motion.div>
+                                ))
+                            }
+                        </AnimatePresence>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center py-16"
+                    >
+                        <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
+                            <Briefcase className="w-10 h-10 text-neutral-400" />
+                        </div>
+                        <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
+                            {search || statusFilter !== "all" ? "No jobs match your filters" : "No jobs posted yet"}
+                        </h3>
+                        <p className="text-neutral-500 mb-6 max-w-md mx-auto">
+                            {
+                                search || statusFilter !== "all"
+                                    ? "Try adjusting your search or filter criteria"
+                                    : "Create your first job listing to start receiving applications from qualified candidates."
+                            }
+                        </p>
+                        {
+                            !search && statusFilter === "all" && (
+                                <Link href="/jobs/new">
+                                    <Button className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Create Your First Job
+                                    </Button>
+                                </Link>
+                            )
                         }
-                    </p>
-                    {!search && statusFilter === "all" && (
-                        <Link href="/jobs/new">
-                            <Button className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create Your First Job
-                            </Button>
-                        </Link>
-                    )}
-                </motion.div>
-            )}
+                    </motion.div>
+                )
+            }
         </div>
     )
 }

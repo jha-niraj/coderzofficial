@@ -11,14 +11,14 @@ import { Badge } from "@repo/ui/components/ui/badge"
 import { Separator } from "@repo/ui/components/ui/separator"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
-import { updateCandidateStatus, rejectCandidate } from "@/actions/candidates"
+import {
+    updateCandidateStatus, rejectCandidate
+} from "@/actions/candidates"
 import Image from "next/image"
+import Link from "next/link"
+import { Label } from "@repo/ui/components/ui/label"
 
 interface Candidate {
     id: string
@@ -105,7 +105,9 @@ export function CandidateDetailSheet({ candidate, onClose }: CandidateDetailShee
         }).format(new Date(date))
     }
 
-    const handleStatusChange = async (newStatus: string) => {
+    type ApplicationStatus = "INTERESTED" | "PREPARING" | "APPLIED" | "UNDER_REVIEW" | "SHORTLISTED" | "ASSIGNMENT_SENT" | "ASSIGNMENT_SUBMITTED" | "INTERVIEW_SCHEDULED" | "INTERVIEWED" | "OFFER_EXTENDED" | "HIRED" | "REJECTED" | "WITHDRAWN"
+
+    const handleStatusChange = async (newStatus: ApplicationStatus) => {
         setIsUpdating(true)
         try {
             const result = await updateCandidateStatus(candidate.applicationId, newStatus)
@@ -139,18 +141,19 @@ export function CandidateDetailSheet({ candidate, onClose }: CandidateDetailShee
 
     return (
         <div className="flex flex-col h-full">
-            {/* Header */}
             <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 p-6">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden relative">
-                            {candidate.image ? (
-                                <Image src={candidate.image} alt={candidate.name} fill className="object-cover" />
-                            ) : (
-                                <span className="text-2xl font-bold text-neutral-600 dark:text-neutral-400">
-                                    {candidate.name.charAt(0).toUpperCase()}
-                                </span>
-                            )}
+                            {
+                                candidate.image ? (
+                                    <Image src={candidate.image} alt={candidate.name} fill className="object-cover" />
+                                ) : (
+                                    <span className="text-2xl font-bold text-neutral-600 dark:text-neutral-400">
+                                        {candidate.name.charAt(0).toUpperCase()}
+                                    </span>
+                                )
+                            }
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
@@ -167,10 +170,7 @@ export function CandidateDetailSheet({ candidate, onClose }: CandidateDetailShee
                     </Button>
                 </div>
             </div>
-
-            {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Applied For */}
                 <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800">
                     <div className="flex items-center gap-2 text-sm text-neutral-500 mb-1">
                         <Briefcase className="w-4 h-4" />
@@ -185,181 +185,187 @@ export function CandidateDetailSheet({ candidate, onClose }: CandidateDetailShee
                     </div>
                 </div>
 
-                {/* Match Score */}
-                {candidate.matchScore && (
-                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                <span className="font-medium text-green-700 dark:text-green-300">
-                                    Profile Match Score
+                {
+                    candidate.matchScore && (
+                        <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                    <span className="font-medium text-green-700 dark:text-green-300">
+                                        Profile Match Score
+                                    </span>
+                                </div>
+                                <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                    {candidate.matchScore}%
                                 </span>
                             </div>
-                            <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                {candidate.matchScore}%
-                            </span>
                         </div>
-                    </div>
-                )}
-
-                {/* Cover Letter */}
-                {candidate.coverLetter && (
-                    <div>
-                        <h4 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-blue-500" />
-                            Cover Letter
-                        </h4>
-                        <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-line bg-neutral-50 dark:bg-neutral-800 p-4 rounded-xl">
-                            {candidate.coverLetter}
-                        </p>
-                    </div>
-                )}
-
-                {/* Resume */}
-                {candidate.resumeUrl && (
-                    <div>
-                        <h4 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-purple-500" />
-                            Resume
-                        </h4>
-                        <a
-                            href={candidate.resumeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-                        >
-                            <FileText className="w-4 h-4" />
-                            View Resume
-                            <ExternalLink className="w-4 h-4" />
-                        </a>
-                    </div>
-                )}
+                    )
+                }
+                {
+                    candidate.coverLetter && (
+                        <div>
+                            <h4 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-blue-500" />
+                                Cover Letter
+                            </h4>
+                            <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-line bg-neutral-50 dark:bg-neutral-800 p-4 rounded-xl">
+                                {candidate.coverLetter}
+                            </p>
+                        </div>
+                    )
+                }
+                {
+                    candidate.resumeUrl && (
+                        <div>
+                            <h4 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-purple-500" />
+                                Resume
+                            </h4>
+                            <Link
+                                href={candidate.resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                            >
+                                <FileText className="w-4 h-4" />
+                                View Resume
+                                <ExternalLink className="w-4 h-4" />
+                            </Link>
+                        </div>
+                    )
+                }
 
                 <Separator />
 
-                {/* Actions */}
-                {currentStatus !== "REJECTED" && currentStatus !== "HIRED" && (
-                    <div>
-                        <h4 className="font-semibold text-neutral-900 dark:text-white mb-3">
-                            Update Status
-                        </h4>
-                        <div className="space-y-3">
-                            <Select 
-                                value={currentStatus} 
-                                onValueChange={handleStatusChange}
-                                disabled={isUpdating}
-                            >
-                                <SelectTrigger className="w-full rounded-xl">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {statusOptions.map(option => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            
-                            {isUpdating && (
-                                <div className="flex items-center gap-2 text-sm text-neutral-500">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Updating status...
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Reject Section */}
-                {!showRejectModal && currentStatus !== "REJECTED" && currentStatus !== "HIRED" && (
-                    <Button
-                        variant="outline"
-                        className="w-full rounded-xl text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
-                        onClick={() => setShowRejectModal(true)}
-                    >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Reject Candidate
-                    </Button>
-                )}
-
-                {/* Reject Modal */}
-                {showRejectModal && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
-                    >
-                        <h4 className="font-semibold text-red-900 dark:text-red-300 mb-4 flex items-center gap-2">
-                            <XCircle className="w-5 h-5" />
-                            Reject Candidate
-                        </h4>
-                        <p className="text-sm text-red-700 dark:text-red-400 mb-4">
-                            Providing feedback is mandatory. This helps candidates improve and maintains our platform&apos;s commitment to transparency.
-                        </p>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-sm font-medium text-red-900 dark:text-red-300 mb-1 block">
-                                    Reason for rejection
-                                </label>
-                                <Select value={rejectionReason} onValueChange={setRejectionReason}>
+                {
+                    currentStatus !== "REJECTED" && currentStatus !== "HIRED" && (
+                        <div>
+                            <h4 className="font-semibold text-neutral-900 dark:text-white mb-3">
+                                Update Status
+                            </h4>
+                            <div className="space-y-3">
+                                <Select
+                                    value={currentStatus}
+                                    onValueChange={handleStatusChange}
+                                    disabled={isUpdating}
+                                >
                                     <SelectTrigger className="w-full rounded-xl">
-                                        <SelectValue placeholder="Select a reason" />
+                                        <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {rejectionReasons.map(reason => (
-                                            <SelectItem key={reason.value} value={reason.value}>
-                                                {reason.label}
-                                            </SelectItem>
-                                        ))}
+                                        {
+                                            statusOptions.map(option => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+
                                     </SelectContent>
                                 </Select>
-                            </div>
 
-                            <div>
-                                <label className="text-sm font-medium text-red-900 dark:text-red-300 mb-1 block">
-                                    Feedback for the candidate (min. 20 characters)
-                                </label>
-                                <Textarea
-                                    value={rejectionFeedback}
-                                    onChange={(e) => setRejectionFeedback(e.target.value)}
-                                    placeholder="Please provide constructive feedback that will help the candidate understand why they weren't selected and how they can improve..."
-                                    className="rounded-xl min-h-[100px]"
-                                />
-                                <p className="text-xs text-red-600 dark:text-red-500 mt-1">
-                                    {rejectionFeedback.length}/20 characters minimum
-                                </p>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <Button
-                                    variant="outline"
-                                    className="flex-1 rounded-xl"
-                                    onClick={() => setShowRejectModal(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white"
-                                    disabled={!rejectionReason || rejectionFeedback.length < 20 || isRejecting}
-                                    onClick={handleReject}
-                                >
-                                    {isRejecting ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Rejecting...
-                                        </>
-                                    ) : (
-                                        "Confirm Rejection"
-                                    )}
-                                </Button>
+                                {
+                                    isUpdating && (
+                                        <div className="flex items-center gap-2 text-sm text-neutral-500">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Updating status...
+                                        </div>
+                                    )
+                                }
                             </div>
                         </div>
-                    </motion.div>
-                )}
+                    )
+                }
+                {
+                    !showRejectModal && currentStatus !== "REJECTED" && currentStatus !== "HIRED" && (
+                        <Button
+                            variant="outline"
+                            className="w-full rounded-xl text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
+                            onClick={() => setShowRejectModal(true)}
+                        >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Reject Candidate
+                        </Button>
+                    )
+                }
+                {
+                    showRejectModal && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
+                        >
+                            <h4 className="font-semibold text-red-900 dark:text-red-300 mb-4 flex items-center gap-2">
+                                <XCircle className="w-5 h-5" />
+                                Reject Candidate
+                            </h4>
+                            <p className="text-sm text-red-700 dark:text-red-400 mb-4">
+                                Providing feedback is mandatory. This helps candidates improve and maintains our platform&apos;s commitment to transparency.
+                            </p>
+                            <div className="space-y-4">
+                                <div>
+                                    <Label className="text-sm font-medium text-red-900 dark:text-red-300 mb-1 block">
+                                        Reason for rejection
+                                    </Label>
+                                    <Select value={rejectionReason} onValueChange={setRejectionReason}>
+                                        <SelectTrigger className="w-full rounded-xl">
+                                            <SelectValue placeholder="Select a reason" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {
+                                                rejectionReasons.map(reason => (
+                                                    <SelectItem key={reason.value} value={reason.value}>
+                                                        {reason.label}
+                                                    </SelectItem>
+                                                ))
+                                            }
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium text-red-900 dark:text-red-300 mb-1 block">
+                                        Feedback for the candidate (min. 20 characters)
+                                    </Label>
+                                    <Textarea
+                                        value={rejectionFeedback}
+                                        onChange={(e) => setRejectionFeedback(e.target.value)}
+                                        placeholder="Please provide constructive feedback that will help the candidate understand why they weren't selected and how they can improve..."
+                                        className="rounded-xl min-h-[100px]"
+                                    />
+                                    <p className="text-xs text-red-600 dark:text-red-500 mt-1">
+                                        {rejectionFeedback.length}/20 characters minimum
+                                    </p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 rounded-xl"
+                                        onClick={() => setShowRejectModal(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+                                        disabled={!rejectionReason || rejectionFeedback.length < 20 || isRejecting}
+                                        onClick={handleReject}
+                                    >
+                                        {
+                                            isRejecting ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Rejecting...
+                                                </>
+                                            ) : (
+                                                "Confirm Rejection"
+                                            )
+                                        }
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )
+                }
 
-                {/* View Full Profile Button */}
                 <Button
                     variant="outline"
                     className="w-full rounded-xl"
@@ -370,8 +376,6 @@ export function CandidateDetailSheet({ candidate, onClose }: CandidateDetailShee
                     <ExternalLink className="w-4 h-4 ml-2" />
                 </Button>
             </div>
-
-            {/* Footer Actions */}
             <div className="sticky bottom-0 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 p-4">
                 <div className="flex gap-3">
                     <Button variant="outline" className="flex-1 rounded-xl">

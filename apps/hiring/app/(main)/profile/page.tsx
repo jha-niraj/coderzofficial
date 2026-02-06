@@ -20,7 +20,7 @@ import { useSession } from "@repo/auth/client"
 import {
     getUserProfile, getCompanyDetails, getCurrentMember,
     updateUserProfile, changePassword, updateCompanyDetails
-} from "@/actions/profile/profile.action"
+} from "@/actions/profile"
 import type {
     UserProfile, CompanyDetails, CompanyMemberRole, CompanyMemberJobTitle,
     Permission, UpdateCompanyPayload,
@@ -32,10 +32,14 @@ const JOB_TITLE_LABELS: Record<CompanyMemberJobTitle, string> = {
     CTO: "CTO",
     COFOUNDER: "Co-Founder",
     VP_ENGINEERING: "VP Engineering",
+    ENGINEERING_MANAGER: "Engineering Manager",
     HR_HEAD: "HR Head",
     HR_MANAGER: "HR Manager",
+    TALENT_ACQUISITION: "Talent Acquisition",
     RECRUITER: "Recruiter",
     HIRING_MANAGER: "Hiring Manager",
+    TECH_LEAD: "Tech Lead",
+    INTERVIEWER: "Interviewer",
     OTHER: "Other",
 }
 
@@ -300,7 +304,7 @@ export default function ProfilePage() {
                                     }
                                 </div>
                                 {
-                                    memberRole === "HEAD" && (
+                                    memberRole === "FOUNDER" && (
                                         <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center border-2 border-white dark:border-neutral-950">
                                             <Crown className="w-3 h-3 text-white" />
                                         </div>
@@ -323,7 +327,7 @@ export default function ProfilePage() {
                                                     : "Team Member"
                                         }
                                     </span>
-                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${memberRole === "HEAD"
+                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${memberRole === "FOUNDER"
                                         ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                                         : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
                                         }`}>
