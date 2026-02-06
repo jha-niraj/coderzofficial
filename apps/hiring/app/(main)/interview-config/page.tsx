@@ -1,7 +1,11 @@
 import { Suspense } from "react"
-import { getInterviewProcesses, getInterviewProcessStats } from "@/actions/interview-config"
+import { 
+    getInterviewProcesses, getInterviewProcessStats 
+} from "@/actions/interview-config"
 import { InterviewConfigContent } from "./interview-config-content"
-import { Loader2 } from "lucide-react"
+import { 
+    Loader2 
+} from "lucide-react"
 
 export const metadata = {
     title: "Interview Process Configuration | FlowSync",

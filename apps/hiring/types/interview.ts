@@ -38,6 +38,7 @@ export type JobMockStatus =
     | "IN_PROGRESS"
     | "COMPLETED"
     | "CANCELLED"
+    | "FAILED"
 
 // ============================================
 // INTERVIEW ROUND INTERFACES

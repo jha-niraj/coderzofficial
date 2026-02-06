@@ -1,6 +1,8 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
-import { getAnalyticsOverview, getRecruiterPerformance } from "@/actions/analytics"
+import { 
+    getAnalyticsOverview, getRecruiterPerformance 
+} from "@/actions/analytics"
 import { AnalyticsContent } from "./analytics-content"
 
 export const metadata = {

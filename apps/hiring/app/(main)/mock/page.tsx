@@ -1,6 +1,10 @@
 import { Suspense } from "react"
-import { Loader2 } from "lucide-react"
-import { getMockSessionsOverview, getMockStats } from "@/actions/mock"
+import { 
+    Loader2 
+} from "lucide-react"
+import { 
+    getMockSessionsOverview, getMockStats 
+} from "@/actions/mock"
 import { MockInterviewsContent } from "./mock-content"
 
 export const metadata = {

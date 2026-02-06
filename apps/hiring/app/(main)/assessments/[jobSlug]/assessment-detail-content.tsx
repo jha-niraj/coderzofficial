@@ -1,0 +1,632 @@
+"use client"
+
+import { motion } from "framer-motion"
+import {
+    ArrowLeft, Send, Clock, CheckCircle2, Users, FileText, Star,
+    MessageSquare, Calendar, Mail, MoreVertical, Eye, RefreshCw,
+    Clipboard
+} from "lucide-react"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import { Input } from "@repo/ui/components/ui/input"
+import { Textarea } from "@repo/ui/components/ui/textarea"
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@repo/ui/components/ui/dropdown-menu"
+import {
+    Dialog, DialogContent, DialogDescription, DialogFooter,
+    DialogHeader, DialogTitle
+} from "@repo/ui/components/ui/dialog"
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from "@repo/ui/components/ui/tabs"
+import Link from "next/link"
+import { useState, useTransition } from "react"
+import {
+    sendAssignmentToCandidate, scoreAssignment
+} from "@/actions/assessments"
+import toast from "@repo/ui/components/ui/sonner"
+import Image from "next/image"
+import { Label } from "@repo/ui/components/ui/label"
+import type { 
+    JobWithAssessmentDetails, 
+    AssignmentSubmissionItem,
+    AssessmentApplication
+} from "@/types"
+
+// ============================================
+// TYPES
+// ============================================
+
+interface AssessmentDetailContentProps {
+    job: JobWithAssessmentDetails
+    submissions: AssignmentSubmissionItem[]
+}
+
+// ============================================
+// STATUS BADGE COMPONENT
+// ============================================
+
+function StatusBadge({ status }: { status: string }) {
+    const config: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+        ASSIGNMENT_SENT: {
+            label: "Awaiting",
+            color: "bg-amber-50 text-amber-700 border-amber-200",
+            icon: <Clock className="h-3 w-3" />
+        },
+        ASSIGNMENT_SUBMITTED: {
+            label: "Submitted",
+            color: "bg-green-50 text-green-700 border-green-200",
+            icon: <CheckCircle2 className="h-3 w-3" />
+        },
+        SHORTLISTED: {
+            label: "Shortlisted",
+            color: "bg-blue-50 text-blue-700 border-blue-200",
+            icon: <Star className="h-3 w-3" />
+        }
+    }
+
+    const defaultConfig = {
+        label: status,
+        color: "bg-gray-50 text-gray-700 border-gray-200",
+        icon: null as React.ReactNode
+    }
+
+    const { label, color, icon } = config[status] ?? defaultConfig
+
+    return (
+        <Badge variant="outline" className={`${color} flex items-center gap-1`}>
+            {icon}
+            {label}
+        </Badge>
+    )
+}
+
+// ============================================
+// CANDIDATE CARD COMPONENT
+// ============================================
+
+function CandidateCard({
+    application,
+    onSendAssignment,
+    onScoreAssignment,
+    isPending
+}: {
+    application: AssessmentApplication
+    onSendAssignment: (id: string) => void
+    onScoreAssignment: (application: AssessmentApplication) => void
+    isPending: boolean
+}) {
+    const formatDate = (date: Date | null) => {
+        if (!date) return "—"
+        return new Date(date).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+        })
+    }
+
+    const showSendButton = application.status === "SHORTLISTED" || application.status === "UNDER_REVIEW"
+    const showScoreButton = application.status === "ASSIGNMENT_SUBMITTED"
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl border border-[#e6e6e6] p-4 hover:shadow-md transition-all"
+        >
+            <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                    {
+                        application.user.image ? (
+                            <Image
+                                src={application.user.image}
+                                alt={application.user.name || "User"}
+                                className="h-10 w-10 rounded-full object-cover"
+                                fill
+                            />
+                        ) : (
+                            <div className="h-10 w-10 rounded-full bg-[#0F172A] flex items-center justify-center text-white font-medium">
+                                {application.user.name?.charAt(0) || application.user.email.charAt(0).toUpperCase()}
+                            </div>
+                        )
+                    }
+                    <div>
+                        <h4 className="font-medium text-[#0F172A]">
+                            {application.user.name || "Unknown"}
+                        </h4>
+                        <p className="text-sm text-[#64748B]">{application.user.email}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <StatusBadge status={application.status} />
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <Mail className="h-4 w-4 mr-2" />
+                                Send Email
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
+            <div className="mt-4 flex items-center gap-6 text-sm text-[#64748B]">
+                {
+                    application.assignmentStartedAt && (
+                        <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Sent: {formatDate(application.assignmentStartedAt)}</span>
+                        </div>
+                    )
+                }
+                {
+                    application.assignmentSubmittedAt && (
+                        <div className="flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                            <span>Submitted: {formatDate(application.assignmentSubmittedAt)}</span>
+                        </div>
+                    )
+                }
+                {
+                    application.assignmentScore !== null && (
+                        <div className="flex items-center gap-1.5">
+                            <Star className="h-3.5 w-3.5 text-amber-500" />
+                            <span>Score: {application.assignmentScore}/100</span>
+                        </div>
+                    )
+                }
+            </div>
+            <div className="mt-4 flex items-center gap-2">
+                {
+                    showSendButton && (
+                        <Button
+                            size="sm"
+                            onClick={() => onSendAssignment(application.id)}
+                            disabled={isPending}
+                            className="bg-[#0F172A] hover:bg-[#1e293b] text-white"
+                        >
+                            <Send className="h-3.5 w-3.5 mr-1.5" />
+                            Send Assignment
+                        </Button>
+                    )
+                }
+                {
+                    showScoreButton && (
+                        <Button
+                            size="sm"
+                            onClick={() => onScoreAssignment(application)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            <Star className="h-3.5 w-3.5 mr-1.5" />
+                            Score Submission
+                        </Button>
+                    )
+                }
+                {
+                    application.assignmentScore !== null && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onScoreAssignment(application)}
+                        >
+                            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                            Update Score
+                        </Button>
+                    )
+                }
+            </div>
+        </motion.div>
+    )
+}
+
+// ============================================
+// SCORE DIALOG COMPONENT
+// ============================================
+
+function ScoreDialog({
+    application,
+    open,
+    onOpenChange,
+    onScore
+}: {
+    application: AssessmentApplication | null
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    onScore: (applicationId: string, score: number, feedback: string) => void
+}) {
+    const [score, setScore] = useState(application?.assignmentScore?.toString() || "")
+    const [feedback, setFeedback] = useState(application?.assignmentFeedback || "")
+    const [isPending, startTransition] = useTransition()
+
+    const handleSubmit = () => {
+        if (!application) return
+        const scoreNum = parseInt(score)
+        if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
+            toast.error("Score must be between 0 and 100")
+            return
+        }
+        startTransition(() => {
+            onScore(application.id, scoreNum, feedback)
+        })
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>Score Assignment</DialogTitle>
+                    <DialogDescription>
+                        Evaluate the submission from {application?.user.name || application?.user.email}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-[#0F172A]">
+                            Score (0-100)
+                        </Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={score}
+                            onChange={(e) => setScore(e.target.value)}
+                            placeholder="Enter score"
+                            className="h-11"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-[#0F172A]">
+                            Feedback
+                        </Label>
+                        <Textarea
+                            value={feedback}
+                            onChange={(e) => setFeedback(e.target.value)}
+                            placeholder="Provide feedback on the submission..."
+                            rows={4}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={isPending || !score}
+                        className="bg-[#0F172A] hover:bg-[#1e293b] text-white"
+                    >
+                        {isPending ? "Saving..." : "Save Score"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
+export default function AssessmentDetailContent({ job, submissions }: AssessmentDetailContentProps) {
+    const [isPending, startTransition] = useTransition()
+    const [scoreDialogOpen, setScoreDialogOpen] = useState(false)
+    const [selectedApplication, setSelectedApplication] = useState<AssessmentApplication | null>(null)
+
+    // Stats
+    const awaitingCount = job.applications.filter(a => a.status === "ASSIGNMENT_SENT").length
+    const submittedCount = submissions.length
+    const scoredCount = submissions.filter(s => s.assignmentScore !== null).length
+    const avgScore = scoredCount > 0
+        ? Math.round(submissions.filter(s => s.assignmentScore !== null).reduce((sum, s) => sum + (s.assignmentScore || 0), 0) / scoredCount)
+        : 0
+
+    const handleSendAssignment = async (applicationId: string) => {
+        startTransition(async () => {
+            const result = await sendAssignmentToCandidate(applicationId)
+            if (result.success) {
+                toast.success("Assignment sent successfully!")
+            } else {
+                toast.error(result.error || "Failed to send assignment")
+            }
+        })
+    }
+
+    const handleScoreAssignment = (application: AssessmentApplication) => {
+        setSelectedApplication(application)
+        setScoreDialogOpen(true)
+    }
+
+    const handleScoreSubmit = async (applicationId: string, score: number, feedback: string) => {
+        const result = await scoreAssignment(applicationId, { score, feedback })
+        if (result.success) {
+            toast.success("Score saved successfully!")
+            setScoreDialogOpen(false)
+            setSelectedApplication(null)
+        } else {
+            toast.error(result.error || "Failed to save score")
+        }
+    }
+
+    return (
+        <div className="min-h-screen bg-[#FAFAFA]">
+            <div className="bg-white border-b border-[#e6e6e6]">
+                <div className="container mx-auto px-6 py-6">
+                    <Link
+                        href="/assessments"
+                        className="inline-flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] text-sm mb-4 transition-colors"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Assessments
+                    </Link>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-[#0F172A]">{job.title}</h1>
+                            <p className="text-[#64748B] mt-1">
+                                Manage assignments and review submissions
+                            </p>
+                        </div>
+                        <Badge
+                            variant="outline"
+                            className={job.status === "PUBLISHED" ? "bg-green-50 text-green-700 border-green-200" : ""}
+                        >
+                            {job.status}
+                        </Badge>
+                    </div>
+                    <div className="flex items-center gap-6 mt-6 text-sm">
+                        <div className="flex items-center gap-2 text-[#64748B]">
+                            <Clock className="h-4 w-4" />
+                            <span>{awaitingCount} awaiting</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[#64748B]">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <span>{submittedCount} submitted</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[#64748B]">
+                            <Star className="h-4 w-4 text-amber-500" />
+                            <span>{scoredCount} scored</span>
+                        </div>
+                        {
+                            avgScore > 0 && (
+                                <div className="flex items-center gap-2 text-[#64748B]">
+                                    <span className="font-medium">Avg Score: {avgScore}/100</span>
+                                </div>
+                            )
+                        }
+                    </div>
+                </div>
+            </div>
+            <div className="container mx-auto px-6 py-8">
+                <Tabs defaultValue="candidates" className="space-y-6">
+                    <TabsList className="bg-white border border-[#e6e6e6]">
+                        <TabsTrigger value="candidates">
+                            <Users className="h-4 w-4 mr-2" />
+                            Candidates ({job.applications.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="submissions">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Submissions ({submittedCount})
+                        </TabsTrigger>
+                        <TabsTrigger value="assignment">
+                            <Clipboard className="h-4 w-4 mr-2" />
+                            Assignment Details
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="candidates" className="space-y-4">
+                        {
+                            job.applications.length === 0 ? (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="bg-white rounded-xl border border-[#e6e6e6] p-12 text-center"
+                                >
+                                    <div className="mx-auto w-12 h-12 rounded-full bg-[#F1F5F9] flex items-center justify-center mb-4">
+                                        <Users className="h-6 w-6 text-[#64748B]" />
+                                    </div>
+                                    <h3 className="text-lg font-medium text-[#0F172A] mb-2">
+                                        No candidates yet
+                                    </h3>
+                                    <p className="text-[#64748B] max-w-md mx-auto">
+                                        Candidates who are shortlisted or have been sent assignments will appear here.
+                                    </p>
+                                </motion.div>
+                            ) : (
+                                <div className="grid gap-4">
+                                    {
+                                        job.applications.map((application) => (
+                                            <CandidateCard
+                                                key={application.id}
+                                                application={application}
+                                                onSendAssignment={handleSendAssignment}
+                                                onScoreAssignment={handleScoreAssignment}
+                                                isPending={isPending}
+                                            />
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
+                    </TabsContent>
+                    <TabsContent value="submissions" className="space-y-4">
+                        {
+                            submissions.length === 0 ? (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="bg-white rounded-xl border border-[#e6e6e6] p-12 text-center"
+                                >
+                                    <div className="mx-auto w-12 h-12 rounded-full bg-[#F1F5F9] flex items-center justify-center mb-4">
+                                        <FileText className="h-6 w-6 text-[#64748B]" />
+                                    </div>
+                                    <h3 className="text-lg font-medium text-[#0F172A] mb-2">
+                                        No submissions yet
+                                    </h3>
+                                    <p className="text-[#64748B] max-w-md mx-auto">
+                                        When candidates submit their assignments, they will appear here for review.
+                                    </p>
+                                </motion.div>
+                            ) : (
+                                <div className="grid gap-4">
+                                    {
+                                        submissions.map((submission) => (
+                                            <motion.div
+                                                key={submission.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="bg-white rounded-xl border border-[#e6e6e6] p-4"
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        {
+                                                            submission.user.image ? (
+                                                                <Image
+                                                                    src={submission.user.image}
+                                                                    alt={submission.user.name || "User"}
+                                                                    className="h-10 w-10 rounded-full object-cover"
+                                                                    fill
+                                                                />
+                                                            ) : (
+                                                                <div className="h-10 w-10 rounded-full bg-[#0F172A] flex items-center justify-center text-white font-medium">
+                                                                    {submission.user.name?.charAt(0) || submission.user.email.charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )
+                                                        }
+                                                        <div>
+                                                            <h4 className="font-medium text-[#0F172A]">
+                                                                {submission.user.name || "Unknown"}
+                                                            </h4>
+                                                            <p className="text-sm text-[#64748B]">{submission.user.email}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {
+                                                        submission.assignmentScore !== null ? (
+                                                            <div className="text-right">
+                                                                <div className="text-2xl font-bold text-[#0F172A]">
+                                                                    {submission.assignmentScore}
+                                                                    <span className="text-sm font-normal text-[#64748B]">/100</span>
+                                                                </div>
+                                                                <p className="text-xs text-[#64748B]">Scored</p>
+                                                            </div>
+                                                        ) : (
+                                                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                                                Needs Review
+                                                            </Badge>
+                                                        )
+                                                    }
+                                                </div>
+
+                                                {
+                                                    submission.assignmentFeedback && (
+                                                        <div className="mt-4 p-3 bg-[#F1F5F9] rounded-lg">
+                                                            <div className="flex items-center gap-2 text-sm font-medium text-[#0F172A] mb-1">
+                                                                <MessageSquare className="h-3.5 w-3.5" />
+                                                                Feedback
+                                                            </div>
+                                                            <p className="text-sm text-[#64748B]">{submission.assignmentFeedback}</p>
+                                                        </div>
+                                                    )
+                                                }
+
+                                                <div className="mt-4 flex items-center gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                    >
+                                                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                                                        View Submission
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleScoreAssignment({
+                                                            ...submission,
+                                                            createdAt: new Date()
+                                                        } as AssessmentApplication)}
+                                                        className="bg-[#0F172A] hover:bg-[#1e293b] text-white"
+                                                    >
+                                                        <Star className="h-3.5 w-3.5 mr-1.5" />
+                                                        {submission.assignmentScore !== null ? "Update Score" : "Score"}
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
+                    </TabsContent>
+                    <TabsContent value="assignment">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        >
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2 rounded-lg bg-[#F1F5F9]">
+                                    <Clipboard className="h-5 w-5 text-[#0F172A]" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-[#0F172A]">Assignment Configuration</h3>
+                                    <p className="text-sm text-[#64748B]">Details of the take-home assignment</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-[#F8FAFC] rounded-lg">
+                                    <label className="text-sm font-medium text-[#64748B]">Deadline</label>
+                                    <p className="text-[#0F172A] mt-1">
+                                        {job.assignmentDeadlineDays
+                                            ? `${job.assignmentDeadlineDays} days after receiving`
+                                            : "No deadline set"}
+                                    </p>
+                                </div>
+
+                                {
+                                    job.assignmentInstructions && (
+                                        <div className="p-4 bg-[#F8FAFC] rounded-lg">
+                                            <Label className="text-sm font-medium text-[#64748B]">Instructions</Label>
+                                            <p className="text-[#0F172A] mt-1 whitespace-pre-wrap">
+                                                {job.assignmentInstructions}
+                                            </p>
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    job.assignmentDetails !== null && job.assignmentDetails !== undefined && (
+                                        <div className="p-4 bg-[#F8FAFC] rounded-lg">
+                                            <Label className="text-sm font-medium text-[#64748B]">Assignment Details</Label>
+                                            <pre className="text-sm text-[#0F172A] mt-2 overflow-auto">
+                                                {JSON.stringify(job.assignmentDetails, null, 2)}
+                                            </pre>
+                                        </div>
+                                    )
+                                }
+                            </div>
+                            <div className="mt-6">
+                                <Button variant="outline">
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Edit Assignment
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </TabsContent>
+                </Tabs>
+            </div>
+            <ScoreDialog
+                application={selectedApplication}
+                open={scoreDialogOpen}
+                onOpenChange={setScoreDialogOpen}
+                onScore={handleScoreSubmit}
+            />
+        </div>
+    )
+}

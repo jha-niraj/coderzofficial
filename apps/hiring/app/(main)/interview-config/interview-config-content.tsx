@@ -21,47 +21,34 @@ import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
     DialogHeader, DialogTitle
 } from "@repo/ui/components/ui/dialog"
-import { InterviewProcessForm, ProcessTemplate } from "./components/interview-process-form"
+import { 
+    InterviewProcessForm, ProcessTemplate 
+} from "./components/interview-process-form"
 import { InterviewProcessDetail } from "./components/interview-process-detail"
 import {
     cloneInterviewProcess, deleteInterviewProcess
 } from "@/actions/interview-config"
 import toast from "@repo/ui/components/ui/sonner"
+import type { 
+    InterviewProcessStats, InterviewProcess, InterviewRound 
+} from "@/types"
 
-interface InterviewRound {
-    id: string
-    roundNumber: number
-    roundType: string
-    title: string
-    durationMinutes?: number | null
-    format: string
-    description: string
-    hasMockInterview: boolean
-}
+// View-specific types - subset of full types for list display
+type InterviewRoundView = Pick<
+    InterviewRound,
+    'id' | 'roundNumber' | 'roundType' | 'title' | 'durationMinutes' | 'format' | 'description' | 'hasMockInterview'
+>
 
-interface InterviewProcess {
-    id: string
-    name: string
-    description?: string | null
-    isDefault: boolean
-    isActive: boolean
-    estimatedDurationWeeks?: number | null
-    rounds: InterviewRound[]
-    _count?: {
-        jobs: number
-    }
-    createdAt: Date
-}
-
-interface Stats {
-    processCount: number
-    totalRounds: number
-    jobsWithProcess: number
+type InterviewProcessView = Pick<
+    InterviewProcess,
+    'id' | 'name' | 'description' | 'isDefault' | 'isActive' | 'estimatedDurationWeeks' | '_count' | 'createdAt'
+> & {
+    rounds: InterviewRoundView[]
 }
 
 interface InterviewConfigContentProps {
-    initialProcesses: InterviewProcess[]
-    initialStats: Stats
+    initialProcesses: InterviewProcessView[]
+    initialStats: InterviewProcessStats
 }
 
 const roundTypeColors: Record<string, string> = {
@@ -78,15 +65,15 @@ const roundTypeColors: Record<string, string> = {
 }
 
 export function InterviewConfigContent({ initialProcesses, initialStats }: InterviewConfigContentProps) {
-    const [processes, setProcesses] = useState<InterviewProcess[]>(initialProcesses)
-    const [stats, setStats] = useState<Stats>(initialStats)
+    const [processes, setProcesses] = useState<InterviewProcessView[]>(initialProcesses)
+    const [stats, setStats] = useState<InterviewProcessStats>(initialStats)
     const [searchQuery, setSearchQuery] = useState("")
     const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false)
-    const [selectedProcess, setSelectedProcess] = useState<InterviewProcess | null>(null)
+    const [selectedProcess, setSelectedProcess] = useState<InterviewProcessView | null>(null)
     const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
     const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
     const [cloneDialogOpen, setCloneDialogOpen] = useState(false)
-    const [processToClone, setProcessToClone] = useState<InterviewProcess | null>(null)
+    const [processToClone, setProcessToClone] = useState<InterviewProcessView | null>(null)
     const [cloneName, setCloneName] = useState("")
     const [isPending, startTransition] = useTransition()
     const [selectedTemplate, setSelectedTemplate] = useState<ProcessTemplate | null>(null)
@@ -96,12 +83,12 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
         p.description?.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    const handleViewProcess = (process: InterviewProcess) => {
+    const handleViewProcess = (process: InterviewProcessView) => {
         setSelectedProcess(process)
         setIsDetailSheetOpen(true)
     }
 
-    const handleCloneClick = (process: InterviewProcess, e: React.MouseEvent) => {
+    const handleCloneClick = (process: InterviewProcessView, e: React.MouseEvent) => {
         e.stopPropagation()
         setProcessToClone(process)
         setCloneName(`${process.name} (Copy)`)
@@ -114,7 +101,7 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
         startTransition(async () => {
             const result = await cloneInterviewProcess(processToClone.id, cloneName)
             if (result.success && result.data) {
-                setProcesses(prev => [...prev, result.data as InterviewProcess])
+                setProcesses(prev => [...prev, result.data as InterviewProcessView])
                 setStats(prev => ({ ...prev, processCount: prev.processCount + 1 }))
                 toast.success("Process cloned successfully")
                 setCloneDialogOpen(false)
@@ -124,7 +111,7 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
         })
     }
 
-    const handleDelete = async (process: InterviewProcess, e: React.MouseEvent) => {
+    const handleDelete = async (process: InterviewProcessView, e: React.MouseEvent) => {
         e.stopPropagation()
         if (!confirm(`Are you sure you want to delete "${process.name}"?`)) return
 
@@ -607,7 +594,7 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
 
             <Sheet open={isCreateSheetOpen} onOpenChange={(open) => {
                 setIsCreateSheetOpen(open)
-                if (!open) setSelectedTemplate(null) // Clear template when closing
+                if (!open) setSelectedTemplate(null)
             }}>
                 <SheetContent className="w-full sm:max-w-2xl h-[95vh] overflow-y-auto">
                     <SheetHeader>

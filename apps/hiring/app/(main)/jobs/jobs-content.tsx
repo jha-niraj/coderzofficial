@@ -22,53 +22,27 @@ import {
     publishJob, pauseJob, duplicateJob, deleteJob
 } from "@/actions/jobs"
 import { toast } from "@repo/ui/components/ui/sonner"
+import type { JobStats, InterviewRound, InterviewProcess, Job } from "@/types"
 
-interface InterviewRound {
-    id: string
-    roundNumber: number
-    roundType: string
-    title: string
+// View-specific types for job list display
+type InterviewRoundView = Pick<InterviewRound, 'id' | 'roundNumber' | 'roundType' | 'title'>
+
+type InterviewProcessView = Pick<InterviewProcess, 'id' | 'name'> & {
+    rounds: InterviewRoundView[]
 }
 
-interface Job {
-    id: string
-    title: string
-    slug: string
-    status: string
-    locationType: string
-    employmentType: string
-    location: string | null
-    viewsCount: number
-    applicationsCount: number
-    createdAt: Date
-    publishedAt: Date | null
-    interviewProcess?: {
-        id: string
-        name: string
-        rounds: InterviewRound[]
-    } | null
-}
-
-interface JobStats {
-    total: number
-    active: number
-    paused: number
-    draft: number
-    closed: number
-    totalViews: number
-    totalApplications: number
-}
-
-interface InterviewProcess {
-    id: string
-    name: string
-    rounds: InterviewRound[]
+type JobWithProcess = Pick<
+    Job,
+    'id' | 'title' | 'slug' | 'status' | 'locationType' | 'employmentType' | 
+    'location' | 'viewsCount' | 'applicationsCount' | 'createdAt' | 'publishedAt'
+> & {
+    interviewProcess?: InterviewProcessView | null
 }
 
 interface JobsContentProps {
-    initialJobs: Job[]
+    initialJobs: JobWithProcess[]
     stats: JobStats | null
-    interviewProcesses: InterviewProcess[]
+    interviewProcesses: InterviewProcessView[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -11,6 +11,7 @@
         "check-types": "next typegen && tsc --noEmit"
     },
     "dependencies": {
+        "@hookform/resolvers": "^3.10.0",
         "@prisma/client": "6.14.0",
         "@repo/auth": "workspace:*",
         "@repo/prisma": "workspace:*",
@@ -26,9 +27,11 @@
         "postcss": "^8.5.6",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
+        "react-hook-form": "^7.69.0",
         "react-icons": "^5.5.0",
         "resend": "^4.0.0",
-        "tailwindcss": "^4.1.18"
+        "tailwindcss": "^4.1.18",
+        "zod": "^3.24.3"
     },
     "devDependencies": {
         "@repo/eslint-config": "workspace:*",

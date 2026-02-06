@@ -7,20 +7,42 @@ import { signIn } from '@repo/auth/client';
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2
+    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2, ShieldCheck, Users, Info
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
 import { Label } from "@repo/ui/components/ui/label";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@repo/ui/components/ui/select";
 import toast from "@repo/ui/components/ui/sonner";
+
+// ============================================
+// TYPES
+// ============================================
+
+type FounderRole = "FOUNDER" | "CEO" | "CTO" | "COO" | "OTHER_EXECUTIVE";
+
+const FOUNDER_ROLES: { value: FounderRole; label: string }[] = [
+    { value: "FOUNDER", label: "Founder" },
+    { value: "CEO", label: "CEO (Chief Executive Officer)" },
+    { value: "CTO", label: "CTO (Chief Technology Officer)" },
+    { value: "COO", label: "COO (Chief Operating Officer)" },
+    { value: "OTHER_EXECUTIVE", label: "Other Executive/Co-Founder" },
+];
 
 function SignUpForm() {
     const [companyName, setCompanyName] = useState("");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [founderRole, setFounderRole] = useState<FounderRole>("FOUNDER");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -66,6 +88,7 @@ function SignUpForm() {
                 password,
                 companyName,
                 role: "RECRUITER",
+                founderRole, // Send the founder role
             });
 
             if (response.data.success) {
@@ -121,6 +144,20 @@ function SignUpForm() {
                         <p className="text-neutral-400 text-lg mb-8">
                             Initialize your workspace and gain access to pre-vetted engineering resources.
                         </p>
+                        
+                        {/* Founder Only Notice */}
+                        <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 mb-6">
+                            <div className="flex items-start gap-3">
+                                <ShieldCheck className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-amber-200 font-medium text-sm">Founder Registration Only</p>
+                                    <p className="text-amber-200/70 text-xs mt-1">
+                                        This registration is exclusively for company founders, CEOs, and executives who are setting up their organization&apos;s hiring workspace.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-900/50">
                             <p className="text-neutral-300 italic">
                                 &quot;Reduced our hiring cycle from 6 weeks to 2 weeks. The candidate vetting is exceptional.&quot;
@@ -147,13 +184,27 @@ function SignUpForm() {
                             CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
                         </span>
                     </div>
+                    
+                    {/* Not a Founder Notice (Mobile) */}
+                    <div className="lg:hidden p-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 mb-6">
+                        <div className="flex items-start gap-2">
+                            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                            <p className="text-amber-800 dark:text-amber-200 text-xs">
+                                <strong>Founders & Executives Only.</strong> Team members should sign in with credentials provided by their company admin.
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="text-center mb-8">
                         <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
-                            New Registration
+                            Company Registration
                         </span>
                         <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
                             Initialize Company Workspace
                         </h2>
+                        <p className="text-sm text-neutral-500 mt-2">
+                            For founders, CEOs, and executives only
+                        </p>
                     </div>
                     <AnimatePresence>
                         {
@@ -212,6 +263,26 @@ function SignUpForm() {
                                 className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
                             />
                         </div>
+                        
+                        {/* Founder Role Selection */}
+                        <div className="space-y-2">
+                            <Label htmlFor="founderRole" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                                Your Role
+                            </Label>
+                            <Select value={founderRole} onValueChange={(v) => setFounderRole(v as FounderRole)}>
+                                <SelectTrigger className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                    <SelectValue placeholder="Select your role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {FOUNDER_ROLES.map((role) => (
+                                        <SelectItem key={role.value} value={role.value}>
+                                            {role.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="name" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                                 Your Full Name
@@ -340,6 +411,30 @@ function SignUpForm() {
                             }
                         </Button>
                     </form>
+                    
+                    {/* Team Member Notice */}
+                    <div className="mt-6 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                        <div className="flex items-start gap-3">
+                            <Users className="h-5 w-5 text-neutral-500 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                    Not a founder or executive?
+                                </p>
+                                <p className="text-xs text-neutral-500 mt-1">
+                                    Team members should sign in using credentials provided by their company admin. 
+                                    Ask your manager or HR for your login details.
+                                </p>
+                                <Link 
+                                    href="/signin" 
+                                    className="inline-flex items-center gap-1 text-xs text-neutral-900 dark:text-white font-semibold hover:underline mt-2"
+                                >
+                                    Go to Sign In
+                                    <ArrowRight className="h-3 w-3" />
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
                     <p className="mt-6 text-center text-neutral-500">
                         Already have access?{" "}
                         <Link

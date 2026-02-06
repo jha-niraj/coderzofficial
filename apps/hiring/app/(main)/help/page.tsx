@@ -1,7 +1,10 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { HelpCircle, Book, MessageCircle, FileText, ExternalLink, Mail } from "lucide-react"
+import {
+    HelpCircle, Book, MessageCircle, FileText, ExternalLink,
+    Mail
+} from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import Link from "next/link"
 
@@ -54,7 +57,6 @@ const faqs = [
 export default function HelpPage() {
     return (
         <div className="min-h-full p-6 lg:p-8">
-            {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white">
                     Help & Support
@@ -63,30 +65,28 @@ export default function HelpPage() {
                     Get help with using FlowSync
                 </p>
             </div>
-
-            {/* Help Categories */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-                {helpCategories.map((item, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                    >
-                        <Link href={item.href}>
-                            <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all cursor-pointer h-full">
-                                <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mb-4 text-neutral-600 dark:text-neutral-400">
-                                    {item.icon}
+                {
+                    helpCategories.map((item, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                        >
+                            <Link href={item.href}>
+                                <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all cursor-pointer h-full">
+                                    <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mb-4 text-neutral-600 dark:text-neutral-400">
+                                        {item.icon}
+                                    </div>
+                                    <h3 className="font-bold text-neutral-900 dark:text-white mb-1">{item.title}</h3>
+                                    <p className="text-sm text-neutral-500">{item.description}</p>
                                 </div>
-                                <h3 className="font-bold text-neutral-900 dark:text-white mb-1">{item.title}</h3>
-                                <p className="text-sm text-neutral-500">{item.description}</p>
-                            </div>
-                        </Link>
-                    </motion.div>
-                ))}
+                            </Link>
+                        </motion.div>
+                    ))
+                }
             </div>
-
-            {/* FAQs */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -98,19 +98,19 @@ export default function HelpPage() {
                     Frequently Asked Questions
                 </h2>
                 <div className="space-y-4">
-                    {faqs.map((faq, i) => (
-                        <div
-                            key={i}
-                            className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
-                        >
-                            <h3 className="font-bold text-neutral-900 dark:text-white mb-2">{faq.q}</h3>
-                            <p className="text-sm text-neutral-500">{faq.a}</p>
-                        </div>
-                    ))}
+                    {
+                        faqs.map((faq, i) => (
+                            <div
+                                key={i}
+                                className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6"
+                            >
+                                <h3 className="font-bold text-neutral-900 dark:text-white mb-2">{faq.q}</h3>
+                                <p className="text-sm text-neutral-500">{faq.a}</p>
+                            </div>
+                        ))
+                    }
                 </div>
             </motion.div>
-
-            {/* Contact CTA */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -1,6 +1,10 @@
 import { Suspense } from "react"
-import { Loader2 } from "lucide-react"
-import { getJobs, getOverallJobStats } from "@/actions/jobs"
+import { 
+    Loader2 
+} from "lucide-react"
+import { 
+    getJobs, getOverallJobStats 
+} from "@/actions/jobs"
 import { getInterviewProcesses } from "@/actions/interview-config"
 import { JobsContent } from "./jobs-content"
 

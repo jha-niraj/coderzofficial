@@ -14,3 +14,12 @@ export type * from "./company"
 
 // Profile-related types
 export type * from "./profile"
+
+// Application-related types
+export type * from "./application"
+
+// Assessment-related types
+export type * from "./assessment"
+
+// Zod schemas (export values, not just types)
+export * from "./job-schema"

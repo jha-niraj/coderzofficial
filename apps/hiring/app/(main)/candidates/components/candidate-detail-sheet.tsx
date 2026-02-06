@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    X, Calendar, Briefcase, ExternalLink, XCircle,
-    MessageSquare, FileText, Loader2, User, TrendingUp
+    X, Calendar, Briefcase, ExternalLink, XCircle, MessageSquare,
+    FileText, Loader2, User, TrendingUp
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
@@ -259,8 +259,8 @@ export function CandidateDetailSheet({ candidate, onClose }: CandidateDetailShee
                                                 <SelectItem key={option.value} value={option.value}>
                                                     {option.label}
                                                 </SelectItem>
-                                            ))}
-
+                                            ))
+                                        }
                                     </SelectContent>
                                 </Select>
 

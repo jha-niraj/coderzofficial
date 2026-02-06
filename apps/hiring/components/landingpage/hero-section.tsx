@@ -24,7 +24,7 @@ export default function HeroSection() {
                         className="flex justify-center mb-8"
                     >
                         <span className="px-3 py-1 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 backdrop-blur-sm text-[10px] font-mono uppercase tracking-widest text-neutral-500">
-                            System V2.0 // Hiring Infrastructure
+                            System V2.0 - Hiring Infrastructure
                         </span>
                     </motion.div>
                     <motion.h1

@@ -1,5 +1,7 @@
 import { Suspense } from "react"
-import { Loader2 } from "lucide-react"
+import { 
+    Loader2 
+} from "lucide-react"
 import { 
     getCandidates, getCandidateStats, getCompanyJobsForFilter 
 } from "@/actions/candidates"

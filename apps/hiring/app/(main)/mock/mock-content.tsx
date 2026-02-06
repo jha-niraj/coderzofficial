@@ -17,40 +17,26 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@repo/ui/components/ui/dropdown-menu"
 import Image from "next/image"
+import type { MockSession as BaseMockSession, MockStats as BaseMockStats } from "@/types"
 
-interface MockSession {
-    id: string
-    userId: string
+// Extended type for displaying session with related user/round/job info
+interface MockSessionWithDetails extends Omit<BaseMockSession, 'companyId' | 'updatedAt'> {
     userName?: string | null
     userEmail?: string | null
     userImage?: string | null
-    roundId: string
     roundTitle?: string | null
     roundType?: string | null
-    jobId?: string | null
     jobTitle?: string | null
-    sessionType: string
-    status: string
-    scheduledFor?: Date | null
-    startedAt?: Date | null
-    completedAt?: Date | null
-    durationSeconds?: number | null
-    overallScore?: number | null
-    createdAt: Date
 }
 
-interface MockStats {
-    totalSessions: number
-    completedSessions: number
-    averageScore: number
-    topPerformers: number
+// Extended stats with weekly tracking
+interface MockStatsExtended extends BaseMockStats {
     sessionsThisWeek: number
-    sessionsByRound: { roundType: string; count: number }[]
 }
 
 interface MockInterviewsContentProps {
-    initialSessions: MockSession[]
-    stats: MockStats | null
+    initialSessions: MockSessionWithDetails[]
+    stats: MockStatsExtended | null
 }
 
 const statusColors: Record<string, string> = {
@@ -69,7 +55,7 @@ const roundTypeIcons: Record<string, React.ReactNode> = {
 }
 
 export function MockInterviewsContent({ initialSessions, stats }: MockInterviewsContentProps) {
-    const [sessions] = useState<MockSession[]>(initialSessions)
+    const [sessions] = useState<MockSessionWithDetails[]>(initialSessions)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [roundFilter, setRoundFilter] = useState<string>("all")

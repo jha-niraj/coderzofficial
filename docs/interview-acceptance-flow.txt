@@ -1,0 +1,606 @@
+================================================================================
+                    INTERVIEW ACCEPTANCE FLOW DOCUMENTATION
+                           Coderz Hiring Platform
+================================================================================
+
+This document outlines the complete interview acceptance flow for the Coderz 
+hiring platform, covering both the HIRING app (for HR/recruiters) and the 
+MAIN app (for candidates).
+
+================================================================================
+                              OVERVIEW
+================================================================================
+
+The interview acceptance flow consists of the following stages:
+1. Application Review (Hiring App)
+2. Shortlisting (Hiring App)
+3. Interview Scheduling (Hiring App)
+4. Interview Notification (Main App - Candidate)
+5. Interview Participation (Both Apps)
+6. Interview Evaluation (Hiring App)
+7. Final Decision (Hiring App)
+
+================================================================================
+                         SYSTEM ARCHITECTURE
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            DATABASE (Prisma)                                │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐   │
+│  │ JobPosting  │  │ JobApplica- │  │  Interview  │  │ InterviewSlot   │   │
+│  │             │  │   tion      │  │             │  │                 │   │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          SERVER ACTIONS                                     │
+│  apps/hiring/actions/applications/index.ts                                  │
+│  ├── getApplications()                                                      │
+│  ├── getApplicationDetail()                                                 │
+│  ├── shortlistApplication()                                                 │
+│  ├── scheduleInterview()                                                    │
+│  ├── rejectApplication()                                                    │
+│  └── updateApplicationStatus()                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    HIRING APP (HR/RECRUITER SIDE)
+================================================================================
+
+PAGE STRUCTURE:
+---------------
+
+/applications
+└── page.tsx (Server Component)
+    └── applications-content.tsx (Client Component)
+        ├── Stats Overview Cards
+        ├── Job List with Application Counts
+        └── Search & Filter
+
+/applications/[jobSlug]
+└── page.tsx (Server Component)
+    └── job-applications-content.tsx (Client Component)
+        ├── Applications Table (Paginated)
+        ├── Filter by Status
+        ├── Search by Name/Email
+        └── Application Detail Sheet (80vh Bottom Sheet)
+            ├── Candidate Info
+            ├── Resume Link (opens new tab)
+            ├── Experience & Education
+            ├── Skills
+            ├── Cover Letter
+            ├── HR Notes
+            ├── Activity Timeline
+            └── Action Buttons
+                ├── Add Note
+                ├── Reject
+                └── Shortlist / Schedule Interview
+
+/interviews (Future - Interview Management)
+└── page.tsx (Server Component)
+    └── interviews-content.tsx (Client Component)
+        ├── Upcoming Interviews
+        ├── Past Interviews
+        └── Interview Details
+
+================================================================================
+                    DETAILED FLOW - HIRING APP
+================================================================================
+
+                        ┌──────────────────────┐
+                        │  New Application     │
+                        │  Status: APPLIED     │
+                        └──────────┬───────────┘
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │      HR Views Application    │
+                    │   /applications/[jobSlug]    │
+                    └──────────────┬───────────────┘
+                                   │
+                    ┌──────────────┴──────────────┐
+                    │                             │
+                    ▼                             ▼
+        ┌───────────────────┐         ┌───────────────────┐
+        │  Click "Reject"   │         │ Click "Shortlist" │
+        │                   │         │                   │
+        └─────────┬─────────┘         └─────────┬─────────┘
+                  │                             │
+                  ▼                             ▼
+        ┌───────────────────┐         ┌───────────────────┐
+        │  Reject Dialog    │         │ Status changed to │
+        │  - Markdown Editor│         │   SHORTLISTED     │
+        │  - Voice Capture  │         └─────────┬─────────┘
+        │  - AI Enhancement │                   │
+        └─────────┬─────────┘                   ▼
+                  │                   ┌───────────────────┐
+                  ▼                   │ Click "Schedule   │
+        ┌───────────────────┐         │    Interview"     │
+        │  Status: REJECTED │         └─────────┬─────────┘
+        │  Email sent to    │                   │
+        │  candidate        │                   ▼
+        └───────────────────┘         ┌───────────────────┐
+                                      │  Interview Dialog │
+                                      │  - Select Date    │
+                                      │  - Select Time    │
+                                      │  - Add Notes      │
+                                      └─────────┬─────────┘
+                                                │
+                                                ▼
+                                      ┌───────────────────┐
+                                      │ Interview Created │
+                                      │ Status: INTERVIEW_│
+                                      │        SCHEDULED  │
+                                      │ Demo Link Generated│
+                                      └─────────┬─────────┘
+                                                │
+                                                ▼
+                                      ┌───────────────────┐
+                                      │ Show Interview    │
+                                      │ Link to HR        │
+                                      │ Redirect to       │
+                                      │ /interviews       │
+                                      └───────────────────┘
+
+================================================================================
+                    REJECTION FLOW DETAILS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        REJECT DIALOG COMPONENTS                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                     Rejection Message Editor                         │   │
+│  │  ┌───────────────────────────────────────────────────────────────┐  │   │
+│  │  │  [Textarea with Markdown Support]                             │  │   │
+│  │  │                                                                │  │   │
+│  │  │  Dear {Candidate},                                             │  │   │
+│  │  │                                                                │  │   │
+│  │  │  Thank you for your interest in the {Position} role...        │  │   │
+│  │  │                                                                │  │   │
+│  │  └───────────────────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌──────────────────┐  ┌──────────────────┐                                │
+│  │ 🎤 Voice Note    │  │ ✨ Make          │                                │
+│  │    (Record)      │  │    Professional  │                                │
+│  └──────────────────┘  └──────────────────┘                                │
+│                                                                             │
+│  Voice Button:                                                              │
+│  - Uses Web Speech API / MediaRecorder                                      │
+│  - Captures audio for transcription                                         │
+│  - Appends transcribed text to message                                      │
+│                                                                             │
+│  AI Button (Make Professional):                                             │
+│  - Calls OpenAI API via makeMessageProfessional()                          │
+│  - Transforms casual/rough notes into professional rejection message        │
+│  - Maintains key points while improving tone                                │
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────────────┐                                │
+│  │   Cancel     │  │   Send Rejection     │                                │
+│  └──────────────┘  └──────────────────────┘                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    MAIN APP (CANDIDATE SIDE)
+================================================================================
+
+PAGE STRUCTURE:
+---------------
+
+/dashboard/applications
+└── page.tsx (Server Component)
+    └── applications-content.tsx (Client Component)
+        ├── My Applications List
+        ├── Status for each application
+        └── Interview Schedule (if applicable)
+
+/dashboard/applications/[applicationId]
+└── page.tsx (Server Component)
+    └── application-detail.tsx (Client Component)
+        ├── Job Details
+        ├── Application Status Timeline
+        ├── Messages from HR
+        └── Interview Information (if scheduled)
+            ├── Date & Time
+            ├── Interview Link
+            └── Join Button
+
+/interviews/[interviewId]
+└── page.tsx (Server Component)
+    └── interview-room.tsx (Client Component)
+        ├── Video Call Component
+        ├── Chat Panel
+        ├── Code Editor (if technical)
+        └── Screen Share
+
+================================================================================
+                    INTERVIEW SCHEDULING FLOW
+================================================================================
+
+STEP 1: HR Schedules Interview
+─────────────────────────────────────────────────────────────────────────────
+
+    ┌─────────────────────────────────────────┐
+    │         Schedule Interview Dialog        │
+    │  ┌─────────────────────────────────────┐│
+    │  │  Interview Date:  [📅 Date Picker ] ││
+    │  │  Interview Time:  [🕐 Time Picker ] ││
+    │  │                                      ││
+    │  │  Notes:                              ││
+    │  │  ┌──────────────────────────────┐   ││
+    │  │  │ Technical interview with     │   ││
+    │  │  │ senior engineer...           │   ││
+    │  │  └──────────────────────────────┘   ││
+    │  └─────────────────────────────────────┘│
+    │                                          │
+    │  [Cancel]              [Schedule Interview]│
+    └─────────────────────────────────────────┘
+
+
+STEP 2: System Actions
+─────────────────────────────────────────────────────────────────────────────
+
+    ┌──────────────────────────────────────────────────────────────────┐
+    │                      BACKEND PROCESSING                          │
+    │                                                                  │
+    │  1. Create Interview record in database                          │
+    │     - id: unique interview ID                                    │
+    │     - applicationId: linked application                          │
+    │     - scheduledAt: date/time                                     │
+    │     - status: SCHEDULED                                          │
+    │     - meetingLink: generated unique URL                          │
+    │                                                                  │
+    │  2. Update JobApplication                                        │
+    │     - status: INTERVIEW_SCHEDULED                                │
+    │     - Add activity log entry                                     │
+    │                                                                  │
+    │  3. Generate Demo Interview Link                                 │
+    │     - Format: /interviews/{interviewId}?token={secureToken}     │
+    │                                                                  │
+    │  4. Send Email Notification to Candidate                         │
+    │     - Interview date/time                                        │
+    │     - Interview link                                             │
+    │     - Preparation instructions                                   │
+    │                                                                  │
+    │  5. Create Calendar Event (optional)                             │
+    │     - Google Calendar / Outlook integration                      │
+    │                                                                  │
+    └──────────────────────────────────────────────────────────────────┘
+
+
+STEP 3: Success Response to HR
+─────────────────────────────────────────────────────────────────────────────
+
+    ┌─────────────────────────────────────────┐
+    │    ✅ Interview Scheduled!               │
+    │                                          │
+    │    The interview has been scheduled      │
+    │    with {Candidate Name}.                │
+    │                                          │
+    │    ┌─────────────────────────────────┐  │
+    │    │  Interview Link                  │  │
+    │    │  ┌───────────────────────┐       │  │
+    │    │  │ /interviews/abc123... │ [Copy]│  │
+    │    │  └───────────────────────┘       │  │
+    │    └─────────────────────────────────┘  │
+    │                                          │
+    │          [View Interview Process]        │
+    └─────────────────────────────────────────┘
+
+================================================================================
+                    DATA MODELS
+================================================================================
+
+Interview Model (Prisma Schema):
+─────────────────────────────────────────────────────────────────────────────
+
+model Interview {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id])
+  
+  scheduledAt   DateTime
+  duration      Int         @default(60) // minutes
+  
+  meetingLink   String      @unique
+  meetingType   InterviewType @default(VIDEO)
+  
+  status        InterviewStatus @default(SCHEDULED)
+  
+  notes         String?     // HR notes
+  feedback      String?     // Post-interview feedback
+  rating        Int?        // 1-5 rating
+  
+  interviewers  Interviewer[]
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+enum InterviewType {
+  VIDEO
+  PHONE
+  IN_PERSON
+  TECHNICAL
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+
+================================================================================
+                    API ENDPOINTS / SERVER ACTIONS
+================================================================================
+
+HIRING APP SERVER ACTIONS:
+─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  scheduleInterview(applicationId, scheduledAt, notes?)                      │
+│  ─────────────────────────────────────────────────────                      │
+│  Input:                                                                     │
+│    - applicationId: string                                                  │
+│    - scheduledAt: Date                                                      │
+│    - notes?: string                                                         │
+│                                                                             │
+│  Process:                                                                   │
+│    1. Validate application exists and status allows scheduling              │
+│    2. Generate unique meeting link                                          │
+│    3. Create Interview record                                               │
+│    4. Update JobApplication status to INTERVIEW_SCHEDULED                   │
+│    5. Add activity log                                                      │
+│    6. Trigger notification to candidate                                     │
+│                                                                             │
+│  Output:                                                                    │
+│    - success: boolean                                                       │
+│    - data: { interviewId, interviewLink }                                  │
+│    - error?: string                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  rejectApplication(applicationId, reason)                                   │
+│  ────────────────────────────────────────                                   │
+│  Input:                                                                     │
+│    - applicationId: string                                                  │
+│    - reason: string (markdown formatted)                                    │
+│                                                                             │
+│  Process:                                                                   │
+│    1. Validate application exists                                           │
+│    2. Update status to REJECTED                                             │
+│    3. Store rejection reason                                                │
+│    4. Add activity log                                                      │
+│    5. Send rejection email to candidate                                     │
+│                                                                             │
+│  Output:                                                                    │
+│    - success: boolean                                                       │
+│    - error?: string                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  makeMessageProfessional(message)                                           │
+│  ────────────────────────────────                                           │
+│  Input:                                                                     │
+│    - message: string (raw message text)                                     │
+│                                                                             │
+│  Process:                                                                   │
+│    1. Send message to OpenAI GPT-4                                          │
+│    2. Prompt: "Transform this message into a professional, polite           │
+│       rejection message while maintaining the key points..."                │
+│    3. Return enhanced message                                               │
+│                                                                             │
+│  Output:                                                                    │
+│    - success: boolean                                                       │
+│    - data: string (enhanced message)                                        │
+│    - error?: string                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                    UI COMPONENT HIERARCHY
+================================================================================
+
+HIRING APP:
+─────────────────────────────────────────────────────────────────────────────
+
+app/(main)/applications/
+├── page.tsx                          # Server: Fetch stats, job list
+│   └── applications-content.tsx      # Client: Render stats cards, job list
+│
+└── [jobSlug]/
+    ├── page.tsx                      # Server: Fetch applications for job
+    │   └── job-applications-content.tsx  # Client: Table, filters, pagination
+    │       └── application-detail-sheet.tsx  # Client: Bottom sheet (80vh)
+    │           ├── RejectDialog          # With markdown, voice, AI
+    │           ├── AcceptDialog          # Shortlist or schedule interview
+    │           └── AddNoteDialog         # HR notes with voice capture
+
+MAIN APP (Candidate):
+─────────────────────────────────────────────────────────────────────────────
+
+app/(main)/dashboard/
+└── applications/
+    ├── page.tsx                      # Server: Fetch candidate's applications
+    │   └── my-applications.tsx       # Client: List of applications
+    │
+    └── [applicationId]/
+        └── page.tsx                  # Server: Fetch specific application
+            └── application-detail.tsx # Client: Full application status
+
+app/(main)/interviews/
+└── [interviewId]/
+    └── page.tsx                      # Server: Validate interview access
+        └── interview-room.tsx        # Client: Video call interface
+
+================================================================================
+                    STATUS FLOW DIAGRAM
+================================================================================
+
+                           ┌───────────────┐
+                           │   INTERESTED  │
+                           └───────┬───────┘
+                                   │
+                                   ▼
+                           ┌───────────────┐
+                           │   PREPARING   │
+                           └───────┬───────┘
+                                   │
+                                   ▼
+                           ┌───────────────┐
+                           │    APPLIED    │◄────────────────┐
+                           └───────┬───────┘                 │
+                                   │                         │
+                    ┌──────────────┼──────────────┐         │
+                    │              │              │         │
+                    ▼              ▼              ▼         │
+            ┌──────────┐   ┌────────────┐   ┌──────────┐   │
+            │ REJECTED │   │UNDER_REVIEW│   │WITHDRAWN │   │
+            └──────────┘   └──────┬─────┘   └──────────┘   │
+                                  │                         │
+                    ┌─────────────┼─────────────┐           │
+                    │             │             │           │
+                    ▼             ▼             ▼           │
+            ┌──────────┐  ┌───────────┐  ┌──────────┐      │
+            │ REJECTED │  │SHORTLISTED│  │ASSIGNMENT│      │
+            └──────────┘  └─────┬─────┘  │   SENT   │      │
+                                │        └────┬─────┘      │
+                                │             │            │
+                                │             ▼            │
+                                │      ┌───────────┐       │
+                                │      │ASSIGNMENT │       │
+                                │      │SUBMITTED  │       │
+                                │      └─────┬─────┘       │
+                                │            │             │
+                    ┌───────────┴────────────┘             │
+                    │                                      │
+                    ▼                                      │
+            ┌───────────────┐                              │
+            │   INTERVIEW   │                              │
+            │   SCHEDULED   │                              │
+            └───────┬───────┘                              │
+                    │                                      │
+                    ▼                                      │
+            ┌───────────────┐                              │
+            │  INTERVIEWED  │                              │
+            └───────┬───────┘                              │
+                    │                                      │
+         ┌──────────┼──────────┐                          │
+         │          │          │                          │
+         ▼          ▼          ▼                          │
+   ┌──────────┐ ┌────────┐ ┌──────────┐                   │
+   │ REJECTED │ │OFFER   │ │RE-APPLY  │───────────────────┘
+   └──────────┘ │EXTENDED│ └──────────┘
+                └────┬───┘
+                     │
+          ┌──────────┼──────────┐
+          │          │          │
+          ▼          ▼          ▼
+    ┌──────────┐ ┌──────┐ ┌──────────┐
+    │ REJECTED │ │ HIRED│ │WITHDRAWN │
+    └──────────┘ └──────┘ └──────────┘
+
+================================================================================
+                    NOTIFICATIONS
+================================================================================
+
+Email Templates:
+─────────────────────────────────────────────────────────────────────────────
+
+1. INTERVIEW_SCHEDULED
+   Subject: "Interview Scheduled for {Job Title} at {Company}"
+   Content:
+   - Interview date and time
+   - Interview link
+   - Interviewer names (if available)
+   - What to prepare
+   - Technical requirements (camera, mic)
+
+2. APPLICATION_REJECTED
+   Subject: "Update on your application for {Job Title}"
+   Content:
+   - Personalized rejection message (from HR)
+   - Encouragement to apply for future roles
+   - Link to job board
+
+3. APPLICATION_SHORTLISTED
+   Subject: "Great news about your {Job Title} application!"
+   Content:
+   - Congratulations on shortlisting
+   - Next steps
+   - Timeline expectations
+
+================================================================================
+                    SECURITY CONSIDERATIONS
+================================================================================
+
+1. Interview Link Security:
+   - Include secure token in URL: /interviews/{id}?token={jwt}
+   - Token validates: interviewId, candidateId, expiry
+   - Rate limit joining attempts
+
+2. Application Access:
+   - Candidates can only view their own applications
+   - HR can only view applications for their company's jobs
+
+3. Action Authorization:
+   - Only HR with appropriate role can reject/accept
+   - Audit log all status changes
+
+================================================================================
+                    FUTURE ENHANCEMENTS
+================================================================================
+
+1. Calendar Integration
+   - Google Calendar sync
+   - Outlook integration
+   - iCal export
+
+2. Video Interview Platform
+   - Built-in video calls
+   - Screen sharing
+   - Code editor for technical interviews
+   - Recording (with consent)
+
+3. AI Features
+   - AI interview questions generation
+   - Candidate answer analysis
+   - Skills assessment automation
+
+4. Batch Actions
+   - Bulk reject
+   - Bulk shortlist
+   - Template messages
+
+================================================================================
+                    FILE STRUCTURE SUMMARY
+================================================================================
+
+apps/hiring/
+├── actions/
+│   └── applications/
+│       └── index.ts              # All application server actions
+│
+├── app/(main)/applications/
+│   ├── page.tsx                  # Main applications page (server)
+│   ├── applications-content.tsx  # Main page content (client)
+│   │
+│   └── [jobSlug]/
+│       ├── page.tsx              # Job applications page (server)
+│       ├── job-applications-content.tsx  # Job apps content (client)
+│       └── application-detail-sheet.tsx  # Detail sheet (client)
+│
+└── types/
+    ├── index.ts                  # Type exports
+    └── application.ts            # Application-related types
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

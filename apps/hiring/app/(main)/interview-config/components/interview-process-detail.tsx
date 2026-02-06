@@ -86,33 +86,37 @@ const formatLabels: Record<string, { icon: React.ElementType; label: string }> =
 export function InterviewProcessDetail({ process, onClose }: InterviewProcessDetailProps) {
     return (
         <div className="space-y-6">
-            {/* Process Overview */}
             <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-900">
                 <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
                         <div className="flex items-center gap-2 mb-2">
-                            {process.isDefault && (
-                                <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                                    <Star className="w-3 h-3 mr-1" />
-                                    Default
-                                </Badge>
-                            )}
-                            {!process.isActive && (
-                                <Badge variant="secondary">Inactive</Badge>
-                            )}
+                            {
+                                process.isDefault && (
+                                    <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                        <Star className="w-3 h-3 mr-1" />
+                                        Default
+                                    </Badge>
+                                )
+                            }
+                            {
+                                !process.isActive && (
+                                    <Badge variant="secondary">Inactive</Badge>
+                                )
+                            }
                         </div>
-                        {process.description && (
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                {process.description}
-                            </p>
-                        )}
+                        {
+                            process.description && (
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                    {process.description}
+                                </p>
+                            )
+                        }
                     </div>
                     <Button variant="outline" size="sm" className="rounded-xl">
                         <Edit2 className="w-4 h-4 mr-2" />
                         Edit
                     </Button>
                 </div>
-
                 <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-3 rounded-xl bg-white dark:bg-neutral-800">
                         <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -134,131 +138,136 @@ export function InterviewProcessDetail({ process, onClose }: InterviewProcessDet
                     </div>
                 </div>
             </div>
-
-            {/* Interview Rounds Timeline */}
             <div>
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
                     Interview Rounds
                 </h3>
-
                 <div className="relative">
-                    {/* Timeline line */}
                     <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-neutral-200 dark:bg-neutral-800" />
 
                     <div className="space-y-4">
-                        {process.rounds.map((round, index) => {
-                            const IconComponent = roundTypeIcons[round.roundType] || FileText
-                            const formatInfo = formatLabels[round.format] || formatLabels.VIDEO
-                            const FormatIcon = formatInfo?.icon || Video
+                        {
+                            process.rounds.map((round, index) => {
+                                const IconComponent = roundTypeIcons[round.roundType] || FileText
+                                const formatInfo = formatLabels[round.format] || formatLabels.VIDEO
+                                const FormatIcon = formatInfo?.icon || Video
 
-                            return (
-                                <motion.div
-                                    key={round.id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className="relative flex gap-4"
-                                >
-                                    {/* Timeline Node */}
-                                    <div className={`relative z-10 w-12 h-12 rounded-full ${roundTypeColors[round.roundType]} flex items-center justify-center shrink-0`}>
-                                        <IconComponent className="w-5 h-5 text-white" />
-                                    </div>
-
-                                    {/* Round Card */}
-                                    <div className="flex-1 p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-                                        <div className="flex items-start justify-between gap-4 mb-3">
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-xs font-medium text-neutral-500 uppercase">
-                                                        Round {round.roundNumber}
-                                                    </span>
-                                                    {round.hasMockInterview && (
-                                                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
-                                                            <Mic className="w-3 h-3 mr-1" />
-                                                            Mock Available
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <h4 className="text-base font-semibold text-neutral-900 dark:text-white">
-                                                    {round.title}
-                                                </h4>
-                                            </div>
-                                            <div className="flex items-center gap-3 text-sm text-neutral-500">
-                                                {round.durationMinutes && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock className="w-4 h-4" />
-                                                        <span>{round.durationMinutes}m</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center gap-1">
-                                                    <FormatIcon className="w-4 h-4" />
-                                                    <span>{formatInfo?.label || "Video Call"}</span>
-                                                </div>
-                                            </div>
+                                return (
+                                    <motion.div
+                                        key={round.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        className="relative flex gap-4"
+                                    >
+                                        <div className={`relative z-10 w-12 h-12 rounded-full ${roundTypeColors[round.roundType]} flex items-center justify-center shrink-0`}>
+                                            <IconComponent className="w-5 h-5 text-white" />
                                         </div>
-
-                                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                                            {round.description}
-                                        </p>
-
-                                        {/* Statistics */}
-                                        {(round.passRatePercent || round.daysToNextRound) && (
-                                            <div className="flex items-center gap-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                                                {round.passRatePercent && (
-                                                    <div className="flex items-center gap-1.5 text-sm">
-                                                        <TrendingUp className="w-4 h-4 text-green-500" />
-                                                        <span className="text-neutral-600 dark:text-neutral-400">
-                                                            {round.passRatePercent}% pass rate
+                                        <div className="flex-1 p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                                            <div className="flex items-start justify-between gap-4 mb-3">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-xs font-medium text-neutral-500 uppercase">
+                                                            Round {round.roundNumber}
                                                         </span>
+                                                        {
+                                                            round.hasMockInterview && (
+                                                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
+                                                                    <Mic className="w-3 h-3 mr-1" />
+                                                                    Mock Available
+                                                                </Badge>
+                                                            )
+                                                        }
                                                     </div>
-                                                )}
-                                                {round.daysToNextRound && (
-                                                    <div className="flex items-center gap-1.5 text-sm">
-                                                        <Clock className="w-4 h-4 text-blue-500" />
-                                                        <span className="text-neutral-600 dark:text-neutral-400">
-                                                            ~{round.daysToNextRound} days to next
-                                                        </span>
+                                                    <h4 className="text-base font-semibold text-neutral-900 dark:text-white">
+                                                        {round.title}
+                                                    </h4>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-sm text-neutral-500">
+                                                    {
+                                                        round.durationMinutes && (
+                                                            <div className="flex items-center gap-1">
+                                                                <Clock className="w-4 h-4" />
+                                                                <span>{round.durationMinutes}m</span>
+                                                            </div>
+                                                        )
+                                                    }
+                                                    <div className="flex items-center gap-1">
+                                                        <FormatIcon className="w-4 h-4" />
+                                                        <span>{formatInfo?.label || "Video Call"}</span>
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            )
-                        })}
+                                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                                                {round.description}
+                                            </p>
+
+                                            {
+                                                (round.passRatePercent || round.daysToNextRound) && (
+                                                    <div className="flex items-center gap-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                                                        {
+                                                            round.passRatePercent && (
+                                                                <div className="flex items-center gap-1.5 text-sm">
+                                                                    <TrendingUp className="w-4 h-4 text-green-500" />
+                                                                    <span className="text-neutral-600 dark:text-neutral-400">
+                                                                        {round.passRatePercent}% pass rate
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            round.daysToNextRound && (
+                                                                <div className="flex items-center gap-1.5 text-sm">
+                                                                    <Clock className="w-4 h-4 text-blue-500" />
+                                                                    <span className="text-neutral-600 dark:text-neutral-400">
+                                                                        ~{round.daysToNextRound} days to next
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+                                        </div>
+                                    </motion.div>
+                                )
+                            })
+                        }
                     </div>
                 </div>
             </div>
 
-            {/* Linked Jobs */}
-            {process.jobs && process.jobs.length > 0 && (
-                <div>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-                        Linked Jobs
-                    </h3>
-                    <div className="space-y-2">
-                        {process.jobs.map((job) => (
-                            <div
-                                key={job.id}
-                                className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <LinkIcon className="w-4 h-4 text-neutral-400" />
-                                    <span className="font-medium text-neutral-900 dark:text-white">
-                                        {job.title}
-                                    </span>
-                                    <Badge variant="secondary" className="text-xs capitalize">
-                                        {job.status.toLowerCase()}
-                                    </Badge>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-neutral-400" />
-                            </div>
-                        ))}
+            {
+                process.jobs && process.jobs.length > 0 && (
+                    <div>
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
+                            Linked Jobs
+                        </h3>
+                        <div className="space-y-2">
+                            {
+                                process.jobs.map((job) => (
+                                    <div
+                                        key={job.id}
+                                        className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <LinkIcon className="w-4 h-4 text-neutral-400" />
+                                            <span className="font-medium text-neutral-900 dark:text-white">
+                                                {job.title}
+                                            </span>
+                                            <Badge variant="secondary" className="text-xs capitalize">
+                                                {job.status.toLowerCase()}
+                                            </Badge>
+                                        </div>
+                                        <ChevronRight className="w-4 h-4 text-neutral-400" />
+                                    </div>
+                                ))
+                            }
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {/* Actions */}
             <div className="flex items-center gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
                 <Button
                     variant="outline"
