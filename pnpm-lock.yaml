@@ -205,6 +205,9 @@ importers:
       next:
         specifier: 15.4.10
         version: 15.4.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      openai:
+        specifier: ^6.18.0
+        version: 6.18.0(ws@8.18.3)(zod@3.25.76)
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -4980,6 +4983,18 @@ packages:
 
   openai@6.15.0:
     resolution: {integrity: sha512-F1Lvs5BoVvmZtzkUEVyh8mDQPPFolq4F+xdsx/DO8Hee8YF3IGAlZqUIsF+DVGhqf4aU0a3bTghsxB6OIsRy1g==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+
+  openai@6.18.0:
+    resolution: {integrity: sha512-odLRYyz9rlzz6g8gKn61RM2oP5UUm428sE2zOxZqS9MzVfD5/XW8UoEjpnRkzTuScXP7ZbP/m7fC+bl8jCOZZw==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -11034,6 +11049,11 @@ snapshots:
     optionalDependencies:
       ws: 8.18.3
       zod: 4.2.1
+
+  openai@6.18.0(ws@8.18.3)(zod@3.25.76):
+    optionalDependencies:
+      ws: 8.18.3
+      zod: 3.25.76
 
   openid-client@5.7.1:
     dependencies:

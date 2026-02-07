@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Plus, Search, ListChecks, ChevronRight, Clock, Users, Mic,
     MoreVertical, Star, Edit2, Trash2, Copy, Eye, CheckCircle2,
-    AlertCircle, Sparkles, FileStack
+    AlertCircle, Sparkles, FileStack, Loader2, Rocket, Building2, Briefcase
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Badge } from "@repo/ui/components/ui/badge"
+import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuSeparator, DropdownMenuTrigger
@@ -21,17 +22,20 @@ import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
     DialogHeader, DialogTitle
 } from "@repo/ui/components/ui/dialog"
-import { 
-    InterviewProcessForm, ProcessTemplate 
+import {
+    InterviewProcessForm, ProcessTemplate
 } from "./components/interview-process-form"
 import { InterviewProcessDetail } from "./components/interview-process-detail"
 import {
-    cloneInterviewProcess, deleteInterviewProcess
+    cloneInterviewProcess, deleteInterviewProcess,
+    getInterviewTemplates, generateInterviewTemplate,
+    type InterviewTemplate
 } from "@/actions/interview-config"
 import toast from "@repo/ui/components/ui/sonner"
-import type { 
-    InterviewProcessStats, InterviewProcess, InterviewRound 
+import type {
+    InterviewProcessStats, InterviewProcess, InterviewRound
 } from "@/types"
+import { cn } from "@repo/ui/lib/utils"
 
 // View-specific types - subset of full types for list display
 type InterviewRoundView = Pick<
@@ -78,9 +82,74 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
     const [isPending, startTransition] = useTransition()
     const [selectedTemplate, setSelectedTemplate] = useState<ProcessTemplate | null>(null)
 
+    // Template states
+    const [templates, setTemplates] = useState<InterviewTemplate[]>([])
+    const [templatesLoading, setTemplatesLoading] = useState(false)
+    const [selectedStyle, setSelectedStyle] = useState<"ALL" | "STARTUP" | "FAANG" | "MNC">("ALL")
+
+    // AI Chat states
+    const [aiChatMessage, setAiChatMessage] = useState("")
+    const [aiRoleType, setAiRoleType] = useState("")
+    const [aiGenerating, setAiGenerating] = useState(false)
+
+    // Fetch templates when sheet opens
+    useEffect(() => {
+        if (isTemplatesOpen) {
+            setTemplatesLoading(true)
+            getInterviewTemplates({ style: selectedStyle === "ALL" ? undefined : selectedStyle })
+                .then(result => {
+                    if (result.success && result.data) {
+                        setTemplates(result.data)
+                    }
+                })
+                .finally(() => setTemplatesLoading(false))
+        }
+    }, [isTemplatesOpen, selectedStyle])
+
+    const handleGenerateWithAI = async (style: "STARTUP" | "FAANG" | "MNC") => {
+        if (!aiRoleType.trim()) {
+            toast.error("Please enter a role type")
+            return
+        }
+
+        setAiGenerating(true)
+        try {
+            const result = await generateInterviewTemplate({
+                style,
+                roleType: aiRoleType,
+                customPrompt: aiChatMessage || undefined
+            })
+
+            if (result.success && result.data) {
+                toast.success("Template generated successfully!")
+                // Convert to ProcessTemplate format
+                setSelectedTemplate({
+                    name: result.data.name,
+                    description: result.data.description || "",
+                    estimatedDurationWeeks: result.data.estimatedDurationWeeks || 2,
+                    rounds: result.data.rounds
+                })
+                setIsTemplatesOpen(false)
+                setIsCreateSheetOpen(true)
+                // Refresh templates list
+                setTemplates(prev => [result.data!, ...prev])
+            } else {
+                toast.error(result.error || "Failed to generate template")
+            }
+        } catch {
+            toast.error("Failed to generate template")
+        } finally {
+            setAiGenerating(false)
+        }
+    }
+
     const filteredProcesses = processes.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const filteredTemplates = templates.filter(t =>
+        selectedStyle === "ALL" || t.style === selectedStyle
     )
 
     const handleViewProcess = (process: InterviewProcessView) => {
@@ -126,204 +195,6 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
             }
         })
     }
-
-    // Role-based templates with full round configurations
-    const roleTemplates: (ProcessTemplate & { roundNames: string[] })[] = [
-        {
-            name: "Software Engineer Interview",
-            description: "Comprehensive technical interview process for software engineering roles including coding, system design, and behavioral assessment.",
-            estimatedDurationWeeks: 3,
-            roundNames: ["Phone Screen", "Technical Coding", "System Design", "Behavioral", "Hiring Manager"],
-            rounds: [
-                {
-                    roundType: "PHONE_SCREEN",
-                    title: "Phone Screen",
-                    durationMinutes: 30,
-                    format: "VOICE",
-                    description: "Initial phone conversation to assess basic qualifications, discuss your background, and answer questions about the role."
-                },
-                {
-                    roundType: "TECHNICAL_CODING",
-                    title: "Technical Coding Round",
-                    durationMinutes: 60,
-                    format: "LIVE_CODING",
-                    description: "Live coding session focusing on data structures, algorithms, and problem-solving. You'll work through 1-2 problems with an engineer."
-                },
-                {
-                    roundType: "SYSTEM_DESIGN",
-                    title: "System Design Round",
-                    durationMinutes: 60,
-                    format: "WHITEBOARD",
-                    description: "Design discussion to evaluate your architectural thinking and ability to design scalable systems."
-                },
-                {
-                    roundType: "BEHAVIORAL",
-                    title: "Behavioral Round",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Interview to assess soft skills, teamwork abilities, and cultural fit using STAR method questions."
-                },
-                {
-                    roundType: "HIRING_MANAGER",
-                    title: "Hiring Manager Round",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Final discussion with the hiring manager about the role, team dynamics, and career growth opportunities."
-                }
-            ]
-        },
-        {
-            name: "Product Manager Interview",
-            description: "Strategy and communication focused interview process for product management roles.",
-            estimatedDurationWeeks: 2,
-            roundNames: ["Recruiter Screen", "Product Sense", "Execution Case", "Behavioral", "Leadership"],
-            rounds: [
-                {
-                    roundType: "PHONE_SCREEN",
-                    title: "Recruiter Screen",
-                    durationMinutes: 30,
-                    format: "VOICE",
-                    description: "Initial conversation to discuss your background, career goals, and fit for the PM role."
-                },
-                {
-                    roundType: "CUSTOM",
-                    title: "Product Sense",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Assessment of your product intuition through product design and strategy questions."
-                },
-                {
-                    roundType: "CUSTOM",
-                    title: "Execution Case",
-                    durationMinutes: 60,
-                    format: "VIDEO",
-                    description: "Problem-solving session focused on metrics, prioritization, and execution planning."
-                },
-                {
-                    roundType: "BEHAVIORAL",
-                    title: "Behavioral Round",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Discussion of your leadership experiences, stakeholder management, and decision-making."
-                },
-                {
-                    roundType: "HIRING_MANAGER",
-                    title: "Leadership Round",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Final round with senior leadership to discuss vision alignment and strategic thinking."
-                }
-            ]
-        },
-        {
-            name: "Data Scientist Interview",
-            description: "Analytics and machine learning focused interview process for data science roles.",
-            estimatedDurationWeeks: 3,
-            roundNames: ["Phone Screen", "Technical Assessment", "ML Deep Dive", "Business Case", "Culture Fit"],
-            rounds: [
-                {
-                    roundType: "PHONE_SCREEN",
-                    title: "Phone Screen",
-                    durationMinutes: 30,
-                    format: "VOICE",
-                    description: "Initial conversation about your data science background and technical interests."
-                },
-                {
-                    roundType: "TECHNICAL_CODING",
-                    title: "Technical Assessment",
-                    durationMinutes: 60,
-                    format: "LIVE_CODING",
-                    description: "Coding session focused on Python/SQL, statistics, and data manipulation problems."
-                },
-                {
-                    roundType: "CUSTOM",
-                    title: "ML Deep Dive",
-                    durationMinutes: 60,
-                    format: "WHITEBOARD",
-                    description: "In-depth discussion of machine learning concepts, model selection, and feature engineering."
-                },
-                {
-                    roundType: "CUSTOM",
-                    title: "Business Case",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Present how you would approach a real business problem using data science techniques."
-                },
-                {
-                    roundType: "CULTURE_FIT",
-                    title: "Culture Fit",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Meet the team and discuss collaboration, communication style, and work preferences."
-                }
-            ]
-        },
-        {
-            name: "Designer Interview",
-            description: "Portfolio and design thinking focused process for design roles.",
-            estimatedDurationWeeks: 2,
-            roundNames: ["Portfolio Review", "Design Challenge", "Whiteboard Session", "Team Fit"],
-            rounds: [
-                {
-                    roundType: "CUSTOM",
-                    title: "Portfolio Review",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Walk through your design portfolio, discussing process, decisions, and outcomes."
-                },
-                {
-                    roundType: "TAKE_HOME",
-                    title: "Design Challenge",
-                    durationMinutes: 180,
-                    format: "TAKE_HOME",
-                    description: "Complete a design exercise that showcases your problem-solving and visual design skills."
-                },
-                {
-                    roundType: "CUSTOM",
-                    title: "Whiteboard Session",
-                    durationMinutes: 60,
-                    format: "WHITEBOARD",
-                    description: "Collaborative design session to see how you think through problems in real-time."
-                },
-                {
-                    roundType: "CULTURE_FIT",
-                    title: "Team Fit",
-                    durationMinutes: 45,
-                    format: "VIDEO",
-                    description: "Meet potential teammates and discuss collaboration, feedback culture, and work style."
-                }
-            ]
-        },
-        {
-            name: "Intern Interview",
-            description: "Simplified interview process for internship positions.",
-            estimatedDurationWeeks: 1,
-            roundNames: ["Resume Screen", "Technical Interview", "Manager Chat"],
-            rounds: [
-                {
-                    roundType: "PHONE_SCREEN",
-                    title: "Resume Screen",
-                    durationMinutes: 20,
-                    format: "VOICE",
-                    description: "Quick call to discuss your background, coursework, and interest in the internship."
-                },
-                {
-                    roundType: "TECHNICAL_CODING",
-                    title: "Technical Interview",
-                    durationMinutes: 45,
-                    format: "LIVE_CODING",
-                    description: "Coding interview with problems appropriate for your experience level."
-                },
-                {
-                    roundType: "HIRING_MANAGER",
-                    title: "Manager Chat",
-                    durationMinutes: 30,
-                    format: "VIDEO",
-                    description: "Casual conversation with the team manager about the internship experience and your goals."
-                }
-            ]
-        }
-    ]
 
     return (
         <div className="min-h-full p-6 lg:p-8">
@@ -596,7 +467,10 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
                 setIsCreateSheetOpen(open)
                 if (!open) setSelectedTemplate(null)
             }}>
-                <SheetContent className="w-full sm:max-w-2xl h-[95vh] overflow-y-auto">
+                <SheetContent
+                    side="bottom"
+                    className="h-[90vh] rounded-t-3xl flex flex-col"
+                >
                     <SheetHeader>
                         <SheetTitle>
                             {selectedTemplate ? `Create from Template: ${selectedTemplate.name}` : "Create Interview Process"}
@@ -607,11 +481,11 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
                         </SheetDescription>
                     </SheetHeader>
                     <div className="mt-6">
-                        <InterviewProcessForm 
+                        <InterviewProcessForm
                             onClose={() => {
                                 setIsCreateSheetOpen(false)
                                 setSelectedTemplate(null)
-                            }} 
+                            }}
                             initialTemplate={selectedTemplate}
                         />
                     </div>
@@ -671,65 +545,206 @@ export function InterviewConfigContent({ initialProcesses, initialStats }: Inter
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            <Dialog open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen}>
-                <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-purple-500" />
-                            Role-Based Templates
-                        </DialogTitle>
-                        <DialogDescription>
-                            Start with a pre-configured template for common roles and customize it.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        {
-                            roleTemplates.map((template, i) => (
-                                <motion.div
-                                    key={template.name}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                    className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition-all cursor-pointer group"
-                                    onClick={() => {
-                                        // Set the template data and open the form
-                                        setSelectedTemplate({
-                                            name: template.name,
-                                            description: template.description,
-                                            estimatedDurationWeeks: template.estimatedDurationWeeks,
-                                            rounds: template.rounds
-                                        })
-                                        setIsTemplatesOpen(false)
-                                        setIsCreateSheetOpen(true)
-                                        toast.success(`Selected ${template.name} template - customize it now!`)
-                                    }}
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400">
-                                                {template.name}
-                                            </h3>
-                                            <p className="text-sm text-neutral-500 mt-1">{template.description}</p>
-                                            <div className="flex flex-wrap gap-2 mt-3">
-                                                {
-                                                    template.roundNames.map((round, j) => (
-                                                        <Badge key={j} variant="outline" className="text-xs">
-                                                            {j + 1}. {round}
-                                                        </Badge>
-                                                    ))
-                                                }
-                                            </div>
-                                        </div>
-                                        <Button size="sm" variant="ghost" className="rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Use Template
+
+            {/* Templates Sheet from Bottom */}
+            <Sheet open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen}>
+                <SheetContent
+                    side="bottom"
+                    className="h-[90vh] rounded-t-3xl flex flex-col"
+                >
+                    <div className="max-w-7xl mx-auto w-full flex flex-col h-full">
+                        <SheetHeader className="pb-4 border-b border-neutral-200 dark:border-neutral-800">
+                            <SheetTitle className="flex items-center gap-2 text-xl">
+                                <Sparkles className="w-6 h-6 text-purple-500" />
+                                Interview Process Templates
+                            </SheetTitle>
+                            <SheetDescription>
+                                Choose a template or generate one with AI based on your hiring style
+                            </SheetDescription>
+                        </SheetHeader>
+                        <div className="py-4 border-b border-neutral-200 dark:border-neutral-800">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mr-2">
+                                    Interview Style:
+                                </span>
+                                {
+                                    (["ALL", "STARTUP", "FAANG", "MNC"] as const).map((style) => {
+                                        const styleConfig = {
+                                            ALL: { icon: ListChecks, label: "All Templates", color: "neutral" },
+                                            STARTUP: { icon: Rocket, label: "Startup", color: "green" },
+                                            FAANG: { icon: Building2, label: "FAANG / Big Tech", color: "blue" },
+                                            MNC: { icon: Briefcase, label: "MNC / Corporate", color: "purple" }
+                                        }[style]
+                                        const Icon = styleConfig.icon
+
+                                        return (
+                                            <button
+                                                key={style}
+                                                onClick={() => setSelectedStyle(style)}
+                                                className={cn(
+                                                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                                                    selectedStyle === style
+                                                        ? "bg-neutral-900 text-white dark:bg-white dark:text-black"
+                                                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                                                )}
+                                            >
+                                                <Icon className="w-4 h-4" />
+                                                {styleConfig.label}
+                                            </button>
+                                        )
+                                    })
+                                }
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto py-4">
+                            {
+                                templatesLoading ? (
+                                    <div className="flex items-center justify-center h-40">
+                                        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                                    </div>
+                                ) : filteredTemplates.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {
+                                            filteredTemplates.map((template, i) => (
+                                                <motion.div
+                                                    key={template.id}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.03 }}
+                                                    className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition-all cursor-pointer group"
+                                                    onClick={() => {
+                                                        setSelectedTemplate({
+                                                            name: template.name,
+                                                            description: template.description || "",
+                                                            estimatedDurationWeeks: template.estimatedDurationWeeks || 2,
+                                                            rounds: template.rounds
+                                                        })
+                                                        setIsTemplatesOpen(false)
+                                                        setIsCreateSheetOpen(true)
+                                                        toast.success(`Selected ${template.name} template - customize it now!`)
+                                                    }}
+                                                >
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={cn(
+                                                                    "text-xs",
+                                                                    template.style === "STARTUP" && "border-green-300 text-green-700 dark:border-green-700 dark:text-green-400",
+                                                                    template.style === "FAANG" && "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400",
+                                                                    template.style === "MNC" && "border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400"
+                                                                )}
+                                                            >
+                                                                {template.style}
+                                                            </Badge>
+                                                            {
+                                                                template.isAiGenerated && (
+                                                                    <Badge variant="secondary" className="text-xs bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-700 dark:text-purple-400">
+                                                                        <Sparkles className="w-3 h-3 mr-1" />
+                                                                        AI
+                                                                    </Badge>
+                                                                )
+                                                            }
+                                                        </div>
+                                                        <span className="text-xs text-neutral-400">
+                                                            {template.roundCount} rounds
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-400 mb-1">
+                                                        {template.name}
+                                                    </h3>
+                                                    <p className="text-sm text-neutral-500 line-clamp-2 mb-3">
+                                                        {template.description}
+                                                    </p>
+                                                    <div className="flex items-center justify-between text-xs text-neutral-400">
+                                                        <span>{template.estimatedDurationWeeks} weeks</span>
+                                                        <span>{template.usageCount} uses</span>
+                                                    </div>
+                                                </motion.div>
+                                            ))
+                                        }
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <FileStack className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
+                                            No templates found
+                                        </h3>
+                                        <p className="text-neutral-500">
+                                            Try selecting a different style or generate one with AI below
+                                        </p>
+                                    </div>
+                                )
+                            }
+                        </div>
+                        <div className="border-t border-neutral-200 dark:border-neutral-800 pt-4 mt-auto">
+                            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-2xl p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Sparkles className="w-5 h-5 text-purple-500" />
+                                    <h3 className="font-semibold text-neutral-900 dark:text-white">
+                                        Generate with AI
+                                    </h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                    <Input
+                                        value={aiRoleType}
+                                        onChange={(e) => setAiRoleType(e.target.value)}
+                                        placeholder="Enter role (e.g., Senior Frontend Engineer)"
+                                        className="rounded-xl bg-white dark:bg-neutral-900"
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={() => handleGenerateWithAI("STARTUP")}
+                                            disabled={aiGenerating || !aiRoleType.trim()}
+                                            variant="outline"
+                                            className="flex-1 rounded-xl border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/30"
+                                        >
+                                            <Rocket className="w-4 h-4 mr-1" />
+                                            Startup
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleGenerateWithAI("FAANG")}
+                                            disabled={aiGenerating || !aiRoleType.trim()}
+                                            variant="outline"
+                                            className="flex-1 rounded-xl border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                                        >
+                                            <Building2 className="w-4 h-4 mr-1" />
+                                            FAANG
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleGenerateWithAI("MNC")}
+                                            disabled={aiGenerating || !aiRoleType.trim()}
+                                            variant="outline"
+                                            className="flex-1 rounded-xl border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-950/30"
+                                        >
+                                            <Briefcase className="w-4 h-4 mr-1" />
+                                            MNC
                                         </Button>
                                     </div>
-                                </motion.div>
-                            ))
-                        }
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Textarea
+                                        value={aiChatMessage}
+                                        onChange={(e) => setAiChatMessage(e.target.value)}
+                                        placeholder="Optional: Add specific requirements (e.g., 'focus on system design', 'include take-home assignment', 'shorter process for urgent hire')..."
+                                        className="rounded-xl bg-white dark:bg-neutral-900 min-h-[60px] resize-none"
+                                    />
+                                </div>
+
+                                {
+                                    aiGenerating && (
+                                        <div className="flex items-center gap-2 mt-3 text-sm text-purple-600 dark:text-purple-400">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Generating interview process...
+                                        </div>
+                                    )
+                                }
+                            </div>
+                        </div>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
         </div>
     )
 }

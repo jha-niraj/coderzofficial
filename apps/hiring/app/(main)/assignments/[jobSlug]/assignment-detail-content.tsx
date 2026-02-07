@@ -25,22 +25,21 @@ import Link from "next/link"
 import { useState, useTransition } from "react"
 import {
     sendAssignmentToCandidate, scoreAssignment
-} from "@/actions/assessments"
+} from "@/actions/assignments"
 import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
 import { Label } from "@repo/ui/components/ui/label"
 import type { 
-    JobWithAssessmentDetails, 
-    AssignmentSubmissionItem,
-    AssessmentApplication
+    JobWithAssignmentDetails, AssignmentSubmissionItem, 
+    AssignmentApplication
 } from "@/types"
 
 // ============================================
 // TYPES
 // ============================================
 
-interface AssessmentDetailContentProps {
-    job: JobWithAssessmentDetails
+interface AssignmentDetailContentProps {
+    job: JobWithAssignmentDetails
     submissions: AssignmentSubmissionItem[]
 }
 
@@ -93,9 +92,9 @@ function CandidateCard({
     onScoreAssignment,
     isPending
 }: {
-    application: AssessmentApplication
+    application: AssignmentApplication
     onSendAssignment: (id: string) => void
-    onScoreAssignment: (application: AssessmentApplication) => void
+    onScoreAssignment: (application: AssignmentApplication) => void
     isPending: boolean
 }) {
     const formatDate = (date: Date | null) => {
@@ -239,7 +238,7 @@ function ScoreDialog({
     onOpenChange,
     onScore
 }: {
-    application: AssessmentApplication | null
+    application: AssignmentApplication | null
     open: boolean
     onOpenChange: (open: boolean) => void
     onScore: (applicationId: string, score: number, feedback: string) => void
@@ -317,10 +316,10 @@ function ScoreDialog({
 // MAIN COMPONENT
 // ============================================
 
-export default function AssessmentDetailContent({ job, submissions }: AssessmentDetailContentProps) {
+export default function AssignmentDetailContent({ job, submissions }: AssignmentDetailContentProps) {
     const [isPending, startTransition] = useTransition()
     const [scoreDialogOpen, setScoreDialogOpen] = useState(false)
-    const [selectedApplication, setSelectedApplication] = useState<AssessmentApplication | null>(null)
+    const [selectedApplication, setSelectedApplication] = useState<AssignmentApplication | null>(null)
 
     // Stats
     const awaitingCount = job.applications.filter(a => a.status === "ASSIGNMENT_SENT").length
@@ -341,7 +340,7 @@ export default function AssessmentDetailContent({ job, submissions }: Assessment
         })
     }
 
-    const handleScoreAssignment = (application: AssessmentApplication) => {
+    const handleScoreAssignment = (application: AssignmentApplication) => {
         setSelectedApplication(application)
         setScoreDialogOpen(true)
     }
@@ -362,11 +361,11 @@ export default function AssessmentDetailContent({ job, submissions }: Assessment
             <div className="bg-white border-b border-[#e6e6e6]">
                 <div className="container mx-auto px-6 py-6">
                     <Link
-                        href="/assessments"
+                        href="/assignments"
                         className="inline-flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] text-sm mb-4 transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                        Back to Assessments
+                        Back to Assignments
                     </Link>
                     <div className="flex items-start justify-between">
                         <div>
@@ -550,7 +549,7 @@ export default function AssessmentDetailContent({ job, submissions }: Assessment
                                                         onClick={() => handleScoreAssignment({
                                                             ...submission,
                                                             createdAt: new Date()
-                                                        } as AssessmentApplication)}
+                                                        } as AssignmentApplication)}
                                                         className="bg-[#0F172A] hover:bg-[#1e293b] text-white"
                                                     >
                                                         <Star className="h-3.5 w-3.5 mr-1.5" />

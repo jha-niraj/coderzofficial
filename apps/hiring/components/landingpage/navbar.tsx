@@ -3,6 +3,7 @@
 import { Button } from "@repo/ui/components/ui/button";
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
     Sheet, SheetContent
 } from "@repo/ui/components/ui/sheet";
@@ -15,6 +16,12 @@ import { cn } from "@repo/ui/lib/utils";
 
 export default function Navbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const pathname = usePathname();
+
+    // Hide navbar on onboarding page
+    if (pathname === "/onboarding") {
+        return null;
+    }
 
     const navLinkClass = "text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors";
 
@@ -84,8 +91,8 @@ export default function Navbar() {
                             <SheetContent className="w-full sm:max-w-md bg-white dark:bg-neutral-950 border-l border-neutral-200 dark:border-neutral-800">
                                 <div className="flex flex-col gap-6 mt-8">
                                     <Link href="/" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Overview</Link>
-                                    <a href="#features" onClick={(e) => handleSmoothScroll(e, "#features")} className="text-xl font-medium cursor-pointer">Features</a>
-                                    <a href="#pricing" onClick={(e) => handleSmoothScroll(e, "#pricing")} className="text-xl font-medium cursor-pointer">Pricing</a>
+                                    <Link href="#features" onClick={(e) => handleSmoothScroll(e, "#features")} className="text-xl font-medium cursor-pointer">Features</Link>
+                                    <Link href="#pricing" onClick={(e) => handleSmoothScroll(e, "#pricing")} className="text-xl font-medium cursor-pointer">Pricing</Link>
                                     <Link href="/billing" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Billing</Link>
                                     <hr className="border-neutral-200 dark:border-neutral-800" />
                                     <Link href="/signin">

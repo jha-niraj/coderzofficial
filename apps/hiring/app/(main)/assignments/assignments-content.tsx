@@ -10,15 +10,15 @@ import { Input } from "@repo/ui/components/ui/input"
 import { Badge } from "@repo/ui/components/ui/badge"
 import Link from "next/link"
 import { useState } from "react"
-import type { AssessmentStats, JobWithAssessment } from "@/types"
+import type { AssignmentStats, JobWithAssignment } from "@/types"
 
 // ============================================
 // TYPES
 // ============================================
 
-interface AssessmentsContentProps {
-    stats: AssessmentStats | null
-    jobs: JobWithAssessment[]
+interface AssignmentsContentProps {
+    stats: AssignmentStats | null
+    jobs: JobWithAssignment[]
 }
 
 // ============================================
@@ -57,7 +57,7 @@ function StatCard({
 // JOB CARD COMPONENT
 // ============================================
 
-function JobAssessmentCard({ job }: { job: JobWithAssessment }) {
+function JobAssignmentCard({ job }: { job: JobWithAssignment }) {
     const statusColor = {
         ACTIVE: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
         DRAFT: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
@@ -85,13 +85,12 @@ function JobAssessmentCard({ job }: { job: JobWithAssessment }) {
                         </Badge>
                     </div>
                 </div>
-                <Link href={`/assessments/${job.slug}`}>
+                <Link href={`/assignments/${job.slug}`}>
                     <Button variant="ghost" size="sm" className="rounded-xl">
                         View <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                 </Link>
             </div>
-
             <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
                 <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-blue-600 dark:text-blue-400">
@@ -116,14 +115,16 @@ function JobAssessmentCard({ job }: { job: JobWithAssessment }) {
                 </div>
             </div>
 
-            {job.assignmentDeadlineDays && (
-                <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                    <p className="text-sm text-neutral-500">
-                        <Clock className="w-4 h-4 inline-block mr-1" />
-                        {job.assignmentDeadlineDays} days deadline
-                    </p>
-                </div>
-            )}
+            {
+                job.assignmentDeadlineDays && (
+                    <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                        <p className="text-sm text-neutral-500">
+                            <Clock className="w-4 h-4 inline-block mr-1" />
+                            {job.assignmentDeadlineDays} days deadline
+                        </p>
+                    </div>
+                )
+            }
         </motion.div>
     )
 }
@@ -132,7 +133,7 @@ function JobAssessmentCard({ job }: { job: JobWithAssessment }) {
 // MAIN COMPONENT
 // ============================================
 
-export default function AssessmentsContent({ stats, jobs }: AssessmentsContentProps) {
+export default function AssignmentsContent({ stats, jobs }: AssignmentsContentProps) {
     const [searchQuery, setSearchQuery] = useState("")
 
     const filteredJobs = jobs.filter(job =>
@@ -141,11 +142,10 @@ export default function AssessmentsContent({ stats, jobs }: AssessmentsContentPr
 
     return (
         <div className="min-h-full p-6 lg:p-8">
-            {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white">
-                        Assessments
+                        Assignments
                     </h1>
                     <p className="text-neutral-500 mt-1">
                         Manage take-home assignments and track submissions
@@ -159,43 +159,43 @@ export default function AssessmentsContent({ stats, jobs }: AssessmentsContentPr
                 </Link>
             </div>
 
-            {/* Stats */}
-            {stats && (
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                    <StatCard
-                        icon={<Briefcase className="w-5 h-5 text-blue-600" />}
-                        label="Jobs with Assignments"
-                        value={stats.totalJobsWithAssessments}
-                        color="bg-blue-100 dark:bg-blue-900/30"
-                    />
-                    <StatCard
-                        icon={<Send className="w-5 h-5 text-purple-600" />}
-                        label="Assignments Sent"
-                        value={stats.totalAssignmentsSent}
-                        color="bg-purple-100 dark:bg-purple-900/30"
-                    />
-                    <StatCard
-                        icon={<CheckCircle2 className="w-5 h-5 text-green-600" />}
-                        label="Submissions"
-                        value={stats.totalSubmissions}
-                        color="bg-green-100 dark:bg-green-900/30"
-                    />
-                    <StatCard
-                        icon={<Clock className="w-5 h-5 text-amber-600" />}
-                        label="Pending Review"
-                        value={stats.pendingReview}
-                        color="bg-amber-100 dark:bg-amber-900/30"
-                    />
-                    <StatCard
-                        icon={<Star className="w-5 h-5 text-orange-600" />}
-                        label="Avg. Score"
-                        value={`${Math.round(stats.averageScore)}%`}
-                        color="bg-orange-100 dark:bg-orange-900/30"
-                    />
-                </div>
-            )}
+            {
+                stats && (
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                        <StatCard
+                            icon={<Briefcase className="w-5 h-5 text-blue-600" />}
+                            label="Jobs with Assignments"
+                            value={stats.totalJobsWithAssignments}
+                            color="bg-blue-100 dark:bg-blue-900/30"
+                        />
+                        <StatCard
+                            icon={<Send className="w-5 h-5 text-purple-600" />}
+                            label="Assignments Sent"
+                            value={stats.totalAssignmentsSent}
+                            color="bg-purple-100 dark:bg-purple-900/30"
+                        />
+                        <StatCard
+                            icon={<CheckCircle2 className="w-5 h-5 text-green-600" />}
+                            label="Submissions"
+                            value={stats.totalSubmissions}
+                            color="bg-green-100 dark:bg-green-900/30"
+                        />
+                        <StatCard
+                            icon={<Clock className="w-5 h-5 text-amber-600" />}
+                            label="Pending Review"
+                            value={stats.pendingReview}
+                            color="bg-amber-100 dark:bg-amber-900/30"
+                        />
+                        <StatCard
+                            icon={<Star className="w-5 h-5 text-orange-600" />}
+                            label="Avg. Score"
+                            value={`${Math.round(stats.averageScore)}%`}
+                            color="bg-orange-100 dark:bg-orange-900/30"
+                        />
+                    </div>
+                )
+            }
 
-            {/* Search */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -208,53 +208,55 @@ export default function AssessmentsContent({ stats, jobs }: AssessmentsContentPr
                 </div>
             </div>
 
-            {/* Jobs List */}
-            {filteredJobs.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredJobs.map((job) => (
-                        <JobAssessmentCard key={job.id} job={job} />
-                    ))}
-                </div>
-            ) : jobs.length === 0 ? (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center py-16"
-                >
-                    <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
-                        <ClipboardList className="w-10 h-10 text-neutral-400" />
+            {
+                filteredJobs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {
+                            filteredJobs.map((job) => (
+                                <JobAssignmentCard key={job.id} job={job} />
+                            ))
+                        }
                     </div>
-                    <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
-                        No jobs with assignments
-                    </h3>
-                    <p className="text-neutral-500 mb-6 max-w-md mx-auto">
-                        Create a job posting with an assignment to start evaluating candidates&apos; technical skills.
-                    </p>
-                    <Link href="/jobs/new">
-                        <Button className="rounded-xl">
-                            Create Job with Assignment
-                        </Button>
-                    </Link>
-                </motion.div>
-            ) : (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center py-16"
-                >
-                    <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
-                        <Search className="w-10 h-10 text-neutral-400" />
-                    </div>
-                    <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
-                        No results found
-                    </h3>
-                    <p className="text-neutral-500 max-w-md mx-auto">
-                        No jobs match your search query. Try a different search term.
-                    </p>
-                </motion.div>
-            )}
+                ) : jobs.length === 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center py-16"
+                    >
+                        <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
+                            <ClipboardList className="w-10 h-10 text-neutral-400" />
+                        </div>
+                        <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
+                            No jobs with assignments
+                        </h3>
+                        <p className="text-neutral-500 mb-6 max-w-md mx-auto">
+                            Create a job posting with an assignment to start evaluating candidates&apos; technical skills.
+                        </p>
+                        <Link href="/jobs/new">
+                            <Button className="rounded-xl">
+                                Create Job with Assignment
+                            </Button>
+                        </Link>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center py-16"
+                    >
+                        <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-6">
+                            <Search className="w-10 h-10 text-neutral-400" />
+                        </div>
+                        <h3 className="font-bold text-xl text-neutral-900 dark:text-white mb-2">
+                            No results found
+                        </h3>
+                        <p className="text-neutral-500 max-w-md mx-auto">
+                            No jobs match your search query. Try a different search term.
+                        </p>
+                    </motion.div>
+                )
+            }
 
-            {/* Info Section */}
             <div className="mt-12 p-6 bg-neutral-50 dark:bg-neutral-900 rounded-2xl">
                 <h3 className="font-semibold text-neutral-900 dark:text-white mb-3">
                     How Assessments Work

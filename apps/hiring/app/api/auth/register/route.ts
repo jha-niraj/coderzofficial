@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
                 hashedPassword,
                 verifyOTP,
                 verifyOTPExpiry,
-                onboardingCompleted: false, // User needs to complete company onboarding
-                // Note: We'll create the Company and CompanyMember records after onboarding
+                role: "HR", // Set HR role for hiring platform users
+                onboardingCompleted: false
             }
         });
         console.log('✅ User created successfully:', user.id);

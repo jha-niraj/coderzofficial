@@ -441,3 +441,67 @@ model CompanyInvoice {
     @@index([invoiceNumber])
     @@index([invoiceDate])
 }
+
+// ============================================
+// INTERVIEW PROCESS TEMPLATES
+// Reusable templates for interview processes
+// ============================================
+
+enum TemplateStyle {
+    STARTUP     // Fast-paced, fewer rounds
+    FAANG       // Comprehensive, algorithmic focus
+    MNC         // Traditional corporate style
+    CUSTOM      // User-generated
+}
+
+enum TemplateCategory {
+    ENGINEERING
+    PRODUCT
+    DESIGN
+    DATA_SCIENCE
+    MARKETING
+    SALES
+    OPERATIONS
+    INTERN
+    GENERAL
+}
+
+model InterviewProcessTemplate {
+    id          String   @id @default(cuid())
+    name        String
+    description String?  @db.Text
+    
+    // Template classification
+    style       TemplateStyle    @default(CUSTOM)
+    category    TemplateCategory @default(GENERAL)
+    
+    // Template configuration (rounds stored as JSON)
+    // Structure: [{ roundType, title, durationMinutes, format, description }]
+    rounds      Json
+    
+    // Metadata
+    estimatedDurationWeeks Int?
+    roundCount             Int      @default(0)
+    
+    // AI Generated flag
+    isAiGenerated Boolean @default(false)
+    aiPrompt      String? @db.Text // The prompt used to generate this template
+    
+    // Public availability
+    isPublic    Boolean  @default(true)
+    
+    // Usage stats
+    usageCount  Int      @default(0)
+    
+    // Creator info (null for system templates)
+    createdByCompanyId String?
+    createdByUserId    String?
+    
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([style])
+    @@index([category])
+    @@index([isPublic])
+    @@index([usageCount])
+}

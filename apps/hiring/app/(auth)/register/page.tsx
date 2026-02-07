@@ -7,7 +7,7 @@ import { signIn } from '@repo/auth/client';
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2, ShieldCheck, 
+    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2, ShieldCheck,
     Users, Info
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
@@ -85,7 +85,7 @@ function SignUpForm() {
                 password,
                 companyName,
                 role: "RECRUITER",
-                founderRole, // Send the founder role
+                founderRole
             });
 
             if (response.data.success) {
@@ -117,11 +117,7 @@ function SignUpForm() {
 
     return (
         <div className="min-h-screen flex bg-white dark:bg-neutral-950">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
-
             <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center bg-neutral-950 overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
-
                 <div className="relative z-10 px-12 max-w-lg">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -141,8 +137,6 @@ function SignUpForm() {
                         <p className="text-neutral-400 text-lg mb-8">
                             Initialize your workspace and gain access to pre-vetted engineering resources.
                         </p>
-                        
-                        {/* Founder Only Notice */}
                         <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 mb-6">
                             <div className="flex items-start gap-3">
                                 <ShieldCheck className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
@@ -154,8 +148,28 @@ function SignUpForm() {
                                 </div>
                             </div>
                         </div>
-
-                        <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-900/50">
+                        <div className="mt-6 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                            <div className="flex items-start gap-3">
+                                <Users className="h-5 w-5 text-neutral-500 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                        Not a founder or executive?
+                                    </p>
+                                    <p className="text-xs text-neutral-500 mt-1">
+                                        Team members should sign in using credentials provided by their company admin.
+                                        Ask your manager or HR for your login details.
+                                    </p>
+                                    <Link
+                                        href="/signin"
+                                        className="inline-flex items-center gap-1 text-xs text-neutral-900 dark:text-white font-semibold hover:underline mt-2"
+                                    >
+                                        Go to Sign In
+                                        <ArrowRight className="h-3 w-3" />
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 p-6 rounded-2xl border border-neutral-800 bg-neutral-900/50">
                             <p className="text-neutral-300 italic">
                                 &quot;Reduced our hiring cycle from 6 weeks to 2 weeks. The candidate vetting is exceptional.&quot;
                             </p>
@@ -181,8 +195,6 @@ function SignUpForm() {
                             CODER&apos;Z <span className="text-neutral-500 font-mono font-normal">HIRING</span>
                         </span>
                     </div>
-                    
-                    {/* Not a Founder Notice (Mobile) */}
                     <div className="lg:hidden p-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 mb-6">
                         <div className="flex items-start gap-2">
                             <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
@@ -191,9 +203,8 @@ function SignUpForm() {
                             </p>
                         </div>
                     </div>
-
                     <div className="text-center mb-8">
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
+                        <span className="text-[10px]  tracking-widest text-neutral-500 mb-2 block">
                             Company Registration
                         </span>
                         <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
@@ -240,48 +251,49 @@ function SignUpForm() {
                             <div className="w-full border-t border-neutral-200 dark:border-neutral-800" />
                         </div>
                         <div className="relative flex justify-center">
-                            <span className="px-4 bg-white dark:bg-neutral-950 text-[10px] font-mono uppercase tracking-widest text-neutral-500">
+                            <span className="px-4 bg-white dark:bg-neutral-950 text-[10px]  tracking-widest text-neutral-500">
                                 Or continue with email
                             </span>
                         </div>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="companyName" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
-                                Company Name
-                            </Label>
-                            <Input
-                                id="companyName"
-                                type="text"
-                                placeholder="Acme Inc."
-                                value={companyName}
-                                onChange={(e) => setCompanyName(e.target.value)}
-                                required
-                                className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
-                            />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="companyName" className="text-xs  tracking-wider text-neutral-500">
+                                    Company Name
+                                </Label>
+                                <Input
+                                    id="companyName"
+                                    type="text"
+                                    placeholder="Acme Inc."
+                                    value={companyName}
+                                    onChange={(e) => setCompanyName(e.target.value)}
+                                    required
+                                    className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="founderRole" className="text-xs  tracking-wider text-neutral-500">
+                                    Your Role
+                                </Label>
+                                <Select value={founderRole} onValueChange={(v) => setFounderRole(v as FounderRole)}>
+                                    <SelectTrigger className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                        <SelectValue placeholder="Select your role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {
+                                            FOUNDER_ROLES.map((role) => (
+                                                <SelectItem key={role.value} value={role.value}>
+                                                    {role.label}
+                                                </SelectItem>
+                                            ))
+                                        }
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        
-                        {/* Founder Role Selection */}
                         <div className="space-y-2">
-                            <Label htmlFor="founderRole" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
-                                Your Role
-                            </Label>
-                            <Select value={founderRole} onValueChange={(v) => setFounderRole(v as FounderRole)}>
-                                <SelectTrigger className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                    <SelectValue placeholder="Select your role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {FOUNDER_ROLES.map((role) => (
-                                        <SelectItem key={role.value} value={role.value}>
-                                            {role.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="name" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                            <Label htmlFor="name" className="text-xs tracking-wider text-neutral-500">
                                 Your Full Name
                             </Label>
                             <Input
@@ -295,7 +307,7 @@ function SignUpForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                            <Label htmlFor="email" className="text-xs tracking-wider text-neutral-500">
                                 Work Email
                             </Label>
                             <Input
@@ -309,7 +321,7 @@ function SignUpForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                            <Label htmlFor="password" className="text-xs tracking-wider text-neutral-500">
                                 Password
                             </Label>
                             <div className="relative">
@@ -337,7 +349,7 @@ function SignUpForm() {
                                         animate={{ opacity: 1, height: "auto" }}
                                         className="mt-3 p-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
                                     >
-                                        <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2">
+                                        <p className="text-[10px]  tracking-widest text-neutral-500 mb-2">
                                             Security Requirements
                                         </p>
                                         <div className="grid grid-cols-2 gap-2 text-xs">
@@ -408,30 +420,6 @@ function SignUpForm() {
                             }
                         </Button>
                     </form>
-                    
-                    {/* Team Member Notice */}
-                    <div className="mt-6 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                        <div className="flex items-start gap-3">
-                            <Users className="h-5 w-5 text-neutral-500 mt-0.5 shrink-0" />
-                            <div>
-                                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                    Not a founder or executive?
-                                </p>
-                                <p className="text-xs text-neutral-500 mt-1">
-                                    Team members should sign in using credentials provided by their company admin. 
-                                    Ask your manager or HR for your login details.
-                                </p>
-                                <Link 
-                                    href="/signin" 
-                                    className="inline-flex items-center gap-1 text-xs text-neutral-900 dark:text-white font-semibold hover:underline mt-2"
-                                >
-                                    Go to Sign In
-                                    <ArrowRight className="h-3 w-3" />
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-
                     <p className="mt-6 text-center text-neutral-500">
                         Already have access?{" "}
                         <Link

@@ -11,6 +11,9 @@ interface OnboardingData {
     description?: string;
     userRole: string;
     hiringGoals?: string[];
+    city?: string;
+    state?: string;
+    country?: string;
 }
 
 export async function completeOnboarding(data: OnboardingData) {
@@ -43,6 +46,9 @@ export async function completeOnboarding(data: OnboardingData) {
                 industry: data.industry || null,
                 companySize: data.companySize || null,
                 description: data.description || null,
+                city: data.city || null,
+                state: data.state || null,
+                country: data.country || null,
                 createdByUserId: userId,
                 verificationStatus: "PENDING",
             },

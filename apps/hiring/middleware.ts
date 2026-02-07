@@ -13,7 +13,7 @@ const protectedRoutes = [
     '/team',
     '/company',
     '/interviews',
-    '/assessments',
+    '/assignments',
 ]
 
 // Public routes that don't require authentication
@@ -88,18 +88,18 @@ export default withAuth(
 
             // If onboarding is completed and user tries to access onboarding page, redirect to dashboard
             if (onboardingCompleted && nextUrl.pathname === '/onboarding') {
-                return NextResponse.redirect(new URL('/dashboard', nextUrl.origin))
+                return NextResponse.redirect(new URL('/home', nextUrl.origin))
             }
 
             // If user is trying to access signin/register, redirect based on onboarding status
             if (nextUrl.pathname === '/signin' || nextUrl.pathname === '/register') {
-                const redirectUrl = onboardingCompleted ? '/dashboard' : '/onboarding'
+                const redirectUrl = onboardingCompleted ? '/home' : '/onboarding'
                 return NextResponse.redirect(new URL(redirectUrl, nextUrl.origin))
             }
 
             // For the root path, redirect authenticated users based on onboarding status
             if (nextUrl.pathname === '/') {
-                const redirectUrl = onboardingCompleted ? '/dashboard' : '/onboarding'
+                const redirectUrl = onboardingCompleted ? '/home' : '/onboarding'
                 return NextResponse.redirect(new URL(redirectUrl, nextUrl.origin))
             }
         }

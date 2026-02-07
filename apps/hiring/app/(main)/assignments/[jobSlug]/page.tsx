@@ -1,24 +1,24 @@
 import {
     getJobAssessmentDetails, getAssignmentSubmissions
-} from "@/actions/assessments"
+} from "@/actions/assignments"
 import { notFound } from "next/navigation"
-import AssessmentDetailContent from "./assessment-detail-content"
+import AssignmentDetailContent from "./assignment-detail-content"
 
 export async function generateMetadata({ params }: { params: Promise<{ jobSlug: string }> }) {
     const { jobSlug } = await params
     const result = await getJobAssessmentDetails(jobSlug)
 
     if (!result.success || !result.data) {
-        return { title: "Assessment Not Found | Hiring" }
+        return { title: "Assignment Not Found | Hiring" }
     }
 
     return {
-        title: `${result.data.title} - Assessments | Hiring`,
+        title: `${result.data.title} - Assignments | Hiring`,
         description: `Manage assignments for ${result.data.title}`,
     }
 }
 
-export default async function AssessmentDetailPage({
+export default async function AssignmentDetailPage({
     params
 }: {
     params: Promise<{ jobSlug: string }>
@@ -37,7 +37,7 @@ export default async function AssessmentDetailPage({
     const submissions = submissionsResult.success ? submissionsResult.data ?? [] : []
 
     return (
-        <AssessmentDetailContent
+        <AssignmentDetailContent
             job={jobResult.data}
             submissions={submissions}
         />

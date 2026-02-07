@@ -139,7 +139,7 @@ function ListInput({
 
     return (
         <div className="space-y-2">
-            <Label className="text-sm font-medium text-[#0F172A]">{label}</Label>
+            <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{label}</Label>
             <div className="flex gap-2">
                 <Input
                     value={inputValue}
@@ -160,13 +160,13 @@ function ListInput({
                                 <Badge
                                     key={index}
                                     variant="secondary"
-                                    className="bg-[#F1F5F9] text-[#475569] pl-2 pr-1 py-1"
+                                    className="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 pl-2 pr-1 py-1"
                                 >
                                     {item}
                                     <button
                                         type="button"
                                         onClick={() => onRemove(index)}
-                                        className="ml-1 p-0.5 hover:bg-[#e2e8f0] rounded"
+                                        className="ml-1 p-0.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded"
                                     >
                                         <X className="h-3 w-3" />
                                     </button>
@@ -216,7 +216,7 @@ function SkillsInput({
 
     return (
         <div className="space-y-2">
-            <Label className="text-sm font-medium text-[#0F172A]">{label}</Label>
+            <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{label}</Label>
             <div className="relative">
                 <Input
                     value={inputValue}
@@ -237,14 +237,14 @@ function SkillsInput({
                 />
                 {
                     showSuggestions && filteredSuggestions.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-[#e6e6e6] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                             {
                                 filteredSuggestions.map((suggestion) => (
                                     <button
                                         key={suggestion}
                                         type="button"
                                         onClick={() => handleAdd(suggestion)}
-                                        className="w-full px-3 py-2 text-left text-sm hover:bg-[#F1F5F9] transition-colors"
+                                        className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-900 dark:text-neutral-100"
                                     >
                                         {suggestion}
                                     </button>
@@ -261,13 +261,13 @@ function SkillsInput({
                             skills.map((skill, index) => (
                                 <Badge
                                     key={index}
-                                    className="bg-[#0F172A] text-white pl-2 pr-1 py-1"
+                                    className="bg-neutral-900 dark:bg-white text-white dark:text-black pl-2 pr-1 py-1"
                                 >
                                     {skill}
                                     <button
                                         type="button"
                                         onClick={() => onRemove(index)}
-                                        className="ml-1 p-0.5 hover:bg-[#334155] rounded"
+                                        className="ml-1 p-0.5 hover:bg-neutral-700 dark:hover:bg-neutral-200 rounded"
                                     >
                                         <X className="h-3 w-3" />
                                     </button>
@@ -428,20 +428,20 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
     }
 
     return (
-        <div className="min-h-screen bg-[#FAFAFA]">
-            <div className="bg-white border-b border-[#e6e6e6]">
+        <div className="h-screen bg-neutral-50 dark:bg-neutral-950">
+            <div className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
                 <div className="container mx-auto px-6 py-6">
                     <Link
                         href="/jobs"
-                        className="inline-flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] text-sm mb-4 transition-colors"
+                        className="inline-flex items-center gap-2 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white text-sm mb-4 transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Jobs
                     </Link>
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-semibold text-[#0F172A]">Create New Job</h1>
-                            <p className="text-[#64748B] mt-1">Fill in the details to post a new job opening</p>
+                            <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">Create New Job</h1>
+                            <p className="text-neutral-500 dark:text-neutral-400 mt-1">Fill in the details to post a new job opening</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <Button
@@ -455,7 +455,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                             <Button
                                 onClick={() => handleSubmit("ACTIVE")}
                                 disabled={isPending}
-                                className="bg-[#0F172A] hover:bg-[#1e293b] text-white"
+                                className="bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black"
                             >
                                 <Send className="h-4 w-4 mr-2" />
                                 Publish Job
@@ -469,20 +469,20 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                <Briefcase className="h-5 w-5 text-[#0F172A]" />
+                            <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                <Briefcase className="h-5 w-5 text-neutral-900 dark:text-white" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-[#0F172A]">Basic Information</h2>
-                                <p className="text-sm text-[#64748B]">Job title and description</p>
+                                <h2 className="font-semibold text-neutral-900 dark:text-white">Basic Information</h2>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">Job title and description</p>
                             </div>
                         </div>
                         <div className="space-y-4">
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Job Title *</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Job Title *</Label>
                                 <Input
                                     value={formData.title}
                                     onChange={(e) => updateField("title", e.target.value)}
@@ -492,7 +492,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                 {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
                             </div>
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Description *</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Description *</Label>
                                 <Textarea
                                     value={formData.description}
                                     onChange={(e) => updateField("description", e.target.value)}
@@ -503,7 +503,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                 {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                             </div>
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Department</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Department</Label>
                                 <Input
                                     value={formData.department}
                                     onChange={(e) => updateField("department", e.target.value)}
@@ -517,20 +517,20 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                <MapPin className="h-5 w-5 text-[#0F172A]" />
+                            <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                <MapPin className="h-5 w-5 text-neutral-900 dark:text-white" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-[#0F172A]">Location & Employment</h2>
-                                <p className="text-sm text-[#64748B]">Work arrangement and job type</p>
+                                <h2 className="font-semibold text-neutral-900 dark:text-white">Location & Employment</h2>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">Work arrangement and job type</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Work Type *</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Work Type *</Label>
                                 <Select
                                     value={formData.locationType}
                                     onValueChange={(v) => updateField("locationType", v as JobLocationType)}
@@ -550,7 +550,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                 </Select>
                             </div>
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Employment Type *</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Employment Type *</Label>
                                 <Select
                                     value={formData.employmentType}
                                     onValueChange={(v) => updateField("employmentType", v as EmploymentType)}
@@ -573,7 +573,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                             {
                                 formData.locationType !== "REMOTE" && (
                                     <div className="md:col-span-2">
-                                        <Label className="text-sm font-medium text-[#0F172A]">Location</Label>
+                                        <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Location</Label>
                                         <Input
                                             value={formData.location}
                                             onChange={(e) => updateField("location", e.target.value)}
@@ -589,15 +589,15 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                <Clock className="h-5 w-5 text-[#0F172A]" />
+                            <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                <Clock className="h-5 w-5 text-neutral-900 dark:text-white" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-[#0F172A]">Experience Level</h2>
-                                <p className="text-sm text-[#64748B]">Required years of experience</p>
+                                <h2 className="font-semibold text-neutral-900 dark:text-white">Experience Level</h2>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">Required years of experience</p>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2 mb-4">
@@ -611,7 +611,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                         onClick={() => setExperiencePreset(preset)}
                                         className={`${formData.experienceMin === preset.min.toString() &&
                                                 formData.experienceMax === preset.max.toString()
-                                                ? "bg-[#0F172A] text-white border-[#0F172A]"
+                                                ? "bg-neutral-900 dark:bg-white text-white dark:text-black border-neutral-900 dark:border-white"
                                                 : ""
                                             }`}
                                     >
@@ -622,7 +622,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Minimum (years)</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Minimum (years)</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -633,7 +633,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                 />
                             </div>
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Maximum (years)</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Maximum (years)</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -650,16 +650,16 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                    <DollarSign className="h-5 w-5 text-[#0F172A]" />
+                                <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                    <DollarSign className="h-5 w-5 text-neutral-900 dark:text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold text-[#0F172A]">Compensation</h2>
-                                    <p className="text-sm text-[#64748B]">Salary range for this position</p>
+                                    <h2 className="font-semibold text-neutral-900 dark:text-white">Compensation</h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Salary range for this position</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -667,12 +667,12 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                     checked={formData.salaryDisclosed}
                                     onCheckedChange={(v) => updateField("salaryDisclosed", v)}
                                 />
-                                <Label className="text-sm text-[#64748B]">Show salary</Label>
+                                <Label className="text-sm text-neutral-500 dark:text-neutral-400">Show salary</Label>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Currency</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Currency</Label>
                                 <Select
                                     value={formData.salaryCurrency}
                                     onValueChange={(v) => updateField("salaryCurrency", v)}
@@ -692,7 +692,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                 </Select>
                             </div>
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Minimum (Annual)</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Minimum (Annual)</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -703,7 +703,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                 />
                             </div>
                             <div>
-                                <Label className="text-sm font-medium text-[#0F172A]">Maximum (Annual)</Label>
+                                <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Maximum (Annual)</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -720,15 +720,15 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                <Sparkles className="h-5 w-5 text-[#0F172A]" />
+                            <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                <Sparkles className="h-5 w-5 text-neutral-900 dark:text-white" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-[#0F172A]">Skills</h2>
-                                <p className="text-sm text-[#64748B]">Required and preferred skills</p>
+                                <h2 className="font-semibold text-neutral-900 dark:text-white">Skills</h2>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">Required and preferred skills</p>
                             </div>
                         </div>
                         <div className="space-y-6">
@@ -753,15 +753,15 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                <FileText className="h-5 w-5 text-[#0F172A]" />
+                            <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                <FileText className="h-5 w-5 text-neutral-900 dark:text-white" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-[#0F172A]">Job Details</h2>
-                                <p className="text-sm text-[#64748B]">Requirements, responsibilities, and benefits</p>
+                                <h2 className="font-semibold text-neutral-900 dark:text-white">Job Details</h2>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">Requirements, responsibilities, and benefits</p>
                             </div>
                         </div>
                         <div className="space-y-6">
@@ -794,15 +794,15 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.35 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                <Users className="h-5 w-5 text-[#0F172A]" />
+                            <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                <Users className="h-5 w-5 text-neutral-900 dark:text-white" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-[#0F172A]">Interview Process</h2>
-                                <p className="text-sm text-[#64748B]">Select an interview process for this job</p>
+                                <h2 className="font-semibold text-neutral-900 dark:text-white">Interview Process</h2>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">Select an interview process for this job</p>
                             </div>
                         </div>
 
@@ -833,8 +833,8 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                     </SelectContent>
                                 </Select>
                             ) : (
-                                <div className="p-4 bg-[#F8FAFC] rounded-lg text-center">
-                                    <p className="text-[#64748B] text-sm mb-2">No interview processes configured yet</p>
+                                <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg text-center">
+                                    <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-2">No interview processes configured yet</p>
                                     <Link href="/interview-config">
                                         <Button variant="outline" size="sm">
                                             Configure Interview Process
@@ -848,16 +848,16 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="bg-white rounded-xl border border-[#e6e6e6] p-6"
+                        className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6"
                     >
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-[#F1F5F9]">
-                                    <Building2 className="h-5 w-5 text-[#0F172A]" />
+                                <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                    <Building2 className="h-5 w-5 text-neutral-900 dark:text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold text-[#0F172A]">Take-Home Assignment</h2>
-                                    <p className="text-sm text-[#64748B]">Optional coding assignment for candidates</p>
+                                    <h2 className="font-semibold text-neutral-900 dark:text-white">Take-Home Assignment</h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Optional coding assignment for candidates</p>
                                 </div>
                             </div>
                             <Switch
@@ -875,19 +875,19 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                             formData.hasAssignment && (
                                 <div className="space-y-4">
                                     {/* Add Now or Later Toggle */}
-                                    <div className="flex items-center gap-2 p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
+                                    <div className="flex items-center gap-2 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-[#0F172A]">When would you like to add assignment details?</p>
-                                            <p className="text-xs text-[#64748B]">You can always edit this later from the job settings</p>
+                                            <p className="text-sm font-medium text-neutral-900 dark:text-white">When would you like to add assignment details?</p>
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-400">You can always edit this later from the job settings</p>
                                         </div>
-                                        <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-[#E2E8F0]">
+                                        <div className="flex items-center gap-2 bg-white dark:bg-neutral-900 rounded-lg p-1 border border-neutral-200 dark:border-neutral-700">
                                             <button
                                                 type="button"
                                                 onClick={() => updateField("assignmentAddLater", false)}
                                                 className={`px-3 py-1.5 text-sm rounded-md transition-all ${
                                                     !formData.assignmentAddLater
-                                                        ? "bg-[#0F172A] text-white"
-                                                        : "text-[#64748B] hover:text-[#0F172A]"
+                                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
+                                                        : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                                                 }`}
                                             >
                                                 Add Now
@@ -897,8 +897,8 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                                 onClick={() => updateField("assignmentAddLater", true)}
                                                 className={`px-3 py-1.5 text-sm rounded-md transition-all ${
                                                     formData.assignmentAddLater
-                                                        ? "bg-[#0F172A] text-white"
-                                                        : "text-[#64748B] hover:text-[#0F172A]"
+                                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
+                                                        : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                                                 }`}
                                             >
                                                 Add Later
@@ -911,7 +911,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                         !formData.assignmentAddLater ? (
                                             <>
                                                 <div>
-                                                    <Label className="text-sm font-medium text-[#0F172A]">Assignment Title *</Label>
+                                                    <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Assignment Title *</Label>
                                                     <Input
                                                         value={formData.assignmentTitle}
                                                         onChange={(e) => updateField("assignmentTitle", e.target.value)}
@@ -920,7 +920,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                                     />
                                                 </div>
                                                 <div>
-                                                    <Label className="text-sm font-medium text-[#0F172A]">Assignment Description *</Label>
+                                                    <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Assignment Description *</Label>
                                                     <Textarea
                                                         value={formData.assignmentDescription}
                                                         onChange={(e) => updateField("assignmentDescription", e.target.value)}
@@ -930,7 +930,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                                     />
                                                 </div>
                                                 <div className="w-48">
-                                                    <Label className="text-sm font-medium text-[#0F172A]">Deadline (days)</Label>
+                                                    <Label className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Deadline (days)</Label>
                                                     <Input
                                                         type="number"
                                                         min="1"
@@ -947,8 +947,8 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                                                 }
                                             </>
                                         ) : (
-                                            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                                                <p className="text-sm text-amber-800">
+                                            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800/50">
+                                                <p className="text-sm text-amber-800 dark:text-amber-300">
                                                     <span className="font-medium">Assignment details will be added later.</span>{" "}
                                                     You can configure the assignment from the job settings after publishing. 
                                                     Candidates won&apos;t see the assignment until you complete it.
@@ -971,7 +971,7 @@ export default function JobFormContent({ interviewProcesses }: JobFormContentPro
                             Save Draft
                         </Button>
                         <Button
-                            className="flex-1 bg-[#0F172A] hover:bg-[#1e293b] text-white"
+                            className="flex-1 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black"
                             onClick={() => handleSubmit("ACTIVE")}
                             disabled={isPending}
                         >

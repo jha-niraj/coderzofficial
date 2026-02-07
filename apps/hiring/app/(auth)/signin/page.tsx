@@ -98,8 +98,6 @@ function SignInForm({ searchParams }: SignInFormProps) {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950 p-4">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
-
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

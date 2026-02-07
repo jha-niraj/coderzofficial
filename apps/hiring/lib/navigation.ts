@@ -14,6 +14,7 @@ export interface NavigationItem {
     children?: NavigationItem[]
     requiredPermission?: string
     badge?: string // For showing "Required" or notification badges
+    isImportant?: boolean // For showing important indicator icon
 }
 
 export interface NavigationConfig {
@@ -23,7 +24,11 @@ export interface NavigationConfig {
 
 export const hiringNavigation: NavigationConfig = {
     primary: [
-        { name: "Dashboard", path: "home", icon: Home },
+        { 
+            name: "Home", 
+            path: "home", 
+            icon: Home 
+        },
         { 
             name: "Jobs", 
             path: "jobs", 
@@ -61,11 +66,7 @@ export const hiringNavigation: NavigationConfig = {
             name: "Interview Process", 
             path: "interview-config", 
             icon: ListChecks,
-            badge: "Required",
-            children: [
-                { name: "All Processes", path: "interview-config", icon: ListChecks },
-                { name: "Create Process", path: "interview-config/new", icon: Plus },
-            ]
+            isImportant: true // Shows indicator icon instead of "Required" text
         },
         { 
             name: "Interviews", 
@@ -78,12 +79,12 @@ export const hiringNavigation: NavigationConfig = {
             ]
         },
         { 
-            name: "Assessments", 
-            path: "assessments", 
+            name: "Assignments", 
+            path: "assignments", 
             icon: ClipboardList,
             children: [
-                { name: "All Assessments", path: "assessments", icon: ClipboardList },
-                { name: "Create Assessment", path: "assessments/new", icon: Plus },
+                { name: "All Assignments", path: "assignments", icon: ClipboardList },
+                { name: "Create Assignments", path: "assignments/new", icon: Plus },
             ]
         },
         { name: "Team", path: "team", icon: UserPlus },

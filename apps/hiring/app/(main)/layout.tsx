@@ -8,8 +8,11 @@ import { cn } from "@repo/ui/lib/utils"
 import { useSession } from "@repo/auth/client"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { Loader2 } from "lucide-react"
+import { 
+    Loader2 
+} from "lucide-react"
 import Script from "next/script"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 
 function HiringLayoutContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()
@@ -58,10 +61,10 @@ function HiringLayoutContent({ children }: { children: React.ReactNode }) {
                     isCollapsed && "lg:ml-[90px]"
                 )}
             >
-                <div className="h-screen bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
-                    <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+                <div className="h-full bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
+                    <ScrollArea className="h-full w-full">
                         {children}
-                    </div>
+                    </ScrollArea>
                 </div>
             </main>
         </div>

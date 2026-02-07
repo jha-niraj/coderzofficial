@@ -23,7 +23,17 @@ export {
     reorderInterviewRounds
 } from "./interview-rounds"
 
-// Templates
+// Round Templates (for form)
 export {
     getRoundTemplates,
 } from "./interview-templates"
+
+// Process Templates (database-backed)
+export {
+    getInterviewTemplates, getInterviewTemplate, incrementTemplateUsage,
+    generateInterviewTemplate, getTemplatesByStyle
+} from "./templates.action"
+
+export type { 
+    InterviewTemplate, TemplateRound 
+} from "./templates.action"

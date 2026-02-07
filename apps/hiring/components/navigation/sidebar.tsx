@@ -8,7 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
     LogOut, User, Sun, Moon, Bell, ChevronLeft, ChevronRight,
-    AlignLeft, Layers
+    AlignLeft, Layers, ChevronDown, AlertCircle
 } from "lucide-react";
 import {
     Tooltip, TooltipTrigger, TooltipContent, TooltipProvider
@@ -16,6 +16,7 @@ import {
 import { cn } from "@repo/ui/lib/utils";
 import { format } from "date-fns";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
+import { AnimatePresence, motion } from "framer-motion";
 import { useSidebar } from "./sidebarprovider";
 import { 
     hiringNavigation, NavigationItem 
@@ -44,6 +45,7 @@ export function HiringSidebar() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
     const profileTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const notificationsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,6 +53,21 @@ export function HiringSidebar() {
     // Close mobile menu on path change
     useEffect(() => {
         setIsMobileOpen(false);
+    }, [pathname]);
+
+    // Auto-expand parent if child route is active
+    useEffect(() => {
+        const allRoutes = [...hiringNavigation.primary, ...hiringNavigation.secondary];
+        for (const route of allRoutes) {
+            if (route.children) {
+                for (const child of route.children) {
+                    if (pathname === `/${child.path}` || pathname.startsWith(`/${child.path}/`)) {
+                        setExpandedItems(prev => prev.includes(route.path) ? prev : [...prev, route.path]);
+                        break;
+                    }
+                }
+            }
+        }
     }, [pathname]);
 
     useEffect(() => {
@@ -69,6 +86,15 @@ export function HiringSidebar() {
         };
         fetchNotifications();
     }, [session]);
+
+    const toggleItemExpanded = (path: string) => {
+        setExpandedItems(prev => {
+            if (prev.includes(path)) {
+                return prev.filter(p => p !== path);
+            }
+            return [path]; // Only allow one expanded at a time
+        });
+    };
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {
@@ -122,17 +148,96 @@ export function HiringSidebar() {
     };
 
     const renderNavItem = (item: NavigationItem) => {
-        // Adjust path logic: hiring app might have relative or absolute paths. 
-        // Current navItems use "/home".
-        // New Sidebar expects "/"+path.
-
-        // Remove leading slash for logic consistency if present
         const cleanPath = item.path.startsWith('/') ? item.path.substring(1) : item.path;
-
-        const isActive = pathname === `/${cleanPath}` || pathname.startsWith(`/${cleanPath}/`);
-
         const Icon = item.icon;
+        const hasChildren = item.children && item.children.length > 0;
 
+        // For parent: check if any child is active
+        const isChildActive = hasChildren && item.children!.some((child) => {
+            const childPath = child.path.startsWith('/') ? child.path.substring(1) : child.path;
+            return pathname === `/${childPath}` || pathname.startsWith(`/${childPath}/`);
+        });
+        const isExpanded = expandedItems.includes(cleanPath) || (isChildActive && !isCollapsed);
+
+        // For items without children, check if the item itself is active
+        const isActive = !hasChildren && (pathname === `/${cleanPath}` || pathname.startsWith(`/${cleanPath}/`));
+
+        if (hasChildren) {
+            return (
+                <div key={cleanPath} className="space-y-1">
+                    <button
+                        onClick={() => toggleItemExpanded(cleanPath)}
+                        className={cn(
+                            "cursor-pointer flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
+                            isChildActive
+                                ? "text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800/50"
+                                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
+                            isCollapsed && "justify-center px-3"
+                        )}
+                    >
+                        <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
+                            <Icon className="h-5 w-5" />
+                        </div>
+                        {!isCollapsed && (
+                            <>
+                                <span className="flex-1 text-left whitespace-nowrap overflow-hidden">{item.name}</span>
+                                {item.isImportant && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="bg-neutral-900 text-white dark:bg-white dark:text-black text-xs">
+                                            Required
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
+                                <ChevronDown className={cn(
+                                    "h-4 w-4 transition-transform duration-200 flex-shrink-0",
+                                    isExpanded && "rotate-180"
+                                )} />
+                            </>
+                        )}
+                    </button>
+                    <AnimatePresence>
+                        {isExpanded && !isCollapsed && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="pl-4 space-y-1">
+                                    {item.children!.map((child) => {
+                                        const childPath = child.path.startsWith('/') ? child.path.substring(1) : child.path;
+                                        const isChildItemActive = pathname === `/${childPath}` || pathname.startsWith(`/${childPath}/`);
+                                        const ChildIcon = child.icon;
+
+                                        return (
+                                            <Link
+                                                key={childPath}
+                                                href={`/${childPath}`}
+                                                className={cn(
+                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                                                    isChildItemActive
+                                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
+                                                        : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
+                                                )}
+                                            >
+                                                <ChildIcon className="h-4 w-4" />
+                                                <span>{child.name}</span>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        }
+
+        // Leaf Node (no children)
         const linkContent = (
             <Link
                 key={cleanPath}
@@ -148,11 +253,21 @@ export function HiringSidebar() {
                 <div className={cn("flex-shrink-0 flex items-center justify-center", "h-5 w-5")}>
                     <Icon className="h-5 w-5" />
                 </div>
-                {
-                    !isCollapsed && (
-                        <span className="whitespace-nowrap overflow-hidden">{item.name}</span>
-                    )
-                }
+                {!isCollapsed && (
+                    <>
+                        <span className="whitespace-nowrap overflow-hidden flex-1">{item.name}</span>
+                        {item.isImportant && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="bg-neutral-900 text-white dark:bg-white dark:text-black text-xs">
+                                    Required
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                    </>
+                )}
             </Link>
         );
 

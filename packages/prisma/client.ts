@@ -173,6 +173,8 @@ export {
     InterviewFormat,
     JobMockSessionType,
     JobMockStatus,
+    TemplateStyle,
+    TemplateCategory,
 
     
 } from "@prisma/client";
