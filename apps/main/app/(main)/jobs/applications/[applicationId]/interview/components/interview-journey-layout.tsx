@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -14,7 +13,6 @@ import {
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Progress } from "@repo/ui/components/ui/progress"
-import { Separator } from "@repo/ui/components/ui/separator"
 
 interface InterviewRound {
     id: string
@@ -35,14 +33,6 @@ interface InterviewProcess {
     name: string
     description: string | null
     rounds: InterviewRound[]
-}
-
-// Helper function to safely parse string arrays from Prisma JsonValue
-function parseStringArray(data: unknown): string[] {
-    if (Array.isArray(data)) {
-        return data.filter((item): item is string => typeof item === 'string')
-    }
-    return []
 }
 
 interface Job {
@@ -146,7 +136,6 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 export function InterviewJourneyLayout({ application }: InterviewJourneyLayoutProps) {
     const router = useRouter()
     const pathname = usePathname()
-    const [selectedRound, setSelectedRound] = useState<InterviewRound | null>(null)
 
     const { job, prepProgress } = application
     const interviewProcess = job.interviewProcess
@@ -295,7 +284,6 @@ export function InterviewJourneyLayout({ application }: InterviewJourneyLayoutPr
                                         </div>
                                         {
                                             rounds.map((round) => {
-                                                const Icon = roundTypeIcons[round.roundType] || FileText
                                                 const isUnlocked = isRoundUnlocked(round.roundNumber)
                                                 const isCompleted = isRoundCompleted(round.roundNumber)
                                                 const isActive = pathname.includes(`/round/${round.id}`)

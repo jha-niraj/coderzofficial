@@ -22,14 +22,25 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "Coder'z Hiring | Find Pre-Vetted Engineers",
+		default: "Coder'z Hiring | AI-Powered Recruitment Platform",
 		template: "%s | Coder'z Hiring"
 	},
-	description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills through real projects and AI-powered assessments.",
-	keywords: ["Hiring", "Recruitment", "Tech Hiring", "Software Engineers", "Developer Hiring", "Pre-vetted Candidates", "Coding Assessments", "Technical Interviews"],
-	authors: [{ name: "Niraj Jha" }],
-	creator: "Shunya Tech",
-	publisher: "Shunya Tech",
+	description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills through real projects, AI-powered assessments, and smart candidate matching.",
+	keywords: [
+		"Hiring Platform",
+		"Tech Recruitment",
+		"Software Engineer Hiring",
+		"AI Recruitment",
+		"Pre-vetted Candidates",
+		"Coding Assessments",
+		"Technical Interviews",
+		"Talent Acquisition",
+		"HR Tech",
+		"Applicant Tracking System"
+	],
+	authors: [{ name: "Coder'z Team" }],
+	creator: "Coder'z",
+	publisher: "Coder'z",
 	metadataBase: new URL("https://hiring.coderzai.xyz"),
 	alternates: {
 		canonical: "/",
@@ -39,31 +50,31 @@ export const metadata: Metadata = {
 		locale: "en_US",
 		url: "https://hiring.coderzai.xyz",
 		siteName: "Coder'z Hiring",
-		title: "Coder'z Hiring - Find Pre-Vetted Engineers with Verified Skills",
+		title: "Coder'z Hiring - AI-Powered Recruitment Platform",
 		description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills through real projects and AI-powered assessments.",
 		images: [
 			{
-				url: "/mainlogo.jpeg",
-				width: 1024,
-				height: 1024,
-				alt: "Coder'z Hiring - Find Pre-Vetted Engineers",
+				url: "/hiring-og.png",
+				width: 1200,
+				height: 630,
+				alt: "Coder'z Hiring - AI-Powered Recruitment Platform",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Coder'z Hiring - Find Pre-Vetted Engineers with Verified Skills",
+		title: "Coder'z Hiring - AI-Powered Recruitment Platform",
 		description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills.",
-		images: ["/mainlogo.jpeg"],
-		creator: "@thecoderzlab",
+		images: ["/hiring-og.png"],
+		creator: "@coderzai",
 	},
 	icons: {
 		icon: [
-			{ url: "/mainlogo.ico", sizes: "any" },
-			{ url: "/mainlogo.jpeg", type: "image/jpeg", sizes: "512x512" },
+			{ url: "/favicon.ico", sizes: "any" },
+			{ url: "/hiring-logo.png", type: "image/png", sizes: "512x512" },
 		],
 		apple: [
-			{ url: "/mainlogo.jpeg", sizes: "180x180", type: "image/jpeg" },
+			{ url: "/hiring-logo.png", sizes: "180x180", type: "image/png" },
 		],
 	},
 	robots: {
@@ -76,11 +87,6 @@ export const metadata: Metadata = {
 			"max-image-preview": "large",
 			"max-snippet": -1,
 		},
-	},
-	verification: {
-		// Add your verification codes here when you have them
-		// google: "your-google-verification-code",
-		// yandex: "your-yandex-verification-code",
 	},
 };
 

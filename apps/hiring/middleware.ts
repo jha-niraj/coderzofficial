@@ -11,7 +11,6 @@ const protectedRoutes = [
     '/applications',
     '/analytics',
     '/team',
-    '/billing',
     '/company',
     '/interviews',
     '/assessments',

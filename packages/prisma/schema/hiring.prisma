@@ -93,6 +93,11 @@ model Company {
     interviewProcesses InterviewProcess[]
     jobMockSessions    JobMockSession[]
 
+    // Subscription & Billing
+    subscription       CompanySubscription?
+    payments           CompanyPayment[]
+    invoices           CompanyInvoice[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -249,4 +254,190 @@ enum CompanyInvitationStatus {
     ACCEPTED
     EXPIRED
     REVOKED
+}
+
+// ============================================
+// HIRING SUBSCRIPTION & BILLING
+// ============================================
+
+enum HiringSubscriptionPlan {
+    FREE
+    PRO
+    ENTERPRISE
+}
+
+enum HiringSubscriptionStatus {
+    ACTIVE
+    CANCELLED
+    EXPIRED
+    PAST_DUE
+    TRIALING
+}
+
+enum HiringPaymentStatus {
+    PENDING
+    PROCESSING
+    SUCCEEDED
+    FAILED
+    REFUNDED
+    CANCELLED
+}
+
+// Company Subscription for Hiring Platform
+model CompanySubscription {
+    id        String @id @default(cuid())
+    companyId String @unique
+    company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    // Plan details
+    plan   HiringSubscriptionPlan   @default(FREE)
+    status HiringSubscriptionStatus @default(ACTIVE)
+
+    // Dodo Payments IDs
+    dodoSubscriptionId String? @unique
+    dodoProductId      String?
+    dodoPriceId        String?
+
+    // Plan limits
+    maxJobPosts        Int @default(3)
+    maxApplications    Int @default(50)
+    maxInterviewTemplates Int @default(1)
+    maxTeamMembers     Int @default(1)
+
+    // Features
+    hasAIScreening     Boolean @default(false)
+    hasCustomAssignments Boolean @default(false)
+    hasPrioritySupport Boolean @default(false)
+    hasAPIAccess       Boolean @default(false)
+    hasSSO             Boolean @default(false)
+    hasWhiteLabel      Boolean @default(false)
+
+    // Billing
+    amount       Float   @default(0)
+    currency     String  @default("INR")
+    billingCycle String  @default("monthly")
+
+    // Period tracking
+    currentPeriodStart DateTime  @default(now())
+    currentPeriodEnd   DateTime?
+    trialStart         DateTime?
+    trialEnd           DateTime?
+    cancelledAt        DateTime?
+
+    metadata Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    payments CompanyPayment[]
+
+    @@index([companyId])
+    @@index([status])
+    @@index([dodoSubscriptionId])
+}
+
+// Company Payment records
+model CompanyPayment {
+    id        String @id @default(cuid())
+    companyId String
+    company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    subscriptionId String?
+    subscription   CompanySubscription? @relation(fields: [subscriptionId], references: [id])
+
+    // Dodo Payments IDs
+    dodoPaymentId         String? @unique
+    dodoCheckoutSessionId String? @unique
+
+    amount   Float
+    currency String              @default("INR")
+    status   HiringPaymentStatus @default(PENDING)
+
+    paymentMethod String?
+    billingEmail  String?
+    billingName   String?
+    description   String?
+    metadata      Json?
+
+    paidAt     DateTime?
+    failedAt   DateTime?
+    refundedAt DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([companyId])
+    @@index([subscriptionId])
+    @@index([status])
+    @@index([dodoPaymentId])
+    @@index([dodoCheckoutSessionId])
+
+    invoice CompanyInvoice?
+}
+
+// Invoice Status
+enum HiringInvoiceStatus {
+    DRAFT
+    PENDING
+    PAID
+    VOID
+    UNCOLLECTIBLE
+}
+
+// Company Invoice for billing records
+model CompanyInvoice {
+    id        String @id @default(cuid())
+    companyId String
+    company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    paymentId String  @unique
+    payment   CompanyPayment @relation(fields: [paymentId], references: [id])
+
+    // Invoice details
+    invoiceNumber String  @unique
+    status        HiringInvoiceStatus @default(DRAFT)
+    
+    // Line items stored as JSON
+    lineItems Json
+    
+    // Amounts
+    subtotal     Float
+    taxAmount    Float   @default(0)
+    taxRate      Float   @default(0)
+    discount     Float   @default(0)
+    totalAmount  Float
+    
+    // Currency
+    currency String @default("INR")
+    
+    // Company billing details at time of invoice
+    billingName    String?
+    billingEmail   String?
+    billingAddress String?
+    billingCity    String?
+    billingState   String?
+    billingCountry String?
+    billingPincode String?
+    gstNumber      String?
+    
+    // Dates
+    invoiceDate   DateTime @default(now())
+    dueDate       DateTime?
+    paidAt        DateTime?
+    
+    // PDF URL (generated invoice PDF)
+    pdfUrl String?
+    
+    // Notes
+    notes String?
+    
+    metadata Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([companyId])
+    @@index([status])
+    @@index([invoiceNumber])
+    @@index([invoiceDate])
 }

@@ -2,7 +2,7 @@ import {
     Home, Briefcase, Users, FileText, ClipboardList, UserPlus, BarChart3,
     Building2, CreditCard, Settings, HelpCircle, LayoutDashboard, ListChecks,
     Plus, Eye, Clock, CheckCircle, XCircle, UserCheck, MessageSquare,
-    Video, Calendar, TrendingUp, PieChart, Activity
+    Video, Calendar, TrendingUp, PieChart, Activity, Receipt, ArrowLeftRight
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -100,7 +100,16 @@ export const hiringNavigation: NavigationConfig = {
     ],
     secondary: [
         { name: "Company", path: "company", icon: Building2 },
-        { name: "Billing", path: "billing", icon: CreditCard },
+        { 
+            name: "Billing", 
+            path: "billing", 
+            icon: CreditCard,
+            children: [
+                { name: "Plans & Usage", path: "billing", icon: CreditCard },
+                { name: "Transactions", path: "transactions", icon: ArrowLeftRight },
+                { name: "Invoices", path: "invoices", icon: Receipt },
+            ]
+        },
         { name: "Settings", path: "settings", icon: Settings },
         { name: "Help", path: "help", icon: HelpCircle },
     ]

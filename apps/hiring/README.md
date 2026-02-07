@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
+# Coder'z Hiring Platform
+
+The intelligent hiring platform for tech companies to find pre-vetted engineers with verified skills.
+
+## Overview
+
+Coder'z Hiring is a comprehensive recruitment platform designed specifically for tech companies. It leverages AI-powered assessments, real project verification, and smart candidate matching to streamline the hiring process.
+
+## Features
+
+### For Companies/HR
+
+- **Job Management**: Create and manage job postings with detailed requirements
+- **Candidate Pipeline**: Track applications through customizable interview stages
+- **AI-Powered Screening**: Automatic resume analysis and candidate scoring
+- **Interview Scheduling**: Built-in interview scheduling and management
+- **Take-Home Assignments**: Create and evaluate coding assignments
+- **Team Collaboration**: Invite team members with role-based access
+- **Analytics Dashboard**: Track hiring metrics and performance
+
+### For Candidates (via Main Platform)
+
+- **Pre-verified Profiles**: Skills verified through real projects
+- **Interview Preparation**: AI-powered mock interviews
+- **Application Tracking**: Real-time status updates
+- **Interview Journey**: Step-by-step interview process guidance
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js
+- **AI Integration**: OpenAI GPT-4, ElevenLabs
+- **Payments**: Dodo Payments
+- **Monorepo**: Turborepo
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+
+- pnpm 9+
+- PostgreSQL database
+
+### Installation
+
+1. Clone the repository and navigate to the project root:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd coderzofficial
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+pnpm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp apps/hiring/.env.example apps/hiring/.env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
+4. Generate Prisma client:
+```bash
+pnpm db:generate
+```
 
-## Learn More
+5. Run database migrations:
+```bash
+pnpm db:push
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. Start the development server:
+```bash
+pnpm dev --filter=hiring
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3001](http://localhost:3001) to view the application.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+apps/hiring/
+├── actions/           # Server actions
+│   ├── applications/  # Application management
+│   ├── jobs/          # Job posting actions
+│   └── (common)/      # Shared actions
+├── app/
+│   ├── (auth)/        # Authentication pages
+│   ├── (home)/        # Public pages (billing, help)
+│   ├── (landing)/     # Landing page
+│   └── (main)/        # Dashboard and main app
+├── components/
+│   ├── landingpage/   # Landing page components
+│   └── shared/        # Shared components
+├── lib/               # Utility functions
+└── types/             # TypeScript types
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Required environment variables:
+
+```env
+# Database
+DATABASE_URL=
+
+# Authentication
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=
+
+# AI Services
+OPENAI_API_KEY=
+ELEVENLABS_API_KEY=
+
+# Payments
+DODO_PAYMENTS_API_KEY=
+```
+
+## Scripts
+
+- `pnpm dev --filter=hiring` - Start development server
+- `pnpm build --filter=hiring` - Build for production
+- `pnpm lint --filter=hiring` - Run linting
+- `pnpm typecheck --filter=hiring` - Type checking
+
+## Subscription Plans
+
+| Feature | Free | Pro | Enterprise |
+|---------|------|-----|------------|
+| Active Job Posts | 3 | 10 | Unlimited |
+| Applications/month | 50 | 500 | Unlimited |
+| Interview Templates | 1 | 5 | Unlimited |
+| AI Resume Screening | ❌ | ✅ | ✅ |
+| Team Members | 1 | 5 | Unlimited |
+| API Access | ❌ | ❌ | ✅ |
+| SSO/SAML | ❌ | ❌ | ✅ |
+
+## Contributing
+
+Please read our contributing guidelines before submitting pull requests.
+
+## License
+
+Proprietary - All rights reserved.
+
+## Support
+
+- Documentation: [docs.coderzai.xyz](https://docs.coderzai.xyz)
+- Email: support@coderzai.xyz
+- Discord: [Join our community](https://discord.gg/coderzai)

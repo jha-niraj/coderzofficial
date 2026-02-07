@@ -21,5 +21,8 @@ export type * from "./application"
 // Assessment-related types
 export type * from "./assessment"
 
+// Billing-related types
+export type * from "./billing"
+
 // Zod schemas (export values, not just types)
 export * from "./job-schema"

@@ -151,5 +151,28 @@ export {
     KnowMeJobStatus,
     KnowMeJobType,
     KnowMeQuestionCategory,
-    KnowMeViewerType
+    KnowMeViewerType,
+
+    // Hiring - FlowSync Enums and Types:
+    CompanyMemberRole,
+    CompanyMemberJobTitle,
+    CompanyVerificationStatus,
+    MemberInviteStatus,
+    CompanyInvitationStatus,
+    HiringSubscriptionPlan,
+    HiringSubscriptionStatus,
+    HiringPaymentStatus,
+    HiringInvoiceStatus,
+    JobLocationType,
+    EmploymentType,
+    JobStatus,
+    JobVisibility,
+    ApplicationStatus,
+    ApplicationActivityType,
+    InterviewRoundType,
+    InterviewFormat,
+    JobMockSessionType,
+    JobMockStatus,
+
+    
 } from "@prisma/client";

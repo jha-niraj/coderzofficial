@@ -3,41 +3,93 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    Check
+    Check, Briefcase, Users, FileText, Sparkles, Shield, Zap, Building2
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { cn } from "@repo/ui/lib/utils"
+import { useRouter } from "next/navigation"
+import { useSession } from "@repo/auth/client"
 
 const plans = [
     {
-        name: "Starter",
-        price: { INR: "Free", USD: "Free" },
-        desc: "Entry level access.",
-        features: ["3 Active Nodes", "Basic Matching", "Standard Logs"],
-        cta: "Deploy Free",
-        highlight: false
+        id: "FREE",
+        name: "Free",
+        price: { INR: "₹0", USD: "$0" },
+        desc: "Perfect for small teams just getting started with hiring",
+        features: [
+            { text: "3 active job posts", icon: Briefcase },
+            { text: "Up to 50 applications/month", icon: Users },
+            { text: "1 interview process template", icon: FileText },
+            { text: "Basic candidate management", icon: Users },
+            { text: "Email support", icon: Building2 },
+        ],
+        cta: "Get Started",
+        highlight: false,
     },
     {
-        name: "Professional",
-        price: { INR: "₹29,999", USD: "$399" },
-        desc: "Full system scale.",
-        features: ["Unlimited Nodes", "AI Logic Core", "Custom Sandboxes", "Priority Routing"],
-        cta: "Start Trial",
-        highlight: true
+        id: "PRO",
+        name: "Pro",
+        price: { INR: "₹3,999", USD: "$49" },
+        desc: "For growing companies with active hiring needs",
+        features: [
+            { text: "10 active job posts", icon: Briefcase },
+            { text: "Up to 500 applications/month", icon: Users },
+            { text: "5 interview process templates", icon: FileText },
+            { text: "AI-powered resume screening", icon: Sparkles },
+            { text: "Custom take-home assignments", icon: FileText },
+            { text: "Team collaboration (5 members)", icon: Building2 },
+            { text: "Priority support", icon: Zap },
+        ],
+        cta: "Upgrade to Pro",
+        highlight: true,
     },
     {
+        id: "ENTERPRISE",
         name: "Enterprise",
         price: { INR: "Custom", USD: "Custom" },
-        desc: "Dedicated infrastructure.",
-        features: ["Dedicated Instance", "SLA Guarantees", "API Access", "White-label"],
+        desc: "For large organizations with complex hiring needs",
+        features: [
+            { text: "Unlimited job posts", icon: Briefcase },
+            { text: "Unlimited applications", icon: Users },
+            { text: "Unlimited interview templates", icon: FileText },
+            { text: "Dedicated account manager", icon: Users },
+            { text: "SSO/SAML authentication", icon: Shield },
+            { text: "API access", icon: Zap },
+            { text: "SLA guarantee", icon: Shield },
+            { text: "Unlimited team members", icon: Building2 },
+        ],
         cta: "Contact Sales",
-        highlight: false
+        highlight: false,
     },
 ]
 
 export default function PricingSection() {
     const [currency, setCurrency] = useState<"INR" | "USD">("INR")
+    const { data: session, status } = useSession()
+    const router = useRouter()
+
+    const handlePlanClick = (planId: string) => {
+        if (planId === "ENTERPRISE") {
+            window.open("mailto:sales@coderztech.com?subject=Enterprise%20Plan%20Inquiry", "_blank")
+            return
+        }
+
+        if (planId === "FREE") {
+            // For free plan, redirect to register
+            router.push("/register")
+            return
+        }
+
+        // For PRO plan, check authentication
+        if (status === "authenticated" && session) {
+            // User is logged in, redirect to billing
+            router.push(`/billing?plan=${planId}&currency=${currency}`)
+        } else {
+            // User not logged in, redirect to signin with return URL
+            router.push(`/signin?callbackUrl=${encodeURIComponent(`/billing?plan=${planId}&currency=${currency}`)}`)
+        }
+    }
 
     return (
         <section id="pricing" className="py-32 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
@@ -45,11 +97,14 @@ export default function PricingSection() {
 
                 <div className="flex flex-col items-center text-center mb-16">
                     <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2">
-                        Resource Allocation
+                        Pricing Plans
                     </span>
-                    <h2 className="text-3xl md:text-4xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-8">
-                        Transparent Compute Costs
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-4">
+                        Simple, Transparent Pricing
                     </h2>
+                    <p className="text-neutral-600 dark:text-neutral-400 max-w-2xl mb-8">
+                        Choose the plan that fits your hiring needs. Upgrade or downgrade anytime.
+                    </p>
                     <div className="flex items-center gap-3 p-1 pr-4 pl-4 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
                         <span className={cn("text-xs font-bold", currency === "INR" ? "text-neutral-900 dark:text-white" : "text-neutral-400")}>INR</span>
                         <Switch checked={currency === "USD"} onCheckedChange={(c) => setCurrency(c ? "USD" : "INR")} />
@@ -72,6 +127,15 @@ export default function PricingSection() {
                                         : "bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800"
                                 )}
                             >
+                                {
+                                    plan.highlight && (
+                                        <div className="absolute top-4 right-4">
+                                            <div className="bg-white dark:bg-black text-black dark:text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                                Most Popular
+                                            </div>
+                                        </div>
+                                    )
+                                }
                                 <div className="mb-8">
                                     <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
                                     <p className={cn("text-sm", plan.highlight ? "text-neutral-400 dark:text-neutral-500" : "text-neutral-500")}>
@@ -82,19 +146,20 @@ export default function PricingSection() {
                                     <span className="text-4xl font-bold tracking-tighter">
                                         {currency === "INR" ? plan.price.INR : plan.price.USD}
                                     </span>
-                                    {plan.price.INR !== "Custom" && <span className="text-sm opacity-60">/mo</span>}
+                                    {plan.price.INR !== "Custom" && <span className="text-sm opacity-60">/month</span>}
                                 </div>
                                 <ul className="space-y-4 mb-8 flex-1">
                                     {
                                         plan.features.map((feat, i) => (
                                             <li key={i} className="flex items-center gap-3 text-sm font-medium">
                                                 <Check className={cn("w-4 h-4", plan.highlight ? "text-white dark:text-black" : "text-neutral-900 dark:text-white")} />
-                                                {feat}
+                                                {feat.text}
                                             </li>
                                         ))
                                     }
                                 </ul>
                                 <Button
+                                    onClick={() => handlePlanClick(plan.id)}
                                     className={cn(
                                         "cursor-pointer w-full rounded-full font-bold h-12",
                                         plan.highlight

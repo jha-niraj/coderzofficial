@@ -1,9 +1,13 @@
 import { Suspense } from "react"
 import { notFound, redirect } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import {
+    Loader2
+} from "lucide-react"
 import { auth } from "@repo/auth"
 import { prisma } from "@repo/prisma"
-import { AssignmentContent, type Application as AssignmentApplication } from "./assignment-content"
+import {
+    AssignmentContent, type Application as AssignmentApplication
+} from "./assignment-content"
 
 interface AssignmentPageProps {
     params: Promise<{
@@ -13,7 +17,7 @@ interface AssignmentPageProps {
 
 export async function generateMetadata({ params }: AssignmentPageProps) {
     const { applicationId } = await params
-    
+
     const application = await prisma.jobApplication.findUnique({
         where: { id: applicationId },
         include: {
@@ -24,7 +28,7 @@ export async function generateMetadata({ params }: AssignmentPageProps) {
     })
 
     return {
-        title: application 
+        title: application
             ? `Assignment - ${application.job.title} | CodeDot.AI`
             : "Assignment | CodeDot.AI",
         description: "Complete your take-home assignment"

@@ -5,7 +5,9 @@ import {
 } from "lucide-react"
 import { auth } from "@repo/auth"
 import { prisma } from "@repo/prisma"
-import { RoundContent, type Application as RoundApplication, type InterviewRound } from "./round-content"
+import { 
+    RoundContent, type Application as RoundApplication, type InterviewRound 
+} from "./round-content"
 
 interface RoundPageProps {
     params: Promise<{

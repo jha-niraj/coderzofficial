@@ -8,11 +8,10 @@ import {
     ArrowLeft, Building2, CheckCircle2, Clock, Mic, FileText,
     Video, Users, Code, Phone, Briefcase, MessageSquare,
     ClipboardList, Target, Award, Lightbulb, HelpCircle,
-    BookOpen, ExternalLink, Play
+    BookOpen
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Separator } from "@repo/ui/components/ui/separator"
 import type { LucideIcon } from "lucide-react"
 
 export interface InterviewRound {
@@ -112,16 +111,15 @@ export function RoundContent({ application, round }: RoundContentProps) {
     const FormatIcon = formatInfo.icon
 
     // Check if this round is completed
-    const completedRounds = application.prepProgress?.roundsCompleted 
-        ? (Array.isArray(application.prepProgress.roundsCompleted) 
-            ? application.prepProgress.roundsCompleted 
+    const completedRounds = application.prepProgress?.roundsCompleted
+        ? (Array.isArray(application.prepProgress.roundsCompleted)
+            ? application.prepProgress.roundsCompleted
             : Array.from({ length: application.prepProgress.roundsCompleted }, (_, i) => i + 1))
         : []
     const isCompleted = completedRounds.includes(round.roundNumber)
 
     return (
         <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-            {/* Header */}
             <div className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 sticky top-0 z-10">
                 <div className="max-w-4xl mx-auto px-6 py-4">
                     <div className="flex items-center gap-4">
@@ -135,17 +133,19 @@ export function RoundContent({ application, round }: RoundContentProps) {
                         </Button>
                         <div className="flex items-center gap-3 flex-1">
                             <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center overflow-hidden">
-                                {job.company.logoUrl ? (
-                                    <Image
-                                        src={job.company.logoUrl}
-                                        alt={job.company.name}
-                                        width={40}
-                                        height={40}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <Building2 className="w-5 h-5 text-neutral-400" />
-                                )}
+                                {
+                                    job.company.logoUrl ? (
+                                        <Image
+                                            src={job.company.logoUrl}
+                                            alt={job.company.name}
+                                            width={40}
+                                            height={40}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <Building2 className="w-5 h-5 text-neutral-400" />
+                                    )
+                                }
                             </div>
                             <div>
                                 <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
@@ -154,28 +154,27 @@ export function RoundContent({ application, round }: RoundContentProps) {
                                 <p className="text-sm text-neutral-500">{job.title} • {job.company.name}</p>
                             </div>
                         </div>
-                        {isCompleted ? (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Completed
-                            </Badge>
-                        ) : (
-                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                                Upcoming
-                            </Badge>
-                        )}
+                        {
+                            isCompleted ? (
+                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                                    Completed
+                                </Badge>
+                            ) : (
+                                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                    Upcoming
+                                </Badge>
+                            )
+                        }
                     </div>
                 </div>
             </div>
-
-            {/* Content */}
             <div className="max-w-4xl mx-auto px-6 py-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-6"
                 >
-                    {/* Round Overview Card */}
                     <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
                         <div className="flex items-start gap-4 mb-6">
                             <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -190,7 +189,6 @@ export function RoundContent({ application, round }: RoundContentProps) {
                                 </p>
                             </div>
                         </div>
-
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                             <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800">
                                 <div className="flex items-center gap-2 text-neutral-500 mb-1">
@@ -210,130 +208,150 @@ export function RoundContent({ application, round }: RoundContentProps) {
                                     {formatInfo.label}
                                 </p>
                             </div>
-                            {round.hasMockInterview && (
-                                <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-                                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-1">
-                                        <Mic className="w-4 h-4" />
-                                        <span className="text-xs font-medium">Mock Available</span>
-                                    </div>
-                                    <p className="text-green-700 dark:text-green-300 font-semibold">
-                                        Practice Ready
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        {round.description && (
-                            <p className="text-neutral-600 dark:text-neutral-400">
-                                {round.description}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* What to Expect */}
-                    {round.whatToExpect && round.whatToExpect.length > 0 && (
-                        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <BookOpen className="w-5 h-5 text-blue-500" />
-                                What to Expect
-                            </h3>
-                            <ul className="space-y-3">
-                                {round.whatToExpect.map((item, index) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-semibold text-blue-700 dark:text-blue-400 shrink-0">
-                                            {index + 1}
+                            {
+                                round.hasMockInterview && (
+                                    <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
+                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-1">
+                                            <Mic className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Mock Available</span>
                                         </div>
-                                        <span className="text-neutral-700 dark:text-neutral-300">{item}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {/* Topics Covered */}
-                    {round.topicsCovered && round.topicsCovered.length > 0 && (
-                        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <Target className="w-5 h-5 text-purple-500" />
-                                Topics Covered
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                                {round.topicsCovered.map((topic, index) => (
-                                    <Badge key={index} variant="secondary" className="px-3 py-1">
-                                        {topic}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Sample Questions */}
-                    {round.sampleQuestions && round.sampleQuestions.length > 0 && (
-                        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <HelpCircle className="w-5 h-5 text-amber-500" />
-                                Sample Questions
-                            </h3>
-                            <div className="space-y-3">
-                                {round.sampleQuestions.map((question, index) => (
-                                    <div key={index} className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
-                                        <p className="text-neutral-800 dark:text-neutral-200">
-                                            <span className="font-semibold text-amber-700 dark:text-amber-400">Q{index + 1}:</span> {question}
+                                        <p className="text-green-700 dark:text-green-300 font-semibold">
+                                            Practice Ready
                                         </p>
                                     </div>
-                                ))}
+                                )
+                            }
+                        </div>
+
+                        {
+                            round.description && (
+                                <p className="text-neutral-600 dark:text-neutral-400">
+                                    {round.description}
+                                </p>
+                            )
+                        }
+                    </div>
+
+                    {
+                        round.whatToExpect && round.whatToExpect.length > 0 && (
+                            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
+                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <BookOpen className="w-5 h-5 text-blue-500" />
+                                    What to Expect
+                                </h3>
+                                <ul className="space-y-3">
+                                    {
+                                        round.whatToExpect.map((item, index) => (
+                                            <li key={index} className="flex items-start gap-3">
+                                                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-semibold text-blue-700 dark:text-blue-400 shrink-0">
+                                                    {index + 1}
+                                                </div>
+                                                <span className="text-neutral-700 dark:text-neutral-300">{item}</span>
+                                            </li>
+                                        ))
+                                    }
+                                </ul>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
-                    {/* Evaluation Criteria */}
-                    {round.evaluationCriteria && round.evaluationCriteria.length > 0 && (
-                        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                Evaluation Criteria
-                            </h3>
-                            <ul className="space-y-2">
-                                {round.evaluationCriteria.map((criteria, index) => (
-                                    <li key={index} className="flex items-start gap-2">
-                                        <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                                        <span className="text-neutral-700 dark:text-neutral-300">{criteria}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                    {
+                        round.topicsCovered && round.topicsCovered.length > 0 && (
+                            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
+                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Target className="w-5 h-5 text-purple-500" />
+                                    Topics Covered
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {
+                                        round.topicsCovered.map((topic, index) => (
+                                            <Badge key={index} variant="secondary" className="px-3 py-1">
+                                                {topic}
+                                            </Badge>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )
+                    }
 
-                    {/* Tips for Candidates */}
-                    {round.tipsForCandidates && round.tipsForCandidates.length > 0 && (
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 p-6">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <Lightbulb className="w-5 h-5 text-yellow-500" />
-                                Tips for Success
-                            </h3>
-                            <ul className="space-y-3">
-                                {round.tipsForCandidates.map((tip, index) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center shrink-0">
-                                            <Lightbulb className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
-                                        </div>
-                                        <span className="text-neutral-700 dark:text-neutral-300">{tip}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                    {
+                        round.sampleQuestions && round.sampleQuestions.length > 0 && (
+                            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
+                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <HelpCircle className="w-5 h-5 text-amber-500" />
+                                    Sample Questions
+                                </h3>
+                                <div className="space-y-3">
+                                    {
+                                        round.sampleQuestions.map((question, index) => (
+                                            <div key={index} className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
+                                                <p className="text-neutral-800 dark:text-neutral-200">
+                                                    <span className="font-semibold text-amber-700 dark:text-amber-400">Q{index + 1}:</span> {question}
+                                                </p>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )
+                    }
 
-                    {/* Action Buttons */}
+                    {
+                        round.evaluationCriteria && round.evaluationCriteria.length > 0 && (
+                            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6">
+                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                    Evaluation Criteria
+                                </h3>
+                                <ul className="space-y-2">
+                                    {
+                                        round.evaluationCriteria.map((criteria, index) => (
+                                            <li key={index} className="flex items-start gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                                                <span className="text-neutral-700 dark:text-neutral-300">{criteria}</span>
+                                            </li>
+                                        ))
+                                    }
+                                </ul>
+                            </div>
+                        )
+                    }
+
+                    {
+                        round.tipsForCandidates && round.tipsForCandidates.length > 0 && (
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 p-6">
+                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Lightbulb className="w-5 h-5 text-yellow-500" />
+                                    Tips for Success
+                                </h3>
+                                <ul className="space-y-3">
+                                    {
+                                        round.tipsForCandidates.map((tip, index) => (
+                                            <li key={index} className="flex items-start gap-3">
+                                                <div className="w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center shrink-0">
+                                                    <Lightbulb className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                                                </div>
+                                                <span className="text-neutral-700 dark:text-neutral-300">{tip}</span>
+                                            </li>
+                                        ))
+                                    }
+                                </ul>
+                            </div>
+                        )
+                    }
+
                     <div className="flex items-center gap-4">
-                        {round.hasMockInterview && !isCompleted && (
-                            <Link href={`/companies/${job.company.slug}/mock`}>
-                                <Button size="lg" className="rounded-xl">
-                                    <Mic className="w-5 h-5 mr-2" />
-                                    Practice Mock Interview
-                                </Button>
-                            </Link>
-                        )}
+                        {
+                            round.hasMockInterview && !isCompleted && (
+                                <Link href={`/companies/${job.company.slug}/mock`}>
+                                    <Button size="lg" className="rounded-xl">
+                                        <Mic className="w-5 h-5 mr-2" />
+                                        Practice Mock Interview
+                                    </Button>
+                                </Link>
+                            )
+                        }
                         <Link href={`/jobs/applications/${application.id}/interview`}>
                             <Button size="lg" variant="outline" className="rounded-xl">
                                 <ArrowLeft className="w-5 h-5 mr-2" />

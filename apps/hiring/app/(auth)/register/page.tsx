@@ -7,7 +7,8 @@ import { signIn } from '@repo/auth/client';
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2, ShieldCheck, Users, Info
+    Eye, EyeOff, Check, X, Building2, ArrowRight, Loader2, ShieldCheck, 
+    Users, Info
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { Input } from "@repo/ui/components/ui/input";
@@ -15,11 +16,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Label } from "@repo/ui/components/ui/label";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select";
 import toast from "@repo/ui/components/ui/sonner";
 
