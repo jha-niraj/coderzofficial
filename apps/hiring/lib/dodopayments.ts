@@ -110,3 +110,126 @@ export function getHiringPlanPrice(plan: HiringSubscriptionPlanType, currency: '
     const config = HIRING_SUBSCRIPTION_PLANS[plan];
     return currency === 'INR' ? config.priceINR : config.priceUSD;
 }
+
+// ============================================
+// DODO PAYMENTS API HELPERS
+// Following official Dodo Payments documentation:
+// https://docs.dodopayments.com/llms.txt
+// ============================================
+
+import type { CountryCode } from 'dodopayments/resources/misc';
+
+export interface DodoCustomer {
+    email: string;
+    name: string;
+    phone_number?: string;
+}
+
+export interface DodoBilling {
+    city: string;
+    country: CountryCode;
+    state: string;
+    street: string;
+    zipcode: string;
+}
+
+export interface DodoProductCartItem {
+    product_id: string;
+    quantity: number;
+}
+
+export interface CreateCheckoutSessionOptions {
+    product_cart: DodoProductCartItem[];
+    customer: DodoCustomer;
+    return_url: string;
+    billing?: DodoBilling;
+    metadata?: Record<string, string>;
+    // For subscription products - optional trial period
+    subscription_data?: {
+        trial_period_days?: number;
+    };
+}
+
+export interface CreatePaymentLinkOptions {
+    product_cart: DodoProductCartItem[];
+    customer: DodoCustomer;
+    billing: DodoBilling;
+    return_url?: string;
+    metadata?: Record<string, string>;
+}
+
+/**
+ * Create a Checkout Session (RECOMMENDED approach per Dodo docs)
+ * 
+ * Use Checkout Sessions to create a secure, hosted checkout experience.
+ * Sessions are valid for 24 hours by default.
+ * 
+ * For subscriptions, you can include subscription_data with trial_period_days.
+ * 
+ * @returns Session with checkout_url to redirect customer
+ */
+export async function createDodoCheckoutSession(options: CreateCheckoutSessionOptions) {
+    if (!dodoClient) {
+        throw new Error('Dodo Payments client not configured. Set DODO_PAYMENTS_API_KEY.');
+    }
+
+    // Use checkoutSessions.create (recommended per docs)
+    // Supports both one-time payments and subscriptions
+    const session = await dodoClient.checkoutSessions.create({
+        product_cart: options.product_cart,
+        customer: options.customer,
+        return_url: options.return_url,
+        ...(options.billing && { billing: options.billing }),
+        ...(options.metadata && { metadata: options.metadata }),
+        // For subscription products - configure trial period
+        ...(options.subscription_data && { subscription_data: options.subscription_data }),
+    });
+
+    return {
+        checkout_url: session.checkout_url,
+        session_id: session.session_id,
+        raw: session,
+    };
+}
+
+/**
+ * Create a Dynamic Payment Link
+ * 
+ * Use when you need a shareable payment link.
+ * Note: Checkout Sessions are recommended for most use cases.
+ * 
+ * IMPORTANT: Must pass payment_link: true to get the payment link URL.
+ */
+export async function createDodoPaymentLink(options: CreatePaymentLinkOptions) {
+    if (!dodoClient) {
+        throw new Error('Dodo Payments client not configured. Set DODO_PAYMENTS_API_KEY.');
+    }
+
+    // Use payments.create with payment_link: true (per docs)
+    const payment = await dodoClient.payments.create({
+        payment_link: true, // REQUIRED to get payment link
+        product_cart: options.product_cart,
+        customer: options.customer,
+        billing: options.billing,
+        ...(options.return_url && { return_url: options.return_url }),
+        ...(options.metadata && { metadata: options.metadata }),
+    });
+
+    return {
+        payment_id: payment.payment_id,
+        payment_link: payment.payment_link,
+        raw: payment,
+    };
+}
+
+/**
+ * Retrieve payment details by ID
+ * Used to verify payment status after customer returns from checkout.
+ */
+export async function getDodoPayment(paymentId: string) {
+    if (!dodoClient) {
+        throw new Error('Dodo Payments client not configured. Set DODO_PAYMENTS_API_KEY.');
+    }
+
+    return await dodoClient.payments.retrieve(paymentId);
+}

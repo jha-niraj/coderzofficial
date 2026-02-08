@@ -1,7 +1,6 @@
 import { prisma } from '@repo/prisma'
 import bcrypt from 'bcryptjs'
 import { seedOpenSourceLearn } from './seed/opensource-git-learn'
-import { seedInterviewTemplates } from './seed/interview-templates.seed'
 
 async function main() {
 	console.log('🌱 Starting database seeding...\n')
@@ -103,16 +102,6 @@ async function main() {
 		console.log('✅ Git learning content seeded successfully!')
 	} catch (error) {
 		console.error('⚠️ Error seeding Git learning content:', error)
-		// Don't throw - allow other seeds to continue
-	}
-
-	// Seed Interview Process Templates
-	console.log('\n📋 Seeding Interview Process Templates...')
-	try {
-		await seedInterviewTemplates()
-		console.log('✅ Interview templates seeded successfully!')
-	} catch (error) {
-		console.error('⚠️ Error seeding interview templates:', error)
 		// Don't throw - allow other seeds to continue
 	}
 

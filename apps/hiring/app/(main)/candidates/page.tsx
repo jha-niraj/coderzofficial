@@ -7,6 +7,8 @@ import {
 } from "@/actions/candidates"
 import { CandidatesContent } from "./candidates-content"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Candidates | FlowSync",
     description: "View and manage candidate applications"

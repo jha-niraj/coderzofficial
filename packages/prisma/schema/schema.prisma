@@ -12,6 +12,7 @@ enum Role {
     Student
     Admin
     HR
+    UNI
 }
 
 enum ContributionStatus {

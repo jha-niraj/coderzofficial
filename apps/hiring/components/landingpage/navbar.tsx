@@ -57,9 +57,8 @@ export default function Navbar() {
                 </Link>
                 <div className="hidden md:flex items-center space-x-8">
                     <Link href="/" className={navLinkClass}>Overview</Link>
-                    <a href="#features" onClick={(e) => handleSmoothScroll(e, "#features")} className={cn(navLinkClass, "cursor-pointer")}>Features</a>
-                    <a href="#pricing" onClick={(e) => handleSmoothScroll(e, "#pricing")} className={cn(navLinkClass, "cursor-pointer")}>Pricing</a>
-                    <Link href="/billing" className={navLinkClass}>Billing</Link>
+                    <Link href="#features" onClick={(e) => handleSmoothScroll(e, "#features")} className={cn(navLinkClass, "cursor-pointer")}>Features</Link>
+                    <Link href="#pricing" onClick={(e) => handleSmoothScroll(e, "#pricing")} className={cn(navLinkClass, "cursor-pointer")}>Pricing</Link>
                 </div>
                 <div className="flex items-center space-x-2">
                     <ThemeToggle />
@@ -93,7 +92,6 @@ export default function Navbar() {
                                     <Link href="/" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Overview</Link>
                                     <Link href="#features" onClick={(e) => handleSmoothScroll(e, "#features")} className="text-xl font-medium cursor-pointer">Features</Link>
                                     <Link href="#pricing" onClick={(e) => handleSmoothScroll(e, "#pricing")} className="text-xl font-medium cursor-pointer">Pricing</Link>
-                                    <Link href="/billing" className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>Billing</Link>
                                     <hr className="border-neutral-200 dark:border-neutral-800" />
                                     <Link href="/signin">
                                         <Button variant="outline" className="cursor-pointer w-full rounded-full h-12 text-base font-bold">

@@ -18,11 +18,11 @@ import { format } from "date-fns";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { AnimatePresence, motion } from "framer-motion";
 import { useSidebar } from "./sidebarprovider";
-import { 
-    hiringNavigation, NavigationItem 
+import {
+    hiringNavigation, NavigationItem
 } from "../../lib/navigation";
-import { 
-    getNotifications, markNotificationAsRead 
+import {
+    getNotifications, markNotificationAsRead
 } from "../../actions/notifications/notifications.action";
 
 interface Notification {
@@ -178,66 +178,73 @@ export function HiringSidebar() {
                         <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
                             <Icon className="h-5 w-5" />
                         </div>
-                        {!isCollapsed && (
-                            <>
-                                <span className="flex-1 text-left whitespace-nowrap overflow-hidden">{item.name}</span>
-                                {item.isImportant && (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" className="bg-neutral-900 text-white dark:bg-white dark:text-black text-xs">
-                                            Required
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )}
-                                <ChevronDown className={cn(
-                                    "h-4 w-4 transition-transform duration-200 flex-shrink-0",
-                                    isExpanded && "rotate-180"
-                                )} />
-                            </>
-                        )}
+                        {
+                            !isCollapsed && (
+                                <>
+                                    <span className="flex-1 text-left whitespace-nowrap overflow-hidden">{item.name}</span>
+                                    {
+                                        item.isImportant && (
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="bg-neutral-900 text-white dark:bg-white dark:text-black text-xs">
+                                                    Required
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )
+                                    }
+                                    <ChevronDown className={cn(
+                                        "h-4 w-4 transition-transform duration-200 flex-shrink-0",
+                                        isExpanded && "rotate-180"
+                                    )} />
+                                </>
+                            )
+                        }
                     </button>
                     <AnimatePresence>
-                        {isExpanded && !isCollapsed && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden"
-                            >
-                                <div className="pl-4 space-y-1">
-                                    {item.children!.map((child) => {
-                                        const childPath = child.path.startsWith('/') ? child.path.substring(1) : child.path;
-                                        const isChildItemActive = pathname === `/${childPath}` || pathname.startsWith(`/${childPath}/`);
-                                        const ChildIcon = child.icon;
+                        {
+                            isExpanded && !isCollapsed && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="pl-4 space-y-1">
+                                        {
+                                            item.children!.map((child) => {
+                                                const childPath = child.path.startsWith('/') ? child.path.substring(1) : child.path;
+                                                const isChildItemActive = pathname === `/${childPath}` || pathname.startsWith(`/${childPath}/`);
+                                                const ChildIcon = child.icon;
 
-                                        return (
-                                            <Link
-                                                key={childPath}
-                                                href={`/${childPath}`}
-                                                className={cn(
-                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-                                                    isChildItemActive
-                                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
-                                                        : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
-                                                )}
-                                            >
-                                                <ChildIcon className="h-4 w-4" />
-                                                <span>{child.name}</span>
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            </motion.div>
-                        )}
+                                                return (
+                                                    <Link
+                                                        key={childPath}
+                                                        href={`/${childPath}`}
+                                                        className={cn(
+                                                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                                                            isChildItemActive
+                                                                ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
+                                                                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
+                                                        )}
+                                                    >
+                                                        <ChildIcon className="h-4 w-4" />
+                                                        <span>{child.name}</span>
+                                                    </Link>
+                                                );
+                                            })
+                                        }
+                                    </div>
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
                 </div>
             );
         }
 
-        // Leaf Node (no children)
         const linkContent = (
             <Link
                 key={cleanPath}
@@ -253,21 +260,25 @@ export function HiringSidebar() {
                 <div className={cn("flex-shrink-0 flex items-center justify-center", "h-5 w-5")}>
                     <Icon className="h-5 w-5" />
                 </div>
-                {!isCollapsed && (
-                    <>
-                        <span className="whitespace-nowrap overflow-hidden flex-1">{item.name}</span>
-                        {item.isImportant && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-neutral-900 text-white dark:bg-white dark:text-black text-xs">
-                                    Required
-                                </TooltipContent>
-                            </Tooltip>
-                        )}
-                    </>
-                )}
+                {
+                    !isCollapsed && (
+                        <>
+                            <span className="whitespace-nowrap overflow-hidden flex-1">{item.name}</span>
+                            {
+                                item.isImportant && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="bg-neutral-900 text-white dark:bg-white dark:text-black text-xs">
+                                            Required
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )
+                            }
+                        </>
+                    )
+                }
             </Link>
         );
 
@@ -431,10 +442,6 @@ export function HiringSidebar() {
                                         onMouseLeave={handleProfileMouseLeave}
                                     >
                                         <div className="p-2">
-                                            <button onClick={() => router.push('/settings')} className="cursor-pointer w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors text-sm">
-                                                <User className="h-4 w-4" />
-                                                Profile
-                                            </button>
                                             <button onClick={() => signOut({ callbackUrl: "/" })} className="cursor-pointer w-full flex items-center gap-3 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-md transition-colors text-sm">
                                                 <LogOut className="h-4 w-4" />
                                                 Sign Out

@@ -46,6 +46,17 @@ function SignUpForm() {
     const [error, setError] = useState("");
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const router = useRouter();
+    
+    // Capture inviteBy from URL (university referral)
+    const [inviteBy, setInviteBy] = useState<string | null>(null);
+    
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const invite = params.get('inviteBy');
+        if (invite) {
+            setInviteBy(invite);
+        }
+    }, []);
 
     // Password validation states
     const [hasCapital, setHasCapital] = useState(false);
@@ -90,7 +101,11 @@ function SignUpForm() {
 
             if (response.data.success) {
                 toast.success("Account created! Please check your email for verification code.");
-                router.push(`/verify?email=${encodeURIComponent(email)}`);
+                // Forward inviteBy to verify page so it can be passed to onboarding
+                const verifyUrl = inviteBy 
+                    ? `/verify?email=${encodeURIComponent(email)}&inviteBy=${encodeURIComponent(inviteBy)}`
+                    : `/verify?email=${encodeURIComponent(email)}`;
+                router.push(verifyUrl);
             }
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {

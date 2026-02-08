@@ -7,6 +7,8 @@ import {
 } from "@/actions/company"
 import { CompanyProfileContent } from "./company-content"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Company Profile | FlowSync",
     description: "Manage your company information and branding"

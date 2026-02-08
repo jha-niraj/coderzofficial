@@ -3,8 +3,10 @@
 import { prisma } from "@repo/prisma"
 import { auth } from "@repo/auth"
 import { revalidatePath } from "next/cache"
+import type { CountryCode } from 'dodopayments/resources/misc'
 import { 
-    dodoClient, HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType 
+    dodoClient, HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType,
+    createDodoCheckoutSession, getDodoPayment,
 } from "@/lib/dodopayments"
 
 // ============================================
@@ -87,9 +89,21 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
             return { success: false, error: "Payment system not configured" }
         }
 
-        // Create checkout session with Dodo Payments
-        const countryCode = (member.company.country || "IN") as import("dodopayments/resources/misc").CountryCode
-        const checkoutSession = await dodoClient.payments.create({
+        // Create checkout session with Dodo Payments (RECOMMENDED approach per docs)
+        // Uses checkoutSessions.create which returns checkout_url
+        const countryCode = (member.company.country || "IN") as CountryCode
+        const checkoutSession = await createDodoCheckoutSession({
+            product_cart: [
+                {
+                    product_id: planConfig.dodoProductId || "",
+                    quantity: 1,
+                },
+            ],
+            customer: {
+                email: member.email || "",
+                name: member.displayName || member.company.name,
+            },
+            return_url: input.returnUrl,
             billing: {
                 city: member.company.city || "Unknown",
                 country: countryCode,
@@ -97,17 +111,6 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
                 street: member.company.address || "Unknown",
                 zipcode: member.company.pincode || "000000",
             },
-            customer: {
-                email: member.email || "",
-                name: member.displayName || member.company.name,
-            },
-            product_cart: [
-                {
-                    product_id: planConfig.dodoProductId || "",
-                    quantity: 1,
-                },
-            ],
-            return_url: input.returnUrl,
             metadata: {
                 companyId: member.companyId,
                 plan: input.plan,
@@ -119,7 +122,7 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
         await prisma.companyPayment.create({
             data: {
                 companyId: member.companyId,
-                dodoCheckoutSessionId: checkoutSession.payment_id,
+                dodoCheckoutSessionId: checkoutSession.session_id,
                 amount: input.amount,
                 currency: input.currency,
                 status: "PENDING",
@@ -132,8 +135,8 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
 
         return {
             success: true,
-            sessionUrl: checkoutSession.payment_link || undefined,
-            sessionId: checkoutSession.payment_id,
+            sessionUrl: checkoutSession.checkout_url,
+            sessionId: checkoutSession.session_id,
         }
     } catch (error) {
         console.error("Create checkout error:", error)
@@ -182,12 +185,9 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
             }
         }
 
-        if (!dodoClient) {
-            return { success: false, error: "Payment system not configured" }
-        }
-
-        // Verify with Dodo Payments
-        const paymentDetails = await dodoClient.payments.retrieve(input.sessionId)
+        // Verify with Dodo Payments using the helper
+        try {
+            const paymentDetails = await getDodoPayment(input.sessionId)
 
         if (paymentDetails.status === "succeeded") {
             const metadata = payment.metadata as { plan?: HiringSubscriptionPlanType }

@@ -6,14 +6,12 @@ import {
 import { Button } from "@repo/ui/components/ui/button"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { BackgroundOrbits } from "./backgroundorbits"
 
 export default function HeroSection() {
     const router = useRouter()
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-white dark:bg-neutral-950 flex flex-col items-center justify-center pt-20">
-            <BackgroundOrbits />
             <div className="relative z-10 w-full px-6">
                 <div className="mx-auto max-w-4xl text-center">
                     <motion.div

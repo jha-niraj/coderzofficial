@@ -106,13 +106,12 @@ export default function OnboardingPage() {
         setLoading(true)
         try {
             const result = await completeOnboarding({
-                companyName: universityName, // Using companyName for now, will be university-specific
+                universityName,
                 website: universityWebsite || undefined,
-                industry: universityType || undefined,
-                companySize: studentCount || undefined,
                 description: description || undefined,
-                userRole,
-                hiringGoals: selectedDepartments,
+                universityType: universityType || undefined,
+                emailDomain,
+                userRole: userRole as "CHANCELLOR" | "PRINCIPAL" | "REGISTRAR" | "DEAN" | "HOD" | "PROFESSOR" | "ASSOCIATE_PROFESSOR" | "ASSISTANT_PROFESSOR" | "LECTURER" | "PLACEMENT_COORDINATOR" | "PLACEMENT_OFFICER" | "FINANCE_MANAGER" | "ACCOUNTS_OFFICER" | "TEACHING_ASSISTANT" | "LAB_INSTRUCTOR" | "OTHER",
             })
 
             if (!result.success) {
@@ -149,8 +148,6 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
-            <div className="fixed inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
-
             <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
                 <DialogContent className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                     <DialogHeader>

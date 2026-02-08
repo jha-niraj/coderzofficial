@@ -7,6 +7,8 @@ import {
 } from "@/actions/team"
 import { TeamContent } from "./team-content"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Team | FlowSync",
     description: "Manage your hiring team"

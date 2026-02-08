@@ -22,6 +22,7 @@ function VerifyContent() {
     const [timer, setTimer] = useState(30)
     const [canResend, setCanResend] = useState(false)
     const [email, setEmail] = useState<string | null>(null)
+    const [inviteBy, setInviteBy] = useState<string | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
 
@@ -38,10 +39,14 @@ function VerifyContent() {
 
     useEffect(() => {
         const emailParam = searchParams.get('email')
+        const inviteByParam = searchParams.get('inviteBy')
         if (emailParam) {
             setEmail(emailParam)
         } else {
             router.push('/register')
+        }
+        if (inviteByParam) {
+            setInviteBy(inviteByParam)
         }
     }, [searchParams, router])
 
@@ -115,8 +120,11 @@ function VerifyContent() {
                 })
 
                 if (result?.ok) {
-                    // Redirect to onboarding after successful auto-signin
-                    setTimeout(() => router.push('/onboarding'), 1000)
+                    // Redirect to onboarding after successful auto-signin, forwarding inviteBy if present
+                    const onboardingUrl = inviteBy 
+                        ? `/onboarding?inviteBy=${encodeURIComponent(inviteBy)}`
+                        : '/onboarding'
+                    setTimeout(() => router.push(onboardingUrl), 1000)
                 } else {
                     // Fallback to signin page if auto-signin fails
                     setTimeout(() => router.push('/signin?verified=true'), 1500)

@@ -5,6 +5,8 @@ import {
 } from "@/actions/analytics"
 import { AnalyticsContent } from "./analytics-content"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Analytics | FlowSync",
     description: "Track your hiring pipeline performance"

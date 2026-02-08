@@ -2,7 +2,8 @@ import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Users, Trophy, Video, Brain, Cable, LayoutDashboard,
     Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon,
-    Building2, Search, Heart, ClipboardCheck
+    Building2, Search, Heart, ClipboardCheck, GraduationCap, School, BookOpen,
+    Coins, Award
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -200,45 +201,16 @@ export const mainNavigation: NavigationConfig = {
             ]
         },
         {
+            name: "University",
+            path: "uni",
+            icon: GraduationCap,
+            status: "active"
+        },
+        {
             name: "Jobs",
             path: "jobs",
             icon: Briefcase,
-            status: "active",
-            children: [
-                { 
-                    name: 'Browse Jobs', 
-                    path: 'jobs', 
-                    icon: Search 
-                },
-                { 
-                    name: 'My Applications', 
-                    path: 'jobs/applications', 
-                    icon: ClipboardCheck 
-                },
-                { 
-                    name: 'Saved Jobs', 
-                    path: 'jobs/saved', 
-                    icon: Heart 
-                }
-            ]
-        },
-        {
-            name: "Companies",
-            path: "companies",
-            icon: Building2,
-            status: "active",
-            children: [
-                { 
-                    name: 'Browse Companies', 
-                    path: 'companies', 
-                    icon: Search 
-                },
-                { 
-                    name: 'Following', 
-                    path: 'companies/following', 
-                    icon: Heart 
-                }
-            ]
+            status: "active"
         },
     ],
     secondary: []

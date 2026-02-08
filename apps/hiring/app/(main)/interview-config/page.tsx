@@ -7,6 +7,8 @@ import {
     Loader2 
 } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Interview Process Configuration | FlowSync",
     description: "Configure your interview process for transparency and enable AI mock interviews"

@@ -61,7 +61,7 @@ function HiringLayoutContent({ children }: { children: React.ReactNode }) {
                     isCollapsed && "lg:ml-[90px]"
                 )}
             >
-                <div className="h-full bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
+                <div className="h-full bg-white dark:bg-neutral-950 lg:rounded-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
                     <ScrollArea className="h-full w-full">
                         {children}
                     </ScrollArea>

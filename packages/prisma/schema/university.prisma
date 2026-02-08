@@ -171,6 +171,9 @@ model University {
     creditTransactions UniversityCreditTransaction[]
     invitations        UniversityInvitation[]
     memberInvitations  UniversityMemberInvitation[]
+    subscription       UniversitySubscription?
+    payments           UniversityPayment[]
+    invoices           UniversityInvoice[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -635,4 +638,160 @@ model UniversityMemberInvitation {
     @@index([inviteCode])
     @@index([status])
     @@index([universityId])
+}
+
+// ============================================
+// SUBSCRIPTION & BILLING MODELS
+// ============================================
+
+// Subscription plans for universities
+enum UniversitySubscriptionPlan {
+    FREE
+    STARTER
+    GROWTH
+    ENTERPRISE
+}
+
+// Subscription status
+enum UniversitySubscriptionStatus {
+    ACTIVE
+    CANCELLED
+    EXPIRED
+    PAST_DUE
+    TRIALING
+}
+
+// University Subscription
+model UniversitySubscription {
+    id           String @id @default(cuid())
+    universityId String @unique
+
+    // Plan details
+    plan   UniversitySubscriptionPlan   @default(FREE)
+    status UniversitySubscriptionStatus @default(ACTIVE)
+
+    // Limits
+    maxStudents          Int @default(500)
+    maxFaculty           Int @default(10)
+    maxDepartments       Int @default(5)
+    maxClassesPerFaculty Int @default(5)
+    maxCreditsPerMonth   Int @default(100000)
+
+    // Features
+    hasAnalytics        Boolean @default(false)
+    hasAdvancedReports  Boolean @default(false)
+    hasPlacementModule  Boolean @default(false)
+    hasCompanyPortal    Boolean @default(false)
+    hasAPIAccess        Boolean @default(false)
+    hasPrioritySupport  Boolean @default(false)
+    hasWhiteLabel       Boolean @default(false)
+    hasCustomBranding   Boolean @default(false)
+
+    // Billing cycle
+    billingCycle       String    @default("monthly") // "monthly", "yearly"
+    amount             Int       @default(0)
+    currency           String    @default("INR")
+    currentPeriodStart DateTime  @default(now())
+    currentPeriodEnd   DateTime?
+
+    // External payment reference
+    dodoSubscriptionId String?
+    dodoCustomerId     String?
+
+    // Relations
+    university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([plan])
+    @@index([status])
+}
+
+// University Payment Records
+model UniversityPayment {
+    id           String @id @default(cuid())
+    universityId String
+
+    // Payment details
+    amount      Int
+    currency    String  @default("INR")
+    status      String  @default("PENDING") // PENDING, SUCCEEDED, FAILED, REFUNDED
+    description String?
+
+    // External reference
+    dodoPaymentId          String?
+    dodoCheckoutSessionId  String?
+
+    // Invoice reference
+    invoiceId String?
+
+    // Metadata
+    metadata Json?
+
+    // Timestamps
+    paidAt    DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    // Relations
+    university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+    @@index([universityId])
+    @@index([status])
+    @@index([dodoPaymentId])
+}
+
+// University Invoice
+model UniversityInvoice {
+    id           String @id @default(cuid())
+    universityId String
+
+    // Invoice details
+    invoiceNumber String @unique
+    status        String @default("DRAFT") // DRAFT, SENT, PAID, OVERDUE, CANCELLED
+
+    // Dates
+    invoiceDate DateTime  @default(now())
+    dueDate     DateTime?
+    paidAt      DateTime?
+
+    // Amounts
+    subtotal    Int
+    taxAmount   Int    @default(0)
+    taxRate     Float  @default(18.0) // GST
+    discount    Int    @default(0)
+    totalAmount Int
+
+    currency String @default("INR")
+
+    // Line items
+    lineItems Json // Array of {description, quantity, unitPrice, amount}
+
+    // Billing info
+    billingName    String?
+    billingEmail   String?
+    billingAddress String?
+    billingCity    String?
+    billingState   String?
+    billingCountry String?
+    billingPincode String?
+    gstNumber      String?
+
+    // PDF
+    pdfUrl String?
+    notes  String? @db.Text
+
+    // Payment reference
+    paymentId String?
+
+    // Relations
+    university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([universityId])
+    @@index([status])
+    @@index([invoiceDate])
 }

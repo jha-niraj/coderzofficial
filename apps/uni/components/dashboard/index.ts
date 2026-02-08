@@ -1,0 +1,6 @@
+export { HeadDashboard } from "./head-dashboard"
+export { DepartmentHeadDashboard } from "./department-head-dashboard"
+export { FacultyDashboard } from "./faculty-dashboard"
+export { PlacementOfficerDashboard } from "./placement-officer-dashboard"
+export { FinanceOfficerDashboard } from "./finance-officer-dashboard"
+export { TeachingAssistantDashboard } from "./teaching-assistant-dashboard"

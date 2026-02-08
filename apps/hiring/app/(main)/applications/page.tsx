@@ -4,6 +4,8 @@ import {
 } from "@/actions/applications"
 import { ApplicationsContent } from "./applications-content"
 
+export const dynamic = "force-dynamic"
+
 export default async function ApplicationsPage() {
     const [statsResult, jobStatsResult] = await Promise.all([
         getApplicationStats(),

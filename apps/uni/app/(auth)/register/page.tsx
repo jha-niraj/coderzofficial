@@ -7,17 +7,33 @@ import { signIn } from '@repo/auth/client';
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Eye, EyeOff, Check, X, GraduationCap, ArrowRight, Loader2
+    Eye, EyeOff, Check, X, GraduationCap, ArrowRight, Loader2, Info, Users
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
 import { Label } from "@repo/ui/components/ui/label";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@repo/ui/components/ui/select";
 import toast from "@repo/ui/components/ui/sonner";
 
+// University Head roles - only these positions can register
+type UniversityHeadRole = "CHANCELLOR" | "VICE_CHANCELLOR" | "PRINCIPAL" | "REGISTRAR" | "DEAN" | "OTHER_ADMIN";
+
+const HEAD_ROLES: { value: UniversityHeadRole; label: string }[] = [
+    { value: "CHANCELLOR", label: "Chancellor" },
+    { value: "VICE_CHANCELLOR", label: "Vice Chancellor" },
+    { value: "PRINCIPAL", label: "Principal" },
+    { value: "REGISTRAR", label: "Registrar" },
+    { value: "DEAN", label: "Dean" },
+    { value: "OTHER_ADMIN", label: "Other University Admin" },
+];
+
 function SignUpForm() {
-    const [companyName, setCompanyName] = useState("");
+    const [universityName, setUniversityName] = useState("");
+    const [headRole, setHeadRole] = useState<UniversityHeadRole>("PRINCIPAL");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -64,8 +80,9 @@ function SignUpForm() {
                 name,
                 email,
                 password,
-                companyName,
-                role: "RECRUITER",
+                universityName,
+                headRole,
+                role: "UNI",
             });
 
             if (response.data.success) {
@@ -97,11 +114,7 @@ function SignUpForm() {
 
     return (
         <div className="min-h-screen flex bg-white dark:bg-neutral-950">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
-
             <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center bg-neutral-950 overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
-
                 <div className="relative z-10 px-12 max-w-lg">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -121,7 +134,41 @@ function SignUpForm() {
                         <p className="text-neutral-400 text-lg mb-8">
                             Initialize your university portal and empower students with industry-ready skills.
                         </p>
-                        <div className="p-6 rounded-2xl border border-violet-800/50 bg-violet-900/20">
+                        <div className="p-4 rounded-xl border border-amber-600/50 bg-amber-950/30 mb-6">
+                            <div className="flex items-start gap-3">
+                                <Info className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-amber-300 font-semibold text-sm">
+                                        University Administrators Only
+                                    </p>
+                                    <p className="text-amber-200/70 text-xs mt-1">
+                                        This registration is exclusively for chancellors, principals, and other university administrators who will initialize the institutional workspace.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                            <div className="flex items-start gap-3">
+                                <Users className="h-5 w-5 text-neutral-500 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-medium text-neutral-300">
+                                        Not a university administrator?
+                                    </p>
+                                    <p className="text-xs text-neutral-500 mt-1">
+                                        Faculty and staff members should sign in using credentials provided by their university admin.
+                                        Contact your administration for access.
+                                    </p>
+                                    <Link
+                                        href="/signin"
+                                        className="inline-flex items-center gap-1 text-xs text-white font-semibold hover:underline mt-2"
+                                    >
+                                        Go to Sign In
+                                        <ArrowRight className="h-3 w-3" />
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 p-6 rounded-2xl border border-violet-800/50 bg-violet-900/20">
                             <p className="text-neutral-300 italic">
                                 &quot;Our students&apos; placement rates increased by 40% after integrating with Coder&apos;z.&quot;
                             </p>
@@ -147,13 +194,24 @@ function SignUpForm() {
                             Coder&apos;z <span className="text-violet-600 font-mono font-normal">UNIVERSITY</span>
                         </span>
                     </div>
+                    <div className="lg:hidden p-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 mb-6">
+                        <div className="flex items-start gap-2">
+                            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                            <p className="text-amber-800 dark:text-amber-200 text-xs">
+                                <strong>University Admins Only.</strong> Faculty members should sign in with credentials provided by their admin.
+                            </p>
+                        </div>
+                    </div>
                     <div className="text-center mb-8">
                         <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
-                            New Registration
+                            University Registration
                         </span>
                         <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
                             Initialize University Portal
                         </h2>
+                        <p className="text-sm text-neutral-500 mt-2">
+                            For chancellors, principals, and administrators only
+                        </p>
                     </div>
                     <AnimatePresence>
                         {
@@ -198,19 +256,40 @@ function SignUpForm() {
                         </div>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="companyName" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
-                                University Name
-                            </Label>
-                            <Input
-                                id="companyName"
-                                type="text"
-                                placeholder="Delhi Technical University"
-                                value={companyName}
-                                onChange={(e) => setCompanyName(e.target.value)}
-                                required
-                                className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
-                            />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="universityName" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                                    University Name
+                                </Label>
+                                <Input
+                                    id="universityName"
+                                    type="text"
+                                    placeholder="Delhi Technical University"
+                                    value={universityName}
+                                    onChange={(e) => setUniversityName(e.target.value)}
+                                    required
+                                    className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="headRole" className="text-xs font-mono uppercase tracking-wider text-neutral-500">
+                                    Your Position
+                                </Label>
+                                <Select value={headRole} onValueChange={(v) => setHeadRole(v as UniversityHeadRole)}>
+                                    <SelectTrigger className="h-12 rounded-xl bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+                                        <SelectValue placeholder="Select your position" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {
+                                            HEAD_ROLES.map((role) => (
+                                                <SelectItem key={role.value} value={role.value}>
+                                                    {role.label}
+                                                </SelectItem>
+                                            ))
+                                        }
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="name" className="text-xs font-mono uppercase tracking-wider text-neutral-500">

@@ -1,3 +1,21 @@
+// Re-export billing types
+export * from "./billing";
+
+// Re-export student types
+export * from "./student";
+
+// Re-export class types
+export * from "./class";
+
+// Re-export assignment types
+export * from "./assignment";
+
+// Re-export department types
+export * from "./department";
+
+// Re-export dashboard types
+export * from "./dashboard";
+
 // Types for the Request Body for the SignUp:
 export interface RegisterRequestBody {
     name: string;

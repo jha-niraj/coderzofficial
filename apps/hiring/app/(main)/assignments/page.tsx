@@ -3,6 +3,8 @@ import {
 } from "@/actions/assignments"
 import AssignmentsContent from "./assignments-content"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Assignments | Hiring",
     description: "Manage job assignments and take-home tasks",

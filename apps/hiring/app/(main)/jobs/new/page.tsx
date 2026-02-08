@@ -1,6 +1,8 @@
 import { getInterviewProcesses } from "@/actions/interview-config"
 import JobFormContent from "./job-form-content"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Create New Job | Hiring",
     description: "Create a new job posting",

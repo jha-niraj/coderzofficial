@@ -5,6 +5,7 @@ import { auth } from "@repo/auth";
 
 interface OnboardingData {
     companyName: string;
+    slug: string;
     website?: string;
     industry?: string;
     companySize?: string;
@@ -14,6 +15,49 @@ interface OnboardingData {
     city?: string;
     state?: string;
     country?: string;
+    inviteBy?: string; // University slug for referral tracking
+}
+
+export async function checkSlugAvailability(slug: string): Promise<{ available: boolean; suggestions?: string[] }> {
+    if (!slug || slug.length < 2) {
+        return { available: false };
+    }
+
+    try {
+        const existingCompany = await prisma.company.findUnique({
+            where: { slug },
+            select: { id: true },
+        });
+
+        if (!existingCompany) {
+            return { available: true };
+        }
+
+        // Generate suggestions if slug is taken
+        const suggestions: string[] = [];
+        const baseSlugs = [
+            `${slug}-hq`,
+            `${slug}-team`,
+            `${slug}-inc`,
+            `${slug}-${Math.floor(Math.random() * 100)}`,
+            `${slug}-${new Date().getFullYear()}`,
+        ];
+
+        for (const suggestion of baseSlugs) {
+            const exists = await prisma.company.findUnique({
+                where: { slug: suggestion },
+                select: { id: true },
+            });
+            if (!exists) {
+                suggestions.push(suggestion);
+            }
+            if (suggestions.length >= 3) break;
+        }
+
+        return { available: false, suggestions };
+    } catch {
+        return { available: false };
+    }
 }
 
 export async function completeOnboarding(data: OnboardingData) {
@@ -30,18 +74,21 @@ export async function completeOnboarding(data: OnboardingData) {
         const headRoles = ["CEO", "CTO", "COFOUNDER", "VP_ENGINEERING", "HR_HEAD"];
         const isHead = headRoles.includes(data.userRole);
 
-        // Create company slug from name
-        const slug = data.companyName
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/(^-|-$)/g, "") +
-            "-" + Math.random().toString(36).substring(2, 8);
+        // Verify slug is available
+        const existingCompany = await prisma.company.findUnique({
+            where: { slug: data.slug },
+            select: { id: true },
+        });
 
-        // Create company
+        if (existingCompany) {
+            return { success: false, error: "This URL is already taken. Please choose a different one." };
+        }
+
+        // Create company with provided name and slug
         const company = await prisma.company.create({
             data: {
                 name: data.companyName,
-                slug,
+                slug: data.slug,
                 website: data.website || null,
                 industry: data.industry || null,
                 companySize: data.companySize || null,
@@ -86,6 +133,36 @@ export async function completeOnboarding(data: OnboardingData) {
             where: { id: userId },
             data: { onboardingCompleted: true },
         });
+
+        // If company was referred by a university, create the link
+        if (data.inviteBy) {
+            try {
+                const university = await prisma.university.findUnique({
+                    where: { slug: data.inviteBy },
+                    select: { id: true, createdByUserId: true },
+                });
+
+                if (university) {
+                    const referralCode = `${company.slug}-${data.inviteBy}-${Date.now().toString(36)}`;
+                    await prisma.companyUniversityLink.create({
+                        data: {
+                            companyId: company.id,
+                            universityId: university.id,
+                            referredById: university.createdByUserId || null,
+                            referralCode,
+                            isPartner: false,
+                            jobsPosted: 0,
+                            studentsHired: 0,
+                            isActive: true,
+                        },
+                    });
+                    console.log(`✅ Created CompanyUniversityLink for company ${company.id} referred by university ${university.id}`);
+                }
+            } catch (linkError) {
+                // Non-fatal: don't block onboarding if link creation fails
+                console.error("Failed to create CompanyUniversityLink:", linkError);
+            }
+        }
 
         return { success: true, companyId: company.id };
     } catch (error) {

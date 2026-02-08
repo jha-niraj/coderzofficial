@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Check } from "lucide-react"
+import { 
+    Check 
+} from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import Link from "next/link"
 import { Switch } from "@repo/ui/components/ui/switch"
@@ -11,23 +13,48 @@ import { cn } from "@repo/ui/lib/utils"
 const plans = [
     {
         name: "Starter",
-        description: "Small colleges",
+        description: "Perfect for small colleges getting started",
         price: { INR: "₹49", USD: "$0.99" },
-        features: ["500 Students", "5 Faculty", "Basic Quizzes", "Email Support"],
+        features: [
+            "Up to 500 students",
+            "5 faculty accounts",
+            "Basic assignments (Quiz, Coding)",
+            "Student verification",
+            "Email support",
+            "Basic analytics"
+        ],
         highlight: false
     },
     {
         name: "Professional",
-        description: "Growing institutions",
+        description: "For growing institutions with more needs",
         price: { INR: "₹39", USD: "$0.79" },
-        features: ["5,000 Students", "Unlimited Faculty", "AI Interviews", "Placement Module", "API Access"],
+        features: [
+            "Up to 5,000 students",
+            "Unlimited faculty accounts",
+            "All assignment types",
+            "Mock interviews included",
+            "Placement module",
+            "Priority support",
+            "Advanced analytics",
+            "API access"
+        ],
         highlight: true
     },
     {
         name: "Enterprise",
-        description: "Large universities",
+        description: "For large universities with complex needs",
         price: { INR: "Custom", USD: "Custom" },
-        features: ["Unlimited Scale", "LMS Integration", "SLA Guarantee", "On-Premise", "Dedicated Manager"],
+        features: [
+            "Unlimited students",
+            "Multi-campus support",
+            "Custom integrations",
+            "Dedicated account manager",
+            "SLA guarantee",
+            "Custom branding",
+            "On-premise option",
+            "24/7 phone support"
+        ],
         highlight: false
     }
 ]

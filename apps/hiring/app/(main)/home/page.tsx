@@ -4,6 +4,8 @@ import { getCandidateStats } from "@/actions/candidates"
 import { getInterviewProcesses } from "@/actions/interview-config"
 import HomeContent from "./home-content"
 
+export const dynamic = "force-dynamic"
+
 export default async function HomePage() {
     const session = await auth()
 
