@@ -17,7 +17,9 @@ import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Label } from '@repo/ui/components/ui/label'
 import { Progress } from '@repo/ui/components/ui/progress'
-import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/ui/alert'
+import { 
+    Alert, AlertDescription, AlertTitle 
+} from '@repo/ui/components/ui/alert'
 import toast from '@repo/ui/components/ui/sonner'
 import { ProjectEchoSchema } from '@/actions/(main)/schemas/projects.schema'
 import {

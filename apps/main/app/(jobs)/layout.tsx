@@ -2,12 +2,13 @@
 
 import React from 'react'
 import Script from 'next/script'
-import { usePathname } from "next/navigation"
 import JobsSidebar from '@/components/common/jobssidebar'
 import {
     useSidebar, SidebarProvider
 } from '@/components/common/sidebarprovider'
-import { WifiOff, RotateCcw } from 'lucide-react'
+import { 
+    WifiOff, RotateCcw 
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { cn } from '@repo/ui/lib/utils'
@@ -96,4 +97,4 @@ const OfflineFallback = () => {
     )
 }
 
-export default JobsLayout
+export default JobsLayout;

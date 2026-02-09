@@ -2,10 +2,34 @@
 // UNIVERSITY PLATFORM SCHEMA
 // Models for University/College side of the platform
 // ============================================
+//
+// CORE PHILOSOPHY:
+// This is NOT a traditional university management system.
+// We focus on PRACTICAL SKILL BUILDING:
+// - Teachers create assignments (coding, quizzes, mocks, projects)
+// - Students complete them on the MAIN platform using credits
+// - Auto-grading where possible
+// - NO attendance, NO lecture scheduling, NO traditional exams
+//
+// ============================================
 
 // ============================================
 // ENUMS - Role and Permission Definitions
 // ============================================
+
+// University Type Classification
+enum UniversityType {
+    PUBLIC
+    PRIVATE
+    DEEMED
+    AUTONOMOUS
+    STATE
+    CENTRAL
+    AFFILIATED
+    COMMUNITY_COLLEGE
+    TECHNICAL_INSTITUTE
+    OTHER
+}
 
 // Role type for members within a university
 enum UniversityMemberRole {
@@ -128,7 +152,7 @@ model University {
     phone String?
 
     // University Classification
-    universityType  String? // "Public", "Private", "Deemed", "Autonomous"
+    universityType  UniversityType? // Enum for university type
     affiliatedTo    String? // Affiliation/Parent university
     accreditation   String? // NAAC, NBA, etc.
     establishedYear Int?
@@ -267,18 +291,20 @@ model UniversityMember {
     @@index([role])
 }
 
-// University Class/Course
+// University Class/Course - A GROUP OF STUDENTS for assignments
+// NOTE: This is NOT a lecture/classroom. It's simply a way to group students
+// so teachers can assign work to them. Think of it as a "cohort" or "batch".
 model UniversityClass {
     id           String  @id @default(cuid())
     universityId String
     departmentId String?
 
     // Class Information
-    name        String // "CS301 - Data Structures"
-    code        String? // "CS301"
+    name        String // "DSA Batch 2024" or "Final Year Project Group"
+    code        String? // "DSA-2024"
     description String? @db.Text
 
-    // Academic Period
+    // Academic Period (for organization)
     semester     SemesterType
     academicYear String // "2024-25"
     section      String? // "A", "B", etc.
@@ -286,7 +312,7 @@ model UniversityClass {
     // Faculty assigned to this class
     facultyId String?
 
-    // Student count (can be auto-calculated from enrollments)
+    // Student count (auto-calculated from enrollments)
     studentCount Int @default(0)
 
     // Settings
@@ -378,8 +404,15 @@ model StudentUniversityLink {
 }
 
 // ============================================
-// ASSIGNMENT MODELS
+// ASSIGNMENT MODELS - CORE FEATURE
 // ============================================
+// Assignments are the HEART of the university platform.
+// Teachers create assignments that link to MAIN platform features:
+// - QUIZ → /assessments (auto-graded)
+// - CODING → /concepts or /studio (auto-graded)
+// - MOCK_INTERVIEW → /mock (AI-graded)
+// - PROJECT → /projects (manual review)
+// - CUSTOM → Teacher uploads, student submits (manual review)
 
 // University Assignments created by faculty
 model UniversityAssignment {
@@ -392,23 +425,26 @@ model UniversityAssignment {
     description  String? @db.Text
     instructions String? @db.Text
 
-    // Assignment Type & Reference
+    // Assignment Type & Reference to MAIN PLATFORM
     type          UniversityAssignmentType
-    referenceId   String? // ID from respective module (assessment, project, mock, space)
-    referenceData Json? // Additional config data
+    referenceId   String? // ID from main platform (assessmentId, conceptSlug, mockId, projectId)
+    referenceUrl  String? // Direct URL to the content on main platform
+    referenceData Json? // Additional config (selected questions, difficulty, etc.)
 
     // Deadline & Attempts
-    deadline    DateTime?
-    maxAttempts Int       @default(1)
+    deadline      DateTime?
+    maxAttempts   Int       @default(1)
+    lateSubmission Boolean  @default(false) // Allow late submissions?
+    latePenalty    Int      @default(0) // Percentage penalty for late submission
 
-    // Credit Requirements
+    // Credit Requirements (deducted from student's allocated credits)
     creditsRequired Int @default(0)
 
     // Grading
     maxScore     Int @default(100)
     passingScore Int @default(40)
 
-    // Auto-grading settings (for Quiz/Coding)
+    // Auto-grading settings (for Quiz/Coding/Mock)
     isAutoGraded Boolean @default(false)
 
     // Status
@@ -416,7 +452,7 @@ model UniversityAssignment {
     publishedAt DateTime?
     closedAt    DateTime?
 
-    // Attachments (URLs/file paths)
+    // Attachments (for CUSTOM type - URLs/file paths)
     attachments Json? // Array of {name, url, type}
 
     // Relations
@@ -435,34 +471,50 @@ model UniversityAssignment {
 }
 
 // Student Submissions for assignments
+// Submissions are synced from MAIN platform when student completes assignment
 model UniversitySubmission {
     id            String @id @default(cuid())
     assignmentId  String
     studentLinkId String // Links to StudentUniversityLink
 
-    // Submission Data
-    submissionData Json? // Type-specific data
-    submissionUrl  String? // If file submission
-    submissionText String? @db.Text // If text submission
+    // Reference to main platform submission (if applicable)
+    mainPlatformSubmissionId String? // ID from main platform's submission record
+    mainPlatformUrl          String? // Direct link to view on main platform
+
+    // Submission Data (stored for reference)
+    submissionData Json? // Type-specific data from main platform
+    submissionUrl  String? // If file submission (for CUSTOM type)
+    submissionText String? @db.Text // If text submission (for CUSTOM type)
 
     // Attempt tracking
     attemptNumber Int @default(1)
 
-    // Credits
+    // Credits used for this submission
     creditsUsed Int @default(0)
 
     // Grading
     status     SubmissionGradingStatus @default(NOT_SUBMITTED)
     score      Int?
+    maxScore   Int? // Copied from assignment for record
+    percentage Float? // Calculated: (score/maxScore) * 100
+    passed     Boolean? // score >= passingScore
+
+    // Feedback
     feedback   String?                 @db.Text
-    gradedById String? // UniversityMember who graded
+    gradedById String? // UniversityMember who graded (for manual grading)
     gradedAt   DateTime?
 
-    // Auto-grade results (for Quiz/Coding)
-    autoGradeResult Json?
+    // Auto-grade results (synced from main platform)
+    autoGradeResult Json? // Full result from assessments/coding/mock
+    autoGradedAt    DateTime?
+
+    // Late submission tracking
+    isLate      Boolean @default(false)
+    latePenalty Int     @default(0) // Penalty applied
 
     // Timestamps
     submittedAt DateTime?
+    startedAt   DateTime? // When student started the assignment
 
     // Relations
     assignment  UniversityAssignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
@@ -476,6 +528,7 @@ model UniversitySubmission {
     @@index([assignmentId])
     @@index([studentLinkId])
     @@index([status])
+    @@index([mainPlatformSubmissionId])
 }
 
 // ============================================

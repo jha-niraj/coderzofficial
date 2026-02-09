@@ -190,6 +190,9 @@ export interface UniversityDetails {
 
 export type UniversityVerificationStatus = "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED" | "SUSPENDED";
 
+// University type enum values
+export type UniversityTypeEnum = "PUBLIC" | "PRIVATE" | "DEEMED" | "AUTONOMOUS" | "STATE" | "CENTRAL" | "AFFILIATED" | "COMMUNITY_COLLEGE" | "TECHNICAL_INSTITUTE" | "OTHER";
+
 // Update university details payload
 export interface UpdateUniversityPayload {
     name?: string;
@@ -197,7 +200,7 @@ export interface UpdateUniversityPayload {
     description?: string;
     email?: string;
     phone?: string;
-    universityType?: string;
+    universityType?: UniversityTypeEnum;
     affiliatedTo?: string;
     accreditation?: string;
     establishedYear?: number;

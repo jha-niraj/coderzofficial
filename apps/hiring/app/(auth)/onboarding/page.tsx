@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useTransition, useEffect, useCallback } from "react"
+import { 
+    useState, useTransition, useEffect, useCallback, Suspense 
+} from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -59,7 +61,28 @@ const roleOptions = [
     { value: "OTHER", label: "Other" },
 ]
 
+// Loading fallback component
+function OnboardingLoading() {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+                <p className="text-neutral-500">Loading...</p>
+            </div>
+        </div>
+    )
+}
+
+// Main page wrapper with Suspense
 export default function OnboardingPage() {
+    return (
+        <Suspense fallback={<OnboardingLoading />}>
+            <OnboardingContent />
+        </Suspense>
+    )
+}
+
+function OnboardingContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()

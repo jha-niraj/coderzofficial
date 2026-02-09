@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Coins, TrendingUp, ArrowRight, Gift, Clock, CheckCircle2, Sparkles } from "lucide-react"
-import { Button } from "@repo/ui/components/ui/button"
-import Link from "next/link"
+import { Coins, TrendingUp, Gift, Clock, CheckCircle2, Sparkles } from "lucide-react"
 import { getStudentUniversityDashboard } from "@/actions/university/university.action"
 
 interface CreditsData {

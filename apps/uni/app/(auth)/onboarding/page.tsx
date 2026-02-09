@@ -23,14 +23,19 @@ import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 import { completeOnboarding } from '@/actions/auth/onboarding.action'
 
+// University type enum values matching Prisma schema
 const UNIVERSITY_TYPES = [
-    "Public University",
-    "Private University",
-    "Deemed University",
-    "Autonomous College",
-    "Affiliated College",
-    "Technical Institute"
-]
+    { value: "PUBLIC", label: "Public University" },
+    { value: "PRIVATE", label: "Private University" },
+    { value: "DEEMED", label: "Deemed University" },
+    { value: "AUTONOMOUS", label: "Autonomous College" },
+    { value: "AFFILIATED", label: "Affiliated College" },
+    { value: "TECHNICAL_INSTITUTE", label: "Technical Institute" },
+    { value: "STATE", label: "State University" },
+    { value: "CENTRAL", label: "Central University" },
+    { value: "COMMUNITY_COLLEGE", label: "Community College" },
+    { value: "OTHER", label: "Other" },
+] as const;
 
 const STUDENT_COUNTS = [
     "Under 500 students",
@@ -321,7 +326,7 @@ export default function OnboardingPage() {
                                                         <SelectContent className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
                                                             {
                                                                 UNIVERSITY_TYPES.map((type) => (
-                                                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                                                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                                                                 ))
                                                             }
                                                         </SelectContent>

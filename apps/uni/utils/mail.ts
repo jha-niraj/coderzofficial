@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-type EmailType = "WELCOME" | "VERIFY_OTP" | "RESET_PASSWORD_OTP" | "COMPANY_WELCOME" | "MEMBER_INVITATION";
+type EmailType = "WELCOME" | "VERIFY_OTP" | "RESET_PASSWORD_OTP" | "COMPANY_WELCOME" | "MEMBER_INVITATION" | "TEACHER_CREDENTIALS";
 
 interface SendEmailProps {
     name?: string;
@@ -9,6 +9,9 @@ interface SendEmailProps {
     otp?: string;
     companyName?: string;
     inviteLink?: string;
+    temporaryPassword?: string;
+    universityName?: string;
+    roleName?: string;
 }
 
 // Lazy initialization to avoid "Missing API key" error during build
@@ -361,14 +364,158 @@ const companyWelcomeTemplate = (name: string, companyName: string) => `
         </div>
         <div class="footer">
             <p><strong>Coder'z Hiring Team</strong></p>
-            <p>Precision Engineering Talent Acquisition</p>
+            <p>Pr ecision Engineering Talent Acquisition</p>
         </div>
     </div>
 </body>
 </html>
 `;
 
-export async function sendEmail({ name, email, emailType, otp, companyName }: SendEmailProps) {
+const teacherCredentialsTemplate = (name: string, email: string, temporaryPassword: string, universityName: string, roleName: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your University Account - Coder'z</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #171717;
+            background-color: #fafafa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background: #171717;
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+        .logo { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .tagline { font-size: 14px; opacity: 0.7; font-family: monospace; }
+        .content { padding: 40px 30px; }
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #171717;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .message {
+            font-size: 16px;
+            color: #525252;
+            margin-bottom: 30px;
+            line-height: 1.7;
+        }
+        .credential-container {
+            background: #f5f5f5;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .credential-label {
+            font-size: 12px;
+            color: #737373;
+            font-family: monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .credential-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #171717;
+            font-family: monospace;
+            margin-bottom: 16px;
+        }
+        .role-badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning-text { font-size: 14px; color: #92400e; margin: 0; }
+        .cta-button {
+            display: inline-block;
+            background: #171717;
+            color: white;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .footer {
+            background: #fafafa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e5e5e5;
+        }
+        .footer p { font-size: 14px; color: #737373; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">CODER'Z UNIVERSITY</div>
+            <div class="tagline">// Your Account is Ready</div>
+        </div>
+        <div class="content">
+            <div class="title">Welcome to ${universityName}! 🎓</div>
+            <p class="message">
+                Hello ${name || 'there'},<br><br>
+                You have been invited to join <strong>${universityName}</strong> as a <span class="role-badge">${roleName}</span>. Your account has been created with the following credentials:
+            </p>
+            
+            <div class="credential-container">
+                <div class="credential-label">Email Address</div>
+                <div class="credential-value">${email}</div>
+                
+                <div class="credential-label">Temporary Password</div>
+                <div class="credential-value">${temporaryPassword}</div>
+            </div>
+            
+            <div class="warning">
+                <p class="warning-text">
+                    <strong>🔒 Security Notice:</strong> Please change your password immediately after your first login. Go to Profile → Security to update your password.
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.NEXT_PUBLIC_UNI_URL || 'https://uni.coderzai.xyz'}/signin" class="cta-button">Sign In to Your Account →</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p><strong>Coder'z University Platform</strong></p>
+            <p>Building Practical Skills for Tomorrow</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+export async function sendEmail({ name, email, emailType, otp, companyName, temporaryPassword, universityName, roleName }: SendEmailProps) {
     const resend = getResend();
 
     let subject = "";
@@ -387,12 +534,22 @@ export async function sendEmail({ name, email, emailType, otp, companyName }: Se
             subject = "Welcome to Coder'z Hiring!";
             html = companyWelcomeTemplate(name || "", companyName || "Your Company");
             break;
+        case "TEACHER_CREDENTIALS":
+            subject = `Your Account at ${universityName || "University"} - Coder'z`;
+            html = teacherCredentialsTemplate(
+                name || "",
+                email,
+                temporaryPassword || "",
+                universityName || "University",
+                roleName || "Faculty"
+            );
+            break;
         default:
             throw new Error(`Unknown email type: ${emailType}`);
     }
 
     const { data, error } = await resend.emails.send({
-        from: "Coder'z Hiring <noreply@coderzai.xyz>",
+        from: "Coder'z <noreply@coderzai.xyz>",
         to: email,
         subject,
         html,

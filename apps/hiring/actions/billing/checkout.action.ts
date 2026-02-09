@@ -135,7 +135,7 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
 
         return {
             success: true,
-            sessionUrl: checkoutSession.checkout_url,
+            sessionUrl: checkoutSession.checkout_url || undefined,
             sessionId: checkoutSession.session_id,
         }
     } catch (error) {
@@ -186,8 +186,7 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
         }
 
         // Verify with Dodo Payments using the helper
-        try {
-            const paymentDetails = await getDodoPayment(input.sessionId)
+        const paymentDetails = await getDodoPayment(input.sessionId)
 
         if (paymentDetails.status === "succeeded") {
             const metadata = payment.metadata as { plan?: HiringSubscriptionPlanType }

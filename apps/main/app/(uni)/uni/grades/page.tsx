@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Award, TrendingUp, BookOpen, School, ArrowRight } from "lucide-react"
+import { Award, TrendingUp, BookOpen, School } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import Link from "next/link"
 

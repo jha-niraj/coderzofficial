@@ -22,7 +22,7 @@ interface University {
     name: string
     website: string
     emailDomain: string
-    universityType: string
+    universityType: "PUBLIC" | "PRIVATE" | "DEEMED" | "AUTONOMOUS" | "STATE" | "CENTRAL" | "AFFILIATED" | "COMMUNITY_COLLEGE" | "TECHNICAL_INSTITUTE" | "OTHER"
     city: string
     state: string
     verificationStatus: "VERIFIED" | "PENDING" | "REJECTED"
@@ -33,11 +33,11 @@ interface University {
 }
 
 const mockUniversities: University[] = [
-    { id: "1", name: "Delhi Technical University", website: "dtu.ac.in", emailDomain: "dtu.ac.in", universityType: "Public", city: "Delhi", state: "Delhi", verificationStatus: "VERIFIED", departmentsCount: 12, studentsCount: 8500, facultyCount: 450, createdAt: "2024-10-15" },
-    { id: "2", name: "IIT Bombay", website: "iitb.ac.in", emailDomain: "iitb.ac.in", universityType: "Public", city: "Mumbai", state: "Maharashtra", verificationStatus: "VERIFIED", departmentsCount: 18, studentsCount: 12000, facultyCount: 680, createdAt: "2024-09-20" },
-    { id: "3", name: "BITS Pilani", website: "bits-pilani.ac.in", emailDomain: "pilani.bits-pilani.ac.in", universityType: "Deemed", city: "Pilani", state: "Rajasthan", verificationStatus: "VERIFIED", departmentsCount: 15, studentsCount: 9800, facultyCount: 520, createdAt: "2024-11-01" },
-    { id: "4", name: "VIT Vellore", website: "vit.ac.in", emailDomain: "vit.ac.in", universityType: "Private", city: "Vellore", state: "Tamil Nadu", verificationStatus: "PENDING", departmentsCount: 0, studentsCount: 0, facultyCount: 0, createdAt: "2024-12-28" },
-    { id: "5", name: "NIT Trichy", website: "nitt.edu", emailDomain: "nitt.edu", universityType: "Public", city: "Tiruchirappalli", state: "Tamil Nadu", verificationStatus: "VERIFIED", departmentsCount: 10, studentsCount: 6500, facultyCount: 340, createdAt: "2024-08-15" },
+    { id: "1", name: "Delhi Technical University", website: "dtu.ac.in", emailDomain: "dtu.ac.in", universityType: "PUBLIC", city: "Delhi", state: "Delhi", verificationStatus: "VERIFIED", departmentsCount: 12, studentsCount: 8500, facultyCount: 450, createdAt: "2024-10-15" },
+    { id: "2", name: "IIT Bombay", website: "iitb.ac.in", emailDomain: "iitb.ac.in", universityType: "PUBLIC", city: "Mumbai", state: "Maharashtra", verificationStatus: "VERIFIED", departmentsCount: 18, studentsCount: 12000, facultyCount: 680, createdAt: "2024-09-20" },
+    { id: "3", name: "BITS Pilani", website: "bits-pilani.ac.in", emailDomain: "pilani.bits-pilani.ac.in", universityType: "DEEMED", city: "Pilani", state: "Rajasthan", verificationStatus: "VERIFIED", departmentsCount: 15, studentsCount: 9800, facultyCount: 520, createdAt: "2024-11-01" },
+    { id: "4", name: "VIT Vellore", website: "vit.ac.in", emailDomain: "vit.ac.in", universityType: "PRIVATE", city: "Vellore", state: "Tamil Nadu", verificationStatus: "PENDING", departmentsCount: 0, studentsCount: 0, facultyCount: 0, createdAt: "2024-12-28" },
+    { id: "5", name: "NIT Trichy", website: "nitt.edu", emailDomain: "nitt.edu", universityType: "PUBLIC", city: "Tiruchirappalli", state: "Tamil Nadu", verificationStatus: "VERIFIED", departmentsCount: 10, studentsCount: 6500, facultyCount: 340, createdAt: "2024-08-15" },
 ]
 
 export default function UniUniversitiesPage() {

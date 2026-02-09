@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import {
     GraduationCap, Building, Search, AlertCircle, CheckCircle,
-    Clock, User, Hash, Loader2
+    Clock, Hash, Loader2
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
@@ -86,7 +86,7 @@ export default function UniVerifyPage() {
             } else {
                 setError("University not found. Please check the code and try again.")
             }
-        } catch (error) {
+        } catch {
             setError("Failed to search for university. Please try again.")
         } finally {
             setSearching(false)
@@ -121,7 +121,7 @@ export default function UniVerifyPage() {
             } else {
                 setError(response.message || "Failed to submit verification request")
             }
-        } catch (error) {
+        } catch {
             setError("Failed to submit verification request. Please try again.")
         } finally {
             setSubmitting(false)

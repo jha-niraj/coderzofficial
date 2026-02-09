@@ -18,6 +18,32 @@ import type {
 // ============================================
 
 /**
+ * Check if user needs to change their password (invited users with temporary password)
+ */
+export async function checkMustChangePassword() {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { success: false, mustChangePassword: false };
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { mustChangePassword: true },
+        });
+
+        return {
+            success: true,
+            mustChangePassword: user?.mustChangePassword || false,
+        };
+    } catch (error) {
+        console.error("Check must change password error:", error);
+        return { success: false, mustChangePassword: false };
+    }
+}
+
+/**
  * Get the current user's profile along with their university member info
  */
 export async function getUserProfile() {
@@ -303,10 +329,13 @@ export async function changePassword(payload: ChangePasswordPayload) {
         // Hash new password
         const hashedPassword = await bcrypt.hash(payload.newPassword, 12);
 
-        // Update password
+        // Update password and clear mustChangePassword flag
         await prisma.user.update({
             where: { id: session.user.id },
-            data: { hashedPassword },
+            data: { 
+                hashedPassword,
+                mustChangePassword: false, // Clear the flag after password change
+            },
         });
 
         return { success: true, message: "Password changed successfully" };

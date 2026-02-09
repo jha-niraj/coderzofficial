@@ -1,13 +1,20 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Code, FolderOpen, GitBranch, Plus, Clock, Users, Star, ArrowRight } from "lucide-react"
+import { Code, FolderOpen, GitBranch, Plus, Clock, Star, ArrowRight } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import Link from "next/link"
 
+interface Project {
+    id: string
+    name: string
+    language: string
+    lastEdited: string
+}
+
 export default function UniStudioPage() {
     // Placeholder - will be replaced with real project data
-    const projects: any[] = []
+    const projects: Project[] = []
 
     return (
         <div className="min-h-full p-6 lg:p-8">

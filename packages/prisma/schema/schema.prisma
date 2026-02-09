@@ -381,6 +381,7 @@ model User {
     university          String?
     semester            String?
     onboardingCompleted Boolean?         @default(false)
+    mustChangePassword  Boolean          @default(false) // For invited users with temporary password
     company             String?
     occupation          String?
     location            String?

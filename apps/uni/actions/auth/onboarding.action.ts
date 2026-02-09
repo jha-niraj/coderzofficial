@@ -2,11 +2,10 @@
 
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
+import { UniversityType } from "@repo/prisma/client";
 import type { 
-    UniversityMemberRole, 
-    UniversityMemberJobTitle,
-    UniversityPermission,
-    DEFAULT_HEAD_PERMISSIONS
+    UniversityMemberRole, UniversityMemberJobTitle,
+    UniversityPermission, DEFAULT_HEAD_PERMISSIONS
 } from "@/types";
 
 // ============================================
@@ -94,7 +93,7 @@ export async function completeUniversityOnboarding(data: UniversityOnboardingDat
                 slug,
                 website: data.website || null,
                 description: data.description || null,
-                universityType: data.universityType || null,
+                universityType: data.universityType as UniversityType | null ?? null,
                 affiliatedTo: data.affiliatedTo || null,
                 accreditation: data.accreditation || null,
                 establishedYear: data.establishedYear || null,

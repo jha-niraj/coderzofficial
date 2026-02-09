@@ -6,9 +6,17 @@ import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import Link from "next/link"
 
+interface Job {
+    id: string
+    title: string
+    company: string
+    location: string
+    postedAt: string
+}
+
 export default function UniJobsPage() {
     // Placeholder - will be replaced with real university jobs data
-    const jobs: any[] = []
+    const jobs: Job[] = []
 
     return (
         <div className="min-h-full p-6 lg:p-8">
@@ -93,7 +101,7 @@ export default function UniJobsPage() {
                     transition={{ delay: 0.2 }}
                     className="space-y-4"
                 >
-                    {jobs.map((job, index) => (
+                    {jobs.map((job) => (
                         <div
                             key={job.id}
                             className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 hover:border-violet-300 dark:hover:border-violet-700 transition-all cursor-pointer group"

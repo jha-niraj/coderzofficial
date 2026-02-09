@@ -267,7 +267,7 @@ export interface University {
     website: string | null
     logo: string | null
     emailDomain: string
-    universityType: string | null
+    universityType: "PUBLIC" | "PRIVATE" | "DEEMED" | "AUTONOMOUS" | "STATE" | "CENTRAL" | "AFFILIATED" | "COMMUNITY_COLLEGE" | "TECHNICAL_INSTITUTE" | "OTHER" | null
     verificationStatus: "PENDING" | "VERIFIED" | "REJECTED" | "SUSPENDED"
     city: string | null
     state: string | null

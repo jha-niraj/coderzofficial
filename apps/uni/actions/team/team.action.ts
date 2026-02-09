@@ -2,6 +2,8 @@
 
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
+import bcrypt from "bcryptjs";
+import { sendEmail } from "@/utils/mail";
 import type {
     UniversityPermission, TeamMember, UpdateTeamMemberPayload, InviteTeamMemberPayload,
     UniversityMemberRole, UniversityMemberJobTitle, MemberInviteStatus, Department
@@ -568,5 +570,204 @@ export async function getPendingInvitations() {
     } catch (error) {
         console.error("Get invitations error:", error);
         return { success: false, error: "Failed to fetch invitations" };
+    }
+}
+
+// ============================================
+// TYPES FOR DIRECT TEACHER CREATION
+// ============================================
+
+interface InviteTeacherWithCredentialsPayload {
+    email: string;
+    name: string;
+    role: UniversityMemberRole;
+    jobTitle: UniversityMemberJobTitle;
+    departmentId?: string;
+    permissions?: UniversityPermission[];
+}
+
+// Default permissions for FACULTY role
+const DEFAULT_FACULTY_PERMISSIONS: UniversityPermission[] = [
+    "view_classes",
+    "create_assignments",
+    "edit_assignments",
+    "grade_submissions",
+    "view_students",
+];
+
+// Default permissions for DEPARTMENT_HEAD role
+const DEFAULT_DEPARTMENT_HEAD_PERMISSIONS: UniversityPermission[] = [
+    "view_classes",
+    "create_classes",
+    "edit_classes",
+    "create_assignments",
+    "edit_assignments",
+    "delete_assignments",
+    "grade_submissions",
+    "view_students",
+    "manage_departments",
+];
+
+// Role display mapping
+const ROLE_LABELS: Record<UniversityMemberRole, string> = {
+    HEAD: "University Admin",
+    DEPARTMENT_HEAD: "Department Head",
+    PLACEMENT_OFFICER: "Placement Officer",
+    FINANCE_OFFICER: "Finance Officer",
+    FACULTY: "Faculty",
+    TEACHING_ASSISTANT: "Teaching Assistant",
+};
+
+/**
+ * Generate a random temporary password
+ */
+function generateTemporaryPassword(): string {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
+/**
+ * Invite a teacher/faculty member with temporary credentials
+ * This creates:
+ * 1. A User account with role "UNI" and hashed temporary password
+ * 2. A UniversityMember linking the user to the university
+ * 3. Sends an email with the temporary credentials
+ */
+export async function inviteTeacherWithCredentials(payload: InviteTeacherWithCredentialsPayload) {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        // Check if user is HEAD
+        const currentMember = await prisma.universityMember.findFirst({
+            where: { userId: session.user.id },
+            include: { university: { select: { id: true, name: true } } },
+        });
+
+        if (!currentMember) {
+            return { success: false, error: "Not a member of any university" };
+        }
+
+        if (currentMember.role !== "HEAD") {
+            return { success: false, error: "Only HEAD can invite team members" };
+        }
+
+        // Check if a user already exists with this email
+        const existingUser = await prisma.user.findUnique({
+            where: { email: payload.email },
+        });
+
+        if (existingUser) {
+            // Check if they're already a member of this university
+            const existingMember = await prisma.universityMember.findFirst({
+                where: {
+                    userId: existingUser.id,
+                    universityId: currentMember.universityId,
+                },
+            });
+
+            if (existingMember) {
+                return { success: false, error: "This user is already a team member of this university" };
+            }
+
+            return { success: false, error: "A user with this email already exists. They can request to join your university through the normal flow." };
+        }
+
+        // Check if email is already in university members
+        const existingMemberEmail = await prisma.universityMember.findFirst({
+            where: {
+                universityId: currentMember.universityId,
+                email: payload.email,
+            },
+        });
+
+        if (existingMemberEmail) {
+            return { success: false, error: "This email is already associated with a team member" };
+        }
+
+        // Generate temporary password
+        const temporaryPassword = generateTemporaryPassword();
+        const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+
+        // Determine permissions based on role if not provided
+        let permissions = payload.permissions;
+        if (!permissions || permissions.length === 0) {
+            if (payload.role === "FACULTY" || payload.role === "TEACHING_ASSISTANT") {
+                permissions = DEFAULT_FACULTY_PERMISSIONS;
+            } else if (payload.role === "DEPARTMENT_HEAD") {
+                permissions = DEFAULT_DEPARTMENT_HEAD_PERMISSIONS;
+            } else {
+                permissions = DEFAULT_FACULTY_PERMISSIONS;
+            }
+        }
+
+        // Create user and university member in a transaction
+        const result = await prisma.$transaction(async (tx) => {
+            // Create the user with UNI role and temporary password
+            const newUser = await tx.user.create({
+                data: {
+                    email: payload.email,
+                    name: payload.name,
+                    role: "UNI",
+                    hashedPassword: hashedPassword,
+                    emailVerified: true, // Mark email as verified since admin created the account
+                    onboardingCompleted: true, // Skip onboarding for invited users
+                    mustChangePassword: true, // Flag to force password change on first login
+                },
+            });
+
+            // Create the university member
+            const newMember = await tx.universityMember.create({
+                data: {
+                    userId: newUser.id,
+                    universityId: currentMember.universityId,
+                    email: payload.email,
+                    displayName: payload.name,
+                    role: payload.role,
+                    jobTitle: payload.jobTitle,
+                    departmentId: payload.departmentId || null,
+                    inviteStatus: "ACCEPTED",
+                    acceptedAt: new Date(),
+                    permissions: JSON.stringify(permissions),
+                    isActive: true,
+                    invitedById: currentMember.id,
+                },
+            });
+
+            return { user: newUser, member: newMember };
+        });
+
+        // Send email with credentials
+        try {
+            await sendEmail({
+                email: payload.email,
+                name: payload.name,
+                emailType: "TEACHER_CREDENTIALS",
+                temporaryPassword: temporaryPassword,
+                universityName: currentMember.university.name,
+                roleName: ROLE_LABELS[payload.role] || payload.role,
+            });
+        } catch (emailError) {
+            console.error("Failed to send credentials email:", emailError);
+            // Don't fail the whole operation if email fails, but log it
+            // The admin can manually share the credentials if needed
+        }
+
+        return {
+            success: true,
+            message: "Teacher account created and credentials sent",
+            memberId: result.member.id,
+            temporaryPassword: temporaryPassword, // Return to admin in case email fails
+        };
+    } catch (error) {
+        console.error("Invite teacher with credentials error:", error);
+        return { success: false, error: "Failed to create teacher account" };
     }
 }

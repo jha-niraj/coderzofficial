@@ -176,5 +176,20 @@ export {
     TemplateStyle,
     TemplateCategory,
 
+    // University - Academia Enums and Types:
+    UniversityType,
+    UniversityMemberRole,
+    UniversityMemberJobTitle,
+    UniversityVerificationStatus,
+    UniversityMemberInviteStatus,
+    StudentVerificationStatus,
+    UniversityAssignmentType,
+    UniversityAssignmentStatus,
+    SubmissionGradingStatus,
+    SemesterType,
+    UniversityJobVisibility,
+    UniversitySubscriptionPlan,
+    UniversitySubscriptionStatus,
+
     
 } from "@prisma/client";

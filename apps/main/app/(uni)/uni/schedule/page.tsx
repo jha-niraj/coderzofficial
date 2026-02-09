@@ -1,7 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Calendar, Clock, MapPin, Users, ChevronLeft, ChevronRight, BookOpen, School } from "lucide-react"
+import {
+    Calendar, ChevronLeft, ChevronRight, School
+} from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { useState } from "react"
 
@@ -16,7 +18,7 @@ export default function UniSchedulePage() {
         const today = new Date()
         const startOfWeek = new Date(today)
         startOfWeek.setDate(today.getDate() - today.getDay() + 1 + currentWeek * 7)
-        
+
         return weekDays.map((_, index) => {
             const date = new Date(startOfWeek)
             date.setDate(startOfWeek.getDate() + index)
@@ -28,7 +30,6 @@ export default function UniSchedulePage() {
 
     return (
         <div className="min-h-full p-6 lg:p-8">
-            {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -76,65 +77,63 @@ export default function UniSchedulePage() {
                     </div>
                 </div>
             </motion.div>
-
-            {/* Week Header */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden"
             >
-                {/* Days Header */}
                 <div className="grid grid-cols-8 border-b border-neutral-200 dark:border-neutral-800">
                     <div className="p-4 text-center border-r border-neutral-200 dark:border-neutral-800">
                         <span className="text-xs text-neutral-500">Time</span>
                     </div>
-                    {weekDates.map((date, index) => {
-                        const isToday = date.toDateString() === new Date().toDateString()
-                        return (
-                            <div
-                                key={index}
-                                className={`p-4 text-center border-r border-neutral-200 dark:border-neutral-800 last:border-r-0 ${
-                                    isToday ? "bg-violet-50 dark:bg-violet-900/20" : ""
-                                }`}
-                            >
-                                <p className={`text-xs font-medium ${isToday ? "text-violet-600" : "text-neutral-500"}`}>
-                                    {weekDays[index]}
-                                </p>
-                                <p className={`text-lg font-bold ${isToday ? "text-violet-600" : "text-neutral-900 dark:text-white"}`}>
-                                    {date.getDate()}
-                                </p>
-                            </div>
-                        )
-                    })}
-                </div>
-
-                {/* Time Slots */}
-                <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                    {timeSlots.map((time, timeIndex) => (
-                        <div key={timeIndex} className="grid grid-cols-8">
-                            <div className="p-4 text-center border-r border-neutral-200 dark:border-neutral-800 flex items-center justify-center">
-                                <span className="text-xs text-neutral-500">{time}</span>
-                            </div>
-                            {weekDays.map((_, dayIndex) => {
-                                const isToday = weekDates[dayIndex].toDateString() === new Date().toDateString()
-                                return (
-                                    <div
-                                        key={dayIndex}
-                                        className={`min-h-[60px] p-2 border-r border-neutral-200 dark:border-neutral-800 last:border-r-0 ${
-                                            isToday ? "bg-violet-50/50 dark:bg-violet-900/10" : ""
+                    {
+                        weekDates.map((date, index) => {
+                            const isToday = date.toDateString() === new Date().toDateString()
+                            return (
+                                <div
+                                    key={index}
+                                    className={`p-4 text-center border-r border-neutral-200 dark:border-neutral-800 last:border-r-0 ${isToday ? "bg-violet-50 dark:bg-violet-900/20" : ""
                                         }`}
-                                    >
-                                        {/* Placeholder for schedule items */}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    ))}
+                                >
+                                    <p className={`text-xs font-medium ${isToday ? "text-violet-600" : "text-neutral-500"}`}>
+                                        {weekDays[index]}
+                                    </p>
+                                    <p className={`text-lg font-bold ${isToday ? "text-violet-600" : "text-neutral-900 dark:text-white"}`}>
+                                        {date.getDate()}
+                                    </p>
+                                </div>
+                            )
+                        })
+                    }
+                </div>
+                <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                    {
+                        timeSlots.map((time, timeIndex) => (
+                            <div key={timeIndex} className="grid grid-cols-8">
+                                <div className="p-4 text-center border-r border-neutral-200 dark:border-neutral-800 flex items-center justify-center">
+                                    <span className="text-xs text-neutral-500">{time}</span>
+                                </div>
+                                {
+                                    weekDays.map((_, dayIndex) => {
+                                        const dateForDay = weekDates[dayIndex]
+                                        const isToday = dateForDay ? dateForDay.toDateString() === new Date().toDateString() : false
+                                        return (
+                                            <div
+                                                key={dayIndex}
+                                                className={`min-h-[60px] p-2 border-r border-neutral-200 dark:border-neutral-800 last:border-r-0 ${isToday ? "bg-violet-50/50 dark:bg-violet-900/10" : ""
+                                                    }`}
+                                            >
+                                                {/* Placeholder for schedule items */}
+                                            </div>
+                                        )
+                                    })
+                                }
+                            </div>
+                        ))
+                    }
                 </div>
             </motion.div>
-
-            {/* No Classes Message */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -149,8 +148,6 @@ export default function UniSchedulePage() {
                     Your class schedule will appear here once your university sets up the timetable.
                 </p>
             </motion.div>
-
-            {/* Legend */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

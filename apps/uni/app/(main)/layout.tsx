@@ -4,6 +4,7 @@ import {
     SidebarProvider, useSidebar
 } from "@/components/navigation/sidebarprovider"
 import { UniversitySidebar } from "@/components/navigation/sidebar"
+import { PasswordChangeBanner } from "@/components/password-change-banner"
 import { cn } from "@repo/ui/lib/utils"
 import { useSession } from "@repo/auth/client"
 import { useRouter } from "next/navigation"
@@ -56,13 +57,14 @@ function UniversityLayoutContent({ children }: { children: React.ReactNode }) {
             <UniversitySidebar />
             <main
                 className={cn(
-                    "h-screen transition-all duration-300",
+                    "h-screen flex flex-col transition-all duration-300",
                     "lg:ml-64 p-3",
                     isCollapsed && "lg:ml-[90px]"
                 )}
             >
-                <div className="h-full bg-white dark:bg-neutral-950 lg:rounded-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden">
-                    <ScrollArea className="h-full w-full">
+                <div className="flex-1 bg-white dark:bg-neutral-950 lg:rounded-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col">
+                    <PasswordChangeBanner />
+                    <ScrollArea className="flex-1 w-full">
                         {children}
                     </ScrollArea>
                 </div>

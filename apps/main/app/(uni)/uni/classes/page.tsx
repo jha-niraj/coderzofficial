@@ -15,9 +15,8 @@ import {
 interface ClassData {
     id: string
     name: string
-    code: string
-    semester: number | null
-    year: number | null
+    code: string | null
+    semester: string | null
     department?: {
         id: string
         name: string
@@ -53,7 +52,7 @@ export default function UniClassesPage() {
     const filteredClasses = classes.filter(
         (cls) =>
             cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cls.code.toLowerCase().includes(searchQuery.toLowerCase())
+            (cls.code && cls.code.toLowerCase().includes(searchQuery.toLowerCase()))
     )
 
     if (loading) {

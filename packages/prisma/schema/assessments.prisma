@@ -469,6 +469,23 @@ model UserPracticeSet {
     
     // Status
     status          UserContentStatus   @default(GENERATING)
+
+    // University Integration - for teacher-assigned assessments/quizzes
+    isUniversityAssessment Boolean @default(false) // If created by a university teacher
+    universityId           String? // Link to University model
+    teacherMemberId        String? // Link to UniversityMember (teacher who created)
+    classIds               String[] // Array of class IDs this assessment is assigned to
+    
+    // University Assignment Config
+    assignmentDeadline    DateTime? // Optional deadline for university assignments
+    assignmentCredits     Int?      // Credits required for this assignment
+    assignmentInstructions String?  @db.Text // Additional instructions from teacher
+
+    // Live Session Config (for in-class live quizzes)
+    isLiveSession        Boolean   @default(false) // If this is a live in-class session
+    liveSessionStartedAt DateTime? // When the live session started
+    liveSessionEndedAt   DateTime? // When the live session ended
+    liveSessionActive    Boolean   @default(false) // Currently active live session
     
     createdAt       DateTime            @default(now())
     updatedAt       DateTime            @updatedAt
@@ -484,6 +501,9 @@ model UserPracticeSet {
     @@index([isPublic])
     @@index([status])
     @@index([createdAt])
+    @@index([universityId])
+    @@index([isUniversityAssessment])
+    @@index([isLiveSession])
 }
 
 // Questions for user-generated practice set (AI generated)

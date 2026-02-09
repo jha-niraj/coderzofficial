@@ -1,20 +1,19 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut, useSession } from "@repo/auth/client"
 import Link from "next/link"
 import Image from "next/image"
 import toast from "@repo/ui/components/ui/sonner"
 import {
-    LogOut, User, ChevronLeft, ChevronRight, ChevronDown,
-    Loader, Sun, Moon, AlignLeft, ArrowLeft, GraduationCap, Coins
+    LogOut, User, ChevronLeft, ChevronRight,
+    Sun, Moon, ArrowLeft, GraduationCap, Coins
 } from "lucide-react"
 import {
     TooltipProvider, Tooltip, TooltipTrigger, TooltipContent
 } from "@repo/ui/components/ui/tooltip"
 import { cn } from "@repo/ui/lib/utils"
-import { Button } from "@repo/ui/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { useTheme } from "@repo/ui/components/themeprovider"
@@ -51,7 +50,7 @@ function UniSidebarContent({ universityName, credits }: UniSidebarProps) {
             await signOut()
             toast.success("Logged out successfully")
             router.push("/")
-        } catch (error) {
+        } catch {
             toast.error("Failed to logout")
         }
     }
@@ -61,7 +60,8 @@ function UniSidebarContent({ universityName, credits }: UniSidebarProps) {
         return pathname.startsWith(`/${path}`) && path !== "uni"
     }
 
-    const renderNavItem = (item: NavigationItem, isSecondary = false) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const renderNavItem = (item: NavigationItem, _isSecondary = false) => {
         const Icon = item.icon
         const active = isActive(item.path)
 

@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion"
 import { Trophy, Medal, Star, TrendingUp, Users, Crown } from "lucide-react"
-import { Button } from "@repo/ui/components/ui/button"
 
 export default function UniLeaderboardPage() {
     // Placeholder data - will be replaced with real data later

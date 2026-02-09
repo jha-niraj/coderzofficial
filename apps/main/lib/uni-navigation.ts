@@ -1,7 +1,6 @@
 import {
-    GraduationCap, Home, BookOpen, School, Award, ClipboardCheck,
-    Briefcase, CreditCard, User, Settings, HelpCircle, FileText,
-    Video, Brain, Trophy, Calendar, Bell
+    GraduationCap, Home, School, Award, ClipboardCheck,
+    Briefcase, CreditCard, Video, Brain, Trophy, Calendar, Bell
 } from "lucide-react"
 
 export type LucideIcon = typeof GraduationCap

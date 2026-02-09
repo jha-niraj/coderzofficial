@@ -44,6 +44,17 @@ model MockInterviewVoice {
     // Predefined Mock Reference (for linking to data file)
     predefinedId String? @unique // matches ID from predefined-mocks.ts
 
+    // University Integration - for teacher-assigned mock interviews
+    isUniversityMock Boolean @default(false) // If created by a university teacher
+    universityId     String? // Link to University model
+    teacherMemberId  String? // Link to UniversityMember (teacher who created)
+    classIds         String[] // Array of class IDs this mock is assigned to
+    
+    // University Assignment Config
+    assignmentDeadline    DateTime? // Optional deadline for university assignments
+    assignmentCredits     Int?      // Credits required for this assignment
+    assignmentInstructions String?  @db.Text // Additional instructions from teacher
+
     // Relations
     sessions MockVoiceSession[]
     ratings  MockVoiceRating[]
@@ -57,6 +68,8 @@ model MockInterviewVoice {
     @@index([isPredefined])
     @@index([createdById])
     @@index([popularity])
+    @@index([universityId])
+    @@index([isUniversityMock])
 }
 
 model MockVoiceSession {

@@ -192,6 +192,17 @@ model ProjectV2 {
     sprintSuggestions ProjectV2SprintSuggestion[] @relation("SprintSuggestions")
     invitations       ProjectV2Invitation[]       @relation("ProjectInvitations")
 
+    // University Integration - for teacher-assigned projects
+    isUniversityProject Boolean @default(false) // If created by a university teacher
+    universityId        String? // Link to University model
+    teacherMemberId     String? // Link to UniversityMember (teacher who created)
+    classIds            String[] // Array of class IDs this project is assigned to
+    
+    // University Assignment Config
+    assignmentDeadline    DateTime? // Optional deadline for university assignments
+    assignmentCredits     Int?      // Credits required for this assignment
+    assignmentInstructions String?  @db.Text // Additional instructions from teacher
+
     @@index([createdBy])
     @@index([visibility])
     @@index([difficulty])
@@ -200,6 +211,8 @@ model ProjectV2 {
     @@index([slug])
     @@index([spaceId])
     @@index([forkedFromId])
+    @@index([universityId])
+    @@index([isUniversityProject])
 }
 
 model ProjectV2Page {

@@ -2,8 +2,7 @@ import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Users, Trophy, Video, Brain, Cable, LayoutDashboard,
     Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon,
-    Building2, Search, Heart, ClipboardCheck, GraduationCap, School, BookOpen,
-    Coins, Award
+    GraduationCap
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard

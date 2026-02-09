@@ -24,6 +24,7 @@ import {
 import type {
     UserProfile, UniversityDetails, UniversityMemberRole, UniversityMemberJobTitle,
     UniversityPermission, UpdateUniversityPayload,
+    UniversityTypeEnum,
 } from "@/types"
 
 // Job title display mapping for university members
@@ -144,7 +145,7 @@ export default function ProfilePage() {
                         description: universityRes.data.description || "",
                         email: universityRes.data.email || "",
                         phone: universityRes.data.phone || "",
-                        universityType: universityRes.data.universityType || "",
+                        universityType: universityRes.data.universityType as UniversityTypeEnum,
                         affiliatedTo: universityRes.data.affiliatedTo || "",
                         accreditation: universityRes.data.accreditation || "",
                         address: universityRes.data.address || "",
@@ -656,7 +657,7 @@ export default function ProfilePage() {
                                                 <Label className="text-sm font-medium">University Type</Label>
                                                 <Input
                                                     value={universityForm.universityType || ""}
-                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, universityType: e.target.value }))}
+                                                    onChange={(e) => setUniversityForm(prev => ({ ...prev, universityType: e.target.value as UpdateUniversityPayload["universityType"] }))}
                                                     placeholder="Public, Private, Deemed..."
                                                     className="mt-2 rounded-xl"
                                                 />

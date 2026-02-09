@@ -4,7 +4,7 @@ import {
 } from "lucide-react"
 import { browseJobs, getRecommendedJobs } from "@/actions/jobs"
 import { getFeaturedCompanies } from "@/actions/companies"
-import { JobsContent } from "@/app/(main)/jobs/jobs-content"
+import { JobsContent } from "./jobs-content"
 
 export const metadata = {
     title: "Jobs | CodeDot.AI",

@@ -1,6 +1,6 @@
 import {
     Briefcase, Search, Heart, ClipboardCheck, Building2, Star,
-    BookmarkCheck, TrendingUp, Bell, FileText
+    TrendingUp, Bell, FileText
 } from "lucide-react"
 
 export type LucideIcon = typeof Briefcase

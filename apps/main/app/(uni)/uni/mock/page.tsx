@@ -1,9 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Users, Video, Calendar, Clock, Star, ArrowRight, Play, Plus } from "lucide-react"
+import { Users, Video, Star, ArrowRight, Play, Plus } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
-import Link from "next/link"
 
 export default function UniMockPage() {
     return (

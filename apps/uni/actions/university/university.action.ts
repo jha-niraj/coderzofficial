@@ -4,7 +4,8 @@ import { prisma } from "@repo/prisma"
 import { auth } from "@repo/auth"
 import { revalidatePath } from "next/cache"
 import type { 
-    UniversityVerificationStatus 
+    UniversityVerificationStatus,
+    UniversityType
 } from "@repo/prisma/client"
 
 // ============================================
@@ -136,7 +137,7 @@ export async function updateUniversityDetails(data: {
     description?: string
     email?: string
     phone?: string
-    universityType?: string
+    universityType?: UniversityType
     affiliatedTo?: string
     accreditation?: string
     establishedYear?: number
