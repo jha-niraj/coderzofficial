@@ -467,29 +467,18 @@ export async function getOwnProfile() {
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             include: {
-                userProfile: {
+                userProfile: true,
+                portfolioProjects: {
                     include: {
-                        pinnedProjects: {
-                            include: {
-                                project: {
-                                    include: {
-                                        userProgress: {
-                                            where: { userId: session.user.id },
-                                        },
-                                    },
-                                },
-                            },
-                            orderBy: { order: "asc" },
-                            take: 6,
-                        },
+                        projectLinks: true,
                     },
+                    orderBy: { startDate: "desc" },
                 },
                 skills: {
                     include: {
                         endorsements: true,
                     },
                 },
-                projects: true,
                 recentActivity: {
                     orderBy: { createdAt: "desc" },
                     take: 20,
@@ -528,23 +517,18 @@ export async function getPublicProfile(username: string) {
         const profileOwner = await prisma.user.findUnique({
             where: { username },
             include: {
-                userProfile: {
+                userProfile: true,
+                portfolioProjects: {
                     include: {
-                        pinnedProjects: {
-                            include: {
-                                project: true,
-                            },
-                            orderBy: { order: "asc" },
-                            take: 6,
-                        },
+                        projectLinks: true,
                     },
+                    orderBy: { startDate: "desc" },
                 },
                 skills: {
                     include: {
                         endorsements: true,
                     },
                 },
-                projects: true,
                 recentActivity: {
                     orderBy: { createdAt: "desc" },
                     take: 20,
@@ -574,15 +558,6 @@ export async function getPublicProfile(username: string) {
             profile = await prisma.userProfile.create({
                 data: {
                     userId: profileOwner.id,
-                },
-                include: {
-                    pinnedProjects: {
-                        include: {
-                            project: true,
-                        },
-                        orderBy: { order: "asc" },
-                        take: 6,
-                    },
                 },
             });
         }
@@ -787,163 +762,6 @@ export async function updatePrivacySettings(data: {
 }
 
 // ============================================
-// PINNED PROJECTS
-// ============================================
-
-/**
- * Pin a project to profile
- */
-export async function pinProject(projectId: string) {
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Not authenticated" };
-        }
-
-        // Get or create profile
-        let profile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
-            include: {
-                pinnedProjects: true,
-            },
-        });
-
-        if (!profile) {
-            profile = await prisma.userProfile.create({
-                data: {
-                    userId: session.user.id,
-                },
-                include: {
-                    pinnedProjects: true,
-                },
-            });
-        }
-
-        // Check if already pinned
-        const alreadyPinned = profile.pinnedProjects.some(
-            (p) => p.projectId === projectId
-        );
-        if (alreadyPinned) {
-            return { success: false, error: "Project already pinned" };
-        }
-
-        // Max 6 pinned projects
-        if (profile.pinnedProjects.length >= 6) {
-            return {
-                success: false,
-                error: "Maximum 6 projects can be pinned. Unpin one first.",
-            };
-        }
-
-        // Get next order
-        const nextOrder = profile.pinnedProjects.length + 1;
-
-        // Pin the project
-        await prisma.pinnedProject.create({
-            data: {
-                profileId: profile.id,
-                projectId,
-                order: nextOrder,
-            },
-        });
-
-        revalidatePath("/profile");
-        return { success: true };
-    } catch (error) {
-        console.error("Error pinning project:", error);
-        return { success: false, error: "Failed to pin project" };
-    }
-}
-
-/**
- * Unpin a project from profile
- */
-export async function unpinProject(projectId: string) {
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Not authenticated" };
-        }
-
-        const profile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
-        });
-
-        if (!profile) {
-            return { success: false, error: "Profile not found" };
-        }
-
-        // Find and delete the pinned project
-        await prisma.pinnedProject.delete({
-            where: {
-                profileId_projectId: {
-                    profileId: profile.id,
-                    projectId,
-                },
-            },
-        });
-
-        // Reorder remaining projects
-        const remainingProjects = await prisma.pinnedProject.findMany({
-            where: { profileId: profile.id },
-            orderBy: { order: "asc" },
-        });
-
-        for (let i = 0; i < remainingProjects.length; i++) {
-            await prisma.pinnedProject.update({
-                where: { id: remainingProjects[i]?.id },
-                data: { order: i + 1 },
-            });
-        }
-
-        revalidatePath("/profile");
-        return { success: true };
-    } catch (error) {
-        console.error("Error unpinning project:", error);
-        return { success: false, error: "Failed to unpin project" };
-    }
-}
-
-/**
- * Reorder pinned projects
- */
-export async function reorderPinnedProjects(projectIds: string[]) {
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Not authenticated" };
-        }
-
-        const profile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
-        });
-
-        if (!profile) {
-            return { success: false, error: "Profile not found" };
-        }
-
-        // Update order for each project
-        for (let i = 0; i < projectIds.length; i++) {
-            await prisma.pinnedProject.update({
-                where: {
-                    profileId_projectId: {
-                        profileId: profile.id,
-                        projectId: projectIds[i]!,
-                    },
-                },
-                data: { order: i + 1 },
-            });
-        }
-
-        revalidatePath("/profile");
-        return { success: true };
-    } catch (error) {
-        console.error("Error reordering pinned projects:", error);
-        return { success: false, error: "Failed to reorder projects" };
-    }
-}
-
-// ============================================
 // SKILL ENDORSEMENTS
 // ============================================
 
@@ -1125,7 +943,7 @@ export async function calculateNewProfileCompletion(userId: string) {
                 skills: true,
                 experiences: true,
                 certifications: true,
-                projects: true,
+                portfolioProjects: true,
                 socialLinks: true,
             },
         });
@@ -1166,8 +984,8 @@ export async function calculateNewProfileCompletion(userId: string) {
         if (user.certifications.length > 0) score += 5;
 
         // Projects (10 points)
-        if (user.projects.length > 0) score += 5;
-        if (user.projects.length >= 3) score += 5;
+        if (user.portfolioProjects.length > 0) score += 5;
+        if (user.portfolioProjects.length >= 3) score += 5;
 
         // Social & Contact (5 points)
         if (user.socialLinks && user.socialLinks.length > 0) score += 3;
@@ -1196,18 +1014,31 @@ export async function getProfileByUsername(username: string) {
         const session = await auth();
         const viewerId = session?.user?.id;
 
+        // First check if it's own profile
+        const targetUser = await prisma.user.findUnique({
+            where: { username },
+            select: { id: true },
+        });
+
+        if (!targetUser) {
+            return { success: false, error: "User not found" };
+        }
+
+        const isOwnProfile = viewerId === targetUser.id;
+
         const user = await prisma.user.findUnique({
             where: { username },
             include: {
-                userProfile: {
+                userProfile: true,
+                portfolioProjects: {
+                    // If own profile, fetch all; otherwise only PUBLIC
+                    where: isOwnProfile ? {} : { visibility: "PUBLIC" },
                     include: {
-                        pinnedProjects: {
-                            include: {
-                                project: true,
-                            },
-                            orderBy: { order: "asc" },
-                        },
+                        projectLinks: true,
+                        projectMedia: true,
                     },
+                    orderBy: { startDate: "desc" },
+                    take: 20,
                 },
                 skills: {
                     include: {
@@ -1234,8 +1065,6 @@ export async function getProfileByUsername(username: string) {
         if (!user) {
             return { success: false, error: "User not found" };
         }
-
-        const isOwnProfile = viewerId === user.id;
 
         // Check if viewer is following the user
         let isFollowing = false;
@@ -1289,7 +1118,7 @@ export async function getUserProfileStats(userId: string) {
             followersCount,
             followingCount,
         ] = await Promise.all([
-            prisma.projects.count({ where: { userId } }),
+            prisma.portfolioProject.count({ where: { userId } }),
             prisma.skills.count({ where: { userId } }),
             prisma.achievements.count({ where: { userId } }),
             prisma.workExperience.count({ where: { userId } }),

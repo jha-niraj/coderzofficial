@@ -8,10 +8,23 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Progress } from "@repo/ui/components/ui/progress";
 import {
-	FolderKanban, Star, ArrowRight, Plus, Pin, Activity, Trophy, 
-	TrendingUp
+	FolderKanban, ArrowRight, Activity, Trophy, TrendingUp, 
+	Globe, CheckCircle2, Clock3, Star
 } from "lucide-react";
 import Link from "next/link";
+
+interface PortfolioProject {
+	id: string;
+	projectName: string;
+	projectType: string;
+	description: string | null;
+	status: string;
+	visibility: string;
+	technologies: string[];
+	startDate: Date;
+	endDate: Date | null;
+	thumbnailUrl: string | null;
+}
 
 interface OverviewTabProps {
 	user: {
@@ -21,20 +34,7 @@ interface OverviewTabProps {
 		currentLevel: number;
 		currentXp: number;
 		totalXp: number;
-		userProfile?: {
-			pinnedProjects: Array<{
-				id: string;
-				order: number;
-				project: {
-					id: string;
-					name: string;
-					description: string;
-					category: string;
-					difficulty: string;
-					tags: string[];
-				};
-			}>;
-		} | null;
+		portfolioProjects?: PortfolioProject[];
 		recentActivity: Array<{
 			id: string;
 			activityType: string | null;
@@ -55,7 +55,6 @@ interface OverviewTabProps {
 		xp: number;
 	};
 	isOwnProfile: boolean;
-	onPinProject?: () => void;
 }
 
 // Activity type icons and colors
@@ -73,9 +72,17 @@ export function OverviewTab({
 	user,
 	stats,
 	isOwnProfile,
-	onPinProject,
 }: OverviewTabProps) {
-	const pinnedProjects = user.userProfile?.pinnedProjects || [];
+	// Get featured projects (public, completed first, max 6)
+	const featuredProjects = (user.portfolioProjects || [])
+		.filter(p => p.visibility === "PUBLIC" || isOwnProfile)
+		.sort((a, b) => {
+			if (a.status === "COMPLETED" && b.status !== "COMPLETED") return -1;
+			if (a.status !== "COMPLETED" && b.status === "COMPLETED") return 1;
+			return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+		})
+		.slice(0, 6);
+
 	const recentActivity = user.recentActivity || [];
 	const recentAchievements = user.achievements?.slice(0, 3) || [];
 
@@ -131,62 +138,84 @@ export function OverviewTab({
 					<CardHeader className="pb-2">
 						<div className="flex items-center justify-between">
 							<CardTitle className="text-lg flex items-center gap-2">
-								<Pin className="w-5 h-5 text-primary" />
-								Pinned Projects
+								<FolderKanban className="w-5 h-5 text-primary" />
+								Featured Projects
 							</CardTitle>
 							{
-								isOwnProfile && pinnedProjects.length < 6 && (
-									<Button variant="ghost" size="sm" onClick={onPinProject}>
-										<Plus className="w-4 h-4 mr-1" />
-										Add
-									</Button>
+								stats.projectsCount > featuredProjects.length && (
+									<Link href={isOwnProfile ? "/profile?tab=projects" : "?tab=projects"}>
+										<Button variant="ghost" size="sm">
+											View All
+											<ArrowRight className="w-4 h-4 ml-1" />
+										</Button>
+									</Link>
 								)
 							}
 						</div>
 					</CardHeader>
 					<CardContent>
 						{
-							pinnedProjects.length > 0 ? (
+							featuredProjects.length > 0 ? (
 								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 									{
-										pinnedProjects.map((pinned, index) => (
+										featuredProjects.map((project, index) => (
 											<motion.div
-												key={pinned.id}
+												key={project.id}
 												initial={{ opacity: 0, scale: 0.95 }}
 												animate={{ opacity: 1, scale: 1 }}
 												transition={{ delay: index * 0.05 }}
 											>
-												<Link href={`/projects/${pinned.project.id}`}>
-													<Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
-														<CardContent className="p-4">
-															<div className="flex items-start justify-between mb-2">
-																<FolderKanban className="w-5 h-5 text-primary flex-shrink-0" />
-																<Badge variant="secondary" className="text-xs">
-																	{pinned.project.difficulty}
-																</Badge>
-															</div>
-															<h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-1">
-																{pinned.project.name}
-															</h4>
-															<p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-																{pinned.project.description}
-															</p>
-															<div className="flex flex-wrap gap-1">
+												<Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
+													<CardContent className="p-4">
+														<div className="flex items-start justify-between mb-2">
+															<div className="flex items-center gap-1">
 																{
-																	pinned.project.tags.slice(0, 3).map((tag) => (
-																		<Badge
-																			key={tag}
-																			variant="outline"
-																			className="text-xs px-1.5 py-0"
-																		>
-																			{tag}
-																		</Badge>
-																	))
+																project.status === "COMPLETED" ? (
+																	<CheckCircle2 className="w-4 h-4 text-green-500" />
+																) : project.status === "IN_PROGRESS" ? (
+																	<Clock3 className="w-4 h-4 text-blue-500" />
+																) : (
+																	<FolderKanban className="w-4 h-4 text-primary" />
+																)
+																}
+																{
+																project.visibility === "PUBLIC" && (
+																	<Globe className="w-3 h-3 text-muted-foreground" />
+																)
 																}
 															</div>
-														</CardContent>
-													</Card>
-												</Link>
+															<Badge variant="secondary" className="text-xs">
+																{project.projectType}
+															</Badge>
+														</div>
+														<h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-1">
+															{project.projectName}
+														</h4>
+														<p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+															{project.description || "No description"}
+														</p>
+														<div className="flex flex-wrap gap-1">
+															{
+																project.technologies.slice(0, 3).map((tech) => (
+																	<Badge
+																		key={tech}
+																		variant="outline"
+																		className="text-xs px-1.5 py-0"
+																	>
+																		{tech}
+																	</Badge>
+																))
+															}
+															{
+															project.technologies.length > 3 && (
+																<Badge variant="outline" className="text-xs px-1.5 py-0">
+																	+{project.technologies.length - 3}
+																</Badge>
+															)
+															}
+														</div>
+													</CardContent>
+												</Card>
 											</motion.div>
 										))
 									}
@@ -194,18 +223,12 @@ export function OverviewTab({
 							) : (
 								<div className="text-center py-8 text-muted-foreground">
 									<FolderKanban className="w-12 h-12 mx-auto mb-3 opacity-30" />
-									<p className="text-sm">No pinned projects yet</p>
+									<p className="text-sm">No projects yet</p>
 									{
 										isOwnProfile && (
-											<Button
-												variant="outline"
-												size="sm"
-												className="mt-3"
-												onClick={onPinProject}
-											>
-												<Plus className="w-4 h-4 mr-1" />
-												Pin your first project
-											</Button>
+											<p className="text-xs mt-2">
+												Add projects to your portfolio to showcase your work
+											</p>
 										)
 									}
 								</div>

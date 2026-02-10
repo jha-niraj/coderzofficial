@@ -55,6 +55,7 @@ enum KnowMeDataType {
     LEETCODE_PROBLEM // LeetCode problem stats
     STACKOVERFLOW_ANSWER // SO answers
     LINKEDIN_EXPERIENCE // LinkedIn work history
+    OWNER_TRAINING // Q&A training from owner chat
     OTHER // Other data
 }
 

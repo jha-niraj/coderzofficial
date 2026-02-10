@@ -1,0 +1,892 @@
+================================================================================
+                    KNOWME MODULE - DETAILED DOCUMENTATION
+================================================================================
+                    AI-Powered Personal Portfolio Assistant
+                       Complete Technical & Design Guide
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. Executive Summary
+2. Problem Statement & Solution
+3. Core Features & Functionality
+4. Technical Architecture
+5. User Journeys & Flowcharts
+6. Technology Stack
+7. Data Flow Architecture
+8. Screen-by-Screen Breakdown
+9. API Integration
+10. Future Roadmap
+11. Business Value & Applications
+
+================================================================================
+SECTION 1: EXECUTIVE SUMMARY
+================================================================================
+
+KnowMe is an innovative AI-powered personal knowledge assistant built as part of
+the Coderz platform. It enables developers and professionals to create an 
+intelligent chatbot that knows everything about their professional profile, 
+allowing visitors to ask questions and receive instant, accurate answers 24/7.
+
+KEY INNOVATION:
+--------------
+Unlike traditional static portfolios, KnowMe transforms professional profiles 
+into interactive, conversational experiences using cutting-edge AI technologies
+including embedding models and vector databases.
+
+CORE VALUE PROPOSITION:
+-----------------------
+• Answers questions about your work 24/7, even when you're not available
+• Uses AI to understand context and provide intelligent responses
+• Learns from your profile data, projects, skills, and experiences
+• Enables recruiters, employers, and collaborators to interact with your 
+  professional presence without direct contact
+
+================================================================================
+SECTION 2: PROBLEM STATEMENT & SOLUTION
+================================================================================
+
+THE PROBLEM:
+------------
+In today's fast-paced professional world, developers and professionals face 
+several challenges:
+
+1. TIME CONSTRAINTS
+   - Professionals spend countless hours answering repetitive questions
+   - Recruiters can't always reach candidates during working hours
+   - Time zone differences create communication barriers
+
+2. INCONSISTENT COMMUNICATION
+   - Different responses to similar questions
+   - Missed opportunities due to delayed responses
+   - Information scattered across multiple platforms
+
+3. PORTFOLIO LIMITATIONS
+   - Static portfolios don't engage visitors
+   - No real-time interaction capability
+   - Limited personalization for different audiences
+
+4. RECRUITMENT CHALLENGES
+   - HR teams struggle to pre-screen candidates efficiently
+   - Candidates can't showcase their full potential in limited interactions
+   - Information asymmetry between job seekers and employers
+
+THE SOLUTION - KNOWME:
+----------------------
+KnowMe addresses all these challenges by creating an AI-powered digital twin 
+that can:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         HOW KNOWME SOLVES PROBLEMS                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Problem: "I'm not available 24/7"                                         │
+│  Solution: AI assistant answers questions anytime, anywhere                │
+│                                                                             │
+│  Problem: "Recruiters ask the same questions repeatedly"                   │
+│  Solution: AI provides consistent, comprehensive answers automatically      │
+│                                                                             │
+│  Problem: "My portfolio is static and boring"                              │
+│  Solution: Interactive conversational experience engages visitors          │
+│                                                                             │
+│  Problem: "I can't showcase everything in an interview"                    │
+│  Solution: AI knows ALL your projects, skills, and experiences            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+REAL-WORLD APPLICATION SCENARIO:
+--------------------------------
+Imagine you're a software developer applying for jobs. An HR manager at a 
+company wants to learn more about you at 2 AM (their timezone), but you're 
+asleep. With KnowMe:
+
+1. HR visits your KnowMe profile link
+2. Asks: "What are your main technical skills?"
+3. AI responds with your complete skill set, relevant projects, and experience
+4. HR asks: "Tell me about your most complex project"
+5. AI provides detailed information about your projects with context
+6. HR decides to schedule an interview - all without you being awake!
+
+================================================================================
+SECTION 3: CORE FEATURES & FUNCTIONALITY
+================================================================================
+
+3.1 PERSONAL DATA INTEGRATION
+-----------------------------
+KnowMe integrates multiple data sources to build a comprehensive knowledge base:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DATA SOURCES                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  CODERZ PROFILE DATA (Automatic)                                           │
+│  ├── Bio & Personal Information                                            │
+│  ├── Skills & Technologies                                                 │
+│  ├── Projects (with descriptions, tech stack, links)                       │
+│  ├── Assessments & Certifications                                          │
+│  └── Work Experience                                                        │
+│                                                                             │
+│  UPLOADED DOCUMENTS                                                         │
+│  ├── Resume (PDF, DOCX, TXT)                                               │
+│  ├── Cover Letters                                                          │
+│  └── Custom Documents                                                       │
+│                                                                             │
+│  PLATFORM CONNECTIONS (Optional)                                            │
+│  ├── GitHub (repositories, contributions, stars)                           │
+│  ├── LeetCode (problems solved, rating)                                    │
+│  ├── StackOverflow (answers, reputation)                                   │
+│  └── LinkedIn (work history, education)                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+3.2 SMART AI CHAT
+-----------------
+The chat system uses Retrieval-Augmented Generation (RAG) to provide accurate,
+context-aware responses:
+
+Features:
+• Context-aware responses based on user's actual data
+• Source citations showing where information came from
+• Suggested follow-up questions
+• Action buttons (Schedule Interview, View Projects, Send Message)
+• Rate limiting to prevent abuse
+• Feedback system (thumbs up/down) for continuous improvement
+
+3.3 PRIVACY & ACCESS CONTROL
+----------------------------
+Users have full control over who can access their KnowMe:
+
+┌──────────────────────────────────────────────────────────────────┐
+│                    PRIVACY OPTIONS                                │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  🌍 PUBLIC         - Anyone with the link can chat               │
+│                      Best for: Job seekers, networking            │
+│                                                                   │
+│  👥 REGISTERED     - Only logged-in Coderz users                 │
+│                      Best for: Community engagement               │
+│                                                                   │
+│  💼 RECRUITERS     - Only verified recruiters                    │
+│                      Best for: Active job search                  │
+│                                                                   │
+│  🔒 PRIVATE        - Only the owner can access                   │
+│                      Best for: Testing before sharing             │
+│                                                                   │
+└──────────────────────────────────────────────────────────────────┘
+
+3.4 ANALYTICS & INSIGHTS
+------------------------
+Dashboard provides valuable insights:
+• Total questions answered
+• Most frequently asked topics
+• Visitor demographics
+• Response quality metrics
+• Popular questions analysis
+• Improvement suggestions
+
+3.5 EXTERNAL INTEGRATION
+------------------------
+Embed KnowMe in external portfolios:
+• JavaScript widget for any website
+• React component for React apps
+• REST API for custom implementations
+• NPM package for easy integration
+
+================================================================================
+SECTION 4: TECHNICAL ARCHITECTURE
+================================================================================
+
+4.1 SYSTEM OVERVIEW
+-------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      KNOWME SYSTEM ARCHITECTURE                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│    ┌──────────────┐         ┌──────────────┐         ┌──────────────┐      │
+│    │   Frontend   │ ──────► │   Next.js    │ ──────► │   Prisma     │      │
+│    │  (React UI)  │         │    Server    │         │   Database   │      │
+│    └──────────────┘         └──────────────┘         └──────────────┘      │
+│           │                        │                        │               │
+│           │                        ▼                        │               │
+│           │                 ┌──────────────┐                │               │
+│           │                 │   OpenAI     │                │               │
+│           │                 │  Embedding   │                │               │
+│           │                 │    Model     │                │               │
+│           │                 └──────────────┘                │               │
+│           │                        │                        │               │
+│           │                        ▼                        │               │
+│           │                 ┌──────────────┐                │               │
+│           └───────────────► │   Upstash    │ ◄──────────────┘               │
+│                             │   Vector     │                                │
+│                             │   Database   │                                │
+│                             └──────────────┘                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+4.2 KEY COMPONENTS
+------------------
+
+1. FRONTEND (React/Next.js)
+   - Dashboard interface for profile owners
+   - Public chat interface for visitors
+   - Onboarding wizard
+   - Settings management
+   - Analytics dashboard
+
+2. BACKEND (Next.js Server Actions)
+   - Profile management
+   - Chat session handling
+   - Embedding generation
+   - Analytics tracking
+   - API endpoints
+
+3. DATABASE (PostgreSQL via Prisma)
+   - User profiles
+   - KnowMe profiles
+   - Chat sessions & messages
+   - Analytics data
+   - Platform connections
+
+4. VECTOR DATABASE (Upstash Vector)
+   - Stores text embeddings
+   - Enables semantic search
+   - Namespace isolation per user
+   - Similarity scoring
+
+5. AI SERVICES (OpenAI)
+   - text-embedding-3-small for embeddings
+   - GPT-4 for response generation
+   - Context-aware chat completion
+
+================================================================================
+SECTION 5: USER JOURNEYS & FLOWCHARTS
+================================================================================
+
+5.1 FIRST-TIME USER ACTIVATION FLOW
+-----------------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     USER ACTIVATION JOURNEY                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+START: User discovers KnowMe
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LANDING PAGE                                                               │
+│  • Value proposition displayed                                              │
+│  • Feature highlights                                                       │
+│  • Demo video / examples                                                    │
+│  • [Get Started] CTA button                                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ONBOARDING WIZARD (4 Steps)                                                │
+│                                                                             │
+│  Step 1: WELCOME (10%)                                                      │
+│  ├── Introduction to KnowMe                                                 │
+│  ├── What to expect                                                         │
+│  └── Time estimate (2 minutes)                                              │
+│                                                                             │
+│  Step 2: DATA SOURCES (40%)                                                 │
+│  ├── Select data to include:                                                │
+│  │   ✓ Coderz Profile Data                                                 │
+│  │   ✓ Projects                                                            │
+│  │   ✓ Assessments                                                         │
+│  └── Upload resume (optional)                                               │
+│                                                                             │
+│  Step 3: PLATFORM CONNECTIONS (70%)                                         │
+│  ├── Connect GitHub (recommended)                                           │
+│  ├── Connect LeetCode                                                       │
+│  └── Connect other platforms                                                │
+│                                                                             │
+│  Step 4: PRIVACY SETTINGS (90%)                                             │
+│  ├── Select who can chat:                                                   │
+│  │   ○ Anyone with the link                                                │
+│  │   ○ Only logged-in users                                                │
+│  │   ○ Only verified recruiters                                            │
+│  │   ○ Private (just for me)                                               │
+│  └── [Create My AI] button                                                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PROCESSING SCREEN                                                          │
+│  • Progress bar animation                                                   │
+│  • Status updates:                                                          │
+│    ├── Collecting your data...                                             │
+│    ├── Processing projects...                                              │
+│    ├── Creating embeddings...                                               │
+│    └── Finalizing AI assistant...                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SUCCESS SCREEN                                                             │
+│  • Celebration animation                                                    │
+│  • Share link                                                               │
+│  • [Go to Dashboard] button                                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+END: Dashboard with active KnowMe
+
+
+5.2 VISITOR CHAT FLOW
+---------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        VISITOR CHAT JOURNEY                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+START: Visitor clicks KnowMe link
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PUBLIC CHAT PAGE                                                           │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │  👤 [User Avatar] [Name]                                        │       │
+│  │      [Title/Occupation]                                         │       │
+│  │      "Ask me anything about my work!"                           │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│  Suggested Questions:                                                       │
+│  [What are your skills?] [Tell me about projects] [Experience?]            │
+│                                                                             │
+│  Chat Area:                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │                                                                  │       │
+│  │  🤖 Hi! I'm [Name]'s AI assistant. I can answer questions       │       │
+│  │     about their skills, projects, and experience. What would    │       │
+│  │     you like to know?                                            │       │
+│  │                                                                  │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+│  [Type your question...                               ] [Send ➤]           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         │ User types question
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  QUESTION PROCESSING (Behind the scenes)                                    │
+│                                                                             │
+│  1. User question received                                                  │
+│  2. Question converted to embedding vector                                  │
+│  3. Vector database searched for relevant chunks                            │
+│  4. Top relevant context retrieved                                          │
+│  5. Context + question sent to GPT-4                                        │
+│  6. AI generates personalized response                                      │
+│  7. Response displayed with sources                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  RESPONSE DISPLAYED                                                         │
+│                                                                             │
+│  🤖 Based on their profile, [Name] has experience with:                    │
+│     • React.js (3+ years)                                                   │
+│     • TypeScript                                                            │
+│     • Node.js                                                               │
+│                                                                             │
+│     They've built several projects including an e-commerce                  │
+│     platform and a real-time chat application.                              │
+│                                                                             │
+│     📎 Sources: Profile Skills, Project: E-commerce App                    │
+│                                                                             │
+│     [👍] [👎] Was this helpful?                                            │
+│                                                                             │
+│     Actions: [View Projects] [Schedule Interview] [Send Message]            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+Visitor continues conversation or takes action
+
+
+5.3 EMBEDDING GENERATION FLOW
+-----------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      EMBEDDING GENERATION FLOW                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+TRIGGER: User completes onboarding OR Manual update
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  1. DATA COLLECTION                                                         │
+│     ├── Fetch user profile from database                                   │
+│     ├── Fetch projects, skills, assessments                                │
+│     ├── Fetch connected platform data (GitHub, etc.)                       │
+│     └── Parse uploaded documents (resume)                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  2. CHUNKING                                                                │
+│     ├── Split data into meaningful chunks                                   │
+│     │   Example chunks:                                                     │
+│     │   • "Skills: React, TypeScript, Node.js..."                          │
+│     │   • "Project: E-commerce Platform - Built with..."                    │
+│     │   • "Experience: 3 years as Full Stack Developer..."                  │
+│     └── Add metadata to each chunk (type, source, date)                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  3. EMBEDDING CREATION                                                      │
+│     ├── Send chunks to OpenAI text-embedding-3-small model                 │
+│     ├── Receive 1536-dimensional vector for each chunk                     │
+│     │                                                                       │
+│     │   "React developer with 3 years experience"                           │
+│     │            ↓                                                          │
+│     │   [0.12, 0.85, 0.34, -0.22, ..., 0.67] (1536 numbers)               │
+│     │                                                                       │
+│     └── Vectors capture semantic meaning of text                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  4. VECTOR STORAGE                                                          │
+│     ├── Store vectors in Upstash Vector Database                           │
+│     ├── Each user gets their own namespace                                  │
+│     │   Namespace: "user_12345/"                                           │
+│     └── Metadata stored alongside vectors                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  5. PROFILE ACTIVATION                                                      │
+│     ├── Update profile status to "ACTIVE"                                   │
+│     ├── Store embedding count and version                                   │
+│     └── Schedule next update cycle                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+END: KnowMe ready for questions!
+
+================================================================================
+SECTION 6: TECHNOLOGY STACK
+================================================================================
+
+6.1 FRONTEND TECHNOLOGIES
+-------------------------
+┌────────────────────────────────────────────────────────────────┐
+│  TECHNOLOGY          │  PURPOSE                                │
+├────────────────────────────────────────────────────────────────┤
+│  Next.js 15          │  React framework with App Router        │
+│  React 19            │  UI component library                   │
+│  TypeScript          │  Type-safe JavaScript                   │
+│  Tailwind CSS        │  Utility-first styling                  │
+│  Framer Motion       │  Smooth animations                      │
+│  Lucide Icons        │  Icon library                           │
+│  shadcn/ui           │  Pre-built UI components                │
+└────────────────────────────────────────────────────────────────┘
+
+6.2 BACKEND TECHNOLOGIES
+------------------------
+┌────────────────────────────────────────────────────────────────┐
+│  TECHNOLOGY          │  PURPOSE                                │
+├────────────────────────────────────────────────────────────────┤
+│  Next.js Server      │  Server-side rendering & API routes    │
+│  Server Actions      │  Type-safe server mutations            │
+│  Prisma ORM          │  Database operations                   │
+│  PostgreSQL          │  Primary database                       │
+│  Better Auth         │  Authentication                         │
+└────────────────────────────────────────────────────────────────┘
+
+6.3 AI & VECTOR TECHNOLOGIES
+----------------------------
+┌────────────────────────────────────────────────────────────────┐
+│  TECHNOLOGY          │  PURPOSE                                │
+├────────────────────────────────────────────────────────────────┤
+│  OpenAI GPT-4        │  Natural language generation           │
+│  text-embedding-3    │  Text to vector conversion             │
+│  Upstash Vector      │  Serverless vector database            │
+│  RAG Architecture    │  Context-aware responses               │
+└────────────────────────────────────────────────────────────────┘
+
+6.4 WHY THESE TECHNOLOGIES?
+---------------------------
+
+VECTOR DATABASE (Upstash) vs Traditional Database:
+─────────────────────────────────────────────────
+Traditional DB:  SELECT * FROM skills WHERE name = 'React'
+                 → Only exact matches
+
+Vector DB:       Find similar to "React development experience"
+                 → Returns: React, React.js, ReactJS, JavaScript, Frontend
+                 → Understands semantic meaning!
+
+EMBEDDING MODELS:
+────────────────
+Embeddings convert text into numbers that capture meaning:
+• "I love coding" → [0.2, 0.7, 0.4, ...]
+• "Programming is my passion" → [0.21, 0.69, 0.41, ...] ← Similar!
+• "I enjoy pizza" → [0.8, 0.1, 0.9, ...] ← Different!
+
+RAG (Retrieval-Augmented Generation):
+────────────────────────────────────
+Instead of relying solely on the AI's training data, RAG:
+1. Retrieves relevant user-specific information
+2. Augments the prompt with this context
+3. Generates accurate, personalized responses
+
+================================================================================
+SECTION 7: DATA FLOW ARCHITECTURE
+================================================================================
+
+7.1 QUESTION-ANSWER FLOW
+------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         QUESTION → ANSWER PIPELINE                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+User Question: "What projects have you built with React?"
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: QUESTION EMBEDDING                                                 │
+│                                                                             │
+│  "What projects have you built with React?"                                 │
+│                    │                                                        │
+│                    ▼ OpenAI text-embedding-3-small                         │
+│                    │                                                        │
+│  [0.15, 0.82, -0.33, 0.67, ..., 0.21] (1536 dimensions)                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: VECTOR SIMILARITY SEARCH                                           │
+│                                                                             │
+│  Query Upstash Vector DB in user's namespace                                │
+│  Find top 5 most similar vectors                                            │
+│                                                                             │
+│  Results (sorted by similarity):                                            │
+│  ┌──────────────────────────────────────────────────────────────────┐      │
+│  │  Score   │  Content                                              │      │
+│  ├──────────────────────────────────────────────────────────────────┤      │
+│  │  0.92    │  "Project: E-commerce App - Built with React,        │      │
+│  │          │   Redux, Node.js. Features include..."                │      │
+│  │  0.89    │  "Project: Chat Application - Real-time chat         │      │
+│  │          │   using React and Socket.io..."                       │      │
+│  │  0.85    │  "Skills: React.js (3 years), TypeScript,            │      │
+│  │          │   Redux, Next.js..."                                   │      │
+│  │  0.78    │  "Experience: Frontend Developer at TechCorp,         │      │
+│  │          │   primarily working with React..."                     │      │
+│  └──────────────────────────────────────────────────────────────────┘      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 3: CONTEXT ASSEMBLY                                                   │
+│                                                                             │
+│  System Prompt:                                                             │
+│  "You are an AI assistant for [Username]. Answer questions based           │
+│   on the following context from their profile..."                           │
+│                                                                             │
+│  Context:                                                                   │
+│  - E-commerce App details                                                   │
+│  - Chat Application details                                                 │
+│  - Skills information                                                       │
+│  - Work experience                                                          │
+│                                                                             │
+│  User Question:                                                             │
+│  "What projects have you built with React?"                                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 4: AI RESPONSE GENERATION (GPT-4)                                     │
+│                                                                             │
+│  Generated Response:                                                        │
+│  "Based on my profile, I've built several React projects:                  │
+│                                                                             │
+│   1. **E-commerce Platform**: A full-stack application using React,        │
+│      Redux for state management, and Node.js backend. Features             │
+│      include product catalog, shopping cart, and payment integration.       │
+│                                                                             │
+│   2. **Real-time Chat App**: Built with React and Socket.io for            │
+│      instant messaging, featuring message history and typing indicators.    │
+│                                                                             │
+│   I have 3+ years of experience with React and have worked with it         │
+│   professionally at TechCorp as a Frontend Developer."                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 5: RESPONSE ENHANCEMENT                                               │
+│                                                                             │
+│  Add source citations:                                                      │
+│  📎 Sources: Profile Skills, Project: E-commerce App, Project: Chat App    │
+│                                                                             │
+│  Add CTAs:                                                                  │
+│  [View E-commerce Project] [View Chat App] [Schedule Interview]            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+Final Response delivered to user
+
+================================================================================
+SECTION 8: SCREEN-BY-SCREEN BREAKDOWN
+================================================================================
+
+8.1 LANDING PAGE (/knowme)
+--------------------------
+For non-activated users:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  HEADER                                                                     │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │  🤖 KnowMe                                         [Login] [Sign Up]  │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  HERO SECTION                                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │                                                                        │ │
+│  │     Your AI-Powered Portfolio Assistant                               │ │
+│  │                                                                        │ │
+│  │     Let your professional profile speak for you.                      │ │
+│  │     Answer questions about your work 24/7, even while you sleep.      │ │
+│  │                                                                        │ │
+│  │     [Get Started for Free]        [Watch Demo]                        │ │
+│  │                                                                        │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  FEATURES GRID                                                              │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
+│  │ 🎯 AI Chat      │  │ 🔗 Integrations │  │ 📊 Analytics    │            │
+│  │ Answer Qs 24/7  │  │ GitHub, Resume  │  │ Track visitors  │            │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘            │
+│                                                                             │
+│  DEMO SECTION                                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │  [Interactive demo chat showing how KnowMe works]                     │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+8.2 DASHBOARD (/knowme) - For Activated Users
+---------------------------------------------
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  DASHBOARD HEADER                                                           │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │  🤖 KnowMe Dashboard                                                  │ │
+│  │  Manage your AI-powered portfolio assistant                           │ │
+│  │                                           [Settings] [Analytics]       │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  MAIN LAYOUT (2 columns)                                                    │
+│  ┌─────────────────────────────────────┬───────────────────────────────┐  │
+│  │                                      │                               │  │
+│  │  CHAT PREVIEW (2/3 width)           │  SIDEBAR (1/3 width)          │  │
+│  │  ┌───────────────────────────────┐  │  ┌─────────────────────────┐  │  │
+│  │  │  Test your AI assistant       │  │  │  STATUS                 │  │  │
+│  │  │                               │  │  │  ● Active               │  │  │
+│  │  │  🤖: Hi! I'm your AI. Ask me  │  │  │                         │  │  │
+│  │  │      anything about your work! │  │  │  SHARE LINK            │  │  │
+│  │  │                               │  │  │  [coderz.com/knowme/...]│  │  │
+│  │  │  You: What are my top skills? │  │  │  [Copy] [QR]            │  │  │
+│  │  │                               │  │  │                         │  │  │
+│  │  │  🤖: Based on your profile... │  │  │  QUICK STATS            │  │  │
+│  │  │                               │  │  │  📊 142 Questions       │  │  │
+│  │  │  [Type message...]      [Send]│  │  │  👥 89 Visitors         │  │  │
+│  │  └───────────────────────────────┘  │  │  ⏱️ Last: 2h ago        │  │  │
+│  │                                      │  │                         │  │  │
+│  │                                      │  │  DATA SOURCES           │  │  │
+│  │                                      │  │  ✓ Profile Data         │  │  │
+│  │                                      │  │  ✓ 12 Projects          │  │  │
+│  │                                      │  │  ✓ GitHub Connected     │  │  │
+│  │                                      │  │  [Sync Now]             │  │  │
+│  │                                      │  └─────────────────────────┘  │  │
+│  └─────────────────────────────────────┴───────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+8.3 PUBLIC CHAT PAGE (/knowme/[username])
+-----------------------------------------
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  USER PROFILE HEADER                                                        │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │  [← Back]                                                   [Share]   │ │
+│  │                                                                        │ │
+│  │  [Avatar]  John Doe                                                   │ │
+│  │            Full Stack Developer                                       │ │
+│  │            "Ask me anything about my work!"                           │ │
+│  │                                                                        │ │
+│  │  Suggested: [Skills?] [Projects?] [Experience?]                       │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  CHAT AREA                                                                  │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │                                                                        │ │
+│  │  🤖 Hi! I'm John's AI assistant. I can answer questions about their  │ │
+│  │     skills, projects, and professional experience.                    │ │
+│  │                                                                        │ │
+│  │                                          You: What are John's skills? │ │
+│  │                                                                        │ │
+│  │  🤖 John has expertise in:                                           │ │
+│  │     • React.js & TypeScript (3+ years)                               │ │
+│  │     • Node.js & Express                                               │ │
+│  │     • PostgreSQL & MongoDB                                            │ │
+│  │                                                                        │ │
+│  │     📎 Sources: Profile Skills                                        │ │
+│  │     [👍] [👎] Was this helpful?                                       │ │
+│  │                                                                        │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  INPUT AREA                                                                 │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │  [Type your question about John...                        ] [Send ➤] │ │
+│  │                                          18/20 questions remaining    │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  ACTION BUTTONS                                                             │
+│  [View Full Profile] [Schedule Interview] [Send Direct Message]            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+8.4 ANALYTICS PAGE (/knowme/analytics)
+--------------------------------------
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ANALYTICS DASHBOARD                                                        │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │  📊 KnowMe Analytics                              [Export] [Settings]  │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  STATS CARDS                                                                │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐      │
+│  │ Total Qs     │ │ Visitors     │ │ Avg Response │ │ Satisfaction │      │
+│  │    1,247     │ │    482       │ │   1.2s       │ │    94%       │      │
+│  │ ↑12% week    │ │ ↑8% week     │ │ ↓0.3s        │ │ ↑2%          │      │
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘      │
+│                                                                             │
+│  TOP QUESTIONS                           │  VISITOR DEMOGRAPHICS            │
+│  ┌───────────────────────────────────────┼────────────────────────────────┐│
+│  │ 1. Technical skills        (23%)      │  Recruiters:      45%          ││
+│  │ 2. Project experience      (18%)      │  Developers:      32%          ││
+│  │ 3. Work history            (15%)      │  HR:              15%          ││
+│  │ 4. Education               (12%)      │  Others:           8%          ││
+│  │ 5. Availability            (10%)      │                                ││
+│  └───────────────────────────────────────┴────────────────────────────────┘│
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+SECTION 9: API INTEGRATION
+================================================================================
+
+9.1 EXTERNAL WIDGET INTEGRATION
+-------------------------------
+Developers can embed KnowMe in their personal websites:
+
+HTML WIDGET:
+```html
+<!-- Add to your portfolio website -->
+<script src="https://cdn.coderz.com/knowme/widget.js"></script>
+<script>
+  KnowMe.init({
+    apiKey: 'your-api-key-here',
+    theme: 'dark',          // 'light' | 'dark' | 'auto'
+    position: 'bottom-right' // Widget position
+  });
+</script>
+```
+
+REACT COMPONENT:
+```jsx
+import { KnowMeChat } from '@coderz/knowme-react';
+
+function Portfolio() {
+  return (
+    <KnowMeChat 
+      apiKey="your-api-key"
+      theme="dark"
+    />
+  );
+}
+```
+
+9.2 REST API ENDPOINTS
+----------------------
+Base URL: https://coderz.com/api/v1/knowme
+
+POST /chat
+- Send a question and receive AI response
+- Headers: Authorization: Bearer <API_KEY>
+- Body: { "question": "string", "sessionId": "optional" }
+
+GET /profile
+- Get public profile information
+- Headers: Authorization: Bearer <API_KEY>
+
+GET /analytics
+- Get analytics data (owner only)
+- Headers: Authorization: Bearer <API_KEY>
+
+================================================================================
+SECTION 10: FUTURE ROADMAP
+================================================================================
+
+PHASE 1 (Current) ✓
+- Basic profile chat
+- Coderz data integration
+- Public sharing
+
+PHASE 2 (Next)
+- GitHub deep integration
+- LeetCode stats
+- Resume parsing
+- Voice chat capability
+
+PHASE 3 (Future)
+- Video responses
+- Multi-language support
+- Calendar integration
+- Direct hiring integration
+
+================================================================================
+SECTION 11: BUSINESS VALUE & APPLICATIONS
+================================================================================
+
+11.1 FOR JOB SEEKERS
+--------------------
+• Stand out with interactive portfolio
+• Answer recruiter questions 24/7
+• Showcase all projects and skills comprehensively
+• Track what recruiters want to know
+
+11.2 FOR RECRUITERS/HR
+----------------------
+• Pre-screen candidates efficiently
+• Get detailed candidate information anytime
+• Reduce initial interview questions
+• Access candidate data without scheduling
+
+11.3 FOR PLATFORM (Coderz)
+--------------------------
+• Unique differentiating feature
+• Increased user engagement
+• Revenue through credits/premium
+• Network effects and growth
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================
+
+Document Version: 1.0
+Last Updated: February 2026
+Author: Coderz Development Team
+
+For questions or feedback, contact the development team.
+================================================================================

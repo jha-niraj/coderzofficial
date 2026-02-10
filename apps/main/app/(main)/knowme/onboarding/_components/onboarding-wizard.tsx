@@ -410,7 +410,7 @@ function DataSourcesStep({
     );
 }
 
-// Step 3: Platform Connections
+// Step 3: Platform Connections Info
 function PlatformsStep({
     includePlatformData,
     setIncludePlatformData,
@@ -418,6 +418,11 @@ function PlatformsStep({
     includePlatformData: boolean;
     setIncludePlatformData: (v: boolean) => void;
 }) {
+    // Set to false by default for initial setup - platforms can be connected later
+    if (includePlatformData) {
+        setIncludePlatformData(false);
+    }
+    
     return (
         <div className="space-y-6">
             <div className="text-center">
@@ -425,82 +430,74 @@ function PlatformsStep({
                     <Github className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                    Connect External Platforms
+                    External Platform Connections
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Supercharge your AI with data from other platforms (optional)
+                    Enhance your AI with data from external platforms
                 </p>
             </div>
-            <div className="space-y-3">
-                <div
-                    className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all",
-                        includePlatformData
-                            ? "bg-purple-50 dark:bg-purple-900/20 border-purple-500"
-                            : "bg-slate-50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 hover:border-slate-300 dark:hover:border-neutral-600"
-                    )}
-                    onClick={() => setIncludePlatformData(!includePlatformData)}
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center">
-                            <Github className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <h4 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                                Enable Platform Data
-                                <Badge variant="secondary" className="text-xs">Recommended</Badge>
-                            </h4>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                                GitHub repositories, contributions, and more
-                            </p>
-                        </div>
+
+            {/* Info Card */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+                <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    {
-                        includePlatformData ? (
-                            <ToggleRight className="w-8 h-8 text-purple-500" />
-                        ) : (
-                            <ToggleLeft className="w-8 h-8 text-slate-400" />
-                        )
-                    }
+                    <div>
+                        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                            First, let&apos;s train with Coderz data
+                        </h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Your AI will be trained on your Coderz profile, projects, and assessments first. 
+                            Once your AI is ready, you can connect external platforms from the Settings page.
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            {
-                includePlatformData && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="bg-slate-50 dark:bg-neutral-800 rounded-xl p-4 space-y-3"
-                    >
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Platforms will be synced after setup. You can connect:
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {
-                                ["GitHub", "LeetCode", "StackOverflow", "LinkedIn"].map((platform) => (
-                                    <div
-                                        key={platform}
-                                        className="flex items-center gap-2 p-2 bg-white dark:bg-neutral-700 rounded-lg text-sm"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-slate-200 dark:bg-neutral-600 flex items-center justify-center">
-                                            <Code2 className="w-3 h-3" />
-                                        </div>
-                                        {platform}
-                                    </div>
-                                ))
-                            }
-                        </div>
-                    </motion.div>
-                )
-            }
+            {/* Available Platforms Preview */}
+            <div className="bg-slate-50 dark:bg-neutral-800 rounded-xl p-4 space-y-3">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Platforms available in Settings:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                    {
+                        [
+                            { name: "GitHub", icon: Github, description: "Repos & contributions" },
+                            { name: "LeetCode", icon: Code2, description: "Problem solving stats" },
+                            { name: "StackOverflow", icon: Code2, description: "Answers & reputation" },
+                            { name: "LinkedIn", icon: Briefcase, description: "Work history" },
+                        ].map((platform) => (
+                            <div
+                                key={platform.name}
+                                className="flex items-center gap-2 p-3 bg-white dark:bg-neutral-700 rounded-lg opacity-60"
+                            >
+                                <div className="w-8 h-8 rounded bg-slate-200 dark:bg-neutral-600 flex items-center justify-center">
+                                    <platform.icon className="w-4 h-4 text-slate-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{platform.name}</p>
+                                    <p className="text-xs text-slate-500">{platform.description}</p>
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">
+                    🔒 Configure these after your AI is created
+                </p>
+            </div>
 
-            <Button
-                variant="ghost"
-                className="w-full text-slate-500"
-                onClick={() => setIncludePlatformData(false)}
-            >
-                Skip for now
-            </Button>
+            {/* Tip */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                        <strong>Tip:</strong> You can also train your AI by chatting with it! 
+                        Ask questions and provide corrections to improve its knowledge.
+                    </span>
+                </p>
+            </div>
         </div>
     );
 }

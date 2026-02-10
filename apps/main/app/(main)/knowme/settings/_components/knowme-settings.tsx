@@ -285,6 +285,12 @@ export default function KnowMeSettings({ profile, apiConfig, initialTab }: KnowM
                                     onToggle={() => setIncludePlatformData(!includePlatformData)}
                                 />
 
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                                        <strong>Coming Soon:</strong> Connect GitHub, LeetCode, and other platforms to automatically import your projects, contributions, and achievements. Enable this toggle to be ready when platform integrations launch.
+                                    </p>
+                                </div>
+
                                 {
                                     profile.platformConnections.length > 0 && (
                                         <div className="bg-slate-50 dark:bg-neutral-800 rounded-xl p-4">

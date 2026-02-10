@@ -73,7 +73,7 @@ export function PublicProfileClient({
 
     // Compute stats from user data
     const stats = {
-        projectsCount: user.projectsOwned?.length || user.projects?.length || 0,
+        projectsCount: user.portfolioProjects?.length || 0,
         skillsCount: user.skills?.length || 0,
         followersCount: user._count?.followers || 0,
         followingCount: user._count?.following || 0,
@@ -96,8 +96,7 @@ export function PublicProfileClient({
                 return (
                     <ProjectsTab
                         user={{
-                            ...user,
-                            projects: user.projectsOwned || user.projects || [],
+                            portfolioProjects: user.portfolioProjects || [],
                         }}
                         isOwnProfile={isOwnProfile}
                     />

@@ -2,7 +2,8 @@
 
 import { auth } from "@repo/auth"
 import {
-    calculateTaskScoring, calculateQuizScore, calculateMockScore, calculateTotalScore
+    calculateTaskScoring, calculateQuizScore, calculateMockScore, 
+    calculateTotalScore
 } from "@/lib/project-scoring"
 import prisma from "@repo/prisma"
 import type {

@@ -420,7 +420,6 @@ model User {
 
     // Relations
     projects      Projects[]
-    proofofwork   ProofOfWork[]
     accounts      Account[]
     referredUsers Referral[]    @relation("Referrer")
     referrer      Referral?     @relation("ReferredUser")
@@ -836,17 +835,6 @@ model SocialLink {
     @@index([userId])
 }
 
-model ProofOfWork {
-    id          String   @id @default(uuid())
-    description String
-    skills      String[]
-    link        String
-    userId      String
-    user        User     @relation(fields: [userId], references: [id])
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-}
-
 // Sessions and Extra Models
 model Account {
     id                String  @id @default(uuid())
@@ -932,8 +920,7 @@ model UserProfile {
     updatedAt DateTime @updatedAt
 
     // Relations
-    views          ProfileView[]
-    pinnedProjects PinnedProject[]
+    views ProfileView[]
 }
 
 model ProfileView {
@@ -981,9 +968,6 @@ model Projects {
     userProgress UserProjectProgress[]
     User         User?                 @relation(fields: [userId], references: [id])
     userId       String?
-
-    // Profile System
-    pinnedByProfiles PinnedProject[]
 
     // Bookmarks
     bookmarks ProjectBookmark[] @relation("ProjectBookmarks")
@@ -1062,25 +1046,6 @@ model SkillEndorsement {
     @@unique([skillId, endorserId])
     @@index([skillId])
     @@index([endorserId])
-}
-
-model PinnedProject {
-    id String @id @default(cuid())
-
-    profileId String
-    profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-    projectId String
-    project   Projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-    // Display order (1-6, max 6 pinned projects)
-    order Int @default(1)
-
-    createdAt DateTime @default(now())
-
-    @@unique([profileId, projectId])
-    @@index([profileId])
-    @@index([projectId])
 }
 
 model Newsletter {

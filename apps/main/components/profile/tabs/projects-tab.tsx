@@ -1,155 +1,134 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-    Card, CardContent
-} from "@repo/ui/components/ui/card";
-import { Button } from "@repo/ui/components/ui/button";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
-import {
-    FolderKanban, ExternalLink, Grid3X3, List, Pin, Clock,
-    CheckCircle2, PlayCircle, Circle, Github, Search
-} from "lucide-react";
-import { cn } from "@repo/ui/lib/utils";
+import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select";
+import {
+    Search, Grid3X3, List, ExternalLink, Github, CheckCircle2,
+    Clock3, Circle, FolderKanban, Eye, EyeOff, Globe, Calendar
+} from "lucide-react";
+import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
+
+// PortfolioProject type matching the database model
+interface PortfolioProject {
+    id: string;
+    projectName: string;
+    projectType: string;
+    description: string | null;
+    status: string;
+    visibility: string;
+    technologies: string[];
+    startDate: Date;
+    endDate: Date | null;
+    thumbnailUrl: string | null;
+    projectLinks?: Array<{
+        id: string;
+        linkType: string;
+        url: string;
+        description: string | null;
+    }>;
+}
 
 interface ProjectsTabProps {
     user: {
-        id: string;
-        projects: Array<{
-            id: string;
-            name: string;
-            description: string;
-            category: string;
-            difficulty: string;
-            tags: string[];
-            tier: string;
-            estimatedTime: string;
-        }>;
-        userProfile?: {
-            pinnedProjects: Array<{
-                projectId: string;
-            }>;
-        } | null;
+        portfolioProjects?: PortfolioProject[];
     };
-    projectProgress?: Array<{
-        projectId: string;
-        status: string;
-        startedAt: Date | null;
-        completedAt: Date | null;
-        xpEarned: number;
-        githubUrl: string | null;
-        liveUrl: string | null;
-    }>;
-    isOwnProfile: boolean;
-    onPinProject?: (projectId: string) => void;
-    onUnpinProject?: (projectId: string) => void;
+    isOwnProfile?: boolean;
 }
 
-// Status config
-const statusConfig: Record<
-    string,
-    { icon: React.ComponentType<{ className?: string }>; color: string; label: string }
-> = {
-    Completed: {
-        icon: CheckCircle2,
-        color: "text-green-500 bg-green-500/10",
-        label: "Completed",
-    },
-    InProgress: {
-        icon: PlayCircle,
-        color: "text-blue-500 bg-blue-500/10",
-        label: "In Progress",
-    },
-    NotStarted: {
-        icon: Circle,
-        color: "text-gray-400 bg-gray-500/10",
-        label: "Not Started",
-    },
+const defaultStatusConfig = {
+    color: "text-gray-500 bg-gray-100",
+    icon: Circle,
+    label: "Planned",
 };
 
-// Difficulty colors
-const difficultyColors: Record<string, string> = {
-    easy: "bg-green-500/10 text-green-600 border-green-500/20",
-    beginner: "bg-green-500/10 text-green-600 border-green-500/20",
-    medium: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
-    intermediate: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
-    hard: "bg-red-500/10 text-red-600 border-red-500/20",
-    advanced: "bg-red-500/10 text-red-600 border-red-500/20",
+const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2; label: string }> = {
+    COMPLETED: {
+        color: "text-green-600 bg-green-100",
+        icon: CheckCircle2,
+        label: "Completed",
+    },
+    IN_PROGRESS: {
+        color: "text-blue-600 bg-blue-100",
+        icon: Clock3,
+        label: "In Progress",
+    },
+    PLANNED: defaultStatusConfig,
+};
+
+const defaultVisibilityConfig = { icon: Globe, label: "Public", color: "text-green-600" };
+
+const visibilityConfig: Record<string, { icon: typeof Globe; label: string; color: string }> = {
+    PUBLIC: defaultVisibilityConfig,
+    PRIVATE: { icon: EyeOff, label: "Private", color: "text-gray-500" },
+    UNLISTED: { icon: Eye, label: "Unlisted", color: "text-yellow-600" },
 };
 
 export function ProjectsTab({
     user,
-    projectProgress = [],
-    isOwnProfile,
-    onPinProject,
-    onUnpinProject,
+    isOwnProfile = false,
 }: ProjectsTabProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [categoryFilter, setCategoryFilter] = useState<string>("all");
+    const [typeFilter, setTypeFilter] = useState<string>("all");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-    const pinnedProjectIds = new Set(
-        user.userProfile?.pinnedProjects?.map((p) => p.projectId) || []
-    );
+    const projects = user.portfolioProjects || [];
 
-    // Get progress for a project
-    const getProgress = (projectId: string) => {
-        return projectProgress.find((p) => p.projectId === projectId);
-    };
-
-    // Get all unique categories
-    const categories = [...new Set(user.projects.map((p) => p.category))];
+    // Get unique project types for filter
+    const projectTypes = useMemo(() => {
+        return [...new Set(projects.map((p) => p.projectType))];
+    }, [projects]);
 
     // Filter projects
-    const filteredProjects = user.projects.filter((project) => {
-        const progress = getProgress(project.id);
-        const status = progress?.status || "NotStarted";
+    const filteredProjects = useMemo(() => {
+        return projects.filter((project) => {
+            // For non-owners, only show public projects
+            if (!isOwnProfile && project.visibility !== "PUBLIC") return false;
 
-        // Search filter
-        if (
-            searchQuery &&
-            !project.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-            !project.description.toLowerCase().includes(searchQuery.toLowerCase())
-        ) {
-            return false;
-        }
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                const matchesSearch =
+                    project.projectName.toLowerCase().includes(query) ||
+                    (project.description?.toLowerCase().includes(query) ?? false) ||
+                    project.technologies.some((tech) => tech.toLowerCase().includes(query));
+                if (!matchesSearch) return false;
+            }
 
-        // Status filter
-        if (statusFilter !== "all" && status !== statusFilter) {
-            return false;
-        }
+            if (statusFilter !== "all" && project.status !== statusFilter) return false;
+            if (typeFilter !== "all" && project.projectType !== typeFilter) return false;
 
-        // Category filter
-        if (categoryFilter !== "all" && project.category !== categoryFilter) {
-            return false;
-        }
+            return true;
+        });
+    }, [projects, searchQuery, statusFilter, typeFilter, isOwnProfile]);
 
-        return true;
-    });
+    // Sort: In Progress first, then Completed, then Planned
+    const sortedProjects = useMemo(() => {
+        return [...filteredProjects].sort((a, b) => {
+            const statusOrder: Record<string, number> = { IN_PROGRESS: 0, COMPLETED: 1, PLANNED: 2 };
+            return (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2);
+        });
+    }, [filteredProjects]);
 
-    // Sort: pinned first, then by status
-    const sortedProjects = [...filteredProjects].sort((a, b) => {
-        const aPinned = pinnedProjectIds.has(a.id);
-        const bPinned = pinnedProjectIds.has(b.id);
-        if (aPinned && !bPinned) return -1;
-        if (!aPinned && bPinned) return 1;
+    // Helper to get project links by type
+    const getLink = (project: PortfolioProject, type: string) => {
+        return project.projectLinks?.find((link) => link.linkType === type)?.url;
+    };
 
-        const aProgress = getProgress(a.id);
-        const bProgress = getProgress(b.id);
-        if (aProgress?.status === "InProgress" && bProgress?.status !== "InProgress")
-            return -1;
-        if (aProgress?.status !== "InProgress" && bProgress?.status === "InProgress")
-            return 1;
-
-        return 0;
-    });
+    const formatDate = (date: Date) => {
+        return new Date(date).toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+        });
+    };
 
     return (
         <div className="space-y-6">
@@ -172,21 +151,21 @@ export function ProjectsTab({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="Completed">Completed</SelectItem>
-                                    <SelectItem value="InProgress">In Progress</SelectItem>
-                                    <SelectItem value="NotStarted">Not Started</SelectItem>
+                                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                    <SelectItem value="PLANNED">Planned</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <Select value={typeFilter} onValueChange={setTypeFilter}>
                                 <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Category" />
+                                    <SelectValue placeholder="Type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Categories</SelectItem>
+                                    <SelectItem value="all">All Types</SelectItem>
                                     {
-                                        categories.map((cat) => (
-                                            <SelectItem key={cat} value={cat}>
-                                                {cat}
+                                        projectTypes.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type}
                                             </SelectItem>
                                         ))
                                     }
@@ -212,36 +191,31 @@ export function ProjectsTab({
                             </div>
                         </div>
                     </div>
+
                     {
-                        (statusFilter !== "all" || categoryFilter !== "all" || searchQuery) && (
+                        (statusFilter !== "all" || typeFilter !== "all" || searchQuery) && (
                             <div className="flex gap-2 mt-4 flex-wrap">
                                 {
                                     searchQuery && (
                                         <Badge variant="secondary" className="gap-1">
                                             Search: {searchQuery}
-                                            <button onClick={() => setSearchQuery("")} className="ml-1">
-                                                ×
-                                            </button>
+                                            <button onClick={() => setSearchQuery("")} className="ml-1">×</button>
                                         </Badge>
                                     )
                                 }
                                 {
                                     statusFilter !== "all" && (
                                         <Badge variant="secondary" className="gap-1">
-                                            {statusFilter}
-                                            <button onClick={() => setStatusFilter("all")} className="ml-1">
-                                                ×
-                                            </button>
+                                            {statusConfig[statusFilter]?.label || statusFilter}
+                                            <button onClick={() => setStatusFilter("all")} className="ml-1">×</button>
                                         </Badge>
                                     )
                                 }
                                 {
-                                    categoryFilter !== "all" && (
+                                    typeFilter !== "all" && (
                                         <Badge variant="secondary" className="gap-1">
-                                            {categoryFilter}
-                                            <button onClick={() => setCategoryFilter("all")} className="ml-1">
-                                                ×
-                                            </button>
+                                            {typeFilter}
+                                            <button onClick={() => setTypeFilter("all")} className="ml-1">×</button>
                                         </Badge>
                                     )
                                 }
@@ -251,7 +225,7 @@ export function ProjectsTab({
                                     onClick={() => {
                                         setSearchQuery("");
                                         setStatusFilter("all");
-                                        setCategoryFilter("all");
+                                        setTypeFilter("all");
                                     }}
                                 >
                                     Clear all
@@ -263,9 +237,10 @@ export function ProjectsTab({
             </Card>
             <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
-                    Showing {sortedProjects.length} of {user.projects.length} projects
+                    Showing {sortedProjects.length} of {projects.length} projects
                 </span>
             </div>
+
             {
                 sortedProjects.length > 0 ? (
                     <div
@@ -277,11 +252,12 @@ export function ProjectsTab({
                     >
                         {
                             sortedProjects.map((project, index) => {
-                                const progress = getProgress(project.id);
-                                const status = progress?.status || "NotStarted";
-                                const config = statusConfig[status] || statusConfig.NotStarted;
-                                const StatusIcon = config!.icon;
-                                const isPinned = pinnedProjectIds.has(project.id);
+                                const config = statusConfig[project.status] ?? defaultStatusConfig;
+                                const StatusIcon = config.icon;
+                                const visibilityConf = visibilityConfig[project.visibility] ?? defaultVisibilityConfig;
+                                const VisibilityIcon = visibilityConf.icon;
+                                const githubUrl = getLink(project, "GITHUB");
+                                const liveUrl = getLink(project, "LIVE");
 
                                 if (viewMode === "list") {
                                     return (
@@ -294,41 +270,56 @@ export function ProjectsTab({
                                             <Card className="hover:shadow-sm transition-shadow">
                                                 <CardContent className="p-4">
                                                     <div className="flex items-start gap-4">
-                                                        <div
-                                                            className={cn(
-                                                                "p-2 rounded-lg flex-shrink-0",
-                                                                config?.color.split(" ")[1]
-                                                            )}
-                                                        >
-                                                            <StatusIcon
-                                                                className={cn("w-5 h-5", config?.color.split(" ")[0])}
-                                                            />
-                                                        </div>
+                                                        {
+                                                            project.thumbnailUrl && (
+                                                                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                                                                    <Image
+                                                                        src={project.thumbnailUrl}
+                                                                        alt={project.projectName}
+                                                                        width={64}
+                                                                        height={64}
+                                                                        className="object-cover w-full h-full"
+                                                                    />
+                                                                </div>
+                                                            )
+                                                        }
+                                                        {
+                                                            !project.thumbnailUrl && (
+                                                                <div
+                                                                    className={cn(
+                                                                        "p-2 rounded-lg flex-shrink-0",
+                                                                        config?.color.split(" ")[1]
+                                                                    )}
+                                                                >
+                                                                    <StatusIcon
+                                                                        className={cn("w-5 h-5", config?.color.split(" ")[0])}
+                                                                    />
+                                                                </div>
+                                                            )
+                                                        }
+
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-start justify-between gap-2">
                                                                 <div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <Link
-                                                                            href={`/projects/${project.id}`}
-                                                                            className="font-medium hover:text-primary transition-colors"
-                                                                        >
-                                                                            {project.name}
-                                                                        </Link>
+                                                                        <span className="font-medium">
+                                                                            {project.projectName}
+                                                                        </span>
                                                                         {
-                                                                            isPinned && (
-                                                                                <Pin className="w-3 h-3 text-primary" />
+                                                                            isOwnProfile && (
+                                                                                <VisibilityIcon className={cn("w-3 h-3", visibilityConf?.color)} />
                                                                             )
                                                                         }
                                                                     </div>
                                                                     <p className="text-sm text-muted-foreground line-clamp-1">
-                                                                        {project.description}
+                                                                        {project.description || "No description"}
                                                                     </p>
                                                                 </div>
                                                                 <div className="flex items-center gap-2 flex-shrink-0">
                                                                     {
-                                                                        progress?.githubUrl && (
+                                                                        githubUrl && (
                                                                             <Link
-                                                                                href={progress.githubUrl}
+                                                                                href={githubUrl}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                             >
@@ -339,9 +330,9 @@ export function ProjectsTab({
                                                                         )
                                                                     }
                                                                     {
-                                                                        progress?.liveUrl && (
+                                                                        liveUrl && (
                                                                             <Link
-                                                                                href={progress.liveUrl}
+                                                                                href={liveUrl}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                             >
@@ -354,24 +345,15 @@ export function ProjectsTab({
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className={difficultyColors[project.difficulty.toLowerCase()]}
-                                                                >
-                                                                    {project.difficulty}
+                                                                <Badge variant="outline" className={config?.color}>
+                                                                    {config?.label}
                                                                 </Badge>
-                                                                <Badge variant="secondary">{project.category}</Badge>
+                                                                <Badge variant="secondary">{project.projectType}</Badge>
                                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                                    <Clock className="w-3 h-3" />
-                                                                    {project.estimatedTime}
+                                                                    <Calendar className="w-3 h-3" />
+                                                                    {formatDate(project.startDate)}
+                                                                    {project.endDate && ` - ${formatDate(project.endDate)}`}
                                                                 </span>
-                                                                {
-                                                                    (progress?.xpEarned ?? 0) > 0 && (
-                                                                        <span className="text-xs text-yellow-600">
-                                                                            +{progress?.xpEarned} XP
-                                                                        </span>
-                                                                    )
-                                                                }
                                                             </div>
                                                         </div>
                                                     </div>
@@ -381,6 +363,7 @@ export function ProjectsTab({
                                     );
                                 }
 
+                                // Grid view
                                 return (
                                     <motion.div
                                         key={project.id}
@@ -389,6 +372,20 @@ export function ProjectsTab({
                                         transition={{ delay: index * 0.02 }}
                                     >
                                         <Card className="h-full hover:shadow-md transition-shadow group">
+                                            {
+                                                project.thumbnailUrl && (
+                                                    <div className="w-full h-36 overflow-hidden rounded-t-lg bg-muted">
+                                                        <Image
+                                                            src={project.thumbnailUrl}
+                                                            alt={project.projectName}
+                                                            width={400}
+                                                            height={144}
+                                                            className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                                                        />
+                                                    </div>
+                                                )
+                                            }
+
                                             <CardContent className="p-4 flex flex-col h-full">
                                                 <div className="flex items-start justify-between mb-3">
                                                     <div
@@ -402,53 +399,48 @@ export function ProjectsTab({
                                                         />
                                                     </div>
                                                     <div className="flex items-center gap-1">
-                                                        {isPinned && <Pin className="w-4 h-4 text-primary" />}
-                                                        <Badge
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "text-xs",
-                                                                difficultyColors[project.difficulty.toLowerCase()]
-                                                            )}
-                                                        >
-                                                            {project.difficulty}
+                                                        {
+                                                            isOwnProfile && (
+                                                                <VisibilityIcon className={cn("w-4 h-4", visibilityConf?.color)} />
+                                                            )
+                                                        }
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {project.projectType}
                                                         </Badge>
                                                     </div>
                                                 </div>
-                                                <Link
-                                                    href={`/projects/${project.id}`}
-                                                    className="font-medium mb-1 group-hover:text-primary transition-colors"
-                                                >
-                                                    {project.name}
-                                                </Link>
+                                                <span className="font-medium mb-1 group-hover:text-primary transition-colors">
+                                                    {project.projectName}
+                                                </span>
                                                 <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
-                                                    {project.description}
+                                                    {project.description || "No description"}
                                                 </p>
                                                 <div className="flex flex-wrap gap-1 mt-3 mb-3">
                                                     {
-                                                        project.tags.slice(0, 3).map((tag) => (
-                                                            <Badge key={tag} variant="secondary" className="text-xs">
-                                                                {tag}
+                                                        project.technologies.slice(0, 3).map((tech) => (
+                                                            <Badge key={tech} variant="secondary" className="text-xs">
+                                                                {tech}
                                                             </Badge>
                                                         ))
                                                     }
                                                     {
-                                                        project.tags.length > 3 && (
+                                                        project.technologies.length > 3 && (
                                                             <Badge variant="secondary" className="text-xs">
-                                                                +{project.tags.length - 3}
+                                                                +{project.technologies.length - 3}
                                                             </Badge>
                                                         )
                                                     }
                                                 </div>
                                                 <div className="flex items-center justify-between pt-3 border-t">
                                                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />
-                                                        {project.estimatedTime}
+                                                        <Calendar className="w-3 h-3" />
+                                                        {formatDate(project.startDate)}
                                                     </span>
                                                     <div className="flex items-center gap-1">
                                                         {
-                                                            progress?.githubUrl && (
+                                                            githubUrl && (
                                                                 <Link
-                                                                    href={progress.githubUrl}
+                                                                    href={githubUrl}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                 >
@@ -459,9 +451,9 @@ export function ProjectsTab({
                                                             )
                                                         }
                                                         {
-                                                            progress?.liveUrl && (
+                                                            liveUrl && (
                                                                 <Link
-                                                                    href={progress.liveUrl}
+                                                                    href={liveUrl}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                 >
@@ -469,27 +461,6 @@ export function ProjectsTab({
                                                                         <ExternalLink className="w-4 h-4" />
                                                                     </Button>
                                                                 </Link>
-                                                            )
-                                                        }
-                                                        {
-                                                            isOwnProfile && onPinProject && onUnpinProject && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-7 w-7"
-                                                                    onClick={() =>
-                                                                        isPinned
-                                                                            ? onUnpinProject(project.id)
-                                                                            : onPinProject(project.id)
-                                                                    }
-                                                                >
-                                                                    <Pin
-                                                                        className={cn(
-                                                                            "w-4 h-4",
-                                                                            isPinned ? "text-primary fill-primary" : ""
-                                                                        )}
-                                                                    />
-                                                                </Button>
                                                             )
                                                         }
                                                     </div>
@@ -508,7 +479,7 @@ export function ProjectsTab({
                             <h3 className="font-medium mb-2">No projects found</h3>
                             <p className="text-sm text-muted-foreground">
                                 {
-                                    searchQuery || statusFilter !== "all" || categoryFilter !== "all"
+                                    searchQuery || statusFilter !== "all" || typeFilter !== "all"
                                         ? "Try adjusting your filters"
                                         : "No projects to display"
                                 }

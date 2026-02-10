@@ -22,7 +22,7 @@ export const useSidebar = () => {
 };
 
 export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
 

@@ -66,6 +66,46 @@ export async function generateProfileEmbeddings(): Promise<
 			return { success: false, error: "Profile not found" };
 		}
 
+		// Fetch user's portfolio projects (personal projects they've added)
+		const portfolioProjects = await prisma.portfolioProject.findMany({
+			where: { userId: session.user.id },
+			include: {
+				projectLinks: true,
+			},
+			take: 50,
+		});
+
+		// Fetch user's projects from ProjectV2 model (platform guided projects)
+		const platformProjects = await prisma.projectV2.findMany({
+			where: { createdBy: session.user.id },
+			select: {
+				id: true,
+				title: true,
+				description: true,
+				technologies: true,
+				slug: true,
+				createdAt: true,
+			},
+			take: 50,
+		});
+
+		// Fetch user's passed assessments
+		const examAttempts = await prisma.examAttempt.findMany({
+			where: {
+				userId: session.user.id,
+				passed: true,
+			},
+			include: {
+				topic: {
+					select: {
+						name: true,
+						language: true,
+					},
+				},
+			},
+			take: 20,
+		});
+
 		// Create embedding job
 		const job = await prisma.knowMeEmbeddingJob.create({
 			data: {
@@ -84,17 +124,28 @@ export async function generateProfileEmbeddings(): Promise<
 
 		// Update profile status
 		await prisma.knowMeProfile.update({
-			where: { id: profile.id },
-			data: { status: "PROCESSING" },
+			where: { 
+				id: profile.id 
+			},
+			data: { 
+				status: "PROCESSING" 
+			},
 		});
 
 		try {
-			// Process embeddings (this could be moved to a background job for large datasets)
-			const result = await processEmbeddings(profile);
+			// Process embeddings with fetched data
+			const result = await processEmbeddings({
+				...profile,
+				portfolioProjects,
+				platformProjects,
+				examAttempts,
+			});
 
 			// Update job with results
 			await prisma.knowMeEmbeddingJob.update({
-				where: { id: job.id },
+				where: {
+					id: job.id 
+				},
 				data: {
 					status: "COMPLETED",
 					progress: 100,
@@ -179,6 +230,7 @@ async function processEmbeddings(profile: {
 	includeResume: boolean;
 	user: {
 		name: string | null;
+		email: string | null;
 		bio: string | null;
 		occupation: string | null;
 		location: string | null;
@@ -198,6 +250,44 @@ async function processEmbeddings(profile: {
 		url: string | null;
 		techStack: string[];
 	}[];
+	// Portfolio projects (user's personal projects)
+	portfolioProjects: {
+		id: string;
+		projectName: string;
+		projectType: string;
+		description: string | null;
+		status: string;
+		visibility: string;
+		technologies: string[];
+		startDate: Date;
+		endDate: Date | null;
+		thumbnailUrl: string | null;
+		projectLinks: {
+			id: string;
+			linkType: string;
+			url: string;
+			description: string | null;
+		}[];
+	}[];
+	// Platform guided projects (ProjectV2)
+	platformProjects: {
+		id: string;
+		title: string;
+		description: string | null;
+		technologies: string[];
+		slug: string;
+		createdAt: Date;
+	}[];
+	examAttempts: {
+		id: string;
+		score: number | null;
+		passed: boolean | null;
+		completedAt: Date | null;
+		topic: {
+			name: string;
+			language: string;
+		};
+	}[];
 }): Promise<{
 	totalItems: number;
 	processedItems: number;
@@ -212,13 +302,15 @@ async function processEmbeddings(profile: {
 	let totalItems = 0;
 	let failedItems = 0;
 
-	// 1. Process user profile/bio
+	// 1. Process user profile/bio (excluding sensitive data like DOB)
 	const bioChunks = createBioChunks(profile.id, {
 		name: profile.user.name,
 		bio: profile.user.bio,
 		occupation: profile.user.occupation,
 		location: profile.user.location,
 		skills: profile.user.skills.map((s) => s.name),
+		// Include email for meeting scheduling purposes (AI can suggest scheduling)
+		email: profile.user.email,
 	});
 
 	bioChunks.forEach((chunk, index) => {
@@ -264,36 +356,30 @@ async function processEmbeddings(profile: {
 		}
 	}
 
-	// 3. Process Coderz projects
-	if (profile.includeProjects) {
-		const projects = await prisma.projectV2.findMany({
-			where: { createdBy: profile.userId },
-			select: {
-				id: true,
-				title: true,
-				description: true,
-				technologies: true,
-				slug: true,
-			},
-			take: 50, // Limit for performance
-		});
-
-		for (const project of projects) {
+	// 3. Process portfolio projects (user's personal projects)
+	if (profile.includeProjects && profile.portfolioProjects.length > 0) {
+		for (const project of profile.portfolioProjects) {
 			try {
+				// Get the main link (GitHub or Live Demo)
+				const githubLink = project.projectLinks.find(l => l.linkType.toLowerCase() === 'github')?.url;
+				const liveLink = project.projectLinks.find(l => l.linkType.toLowerCase() === 'live demo')?.url;
+				
 				const chunks = createProjectChunks(profile.id, project.id, {
-					title: project.title,
-					description: project.description,
+					title: project.projectName,
+					description: project.description || `${project.projectType} project`,
 					technologies: project.technologies,
-					url: `/projects/${project.slug}`,
+					url: githubLink || liveLink || undefined,
 				});
 
 				chunks.forEach((chunk, index) => {
 					allChunks.push({
-						id: generateVectorId(profile.id, "PROJECT", project.id, index),
+						id: generateVectorId(profile.id, "PROJECT", `portfolio_${project.id}`, index),
 						text: chunk.text,
 						metadata: {
 							...chunk.metadata,
 							text: chunk.text,
+							projectType: "portfolio",
+							status: project.status,
 						},
 					});
 				});
@@ -304,25 +390,38 @@ async function processEmbeddings(profile: {
 		}
 	}
 
-	// 4. Process assessments
-	if (profile.includeAssessments) {
-		const examAttempts = await prisma.examAttempt.findMany({
-			where: {
-				userId: profile.userId,
-				passed: true,
-			},
-			include: {
-				topic: {
-					select: {
-						name: true,
-						language: true,
-					},
-				},
-			},
-			take: 20,
-		});
+	// 4. Process platform projects (ProjectV2 model - guided projects)
+	if (profile.includeProjects && profile.platformProjects.length > 0) {
+		for (const project of profile.platformProjects) {
+			try {
+				const chunks = createProjectChunks(profile.id, project.id, {
+					title: project.title,
+					description: project.description || "Platform guided project",
+					technologies: project.technologies,
+					url: `/projects/${project.slug}`,
+				});
 
-		for (const attempt of examAttempts) {
+				chunks.forEach((chunk, index) => {
+					allChunks.push({
+						id: generateVectorId(profile.id, "PROJECT", `platform_${project.id}`, index),
+						text: chunk.text,
+						metadata: {
+							...chunk.metadata,
+							text: chunk.text,
+							projectType: "platform",
+						},
+					});
+				});
+				totalItems += chunks.length;
+			} catch {
+				failedItems++;
+			}
+		}
+	}
+
+	// 5. Process assessments (passed exams)
+	if (profile.includeAssessments && profile.examAttempts.length > 0) {
+		for (const attempt of profile.examAttempts) {
 			try {
 				const chunks = createAssessmentChunks(profile.id, attempt.id, {
 					title: attempt.topic.name,
@@ -349,7 +448,7 @@ async function processEmbeddings(profile: {
 		}
 	}
 
-	// 5. Process external platform data
+	// 6. Process external platform data (only if enabled - for future use)
 	if (profile.includePlatformData) {
 		for (const data of profile.externalData) {
 			try {
@@ -401,6 +500,7 @@ async function processEmbeddings(profile: {
 	const batchSize = 50;
 	const vectorsToUpsert: {
 		id: string;
+		text: string;
 		embedding: number[];
 		metadata: Record<string, unknown>;
 	}[] = [];
@@ -416,6 +516,7 @@ async function processEmbeddings(profile: {
 				if (embeddings[index] && embeddings[index].length > 0) {
 					vectorsToUpsert.push({
 						id: chunk.id,
+						text: chunk.text,
 						embedding: embeddings[index],
 						metadata: chunk.metadata as Record<string, unknown>,
 					});
@@ -432,6 +533,7 @@ async function processEmbeddings(profile: {
 		await upsertVectorsBatch(
 			vectorsToUpsert.map((v) => ({
 				id: v.id,
+				text: v.text,
 				embedding: v.embedding,
 				metadata: v.metadata as unknown as import("@/types/knowme").EmbeddingMetadata,
 			})),

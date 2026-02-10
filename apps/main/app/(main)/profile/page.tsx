@@ -16,8 +16,7 @@ import {
 import type { ProfileTab } from "@/components/profile";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    getOwnProfile, getUserProfileStats, endorseSkill, pinProject, 
-    unpinProject
+    getOwnProfile, getUserProfileStats, endorseSkill
 } from "@/actions/(main)/user/profile.action";
 import { useRouter } from "next/navigation";
 
@@ -61,15 +60,23 @@ interface ProfileData {
         description: string;
         createdAt: Date;
     }>;
-    projects: Array<{
+    portfolioProjects?: Array<{
         id: string;
-        name: string;
-        description: string;
-        category: string;
-        difficulty: string;
-        tags: string[];
-        tier: string;
-        estimatedTime: string;
+        projectName: string;
+        projectType: string;
+        description: string | null;
+        status: string;
+        visibility: string;
+        technologies: string[];
+        startDate: Date;
+        endDate: Date | null;
+        thumbnailUrl: string | null;
+        projectLinks?: Array<{
+            id: string;
+            linkType: string;
+            url: string;
+            description: string | null;
+        }>;
     }>;
     skills: Array<{
         id: string;
@@ -126,19 +133,6 @@ interface ProfileData {
         theme: string;
         profileViews: number;
         completionScore: number;
-        pinnedProjects: Array<{
-            id: string;
-            order: number;
-            projectId: string;
-            project: {
-                id: string;
-                name: string;
-                description: string;
-                category: string;
-                difficulty: string;
-                tags: string[];
-            };
-        }>;
     } | null;
     _count?: {
         followers: number;
@@ -204,28 +198,6 @@ export default function ProfilePage() {
             await loadProfile();
         } else {
             toast.error(result.error || "Failed to endorse skill");
-        }
-    };
-
-    // Handle pin project
-    const handlePinProject = async (projectId: string) => {
-        const result = await pinProject(projectId);
-        if (result.success) {
-            toast.success("Project pinned to your profile!");
-            await loadProfile();
-        } else {
-            toast.error(result.error || "Failed to pin project");
-        }
-    };
-
-    // Handle unpin project
-    const handleUnpinProject = async (projectId: string) => {
-        const result = await unpinProject(projectId);
-        if (result.success) {
-            toast.success("Project unpinned from your profile!");
-            await loadProfile();
-        } else {
-            toast.error(result.error || "Failed to unpin project");
         }
     };
 
@@ -310,7 +282,7 @@ export default function ProfilePage() {
 
     // Profile stats
     const profileStats = stats || {
-        projectsCount: profileData?.projects?.length || 0,
+        projectsCount: profileData?.portfolioProjects?.length || 0,
         skillsCount: profileData?.skills?.length || 0,
         followersCount: profileData?._count?.followers || 0,
         followingCount: profileData?._count?.following || 0,
@@ -333,15 +305,15 @@ export default function ProfilePage() {
                     <OverviewTab
                         {...commonProps}
                         stats={profileStats}
-                        onPinProject={() => setActiveTab("projects")}
                     />
                 );
             case "projects":
                 return (
                     <ProjectsTab
-                        {...commonProps}
-                        onPinProject={handlePinProject}
-                        onUnpinProject={handleUnpinProject}
+                        user={{
+                            portfolioProjects: profileData?.portfolioProjects || [],
+                        }}
+                        isOwnProfile={true}
                     />
                 );
             case "activity":

@@ -59,8 +59,6 @@ export async function upsertVector(
 				{
 					id,
 					vector: embedding,
-					// Empty sparse vector for hybrid index compatibility
-					sparseVector: { indices: [], values: [] },
 					metadata: metadata as unknown as Record<string, unknown>,
 				},
 			],
@@ -78,6 +76,7 @@ export async function upsertVector(
 export async function upsertVectorsBatch(
 	vectors: {
 		id: string;
+		text: string;
 		embedding: number[];
 		metadata: EmbeddingMetadata;
 	}[],
@@ -96,8 +95,7 @@ export async function upsertVectorsBatch(
 				batch.map((v) => ({
 					id: v.id,
 					vector: v.embedding,
-					// Empty sparse vector for hybrid index compatibility
-					sparseVector: { indices: [], values: [] },
+					data: v.text,
 					metadata: v.metadata as unknown as Record<string, unknown>,
 				})),
 				{ namespace }
