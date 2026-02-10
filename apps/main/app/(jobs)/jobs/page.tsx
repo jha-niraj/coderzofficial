@@ -2,9 +2,9 @@ import { Suspense } from "react"
 import { 
     Loader2 
 } from "lucide-react"
-import { browseJobs, getRecommendedJobs } from "@/actions/jobs"
-import { getFeaturedCompanies } from "@/actions/companies"
-import { JobsContent } from "./jobs-content"
+import { getFeedStats } from "@/actions/jobs"
+import { auth } from "@repo/auth"
+import { JobsFeedContent } from "./jobs-feed-content"
 
 export const metadata = {
     title: "Jobs | CodeDot.AI",
@@ -12,16 +12,13 @@ export const metadata = {
 }
 
 export default async function JobsPage() {
-    const [jobsResult, recommendedResult, companiesResult] = await Promise.all([
-        browseJobs({}, 1, 20),
-        getRecommendedJobs(5),
-        getFeaturedCompanies(6)
+    const [session, statsResult] = await Promise.all([
+        auth(),
+        getFeedStats()
     ])
 
-    const jobs = jobsResult.success ? jobsResult.data?.jobs ?? [] : []
-    const pagination = jobsResult.success ? jobsResult.data?.pagination ?? { page: 1, limit: 20, total: 0, totalPages: 0 } : { page: 1, limit: 20, total: 0, totalPages: 0 }
-    const recommended = recommendedResult.success ? recommendedResult.data ?? [] : []
-    const featuredCompanies = companiesResult.success ? companiesResult.data ?? [] : []
+    const stats = statsResult.success && statsResult.data ? statsResult.data : null
+    const isAuthenticated = !!session?.user?.id
 
     return (
         <Suspense 
@@ -31,11 +28,9 @@ export default async function JobsPage() {
                 </div>
             }
         >
-            <JobsContent 
-                initialJobs={jobs}
-                initialPagination={pagination}
-                recommendedJobs={recommended}
-                featuredCompanies={featuredCompanies}
+            <JobsFeedContent 
+                initialStats={stats}
+                isAuthenticated={isAuthenticated}
             />
         </Suspense>
     )
