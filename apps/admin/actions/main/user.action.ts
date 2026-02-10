@@ -121,7 +121,7 @@ export async function getUserById(userId: string): Promise<AdminResponse<any>> {
                     take: 10,
                     orderBy: { createdAt: "desc" },
                 },
-                projects: {
+                portfolioProjects: {
                     take: 5,
                     orderBy: { createdAt: "desc" },
                 },
