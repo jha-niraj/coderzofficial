@@ -15,11 +15,11 @@ interface Project {
     id: string;
     project: {
         id: string;
-        name: string;
+        title: string;
+        slug: string;
         description: string | null;
         difficulty: string;
-        category: string;
-        tier: string;
+        generationType: string;
     };
 }
 
@@ -110,7 +110,7 @@ export default function ContinueLearning({ projects, studios }: ContinueLearning
                                 variants={itemVariants}
                                 className="flex-shrink-0 w-[300px]"
                             >
-                                <Link href={`/projects/${progress.project.id}`}>
+                                <Link href={`/projects/${progress.project.slug}`}>
                                     <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-primary/10 hover:border-primary/30">
                                         <CardHeader className="pb-2">
                                             <div className="flex items-start justify-between">
@@ -127,7 +127,7 @@ export default function ContinueLearning({ projects, studios }: ContinueLearning
                                                 </Badge>
                                             </div>
                                             <CardTitle className="text-base line-clamp-1">
-                                                {progress.project.name}
+                                                {progress.project.title}
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-3">
@@ -137,7 +137,7 @@ export default function ContinueLearning({ projects, studios }: ContinueLearning
                                             </p>
                                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                                 <Badge variant="outline" className="text-xs">
-                                                    {progress.project.category}
+                                                    {progress.project.generationType}
                                                 </Badge>
                                                 <span className="flex items-center gap-1">
                                                     <ChevronRight className="h-3 w-3" />

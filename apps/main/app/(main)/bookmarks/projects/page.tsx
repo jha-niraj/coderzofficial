@@ -28,18 +28,21 @@ interface BookmarkProject {
     id: string;
     slug?: string;
     title: string;
-    description?: string;
+    description?: string | null;
     coverImage?: string;
     category?: string;
     difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | string;
     memberCount?: number;
-    taskCount: number;
+    taskCount?: number;
+    pageCount?: number;
     techStack?: TechStack[];
+    technologies?: string[];
     savedAt: string | Date;
     type?: string;
     folder?: string | null;
     notes?: string | null;
     estimatedTime?: string | null;
+    estimatedHours?: number;
 }
 
 export default function ProjectBookmarksPage() {
@@ -186,15 +189,15 @@ export default function ProjectBookmarksPage() {
                                                             </span>
                                                             <span className="flex items-center gap-1">
                                                                 <ListTodo className="h-3.5 w-3.5" />
-                                                                {project.taskCount} tasks
+                                                                {project.taskCount ?? project.pageCount ?? 0} tasks
                                                             </span>
                                                         </div>
 
                                                         {
-                                                            project.techStack && project.techStack?.length > 0 && (
+                                                            (project.techStack && project.techStack?.length > 0) || (project.technologies && project.technologies?.length > 0) ? (
                                                                 <div className="flex flex-wrap gap-1 mt-3">
                                                                     {
-                                                                        project.techStack.slice(0, 3).map((tech) => (
+                                                                        (project.techStack || project.technologies?.map(t => ({ id: t, name: t })) || []).slice(0, 3).map((tech) => (
                                                                             <Badge
                                                                                 key={tech.id}
                                                                                 variant="secondary"
@@ -205,14 +208,14 @@ export default function ProjectBookmarksPage() {
                                                                         ))
                                                                     }
                                                                     {
-                                                                        project.techStack.length > 3 && (
+                                                                        (project.techStack?.length ?? project.technologies?.length ?? 0) > 3 && (
                                                                             <Badge variant="secondary" className="text-xs rounded-full">
-                                                                                +{project.techStack.length - 3}
+                                                                                +{(project.techStack?.length ?? project.technologies?.length ?? 0) - 3}
                                                                             </Badge>
                                                                         )
                                                                     }
                                                                 </div>
-                                                            )
+                                                            ) : null
                                                         }
                                                     </div>
                                                 </div>

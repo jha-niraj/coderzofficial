@@ -174,8 +174,8 @@ export async function getProjectsPageStats() {
             prisma.projectV2.count({ where: { generationType: 'AI_AGENT' } }),
             prisma.projectV2Task.count(),
             prisma.projectV2Submission.count({ where: { status: 'APPROVED' } }),
-            // Active users - users with at least one project progress
-            prisma.userProjectProgress.groupBy({
+            // Active users - users with at least one project progress (using ProjectV2)
+            prisma.userProjectV2Progress.groupBy({
                 by: ['userId']
             }).then(results => results.length).catch(() => 0)
         ])

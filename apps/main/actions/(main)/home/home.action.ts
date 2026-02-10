@@ -55,21 +55,21 @@ export async function getHomeData() {
                 },
             }),
 
-            // In-progress projects (limit 6)
-            prisma.userProjectProgress.findMany({
+            // In-progress projects (limit 6) - using ProjectV2
+            prisma.userProjectV2Progress.findMany({
                 where: {
                     userId,
-                    status: "InProgress",
+                    status: "IN_PROGRESS",
                 },
                 include: {
                     project: {
                         select: {
                             id: true,
-                            name: true,
+                            slug: true,
+                            title: true,
                             description: true,
                             difficulty: true,
-                            category: true,
-                            tier: true,
+                            generationType: true,
                         },
                     },
                 },

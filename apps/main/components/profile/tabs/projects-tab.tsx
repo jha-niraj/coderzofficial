@@ -81,7 +81,10 @@ export function ProjectsTab({
     const [typeFilter, setTypeFilter] = useState<string>("all");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-    const projects = user.portfolioProjects || [];
+    // Memoize projects to prevent unnecessary re-renders
+    const projects = useMemo(() => {
+        return user.portfolioProjects || [];
+    }, [user.portfolioProjects]);
 
     // Get unique project types for filter
     const projectTypes = useMemo(() => {

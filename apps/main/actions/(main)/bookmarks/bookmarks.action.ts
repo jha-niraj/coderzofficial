@@ -27,7 +27,6 @@ export async function getBookmarksSummary() {
         // Fetch all bookmark counts and recent items in parallel
         const [
             conceptBookmarks,
-            projectBookmarks,
             projectV2Bookmarks,
             communityPostBookmarks,
             mockInterviewBookmarks,
@@ -44,22 +43,6 @@ export async function getBookmarksSummary() {
                             difficulty: true,
                             thumbnail: true,
                             estimatedTime: true,
-                        },
-                    },
-                },
-                orderBy: { createdAt: "desc" },
-                take: 10,
-            }),
-            prisma.projectBookmark.findMany({
-                where: { userId: user.id },
-                include: {
-                    project: {
-                        select: {
-                            id: true,
-                            name: true,
-                            description: true,
-                            category: true,
-                            difficulty: true,
                         },
                     },
                 },
@@ -158,16 +141,6 @@ export async function getBookmarksSummary() {
             });
         });
 
-        projectBookmarks.forEach(b => {
-            recentSaves.push({
-                type: "project" as const,
-                id: b.project.id,
-                title: b.project.name,
-                category: b.project.category,
-                savedAt: b.createdAt,
-            });
-        });
-
         projectV2Bookmarks.forEach(b => {
             recentSaves.push({
                 type: "projectV2" as const,
@@ -202,7 +175,7 @@ export async function getBookmarksSummary() {
         // Sort by saved date
         recentSaves.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
 
-        const totalProjects = projectBookmarks.length + projectV2Bookmarks.length;
+        const totalProjects = projectV2Bookmarks.length;
 
         return {
             success: true,
@@ -229,19 +202,13 @@ export async function getBookmarksSummary() {
                     },
                     projects: {
                         count: totalProjects,
-                        recent: [...projectBookmarks.slice(0, 3).map(b => ({
-                            id: b.project.id,
-                            title: b.project.name,
-                            category: b.project.category,
-                            type: "v1" as const,
-                            savedAt: b.createdAt,
-                        })), ...projectV2Bookmarks.slice(0, 2).map(b => ({
+                        recent: projectV2Bookmarks.slice(0, 5).map(b => ({
                             id: b.project.id,
                             title: b.project.title,
                             slug: b.project.slug,
                             type: "v2" as const,
                             savedAt: b.createdAt,
-                        }))],
+                        })),
                     },
                     community: {
                         count: communityPostBookmarks.length,
@@ -365,93 +332,18 @@ export async function toggleConceptBookmark(conceptId: string) {
 }
 
 // ==========================================
-// PROJECT BOOKMARKS (V1)
+// PROJECT V2 BOOKMARKS (Primary project bookmarks)
 // ==========================================
 
+// Alias for backward compatibility - redirects to ProjectV2Bookmarks
 export async function getProjectBookmarks() {
-    try {
-        const user = await getCurrentUser();
-        if (!user) {
-            return { success: false, error: "Unauthorized" };
-        }
-
-        const bookmarks = await prisma.projectBookmark.findMany({
-            where: { userId: user.id },
-            include: {
-                project: {
-                    include: {
-                        _count: {
-                            select: {
-                                tasks: true,
-                            },
-                        },
-                    },
-                },
-            },
-            orderBy: { createdAt: "desc" },
-        });
-
-        return {
-            success: true,
-            data: bookmarks.map(b => ({
-                id: b.project.id,
-                title: b.project.name,
-                description: b.project.description,
-                category: b.project.category,
-                difficulty: b.project.difficulty,
-                estimatedTime: b.project.estimatedTime,
-                taskCount: b.project._count.tasks,
-                savedAt: b.createdAt,
-                folder: b.folder,
-                notes: b.notes,
-                type: "v1",
-            })),
-        };
-    } catch (error) {
-        console.error("Error fetching project bookmarks:", error);
-        return { success: false, error: "Failed to fetch bookmarks" };
-    }
+    return getProjectV2Bookmarks();
 }
 
+// Alias for backward compatibility - redirects to ProjectV2Bookmark toggle
 export async function toggleProjectBookmark(projectId: string) {
-    try {
-        const user = await getCurrentUser();
-        if (!user) {
-            return { success: false, error: "Unauthorized" };
-        }
-
-        const existing = await prisma.projectBookmark.findUnique({
-            where: {
-                projectId_userId: {
-                    projectId,
-                    userId: user.id,
-                },
-            },
-        });
-
-        if (existing) {
-            await prisma.projectBookmark.delete({
-                where: { id: existing.id },
-            });
-            return { success: true, bookmarked: false };
-        } else {
-            await prisma.projectBookmark.create({
-                data: {
-                    projectId,
-                    userId: user.id,
-                },
-            });
-            return { success: true, bookmarked: true };
-        }
-    } catch (error) {
-        console.error("Error toggling project bookmark:", error);
-        return { success: false, error: "Failed to toggle bookmark" };
-    }
+    return toggleProjectV2Bookmark(projectId);
 }
-
-// ==========================================
-// PROJECT V2 BOOKMARKS
-// ==========================================
 
 export async function getProjectV2Bookmarks() {
     try {
@@ -751,30 +643,22 @@ export async function isConceptBookmarked(conceptId: string) {
     }
 }
 
-export async function isProjectBookmarked(projectId: string, version: "v1" | "v2" = "v1") {
+export async function isProjectBookmarked(projectId: string, version: "v1" | "v2" = "v2") {
     try {
         const user = await getCurrentUser();
         if (!user) {
             return { success: true, bookmarked: false };
         }
 
-        const bookmark = version === "v1"
-            ? await prisma.projectBookmark.findUnique({
-                where: {
-                    projectId_userId: {
-                        projectId,
-                        userId: user.id,
-                    },
+        // All project bookmarks now use ProjectV2Bookmark
+        const bookmark = await prisma.projectV2Bookmark.findUnique({
+            where: {
+                projectId_userId: {
+                    projectId,
+                    userId: user.id,
                 },
-            })
-            : await prisma.projectV2Bookmark.findUnique({
-                where: {
-                    projectId_userId: {
-                        projectId,
-                        userId: user.id,
-                    },
-                },
-            });
+            },
+        });
 
         return { success: true, bookmarked: !!bookmark };
     } catch (error) {
@@ -817,9 +701,8 @@ export async function getBookmarkStats() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const [conceptCount, projectCount, projectV2Count, communityCount, mockCount] = await Promise.all([
+        const [conceptCount, projectV2Count, communityCount, mockCount] = await Promise.all([
             prisma.conceptBookmark.count({ where: { userId: user.id } }),
-            prisma.projectBookmark.count({ where: { userId: user.id } }),
             prisma.projectV2Bookmark.count({ where: { userId: user.id } }),
             prisma.communityPostBookmark.count({ where: { userId: user.id } }),
             prisma.mockInterviewBookmark.count({ where: { userId: user.id } }),
@@ -829,10 +712,10 @@ export async function getBookmarkStats() {
             success: true,
             data: {
                 concepts: conceptCount,
-                projects: projectCount + projectV2Count,
+                projects: projectV2Count,
                 community: communityCount,
                 mock: mockCount,
-                total: conceptCount + projectCount + projectV2Count + communityCount + mockCount,
+                total: conceptCount + projectV2Count + communityCount + mockCount,
             },
         };
     } catch (error) {

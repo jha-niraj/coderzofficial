@@ -75,15 +75,16 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
             mockSessions,
             communityMemberships,
         ] = await Promise.all([
-            // Projects user has started/worked on
-            prisma.userProjectProgress.findMany({
+            // Projects user has started/worked on (using ProjectV2)
+            prisma.userProjectV2Progress.findMany({
                 where: { userId: user.id },
                 include: {
                     project: {
                         select: {
                             id: true,
-                            name: true,
-                            category: true,
+                            title: true,
+                            slug: true,
+                            generationType: true,
                             difficulty: true,
                             updatedAt: true,
                         },
@@ -178,9 +179,9 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
         projectProgress.slice(0, 2).forEach(p => {
             recentActivity.push({
                 type: "project",
-                title: p.project.name,
-                slug: p.project.id,
-                action: p.status === "Completed" ? "completed" : "working",
+                title: p.project.title,
+                slug: p.project.slug,
+                action: p.status === "COMPLETED" ? "completed" : "working",
                 date: p.startedAt || p.project.updatedAt,
             });
         });
@@ -201,21 +202,21 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
         return {
             success: true,
             data: {
-                totalItemsInProgress: conceptsInProgress + projectProgress.filter(p => p.status !== "Completed").length,
-                totalCompleted: conceptsCompleted + projectProgress.filter(p => p.status === "Completed").length,
+                totalItemsInProgress: conceptsInProgress + projectProgress.filter(p => p.status !== "COMPLETED").length,
+                totalCompleted: conceptsCompleted + projectProgress.filter(p => p.status === "COMPLETED").length,
                 currentStreak,
                 totalLearningTime: conceptProgress.reduce((acc, p) => acc + (p.totalTimeSpent || 0), 0),
                 modules: {
                     projects: {
-                        inProgress: projectProgress.filter(p => p.status !== "Completed").length,
-                        completed: projectProgress.filter(p => p.status === "Completed").length,
+                        inProgress: projectProgress.filter(p => p.status !== "COMPLETED").length,
+                        completed: projectProgress.filter(p => p.status === "COMPLETED").length,
                         total: projectProgress.length,
                         recent: projectProgress.slice(0, 5).map(p => ({
                             id: p.project.id,
-                            title: p.project.name,
-                            slug: p.project.id,
+                            title: p.project.title,
+                            slug: p.project.slug,
                             coverImage: null,
-                            category: p.project.category,
+                            category: p.project.generationType,
                             status: p.status,
                         })),
                     },
@@ -278,12 +279,16 @@ export async function getProjectLearnings() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const projects = await prisma.userProjectProgress.findMany({
+        const projects = await prisma.userProjectV2Progress.findMany({
             where: { userId: user.id },
             include: {
                 project: {
                     include: {
-                        tasks: true,
+                        sprints: {
+                            include: {
+                                tasks: true,
+                            },
+                        },
                     },
                 },
             },
@@ -294,15 +299,15 @@ export async function getProjectLearnings() {
             success: true,
             data: projects.map(p => ({
                 id: p.project.id,
-                title: p.project.name,
-                slug: p.project.id,
+                title: p.project.title,
+                slug: p.project.slug,
                 description: p.project.description,
                 coverImage: null,
-                category: p.project.category,
+                category: p.project.generationType,
                 status: p.status,
                 difficulty: p.project.difficulty,
                 joinedAt: p.startedAt,
-                taskCount: p.project.tasks.length,
+                taskCount: p.project.sprints.reduce((acc, s) => acc + s.tasks.length, 0),
             })),
         };
     } catch (error) {
@@ -468,7 +473,7 @@ export async function getLearningStats() {
             mockCount,
             communityCount,
         ] = await Promise.all([
-            prisma.userProjectProgress.count({ where: { userId: user.id } }),
+            prisma.userProjectV2Progress.count({ where: { userId: user.id } }),
             prisma.conceptProgress.findMany({
                 where: { userId: user.id },
                 select: {

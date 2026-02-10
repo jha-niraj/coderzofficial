@@ -27,14 +27,16 @@ export async function getOverviewStats(dateRange?: DateRange): Promise<AdminResp
         const [
             totalUsers,
             newUsers,
-            totalProjects,
+            totalProjectV2,
+            totalPortfolioProjects,
             totalCredits,
             totalFeedback,
             activeCommunities,
         ] = await Promise.all([
             prisma.user.count(),
             prisma.user.count({ where: { createdAt: { gte: from, lte: to } } }),
-            prisma.projects.count(),
+            prisma.projectV2.count(),
+            prisma.portfolioProject.count(),
             prisma.user.aggregate({ _sum: { credits: true } }),
             prisma.feedback.count({ where: { createdAt: { gte: from, lte: to } } }),
             prisma.community.count({ where: { createdAt: { lte: to } } }),
@@ -45,7 +47,7 @@ export async function getOverviewStats(dateRange?: DateRange): Promise<AdminResp
             data: {
                 totalUsers,
                 newUsers,
-                totalProjects,
+                totalProjects: totalProjectV2 + totalPortfolioProjects,
                 totalCredits: totalCredits._sum.credits || 0,
                 totalFeedback,
                 activeCommunities,
@@ -125,7 +127,7 @@ export async function getEngagementStats(dateRange?: DateRange): Promise<AdminRe
             communitiesJoined,
             mocksCompleted,
         ] = await Promise.all([
-            prisma.userProjectProgress.count({
+            prisma.userProjectV2Progress.count({
                 where: { startedAt: { gte: from, lte: to } },
             }),
             prisma.feedback.count({
@@ -235,7 +237,7 @@ export async function getModuleUsageStats(dateRange?: DateRange): Promise<AdminR
             communitiesCount,
             conceptsCount,
         ] = await Promise.all([
-            prisma.userProjectProgress.count({
+            prisma.userProjectV2Progress.count({
                 where: { startedAt: { gte: from, lte: to } },
             }),
             prisma.mockVoiceSession.count({
