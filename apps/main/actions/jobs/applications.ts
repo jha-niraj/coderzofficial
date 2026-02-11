@@ -9,7 +9,10 @@ export async function showInterest(jobId: string) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
-            return { success: false, error: "Please sign in to show interest" }
+            return { 
+                success: false,
+                error: "Please sign in to show interest" 
+            }
         }
 
         const job = await prisma.job.findUnique({
@@ -91,8 +94,15 @@ export async function startPreparing(applicationId: string) {
     }
 }
 
-// Submit application (move from PREPARING to APPLIED)
-export async function submitApplication(applicationId: string, coverLetter?: string) {
+// Custom Question Response Type
+interface CustomQuestionResponse {
+    questionId: string
+    answer: string | string[] | number | boolean
+    answeredAt: string
+}
+
+// Commitment Check - Validates candidate is ready to apply
+export async function performCommitmentCheck(applicationId: string) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
@@ -104,7 +114,125 @@ export async function submitApplication(applicationId: string, coverLetter?: str
                 id: applicationId,
                 userId: session.user.id
             },
-            include: { job: true }
+            include: {
+                job: {
+                    include: {
+                        company: {
+                            select: { name: true }
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!application) {
+            return { success: false, error: "Application not found" }
+        }
+
+        const checks = {
+            // Profile completeness check
+            profileComplete: false,
+            // Match score check (recommend at least 60%)
+            matchScoreOk: (application.matchScore ?? 0) >= 60,
+            // Preparation status check
+            hasReviewedRequirements: true, // They've seen the job details
+            // Competition awareness
+            understoodsCompetition: application.job.applicationsCount > 0,
+            // Can proceed with caution if low match
+            canProceedWithCaution: (application.matchScore ?? 0) >= 40 && (application.matchScore ?? 0) < 60
+        }
+
+        // Get user profile to check completeness
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                name: true,
+                email: true,
+                resume: true,
+                skills: true
+            }
+        })
+
+        if (user) {
+            checks.profileComplete = !!(user.name && user.email && (user.resume || (user.skills && user.skills.length > 0)))
+        }
+
+        const isReadyToApply = checks.profileComplete && (checks.matchScoreOk || checks.canProceedWithCaution)
+
+        const recommendations = []
+        if (!checks.profileComplete) {
+            recommendations.push({
+                type: "warning",
+                message: "Complete your profile to increase your chances"
+            })
+        }
+        if (!checks.matchScoreOk && !checks.canProceedWithCaution) {
+            recommendations.push({
+                type: "caution",
+                message: `Your match score (${application.matchScore ?? 0}%) is low for this role. Consider improving your skills first.`
+            })
+        }
+        if (checks.canProceedWithCaution) {
+            recommendations.push({
+                type: "info",
+                message: "Your match score is moderate. You can still apply, but improving relevant skills may help."
+            })
+        }
+        if (application.job.applicationsCount > 20) {
+            recommendations.push({
+                type: "info",
+                message: `This role has ${application.job.applicationsCount}+ applicants. Stand out with a strong cover letter!`
+            })
+        }
+
+        return {
+            success: true,
+            data: {
+                checks,
+                isReadyToApply,
+                recommendations,
+                job: {
+                    title: application.job.title,
+                    company: application.job.company.name,
+                    applicationsCount: application.job.applicationsCount
+                },
+                matchScore: application.matchScore ?? 0
+            }
+        }
+    } catch (error) {
+        console.error("Error performing commitment check:", error)
+        return { success: false, error: "Failed to perform commitment check" }
+    }
+}
+
+// Submit application (move from PREPARING to APPLIED)
+export async function submitApplication(
+    applicationId: string, 
+    data?: {
+        coverLetter?: string
+        customQuestionResponses?: CustomQuestionResponse[]
+        acknowledgedCommitmentCheck?: boolean
+    }
+) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        const application = await prisma.jobApplication.findFirst({
+            where: {
+                id: applicationId,
+                userId: session.user.id
+            },
+            include: { 
+                job: {
+                    select: {
+                        id: true,
+                        customQuestions: true
+                    }
+                } 
+            }
         })
 
         if (!application) {
@@ -115,13 +243,39 @@ export async function submitApplication(applicationId: string, coverLetter?: str
             return { success: false, error: "Application already submitted" }
         }
 
+        // Validate required custom questions if any
+        const customQuestions = application.job.customQuestions as Array<{
+            id: string
+            required: boolean
+            question: string
+        }> | null
+
+        if (customQuestions && customQuestions.length > 0) {
+            const requiredQuestions = customQuestions.filter(q => q.required)
+            const responses = data?.customQuestionResponses || []
+            
+            for (const rq of requiredQuestions) {
+                const response = responses.find(r => r.questionId === rq.id)
+                if (!response || !response.answer || 
+                    (Array.isArray(response.answer) && response.answer.length === 0) ||
+                    (typeof response.answer === 'string' && response.answer.trim() === '')) {
+                    return { 
+                        success: false, 
+                        error: `Please answer the required question: "${rq.question}"` 
+                    }
+                }
+            }
+        }
+
         // Update application
         const updated = await prisma.jobApplication.update({
             where: { id: applicationId },
             data: {
                 status: "APPLIED",
                 appliedAt: new Date(),
-                coverLetter: coverLetter || application.coverLetter
+                coverLetter: data?.coverLetter || application.coverLetter,
+                // Cast to JSON for Prisma
+                customQuestionResponses: JSON.parse(JSON.stringify(data?.customQuestionResponses || []))
             }
         })
 

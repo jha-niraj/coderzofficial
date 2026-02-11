@@ -3,6 +3,8 @@ import { Loader2 } from "lucide-react"
 import { browseCompanies, getFeaturedCompanies, getFollowedCompanyIds } from "@/actions/companies"
 import { CompaniesContent } from "./companies-content"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
     title: "Companies | CodeDot.AI",
     description: "Discover companies with transparent interview processes"

@@ -1,3 +1,5 @@
+
+
 {
 	"$schema": "https://turborepo.com/schema.json",
 	"ui": "tui",
@@ -96,7 +98,8 @@
 				"NEXT_PUBLIC_BASE_URL",
 				"RAZORPAY_KEY_SECRET",
 				"UPSTASH_VECTOR_REST_URL",
-				"UPSTASH_VECTOR_REST_TOKEN"
+				"UPSTASH_VECTOR_REST_TOKEN",
+				"DODO_PRO_PRODUCT_ID"
 			],
 			"inputs": [
 				"$TURBO_DEFAULT$",
@@ -164,7 +167,8 @@
 				"FALAI_API_KEY",
 				"G_ANALYTICS_ID",
 				"UPSTASH_VECTOR_REST_URL",
-				"UPSTASH_VECTOR_REST_TOKEN"
+				"UPSTASH_VECTOR_REST_TOKEN",
+				"DODO_PRO_PRODUCT_ID"
 			]
 		},
 		"lint": {

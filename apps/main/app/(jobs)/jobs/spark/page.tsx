@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
 import { auth } from "@repo/auth"
 import { getSparkJobs } from "@/actions/jobs/tabs"
-import { SparkContent } from "./spark/spark-content"
+import { SparkContent } from "./spark-content"
 
 export const dynamic = "force-dynamic"
 
@@ -11,8 +11,7 @@ export const metadata = {
     description: "Swipe through jobs and find your perfect match with AI-powered recommendations"
 }
 
-// Default /jobs page shows Spark (swipe) interface
-export default async function JobsPage() {
+export default async function SparkPage() {
     const [session, jobsResult] = await Promise.all([
         auth(),
         getSparkJobs(1, 20)

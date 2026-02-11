@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
                 verifyOTP,
                 verifyOTPExpiry,
                 role: "HR", // Set HR role for hiring platform users
-                onboardingCompleted: false
+                onboardingCompleted: false,
+                company: companyName || null // Store company name from registration
             }
         });
         console.log('✅ User created successfully:', user.id);

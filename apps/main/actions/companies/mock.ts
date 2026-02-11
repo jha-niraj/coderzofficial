@@ -18,7 +18,48 @@ export async function getCompanyMockHub(companySlug: string) {
             return { success: false, error: "Company not found" }
         }
 
-        // Get interview processes with mock-enabled rounds
+        // Get jobs with interview processes that have mock-enabled rounds
+        const jobs = await prisma.job.findMany({
+            where: {
+                companyId: company.id,
+                status: "ACTIVE",
+                interviewProcess: {
+                    isActive: true,
+                    rounds: {
+                        some: {
+                            hasMockInterview: true
+                        }
+                    }
+                }
+            },
+            include: {
+                interviewProcess: {
+                    include: {
+                        rounds: {
+                            orderBy: { roundNumber: "asc" },
+                            select: {
+                                id: true,
+                                roundNumber: true,
+                                title: true,
+                                roundType: true,
+                                description: true,
+                                durationMinutes: true,
+                                hasMockInterview: true,
+                                tipsForCandidates: true
+                            }
+                        }
+                    }
+                },
+                _count: {
+                    select: {
+                        applications: true
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        })
+
+        // Get interview processes with mock-enabled rounds (for backward compatibility)
         const processes = await prisma.interviewProcess.findMany({
             where: {
                 companyId: company.id,
@@ -57,7 +98,10 @@ export async function getCompanyMockHub(companySlug: string) {
         }
 
         if (userId) {
-            const roundIds = processes.flatMap(p => p.rounds.map(r => r.id))
+            // Get round IDs from both jobs and processes
+            const jobRoundIds = jobs.flatMap(j => j.interviewProcess?.rounds.map(r => r.id) || [])
+            const processRoundIds = processes.flatMap(p => p.rounds.map(r => r.id))
+            const roundIds = [...new Set([...jobRoundIds, ...processRoundIds])]
             
             const sessions = await prisma.jobMockSession.findMany({
                 where: {
@@ -112,6 +156,25 @@ export async function getCompanyMockHub(companySlug: string) {
         return {
             success: true,
             data: {
+                jobs: jobs.map(j => ({
+                    id: j.id,
+                    title: j.title,
+                    slug: j.slug,
+                    location: j.location,
+                    locationType: j.locationType,
+                    employmentType: j.employmentType,
+                    applicationsCount: j._count.applications,
+                    interviewProcess: j.interviewProcess ? {
+                        id: j.interviewProcess.id,
+                        name: j.interviewProcess.name,
+                        description: j.interviewProcess.description,
+                        estimatedDurationWeeks: j.interviewProcess.estimatedDurationWeeks,
+                        rounds: j.interviewProcess.rounds.map(r => ({
+                            ...r,
+                            tipsForCandidates: r.tipsForCandidates as string[] | null
+                        }))
+                    } : null
+                })),
                 processes: processes.map(p => ({
                     id: p.id,
                     name: p.name,

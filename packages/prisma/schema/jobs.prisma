@@ -43,6 +43,24 @@ model Job {
     assignmentDetails      Json? // { title, description, requirements[], resources[], deliverables[] }
     assignmentInstructions String? @db.Text // Detailed instructions for assignment
 
+    // Custom Questions from HR
+    // Structure: Array of CustomQuestion objects
+    // {
+    //   id: string (uuid)
+    //   question: string (the question text)
+    //   type: "text" | "textarea" | "select" | "multiselect" | "radio" | "checkbox" | "number" | "date" | "file"
+    //   required: boolean
+    //   options?: string[] (for select, multiselect, radio, checkbox types)
+    //   placeholder?: string
+    //   minLength?: number (for text/textarea)
+    //   maxLength?: number (for text/textarea)
+    //   min?: number (for number type)
+    //   max?: number (for number type)
+    //   helperText?: string (additional context for candidates)
+    //   order: number (display order)
+    // }
+    customQuestions Json? @default("[]")
+
     // Job Status
     status     JobStatus     @default(DRAFT)
     visibility JobVisibility @default(PUBLIC)
@@ -147,6 +165,15 @@ model JobApplication {
     // Cover letter / notes from candidate
     coverLetter String? @db.Text
     resumeUrl   String? // Link to resume file
+
+    // Custom Question Responses
+    // Structure: Array of CustomQuestionResponse objects
+    // {
+    //   questionId: string (matches CustomQuestion.id)
+    //   answer: string | string[] | number | boolean (depending on question type)
+    //   answeredAt: ISO date string
+    // }
+    customQuestionResponses Json? @default("[]")
 
     // Timestamps
     appliedAt DateTime?

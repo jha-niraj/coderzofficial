@@ -1,0 +1,34 @@
+import { Suspense } from "react"
+import { Loader2 } from "lucide-react"
+import { auth } from "@repo/auth"
+import { getFollowingFeedJobs } from "@/actions/jobs"
+import { FollowingContent } from "./following-content"
+
+export const dynamic = "force-dynamic"
+
+export const metadata = {
+    title: "Following - Jobs | CodeDot.AI",
+    description: "Jobs from companies you follow"
+}
+
+export default async function FollowingPage() {
+    const [session, jobsResult] = await Promise.all([
+        auth(),
+        getFollowingFeedJobs(1, 20)
+    ])
+
+    const isAuthenticated = !!session?.user?.id
+    
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+            </div>
+        }>
+            <FollowingContent 
+                initialData={jobsResult}
+                isAuthenticated={isAuthenticated}
+            />
+        </Suspense>
+    )
+}

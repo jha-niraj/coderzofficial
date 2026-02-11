@@ -41,6 +41,42 @@ export type ApplicationActivityType =
     | "ASSIGNMENT_SUBMISSION"
 
 // ============================================
+// CUSTOM QUESTION TYPES
+// ============================================
+
+export type CustomQuestionType = 
+    | "text"        // Single line text input
+    | "textarea"    // Multi-line text area
+    | "select"      // Single select dropdown
+    | "multiselect" // Multi-select dropdown/checkboxes
+    | "radio"       // Radio button group
+    | "checkbox"    // Checkbox (yes/no)
+    | "number"      // Numeric input
+    | "date"        // Date picker
+    | "file"        // File upload
+
+export interface CustomQuestion {
+    id: string
+    question: string
+    type: CustomQuestionType
+    required: boolean
+    options?: string[]       // For select, multiselect, radio
+    placeholder?: string
+    minLength?: number       // For text/textarea
+    maxLength?: number       // For text/textarea
+    min?: number             // For number
+    max?: number             // For number
+    helperText?: string      // Additional context
+    order: number
+}
+
+export interface CustomQuestionResponse {
+    questionId: string
+    answer: string | string[] | number | boolean
+    answeredAt: string
+}
+
+// ============================================
 // JOB INTERFACES
 // ============================================
 
@@ -74,6 +110,7 @@ export interface CreateJobInput {
     assignmentDetails?: AssignmentDetails
     assignmentDeadlineDays?: number
     interviewProcessId?: string
+    customQuestions?: CustomQuestion[]
     visibility?: JobVisibility
     status?: JobStatus
 }
@@ -103,6 +140,7 @@ export interface Job {
     assignmentDetails: AssignmentDetails | null
     assignmentDeadlineDays: number | null
     interviewProcessId: string | null
+    customQuestions: CustomQuestion[] | null
     visibility: JobVisibility
     status: JobStatus
     viewsCount: number

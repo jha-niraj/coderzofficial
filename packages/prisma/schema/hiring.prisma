@@ -78,6 +78,7 @@ model Company {
 
     // The User who created/registered the company
     createdByUserId String? // Links to User.id from main schema
+    createdBy       User?   @relation("CompanyCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
     // Interview Process Configuration Status
     hasInterviewProcess Boolean @default(false)

@@ -19,7 +19,7 @@ import {
 } from "@repo/ui/components/ui/select"
 import { cn } from "@repo/ui/lib/utils"
 import { 
-    completeOnboarding, checkSlugAvailability 
+    completeOnboarding, checkSlugAvailability, getPendingCompanyInfo 
 } from "@/actions/auth/onboarding.action"
 import toast from "@repo/ui/components/ui/sonner"
 
@@ -87,6 +87,8 @@ function OnboardingContent() {
     const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()
     const [currentStep, setCurrentStep] = useState(1)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_isLoadingPendingInfo, setIsLoadingPendingInfo] = useState(true)
     
     // Get inviteBy from URL (university referral)
     const inviteBy = searchParams.get('inviteBy')
@@ -107,6 +109,28 @@ function OnboardingContent() {
     const [selectedGoals, setSelectedGoals] = useState<string[]>([])
 
     const totalSteps = 2
+
+    // Fetch pending company info from registration
+    useEffect(() => {
+        const fetchPendingInfo = async () => {
+            try {
+                const result = await getPendingCompanyInfo();
+                if (result.success && result.data) {
+                    if (result.data.companyName) {
+                        setCompanyName(result.data.companyName);
+                    }
+                    if (result.data.suggestedWebsite) {
+                        setWebsite(result.data.suggestedWebsite);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch pending company info:", error);
+            } finally {
+                setIsLoadingPendingInfo(false);
+            }
+        };
+        fetchPendingInfo();
+    }, []);
 
     // Generate slug from company name
     const generateSlug = useCallback((name: string) => {
@@ -236,10 +260,17 @@ function OnboardingContent() {
                                             <Building2 className="w-8 h-8 text-neutral-600 dark:text-neutral-400" />
                                         </div>
                                         <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
-                                            Set up your workspace
+                                            {companyName ? (
+                                                <>Set up your workspace for <span className="text-neutral-500">{companyName}</span></>
+                                            ) : (
+                                                "Set up your workspace"
+                                            )}
                                         </h1>
                                         <p className="text-neutral-500">
-                                            Tell us about your company to personalize your experience
+                                            {companyName 
+                                                ? "Complete the details below to finalize your workspace"
+                                                : "Tell us about your company to personalize your experience"
+                                            }
                                         </p>
                                     </div>
                                     <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 space-y-6">

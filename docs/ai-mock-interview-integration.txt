@@ -1,0 +1,674 @@
+================================================================================
+AI MOCK INTERVIEW INTEGRATION DOCUMENTATION
+Cross-Platform Integration Between Main Platform & Hiring Platform
+================================================================================
+
+Created: February 2026
+Platform: Coderz - Main Platform & Hiring Platform
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. Overview & Purpose
+2. Current System Architecture
+3. Screen Flowcharts
+4. Integration Points
+5. Data Flow Diagrams
+6. Implementation Details
+7. HR Dashboard View
+8. Candidate Practice Flow
+9. Score Sharing & Analytics
+
+================================================================================
+1. OVERVIEW & PURPOSE
+================================================================================
+
+The AI Mock Interview system bridges two platforms:
+
+1. HIRING PLATFORM (apps/hiring/)
+   - Used by HR/Companies
+   - Configure interview processes
+   - Add rounds with mock interview support
+   - View candidate mock scores
+   - Schedule real interviews
+
+2. MAIN PLATFORM (apps/main/)
+   - Used by Candidates/Students
+   - Browse companies and jobs
+   - Practice AI mock interviews
+   - Track interview preparation progress
+   - Apply to jobs
+
+KEY GOAL: Enable candidates to practice company-specific interview rounds
+         while HR gets visibility into candidate preparation levels.
+
+================================================================================
+2. CURRENT SYSTEM ARCHITECTURE
+================================================================================
+
+DATABASE SCHEMA (Shared by both platforms)
+------------------------------------------
+
+InterviewProcess (created by HR in Hiring Platform)
+├── id
+├── companyId
+├── name
+├── description
+├── estimatedDurationWeeks
+├── isDefault
+└── rounds[] → InterviewRound
+
+InterviewRound (configured per process)
+├── id
+├── processId
+├── roundNumber
+├── roundType (PHONE_SCREEN, TECHNICAL_CODING, SYSTEM_DESIGN, etc.)
+├── title
+├── durationMinutes
+├── format (VOICE, VIDEO, LIVE_CODING, etc.)
+├── description (candidate-facing)
+├── hasMockInterview (boolean) ← KEY FLAG
+├── mockKnowledgeBase (custom AI context)
+└── mockSessions[] → JobMockSession
+
+JobMockSession (candidate practice sessions)
+├── id
+├── userId (candidate)
+├── jobId (optional - specific job)
+├── companyId
+├── roundId → InterviewRound
+├── sessionType (VOICE, CODING, SYSTEM_DESIGN, BEHAVIORAL)
+├── status (SCHEDULED, IN_PROGRESS, COMPLETED, etc.)
+├── conversationId (ElevenLabs)
+├── overallScore
+├── categoryScores (JSON)
+├── aiAnalysis (JSON)
+└── timestamps
+
+Job
+├── interviewProcessId → InterviewProcess
+└── (links job to company's interview process)
+
+================================================================================
+3. SCREEN FLOWCHARTS
+================================================================================
+
+FLOWCHART A: WHERE MOCK INTERVIEWS ARE SHOWN
+=============================================
+
++==============================================================================+
+|                           MAIN PLATFORM - CANDIDATE VIEW                      |
++==============================================================================+
+
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                         1. JOB CARD (Spark/Browse)                     │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌──────────────────────────────────────────────────────────────────┐ │
+    │  │  [Company Logo]                                                  │ │
+    │  │                                                                  │ │
+    │  │  Senior Frontend Developer                    Match: 85%        │ │
+    │  │  TechCorp Inc.                                                  │ │
+    │  │                                                                  │ │
+    │  │  📍 Remote  💼 Full-time  💰 $80k-$120k                        │ │
+    │  │                                                                  │ │
+    │  │  ────────────────────────────────────────────────────────────── │ │
+    │  │                                                                  │ │
+    │  │  ✓ Transparent Process  •  4 rounds  •  ~3 weeks               │ │
+    │  │                                                                  │ │
+    │  │  🎤 AI Mock Available   ← INDICATOR SHOWN HERE                  │ │
+    │  │                                                                  │ │
+    │  └──────────────────────────────────────────────────────────────────┘ │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ Click Card
+                                        ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                         2. JOB DETAIL PAGE                             │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │                    INTERVIEW PROCESS SECTION                    │  │
+    │  │                                                                 │  │
+    │  │  Round 1: Phone Screen              [🎤 Practice]              │  │
+    │  │  ──────────────────────────────                                │  │
+    │  │  30 min • Voice • Initial screening                            │  │
+    │  │                                                                 │  │
+    │  │  Round 2: Technical Coding          [🎤 Practice]              │  │
+    │  │  ──────────────────────────────                                │  │
+    │  │  60 min • Live Coding • DSA problems                           │  │
+    │  │                                                                 │  │
+    │  │  Round 3: System Design             [🎤 Practice]              │  │
+    │  │  ──────────────────────────────                                │  │
+    │  │  45 min • Whiteboard • Design scalable systems                 │  │
+    │  │                                                                 │  │
+    │  │  Round 4: Behavioral                [🎤 Practice]              │  │
+    │  │  ──────────────────────────────                                │  │
+    │  │  45 min • Hiring Manager • Culture fit                         │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │  PREPARE WITH AI MOCK INTERVIEWS                                │  │
+    │  │                                                                 │  │
+    │  │  Practice all 4 rounds with AI interviewer trained on          │  │
+    │  │  TechCorp's interview style and expectations.                  │  │
+    │  │                                                                 │  │
+    │  │                [🎤 Start Practice Session]                     │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ Click "Practice" on any round
+                                        ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                     3. COMPANY MOCK HUB                                │
+    │                  /companies/[slug]/mock                                │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │  [TechCorp Logo]                                                │  │
+    │  │                                                                 │  │
+    │  │  TechCorp Interview Practice Hub                               │  │
+    │  │                                                                 │  │
+    │  │  Your Progress                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────── │  │
+    │  │  Sessions Completed: 8     Avg Score: 76%     Best: 92%       │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │  AVAILABLE ROUNDS                                               │  │
+    │  │                                                                 │  │
+    │  │  ┌─────────────────────────────────────────────────────────┐   │  │
+    │  │  │ 📞 Phone Screen                                         │   │  │
+    │  │  │ Your Best: 85%  •  Completed: 2 sessions               │   │  │
+    │  │  │                                    [Start Practice]     │   │  │
+    │  │  └─────────────────────────────────────────────────────────┘   │  │
+    │  │                                                                 │  │
+    │  │  ┌─────────────────────────────────────────────────────────┐   │  │
+    │  │  │ 💻 Technical Coding                                     │   │  │
+    │  │  │ Your Best: 72%  •  Completed: 3 sessions               │   │  │
+    │  │  │                                    [Start Practice]     │   │  │
+    │  │  └─────────────────────────────────────────────────────────┘   │  │
+    │  │                                                                 │  │
+    │  │  ┌─────────────────────────────────────────────────────────┐   │  │
+    │  │  │ 🏗️ System Design                                        │   │  │
+    │  │  │ Not attempted yet                                       │   │  │
+    │  │  │                                    [Start Practice]     │   │  │
+    │  │  └─────────────────────────────────────────────────────────┘   │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ Click "Start Practice"
+                                        ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                     4. AI MOCK SESSION                                 │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │                     AI INTERVIEWER                              │  │
+    │  │                                                                 │  │
+    │  │                        [AI Avatar]                             │  │
+    │  │                                                                 │  │
+    │  │  "Hi! I'll be conducting your technical coding interview      │  │
+    │  │   for TechCorp today. Let's start with a warmup question..."  │  │
+    │  │                                                                 │  │
+    │  │                  ───────────────────────────                   │  │
+    │  │                                                                 │  │
+    │  │                       [🎤 Speaking...]                         │  │
+    │  │                                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────  │  │
+    │  │                                                                 │  │
+    │  │  Time: 12:34 / 45:00                                          │  │
+    │  │                                                                 │  │
+    │  │  [End Session]  [Pause]  [Get Hint]                           │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ Session Completes
+                                        ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                     5. SESSION RESULTS                                 │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │                   SESSION COMPLETE!                             │  │
+    │  │                                                                 │  │
+    │  │                    Overall Score: 78%                          │  │
+    │  │                    ████████████████░░░░                        │  │
+    │  │                                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────── │  │
+    │  │                                                                 │  │
+    │  │  Category Scores                                               │  │
+    │  │  ─────────────────                                             │  │
+    │  │  Problem Solving:    85%  ████████░░                          │  │
+    │  │  Communication:      72%  ███████░░░                          │  │
+    │  │  Code Quality:       80%  ████████░░                          │  │
+    │  │  Time Management:    75%  ███████░░░                          │  │
+    │  │                                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────── │  │
+    │  │                                                                 │  │
+    │  │  AI Feedback:                                                  │  │
+    │  │  ────────────                                                  │  │
+    │  │  Strengths:                                                    │  │
+    │  │  • Clear explanation of approach                              │  │
+    │  │  • Good edge case handling                                    │  │
+    │  │                                                                 │  │
+    │  │  Areas to Improve:                                            │  │
+    │  │  • Practice time complexity analysis                          │  │
+    │  │  • Consider more optimal solutions                            │  │
+    │  │                                                                 │  │
+    │  │  [Practice Again]  [View Transcript]  [Done]                  │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    │  📊 This score is shared with TechCorp HR                             │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+
+
+FLOWCHART B: HR VIEW (HIRING PLATFORM)
+======================================
+
++==============================================================================+
+|                         HIRING PLATFORM - HR VIEW                            |
++==============================================================================+
+
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                     1. INTERVIEW CONFIG PAGE                           │
+    │                    /interview-config                                   │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │  CREATE/EDIT INTERVIEW PROCESS                                  │  │
+    │  │                                                                 │  │
+    │  │  Process Name: [Standard Engineering Process     ]             │  │
+    │  │  Description: [Our standard 4-round process for... ]           │  │
+    │  │  Duration: [3] weeks                                           │  │
+    │  │                                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────── │  │
+    │  │                                                                 │  │
+    │  │  ROUNDS                                    [+ Add Round]       │  │
+    │  │                                                                 │  │
+    │  │  ┌──────────────────────────────────────────────────────────┐ │  │
+    │  │  │ Round 1: Phone Screen                                    │ │  │
+    │  │  │                                                          │ │  │
+    │  │  │ Type: [PHONE_SCREEN ▼]   Format: [VOICE ▼]              │ │  │
+    │  │  │ Duration: [30] min                                       │ │  │
+    │  │  │ Description: [Initial screening call with recruiter]     │ │  │
+    │  │  │                                                          │ │  │
+    │  │  │ ☑️ Enable AI Mock Interview  ← KEY TOGGLE                │ │  │
+    │  │  │                                                          │ │  │
+    │  │  │ [Optional] Custom AI Context:                            │ │  │
+    │  │  │ [Focus on cultural fit, communication skills...]         │ │  │
+    │  │  │                                                          │ │  │
+    │  │  └──────────────────────────────────────────────────────────┘ │  │
+    │  │                                                                 │  │
+    │  │  ┌──────────────────────────────────────────────────────────┐ │  │
+    │  │  │ Round 2: Technical Coding                                │ │  │
+    │  │  │                                                          │ │  │
+    │  │  │ Type: [TECHNICAL_CODING ▼]   Format: [LIVE_CODING ▼]    │ │  │
+    │  │  │ Duration: [60] min                                       │ │  │
+    │  │  │ Description: [DSA problems, focus on arrays/trees]       │ │  │
+    │  │  │                                                          │ │  │
+    │  │  │ ☑️ Enable AI Mock Interview                              │ │  │
+    │  │  │                                                          │ │  │
+    │  │  │ [Optional] Custom AI Context:                            │ │  │
+    │  │  │ [Evaluate on code quality, optimization, testing...]     │ │  │
+    │  │  │                                                          │ │  │
+    │  │  └──────────────────────────────────────────────────────────┘ │  │
+    │  │                                                                 │  │
+    │  │                           [Save Process]                       │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ Process saved → Link to Job
+                                        ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                     2. MOCK SESSIONS DASHBOARD                         │
+    │                          /mock                                         │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │  AI MOCK INTERVIEW INSIGHTS                                     │  │
+    │  │                                                                 │  │
+    │  │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐   │  │
+    │  │  │ Total      │ │ Completed  │ │ Avg Score  │ │ Top 80%+   │   │  │
+    │  │  │ Sessions   │ │ This Week  │ │            │ │ Performers │   │  │
+    │  │  │    156     │ │    23      │ │    72%     │ │    18      │   │  │
+    │  │  └────────────┘ └────────────┘ └────────────┘ └────────────┘   │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │  CANDIDATE PRACTICE SESSIONS                                    │  │
+    │  │                                                                 │  │
+    │  │  Filter: [All Rounds ▼]  [All Jobs ▼]  [This Month ▼]         │  │
+    │  │                                                                 │  │
+    │  │  ┌──────────────────────────────────────────────────────────┐ │  │
+    │  │  │ Candidate      │ Round          │ Job      │ Score│ Date │ │  │
+    │  │  │────────────────│────────────────│──────────│──────│──────│ │  │
+    │  │  │ Alice Johnson  │ Technical      │ Sr. Dev  │  92% │ Today│ │  │
+    │  │  │ Bob Smith      │ System Design  │ Lead     │  78% │ Today│ │  │
+    │  │  │ Carol White    │ Phone Screen   │ Jr. Dev  │  85% │ Yday │ │  │
+    │  │  │ David Chen     │ Behavioral     │ Sr. Dev  │  88% │ Yday │ │  │
+    │  │  │ Eve Brown      │ Technical      │ Lead     │  65% │ 2d   │ │  │
+    │  │  └──────────────────────────────────────────────────────────┘ │  │
+    │  │                                                                 │  │
+    │  │  [View Details]  [Export Data]                                 │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ Click on candidate row
+                                        ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                  3. CANDIDATE PRACTICE DETAILS                         │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                        │
+    │  ┌─────────────────────────────────────────────────────────────────┐  │
+    │  │  ALICE JOHNSON - Mock Session Details                           │  │
+    │  │                                                                 │  │
+    │  │  Job: Senior Frontend Developer                                │  │
+    │  │  Round: Technical Coding                                       │  │
+    │  │  Date: Feb 11, 2026 at 2:30 PM                                 │  │
+    │  │  Duration: 58 minutes                                          │  │
+    │  │                                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────── │  │
+    │  │                                                                 │  │
+    │  │  OVERALL SCORE: 92%                                            │  │
+    │  │  ████████████████████░░░░                                      │  │
+    │  │                                                                 │  │
+    │  │  Category Breakdown:                                           │  │
+    │  │  • Problem Solving:    95%                                     │  │
+    │  │  • Communication:      90%                                     │  │
+    │  │  • Code Quality:       88%                                     │  │
+    │  │  • Time Management:    92%                                     │  │
+    │  │                                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────── │  │
+    │  │                                                                 │  │
+    │  │  AI ANALYSIS:                                                  │  │
+    │  │  "Candidate demonstrated excellent problem-solving skills.     │  │
+    │  │   Clear communication throughout. Identified optimal           │  │
+    │  │   solution efficiently. Strong code organization."             │  │
+    │  │                                                                 │  │
+    │  │  ───────────────────────────────────────────────────────────── │  │
+    │  │                                                                 │  │
+    │  │  ACTIONS:                                                      │  │
+    │  │  [📅 Schedule Real Interview]  [📧 Send to Team]               │  │
+    │  │                                                                 │  │
+    │  └─────────────────────────────────────────────────────────────────┘  │
+    │                                                                        │
+    └────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+4. INTEGRATION POINTS
+================================================================================
+
+POINT 1: JOB CARD MOCK INDICATOR
+--------------------------------
+Location: apps/main/app/(jobs)/jobs/components/job-card.tsx
+
+Show mock availability when:
+- job.interviewProcess exists
+- job.interviewProcess.rounds.some(r => r.hasMockInterview)
+
+Display:
+┌─────────────────────────────────────────┐
+│  ✓ 4 rounds  •  ~3w  •  🎤 AI Mock     │
+└─────────────────────────────────────────┘
+
+
+POINT 2: JOB DETAIL INTERVIEW SECTION
+-------------------------------------
+Location: apps/main/app/(jobs)/jobs/[slug]/job-detail-content.tsx
+
+For each round with hasMockInterview=true, show:
+┌─────────────────────────────────────────┐
+│ Round 2: Technical Coding  [Practice]   │
+│ 60 min • Live Coding                    │
+│ Focus on DSA problems                   │
+└─────────────────────────────────────────┘
+
+
+POINT 3: COMPANY PROFILE MOCK HUB LINK
+--------------------------------------
+Location: apps/main/app/(jobs)/companies/[slug]/company-detail-content.tsx
+
+Show "Practice Interviews" card when company has processes with mocks:
+┌─────────────────────────────────────────┐
+│  🎤 Practice with AI Mock Interviews    │
+│                                         │
+│  Prepare for interviews with AI         │
+│  trained on [Company]'s style           │
+│                                         │
+│         [Start Practice]                │
+└─────────────────────────────────────────┘
+
+
+POINT 4: APPLICATION JOURNEY PRACTICE
+-------------------------------------
+Location: apps/main/app/(jobs)/jobs/applications/[applicationId]/interview/
+
+Show practice buttons per round in interview journey:
+┌─────────────────────────────────────────┐
+│ Round 1: Phone Screen                   │
+│ Status: Upcoming                        │
+│                                         │
+│ Your Best Mock Score: 85%               │
+│ [Practice Again] [View Tips]            │
+└─────────────────────────────────────────┘
+
+
+================================================================================
+5. DATA FLOW DIAGRAM
+================================================================================
+
+HR CREATES PROCESS → CANDIDATE PRACTICES → HR VIEWS SCORES
+============================================================
+
+┌──────────────────────┐
+│   HIRING PLATFORM    │
+│   (HR/Company)       │
+│                      │
+│ 1. Create Interview  │
+│    Process           │
+│ 2. Add Rounds with   │
+│    hasMockInterview  │◄───────────────────────────────────────┐
+│ 3. Link to Jobs      │                                        │
+│                      │                                        │
+└──────────┬───────────┘                                        │
+           │                                                    │
+           │ Saves to shared database                          │
+           ▼                                                    │
+┌──────────────────────┐                                        │
+│     SHARED DB        │                                        │
+│                      │                                        │
+│ - InterviewProcess   │                                        │
+│ - InterviewRound     │                                        │
+│ - JobMockSession     │────────────────────────────────────────┤
+│ - Job                │                                        │
+│                      │                                        │
+└──────────┬───────────┘                                        │
+           │                                                    │
+           │ Reads process/rounds                               │
+           ▼                                                    │
+┌──────────────────────┐                                        │
+│   MAIN PLATFORM      │                                        │
+│   (Candidate)        │                                        │
+│                      │                                        │
+│ 4. View Job with     │                                        │
+│    Interview Process │                                        │
+│ 5. Click "Practice"  │                                        │
+│ 6. Complete Mock     │                                        │
+│    Session           │                                        │
+│ 7. Get Score         │                                        │
+│                      │                                        │
+└──────────┬───────────┘                                        │
+           │                                                    │
+           │ Creates JobMockSession                             │
+           │ with scores/analysis                               │
+           └────────────────────────────────────────────────────┘
+                              (HR sees in dashboard)
+
+
+================================================================================
+6. IMPLEMENTATION DETAILS
+================================================================================
+
+A. ADDING MOCK INDICATOR TO JOB CARD
+------------------------------------
+
+```tsx
+// In job-card.tsx or similar
+{job.interviewProcess?.rounds.some(r => r.hasMockInterview) && (
+    <div className="flex items-center gap-1.5 text-sm text-green-600">
+        <Mic className="w-4 h-4" />
+        <span>AI Mock</span>
+    </div>
+)}
+```
+
+
+B. STARTING A MOCK SESSION
+--------------------------
+
+Server Action: apps/main/actions/companies/mock.ts
+
+```typescript
+export async function startCompanyMockSession(
+    companySlug: string,
+    roundId: string,
+    jobId?: string
+) {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+    
+    // Get round details for session type
+    const round = await prisma.interviewRound.findUnique({
+        where: { id: roundId },
+        include: { process: true }
+    })
+    
+    // Determine session type from round type
+    const sessionType = mapRoundTypeToSessionType(round.roundType)
+    
+    // Create mock session
+    const mockSession = await prisma.jobMockSession.create({
+        data: {
+            userId: session.user.id,
+            companyId: round.process.companyId,
+            roundId: round.id,
+            jobId: jobId || null,
+            sessionType,
+            status: "SCHEDULED"
+        }
+    })
+    
+    return mockSession
+}
+```
+
+
+C. HR VIEWING CANDIDATE SCORES
+------------------------------
+
+Server Action: apps/hiring/actions/mock/index.ts
+
+```typescript
+export async function getMockSessionsOverview() {
+    const member = await getCurrentCompanyMember()
+    
+    const sessions = await prisma.jobMockSession.findMany({
+        where: { 
+            companyId: member.companyId,
+            status: "COMPLETED"
+        },
+        include: {
+            user: { select: { name: true, email: true, image: true } },
+            round: { select: { title: true, roundType: true } },
+            job: { select: { title: true, slug: true } }
+        },
+        orderBy: { completedAt: "desc" }
+    })
+    
+    return sessions
+}
+```
+
+
+================================================================================
+7. SCHEDULE INTERVIEW FLOW
+================================================================================
+
+HR can use mock scores to inform interview scheduling:
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│  CANDIDATE: Alice Johnson                                                 │
+│  Position: Senior Frontend Developer                                      │
+│                                                                           │
+│  ┌─────────────────────────────────────────────────────────────────────┐ │
+│  │  MOCK INTERVIEW PERFORMANCE                                          │ │
+│  │                                                                      │ │
+│  │  Phone Screen:    85%  ████████░░  (2 sessions)                     │ │
+│  │  Technical:       92%  █████████░  (3 sessions) ← Excellent         │ │
+│  │  System Design:   78%  ███████░░░  (1 session)                      │ │
+│  │  Behavioral:      88%  ████████░░  (2 sessions)                     │ │
+│  │                                                                      │ │
+│  │  Overall Readiness: 86%                                             │ │
+│  │  Recommendation: READY TO INTERVIEW                                 │ │
+│  │                                                                      │ │
+│  └─────────────────────────────────────────────────────────────────────┘ │
+│                                                                           │
+│  ACTIONS:                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │
+│  │ 📅 Schedule     │  │ 📧 Email        │  │ ⏭️ Skip to      │          │
+│  │ Phone Screen    │  │ Candidate       │  │ Technical       │          │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘          │
+│                                                                           │
+│  Note: Based on mock performance, consider fast-tracking to technical.   │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+8. BENEFITS SUMMARY
+================================================================================
+
+FOR CANDIDATES:
+✓ Practice with AI trained on company's actual interview style
+✓ Get detailed feedback and scores
+✓ Track improvement over multiple sessions
+✓ Feel more confident going into real interviews
+✓ Stand out with demonstrated preparation
+
+FOR HR/COMPANIES:
+✓ See candidate preparation levels before interviews
+✓ Identify high-potential candidates early
+✓ Make data-driven interview decisions
+✓ Reduce time spent on unqualified candidates
+✓ Better candidate experience = better employer brand
+
+FOR THE PLATFORM:
+✓ Unique differentiator from other job platforms
+✓ Increased engagement through practice features
+✓ Better hiring outcomes for both sides
+✓ Data for improving AI interviewer
+✓ Premium feature potential
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================

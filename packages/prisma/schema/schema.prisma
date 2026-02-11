@@ -673,6 +673,7 @@ model User {
     savedJobs              SavedJob[]              @relation("UserSavedJobs")
     jobMockSessions        JobMockSession[]        @relation("UserJobMockSessions")
     interviewPrepProgress  InterviewPrepProgress[] @relation("UserInterviewPrepProgress")
+    createdCompanies       Company[]               @relation("CompanyCreator")
 
     @@index([username])
     @@index([email])

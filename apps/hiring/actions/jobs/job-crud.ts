@@ -68,6 +68,7 @@ export async function createJob(input: CreateJobInput) {
                 assignmentDetails: input.assignmentDetails,
                 assignmentDeadlineDays: input.assignmentDeadlineDays,
                 interviewProcessId: input.interviewProcessId,
+                customQuestions: JSON.parse(JSON.stringify(input.customQuestions || [])),
                 visibility: input.visibility || "PUBLIC",
                 status: input.status || "DRAFT"
             }
@@ -120,6 +121,7 @@ export async function updateJob(jobId: string, input: Partial<CreateJobInput>) {
                 assignmentDetails: input.assignmentDetails,
                 assignmentDeadlineDays: input.assignmentDeadlineDays,
                 interviewProcessId: input.interviewProcessId,
+                customQuestions: input.customQuestions ? JSON.parse(JSON.stringify(input.customQuestions)) : undefined,
                 visibility: input.visibility,
                 status: input.status
             }

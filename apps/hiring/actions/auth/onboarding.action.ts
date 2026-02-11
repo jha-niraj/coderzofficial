@@ -3,6 +3,51 @@
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
 
+/**
+ * Get pending company info from user registration
+ * This fetches the company name that was entered during registration
+ */
+export async function getPendingCompanyInfo() {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                company: true,
+                name: true,
+                email: true,
+            },
+        });
+
+        if (!user) {
+            return { success: false, error: "User not found" };
+        }
+
+        // Generate a suggested website URL from company name
+        const suggestedWebsite = user.company
+            ? `https://${user.company.toLowerCase().replace(/[^a-z0-9]+/g, "")}.com`
+            : null;
+
+        return {
+            success: true,
+            data: {
+                companyName: user.company || "",
+                userName: user.name || "",
+                userEmail: user.email,
+                suggestedWebsite,
+            },
+        };
+    } catch (error) {
+        console.error("Get pending company info error:", error);
+        return { success: false, error: "Failed to fetch company info" };
+    }
+}
+
 interface OnboardingData {
     companyName: string;
     slug: string;

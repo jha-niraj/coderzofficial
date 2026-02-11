@@ -3,17 +3,16 @@
 import { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    Bookmark, Loader2, ChevronDown, UserCheck,
-    Sparkles
+    UserCheck, Building2, Loader2, ChevronDown
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import Link from "next/link"
 import { JobCard } from "../components/job-card"
 import { SkillGapModal } from "../components/skill-gap-modal"
-import { getSavedFeedJobs, toggleSaveJob, type FeedJobResult } from "@/actions/jobs"
+import { getFollowingFeedJobs, toggleSaveJob, type FeedJobResult } from "@/actions/jobs"
 import { toast } from "@repo/ui/components/ui/sonner"
 
-interface SavedJobsContentProps {
+interface FollowingContentProps {
     initialData: {
         success: boolean
         data?: {
@@ -24,6 +23,8 @@ interface SavedJobsContentProps {
                 total: number
                 totalPages: number
             }
+            followedCompaniesCount?: number
+            isEmpty?: boolean
         }
         error?: string
         requiresAuth?: boolean
@@ -31,15 +32,15 @@ interface SavedJobsContentProps {
     isAuthenticated: boolean
 }
 
-export function SavedJobsContent({ initialData, isAuthenticated }: SavedJobsContentProps) {
+export function FollowingContent({ initialData, isAuthenticated }: FollowingContentProps) {
     const [jobs, setJobs] = useState<FeedJobResult[]>(
         initialData.success && initialData.data ? initialData.data.jobs : []
     )
     const [loading, setLoading] = useState(false)
     const [page, setPage] = useState(1)
     const [hasMore, setHasMore] = useState(
-        initialData.success && initialData.data
-            ? initialData.data.pagination.page < initialData.data.pagination.totalPages
+        initialData.success && initialData.data 
+            ? initialData.data.pagination.page < initialData.data.pagination.totalPages 
             : false
     )
     const [total, setTotal] = useState(
@@ -50,16 +51,23 @@ export function SavedJobsContent({ initialData, isAuthenticated }: SavedJobsCont
     const [selectedJob, setSelectedJob] = useState<FeedJobResult | null>(null)
     const [showSkillGapModal, setShowSkillGapModal] = useState(false)
 
+    const isEmpty = initialData.data?.isEmpty || false
     const requiresAuth = initialData.requiresAuth || false
 
-    const handleUnsaveJob = useCallback(async (jobId: string) => {
-        const result = await toggleSaveJob(jobId)
-        if (result.success && !result.saved) {
-            setJobs(prev => prev.filter(j => j.id !== jobId))
-            setTotal(prev => prev - 1)
-            toast.success("Job removed from saved")
+    const handleSaveJob = useCallback(async (jobId: string) => {
+        if (!isAuthenticated) {
+            toast.info("Sign in to save jobs")
+            return
         }
-    }, [])
+
+        const result = await toggleSaveJob(jobId)
+        if (result.success) {
+            setJobs(prev => prev.map(j =>
+                j.id === jobId ? { ...j, isSaved: result.saved ?? false } : j
+            ))
+            toast.success(result.saved ? "Job saved!" : "Job removed from saved")
+        }
+    }, [isAuthenticated])
 
     const handleViewDetails = useCallback((job: FeedJobResult) => {
         setSelectedJob(job)
@@ -70,7 +78,7 @@ export function SavedJobsContent({ initialData, isAuthenticated }: SavedJobsCont
         if (loading || !hasMore) return
 
         setLoading(true)
-        const result = await getSavedFeedJobs(page + 1, 20)
+        const result = await getFollowingFeedJobs(page + 1, 20)
 
         if (result.success && result.data) {
             setJobs(prev => [...prev, ...result.data!.jobs])
@@ -90,20 +98,29 @@ export function SavedJobsContent({ initialData, isAuthenticated }: SavedJobsCont
         )
     }
 
+    // Empty state - no followed companies
+    if (isEmpty) {
+        return (
+            <div className="p-4 lg:p-6">
+                <FollowingEmptyState />
+            </div>
+        )
+    }
+
     return (
         <div className="p-4 lg:p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center">
-                        <Bookmark className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                        <UserCheck className="w-5 h-5 text-white" />
                     </div>
                     <div>
                         <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                            Saved Jobs
+                            From Companies You Follow
                         </h2>
                         <p className="text-sm text-neutral-500">
-                            {total} job{total !== 1 ? 's' : ''} saved for later
+                            {total} jobs from your followed companies
                         </p>
                     </div>
                 </div>
@@ -117,14 +134,14 @@ export function SavedJobsContent({ initialData, isAuthenticated }: SavedJobsCont
                             <JobCard
                                 key={job.id}
                                 job={job}
-                                onSave={handleUnsaveJob}
+                                onSave={handleSaveJob}
                                 onViewDetails={handleViewDetails}
                                 index={index}
                             />
                         ))}
                     </div>
                 ) : (
-                    <SavedEmptyState />
+                    <NoJobsState />
                 )}
             </AnimatePresence>
 
@@ -150,7 +167,7 @@ export function SavedJobsContent({ initialData, isAuthenticated }: SavedJobsCont
             {/* Count */}
             {jobs.length > 0 && (
                 <p className="text-center text-sm text-neutral-500 mt-4">
-                    Showing {jobs.length} of {total} saved jobs
+                    Showing {jobs.length} of {total} jobs
                 </p>
             )}
 
@@ -178,10 +195,10 @@ function AuthRequiredState() {
                 <UserCheck className="w-10 h-10 text-purple-600 dark:text-purple-400" />
             </div>
             <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                Sign in to see your saved jobs
+                Sign in to see jobs from followed companies
             </h3>
             <p className="text-neutral-500 max-w-md mx-auto mb-6">
-                Create an account or sign in to save jobs and access them later.
+                Create an account or sign in to follow companies and see their job postings here.
             </p>
             <Link href="/signin">
                 <Button className="rounded-xl">
@@ -192,26 +209,52 @@ function AuthRequiredState() {
     )
 }
 
-function SavedEmptyState() {
+function FollowingEmptyState() {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16 px-4"
         >
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <Bookmark className="w-10 h-10 text-yellow-600 dark:text-yellow-400" />
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <Building2 className="w-10 h-10 text-blue-600 dark:text-blue-400" />
             </div>
             <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                No saved jobs yet
+                Follow companies you love
             </h3>
             <p className="text-neutral-500 max-w-md mx-auto mb-6">
-                Swipe right on jobs you like or click the bookmark icon to save them for later.
+                Follow companies you&apos;d love to work for and never miss a new opening. We&apos;ll show you jobs matched to your skills.
             </p>
-            <Link href="/jobs">
+            <Link href="/companies">
                 <Button className="rounded-xl">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Discover Jobs
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Discover Companies
+                </Button>
+            </Link>
+        </motion.div>
+    )
+}
+
+function NoJobsState() {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16 px-4"
+        >
+            <div className="w-20 h-20 bg-gradient-to-br from-neutral-100 to-neutral-50 dark:from-neutral-800 dark:to-neutral-900 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <Building2 className="w-10 h-10 text-neutral-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
+                No open positions right now
+            </h3>
+            <p className="text-neutral-500 max-w-md mx-auto mb-6">
+                The companies you follow don&apos;t have any active job postings at the moment. Check back later or explore more companies.
+            </p>
+            <Link href="/companies">
+                <Button variant="outline" className="rounded-xl">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Explore More Companies
                 </Button>
             </Link>
         </motion.div>

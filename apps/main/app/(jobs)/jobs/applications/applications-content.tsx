@@ -79,6 +79,7 @@ interface Application {
 
 interface ApplicationsContentProps {
     applications: Application[]
+    isAuthenticated?: boolean
 }
 
 const statusColors: Record<string, string> = {

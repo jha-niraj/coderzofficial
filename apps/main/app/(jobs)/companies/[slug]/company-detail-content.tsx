@@ -398,6 +398,128 @@ export function CompanyDetailContent({ company, interviewProcesses, jobs }: Comp
                                 </motion.div>
                             )
                         }
+
+                        {/* Hiring Roles Section */}
+                        {
+                            jobs.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.35 }}
+                                >
+                                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                                        <Briefcase className="w-5 h-5 text-blue-500" />
+                                        Currently Hiring For
+                                    </h2>
+                                    <div className="space-y-4">
+                                        {/* Group jobs by employment type */}
+                                        {
+                                            Object.entries(
+                                                jobs.reduce((acc, job) => {
+                                                    const type = job.employmentType
+                                                    if (!acc[type]) acc[type] = []
+                                                    acc[type].push(job)
+                                                    return acc
+                                                }, {} as Record<string, typeof jobs>)
+                                            ).map(([type, typeJobs]) => (
+                                                <div key={type} className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {employmentTypeLabels[type]}
+                                                        </Badge>
+                                                        <span className="text-sm text-neutral-500">
+                                                            {typeJobs.length} position{typeJobs.length > 1 ? 's' : ''}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {
+                                                            typeJobs.map((job) => (
+                                                                <Link
+                                                                    key={job.id}
+                                                                    href={`/jobs/${job.slug}`}
+                                                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-sm font-medium text-neutral-900 dark:text-white transition-colors"
+                                                                >
+                                                                    {job.title}
+                                                                    <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+                                                                </Link>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </motion.div>
+                            )
+                        }
+
+                        {/* Mock Interview Hub */}
+                        {
+                            defaultProcess && defaultProcess.rounds.some(r => r.hasMockInterview) && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800"
+                                >
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Mic className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+                                            Mock Interview Hub
+                                        </h2>
+                                    </div>
+                                    <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+                                        Practice for {company.name}&apos;s interview rounds with AI-powered mock sessions.
+                                        Only scores of 75% or above are shared with recruiters.
+                                    </p>
+
+                                    <div className="space-y-3">
+                                        {
+                                            defaultProcess.rounds
+                                                .filter(r => r.hasMockInterview)
+                                                .map((round) => {
+                                                    const IconComponent = roundTypeIcons[round.roundType] ?? FileText
+                                                    const roundColor = roundTypeColors[round.roundType] ?? "bg-neutral-500"
+                                                    return (
+                                                        <div
+                                                            key={round.id}
+                                                            className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-10 h-10 rounded-xl ${roundColor} flex items-center justify-center`}>
+                                                                    <IconComponent className="w-5 h-5 text-white" />
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-medium text-neutral-900 dark:text-white">
+                                                                        {round.title}
+                                                                    </h4>
+                                                                    <p className="text-xs text-neutral-500">
+                                                                        Round {round.roundNumber} • {round.duration ? `${round.duration} min` : 'Variable duration'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <Button
+                                                                size="sm"
+                                                                className="rounded-xl bg-purple-600 hover:bg-purple-700 text-white"
+                                                            >
+                                                                <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
+                                                                Practice
+                                                            </Button>
+                                                        </div>
+                                                    )
+                                                })
+                                        }
+                                    </div>
+
+                                    <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                                            <strong>Note:</strong> Practice sessions are private. Only scores of 75% or higher
+                                            are automatically shared with {company.name}&apos;s recruiters to demonstrate your readiness.
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )
+                        }
                     </div>
                     <div className="space-y-6">
                         <motion.div
@@ -452,11 +574,20 @@ export function CompanyDetailContent({ company, interviewProcesses, jobs }: Comp
                                         }
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6">
-                                        <Briefcase className="w-10 h-10 text-neutral-300 dark:text-neutral-700 mx-auto mb-2" />
-                                        <p className="text-sm text-neutral-500">
+                                    <div className="text-center py-8">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-neutral-100 to-neutral-50 dark:from-neutral-800 dark:to-neutral-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                            <Briefcase className="w-8 h-8 text-neutral-400 dark:text-neutral-600" />
+                                        </div>
+                                        <h4 className="font-medium text-neutral-900 dark:text-white mb-1">
                                             No open positions at the moment
+                                        </h4>
+                                        <p className="text-sm text-neutral-500 mb-4">
+                                            {company.name} doesn&apos;t have any active job postings right now. Follow them to get notified when they do!
                                         </p>
+                                        <Button variant="outline" size="sm" className="rounded-xl">
+                                            <Star className="w-4 h-4 mr-2" />
+                                            Follow {company.name}
+                                        </Button>
                                     </div>
                                 )
                             }

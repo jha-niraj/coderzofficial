@@ -1,0 +1,400 @@
+"use client"
+
+import { useState } from "react"
+import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion"
+import {
+    MapPin, Briefcase, Building2, Clock, TrendingUp, Users,
+    CheckCircle2, X, Heart, Bookmark, RotateCcw, Sparkles,
+    Target, Zap, ChevronDown, Mic
+} from "lucide-react"
+import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
+import {
+    Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
+} from "@repo/ui/components/ui/tooltip"
+import Image from "next/image"
+import { cn } from "@repo/ui/lib/utils"
+import type { FeedJobResult } from "@/actions/jobs"
+
+interface SwipeCardProps {
+    job: FeedJobResult
+    onSwipeLeft: () => void
+    onSwipeRight: () => void
+    onSave: () => void
+    onViewDetails: () => void
+    isTop?: boolean
+}
+
+const locationTypeLabels: Record<string, string> = {
+    REMOTE: "Remote",
+    HYBRID: "Hybrid",
+    ONSITE: "On-site"
+}
+
+const employmentTypeLabels: Record<string, string> = {
+    FULL_TIME: "Full-time",
+    PART_TIME: "Part-time",
+    CONTRACT: "Contract",
+    INTERNSHIP: "Internship",
+    FREELANCE: "Freelance"
+}
+
+const formatSalary = (min: number | null, max: number | null, currency: string) => {
+    if (!min && !max) return null
+    const formatter = new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: currency,
+        maximumFractionDigits: 0
+    })
+    if (min && max) return `${formatter.format(min)} - ${formatter.format(max)}`
+    if (min) return `From ${formatter.format(min)}`
+    if (max) return `Up to ${formatter.format(max)}`
+    return null
+}
+
+const formatExperience = (min: number | null, max: number | null) => {
+    if (!min && !max) return null
+    if (min && max) return `${min}-${max} years`
+    if (min) return `${min}+ years`
+    if (max) return `Up to ${max} years`
+    return null
+}
+
+const getMatchScoreColor = (score: number) => {
+    if (score >= 90) return "from-green-500 to-emerald-500"
+    if (score >= 70) return "from-yellow-500 to-amber-500"
+    return "from-orange-500 to-red-400"
+}
+
+const getMatchScoreBadge = (score: number) => {
+    if (score >= 90) return { label: "Perfect Match", icon: Target, color: "text-green-500 bg-green-100 dark:bg-green-900/30" }
+    if (score >= 70) return { label: "Good Match", icon: Zap, color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30" }
+    return { label: "Explore", icon: Sparkles, color: "text-orange-500 bg-orange-100 dark:bg-orange-900/30" }
+}
+
+export function SwipeCard({ 
+    job, 
+    onSwipeLeft, 
+    onSwipeRight, 
+    onSave,
+    onViewDetails,
+    isTop = false 
+}: SwipeCardProps) {
+    const [exitX, setExitX] = useState(0)
+    
+    const x = useMotionValue(0)
+    const rotate = useTransform(x, [-200, 200], [-15, 15])
+    const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5])
+    
+    // Overlay opacity based on swipe direction
+    const leftOverlayOpacity = useTransform(x, [-100, 0], [1, 0])
+    const rightOverlayOpacity = useTransform(x, [0, 100], [0, 1])
+
+    const matchBadge = getMatchScoreBadge(job.matchScore)
+    const MatchIcon = matchBadge.icon
+
+    const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (info.offset.x > 100) {
+            setExitX(300)
+            onSwipeRight()
+        } else if (info.offset.x < -100) {
+            setExitX(-300)
+            onSwipeLeft()
+        }
+    }
+
+    return (
+        <motion.div
+            className={cn(
+                "absolute w-full",
+                isTop ? "z-10" : "z-0"
+            )}
+            style={{ x, rotate, opacity }}
+            drag={isTop ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.7}
+            onDragEnd={handleDragEnd}
+            animate={{ x: exitX }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+            <div className="relative bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden">
+                {/* Match Score Bar */}
+                <div className={cn(
+                    "h-1.5 bg-gradient-to-r",
+                    getMatchScoreColor(job.matchScore)
+                )} />
+
+                {/* Swipe Overlays */}
+                <motion.div 
+                    className="absolute inset-0 bg-red-500/20 rounded-3xl flex items-center justify-center z-20 pointer-events-none"
+                    style={{ opacity: leftOverlayOpacity }}
+                >
+                    <div className="bg-red-500 text-white px-6 py-3 rounded-2xl font-bold text-xl rotate-[-15deg]">
+                        NOPE
+                    </div>
+                </motion.div>
+                <motion.div 
+                    className="absolute inset-0 bg-green-500/20 rounded-3xl flex items-center justify-center z-20 pointer-events-none"
+                    style={{ opacity: rightOverlayOpacity }}
+                >
+                    <div className="bg-green-500 text-white px-6 py-3 rounded-2xl font-bold text-xl rotate-[15deg]">
+                        INTERESTED
+                    </div>
+                </motion.div>
+
+                {/* Card Content */}
+                <div className="p-6">
+                    {/* Company Header */}
+                    <div className="flex items-start gap-4 mb-5">
+                        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center overflow-hidden shrink-0 relative">
+                            {job.company.logoUrl ? (
+                                <Image
+                                    src={job.company.logoUrl}
+                                    alt={job.company.name}
+                                    className="object-cover"
+                                    fill
+                                />
+                            ) : (
+                                <Building2 className="w-8 h-8 text-neutral-400" />
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white truncate">
+                                {job.title}
+                            </h2>
+                            <p className="text-neutral-500 font-medium">{job.company.name}</p>
+                            {job.isFollowingCompany && (
+                                <Badge className="mt-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs">
+                                    Following
+                                </Badge>
+                            )}
+                        </div>
+                        <Badge className={cn("text-sm px-3 py-1.5 font-bold shrink-0", matchBadge.color)}>
+                            <MatchIcon className="w-4 h-4 mr-1.5" />
+                            {job.matchScore}%
+                        </Badge>
+                    </div>
+
+                    {/* Job Details */}
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                            <MapPin className="w-4 h-4 text-neutral-400" />
+                            <span>{job.location || locationTypeLabels[job.locationType]}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                            <Briefcase className="w-4 h-4 text-neutral-400" />
+                            <span>{employmentTypeLabels[job.employmentType]}</span>
+                        </div>
+                        {formatExperience(job.experienceMin, job.experienceMax) && (
+                            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                <Clock className="w-4 h-4 text-neutral-400" />
+                                <span>{formatExperience(job.experienceMin, job.experienceMax)}</span>
+                            </div>
+                        )}
+                        {job.salaryDisclosed && formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency) && (
+                            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
+                                <TrendingUp className="w-4 h-4" />
+                                <span>{formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency)}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Skills */}
+                    <div className="mb-5">
+                        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-2 font-medium">
+                            Skills Match
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {job.matchedSkills.slice(0, 5).map((skill, i) => (
+                                <Badge key={i} className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                                    {skill}
+                                </Badge>
+                            ))}
+                            {job.missingSkills.slice(0, 3).map((skill, i) => (
+                                <Badge key={i} variant="outline" className="text-xs text-neutral-500">
+                                    {skill}
+                                </Badge>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Interview Process */}
+                    {job.interviewProcess && (
+                        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 mb-5">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span className="font-medium">Transparent Process</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-green-600 dark:text-green-400">
+                                    <span>{job.interviewProcess.rounds.length} rounds</span>
+                                    {job.interviewProcess.estimatedDurationWeeks && (
+                                        <>
+                                            <span className="text-green-300 dark:text-green-700">•</span>
+                                            <span>~{job.interviewProcess.estimatedDurationWeeks}w</span>
+                                        </>
+                                    )}
+                                    {job.interviewProcess.rounds.some(r => r.hasMockInterview) && (
+                                        <>
+                                            <span className="text-green-300 dark:text-green-700">•</span>
+                                            <Mic className="w-4 h-4" />
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Competition */}
+                    <div className="flex items-center justify-between text-sm text-neutral-500 mb-4">
+                        <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            <span>{job.applicationsCount} applicants</span>
+                        </div>
+                        <button 
+                            onClick={onViewDetails}
+                            className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
+                        >
+                            View Details
+                            <ChevronDown className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="border-t border-neutral-200 dark:border-neutral-800 p-4">
+                    <div className="flex items-center justify-center gap-4">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="w-14 h-14 rounded-full border-2 border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300"
+                                        onClick={onSwipeLeft}
+                                    >
+                                        <X className="w-6 h-6 text-red-500" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Not for me</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className={cn(
+                                            "w-12 h-12 rounded-full border-2",
+                                            job.isSaved 
+                                                ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
+                                                : "border-yellow-200 dark:border-yellow-900 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 hover:border-yellow-300"
+                                        )}
+                                        onClick={onSave}
+                                    >
+                                        <Bookmark className={cn(
+                                            "w-5 h-5",
+                                            job.isSaved ? "text-yellow-500 fill-yellow-500" : "text-yellow-500"
+                                        )} />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{job.isSaved ? "Saved" : "Save for later"}</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="w-14 h-14 rounded-full border-2 border-green-200 dark:border-green-900 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300"
+                                        onClick={onSwipeRight}
+                                    >
+                                        <Heart className="w-6 h-6 text-green-500" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>I&apos;m Interested!</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    )
+}
+
+// Stack of cards component
+interface SwipeStackProps {
+    jobs: FeedJobResult[]
+    onSwipeLeft: (job: FeedJobResult) => void
+    onSwipeRight: (job: FeedJobResult) => void
+    onSave: (job: FeedJobResult) => void
+    onViewDetails: (job: FeedJobResult) => void
+    onUndo?: () => void
+    lastSwipedJob?: FeedJobResult | null
+}
+
+export function SwipeStack({ 
+    jobs, 
+    onSwipeLeft, 
+    onSwipeRight, 
+    onSave,
+    onViewDetails,
+    onUndo,
+    lastSwipedJob
+}: SwipeStackProps) {
+    // Show top 3 cards for stacking effect
+    const visibleJobs = jobs.slice(0, 3)
+
+    if (jobs.length === 0) {
+        return null
+    }
+
+    return (
+        <div className="relative w-full max-w-lg mx-auto h-[600px]">
+            {/* Undo button */}
+            {lastSwipedJob && onUndo && (
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute -top-16 left-1/2 -translate-x-1/2 z-30"
+                >
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onUndo}
+                        className="rounded-full gap-2"
+                    >
+                        <RotateCcw className="w-4 h-4" />
+                        Undo
+                    </Button>
+                </motion.div>
+            )}
+
+            {/* Stacked cards */}
+            {visibleJobs.map((job, index) => (
+                <div
+                    key={job.id}
+                    className="absolute inset-0"
+                    style={{
+                        transform: `scale(${1 - index * 0.05}) translateY(${index * 10}px)`,
+                        zIndex: visibleJobs.length - index
+                    }}
+                >
+                    <SwipeCard
+                        job={job}
+                        onSwipeLeft={() => onSwipeLeft(job)}
+                        onSwipeRight={() => onSwipeRight(job)}
+                        onSave={() => onSave(job)}
+                        onViewDetails={() => onViewDetails(job)}
+                        isTop={index === 0}
+                    />
+                </div>
+            ))}
+        </div>
+    )
+}

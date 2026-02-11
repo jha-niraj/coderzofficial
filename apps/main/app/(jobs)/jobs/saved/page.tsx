@@ -1,9 +1,10 @@
 import { Suspense } from "react"
-import { 
-    Loader2 
-} from "lucide-react"
-import { getSavedJobs } from "@/actions/jobs"
+import { Loader2 } from "lucide-react"
+import { auth } from "@repo/auth"
+import { getSavedFeedJobs } from "@/actions/jobs"
 import { SavedJobsContent } from "./saved-jobs-content"
+
+export const dynamic = "force-dynamic"
 
 export const metadata = {
     title: "Saved Jobs | CodeDot.AI",
@@ -11,27 +12,25 @@ export const metadata = {
 }
 
 export default async function SavedJobsPage() {
-    const result = await getSavedJobs()
+    const [session, result] = await Promise.all([
+        auth(),
+        getSavedFeedJobs(1, 20)
+    ])
 
-    const rawJobs = result.success && result.data ? result.data : []
-    
-    // Transform the data to match the expected interface
-    const savedJobs = rawJobs.map(job => ({
-        ...job,
-        skillsRequired: Array.isArray(job.skillsRequired) 
-            ? job.skillsRequired as string[] 
-            : []
-    }))
+    const isAuthenticated = !!session?.user?.id
 
     return (
         <Suspense 
             fallback={
-                <div className="min-h-full flex items-center justify-center">
+                <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
                 </div>
             }
         >
-            <SavedJobsContent savedJobs={savedJobs} />
+            <SavedJobsContent 
+                initialData={result}
+                isAuthenticated={isAuthenticated}
+            />
         </Suspense>
     )
 }

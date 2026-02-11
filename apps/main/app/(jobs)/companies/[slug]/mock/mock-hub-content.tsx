@@ -1,19 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
     ArrowLeft, Building2, Play, Clock, Users, Star, CheckCircle2, Lock,
     Sparkles, Award, TrendingUp, Target, ChevronRight, Video,
-    MessageSquare, Code, Layout, Phone, FileText
+    MessageSquare, Code, Layout, Phone, FileText, Briefcase, MapPin,
+    AlertCircle
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { cn } from "@repo/ui/lib/utils"
 
 import { LucideIcon } from "lucide-react"
+
+// ============================================
+// TYPES
+// ============================================
 
 interface Company {
     id: string
@@ -43,6 +50,17 @@ interface InterviewProcess {
     rounds: InterviewRound[]
 }
 
+interface Job {
+    id: string
+    title: string
+    slug: string
+    location: string | null
+    locationType: string
+    employmentType: string
+    interviewProcess: InterviewProcess | null
+    applicationsCount: number
+}
+
 interface UserProgress {
     roundId: string
     sessionsCompleted: number
@@ -51,6 +69,7 @@ interface UserProgress {
 }
 
 interface MockHubData {
+    jobs: Job[]
     processes: InterviewProcess[]
     userProgress: UserProgress[]
     stats: {
@@ -64,6 +83,10 @@ interface CompanyMockHubContentProps {
     company: Company
     mockHub: MockHubData | null
 }
+
+// ============================================
+// CONSTANTS
+// ============================================
 
 const roundTypeIcons: Record<string, LucideIcon> = {
     PHONE_SCREEN: Phone,
@@ -91,20 +114,43 @@ const roundTypeColors: Record<string, string> = {
     CUSTOM: "from-neutral-500 to-neutral-600",
 }
 
+const employmentTypeLabels: Record<string, string> = {
+    FULL_TIME: "Full-time",
+    PART_TIME: "Part-time",
+    CONTRACT: "Contract",
+    INTERNSHIP: "Internship",
+    FREELANCE: "Freelance"
+}
+
+const locationTypeLabels: Record<string, string> = {
+    REMOTE: "Remote",
+    HYBRID: "Hybrid",
+    ONSITE: "On-site"
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
 export function CompanyMockHubContent({ company, mockHub }: CompanyMockHubContentProps) {
     const router = useRouter()
-    const [selectedProcess, setSelectedProcess] = useState<string | null>(
-        mockHub?.processes[0]?.id || null
+    const [selectedJobId, setSelectedJobId] = useState<string | null>(
+        mockHub?.jobs[0]?.id || null
     )
 
-    const currentProcess = mockHub?.processes.find(p => p.id === selectedProcess)
+    const selectedJob = mockHub?.jobs.find(j => j.id === selectedJobId)
     const progressMap = new Map(mockHub?.userProgress.map(p => [p.roundId, p]) || [])
 
     const getProgressForRound = (roundId: string) => {
         return progressMap.get(roundId)
     }
 
-    if (!mockHub || mockHub.processes.length === 0) {
+    const getMockRoundsCount = (job: Job) => {
+        return job.interviewProcess?.rounds.filter(r => r.hasMockInterview).length || 0
+    }
+
+    // Empty state - no mock interviews available
+    if (!mockHub || mockHub.jobs.length === 0) {
         return (
             <div className="min-h-full p-6 lg:p-8">
                 <Button
@@ -138,246 +184,389 @@ export function CompanyMockHubContent({ company, mockHub }: CompanyMockHubConten
     }
 
     return (
-        <div className="min-h-full">
+        <div className="min-h-screen flex flex-col">
+            {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => router.back()}
-                        className="gap-2 mb-6 text-white/80 hover:text-white hover:bg-white/10"
+                        className="gap-2 mb-4 text-white/80 hover:text-white hover:bg-white/10"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Back
                     </Button>
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center overflow-hidden relative">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center overflow-hidden relative">
                             {
                                 company.logo ? (
                                     <Image src={company.logo} alt={company.name} fill className="object-cover" />
                                 ) : (
-                                    <Building2 className="w-8 h-8 text-neutral-400" />
+                                    <Building2 className="w-7 h-7 text-neutral-400" />
                                 )
                             }
                         </div>
                         <div>
-                            <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
-                                {company.name} Mock Hub
+                            <h1 className="text-xl lg:text-2xl font-bold flex items-center gap-2">
+                                {company.name} Mock Interview Hub
                                 {
                                     company.isVerified && (
-                                        <CheckCircle2 className="w-6 h-6 text-blue-300" />
+                                        <CheckCircle2 className="w-5 h-5 text-blue-300" />
                                     )
                                 }
                             </h1>
-                            <p className="text-white/80">
-                                Practice AI interviews tailored to their process
+                            <p className="text-white/80 text-sm">
+                                Practice AI interviews tailored to each job role
                             </p>
                         </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
                             <div className="flex items-center gap-2 mb-1">
                                 <Video className="w-4 h-4 text-white/70" />
-                                <span className="text-sm text-white/70">Sessions</span>
+                                <span className="text-xs text-white/70">Sessions</span>
                             </div>
-                            <p className="text-2xl font-bold">{mockHub.stats.totalSessions}</p>
+                            <p className="text-xl font-bold">{mockHub.stats.totalSessions}</p>
                         </div>
-                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
                             <div className="flex items-center gap-2 mb-1">
                                 <TrendingUp className="w-4 h-4 text-white/70" />
-                                <span className="text-sm text-white/70">Avg. Score</span>
+                                <span className="text-xs text-white/70">Avg. Score</span>
                             </div>
-                            <p className="text-2xl font-bold">{mockHub.stats.averageScore}%</p>
+                            <p className="text-xl font-bold">{mockHub.stats.averageScore}%</p>
                         </div>
-                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
                             <div className="flex items-center gap-2 mb-1">
                                 <Target className="w-4 h-4 text-white/70" />
-                                <span className="text-sm text-white/70">Rounds Practiced</span>
+                                <span className="text-xs text-white/70">Rounds</span>
                             </div>
-                            <p className="text-2xl font-bold">{mockHub.stats.roundsAttempted}</p>
+                            <p className="text-xl font-bold">{mockHub.stats.roundsAttempted}</p>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {
-                    mockHub.processes.length > 1 && (
-                        <div className="mb-8">
-                            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">
-                                Select Interview Process
-                            </h2>
-                            <div className="flex flex-wrap gap-3">
-                                {
-                                    mockHub.processes.map((process) => (
-                                        <Button
-                                            key={process.id}
-                                            variant={selectedProcess === process.id ? "default" : "outline"}
-                                            onClick={() => setSelectedProcess(process.id)}
-                                            className="rounded-xl"
-                                        >
-                                            {process.name}
-                                            <Badge variant="secondary" className="ml-2">
-                                                {process.rounds.length} rounds
-                                            </Badge>
-                                        </Button>
-                                    ))
-                                }
-                            </div>
-                        </div>
-                    )
-                }
-                {
-                    currentProcess && (
-                        <motion.div
-                            key={currentProcess.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <div className="mb-6">
-                                <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
-                                    {currentProcess.name}
-                                </h2>
-                                {
-                                    currentProcess.description && (
-                                        <p className="text-neutral-500">{currentProcess.description}</p>
-                                    )
-                                }
-                                {
-                                    currentProcess.estimatedDurationWeeks && (
-                                        <div className="flex items-center gap-2 text-sm text-neutral-500 mt-2">
-                                            <Clock className="w-4 h-4" />
-                                            <span>Estimated: {currentProcess.estimatedDurationWeeks} weeks</span>
-                                        </div>
-                                    )
-                                }
-                            </div>
-                            <div className="grid gap-4">
-                                {
-                                    currentProcess.rounds.map((round, index) => {
-                                        const IconComponent = roundTypeIcons[round.roundType] ?? FileText
-                                        const colorClass = roundTypeColors[round.roundType] ?? "from-neutral-500 to-neutral-600"
-                                        const progress = getProgressForRound(round.id)
 
-                                        return (
-                                            <motion.div
-                                                key={round.id}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: index * 0.05 }}
-                                                className="group bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 hover:shadow-lg hover:border-neutral-300 dark:hover:border-neutral-700 transition-all"
-                                            >
-                                                <div className="flex items-start gap-4">
-                                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${colorClass} flex items-center justify-center shrink-0 shadow-lg`}>
-                                                        {IconComponent && <IconComponent className="w-7 h-7 text-white" />}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <Badge variant="outline" className="text-xs">
-                                                                Round {round.roundNumber}
-                                                            </Badge>
-                                                            {
-                                                                round.durationMinutes && (
-                                                                    <span className="text-xs text-neutral-500">
-                                                                        {round.durationMinutes} min
-                                                                    </span>
-                                                                )
-                                                            }
-                                                            {
-                                                                progress && progress.bestScore !== null && (
-                                                                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                                                        Best: {progress.bestScore}%
-                                                                    </Badge>
-                                                                )
-                                                            }
-                                                        </div>
-                                                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
-                                                            {round.title}
-                                                        </h3>
-                                                        {
-                                                            round.description && (
-                                                                <p className="text-sm text-neutral-500 mb-3 line-clamp-2">
-                                                                    {round.description}
-                                                                </p>
-                                                            )
-                                                        }
-                                                        {
-                                                            progress && progress.sessionsCompleted > 0 && (
-                                                                <div className="mb-3">
-                                                                    <div className="flex items-center justify-between text-xs text-neutral-500 mb-1">
-                                                                        <span>{progress.sessionsCompleted} sessions completed</span>
-                                                                        {
-                                                                            progress.lastPracticedAt && (
-                                                                                <span>Last: {new Date(progress.lastPracticedAt).toLocaleDateString()}</span>
-                                                                            )
-                                                                        }
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        }
-                                                        {
-                                                            round.tipsForCandidates && round.tipsForCandidates.length > 0 && (
-                                                                <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
-                                                                    <Sparkles className="w-3 h-3" />
-                                                                    <span>{round.tipsForCandidates.length} tips from the team</span>
-                                                                </div>
-                                                            )
-                                                        }
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        {
-                                                            round.hasMockInterview ? (
-                                                                <Button
-                                                                    className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 gap-2"
-                                                                    onClick={() => router.push(`/mock/company/${company.slug}?round=${round.id}`)}
-                                                                >
-                                                                    <Play className="w-4 h-4" />
-                                                                    Practice
-                                                                </Button>
-                                                            ) : (
-                                                                <Badge variant="outline" className="text-neutral-500">
-                                                                    <Lock className="w-3 h-3 mr-1" />
-                                                                    Coming Soon
-                                                                </Badge>
-                                                            )
-                                                        }
-                                                        <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors" />
+            {/* Score Threshold Notice */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                    <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>
+                            <strong>Note:</strong> Only scores of 75% or above are shared with {company.name}&apos;s recruiters
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content - Sidebar + Content */}
+            <div className="flex-1 flex max-w-7xl mx-auto w-full">
+                {/* Sidebar - Job Roles */}
+                <div className="w-80 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
+                    <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">
+                        <h2 className="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                            <Briefcase className="w-4 h-4" />
+                            Job Roles ({mockHub.jobs.length})
+                        </h2>
+                        <p className="text-xs text-neutral-500 mt-1">
+                            Select a role to practice mock interviews
+                        </p>
+                    </div>
+                    <ScrollArea className="h-[calc(100vh-320px)]">
+                        <div className="p-2 space-y-1">
+                            {
+                                mockHub.jobs.map((job) => {
+                                    const mockCount = getMockRoundsCount(job)
+                                    const isSelected = selectedJobId === job.id
+                                    
+                                    return (
+                                        <button
+                                            key={job.id}
+                                            onClick={() => setSelectedJobId(job.id)}
+                                            className={cn(
+                                                "w-full text-left p-3 rounded-xl transition-all",
+                                                isSelected
+                                                    ? "bg-white dark:bg-neutral-800 shadow-sm border border-neutral-200 dark:border-neutral-700"
+                                                    : "hover:bg-white/50 dark:hover:bg-neutral-800/50"
+                                            )}
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className={cn(
+                                                        "font-medium text-sm truncate",
+                                                        isSelected
+                                                            ? "text-neutral-900 dark:text-white"
+                                                            : "text-neutral-700 dark:text-neutral-300"
+                                                    )}>
+                                                        {job.title}
+                                                    </h3>
+                                                    <div className="flex items-center gap-2 text-xs text-neutral-500 mt-1">
+                                                        <span>{employmentTypeLabels[job.employmentType]}</span>
+                                                        <span>•</span>
+                                                        <span>{locationTypeLabels[job.locationType]}</span>
                                                     </div>
                                                 </div>
-                                            </motion.div>
+                                                {
+                                                    mockCount > 0 && (
+                                                        <Badge className={cn(
+                                                            "text-[10px] shrink-0",
+                                                            isSelected
+                                                                ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                                                                : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                                                        )}>
+                                                            {mockCount} mocks
+                                                        </Badge>
+                                                    )
+                                                }
+                                            </div>
+                                            {
+                                                job.interviewProcess && (
+                                                    <div className="flex items-center gap-1 mt-2 text-xs text-neutral-400">
+                                                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                                        <span>{job.interviewProcess.rounds.length} interview rounds</span>
+                                                    </div>
+                                                )
+                                            }
+                                        </button>
+                                    )
+                                })
+                            }
+                        </div>
+                    </ScrollArea>
+                </div>
+
+                {/* Main Content - Mock Interviews for Selected Role */}
+                <div className="flex-1 p-6 overflow-y-auto">
+                    <AnimatePresence mode="wait">
+                        {
+                            selectedJob ? (
+                                <motion.div
+                                    key={selectedJob.id}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {/* Job Header */}
+                                    <div className="mb-6">
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                                    {selectedJob.title}
+                                                </h2>
+                                                <div className="flex items-center gap-3 mt-2 text-sm text-neutral-500">
+                                                    <div className="flex items-center gap-1">
+                                                        <MapPin className="w-4 h-4" />
+                                                        <span>{selectedJob.location || locationTypeLabels[selectedJob.locationType]}</span>
+                                                    </div>
+                                                    <span>•</span>
+                                                    <span>{employmentTypeLabels[selectedJob.employmentType]}</span>
+                                                    <span>•</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <Users className="w-4 h-4" />
+                                                        <span>{selectedJob.applicationsCount} applicants</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Link href={`/jobs/${selectedJob.slug}`}>
+                                                <Button variant="outline" className="rounded-xl">
+                                                    View Job Details
+                                                    <ChevronRight className="w-4 h-4 ml-1" />
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+
+                                    {/* Interview Rounds */}
+                                    {
+                                        selectedJob.interviewProcess ? (
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                                                        Interview Rounds
+                                                    </h3>
+                                                    <Badge variant="secondary">
+                                                        {selectedJob.interviewProcess.rounds.length} rounds
+                                                    </Badge>
+                                                    {
+                                                        selectedJob.interviewProcess.estimatedDurationWeeks && (
+                                                            <span className="text-sm text-neutral-500">
+                                                                • ~{selectedJob.interviewProcess.estimatedDurationWeeks} weeks
+                                                            </span>
+                                                        )
+                                                    }
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    {
+                                                        selectedJob.interviewProcess.rounds.map((round, index) => {
+                                                            const IconComponent = roundTypeIcons[round.roundType] ?? FileText
+                                                            const colorClass = roundTypeColors[round.roundType] ?? "from-neutral-500 to-neutral-600"
+                                                            const progress = getProgressForRound(round.id)
+
+                                                            return (
+                                                                <motion.div
+                                                                    key={round.id}
+                                                                    initial={{ opacity: 0, y: 20 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    transition={{ delay: index * 0.05 }}
+                                                                    className="group bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 hover:shadow-lg hover:border-neutral-300 dark:hover:border-neutral-700 transition-all"
+                                                                >
+                                                                    <div className="flex items-start gap-4">
+                                                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center shrink-0 shadow-lg`}>
+                                                                            {IconComponent && <IconComponent className="w-6 h-6 text-white" />}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <Badge variant="outline" className="text-xs">
+                                                                                    Round {round.roundNumber}
+                                                                                </Badge>
+                                                                                {
+                                                                                    round.durationMinutes && (
+                                                                                        <span className="text-xs text-neutral-500">
+                                                                                            <Clock className="w-3 h-3 inline mr-1" />
+                                                                                            {round.durationMinutes} min
+                                                                                        </span>
+                                                                                    )
+                                                                                }
+                                                                                {
+                                                                                    progress && progress.bestScore !== null && (
+                                                                                        <Badge className={cn(
+                                                                                            progress.bestScore >= 75
+                                                                                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                                                                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                                                                        )}>
+                                                                                            Best: {progress.bestScore}%
+                                                                                            {progress.bestScore >= 75 && (
+                                                                                                <CheckCircle2 className="w-3 h-3 ml-1" />
+                                                                                            )}
+                                                                                        </Badge>
+                                                                                    )
+                                                                                }
+                                                                            </div>
+                                                                            <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
+                                                                                {round.title}
+                                                                            </h4>
+                                                                            {
+                                                                                round.description && (
+                                                                                    <p className="text-sm text-neutral-500 mb-3">
+                                                                                        {round.description}
+                                                                                    </p>
+                                                                                )
+                                                                            }
+                                                                            {
+                                                                                progress && progress.sessionsCompleted > 0 && (
+                                                                                    <div className="mb-3 text-xs text-neutral-500">
+                                                                                        <span>{progress.sessionsCompleted} sessions completed</span>
+                                                                                        {
+                                                                                            progress.lastPracticedAt && (
+                                                                                                <span className="ml-2">
+                                                                                                    • Last: {new Date(progress.lastPracticedAt).toLocaleDateString()}
+                                                                                                </span>
+                                                                                            )
+                                                                                        }
+                                                                                    </div>
+                                                                                )
+                                                                            }
+                                                                            {
+                                                                                round.tipsForCandidates && round.tipsForCandidates.length > 0 && (
+                                                                                    <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                                                                                        <Sparkles className="w-3 h-3" />
+                                                                                        <span>{round.tipsForCandidates.length} tips from the team</span>
+                                                                                    </div>
+                                                                                )
+                                                                            }
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 shrink-0">
+                                                                            {
+                                                                                round.hasMockInterview ? (
+                                                                                    <Button
+                                                                                        className="rounded-xl bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                                                                                        onClick={() => router.push(`/mock/company/${company.slug}?job=${selectedJob.id}&round=${round.id}`)}
+                                                                                    >
+                                                                                        <Play className="w-4 h-4 fill-current" />
+                                                                                        Practice
+                                                                                    </Button>
+                                                                                ) : (
+                                                                                    <Badge variant="outline" className="text-neutral-500">
+                                                                                        <Lock className="w-3 h-3 mr-1" />
+                                                                                        Coming Soon
+                                                                                    </Badge>
+                                                                                )
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                </motion.div>
+                                                            )
+                                                        })
+                                                    }
+                                                </div>
+
+                                                {/* Ready to Apply CTA */}
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.3 }}
+                                                    className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800"
+                                                >
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shrink-0">
+                                                            <Award className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-semibold text-neutral-900 dark:text-white mb-1">
+                                                                Ready to Apply?
+                                                            </h4>
+                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                                                                Practice makes perfect! Once you score 75% or above, your results will be 
+                                                                visible to {company.name}&apos;s recruiters, giving you an edge.
+                                                            </p>
+                                                            <Link href={`/jobs/${selectedJob.slug}`}>
+                                                                <Button className="rounded-xl bg-green-600 hover:bg-green-700 text-white">
+                                                                    Apply to {selectedJob.title}
+                                                                    <ChevronRight className="w-4 h-4 ml-1" />
+                                                                </Button>
+                                                            </Link>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-16">
+                                                <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
+                                                    <Lock className="w-8 h-8 text-neutral-400" />
+                                                </div>
+                                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                                                    No Interview Process Configured
+                                                </h3>
+                                                <p className="text-neutral-500 max-w-sm mx-auto">
+                                                    This role doesn&apos;t have an interview process configured yet.
+                                                    Check back later!
+                                                </p>
+                                            </div>
                                         )
-                                    })
-                                }
-                            </div>
-                        </motion.div>
-                    )
-                }
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-10 p-6 rounded-2xl bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800"
-                >
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shrink-0">
-                            <Award className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
-                                Ready to Apply?
-                            </h3>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                                After practicing, you&apos;ll be better prepared for the real interviews.
-                                Check out open positions at {company.name}!
-                            </p>
-                            <Link href={`/companies/${company.slug}`}>
-                                <Button className="rounded-xl">
-                                    View Open Positions
-                                    <ChevronRight className="w-4 h-4 ml-1" />
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
-                </motion.div>
+                                    }
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-center py-16"
+                                >
+                                    <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
+                                        <Briefcase className="w-8 h-8 text-neutral-400" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                                        Select a Job Role
+                                    </h3>
+                                    <p className="text-neutral-500">
+                                        Choose a job role from the sidebar to view and practice mock interviews
+                                    </p>
+                                </motion.div>
+                            )
+                        }
+                    </AnimatePresence>
+                </div>
             </div>
         </div>
     )
