@@ -4,6 +4,11 @@ import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
 
+// ============================================
+// Legacy ProductIdea actions (for backward compatibility)
+// New submissions should use Launchpads
+// ============================================
+
 interface ProductIdeaInput {
     title: string
     description: string
@@ -44,7 +49,7 @@ export async function submitProductIdea(input: ProductIdeaInput) {
             }
         })
 
-        revalidatePath('/products')
+        revalidatePath('/launchpads')
         
         return {
             success: true,
@@ -167,8 +172,8 @@ export async function updateProductIdeaStatus(
             }
         })
 
-        revalidatePath('/products')
-        revalidatePath('/admin/products')
+        revalidatePath('/launchpads')
+        revalidatePath('/admin/launchpads')
         
         return {
             success: true,
@@ -182,6 +187,4 @@ export async function updateProductIdeaStatus(
         }
     }
 }
-
-
 

@@ -214,17 +214,32 @@ export function AdminSidebar() {
 
         const hasChildren = item.children && item.children.length > 0;
         const isChildActive = hasChildren && item.children!.some((child) => pathname.startsWith(`/${child.path}`));
-        const isExpanded = expandedItems.includes(itemPath) || (isChildActive && !isCollapsed);
+        const isParentActive = pathname === `/${itemPath}` || pathname.startsWith(`/${itemPath}/`);
+        const isExpanded = expandedItems.includes(itemPath) || ((isChildActive || isParentActive) && !isCollapsed);
         const isActive = pathname === `/${itemPath}` || pathname.startsWith(`/${itemPath}/`);
 
         if (hasChildren) {
+            const handleParentClick = () => {
+                // Navigate to parent route
+                router.push(`/${itemPath}`);
+                // Expand dropdown if not already expanded
+                if (!expandedItems.includes(itemPath)) {
+                    setExpandedItems(() => [itemPath]);
+                }
+            };
+
+            const handleChevronClick = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                toggleItemExpanded(itemPath);
+            };
+
             return (
                 <div key={itemPath} className="space-y-1">
                     <button
-                        onClick={() => toggleItemExpanded(itemPath)}
+                        onClick={handleParentClick}
                         className={cn(
-                            "flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
-                            isChildActive
+                            "cursor-pointer flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
+                            (isChildActive || isParentActive)
                                 ? "text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800/50"
                                 : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
                             isCollapsed && "justify-center px-3"
@@ -237,10 +252,15 @@ export function AdminSidebar() {
                             !isCollapsed && (
                                 <>
                                     <span className="flex-1 text-left whitespace-nowrap overflow-hidden">{itemName}</span>
-                                    <ChevronDown className={cn(
-                                        "h-4 w-4 transition-transform",
-                                        isExpanded && "rotate-180"
-                                    )} />
+                                    <div
+                                        onClick={handleChevronClick}
+                                        className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded transition-colors"
+                                    >
+                                        <ChevronDown className={cn(
+                                            "h-4 w-4 transition-transform",
+                                            isExpanded && "rotate-180"
+                                        )} />
+                                    </div>
                                 </>
                             )
                         }

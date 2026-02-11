@@ -494,6 +494,15 @@ model User {
     productIdeas   ProductIdea[]   @relation("ProductIdeas")
     backgroundJobs BackgroundJob[] @relation("BackgroundJobs")
 
+    // Launchpad Relations
+    launchpadProducts    LaunchpadProduct[]        @relation("LaunchpadProducts")
+    launchpadViews       LaunchpadProductView[]    @relation("LaunchpadViews")
+    launchpadClicks      LaunchpadProductClick[]   @relation("LaunchpadClicks")
+    launchpadLikes       LaunchpadProductLike[]    @relation("LaunchpadLikes")
+    launchpadDislikes    LaunchpadProductDislike[] @relation("LaunchpadDislikes")
+    launchpadComments    LaunchpadProductComment[] @relation("LaunchpadComments")
+    launchpadFeedbacks   LaunchpadProductFeedback[] @relation("LaunchpadFeedbacks")
+
     // ===============================================
     // COMMUNITY PLATFORM RELATIONS
     // ===============================================

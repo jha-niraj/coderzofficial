@@ -1,0 +1,984 @@
+================================================================================
+                AUTOMATIC SOCIAL MEDIA POSTING INTEGRATION
+                CoderzLab Platform - Technical Specification
+                Version 1.0 | February 2026
+================================================================================
+
+TABLE OF CONTENTS
+================================================================================
+1. Executive Summary
+2. Platform Overview
+3. OAuth Authentication Flow
+4. Content Generation Engine
+5. Posting Workflow
+6. Supported Platforms Deep Dive
+7. User Experience Flow
+8. Privacy & Permissions Model
+9. Analytics & Tracking
+10. Rate Limiting & Best Practices
+11. Error Handling & Fallbacks
+12. Screen Flowcharts
+13. Future Enhancements
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+The Automatic Social Media Posting Integration enables CoderzLab users to 
+share their verified learning achievements across multiple social platforms 
+with a single click. The system uses AI to generate personalized, 
+platform-optimized content that maintains the user's authentic voice.
+
+CORE VALUE PROPOSITION:
+• Eliminates friction in sharing achievements
+• Generates professional, personalized posts
+• Builds public learning portfolio automatically
+• Increases accountability through public commitment
+• Drives organic growth through user advocacy
+
+SUPPORTED PLATFORMS:
+• Twitter/X - Short-form achievement posts
+• LinkedIn - Professional learning updates
+• Future: Dev.to, GitHub Profile, Discord
+
+KEY FEATURES:
+• One-click posting to multiple platforms
+• AI-generated personalized content
+• User editing before posting
+• Scheduled posting options
+• Engagement analytics tracking
+
+================================================================================
+2. PLATFORM OVERVIEW
+================================================================================
+
+2.1 SYSTEM ARCHITECTURE
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    SOCIAL POSTING ARCHITECTURE                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│                              USER LAYER                                    │
+│                                                                            │
+│   ┌────────────────┐    ┌────────────────┐    ┌────────────────┐         │
+│   │  Achievement   │    │  Post Preview  │    │  Social        │         │
+│   │  Trigger       │───▶│  & Edit        │───▶│  Confirmation  │         │
+│   └────────────────┘    └────────────────┘    └────────────────┘         │
+│                                                                            │
+└────────────────────────────────────┬──────────────────────────────────────┘
+                                     │
+                                     ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           APPLICATION LAYER                                │
+│                                                                            │
+│   ┌────────────────────────────────────────────────────────────────────┐  │
+│   │                    SOCIAL POSTING SERVICE                           │  │
+│   │                                                                     │  │
+│   │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │  │
+│   │  │ Content      │  │ Platform     │  │ Analytics    │             │  │
+│   │  │ Generator    │  │ Router       │  │ Collector    │             │  │
+│   │  └──────────────┘  └──────────────┘  └──────────────┘             │  │
+│   │                                                                     │  │
+│   └────────────────────────────────────────────────────────────────────┘  │
+│                                                                            │
+└────────────────────────────────────┬──────────────────────────────────────┘
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         │                           │                           │
+         ▼                           ▼                           ▼
+┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
+│   AI SERVICE    │        │   TOKEN VAULT   │        │    DATABASE     │
+│                 │        │                 │        │                 │
+│ ┌─────────────┐ │        │ ┌─────────────┐ │        │ ┌─────────────┐ │
+│ │ OpenAI/     │ │        │ │ OAuth       │ │        │ │ Social      │ │
+│ │ Claude API  │ │        │ │ Tokens      │ │        │ │ Posts       │ │
+│ │             │ │        │ │ (Encrypted) │ │        │ │             │ │
+│ └─────────────┘ │        │ └─────────────┘ │        │ │ Analytics   │ │
+│ ┌─────────────┐ │        │ ┌─────────────┐ │        │ │             │ │
+│ │ Post        │ │        │ │ Refresh     │ │        │ │ User        │ │
+│ │ Generation  │ │        │ │ Logic       │ │        │ │ Preferences │ │
+│ └─────────────┘ │        │ └─────────────┘ │        │ └─────────────┘ │
+└─────────────────┘        └─────────────────┘        └─────────────────┘
+         │                           │                           │
+         └───────────────────────────┼───────────────────────────┘
+                                     │
+                                     ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                        EXTERNAL PLATFORM APIS                              │
+│                                                                            │
+│   ┌────────────────┐    ┌────────────────┐    ┌────────────────┐         │
+│   │   Twitter/X    │    │   LinkedIn     │    │   Future:      │         │
+│   │   API v2       │    │   API v2       │    │   Dev.to, etc  │         │
+│   └────────────────┘    └────────────────┘    └────────────────┘         │
+│                                                                            │
+└───────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+3. OAUTH AUTHENTICATION FLOW
+================================================================================
+
+3.1 TWITTER/X OAUTH 2.0 FLOW
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    TWITTER OAUTH 2.0 PKCE FLOW                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    USER                    CODERZ                    TWITTER
+      │                        │                         │
+      │  1. Click "Connect     │                         │
+      │     Twitter"           │                         │
+      │───────────────────────▶│                         │
+      │                        │                         │
+      │                        │  2. Generate PKCE       │
+      │                        │     code_verifier &     │
+      │                        │     code_challenge      │
+      │                        │                         │
+      │  3. Redirect to Twitter│                         │
+      │     Authorization URL  │                         │
+      │◀───────────────────────│                         │
+      │                        │                         │
+      │  4. User Authorizes    │                         │
+      │─────────────────────────────────────────────────▶│
+      │                        │                         │
+      │  5. Redirect back with │                         │
+      │     authorization code │                         │
+      │◀─────────────────────────────────────────────────│
+      │                        │                         │
+      │  6. Send code to       │                         │
+      │     CoderzLab          │                         │
+      │───────────────────────▶│                         │
+      │                        │                         │
+      │                        │  7. Exchange code for   │
+      │                        │     tokens              │
+      │                        │────────────────────────▶│
+      │                        │                         │
+      │                        │  8. Receive tokens      │
+      │                        │◀────────────────────────│
+      │                        │                         │
+      │                        │  9. Store tokens        │
+      │                        │     (encrypted)         │
+      │                        │                         │
+      │  10. Connection Success│                         │
+      │◀───────────────────────│                         │
+      │                        │                         │
+
+TWITTER SCOPES REQUIRED:
+• tweet.read - Read user's tweets
+• tweet.write - Post tweets on behalf of user
+• users.read - Read basic profile information
+• offline.access - Refresh tokens for persistent access
+
+3.2 LINKEDIN OAUTH 2.0 FLOW
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    LINKEDIN OAUTH 2.0 FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    USER                    CODERZ                    LINKEDIN
+      │                        │                         │
+      │  1. Click "Connect     │                         │
+      │     LinkedIn"          │                         │
+      │───────────────────────▶│                         │
+      │                        │                         │
+      │                        │  2. Generate state      │
+      │                        │     parameter           │
+      │                        │                         │
+      │  3. Redirect to        │                         │
+      │     LinkedIn Auth URL  │                         │
+      │◀───────────────────────│                         │
+      │                        │                         │
+      │  4. User Authorizes    │                         │
+      │─────────────────────────────────────────────────▶│
+      │                        │                         │
+      │  5. Redirect with code │                         │
+      │◀─────────────────────────────────────────────────│
+      │                        │                         │
+      │  6. Code to CoderzLab  │                         │
+      │───────────────────────▶│                         │
+      │                        │                         │
+      │                        │  7. Exchange for tokens │
+      │                        │────────────────────────▶│
+      │                        │                         │
+      │                        │  8. Tokens received     │
+      │                        │◀────────────────────────│
+      │                        │                         │
+      │  10. Success!          │                         │
+      │◀───────────────────────│                         │
+
+LINKEDIN SCOPES REQUIRED:
+• r_liteprofile - Basic profile (name, photo)
+• w_member_social - Post on behalf of member
+• r_emailaddress - Email for verification (optional)
+
+3.3 TOKEN STORAGE & SECURITY
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      TOKEN SECURITY MODEL                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                           TOKEN VAULT                                       │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  STORAGE APPROACH:                                                          │
+│  ─────────────────                                                          │
+│  • Tokens encrypted at rest using AES-256-GCM                              │
+│  • Encryption key stored in environment variables                          │
+│  • Each user's tokens have unique IV (Initialization Vector)               │
+│  • Tokens never logged or exposed in errors                                │
+│                                                                             │
+│  TOKEN STRUCTURE:                                                           │
+│  ─────────────────                                                          │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  User Social Account                                                 │   │
+│  │  ├── id: uuid                                                        │   │
+│  │  ├── userId: user_uuid                                               │   │
+│  │  ├── platform: "twitter" | "linkedin"                                │   │
+│  │  ├── platformUserId: "123456789"                                     │   │
+│  │  ├── platformUsername: "@johndoe"                                    │   │
+│  │  ├── accessToken: encrypted_string                                   │   │
+│  │  ├── refreshToken: encrypted_string                                  │   │
+│  │  ├── expiresAt: datetime                                             │   │
+│  │  ├── scope: ["tweet.write", "users.read"]                            │   │
+│  │  ├── isActive: boolean                                               │   │
+│  │  └── connectedAt: datetime                                           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  REFRESH STRATEGY:                                                          │
+│  ─────────────────                                                          │
+│  • Check token expiry before each API call                                 │
+│  • Refresh 5 minutes before expiry (buffer)                                │
+│  • If refresh fails, mark connection as inactive                           │
+│  • Notify user to re-authenticate                                          │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+4. CONTENT GENERATION ENGINE
+================================================================================
+
+4.1 AI CONTENT GENERATION FLOW
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CONTENT GENERATION PIPELINE                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+        ┌───────────────────────────────┐
+        │     ACHIEVEMENT DATA          │
+        │  • Goal: "Master Arrays"      │
+        │  • Score: 85%                 │
+        │  • Topics: DSA, Algorithms    │
+        │  • Duration: 3 weeks          │
+        │  • Assignments: 8 completed   │
+        └──────────────┬────────────────┘
+                       │
+                       ▼
+        ┌───────────────────────────────┐
+        │     USER CONTEXT              │
+        │  • Name: John Doe             │
+        │  • Writing style: Casual      │
+        │  • Previous posts: [...]      │
+        │  • Preferred hashtags         │
+        │  • Emoji preference: Moderate │
+        └──────────────┬────────────────┘
+                       │
+                       ▼
+        ┌───────────────────────────────┐
+        │     PLATFORM CONTEXT          │
+        │  • Twitter: 280 chars max     │
+        │  • LinkedIn: Professional     │
+        │  • Hashtag limits             │
+        │  • Media support              │
+        └──────────────┬────────────────┘
+                       │
+                       ▼
+        ┌───────────────────────────────┐
+        │     AI CONTENT GENERATOR      │
+        │  (OpenAI GPT-4 / Claude)      │
+        │                               │
+        │  Prompt includes:             │
+        │  • Achievement details        │
+        │  • User tone preferences      │
+        │  • Platform constraints       │
+        │  • Example posts              │
+        │  • Hashtag suggestions        │
+        └──────────────┬────────────────┘
+                       │
+           ┌───────────┴───────────┐
+           │                       │
+           ▼                       ▼
+┌───────────────────────┐ ┌───────────────────────┐
+│   TWITTER POST        │ │   LINKEDIN POST       │
+│                       │ │                       │
+│ 🎯 Just verified my   │ │ I'm excited to share  │
+│ mastery of Arrays &   │ │ that I've verified my │
+│ Strings in DSA!       │ │ proficiency in Data   │
+│                       │ │ Structures - Arrays   │
+│ After 3 weeks of      │ │ & Strings through     │
+│ focused practice, I   │ │ AI-powered assessment.│
+│ scored 85% on AI      │ │                       │
+│ verification.         │ │ Key accomplishments:  │
+│                       │ │ • Two-pointer tech    │
+│ #DSA #CodingJourney   │ │ • Sliding window      │
+│ #100DaysOfCode        │ │ • String manipulation │
+│                       │ │                       │
+│ [280 chars optimized] │ │ [Professional tone]   │
+└───────────────────────┘ └───────────────────────┘
+
+4.2 CONTENT TEMPLATES
+─────────────────────────────
+
+The system uses several base templates that AI personalizes:
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                      CONTENT TEMPLATES                                      │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  TEMPLATE: ACHIEVEMENT_CELEBRATION                                          │
+│  ─────────────────────────────────────────────────────────────────────────│
+│  Twitter:                                                                   │
+│  "🎯 Just verified my {skill} mastery! {score}% on AI assessment.          │
+│   Key takeaways: {bullet_points}. #LearningInPublic #{topic}hashtag"       │
+│                                                                             │
+│  LinkedIn:                                                                  │
+│  "I'm thrilled to share a learning milestone! I've completed and           │
+│   verified my understanding of {skill} through {platform}.                  │
+│                                                                             │
+│   What I learned:                                                           │
+│   {detailed_bullets}                                                        │
+│                                                                             │
+│   The journey took {duration}, and I'm proud to have scored {score}%.      │
+│   Always believe in continuous learning! #{hashtags}"                       │
+│                                                                             │
+│  ─────────────────────────────────────────────────────────────────────────│
+│  TEMPLATE: LEARNING_STREAK                                                  │
+│  ─────────────────────────────────────────────────────────────────────────│
+│  Twitter:                                                                   │
+│  "🔥 {streak_days} day learning streak! Today I worked on {topic}.         │
+│   Consistency > intensity. #{hashtags}"                                     │
+│                                                                             │
+│  LinkedIn:                                                                  │
+│  "Day {streak_days} of my learning journey. Today's focus: {topic}.        │
+│   Small consistent steps lead to big results. #{hashtags}"                  │
+│                                                                             │
+│  ─────────────────────────────────────────────────────────────────────────│
+│  TEMPLATE: GOAL_STARTED                                                     │
+│  ─────────────────────────────────────────────────────────────────────────│
+│  Twitter:                                                                   │
+│  "📚 New learning goal: {goal_title}. Target: {target_date}.               │
+│   Holding myself accountable! #{hashtags}"                                  │
+│                                                                             │
+│  LinkedIn:                                                                  │
+│  "I'm publicly committing to learning {goal_title} by {target_date}.       │
+│   Sharing this to stay accountable. Wish me luck! #{hashtags}"             │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+5. POSTING WORKFLOW
+================================================================================
+
+5.1 COMPLETE POSTING FLOW
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       COMPLETE POSTING WORKFLOW                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────┐
+                    │ Trigger Event       │
+                    │ (Goal Verified)     │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ Check User          │
+                    │ Preferences         │
+                    │ - Auto-post enabled?│
+                    │ - Connected accounts│
+                    └──────────┬──────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │ Auto-post OFF  │                │ Auto-post ON
+              │                ▼                │
+              │     ┌─────────────────────┐     │
+              │     │ Generate Content    │     │
+              │     │ for Preview         │     │
+              │     └──────────┬──────────┘     │
+              │                │                │
+              │                ▼                │
+              │     ┌─────────────────────┐     │
+              │     │ Show Preview Modal  │◀────┘
+              │     │ - Edit option       │
+              │     │ - Platform select   │
+              │     │ - Schedule option   │
+              │     └──────────┬──────────┘
+              │                │
+              │     ┌──────────┴──────────┐
+              │     │                     │
+              │     ▼                     ▼
+              │ [Edit]               [Post Now]
+              │     │                     │
+              │     ▼                     │
+              │ ┌─────────────┐           │
+              │ │ Edit Modal  │           │
+              │ │ - Customize │           │
+              │ │ - Preview   │           │
+              │ └──────┬──────┘           │
+              │        │                  │
+              │        └────────┬─────────┘
+              │                 │
+              │                 ▼
+              │      ┌─────────────────────┐
+              │      │ Validate Content    │
+              │      │ - Character limits  │
+              │      │ - Hashtag count     │
+              │      │ - Link validity     │
+              │      └──────────┬──────────┘
+              │                 │
+              │      ┌──────────┴──────────┐
+              │      │                     │
+              │      ▼                     ▼
+              │  [Scheduled]          [Immediate]
+              │      │                     │
+              │      ▼                     │
+              │ ┌─────────────┐            │
+              │ │ Add to      │            │
+              │ │ Post Queue  │            │
+              │ └─────────────┘            │
+              │                            │
+              │                            ▼
+              │                ┌─────────────────────┐
+              │                │ Execute Post        │
+              │                │ (Platform-specific) │
+              │                └──────────┬──────────┘
+              │                           │
+              │         ┌─────────────────┼─────────────────┐
+              │         │                 │                 │
+              │         ▼                 ▼                 ▼
+              │  ┌────────────┐   ┌────────────┐   ┌────────────┐
+              │  │  Twitter   │   │  LinkedIn  │   │  Future    │
+              │  │  API Call  │   │  API Call  │   │  Platforms │
+              │  └─────┬──────┘   └─────┬──────┘   └────────────┘
+              │        │                │
+              │        └────────┬───────┘
+              │                 │
+              │                 ▼
+              │      ┌─────────────────────┐
+              │      │ Store Post Record   │
+              │      │ - Post ID           │
+              │      │ - Platform          │
+              │      │ - Timestamp         │
+              │      │ - Content           │
+              │      └──────────┬──────────┘
+              │                 │
+              │                 ▼
+              │      ┌─────────────────────┐
+              │      │ Show Confirmation   │
+              │      │ - Success message   │
+              │      │ - View post links   │
+              │      └─────────────────────┘
+              │
+              │ [Skip]
+              └───────▶ ┌─────────────────────┐
+                        │ Record Skip         │
+                        │ (Analytics)         │
+                        └─────────────────────┘
+
+5.2 PLATFORM-SPECIFIC POSTING
+─────────────────────────────
+
+TWITTER POSTING:
+┌────────────────────────────────────────────────────────────────────────────┐
+│  POST TO TWITTER                                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. Retrieve user's Twitter access token                                    │
+│  2. Validate token (refresh if needed)                                      │
+│  3. Construct tweet payload:                                                │
+│     {                                                                       │
+│       "text": "Generated tweet content...",                                 │
+│       "reply_settings": "everyone"                                          │
+│     }                                                                       │
+│  4. POST to https://api.twitter.com/2/tweets                               │
+│  5. Parse response for tweet_id                                             │
+│  6. Store tweet_id and URL                                                  │
+│                                                                             │
+│  ERROR HANDLING:                                                            │
+│  • 401: Token expired → Refresh and retry                                  │
+│  • 403: Permissions issue → Prompt re-auth                                 │
+│  • 429: Rate limit → Queue for later                                       │
+│  • 500: Server error → Retry with backoff                                  │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+LINKEDIN POSTING:
+┌────────────────────────────────────────────────────────────────────────────┐
+│  POST TO LINKEDIN                                                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. Retrieve user's LinkedIn access token                                   │
+│  2. Get user's LinkedIn URN (person URN)                                    │
+│  3. Construct share payload:                                                │
+│     {                                                                       │
+│       "author": "urn:li:person:{member_id}",                               │
+│       "lifecycleState": "PUBLISHED",                                        │
+│       "specificContent": {                                                  │
+│         "com.linkedin.ugc.ShareContent": {                                  │
+│           "shareCommentary": { "text": "..." },                             │
+│           "shareMediaCategory": "NONE"                                      │
+│         }                                                                   │
+│       },                                                                    │
+│       "visibility": {                                                       │
+│         "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"               │
+│       }                                                                     │
+│     }                                                                       │
+│  4. POST to https://api.linkedin.com/v2/ugcPosts                           │
+│  5. Parse response for activity URN                                         │
+│  6. Store activity URN and construct URL                                    │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+6. SUPPORTED PLATFORMS DEEP DIVE
+================================================================================
+
+6.1 TWITTER/X INTEGRATION
+─────────────────────────────
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                    TWITTER/X INTEGRATION DETAILS                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  API VERSION: Twitter API v2                                                │
+│  AUTH METHOD: OAuth 2.0 with PKCE                                          │
+│                                                                             │
+│  FEATURES SUPPORTED:                                                        │
+│  ──────────────────                                                         │
+│  ✓ Text tweets (up to 280 characters)                                      │
+│  ✓ Hashtags (auto-generated, platform-optimized)                           │
+│  ✓ Mentions (@CoderzLab auto-included)                                     │
+│  ✓ Links (achievement page URL)                                            │
+│  ◯ Media attachments (Future: achievement cards)                           │
+│  ◯ Threads (Future: detailed breakdowns)                                   │
+│  ◯ Polls (Future: engagement features)                                     │
+│                                                                             │
+│  RATE LIMITS:                                                               │
+│  ────────────                                                               │
+│  • 200 tweets per 15-minute window per user                                │
+│  • 300 tweets per 3-hour window per user                                   │
+│  • App-level: 1500 per 15 minutes                                          │
+│                                                                             │
+│  BEST PRACTICES:                                                            │
+│  ───────────────                                                            │
+│  • Keep tweets under 250 chars for engagement                              │
+│  • Limit to 2-3 hashtags                                                   │
+│  • Include call-to-action when appropriate                                 │
+│  • Time posts for user's timezone peak hours                               │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+6.2 LINKEDIN INTEGRATION
+─────────────────────────────
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                    LINKEDIN INTEGRATION DETAILS                             │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  API VERSION: LinkedIn Marketing API v2                                     │
+│  AUTH METHOD: OAuth 2.0                                                     │
+│                                                                             │
+│  FEATURES SUPPORTED:                                                        │
+│  ──────────────────                                                         │
+│  ✓ Text posts (up to 3000 characters)                                      │
+│  ✓ Hashtags (professional, industry-relevant)                              │
+│  ✓ Links (with preview cards)                                              │
+│  ✓ Rich formatting (line breaks, bullets)                                  │
+│  ◯ Document sharing (Future: PDF certificates)                             │
+│  ◯ Article posts (Future: detailed achievements)                           │
+│  ◯ Carousel posts (Future: skill showcases)                                │
+│                                                                             │
+│  RATE LIMITS:                                                               │
+│  ────────────                                                               │
+│  • 100 posts per day per user                                              │
+│  • 100,000 API calls per day per app                                       │
+│                                                                             │
+│  CONTENT GUIDELINES:                                                        │
+│  ──────────────────                                                         │
+│  • Professional tone (avoid excessive emojis)                              │
+│  • Industry-relevant hashtags                                              │
+│  • Longer, more detailed content performs better                           │
+│  • Include insights and learnings, not just achievements                   │
+│  • Engage with relevant professionals (tag mentors, etc.)                  │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+7. USER EXPERIENCE FLOW
+================================================================================
+
+7.1 SETTINGS - CONNECT ACCOUNTS
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      SOCIAL CONNECTIONS SETTINGS                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  SETTINGS > Social Connections                                              │
+│                                                                              │
+│  ┌─ Connected Accounts ─────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  🐦 Twitter/X                                                        │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │ Connected as: @johndoe                                          │ │   │
+│  │  │ Permissions: Read & Write                                       │ │   │
+│  │  │ Connected: Feb 10, 2026                                         │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ [Disconnect]                                                    │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  │  💼 LinkedIn                                                         │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │ Not Connected                                                   │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ [Connect LinkedIn]                                              │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─ Posting Preferences ────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  Auto-post achievements:                                             │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐   │   │
+│  │  │ ○ Always auto-post (no preview)                               │   │   │
+│  │  │ ◉ Show preview before posting (Recommended)                   │   │   │
+│  │  │ ○ Never auto-post (manual only)                               │   │   │
+│  │  └──────────────────────────────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  │  Default platforms for posting:                                      │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐   │   │
+│  │  │ ☑ Twitter/X                                                   │   │   │
+│  │  │ ☐ LinkedIn                                                    │   │   │
+│  │  └──────────────────────────────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  │  Tone preference:                                                    │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐   │   │
+│  │  │ ○ Professional & Formal                                       │   │   │
+│  │  │ ◉ Casual & Friendly                                           │   │   │
+│  │  │ ○ Enthusiastic & Energetic                                    │   │   │
+│  │  └──────────────────────────────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  │  Include @CoderzLab mention: ☑ Yes                                   │   │
+│  │  Include achievement link: ☑ Yes                                     │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  [Save Preferences]                                                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+7.2 POST PREVIEW & EDIT MODAL
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      SHARE ACHIEVEMENT                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─ Twitter Preview ────────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │ 🎯 Just verified my mastery of Arrays & Strings in DSA!        │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ After 3 weeks of focused learning:                             │ │   │
+│  │  │ ✅ Two-pointer techniques                                       │ │   │
+│  │  │ ✅ Sliding window algorithms                                    │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ Scored 85% on AI verification @CoderzLab!                      │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ #DSA #CodingJourney #100DaysOfCode                             │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ 📝 coderz.ai/achievement/abc123                                │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  │  Characters: 247/280  ✓                                              │   │
+│  │  [Edit Twitter Post]                                                 │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─ LinkedIn Preview ───────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │   │
+│  │  │ I'm excited to share a learning milestone!                     │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ After 3 weeks of dedicated practice, I've verified my          │ │   │
+│  │  │ proficiency in Data Structures - specifically Arrays &         │ │   │
+│  │  │ Strings - through AI-powered assessment on CoderzLab.          │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ Key accomplishments:                                           │ │   │
+│  │  │ • Mastered two-pointer techniques                              │ │   │
+│  │  │ • Implemented sliding window algorithms                        │ │   │
+│  │  │ • Solved 15+ LeetCode problems                                 │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ Continuous learning is the key to growth in tech!              │ │   │
+│  │  │                                                                 │ │   │
+│  │  │ #DataStructures #Algorithms #ContinuousLearning                │ │   │
+│  │  └─────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                       │   │
+│  │  Characters: 582/3000  ✓                                             │   │
+│  │  [Edit LinkedIn Post]                                                │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  Post to:                                                                    │
+│  ☑ Twitter (@johndoe)     ☑ LinkedIn (John Doe)                             │
+│                                                                              │
+│  Schedule:                                                                   │
+│  ○ Post immediately     ○ Schedule for: [Feb 12, 9:00 AM ▼]                │
+│                                                                              │
+│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────────────┐       │
+│  │ Skip for Now   │  │ Regenerate     │  │    Post Now 🚀          │       │
+│  └────────────────┘  └────────────────┘  └──────────────────────────┘       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+8. PRIVACY & PERMISSIONS MODEL
+================================================================================
+
+8.1 PERMISSION LEVELS
+─────────────────────────────
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                      PRIVACY & PERMISSIONS                                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  USER CONTROLS:                                                             │
+│  ─────────────                                                              │
+│  • Connect/Disconnect accounts at any time                                  │
+│  • Choose which platforms to post to                                        │
+│  • Review and edit every post before publishing                            │
+│  • Delete connection and all stored tokens                                 │
+│  • Export all social data (GDPR compliance)                                │
+│                                                                             │
+│  DATA WE STORE:                                                             │
+│  ───────────────                                                            │
+│  ✓ OAuth tokens (encrypted)                                                │
+│  ✓ Platform username/ID                                                    │
+│  ✓ Posted content (for analytics)                                          │
+│  ✓ Post engagement metrics                                                 │
+│  ✗ Private messages                                                        │
+│  ✗ Friend/follower lists                                                   │
+│  ✗ Other social activity                                                   │
+│                                                                             │
+│  DATA WE NEVER:                                                             │
+│  ──────────────                                                             │
+│  • Post without user consent                                               │
+│  • Access data beyond granted permissions                                  │
+│  • Share data with third parties                                           │
+│  • Read private messages or DMs                                            │
+│  • Access connected account's followers                                    │
+│                                                                             │
+│  REVOCATION:                                                                │
+│  ────────────                                                               │
+│  • Users can revoke access from Settings                                   │
+│  • All tokens are deleted immediately                                      │
+│  • Post history is retained (user can delete)                              │
+│  • Can also revoke from platform's app settings                            │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+9. ANALYTICS & TRACKING
+================================================================================
+
+9.1 METRICS TRACKED
+─────────────────────────────
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                      SOCIAL ANALYTICS DASHBOARD                             │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─ Your Social Impact ─────────────────────────────────────────────────┐  │
+│  │                                                                       │  │
+│  │  Total Posts         Engagement Rate       Profile Visits (est.)     │  │
+│  │  ┌───────────┐      ┌───────────┐        ┌───────────┐               │  │
+│  │  │    23     │      │   4.2%    │        │   ~450    │               │  │
+│  │  │  posts    │      │  avg rate │        │  visits   │               │  │
+│  │  └───────────┘      └───────────┘        └───────────┘               │  │
+│  │                                                                       │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  ┌─ Recent Posts Performance ───────────────────────────────────────────┐  │
+│  │                                                                       │  │
+│  │  Post                           Platform  Likes  Comments  Shares    │  │
+│  │  ─────────────────────────────────────────────────────────────────── │  │
+│  │  "Mastered Arrays & Strings"    Twitter    45      8        12       │  │
+│  │  "Verified DSA skills"          LinkedIn   89     15         7       │  │
+│  │  "30-day learning streak!"      Twitter    62     22        18       │  │
+│  │                                                                       │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  ┌─ Best Performing Content ────────────────────────────────────────────┐  │
+│  │                                                                       │  │
+│  │  📈 Posts with verification scores perform 40% better                │  │
+│  │  📈 Posts on Tuesday 9-11 AM get most engagement                     │  │
+│  │  📈 Posts with 2-3 hashtags perform better than 5+                   │  │
+│  │                                                                       │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+10. RATE LIMITING & BEST PRACTICES
+================================================================================
+
+10.1 RATE LIMITING STRATEGY
+─────────────────────────────
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                      RATE LIMITING STRATEGY                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  USER-LEVEL LIMITS:                                                         │
+│  ──────────────────                                                         │
+│  • Max 5 posts per day across all platforms                                │
+│  • Max 3 posts per platform per day                                        │
+│  • Minimum 15-minute gap between posts                                     │
+│                                                                             │
+│  REASONING:                                                                 │
+│  ──────────                                                                 │
+│  • Prevents spam perception                                                │
+│  • Maintains quality over quantity                                         │
+│  • Respects platform rate limits                                           │
+│  • Ensures meaningful engagement                                           │
+│                                                                             │
+│  QUEUE MANAGEMENT:                                                          │
+│  ─────────────────                                                          │
+│  • If rate limited, posts queued for later                                 │
+│  • Queue processed during optimal posting times                            │
+│  • User notified of queued posts                                           │
+│  • Can cancel queued posts                                                 │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+11. ERROR HANDLING & FALLBACKS
+================================================================================
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                      ERROR HANDLING MATRIX                                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ERROR TYPE            HANDLING                  USER MESSAGE              │
+│  ──────────────────────────────────────────────────────────────────────── │
+│  Token Expired         Auto-refresh              (Silent)                  │
+│  Refresh Failed        Prompt re-auth            "Please reconnect"        │
+│  Rate Limited          Queue for later           "Queued for later"        │
+│  Content Rejected      Show error reason         "Please edit content"     │
+│  Network Error         Retry 3x with backoff     "Retrying..."            │
+│  Platform Down         Queue for later           "Platform unavailable"    │
+│  Invalid Content       Show validation error     "Content too long"        │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+12. SCREEN FLOWCHARTS
+================================================================================
+
+12.1 COMPLETE INTEGRATION FLOW
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    COMPLETE SCREEN FLOW                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────┐
+    │   SETTINGS   │
+    │   > Social   │
+    │   Connections│
+    └──────┬───────┘
+           │
+           │ Click "Connect Twitter"
+           ▼
+    ┌──────────────────────┐
+    │   TWITTER OAUTH      │
+    │   Authorization Page │
+    │   (Twitter domain)   │
+    └──────────┬───────────┘
+               │
+               │ User Authorizes
+               ▼
+    ┌──────────────────────┐
+    │   CALLBACK           │
+    │   Processing...      │
+    └──────────┬───────────┘
+               │
+               │ Success
+               ▼
+    ┌──────────────────────┐
+    │   SETTINGS           │
+    │   Twitter Connected ✓│
+    │   @johndoe           │
+    └──────────────────────┘
+
+           ... Later, user verifies a goal ...
+
+    ┌──────────────────────┐
+    │   VERIFICATION       │
+    │   COMPLETE           │
+    │   Score: 85% ✓       │
+    └──────────┬───────────┘
+               │
+               │ "Share Achievement"
+               ▼
+    ┌──────────────────────┐
+    │   SHARE MODAL        │
+    │   - Twitter preview  │
+    │   - LinkedIn preview │
+    │   - Edit options     │
+    │   - Platform select  │
+    └──────────┬───────────┘
+               │
+               │ "Post Now"
+               ▼
+    ┌──────────────────────┐
+    │   POSTING...         │
+    │   ████████░░░░ 66%   │
+    └──────────┬───────────┘
+               │
+               ▼
+    ┌──────────────────────┐
+    │   SUCCESS! 🎉        │
+    │   Posted to:         │
+    │   • Twitter ✓        │
+    │   • LinkedIn ✓       │
+    │   [View Posts]       │
+    └──────────────────────┘
+
+================================================================================
+13. FUTURE ENHANCEMENTS
+================================================================================
+
+PHASE 2:
+• Dev.to article integration
+• GitHub profile README updates
+• Discord server announcements
+• Scheduled post optimization (AI-suggested times)
+• Rich media cards with achievement graphics
+
+PHASE 3:
+• Cross-platform analytics dashboard
+• A/B testing for post content
+• Engagement prediction AI
+• Automated reply handling
+• Community building features
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

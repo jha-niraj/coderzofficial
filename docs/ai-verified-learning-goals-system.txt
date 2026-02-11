@@ -1,0 +1,990 @@
+================================================================================
+                    AI-VERIFIED LEARNING GOALS SYSTEM
+                    CoderzLab Platform - Feature Specification
+                    Version 1.0 | February 2026
+================================================================================
+
+TABLE OF CONTENTS
+================================================================================
+1. Executive Summary
+2. System Overview
+3. User Flow & Experience
+4. Detailed Feature Breakdown
+5. AI Verification Engine
+6. Assignment Generation System
+7. Social Media Integration
+8. KnowMe Training Data Integration
+9. Gamification & Rewards
+10. Technical Architecture Overview
+11. Screen Flowcharts
+12. Future Enhancements
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+The AI-Verified Learning Goals System transforms traditional to-do lists into 
+an intelligent, accountable learning journey. Unlike simple task managers, 
+this system requires users to PROVE their learning through AI-powered 
+verification, generating contextual assignments, and sharing achievements 
+automatically to social platforms.
+
+KEY DIFFERENTIATORS:
+• Goals aren't just checked off - they're VERIFIED by AI
+• Learning is reinforced through adaptive assignments
+• Achievements are auto-shared to build social proof
+• All verified learning feeds into KnowMe AI training
+• Gamified progression keeps users engaged
+
+TARGET USERS:
+• Students learning new technologies
+• Developers upskilling in new domains
+• Bootcamp participants tracking curriculum
+• Self-learners needing accountability
+• Job seekers building public portfolios
+
+================================================================================
+2. SYSTEM OVERVIEW
+================================================================================
+
+The system operates on a simple but powerful principle:
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                      LEARNING GOALS LIFECYCLE                        │
+    ├─────────────────────────────────────────────────────────────────────┤
+    │                                                                      │
+    │   ┌──────────┐    ┌──────────────┐    ┌────────────────┐            │
+    │   │ ADD GOAL │───▶│ AI GENERATES │───▶│ USER COMPLETES │            │
+    │   │          │    │ ASSIGNMENTS  │    │ LEARNING       │            │
+    │   └──────────┘    └──────────────┘    └───────┬────────┘            │
+    │                                               │                      │
+    │                                               ▼                      │
+    │   ┌──────────┐    ┌──────────────┐    ┌────────────────┐            │
+    │   │  POST TO │◀───│ AI VERIFIES  │◀───│ SUBMIT PROOF   │            │
+    │   │  SOCIALS │    │ COMPLETION   │    │ FOR REVIEW     │            │
+    │   └────┬─────┘    └──────────────┘    └────────────────┘            │
+    │        │                                                             │
+    │        ▼                                                             │
+    │   ┌──────────────────────────────────────────────────────┐          │
+    │   │ FEED INTO KNOWME AS VERIFIED TRAINING DATA           │          │
+    │   └──────────────────────────────────────────────────────┘          │
+    │                                                                      │
+    └─────────────────────────────────────────────────────────────────────┘
+
+CORE COMPONENTS:
+
+1. GOAL MANAGEMENT
+   - Add any learning goal (topic, technology, skill)
+   - Set target dates and complexity levels
+   - Track progress with visual indicators
+   - Group related goals into learning paths
+
+2. AI ASSIGNMENT ENGINE
+   - Automatically generates relevant assignments
+   - Adapts difficulty based on user level
+   - Creates quiz, coding, project, and mock interview tasks
+   - Personalizes based on user's learning style
+
+3. VERIFICATION SYSTEM
+   - AI conducts verification interviews
+   - Requires proof of work (screenshots, code, certificates)
+   - Asks follow-up questions to confirm understanding
+   - Scores comprehension on multiple dimensions
+
+4. SOCIAL INTEGRATION
+   - Auto-posts achievements to connected platforms
+   - Generates personalized achievement posts
+   - Builds public learning portfolio
+   - Tracks social engagement metrics
+
+5. KNOWME INTEGRATION
+   - All verified learning becomes training data
+   - Enhances user's AI profile accuracy
+   - Improves personalized recommendations
+   - Builds comprehensive skill portfolio
+
+================================================================================
+3. USER FLOW & EXPERIENCE
+================================================================================
+
+MAIN USER JOURNEY FLOWCHART:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           USER JOURNEY FLOWCHART                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                              ┌───────────────┐
+                              │    START      │
+                              │  Dashboard    │
+                              └───────┬───────┘
+                                      │
+                                      ▼
+                         ┌────────────────────────┐
+                         │   View Learning Goals  │
+                         │   - Active Goals       │
+                         │   - Completed Goals    │
+                         │   - Suggested Goals    │
+                         └───────────┬────────────┘
+                                     │
+                    ┌────────────────┴────────────────┐
+                    │                                 │
+                    ▼                                 ▼
+        ┌───────────────────┐            ┌───────────────────┐
+        │  Add New Goal     │            │ Continue Existing │
+        │                   │            │      Goal         │
+        └─────────┬─────────┘            └─────────┬─────────┘
+                  │                                │
+                  ▼                                │
+        ┌───────────────────┐                      │
+        │ Enter Goal Details│                      │
+        │ - Topic/Skill     │                      │
+        │ - Target Date     │                      │
+        │ - Complexity      │                      │
+        │ - Description     │                      │
+        └─────────┬─────────┘                      │
+                  │                                │
+                  ▼                                │
+        ┌───────────────────┐                      │
+        │ AI Analyzes Goal  │                      │
+        │ - Extracts topics │                      │
+        │ - Determines scope│                      │
+        │ - Maps to skills  │                      │
+        └─────────┬─────────┘                      │
+                  │                                │
+                  ▼                                │
+        ┌───────────────────┐                      │
+        │ Generate Learning │◀─────────────────────┘
+        │    Assignments    │
+        │ - Quizzes         │
+        │ - Coding Problems │
+        │ - Mini Projects   │
+        │ - Mock Interviews │
+        └─────────┬─────────┘
+                  │
+                  ▼
+        ┌───────────────────┐
+        │ User Works on     │
+        │ Assignments       │◀─────────┐
+        └─────────┬─────────┘          │
+                  │                    │
+                  ▼                    │
+        ┌───────────────────┐          │
+        │ Complete or       │──────────┘
+        │ Request More?     │    More Assignments
+        └─────────┬─────────┘
+                  │ Complete
+                  ▼
+        ┌───────────────────┐
+        │ Submit Proof of   │
+        │ Completion        │
+        │ - Screenshots     │
+        │ - Code Repos      │
+        │ - Certificates    │
+        │ - Project Links   │
+        └─────────┬─────────┘
+                  │
+                  ▼
+        ┌───────────────────┐
+        │ AI Verification   │
+        │ Interview         │
+        │ - Concept Qs      │
+        │ - Practical Qs    │
+        │ - Follow-up Qs    │
+        └─────────┬─────────┘
+                  │
+                  ▼
+        ┌───────────────────┐
+        │ Score >= 75%?     │
+        └─────────┬─────────┘
+              │       │
+         NO   │       │ YES
+              ▼       ▼
+    ┌──────────────┐ ┌──────────────────┐
+    │ Feedback &   │ │ Goal Marked as   │
+    │ Retry Option │ │ VERIFIED         │
+    └──────────────┘ └────────┬─────────┘
+                              │
+                              ▼
+                    ┌──────────────────┐
+                    │ Auto-Generate    │
+                    │ Social Post      │
+                    └────────┬─────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+                    ▼                   ▼
+            ┌───────────────┐   ┌───────────────┐
+            │ Post to       │   │ Update KnowMe │
+            │ Twitter/      │   │ Training Data │
+            │ LinkedIn      │   │ & Skill Graph │
+            └───────────────┘   └───────────────┘
+
+================================================================================
+4. DETAILED FEATURE BREAKDOWN
+================================================================================
+
+4.1 GOAL CREATION INTERFACE
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         ADD NEW LEARNING GOAL                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  What do you want to learn?                                                  │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │ I will master Arrays and Strings in Data Structures                    │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  Complexity Level                        Target Date                         │
+│  ┌──────────────────────┐              ┌──────────────────────┐             │
+│  │ ◉ Beginner           │              │ 📅 February 28, 2026 │             │
+│  │ ○ Intermediate       │              └──────────────────────┘             │
+│  │ ○ Advanced           │                                                   │
+│  │ ○ Expert             │              Estimated Hours                      │
+│  └──────────────────────┘              ┌──────────────────────┐             │
+│                                        │ 20-30 hours          │             │
+│  Category (Auto-detected)              └──────────────────────┘             │
+│  ┌──────────────────────┐                                                   │
+│  │ 🏷️ DSA               │                                                   │
+│  │ 🏷️ Arrays            │                                                   │
+│  │ 🏷️ Algorithms        │                                                   │
+│  └──────────────────────┘                                                   │
+│                                                                              │
+│  Additional Notes (Optional)                                                 │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │ Focus on solving LeetCode medium problems...                           │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  Verification Preference                                                     │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ ☑ AI Interview (Recommended)                                          │   │
+│  │ ☑ Quiz Assessment                                                     │   │
+│  │ ☑ Practical Coding Test                                               │   │
+│  │ ☐ Project Submission Only                                             │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌────────────────────┐  ┌────────────────────┐                             │
+│  │  Cancel            │  │  Create Goal ✨    │                             │
+│  └────────────────────┘  └────────────────────┘                             │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+GOAL ATTRIBUTES:
+• Title: Free-form text describing the learning objective
+• Complexity: Beginner, Intermediate, Advanced, Expert
+• Target Date: When user aims to complete
+• Category: Auto-detected from title (DSA, Web Dev, DevOps, etc.)
+• Tags: AI-generated relevant skill tags
+• Verification Preferences: User chooses verification methods
+• Notes: Additional context for AI to understand scope
+
+4.2 GOAL DASHBOARD
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         MY LEARNING GOALS                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─ Active Goals (3) ─────────────────────────────────────────────────────┐ │
+│  │                                                                         │ │
+│  │  ┌───────────────────────────────────────────────────────────────────┐ │ │
+│  │  │ 📚 Master Arrays and Strings in DSA                               │ │ │
+│  │  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 65%                          │ │ │
+│  │  │ 🎯 Due: Feb 28 • 📝 5/8 Assignments Complete                      │ │ │
+│  │  │ ┌────────┐ ┌────────────────┐ ┌──────────────────┐               │ │ │
+│  │  │ │ Resume │ │ View Progress  │ │ Mark as Complete │               │ │ │
+│  │  │ └────────┘ └────────────────┘ └──────────────────┘               │ │ │
+│  │  └───────────────────────────────────────────────────────────────────┘ │ │
+│  │                                                                         │ │
+│  │  ┌───────────────────────────────────────────────────────────────────┐ │ │
+│  │  │ 🌐 Learn React Server Components                                  │ │ │
+│  │  │ ━━━━━━━━━━━━━━━━━━━━ 30%                                         │ │ │
+│  │  │ 🎯 Due: Mar 15 • 📝 2/7 Assignments Complete                      │ │ │
+│  │  └───────────────────────────────────────────────────────────────────┘ │ │
+│  │                                                                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  ┌─ Verified & Completed (12) ────────────────────────────────────────────┐ │
+│  │                                                                         │ │
+│  │  ✅ JavaScript Fundamentals      │ Verified Feb 1 │ Score: 92%         │ │
+│  │  ✅ Git & Version Control        │ Verified Jan 25│ Score: 88%         │ │
+│  │  ✅ HTML & CSS Basics            │ Verified Jan 15│ Score: 95%         │ │
+│  │                                                                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  ┌─ Suggested Goals ──────────────────────────────────────────────────────┐ │
+│  │                                                                         │ │
+│  │  💡 Based on your learning path, consider:                             │ │
+│  │  • Linked Lists & Trees (Next logical step after Arrays)               │ │
+│  │  • React Hooks Deep Dive (Complements your React learning)             │ │
+│  │  • System Design Basics (Good progression for your level)              │ │
+│  │                                                                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+5. AI VERIFICATION ENGINE
+================================================================================
+
+The AI Verification Engine is the heart of the system, ensuring that users 
+have genuinely learned what they claim to have learned.
+
+5.1 VERIFICATION PROCESS FLOW
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    AI VERIFICATION PROCESS                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌──────────────────────┐
+                    │ User Clicks "Mark    │
+                    │ as Complete"         │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ System Prompts for   │
+                    │ Proof of Work        │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+    ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+    │ Screenshot   │ │ GitHub Repo  │ │ Certificate  │
+    │ Upload       │ │ Link         │ │ Upload       │
+    └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
+           │                │                │
+           └────────────────┼────────────────┘
+                            │
+                            ▼
+                    ┌──────────────────────┐
+                    │ AI Analyzes Proof    │
+                    │ - OCR for text       │
+                    │ - Code analysis      │
+                    │ - Certificate verify │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ Start AI Interview   │
+                    │ Session              │
+                    └──────────┬───────────┘
+                               │
+        ┌──────────────────────┼──────────────────────┐
+        │                      │                      │
+        ▼                      ▼                      ▼
+┌────────────────┐   ┌────────────────┐   ┌────────────────┐
+│ Conceptual     │   │ Practical      │   │ Follow-up      │
+│ Questions      │   │ Questions      │   │ Questions      │
+│ (3-5 Qs)       │   │ (2-3 Qs)       │   │ (Dynamic)      │
+└───────┬────────┘   └───────┬────────┘   └───────┬────────┘
+        │                    │                    │
+        └────────────────────┼────────────────────┘
+                             │
+                             ▼
+                    ┌──────────────────────┐
+                    │ AI Scores Responses  │
+                    │ - Accuracy           │
+                    │ - Depth              │
+                    │ - Application        │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │                     │
+                    ▼                     ▼
+            Score < 75%           Score >= 75%
+                    │                     │
+                    ▼                     ▼
+        ┌──────────────────┐   ┌──────────────────┐
+        │ Show Feedback    │   │ GOAL VERIFIED ✅ │
+        │ - Weak areas     │   │ - Award XP       │
+        │ - Resources      │   │ - Update profile │
+        │ - Retry option   │   │ - Auto-post      │
+        └──────────────────┘   └──────────────────┘
+
+5.2 VERIFICATION INTERVIEW INTERFACE
+─────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      VERIFICATION INTERVIEW                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Goal: Master Arrays and Strings in DSA                                     │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━          │
+│                                                                              │
+│  ┌─ AI Interviewer ─────────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  🤖 Great! I can see you've completed the assignments. Let me        │   │
+│  │     verify your understanding with a few questions.                   │   │
+│  │                                                                       │   │
+│  │  Question 2 of 5:                                                     │   │
+│  │  ─────────────────                                                    │   │
+│  │  You have an array [1, 2, 3, 4, 5] and need to rotate it right       │   │
+│  │  by 2 positions. What would be the most efficient approach and       │   │
+│  │  what's the time complexity?                                          │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─ Your Response ──────────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  We can use the reversal algorithm:                                   │   │
+│  │  1. Reverse the entire array → [5, 4, 3, 2, 1]                       │   │
+│  │  2. Reverse first k elements → [4, 5, 3, 2, 1]                       │   │
+│  │  3. Reverse remaining elements → [4, 5, 1, 2, 3]                     │   │
+│  │                                                                       │   │
+│  │  Time complexity is O(n) and space is O(1).                          │   │
+│  │  █                                                                    │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  Progress: ████████░░░░░░░░░░░░ 2/5                                         │
+│                                                                              │
+│  ┌─────────────┐  ┌─────────────────┐  ┌─────────────────────┐              │
+│  │  Skip (1)   │  │  Submit Answer  │  │  End Interview      │              │
+│  └─────────────┘  └─────────────────┘  └─────────────────────┘              │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+5.3 SCORING DIMENSIONS
+─────────────────────────────
+
+The AI evaluates responses across multiple dimensions:
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                         SCORING BREAKDOWN                                   │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  DIMENSION         WEIGHT    CRITERIA                                       │
+│  ───────────────────────────────────────────────────────────────────────── │
+│  Accuracy          35%       Correctness of technical facts                 │
+│  Understanding     25%       Depth of conceptual knowledge                  │
+│  Application       20%       Ability to apply in practical scenarios        │
+│  Communication     10%       Clarity and structure of explanation           │
+│  Completeness      10%       Coverage of all relevant aspects               │
+│                                                                             │
+│  PASSING THRESHOLD: 75%                                                     │
+│  DISTINCTION: 90%+                                                          │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+6. ASSIGNMENT GENERATION SYSTEM
+================================================================================
+
+6.1 ASSIGNMENT TYPES
+─────────────────────────────
+
+When a user creates a learning goal, the AI generates various assignments
+tailored to the topic:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      ASSIGNMENT TYPES MATRIX                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  TYPE              DESCRIPTION                    VERIFICATION METHOD        │
+│  ──────────────────────────────────────────────────────────────────────────│
+│                                                                              │
+│  📝 QUIZ          Multiple choice, true/false    Auto-graded                │
+│     ASSESSMENT    Fill in the blanks             Score calculation          │
+│                                                                              │
+│  💻 CODING        LeetCode-style problems        Test case validation       │
+│     PROBLEMS      Algorithm challenges           Code review by AI          │
+│                                                                              │
+│  🛠️ MINI          Small practical projects      GitHub submission          │
+│     PROJECTS      Implementation tasks           AI code analysis           │
+│                                                                              │
+│  🎤 MOCK          Voice/text interview           AI conducts interview      │
+│     INTERVIEW     Topic-specific questions       Response analysis          │
+│                                                                              │
+│  📖 READING       Articles, documentation        Summary submission         │
+│     ASSIGNMENTS   Tutorial completion            Quiz on content            │
+│                                                                              │
+│  🎥 VIDEO         Watch & learn                  Summary + quiz             │
+│     LESSONS       Tutorial videos                Implementation task        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+6.2 ASSIGNMENT GENERATION FLOW
+─────────────────────────────
+
+          ┌─────────────────────────────────────────────────────────────────┐
+          │                   ASSIGNMENT GENERATION                          │
+          └─────────────────────────────────────────────────────────────────┘
+
+                            ┌─────────────────┐
+                            │  User Creates   │
+                            │  Learning Goal  │
+                            └────────┬────────┘
+                                     │
+                                     ▼
+                            ┌─────────────────┐
+                            │ AI Parses Goal  │
+                            │ - Extract topics│
+                            │ - Identify scope│
+                            │ - Map skills    │
+                            └────────┬────────┘
+                                     │
+                                     ▼
+                            ┌─────────────────┐
+                            │ Determine User  │
+                            │ Level from      │
+                            │ KnowMe Profile  │
+                            └────────┬────────┘
+                                     │
+                    ┌────────────────┼────────────────┐
+                    │                │                │
+                    ▼                ▼                ▼
+            ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+            │  Beginner   │  │Intermediate │  │  Advanced   │
+            │ Assignments │  │ Assignments │  │ Assignments │
+            └──────┬──────┘  └──────┬──────┘  └──────┬──────┘
+                   │                │                │
+                   └────────────────┼────────────────┘
+                                    │
+                                    ▼
+                           ┌────────────────┐
+                           │ Generate Mixed │
+                           │ Assignment Set │
+                           │ - 2-3 Quizzes  │
+                           │ - 2-3 Coding   │
+                           │ - 1 Project    │
+                           │ - 1 Mock       │
+                           └────────┬───────┘
+                                    │
+                                    ▼
+                           ┌────────────────┐
+                           │ Present to     │
+                           │ User with      │
+                           │ Learning Path  │
+                           └────────────────┘
+
+6.3 SAMPLE ASSIGNMENTS SCREEN
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     ASSIGNMENTS FOR: Arrays & Strings                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Your personalized learning path • Est. completion: 25 hours                │
+│                                                                              │
+│  ┌─ Phase 1: Foundation ────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  ✅ Quiz: Array Basics (15 questions)           │ 95% │ Completed    │   │
+│  │  ✅ Quiz: String Operations (12 questions)      │ 88% │ Completed    │   │
+│  │  ⏳ Coding: Two Sum Problem (LeetCode Easy)     │ --  │ In Progress  │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─ Phase 2: Application ───────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  🔒 Coding: Sliding Window Problems (3 problems)                      │   │
+│  │  🔒 Coding: Two Pointer Technique (3 problems)                        │   │
+│  │  🔒 Quiz: Time Complexity Analysis (10 questions)                     │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─ Phase 3: Mastery ───────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  🔒 Mini Project: Build a Text Analyzer                               │   │
+│  │  🔒 Mock Interview: DSA Arrays Round (30 min)                         │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌─ Request More ───────────────────────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  Need more practice? AI can generate additional assignments.          │   │
+│  │                                                                       │   │
+│  │  ┌────────────────────────────────────────────────────────────────┐  │   │
+│  │  │ + Generate More Coding Problems  │ + Generate More Quizzes     │  │   │
+│  │  └────────────────────────────────────────────────────────────────┘  │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+7. SOCIAL MEDIA INTEGRATION
+================================================================================
+
+7.1 AUTO-POSTING FLOW
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      SOCIAL POSTING WORKFLOW                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌──────────────────────┐
+                    │ Goal Verified ✅     │
+                    │ Score: 85%           │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ AI Generates         │
+                    │ Achievement Post     │
+                    │ - Personal tone      │
+                    │ - Key achievements   │
+                    │ - Hashtags           │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ Show Preview to User │
+                    │ - Edit option        │
+                    │ - Platform selection │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+    ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+    │   Twitter    │ │   LinkedIn   │ │   Skip       │
+    │   🐦         │ │   💼         │ │   📪         │
+    └──────┬───────┘ └──────┬───────┘ └──────────────┘
+           │                │
+           └────────┬───────┘
+                    │
+                    ▼
+           ┌──────────────────┐
+           │ Post Published   │
+           │ & Track Metrics  │
+           └──────────────────┘
+
+7.2 POST PREVIEW INTERFACE
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      SHARE YOUR ACHIEVEMENT 🎉                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Goal Completed: Master Arrays and Strings in DSA                           │
+│  Verification Score: 85% ⭐                                                  │
+│                                                                              │
+│  ┌─ Generated Post (Click to Edit) ─────────────────────────────────────┐   │
+│  │                                                                       │   │
+│  │  🎯 Just verified my mastery of Arrays & Strings in DSA!             │   │
+│  │                                                                       │   │
+│  │  After 3 weeks of focused learning, I can confidently say I've        │   │
+│  │  conquered:                                                           │   │
+│  │  ✅ Two-pointer techniques                                            │   │
+│  │  ✅ Sliding window algorithms                                         │   │
+│  │  ✅ String manipulation patterns                                      │   │
+│  │                                                                       │   │
+│  │  Verified through AI assessment with 85% score on @CoderzLab!         │   │
+│  │                                                                       │   │
+│  │  #DSA #DataStructures #CodingJourney #100DaysOfCode                   │   │
+│  │  #LearningInPublic #TechTwitter                                       │   │
+│  │                                                                       │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  Post To:                                                                    │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ ☑ Twitter (Connected: @johndoe)                                       │  │
+│  │ ☑ LinkedIn (Connected: John Doe)                                      │  │
+│  │ ☐ Schedule for later                                                  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌────────────────┐  ┌────────────────────┐  ┌──────────────────────────┐   │
+│  │ Skip for Now   │  │ Edit Post          │  │  Post Now 🚀            │   │
+│  └────────────────┘  └────────────────────┘  └──────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+8. KNOWME TRAINING DATA INTEGRATION
+================================================================================
+
+Every verified learning goal contributes to the user's KnowMe AI profile,
+creating a comprehensive and accurate representation of their skills.
+
+8.1 DATA FLOW TO KNOWME
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    KNOWME INTEGRATION FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+        ┌─────────────────────┐
+        │  Verified Goal      │
+        │  - Topic: Arrays    │
+        │  - Score: 85%       │
+        │  - Date: Feb 2026   │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │  Extract Learning   │
+        │  Artifacts          │
+        │  - Q&A pairs        │
+        │  - Code samples     │
+        │  - Project links    │
+        │  - Interview logs   │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │  Transform to       │
+        │  Training Format    │
+        │  - Skill vectors    │
+        │  - Context pairs    │
+        │  - Proficiency map  │
+        └──────────┬──────────┘
+                   │
+          ┌────────┴────────┐
+          │                 │
+          ▼                 ▼
+┌──────────────────┐ ┌──────────────────┐
+│ Update Skill     │ │ Add to Training  │
+│ Graph            │ │ Dataset          │
+│ - Arrays: 85%    │ │ - Q&A corpus     │
+│ - Algorithms: 80%│ │ - Code examples  │
+└──────────────────┘ └──────────────────┘
+          │                 │
+          └────────┬────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │  KnowMe AI Now      │
+        │  Knows User Can:    │
+        │  - Explain arrays   │
+        │  - Write algorithms │
+        │  - Solve problems   │
+        └─────────────────────┘
+
+8.2 SKILL GRAPH VISUALIZATION
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     YOUR VERIFIED SKILL GRAPH                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│                           ┌───────────────┐                                  │
+│                           │   Arrays      │                                  │
+│                           │   ████████░░  │                                  │
+│                           │   85%         │                                  │
+│                           └───────┬───────┘                                  │
+│                      ┌────────────┼────────────┐                             │
+│                      │            │            │                             │
+│              ┌───────▼───────┐    │    ┌───────▼───────┐                     │
+│              │ Sorting       │    │    │ Searching     │                     │
+│              │ ████████░░    │    │    │ █████████░    │                     │
+│              │ 80%           │    │    │ 90%           │                     │
+│              └───────────────┘    │    └───────────────┘                     │
+│                                   │                                          │
+│                           ┌───────▼───────┐                                  │
+│                           │   Strings     │                                  │
+│                           │   ███████░░░  │                                  │
+│                           │   75%         │                                  │
+│                           └───────────────┘                                  │
+│                                                                              │
+│  📊 Total Verified Skills: 12                                               │
+│  🎯 Average Proficiency: 82%                                                │
+│  📈 Skills Added This Month: 3                                              │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+9. GAMIFICATION & REWARDS
+================================================================================
+
+9.1 XP AND REWARDS STRUCTURE
+─────────────────────────────
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                       GAMIFICATION REWARDS                                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ACTION                               XP REWARD     CREDITS                 │
+│  ─────────────────────────────────────────────────────────────────────────│
+│  Create a learning goal               +10 XP        -                       │
+│  Complete an assignment               +25 XP        -                       │
+│  Pass verification (75-84%)           +100 XP       +5 Credits              │
+│  Pass verification (85-94%)           +150 XP       +10 Credits             │
+│  Pass verification (95-100%)          +250 XP       +20 Credits             │
+│  Share to social media                +50 XP        -                       │
+│  Complete a learning path             +500 XP       +50 Credits             │
+│  7-day learning streak                +200 XP       +15 Credits             │
+│  30-day learning streak               +1000 XP      +100 Credits            │
+│                                                                             │
+│  BADGES                                                                     │
+│  ─────────────────────────────────────────────────────────────────────────│
+│  🥉 First Goal Verified                                                     │
+│  🥈 10 Goals Verified                                                       │
+│  🥇 50 Goals Verified                                                       │
+│  🌟 Perfect Score (100%)                                                    │
+│  🔥 30-Day Streak                                                           │
+│  📚 Learning Path Master                                                    │
+│  🎯 Skill Specialist (5+ goals in one domain)                              │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+10. TECHNICAL ARCHITECTURE OVERVIEW
+================================================================================
+
+Note: This section provides a high-level overview without code specifics.
+
+10.1 SYSTEM COMPONENTS
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      SYSTEM ARCHITECTURE                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FRONTEND LAYER                                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │ Goals       │  │ Assignments │  │ Verification│  │ Social      │        │
+│  │ Dashboard   │  │ Interface   │  │ Interface   │  │ Sharing     │        │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘        │
+│         └─────────────────┴─────────────────┴─────────────────┘             │
+└─────────────────────────────────────────┬───────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              API LAYER                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                      Server Actions / API Routes                     │    │
+│  │  • Goal CRUD          • Assignment Generation    • Verification      │    │
+│  │  • Progress Tracking  • Social Integration       • KnowMe Sync      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────┬───────────────────────────────────┘
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    │                     │                     │
+                    ▼                     ▼                     ▼
+┌─────────────────────────┐ ┌─────────────────────────┐ ┌─────────────────────┐
+│     AI SERVICES         │ │      DATABASE           │ │  EXTERNAL SERVICES  │
+│ ┌─────────────────────┐ │ │ ┌─────────────────────┐ │ │ ┌─────────────────┐ │
+│ │ OpenAI/Claude API   │ │ │ │ PostgreSQL          │ │ │ │ Twitter API     │ │
+│ │ - Question Gen      │ │ │ │ - Goals             │ │ │ │ - OAuth         │ │
+│ │ - Response Eval     │ │ │ │ - Assignments       │ │ │ │ - Post Creation │ │
+│ │ - Post Generation   │ │ │ │ - Verifications     │ │ │ └─────────────────┘ │
+│ └─────────────────────┘ │ │ │ - Social Posts      │ │ │ ┌─────────────────┐ │
+│ ┌─────────────────────┐ │ │ │ - User Progress     │ │ │ │ LinkedIn API    │ │
+│ │ Speech-to-Text      │ │ │ └─────────────────────┘ │ │ │ - OAuth         │ │
+│ │ (Voice Interview)   │ │ │                         │ │ │ - Post Creation │ │
+│ └─────────────────────┘ │ │                         │ │ └─────────────────┘ │
+└─────────────────────────┘ └─────────────────────────┘ └─────────────────────┘
+
+================================================================================
+11. SCREEN FLOWCHARTS
+================================================================================
+
+11.1 COMPLETE USER JOURNEY
+─────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        COMPLETE SCREEN FLOW                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────┐
+    │   SIDEBAR    │
+    │  Navigation  │───────────────────────────────────────────────────┐
+    │ > Goals      │                                                   │
+    └──────┬───────┘                                                   │
+           │                                                           │
+           ▼                                                           │
+    ┌──────────────────────────────────────────────────────────────────┴────┐
+    │                        GOALS DASHBOARD                                 │
+    │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐          │
+    │  │ Active Goals   │  │ Completed      │  │ Suggestions    │          │
+    │  │ Section        │  │ Goals Section  │  │ Section        │          │
+    │  └───────┬────────┘  └────────────────┘  └───────┬────────┘          │
+    │          │                                        │                   │
+    └──────────┼────────────────────────────────────────┼───────────────────┘
+               │                                        │
+               │ Click "Resume"                         │ Click "Start"
+               ▼                                        ▼
+    ┌────────────────────────────────────┐   ┌────────────────────────────┐
+    │        GOAL DETAIL PAGE            │   │    ADD NEW GOAL MODAL      │
+    │  ┌──────────────────────────────┐  │   │  ┌──────────────────────┐  │
+    │  │ Goal Title & Progress        │  │   │  │ Goal Title Input     │  │
+    │  │ ━━━━━━━━━━━━━━━━━━━━ 65%     │  │   │  │ Complexity Select    │  │
+    │  └──────────────────────────────┘  │   │  │ Target Date Picker   │  │
+    │                                    │   │  │ Notes Textarea       │  │
+    │  ┌─ Assignments ────────────────┐  │   │  └──────────────────────┘  │
+    │  │ Phase 1: Foundation          │  │   │  [Cancel] [Create Goal]   │
+    │  │ Phase 2: Application         │  │   └────────────────────────────┘
+    │  │ Phase 3: Mastery             │  │
+    │  └──────────────────────────────┘  │
+    │                                    │
+    │  [Mark Complete] [Request More]    │
+    └─────────────┬──────────────────────┘
+                  │
+                  │ Click "Mark Complete"
+                  ▼
+    ┌────────────────────────────────────┐
+    │      PROOF SUBMISSION MODAL        │
+    │  ┌──────────────────────────────┐  │
+    │  │ Upload Screenshots           │  │
+    │  │ Add GitHub Links             │  │
+    │  │ Upload Certificates          │  │
+    │  └──────────────────────────────┘  │
+    │  [Cancel] [Submit & Start Interview]│
+    └─────────────┬──────────────────────┘
+                  │
+                  │ Click "Submit"
+                  ▼
+    ┌────────────────────────────────────┐
+    │     VERIFICATION INTERVIEW         │
+    │  ┌──────────────────────────────┐  │
+    │  │ AI Question Display          │  │
+    │  │ User Response Input          │  │
+    │  │ Progress Indicator (Q 1/5)   │  │
+    │  └──────────────────────────────┘  │
+    │  [Skip] [Submit Answer]            │
+    └─────────────┬──────────────────────┘
+                  │
+                  │ All Questions Answered
+                  ▼
+    ┌────────────────────────────────────┐
+    │       RESULTS PAGE                 │
+    │  ┌──────────────────────────────┐  │
+    │  │ Score: 85% ✅ PASSED         │  │
+    │  │ ─────────────────────────    │  │
+    │  │ Breakdown by Dimension       │  │
+    │  │ Strengths & Improvements     │  │
+    │  └──────────────────────────────┘  │
+    │  [Share Achievement] [Back]        │
+    └─────────────┬──────────────────────┘
+                  │
+                  │ Click "Share Achievement"
+                  ▼
+    ┌────────────────────────────────────┐
+    │       SOCIAL SHARING MODAL         │
+    │  ┌──────────────────────────────┐  │
+    │  │ Generated Post Preview       │  │
+    │  │ [Edit Post]                  │  │
+    │  │ Platform Selection           │  │
+    │  │ ☑ Twitter ☑ LinkedIn        │  │
+    │  └──────────────────────────────┘  │
+    │  [Skip] [Edit] [Post Now 🚀]       │
+    └────────────────────────────────────┘
+
+================================================================================
+12. FUTURE ENHANCEMENTS
+================================================================================
+
+PHASE 2 FEATURES (Future):
+• Team Goals: Collaborative learning goals with peers
+• Learning Paths: Pre-built curriculum for specific roles
+• Mentor Matching: Connect with experts for guidance
+• Company Challenges: Employer-sponsored learning goals
+• Certification Integration: Auto-import external certifications
+• Learning Communities: Join groups with similar goals
+• Progress Competitions: Weekly/monthly leaderboards
+• AI Learning Coach: Proactive suggestions and reminders
+
+PHASE 3 FEATURES (Future):
+• Video Verification: Record explanation videos
+• Live Assessment: Real-time coding evaluation
+• Portfolio Generator: Auto-build portfolio from verified skills
+• Job Matching: Match with jobs requiring verified skills
+• University Integration: Academic credit for verified learning
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

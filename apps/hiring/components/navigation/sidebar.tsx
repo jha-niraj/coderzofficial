@@ -152,24 +152,39 @@ export function HiringSidebar() {
         const Icon = item.icon;
         const hasChildren = item.children && item.children.length > 0;
 
-        // For parent: check if any child is active
+        // For parent: check if any child is active OR if we're on the parent route itself
         const isChildActive = hasChildren && item.children!.some((child) => {
             const childPath = child.path.startsWith('/') ? child.path.substring(1) : child.path;
             return pathname === `/${childPath}` || pathname.startsWith(`/${childPath}/`);
         });
-        const isExpanded = expandedItems.includes(cleanPath) || (isChildActive && !isCollapsed);
+        const isParentActive = pathname === `/${cleanPath}` || pathname.startsWith(`/${cleanPath}/`);
+        const isExpanded = expandedItems.includes(cleanPath) || ((isChildActive || isParentActive) && !isCollapsed);
 
         // For items without children, check if the item itself is active
         const isActive = !hasChildren && (pathname === `/${cleanPath}` || pathname.startsWith(`/${cleanPath}/`));
 
         if (hasChildren) {
+            const handleParentClick = () => {
+                // Navigate to parent route
+                router.push(`/${cleanPath}`);
+                // Expand dropdown if not already expanded
+                if (!expandedItems.includes(cleanPath)) {
+                    setExpandedItems(prev => [cleanPath]);
+                }
+            };
+
+            const handleChevronClick = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                toggleItemExpanded(cleanPath);
+            };
+
             return (
                 <div key={cleanPath} className="space-y-1">
                     <button
-                        onClick={() => toggleItemExpanded(cleanPath)}
+                        onClick={handleParentClick}
                         className={cn(
                             "cursor-pointer flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
-                            isChildActive
+                            (isChildActive || isParentActive)
                                 ? "text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800/50"
                                 : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
                             isCollapsed && "justify-center px-3"
@@ -194,10 +209,15 @@ export function HiringSidebar() {
                                             </Tooltip>
                                         )
                                     }
-                                    <ChevronDown className={cn(
-                                        "h-4 w-4 transition-transform duration-200 flex-shrink-0",
-                                        isExpanded && "rotate-180"
-                                    )} />
+                                    <div
+                                        onClick={handleChevronClick}
+                                        className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded transition-colors"
+                                    >
+                                        <ChevronDown className={cn(
+                                            "h-4 w-4 transition-transform duration-200 flex-shrink-0",
+                                            isExpanded && "rotate-180"
+                                        )} />
+                                    </div>
                                 </>
                             )
                         }

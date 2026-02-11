@@ -1,0 +1,300 @@
+// ===========================================
+// LAUNCHPADS - Product Discovery Platform
+// ===========================================
+
+// Product Types
+enum LaunchpadProductType {
+    CODERZ_OFFICIAL  // Products built by Coderz team
+    COMMUNITY        // User-submitted products
+}
+
+// Product Status
+enum LaunchpadProductStatus {
+    DRAFT            // Being created
+    PENDING_REVIEW   // Waiting for admin approval (community)
+    APPROVED         // Live and visible
+    REJECTED         // Not approved
+    ARCHIVED         // No longer active
+}
+
+// Product Category
+enum LaunchpadCategory {
+    LEARNING         // Educational tools
+    PRODUCTIVITY     // Productivity tools
+    CAREER           // Career-related
+    COMMUNITY        // Community/Social
+    DEVELOPER_TOOLS  // Dev tools
+    AI_POWERED       // AI-based products
+    OTHER            // Miscellaneous
+}
+
+// Main Product Model
+model LaunchpadProduct {
+    id          String @id @default(cuid())
+    slug        String @unique
+
+    // Basic Info
+    name        String
+    tagline     String              // Short one-liner
+    description String              @db.Text
+    
+    // Visuals
+    logo        String?             // Logo URL
+    coverImage  String?             // Hero/Banner image
+    screenshots String[]            // Gallery images
+    
+    // Links
+    websiteUrl  String?
+    demoUrl     String?
+    githubUrl   String?
+    twitterUrl  String?
+    
+    // Categorization
+    type        LaunchpadProductType @default(COMMUNITY)
+    status      LaunchpadProductStatus @default(PENDING_REVIEW)
+    category    LaunchpadCategory    @default(OTHER)
+    tags        String[]             // Custom tags
+    
+    // Features & Details
+    features    Json?                // Array of feature strings
+    techStack   String[]             // Technologies used
+    pricing     String?              // Free, Freemium, Paid, etc.
+    
+    // Creator Info (for COMMUNITY products)
+    createdById String?
+    createdBy   User?                @relation("LaunchpadProducts", fields: [createdById], references: [id], onDelete: SetNull)
+    
+    // For CODERZ_OFFICIAL products - admin who added
+    addedByAdminId String?
+    
+    // Verification & Review
+    isVerified     Boolean  @default(false)
+    verifiedAt     DateTime?
+    verifiedById   String?            // Admin who verified
+    rejectionReason String?           @db.Text
+    adminNotes     String?            @db.Text
+    
+    // Engagement Stats (denormalized for performance)
+    viewCount      Int     @default(0)
+    linkClickCount Int     @default(0)
+    likeCount      Int     @default(0)
+    dislikeCount   Int     @default(0)
+    commentCount   Int     @default(0)
+    shareCount     Int     @default(0)
+    
+    // Featured/Highlighted
+    isFeatured     Boolean  @default(false)
+    featuredAt     DateTime?
+    featuredOrder  Int?
+    
+    // Launch Info
+    launchDate     DateTime?          // When product was launched
+    isLaunched     Boolean  @default(false)
+    
+    // Timestamps
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    publishedAt    DateTime?
+    
+    // Relations
+    views          LaunchpadProductView[]
+    clicks         LaunchpadProductClick[]
+    likes          LaunchpadProductLike[]
+    dislikes       LaunchpadProductDislike[]
+    comments       LaunchpadProductComment[]
+    feedbacks      LaunchpadProductFeedback[]
+    
+    @@index([createdById])
+    @@index([type])
+    @@index([status])
+    @@index([category])
+    @@index([isVerified])
+    @@index([isFeatured])
+    @@index([createdAt])
+    @@index([viewCount])
+    @@index([likeCount])
+}
+
+// Product View Tracking
+model LaunchpadProductView {
+    id          String @id @default(cuid())
+    
+    productId   String
+    product     LaunchpadProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+    
+    // Viewer Info (null for anonymous)
+    viewerId    String?
+    viewer      User?            @relation("LaunchpadViews", fields: [viewerId], references: [id], onDelete: SetNull)
+    
+    // Session Info
+    sessionId   String?          // For anonymous tracking
+    ipHash      String?          // Hashed IP for uniqueness
+    userAgent   String?
+    referrer    String?          // Where they came from
+    
+    // View Details
+    source      String?          // "launchpads", "search", "direct", "social"
+    duration    Int?             // Time spent in seconds
+    
+    createdAt   DateTime @default(now())
+    
+    @@index([productId])
+    @@index([viewerId])
+    @@index([createdAt])
+}
+
+// Link Click Tracking
+model LaunchpadProductClick {
+    id          String @id @default(cuid())
+    
+    productId   String
+    product     LaunchpadProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+    
+    // Clicker Info
+    clickerId   String?
+    clicker     User?            @relation("LaunchpadClicks", fields: [clickerId], references: [id], onDelete: SetNull)
+    
+    // Click Details
+    linkType    String           // "website", "demo", "github", "twitter"
+    targetUrl   String
+    
+    createdAt   DateTime @default(now())
+    
+    @@index([productId])
+    @@index([clickerId])
+    @@index([linkType])
+}
+
+// Like Model
+model LaunchpadProductLike {
+    id          String @id @default(cuid())
+    
+    productId   String
+    product     LaunchpadProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+    
+    userId      String
+    user        User             @relation("LaunchpadLikes", fields: [userId], references: [id], onDelete: Cascade)
+    
+    createdAt   DateTime @default(now())
+    
+    @@unique([productId, userId])
+    @@index([productId])
+    @@index([userId])
+}
+
+// Dislike Model
+model LaunchpadProductDislike {
+    id          String @id @default(cuid())
+    
+    productId   String
+    product     LaunchpadProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+    
+    userId      String
+    user        User             @relation("LaunchpadDislikes", fields: [userId], references: [id], onDelete: Cascade)
+    
+    createdAt   DateTime @default(now())
+    
+    @@unique([productId, userId])
+    @@index([productId])
+    @@index([userId])
+}
+
+// Comments Model
+model LaunchpadProductComment {
+    id          String @id @default(cuid())
+    
+    productId   String
+    product     LaunchpadProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+    
+    userId      String
+    user        User             @relation("LaunchpadComments", fields: [userId], references: [id], onDelete: Cascade)
+    
+    content     String           @db.Text
+    
+    // Reply structure
+    parentId    String?
+    parent      LaunchpadProductComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+    replies     LaunchpadProductComment[] @relation("CommentReplies")
+    
+    // Engagement
+    likeCount   Int     @default(0)
+    
+    // Moderation
+    isHidden    Boolean @default(false)
+    hiddenReason String?
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@index([productId])
+    @@index([userId])
+    @@index([parentId])
+}
+
+// Feedback Model (detailed feedback from users)
+model LaunchpadProductFeedback {
+    id          String @id @default(cuid())
+    
+    productId   String
+    product     LaunchpadProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+    
+    userId      String
+    user        User             @relation("LaunchpadFeedbacks", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Rating (1-5)
+    rating      Int
+    
+    // Feedback content
+    title       String?
+    content     String?          @db.Text
+    
+    // Categories
+    pros        String[]
+    cons        String[]
+    
+    // Helpful votes
+    helpfulCount Int    @default(0)
+    
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    @@unique([productId, userId]) // One feedback per user per product
+    @@index([productId])
+    @@index([userId])
+    @@index([rating])
+}
+
+// Keep the old ProductIdea for backward compatibility but mark as deprecated
+// (Can be migrated later)
+model ProductIdea {
+    id String @id @default(cuid())
+
+    // Basic Info
+    title           String
+    description     String  @db.Text
+    helpDescription String  @db.Text // How it helps students
+    category        String  @default("Learning Tool")
+    link            String? // Optional demo/mockup link
+
+    // Submission Info
+    submittedById String
+    submittedBy   User   @relation("ProductIdeas", fields: [submittedById], references: [id], onDelete: Cascade)
+
+    // Status
+    status     String  @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED, IMPLEMENTED
+    adminNotes String? @db.Text
+
+    // Engagement
+    upvotes Int @default(0)
+    views   Int @default(0)
+
+    // Timestamps
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    reviewedAt DateTime?
+
+    @@index([submittedById])
+    @@index([status])
+    @@index([category])
+    @@index([createdAt])
+}

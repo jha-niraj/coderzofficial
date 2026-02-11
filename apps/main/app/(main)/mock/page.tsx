@@ -10,7 +10,7 @@ import {
 } from '@repo/ui/components/ui/card'
 import {
     ArrowRight, Brain, Video, Building2, Users, Phone, Sparkles, CheckCircle, TrendingUp, 
-    Trophy, Target, Zap, Star, MessageSquare, Mic, Award, Timer, Shield
+    Trophy, Target, Zap, Star, MessageSquare, Mic, Award, Timer, Shield, Lock
 } from 'lucide-react'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getMockInterviewStats } from '@/actions/(main)/mockvoice/stats.action'
@@ -21,59 +21,50 @@ const mockInterviewTypes = [
         title: 'AI Voice Mock',
         description: 'Practice with advanced AI interviewer. Real-time feedback and detailed analysis.',
         icon: <Brain className="w-6 h-6" />,
-        href: '/mockinterview/voice',
+        href: '/mock/voice',
         features: ['Voice-based', 'Real-time feedback', 'Custom scenarios'],
-        badge: '15K+ completed'
-    },
-    {
-        id: 'general',
-        title: 'General Mock',
-        description: 'Create custom mocks for any topic. Upload your syllabus and get AI-generated questions.',
-        icon: <Sparkles className="w-6 h-6" />,
-        href: '/mockinterview/general',
-        features: ['Any subject', 'Custom knowledge base', 'Public & Private'],
-        badge: 'New ✨',
-        isNew: true
+        badge: '15K+ completed',
+        isActive: true
     },
     {
         id: 'video',
         title: 'AI Video Mock',
         description: 'Face-to-face AI practice. Analyze body language and presentation skills.',
         icon: <Video className="w-6 h-6" />,
-        href: '/mockinterview/video',
+        href: '/mock/video',
         features: ['Video analysis', 'Body language', 'Facial expressions'],
         badge: 'Coming Soon',
-        comingSoon: true
+        isLocked: true
     },
     {
         id: 'companywise',
         title: 'Company-Specific',
         description: 'Prepare for specific companies with tailored questions and formats.',
         icon: <Building2 className="w-6 h-6" />,
-        href: '/mockinterview/companywise',
+        href: '/mock/companywise',
         features: ['FAANG focused', 'Company culture', 'Real questions'],
-        badge: '12K+ completed',
-        comingSoon: true
+        badge: 'Coming Soon',
+        isLocked: true
     },
     {
         id: 'peertopeer',
         title: 'Peer-to-Peer',
         description: 'Practice with other developers. Give and receive feedback in real-time.',
         icon: <Users className="w-6 h-6" />,
-        href: '/mockinterview/peertopeer',
+        href: '/mock/peertopeer',
         features: ['Live sessions', 'Community driven', 'Collaborative'],
-        badge: '6K+ sessions',
-        comingSoon: true
+        badge: 'Coming Soon',
+        isLocked: true
     },
     {
         id: 'connect',
         title: 'Expert Mentorship',
         description: 'Schedule 1-on-1 sessions with industry professionals for expert guidance.',
         icon: <Phone className="w-6 h-6" />,
-        href: '/mockinterview/connect',
+        href: '/mock/connect',
         features: ['Expert mentors', 'Personalized', '1-on-1 sessions'],
-        badge: '2K+ mentors',
-        comingSoon: true
+        badge: 'Coming Soon',
+        isLocked: true
     },
 ]
 
@@ -285,65 +276,86 @@ export default function MockInterviewLandingPage() {
                         </motion.div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {
-                                mockInterviewTypes.map((type, index) => (
-                                    <motion.div
-                                        key={type.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        whileInView={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                        viewport={{ once: true }}
-                                    >
-                                        <Link href={type.href}>
-                                            <Card className="h-full bg-white dark:bg-neutral-900 shadow-lg hover:shadow-2xl border border-neutral-200 dark:border-neutral-800 p-4 transition-all duration-300 group cursor-pointer">
-                                                <CardHeader className="space-y-4">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-neutral-700 dark:text-neutral-300">
-                                                            {type.icon}
-                                                        </div>
-                                                        {
-                                                            type.comingSoon && (
-                                                                <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-0">
-                                                                    Coming Soon
-                                                                </Badge>
-                                                            )
-                                                        }
-                                                        {
-                                                            (type).isNew && (
-                                                                <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-0">
-                                                                    New ✨
-                                                                </Badge>
-                                                            )
-                                                        }
+                                mockInterviewTypes.map((type, index) => {
+                                    const isLocked = 'isLocked' in type && type.isLocked;
+                                    const isActive = 'isActive' in type && type.isActive;
+                                    
+                                    const cardContent = (
+                                        <Card className={`h-full bg-white dark:bg-neutral-900 shadow-lg border border-neutral-200 dark:border-neutral-800 p-4 transition-all duration-300 group ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-2xl cursor-pointer'}`}>
+                                            <CardHeader className="space-y-4">
+                                                <div className="flex items-start justify-between">
+                                                    <div className={`p-3 rounded-xl ${isActive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'}`}>
+                                                        {type.icon}
                                                     </div>
-                                                    <div>
-                                                        <CardTitle className="text-xl mb-2 group-hover:underline underline-offset-4">
-                                                            {type.title}
-                                                        </CardTitle>
-                                                        <CardDescription className="text-sm">
-                                                            {type.description}
-                                                        </CardDescription>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent className="space-y-4">
-                                                    <div className="space-y-2">
-                                                        {
-                                                            type.features.map((feature, idx) => (
-                                                                <div key={idx} className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                                                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-500 flex-shrink-0" />
-                                                                    <span>{feature}</span>
-                                                                </div>
-                                                            ))
-                                                        }
-                                                    </div>
-                                                    <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                                                        <span className="text-sm text-neutral-600 dark:text-neutral-400">{type.badge}</span>
-                                                        <ArrowRight className="w-5 h-5 text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white group-hover:translate-x-1 transition-all" />
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        </Link>
-                                    </motion.div>
-                                ))
+                                                    {
+                                                        isLocked && (
+                                                            <Badge className="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-0">
+                                                                <Lock className="w-3 h-3 mr-1" />
+                                                                Locked
+                                                            </Badge>
+                                                        )
+                                                    }
+                                                    {
+                                                        isActive && (
+                                                            <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-0">
+                                                                <CheckCircle className="w-3 h-3 mr-1" />
+                                                                Active
+                                                            </Badge>
+                                                        )
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <CardTitle className={`text-xl mb-2 ${!isLocked && 'group-hover:underline underline-offset-4'}`}>
+                                                        {type.title}
+                                                    </CardTitle>
+                                                    <CardDescription className="text-sm">
+                                                        {type.description}
+                                                    </CardDescription>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <div className="space-y-2">
+                                                    {
+                                                        type.features.map((feature, idx) => (
+                                                            <div key={idx} className={`flex items-center gap-2 text-sm ${isLocked ? 'text-neutral-400 dark:text-neutral-500' : 'text-neutral-600 dark:text-neutral-400'}`}>
+                                                                <CheckCircle className={`w-4 h-4 flex-shrink-0 ${isLocked ? 'text-neutral-400 dark:text-neutral-500' : 'text-green-600 dark:text-green-500'}`} />
+                                                                <span>{feature}</span>
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                                <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                                    <span className={`text-sm ${isLocked ? 'text-neutral-400 dark:text-neutral-500' : 'text-neutral-600 dark:text-neutral-400'}`}>{type.badge}</span>
+                                                    {
+                                                        isLocked ? (
+                                                            <Lock className="w-5 h-5 text-neutral-400" />
+                                                        ) : (
+                                                            <ArrowRight className="w-5 h-5 text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                                        )
+                                                    }
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+
+                                    return (
+                                        <motion.div
+                                            key={type.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.1 }}
+                                            viewport={{ once: true }}
+                                        >
+                                            {
+                                                isLocked ? (
+                                                    <div>{cardContent}</div>
+                                                ) : (
+                                                    <Link href={type.href}>{cardContent}</Link>
+                                                )
+                                            }
+                                        </motion.div>
+                                    );
+                                })
                             }
                         </div>
                     </div>
@@ -439,7 +451,7 @@ export default function MockInterviewLandingPage() {
                                     className="bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200"
                                     asChild
                                 >
-                                    <Link href="/mockinterview/voice">
+                                    <Link href="/mock/voice">
                                         Start Practicing Now
                                         <ArrowRight className="w-4 h-4 ml-2" />
                                     </Link>

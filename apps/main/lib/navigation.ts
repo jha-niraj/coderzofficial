@@ -1,8 +1,8 @@
 import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
-    Briefcase, Users, Trophy, Video, Brain, Cable, LayoutDashboard,
+    Briefcase, Trophy, Video, Brain, Cable, LayoutDashboard,
     Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon,
-    GraduationCap
+    GraduationCap, Rocket, Activity, Share2
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -130,20 +130,31 @@ export const mainNavigation: NavigationConfig = {
             ]
         },
         {
-            name: "Products",
-            path: "products",
-            icon: Users,
+            name: "Launchpads",
+            path: "launchpads",
+            icon: Rocket,
             status: "active",
             children: [
                 { 
-                    name: 'KnowMe', 
+                    name: 'Discover', 
+                    path: 'launchpads', 
+                    icon: Rocket 
+                },
+                { 
+                    name: 'KnowMe AI', 
                     path: 'knowme', 
                     icon: LucideWandSparkles 
                 },
                 { 
-                    name: 'Collective', 
-                    path: 'collective', 
-                    icon: Trophy, 
+                    name: 'Activity Tracker', 
+                    path: 'activity', 
+                    icon: Activity,
+                    comingSoon: true 
+                },
+                { 
+                    name: 'Social Posting', 
+                    path: 'socialpost', 
+                    icon: Share2,
                     comingSoon: true 
                 }
             ]

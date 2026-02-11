@@ -3,7 +3,7 @@ import {
     Trophy, MessageSquare, MessageCircle, Lightbulb, BarChart3, Settings, 
     Shield, FileText, type LucideIcon, Coins, Receipt, ArrowLeftRight, 
     UserCheck, BookOpen, Flame, Zap, Vote, Flag, Activity, Database, User, 
-    Lock, Building2, GraduationCap, Briefcase, School
+    Lock, Building2, GraduationCap, Briefcase, School, Rocket, Clock
 } from "lucide-react"
 
 export interface NavigationItem {
@@ -153,6 +153,16 @@ export const adminNavigation: NavigationConfig = {
                     children: [
                         { name: "All Communities", path: "main/communities", icon: MessageSquare },
                         { name: "Reports", path: "main/communities/reports", icon: Flag },
+                    ]
+                },
+                {
+                    name: "Launchpads",
+                    path: "launchpads",
+                    icon: Rocket,
+                    requiredPermission: "admin_management",
+                    children: [
+                        { name: "All Products", path: "launchpads", icon: Rocket },
+                        { name: "Pending Review", path: "launchpads/pending", icon: Clock },
                     ]
                 },
             ]
