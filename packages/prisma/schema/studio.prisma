@@ -94,6 +94,9 @@ model Studio {
     updatedAt    DateTime @updatedAt
     lastEditedAt DateTime @default(now())
 
+    // Pathfinder (Learning Goals) back-relation
+    pathfinderGoal PathfinderGoal? @relation("PathfinderStudio")
+
     @@index([userId])
     @@index([category])
     @@index([visibility])

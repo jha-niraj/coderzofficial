@@ -1,0 +1,1899 @@
+================================================================================
+                    AI-VERIFIED LEARNING GOALS SYSTEM V2
+                    CoderzLab Platform - Revised Feature Specification
+                    Version 2.0 | February 2026
+================================================================================
+
+TABLE OF CONTENTS
+================================================================================
+1. Executive Summary & Key Changes from V1
+2. System Architecture Overview
+3. Goal Creation Flow
+4. Goal Details Page with Studio Integration
+5. AI Assignment Generation (OpenAI Assistants)
+6. Verification System (Tab-Based Question Handling)
+7. Question Type Components
+8. Database Schema Design
+9. Server Actions Architecture
+10. User Flow Diagrams
+11. Technical Implementation Details
+12. Social Media & KnowMe Integration
+13. Gamification System
+
+================================================================================
+1. EXECUTIVE SUMMARY & KEY CHANGES FROM V1
+================================================================================
+
+The AI-Verified Learning Goals System V2 represents a complete reimagining of
+the verification process, leveraging existing platform components (Studio, Quiz,
+CodeEditor, Voice) to create a seamless, integrated learning experience.
+
+KEY CHANGES FROM V1:
+────────────────────────────────────────────────────────────────────────────────
+
+V1 APPROACH (DEPRECATED)                   V2 APPROACH (NEW)
+─────────────────────────                  ──────────────────────
+User uploads documents/screenshots         User completes AI-generated tasks
+Manual proof submission required           Automatic verification through tasks
+Separate verification interface            Integrated Studio-based learning
+Single verification method                 Tab-based multi-type verification
+Generic assignment generation              OpenAI Assistants with schema format
+Complex goal creation form                 Simple click-based goal creation
+Separate notes/learning area              Studio integration for notes/practice
+
+WHY V2 IS BETTER:
+────────────────────────────────────────────────────────────────────────────────
+• NO manual uploads - verification happens through task completion
+• REUSES existing platform components (Studio, Quiz, CodeEditor, Voice)
+• SIMPLER goal creation - click-click-click, no long descriptions
+• INTEGRATED learning experience - practice and verify in one place
+• DYNAMIC verification - only shows relevant question types
+• SERVER-SIDE rendering with client components for optimal performance
+
+================================================================================
+2. SYSTEM ARCHITECTURE OVERVIEW
+================================================================================
+
+COMPLETE SYSTEM ARCHITECTURE:
+────────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           AI-VERIFIED LEARNING GOALS V2                          │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                        FRONTEND LAYER                                     │   │
+│  ├──────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                           │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
+│  │  │   Goals     │  │   Goal      │  │ Verification│  │   Results   │     │   │
+│  │  │  Dashboard  │  │   Details   │  │    Page     │  │    Page     │     │   │
+│  │  │  /goals     │  │ /goals/[id] │  │ /verify/[id]│  │/results/[id]│     │   │
+│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘     │   │
+│  │         │                │                │                │              │   │
+│  │         │         ┌──────┴──────┐  ┌──────┴──────┐         │              │   │
+│  │         │         │   STUDIO    │  │  TAB-BASED  │         │              │   │
+│  │         │         │  COMPONENT  │  │ VERIFICATION│         │              │   │
+│  │         │         │ (Left+Right)│  │ COMPONENTS  │         │              │   │
+│  │         │         └─────────────┘  └─────────────┘         │              │   │
+│  │         │                                                   │              │   │
+│  └─────────┼───────────────────────────────────────────────────┼──────────────┘   │
+│            │                                                   │                  │
+│            ▼                                                   ▼                  │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                        SERVER ACTIONS LAYER                               │   │
+│  ├──────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                           │   │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │   │
+│  │  │ goals.action.ts │  │ assignments.    │  │ verification.   │          │   │
+│  │  │ • createGoal    │  │   action.ts     │  │   action.ts     │          │   │
+│  │  │ • getGoals      │  │ • generateWith  │  │ • submitQuiz    │          │   │
+│  │  │ • updateGoal    │  │   Assistants    │  │ • submitCode    │          │   │
+│  │  │ • deleteGoal    │  │ • saveAssignments│ │ • submitMock    │          │   │
+│  │  └────────┬────────┘  └────────┬────────┘  │ • verifyGoal    │          │   │
+│  │           │                    │           └────────┬────────┘          │   │
+│  │           └────────────────────┼────────────────────┘                   │   │
+│  │                                │                                         │   │
+│  └────────────────────────────────┼─────────────────────────────────────────┘   │
+│                                   │                                              │
+│                                   ▼                                              │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                        AI & DATABASE LAYER                                │   │
+│  ├──────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                           │   │
+│  │  ┌─────────────────────────┐     ┌─────────────────────────┐             │   │
+│  │  │    OpenAI Assistants    │     │       PostgreSQL        │             │   │
+│  │  │  • Assignment Generator │     │  • LearningGoal         │             │   │
+│  │  │  • Schema-based output  │     │  • LearningAssignment   │             │   │
+│  │  │  • Context-aware        │     │  • GoalVerification     │             │   │
+│  │  │  • Structured JSON      │     │  • QuizAttempt          │             │   │
+│  │  └─────────────────────────┘     │  • CodingSubmission     │             │   │
+│  │                                  │  • MockSession          │             │   │
+│  │                                  └─────────────────────────┘             │   │
+│  │                                                                           │   │
+│  └──────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+3. GOAL CREATION FLOW
+================================================================================
+
+The goal creation process is designed to be SIMPLE and QUICK - "click-click-click"
+without requiring users to write long descriptions.
+
+3.1 GOAL CREATION TRIGGER
+────────────────────────────────────────────────────────────────────────────────
+
+When user navigates to /goals section, they see:
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              MY LEARNING GOALS                                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌─ Header ─────────────────────────────────────────────────────────────────┐   │
+│  │  My Learning Goals                                       [+ Add Goal]     │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  ┌─ Active Goals ───────────────────────────────────────────────────────────┐   │
+│  │  (Goal cards showing progress, assignments, due dates...)                 │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  ┌─ Completed Goals ────────────────────────────────────────────────────────┐   │
+│  │  (Verified goals with scores and achievements)                            │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+When user clicks [+ Add Goal], a SHEET slides up from the bottom:
+
+3.2 GOAL CREATION SHEET (FROM BOTTOM)
+────────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                         ADD NEW LEARNING GOAL                        [X Close]  │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  What do you want to learn? *                                                   │
+│  ┌───────────────────────────────────────────────────────────────────────────┐  │
+│  │ Learn Arrays and Strings in DSA                                           │  │
+│  └───────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
+│  Category (Click to select) *                                                   │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │ ○ DSA    ○ Web Dev    ○ Backend    ○ DevOps    ○ AI/ML    ○ Other         │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+│  Your Level (Click to select) *                                                 │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │ ○ Beginner    ○ Intermediate    ○ Advanced    ○ Expert                     │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+│  Target Completion Date (Optional)                                              │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │ 📅 Select date...                                                          │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+│  Focus Areas (Click all that apply - Optional)                                  │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │ □ Concepts    □ Practice Problems    □ Projects    □ Interview Prep        │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+│  ┌───────────────────────────────────────────────────────────────────────────┐  │
+│  │                    CREATE GOAL & GENERATE ASSIGNMENTS ✨                   │  │
+│  └───────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+GOAL CREATION FIELDS:
+────────────────────────────────────────────────────────────────────────────────
+
+Field                   Type              Required    Description
+─────────────────────────────────────────────────────────────────────────────────
+title                   Text Input        Yes         Short title (what to learn)
+category                Radio/Select      Yes         DSA, Web Dev, Backend, etc.
+level                   Radio/Select      Yes         Beginner to Expert
+targetDate              Date Picker       No          When to complete by
+focusAreas              Checkbox Group    No          What aspects to focus on
+
+NOTE: NO description field - the AI will infer from title, category, and level.
+
+3.3 GOAL CREATION FLOW DIAGRAM
+────────────────────────────────────────────────────────────────────────────────
+
+                    ┌──────────────────────┐
+                    │  User clicks         │
+                    │  "+ Add Goal"        │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  Sheet slides up     │
+                    │  from bottom         │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  User fills fields   │
+                    │  (click-click-click) │
+                    │  • Title             │
+                    │  • Category (radio)  │
+                    │  • Level (radio)     │
+                    │  • Date (optional)   │
+                    │  • Focus (checkboxes)│
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  Click "Create Goal" │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  Show Loading State  │
+                    │  "Generating your    │
+                    │   assignments..."    │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  Server Action:      │
+                    │  createGoalWithAI()  │
+                    │  1. Save goal to DB  │
+                    │  2. Call OpenAI      │
+                    │     Assistants API   │
+                    │  3. Parse response   │
+                    │  4. Save assignments │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  Redirect to         │
+                    │  /goals/[goalId]     │
+                    │  (Goal Details Page) │
+                    └──────────────────────┘
+
+================================================================================
+4. GOAL DETAILS PAGE WITH STUDIO INTEGRATION
+================================================================================
+
+After goal creation, user is redirected to the Goal Details page. This page
+integrates the existing Studio component for a unified learning experience.
+
+4.1 GOAL DETAILS PAGE LAYOUT
+────────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           /goals/[goalId]                                        │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌─ Header Section ─────────────────────────────────────────────────────────┐   │
+│  │                                                                           │   │
+│  │  📚 Arrays and Strings in DSA                                            │   │
+│  │  Category: DSA • Level: Intermediate • Due: Feb 28, 2026                 │   │
+│  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45%                    │   │
+│  │                                                                           │   │
+│  │  ┌────────────────┐  ┌────────────────────┐                              │   │
+│  │  │ 📋 Assignments │  │ ✅ Mark Complete   │                              │   │
+│  │  └────────────────┘  └────────────────────┘                              │   │
+│  │                                                                           │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  ┌─ Main Content (Split Layout) ────────────────────────────────────────────┐   │
+│  │                                                                           │   │
+│  │  ┌─────────────────────────────────┐  ┌─────────────────────────────────┐│   │
+│  │  │                                 │  │                                 ││   │
+│  │  │      STUDIO BLOCK EDITOR        │  │       STUDIO AI PANEL           ││   │
+│  │  │           (2/3 width)           │  │        (1/3 width)              ││   │
+│  │  │                                 │  │                                 ││   │
+│  │  │  • Write notes                  │  │  🤖 AI Assistant                ││   │
+│  │  │  • Add code blocks              │  │                                 ││   │
+│  │  │  • Create quizzes               │  │  Ask me anything about          ││   │
+│  │  │  • Generate flashcards          │  │  Arrays and Strings!            ││   │
+│  │  │  • Add images                   │  │                                 ││   │
+│  │  │  • Practice problems            │  │  ┌───────────────────────────┐ ││   │
+│  │  │                                 │  │  │ Explain two-pointer...    │ ││   │
+│  │  │  Use / commands for blocks:     │  │  └───────────────────────────┘ ││   │
+│  │  │  /text /code /quiz /flashcard   │  │  ┌───────────────────────────┐ ││   │
+│  │  │  /image /mock                   │  │  │ 🤖 Two-pointer is a...   │ ││   │
+│  │  │                                 │  │  └───────────────────────────┘ ││   │
+│  │  │                                 │  │                                 ││   │
+│  │  │                                 │  │  ┌─────────────────────────────┐││   │
+│  │  │                                 │  │  │ Ask a question...       [→]│││   │
+│  │  │                                 │  │  └─────────────────────────────┘││   │
+│  │  │                                 │  │                                 ││   │
+│  │  └─────────────────────────────────┘  └─────────────────────────────────┘│   │
+│  │                                                                           │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+4.2 STUDIO INTEGRATION DETAILS
+────────────────────────────────────────────────────────────────────────────────
+
+The Studio component is reused from: @apps/main/app/(main)/studio/
+
+LEFT SIDE (2/3 width) - StudioBlockEditor:
+• Block-based content editor (Notion-like)
+• Slash commands for inserting blocks:
+  - /text        → Text/heading blocks
+  - /code        → Code editor with syntax highlighting & execution
+  - /quiz        → AI-generated quiz for the topic
+  - /flashcard   → AI-generated flashcard deck
+  - /image       → AI-generated image
+  - /mock        → Mock interview placeholder
+• Auto-save functionality
+• Supports writing notes, code practice, concept summaries
+
+RIGHT SIDE (1/3 width) - StudioAIPanel:
+• Context-aware AI chat
+• Knows the learning goal context
+• Can answer questions about the topic
+• Can explain concepts
+• Can suggest practice problems
+• Uses existing StudioChatMessage model
+
+4.3 ASSIGNMENTS BUTTON BEHAVIOR
+────────────────────────────────────────────────────────────────────────────────
+
+When user clicks "📋 Assignments" button:
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         ASSIGNMENTS DIALOG                              [X]     │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  Your Learning Assignments for: Arrays and Strings                              │
+│                                                                                  │
+│  ┌─ Generated Assignments ──────────────────────────────────────────────────┐   │
+│  │                                                                           │   │
+│  │  📝 QUIZ                                                                 │   │
+│  │  └─ 15 questions covering array basics, string manipulation             │   │
+│  │     Estimated time: 20 minutes                              [Pending]    │   │
+│  │                                                                           │   │
+│  │  💻 CODING                                                               │   │
+│  │  └─ 5 coding problems (Easy to Medium difficulty)                        │   │
+│  │     Estimated time: 45 minutes                              [Pending]    │   │
+│  │                                                                           │   │
+│  │  🎤 MOCK INTERVIEW                                                       │   │
+│  │  └─ 10-minute voice interview on array concepts                          │   │
+│  │     Focus: Time complexity, problem-solving approach        [Pending]    │   │
+│  │                                                                           │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  Note: Complete all assignments to verify your learning goal.                   │
+│                                                                                  │
+│  ┌─────────────────────────┐                                                    │
+│  │       Close Dialog      │                                                    │
+│  └─────────────────────────┘                                                    │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+5. AI ASSIGNMENT GENERATION (OPENAI ASSISTANTS)
+================================================================================
+
+The assignment generation uses OpenAI Assistants API with a structured schema,
+similar to how projects are generated in @apps/main/app/(main)/projects/.
+
+5.1 OPENAI ASSISTANT CONFIGURATION
+────────────────────────────────────────────────────────────────────────────────
+
+Assistant Name: learning-goals-assignment-generator
+Model: gpt-4o or gpt-4-turbo-preview
+
+System Instructions:
+```
+You are an AI learning assignment generator for CoderzLab. Your job is to create
+comprehensive, level-appropriate learning assignments based on a user's learning
+goal.
+
+Based on the goal title, category, level, and focus areas, generate assignments
+in the following types:
+- QUIZ: Multiple choice questions testing conceptual understanding
+- CODING: Programming problems to test practical skills
+- MOCK: Interview questions for voice-based assessment
+- PROJECT: Only for applicable topics (web dev, etc.) - NOT for pure DSA
+
+IMPORTANT RULES:
+1. DSA/Algorithm goals should NOT include PROJECT type
+2. Web Dev/Frontend/Backend goals SHOULD include PROJECT type
+3. All goals should have at least QUIZ
+4. Level affects difficulty and depth
+5. Focus areas guide emphasis
+
+Return your response in the EXACT JSON schema provided.
+```
+
+5.2 ASSIGNMENT GENERATION SCHEMA
+────────────────────────────────────────────────────────────────────────────────
+
+INPUT TO ASSISTANT:
+```json
+{
+    "goal": {
+        "title": "Learn Arrays and Strings in DSA",
+        "category": "DSA",
+        "level": "INTERMEDIATE",
+        "focusAreas": ["Concepts", "Practice Problems", "Interview Prep"]
+    },
+    "userContext": {
+        "previousGoals": ["JavaScript Fundamentals", "Basic Algorithms"],
+        "skillLevel": "intermediate"
+    }
+}
+```
+
+OUTPUT SCHEMA (Required Response Format):
+```json
+{
+    "assignmentTypes": ["quiz", "coding", "mock"],  // Only types generated
+    
+    "quiz": {
+        "title": "Arrays & Strings Mastery Quiz",
+        "description": "Test your understanding of array and string concepts",
+        "estimatedMinutes": 20,
+        "questions": [
+            {
+                "id": "q1",
+                "type": "single",
+                "text": "What is the time complexity of accessing an element by index in an array?",
+                "options": [
+                    { "id": "a", "text": "O(1)", "isCorrect": true },
+                    { "id": "b", "text": "O(n)", "isCorrect": false },
+                    { "id": "c", "text": "O(log n)", "isCorrect": false },
+                    { "id": "d", "text": "O(n²)", "isCorrect": false }
+                ],
+                "explanation": "Array access by index is O(1) because arrays store elements in contiguous memory locations.",
+                "difficulty": "EASY",
+                "category": "Arrays",
+                "hint": "Think about how arrays are stored in memory"
+            }
+            // ... more questions (10-20 based on level)
+        ]
+    },
+    
+    "coding": {
+        "title": "Array & String Coding Challenges",
+        "description": "Practice implementing array and string algorithms",
+        "problems": [
+            {
+                "id": "p1",
+                "title": "Two Sum",
+                "description": "Given an array of integers and a target sum, return indices of two numbers that add up to the target.",
+                "difficulty": "EASY",
+                "estimatedMinutes": 15,
+                "language": "javascript",
+                "starterCode": "function twoSum(nums, target) {\n  // Your code here\n}",
+                "testCases": [
+                    {
+                        "input": "twoSum([2, 7, 11, 15], 9)",
+                        "expectedOutput": "[0, 1]",
+                        "explanation": "nums[0] + nums[1] = 2 + 7 = 9"
+                    }
+                ],
+                "hints": [
+                    "Consider using a hash map for O(n) time complexity",
+                    "Think about what complement you need for each number"
+                ],
+                "solution": "function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map.has(complement)) return [map.get(complement), i];\n    map.set(nums[i], i);\n  }\n}"
+            }
+            // ... more problems (3-7 based on level)
+        ]
+    },
+    
+    "mock": {
+        "title": "DSA Arrays Interview",
+        "description": "AI-powered voice interview testing your array knowledge",
+        "estimatedMinutes": 10,
+        "knowledgeBase": "Focus areas: Array time complexity, Two-pointer technique, Sliding window, String manipulation. Level: Intermediate. Ask about: when to use arrays vs linked lists, common array patterns, time-space tradeoffs.",
+        "sampleQuestions": [
+            "Explain the two-pointer technique and when you would use it",
+            "What's the difference between in-place and out-of-place algorithms?",
+            "Walk me through how you would reverse a string in-place"
+        ]
+    },
+    
+    "project": null  // NULL for DSA - no project assignment
+}
+```
+
+5.3 ASSIGNMENT TYPE DETERMINATION LOGIC
+────────────────────────────────────────────────────────────────────────────────
+
+                    ┌──────────────────────┐
+                    │   Analyze Goal       │
+                    │   Category & Level   │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │   Category Check     │
+                    └──────────┬───────────┘
+                               │
+           ┌───────────────────┼───────────────────┐
+           │                   │                   │
+           ▼                   ▼                   ▼
+    ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+    │    DSA      │     │  Web Dev    │     │   DevOps    │
+    │  Category   │     │  Category   │     │  Category   │
+    └──────┬──────┘     └──────┬──────┘     └──────┬──────┘
+           │                   │                   │
+           ▼                   ▼                   ▼
+    ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+    │ Types:      │     │ Types:      │     │ Types:      │
+    │ • Quiz ✓    │     │ • Quiz ✓    │     │ • Quiz ✓    │
+    │ • Coding ✓  │     │ • Coding ✓  │     │ • Coding ✓  │
+    │ • Mock ✓    │     │ • Mock ✓    │     │ • Project ✓ │
+    │ • Project ✗ │     │ • Project ✓ │     │ • Mock ✓    │
+    └─────────────┘     └─────────────┘     └─────────────┘
+
+CATEGORY → ASSIGNMENT TYPES MAPPING:
+────────────────────────────────────────────────────────────────────────────────
+Category          Quiz    Coding    Mock    Project
+────────────────────────────────────────────────────────────────────────────────
+DSA               ✓       ✓         ✓       ✗
+Web Development   ✓       ✓         ✓       ✓
+Backend           ✓       ✓         ✓       ✓
+Frontend          ✓       ✓         ✓       ✓
+DevOps            ✓       ✓         ✓       ✓
+AI/ML             ✓       ✓         ✓       ✓
+Database          ✓       ✓         ✓       ✗
+System Design     ✓       ✗         ✓       ✗
+Other             ✓       ?         ?       ?
+
+================================================================================
+6. VERIFICATION SYSTEM (TAB-BASED QUESTION HANDLING)
+================================================================================
+
+When the user is ready to verify their learning, they click "Mark Complete".
+
+6.1 MARK COMPLETE FLOW
+────────────────────────────────────────────────────────────────────────────────
+
+Step 1: User clicks "✅ Mark Complete" button on Goal Details page
+
+Step 2: Confirmation Dialog appears:
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         READY TO VERIFY YOUR LEARNING?                   [X]    │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  🎯 Goal: Arrays and Strings in DSA                                             │
+│                                                                                  │
+│  You'll be tested on:                                                           │
+│  ┌───────────────────────────────────────────────────────────────────────────┐  │
+│  │  📝 Quiz        - 15 questions on concepts          (~20 min)             │  │
+│  │  💻 Coding      - 5 programming problems            (~45 min)             │  │
+│  │  🎤 Mock        - Voice interview with AI           (~10 min)             │  │
+│  └───────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
+│  ⚠️ Tips:                                                                       │
+│  • Find a quiet place for the mock interview                                    │
+│  • You can complete each section at your own pace                               │
+│  • Your progress is saved automatically                                         │
+│                                                                                  │
+│  ┌───────────────────────┐  ┌───────────────────────────────────────────────┐   │
+│  │    Not Yet, Go Back   │  │     Yes, Start Verification →                 │   │
+│  └───────────────────────┘  └───────────────────────────────────────────────┘   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Step 3: User is redirected to /goals/[goalId]/verify
+
+6.2 VERIFICATION PAGE LAYOUT
+────────────────────────────────────────────────────────────────────────────────
+
+The verification page uses TABS to handle different question types. Only the
+tabs for generated assignment types are shown (dynamic tabs).
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        /goals/[goalId]/verify                                    │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌─ Header ─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                           │   │
+│  │  🎯 Verifying: Arrays and Strings in DSA                                 │   │
+│  │  Complete all sections to verify your learning goal                       │   │
+│  │                                                                           │   │
+│  │  Overall Progress: ━━━━━━━━━━━━░░░░░░░░░░ 2/3 Sections Complete          │   │
+│  │                                                                           │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  ┌─ Dynamic Tabs (only shown if assignment type exists) ────────────────────┐   │
+│  │                                                                           │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │   │
+│  │  │ 📝 Quiz     │  │ 💻 Coding   │  │ 🎤 Mock     │  │ 🛠️ Project  │      │   │
+│  │  │    ✓ Done   │  │  In Progress│  │   Pending   │  │   (hidden)  │      │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘      │   │
+│  │                                                                           │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  ┌─ Tab Content Area (h-screen with ScrollArea) ────────────────────────────┐   │
+│  │                                                                           │   │
+│  │  ┌─────────────────────────────────────────────────────────────────────┐ │   │
+│  │  │                                                                     │ │   │
+│  │  │              VERIFICATION COMPONENT FOR SELECTED TAB                │ │   │
+│  │  │                                                                     │ │   │
+│  │  │              • QuizVerification (if Quiz tab)                       │ │   │
+│  │  │              • CodingVerification (if Coding tab)                   │ │   │
+│  │  │              • MockVerification (if Mock tab)                       │ │   │
+│  │  │              • ProjectVerification (if Project tab)                 │ │   │
+│  │  │                                                                     │ │   │
+│  │  │              Each is a SEPARATE component file                      │ │   │
+│  │  │                                                                     │ │   │
+│  │  └─────────────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                           │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+6.3 TAB VISIBILITY LOGIC
+────────────────────────────────────────────────────────────────────────────────
+
+The tabs are DYNAMICALLY shown based on what OpenAI generated:
+
+// In verification page.tsx (server component)
+const goalData = await getGoalWithAssignments(goalId);
+const assignmentTypes = goalData.assignments.assignmentTypes; 
+// e.g., ["quiz", "coding", "mock"] - no "project" for DSA
+
+// Pass to client component
+<VerificationContent 
+    goal={goalData}
+    assignmentTypes={assignmentTypes}
+    quizData={assignmentTypes.includes('quiz') ? goalData.quiz : null}
+    codingData={assignmentTypes.includes('coding') ? goalData.coding : null}
+    mockData={assignmentTypes.includes('mock') ? goalData.mock : null}
+    projectData={assignmentTypes.includes('project') ? goalData.project : null}
+/>
+
+================================================================================
+7. QUESTION TYPE COMPONENTS
+================================================================================
+
+Each verification type has its OWN separate component file. These components
+REUSE existing platform components (Quiz, CodeEditor, Voice).
+
+7.1 FILE STRUCTURE
+────────────────────────────────────────────────────────────────────────────────
+
+apps/main/app/(main)/goals/[goalId]/verify/
+├── page.tsx                          # Server component - fetches data
+├── _components/
+│   ├── verification-content.tsx      # Client component - tab management
+│   ├── quiz-verification.tsx         # Quiz tab component
+│   ├── coding-verification.tsx       # Coding tab component
+│   ├── mock-verification.tsx         # Mock tab component
+│   └── project-verification.tsx      # Project tab component
+
+7.2 QUIZ VERIFICATION COMPONENT
+────────────────────────────────────────────────────────────────────────────────
+
+File: quiz-verification.tsx
+
+Uses: @apps/main/components/main/quiz.tsx
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          QUIZ VERIFICATION TAB                                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  📝 Arrays & Strings Mastery Quiz                                               │
+│  15 questions • Estimated time: 20 minutes                                      │
+│                                                                                  │
+│  ┌───────────────────────────────────────────────────────────────────────────┐  │
+│  │                                                                           │  │
+│  │                    QUIZ COMPONENT                                         │  │
+│  │                    (From @/components/main/quiz.tsx)                      │  │
+│  │                                                                           │  │
+│  │    • Single/Multiple choice questions                                     │  │
+│  │    • Timer display                                                        │  │
+│  │    • Progress indicator                                                   │  │
+│  │    • Hint system                                                          │  │
+│  │    • Flag for review                                                      │  │
+│  │    • Immediate feedback mode                                              │  │
+│  │    • Question navigation                                                  │  │
+│  │                                                                           │  │
+│  └───────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Component Props Interface:
+```typescript
+interface QuizVerificationProps {
+    goalId: string;
+    quizData: {
+        title: string;
+        description: string;
+        estimatedMinutes: number;
+        questions: QuizQuestion[];
+    };
+    onComplete: (results: QuizResult) => void;
+}
+```
+
+7.3 CODING VERIFICATION COMPONENT
+────────────────────────────────────────────────────────────────────────────────
+
+File: coding-verification.tsx
+
+Uses: @apps/main/components/main/code-editor.tsx
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         CODING VERIFICATION TAB                                  │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  💻 Array & String Coding Challenges                                            │
+│  5 problems • Estimated time: 45 minutes                                        │
+│                                                                                  │
+│  ┌─ Problem Navigator ──────────────────────────────────────────────────────┐   │
+│  │  [1 ✓] [2 ✓] [3 •] [4 ○] [5 ○]    3/5 Complete                          │   │
+│  └───────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  ┌─ Problem Panel (Left 40%) ────┐  ┌─ Code Panel (Right 60%) ──────────────┐  │
+│  │                                │  │                                       │  │
+│  │  Problem 3: Reverse Words      │  │  ┌─────────────────────────────────┐ │  │
+│  │  ─────────────────────────     │  │  │  JavaScript  ▼    [Run] [Submit]│ │  │
+│  │                                │  │  └─────────────────────────────────┘ │  │
+│  │  Given a string, reverse the   │  │  ┌─────────────────────────────────┐ │  │
+│  │  order of words.               │  │  │ function reverseWords(s) {      │ │  │
+│  │                                │  │  │   // Your code here             │ │  │
+│  │  Example:                      │  │  │                                 │ │  │
+│  │  Input: "hello world"          │  │  │ }                               │ │  │
+│  │  Output: "world hello"         │  │  │                                 │ │  │
+│  │                                │  │  └─────────────────────────────────┘ │  │
+│  │  ┌─ Hints ──────────────────┐ │  │                                       │  │
+│  │  │ 💡 Split by spaces       │ │  │  ┌─ Test Results ──────────────────┐ │  │
+│  │  │ 💡 Use array reverse     │ │  │  │ Test 1: ✓ Passed                │ │  │
+│  │  └──────────────────────────┘ │  │  │ Test 2: ✓ Passed                │ │  │
+│  │                                │  │  │ Test 3: ✗ Failed                │ │  │
+│  │  Difficulty: 🟡 MEDIUM         │  │  │   Expected: "world hello"       │ │  │
+│  │                                │  │  │   Got: "hello world"            │ │  │
+│  │                                │  │  └─────────────────────────────────┘ │  │
+│  └────────────────────────────────┘  └───────────────────────────────────────┘  │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Component Props Interface:
+```typescript
+interface CodingVerificationProps {
+    goalId: string;
+    codingData: {
+        title: string;
+        description: string;
+        problems: CodingProblem[];
+    };
+    onComplete: (results: CodingResult) => void;
+}
+
+interface CodingProblem {
+    id: string;
+    title: string;
+    description: string;
+    difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+    estimatedMinutes: number;
+    language: string;
+    starterCode: string;
+    testCases: TestCase[];
+    hints: string[];
+    solution: string;
+}
+```
+
+7.4 MOCK VERIFICATION COMPONENT
+────────────────────────────────────────────────────────────────────────────────
+
+File: mock-verification.tsx
+
+Uses: @apps/main/components/main/voice.tsx
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          MOCK VERIFICATION TAB                                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  🎤 DSA Arrays Interview                                                        │
+│  AI-powered voice interview • Estimated time: 10 minutes                        │
+│                                                                                  │
+│  ┌───────────────────────────────────────────────────────────────────────────┐  │
+│  │                                                                           │  │
+│  │                         VOICE COMPONENT                                   │  │
+│  │                         (From @/components/main/voice.tsx)                │  │
+│  │                                                                           │  │
+│  │                              ┌─────────┐                                  │  │
+│  │                              │   ORB   │                                  │  │
+│  │                              │ [====]  │                                  │  │
+│  │                              └─────────┘                                  │  │
+│  │                                                                           │  │
+│  │                         Listening...                                      │  │
+│  │                         Your turn to speak                                │  │
+│  │                                                                           │  │
+│  │                  [🎤 Mute] [📞 End Interview] [🔊 Volume]                 │  │
+│  │                                                                           │  │
+│  └───────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
+│  Sample Questions:                                                              │
+│  • Explain the two-pointer technique and when you would use it                  │
+│  • What's the difference between in-place and out-of-place algorithms?          │
+│  • Walk me through how you would reverse a string in-place                      │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Component Props Interface:
+```typescript
+interface MockVerificationProps {
+    goalId: string;
+    mockData: {
+        title: string;
+        description: string;
+        estimatedMinutes: number;
+        knowledgeBase: string;
+        sampleQuestions: string[];
+    };
+    onComplete: (results: MockResult) => void;
+}
+```
+
+7.5 PROJECT VERIFICATION COMPONENT
+────────────────────────────────────────────────────────────────────────────────
+
+File: project-verification.tsx
+
+This component offers TWO OPTIONS for completing the project requirement:
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         PROJECT VERIFICATION TAB                                 │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  🛠️ Build a Todo App with React                                                 │
+│  Complete a project to demonstrate your skills                                  │
+│                                                                                  │
+│  Choose how you want to complete this project:                                  │
+│                                                                                  │
+│  ┌─ Option 1 ─────────────────────────────────────────────────────────────────┐ │
+│  │                                                                             │ │
+│  │  🚀 BUILD WITH CODERZ PROJECTS                                             │ │
+│  │                                                                             │ │
+│  │  Use our guided project system with:                                        │ │
+│  │  • Step-by-step sprints and tasks                                          │ │
+│  │  • AI assistance and code validation                                        │ │
+│  │  • Automatic tracking and completion                                        │ │
+│  │                                                                             │ │
+│  │  ┌─────────────────────────────────────────────────────────────────────┐   │ │
+│  │  │              Go to Coderz Projects →                                │   │ │
+│  │  └─────────────────────────────────────────────────────────────────────┘   │ │
+│  │                                                                             │ │
+│  │  (Redirects to /projects with pre-selected project matching the goal)      │ │
+│  │                                                                             │ │
+│  └─────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+│  ─────────────────────────────── OR ───────────────────────────────────────────  │
+│                                                                                  │
+│  ┌─ Option 2 ─────────────────────────────────────────────────────────────────┐ │
+│  │                                                                             │ │
+│  │  📁 ADD YOUR OWN PROJECT                                                   │ │
+│  │                                                                             │ │
+│  │  Already built something? Add it to your portfolio:                        │ │
+│  │                                                                             │ │
+│  │  Project Name *                                                             │ │
+│  │  ┌───────────────────────────────────────────────────────────────────────┐ │ │
+│  │  │ My Todo App                                                           │ │ │
+│  │  └───────────────────────────────────────────────────────────────────────┘ │ │
+│  │                                                                             │ │
+│  │  GitHub Link *                                                              │ │
+│  │  ┌───────────────────────────────────────────────────────────────────────┐ │ │
+│  │  │ https://github.com/username/todo-app                                  │ │ │
+│  │  └───────────────────────────────────────────────────────────────────────┘ │ │
+│  │                                                                             │ │
+│  │  Live Demo (Optional)                                                       │ │
+│  │  ┌───────────────────────────────────────────────────────────────────────┐ │ │
+│  │  │ https://my-todo-app.vercel.app                                        │ │ │
+│  │  └───────────────────────────────────────────────────────────────────────┘ │ │
+│  │                                                                             │ │
+│  │  Technologies Used                                                          │ │
+│  │  ┌───────────────────────────────────────────────────────────────────────┐ │ │
+│  │  │ [React] [TypeScript] [Tailwind] [+Add]                                │ │ │
+│  │  └───────────────────────────────────────────────────────────────────────┘ │ │
+│  │                                                                             │ │
+│  │  ┌─────────────────────────────────────────────────────────────────────┐   │ │
+│  │  │              Submit Project to Portfolio                            │   │ │
+│  │  └─────────────────────────────────────────────────────────────────────┘   │ │
+│  │                                                                             │ │
+│  │  (Saves to PortfolioProject model and marks project verification complete) │ │
+│  │                                                                             │ │
+│  └─────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+PortfolioProject Integration:
+- Uses existing model from @packages/prisma/schema/schema.prisma
+- Creates a PortfolioProject entry linked to the user
+- Includes ProjectLink entries for GitHub/Demo URLs
+- Marks the project verification as complete
+
+================================================================================
+8. DATABASE SCHEMA DESIGN
+================================================================================
+
+8.1 NEW PRISMA MODELS
+────────────────────────────────────────────────────────────────────────────────
+
+File: packages/prisma/schema/learning-goals.prisma
+
+```prisma
+// ==================== LEARNING GOALS ====================
+
+enum LearningGoalCategory {
+    DSA
+    WEB_DEVELOPMENT
+    BACKEND
+    FRONTEND
+    DEVOPS
+    AI_ML
+    DATABASE
+    SYSTEM_DESIGN
+    OTHER
+}
+
+enum LearningGoalLevel {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+    EXPERT
+}
+
+enum LearningGoalStatus {
+    ACTIVE
+    COMPLETED
+    VERIFIED
+    ABANDONED
+}
+
+enum VerificationStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    PASSED
+    FAILED
+}
+
+model LearningGoal {
+    id          String              @id @default(uuid())
+    userId      String
+    user        User                @relation("UserLearningGoals", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Basic Info
+    title       String
+    category    LearningGoalCategory
+    level       LearningGoalLevel
+    focusAreas  String[]            // Array of focus areas
+    targetDate  DateTime?
+    
+    // Status
+    status      LearningGoalStatus  @default(ACTIVE)
+    progress    Int                 @default(0) // 0-100
+    
+    // Timestamps
+    createdAt   DateTime            @default(now())
+    updatedAt   DateTime            @updatedAt
+    completedAt DateTime?
+    verifiedAt  DateTime?
+    
+    // Relations
+    assignments     LearningAssignment?
+    verification    GoalVerification?
+    studioContent   LearningGoalStudio?
+    
+    @@index([userId])
+    @@index([status])
+    @@index([category])
+}
+
+model LearningAssignment {
+    id          String          @id @default(uuid())
+    goalId      String          @unique
+    goal        LearningGoal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // Assignment Types (dynamic - only types that exist)
+    assignmentTypes String[]    // ["quiz", "coding", "mock", "project"]
+    
+    // Raw AI Response (for debugging/auditing)
+    rawResponse     Json?
+    
+    // Individual Assignments (stored as JSON for flexibility)
+    quizData        Json?       // QuizAssignment structure
+    codingData      Json?       // CodingAssignment structure
+    mockData        Json?       // MockAssignment structure
+    projectData     Json?       // ProjectAssignment structure
+    
+    // Timestamps
+    generatedAt     DateTime    @default(now())
+    
+    @@index([goalId])
+}
+
+model GoalVerification {
+    id              String              @id @default(uuid())
+    goalId          String              @unique
+    goal            LearningGoal        @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // Overall Status
+    status          VerificationStatus  @default(PENDING)
+    overallScore    Int?                // 0-100
+    
+    // Individual Section Scores
+    quizScore       Int?
+    codingScore     Int?
+    mockScore       Int?
+    projectComplete Boolean             @default(false)
+    
+    // Individual Section Status
+    quizStatus      VerificationStatus  @default(PENDING)
+    codingStatus    VerificationStatus  @default(PENDING)
+    mockStatus      VerificationStatus  @default(PENDING)
+    projectStatus   VerificationStatus  @default(PENDING)
+    
+    // Detailed Results (JSON for flexibility)
+    quizResults     Json?
+    codingResults   Json?
+    mockResults     Json?
+    projectResults  Json?
+    
+    // Timestamps
+    startedAt       DateTime?
+    completedAt     DateTime?
+    
+    // Related Records
+    quizAttempts        GoalQuizAttempt[]
+    codingSubmissions   GoalCodingSubmission[]
+    mockSessions        GoalMockSession[]
+    
+    @@index([goalId])
+    @@index([status])
+}
+
+model GoalQuizAttempt {
+    id              String              @id @default(uuid())
+    verificationId  String
+    verification    GoalVerification    @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+    userId          String
+    
+    // Results
+    score           Int                 // 0-100
+    correctCount    Int
+    totalQuestions  Int
+    timeTaken       Int                 // in seconds
+    answers         Json                // Array of answers with questionId, selected, isCorrect
+    
+    // Timestamps
+    startedAt       DateTime
+    completedAt     DateTime            @default(now())
+    
+    @@index([verificationId])
+    @@index([userId])
+}
+
+model GoalCodingSubmission {
+    id              String              @id @default(uuid())
+    verificationId  String
+    verification    GoalVerification    @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+    userId          String
+    
+    // Problem Info
+    problemId       String
+    problemTitle    String
+    
+    // Submission
+    code            String
+    language        String
+    
+    // Results
+    passed          Boolean
+    testResults     Json?               // Array of test case results
+    
+    // Timestamps
+    submittedAt     DateTime            @default(now())
+    
+    @@index([verificationId])
+    @@index([userId])
+    @@index([problemId])
+}
+
+model GoalMockSession {
+    id              String              @id @default(uuid())
+    verificationId  String
+    verification    GoalVerification    @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+    userId          String
+    
+    // ElevenLabs Data
+    conversationId  String?
+    
+    // Results
+    score           Int?                // 0-100
+    feedback        Json?               // AI-generated feedback
+    transcript      Json?               // Conversation transcript
+    
+    // Duration
+    duration        Int?                // in seconds
+    
+    // Timestamps
+    startedAt       DateTime            @default(now())
+    completedAt     DateTime?
+    
+    @@index([verificationId])
+    @@index([userId])
+    @@index([conversationId])
+}
+
+model LearningGoalStudio {
+    id          String          @id @default(uuid())
+    goalId      String          @unique
+    goal        LearningGoal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // Studio Content (same structure as Studio model)
+    content     Json            @default("{\"blocks\":[]}")
+    
+    // Chat History
+    chatMessages    GoalStudioChatMessage[]
+    
+    // Timestamps
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+    
+    @@index([goalId])
+}
+
+model GoalStudioChatMessage {
+    id          String              @id @default(uuid())
+    studioId    String
+    studio      LearningGoalStudio  @relation(fields: [studioId], references: [id], onDelete: Cascade)
+    
+    role        String              // "user" | "assistant"
+    content     String
+    
+    createdAt   DateTime            @default(now())
+    
+    @@index([studioId])
+}
+```
+
+8.2 USER MODEL RELATION UPDATES
+────────────────────────────────────────────────────────────────────────────────
+
+Add to User model in schema.prisma:
+
+```prisma
+model User {
+    // ... existing fields ...
+    
+    // Learning Goals Relations
+    learningGoals       LearningGoal[]      @relation("UserLearningGoals")
+}
+```
+
+================================================================================
+9. SERVER ACTIONS ARCHITECTURE
+================================================================================
+
+9.1 FILE STRUCTURE
+────────────────────────────────────────────────────────────────────────────────
+
+apps/main/actions/(main)/goals/
+├── goals.action.ts              # Goal CRUD operations
+├── assignments.action.ts        # Assignment generation with OpenAI
+├── verification.action.ts       # Verification submissions
+├── studio.action.ts             # Goal studio content
+└── index.ts                     # Exports
+
+9.2 GOALS.ACTION.TS
+────────────────────────────────────────────────────────────────────────────────
+
+```typescript
+'use server'
+
+import { prisma } from '@repo/prisma'
+import { auth } from '@/auth'
+import { revalidatePath } from 'next/cache'
+import { generateAssignmentsWithAI } from './assignments.action'
+
+interface CreateGoalInput {
+    title: string
+    category: string
+    level: string
+    targetDate?: Date
+    focusAreas?: string[]
+}
+
+export async function createGoal(input: CreateGoalInput) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    try {
+        // 1. Create the learning goal
+        const goal = await prisma.learningGoal.create({
+            data: {
+                userId: session.user.id,
+                title: input.title,
+                category: input.category,
+                level: input.level,
+                targetDate: input.targetDate,
+                focusAreas: input.focusAreas || [],
+            }
+        })
+
+        // 2. Generate assignments using OpenAI Assistants
+        const assignmentResult = await generateAssignmentsWithAI({
+            goalId: goal.id,
+            title: input.title,
+            category: input.category,
+            level: input.level,
+            focusAreas: input.focusAreas || [],
+        })
+
+        if (!assignmentResult.success) {
+            // Rollback goal creation if assignment generation fails
+            await prisma.learningGoal.delete({ where: { id: goal.id } })
+            return { success: false, error: 'Failed to generate assignments' }
+        }
+
+        // 3. Create studio content for the goal
+        await prisma.learningGoalStudio.create({
+            data: {
+                goalId: goal.id,
+                content: { blocks: [] }
+            }
+        })
+
+        revalidatePath('/goals')
+        return { success: true, goalId: goal.id }
+
+    } catch (error) {
+        console.error('Error creating goal:', error)
+        return { success: false, error: 'Failed to create goal' }
+    }
+}
+
+export async function getGoals() {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    try {
+        const goals = await prisma.learningGoal.findMany({
+            where: { userId: session.user.id },
+            include: {
+                assignments: true,
+                verification: true,
+            },
+            orderBy: { createdAt: 'desc' }
+        })
+
+        return { success: true, goals }
+    } catch (error) {
+        console.error('Error fetching goals:', error)
+        return { success: false, error: 'Failed to fetch goals' }
+    }
+}
+
+export async function getGoalWithAssignments(goalId: string) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    try {
+        const goal = await prisma.learningGoal.findUnique({
+            where: { id: goalId, userId: session.user.id },
+            include: {
+                assignments: true,
+                verification: true,
+                studioContent: {
+                    include: {
+                        chatMessages: {
+                            orderBy: { createdAt: 'asc' }
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!goal) {
+            return { success: false, error: 'Goal not found' }
+        }
+
+        return { success: true, goal }
+    } catch (error) {
+        console.error('Error fetching goal:', error)
+        return { success: false, error: 'Failed to fetch goal' }
+    }
+}
+```
+
+9.3 ASSIGNMENTS.ACTION.TS
+────────────────────────────────────────────────────────────────────────────────
+
+```typescript
+'use server'
+
+import OpenAI from 'openai'
+import { prisma } from '@repo/prisma'
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+})
+
+interface GenerateAssignmentsInput {
+    goalId: string
+    title: string
+    category: string
+    level: string
+    focusAreas: string[]
+}
+
+export async function generateAssignmentsWithAI(input: GenerateAssignmentsInput) {
+    try {
+        // Use OpenAI Assistants API (like projects module)
+        const thread = await openai.beta.threads.create()
+
+        await openai.beta.threads.messages.create(thread.id, {
+            role: 'user',
+            content: JSON.stringify({
+                goal: {
+                    title: input.title,
+                    category: input.category,
+                    level: input.level,
+                    focusAreas: input.focusAreas
+                }
+            })
+        })
+
+        const run = await openai.beta.threads.runs.create(thread.id, {
+            assistant_id: process.env.LEARNING_GOALS_ASSISTANT_ID!,
+        })
+
+        // Poll for completion
+        let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+        while (runStatus.status !== 'completed') {
+            if (runStatus.status === 'failed') {
+                throw new Error('Assistant run failed')
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+        }
+
+        // Get the response
+        const messages = await openai.beta.threads.messages.list(thread.id)
+        const assistantMessage = messages.data.find(m => m.role === 'assistant')
+        
+        if (!assistantMessage || assistantMessage.content[0].type !== 'text') {
+            throw new Error('Invalid assistant response')
+        }
+
+        // Parse JSON from response
+        const responseText = assistantMessage.content[0].text.value
+        const jsonMatch = responseText.match(/```json\n?([\s\S]*?)\n?```/)
+        const assignments = JSON.parse(jsonMatch ? jsonMatch[1] : responseText)
+
+        // Save to database
+        await prisma.learningAssignment.create({
+            data: {
+                goalId: input.goalId,
+                assignmentTypes: assignments.assignmentTypes,
+                rawResponse: assignments,
+                quizData: assignments.quiz,
+                codingData: assignments.coding,
+                mockData: assignments.mock,
+                projectData: assignments.project,
+            }
+        })
+
+        // Create verification record
+        await prisma.goalVerification.create({
+            data: {
+                goalId: input.goalId,
+                status: 'PENDING',
+                quizStatus: assignments.quiz ? 'PENDING' : 'COMPLETED',
+                codingStatus: assignments.coding ? 'PENDING' : 'COMPLETED',
+                mockStatus: assignments.mock ? 'PENDING' : 'COMPLETED',
+                projectStatus: assignments.project ? 'PENDING' : 'COMPLETED',
+            }
+        })
+
+        return { success: true, assignments }
+
+    } catch (error) {
+        console.error('Error generating assignments:', error)
+        return { success: false, error: 'Failed to generate assignments' }
+    }
+}
+```
+
+9.4 VERIFICATION.ACTION.TS
+────────────────────────────────────────────────────────────────────────────────
+
+```typescript
+'use server'
+
+import { prisma } from '@repo/prisma'
+import { auth } from '@/auth'
+import { revalidatePath } from 'next/cache'
+
+// Submit Quiz Results
+export async function submitQuizVerification(
+    goalId: string,
+    results: {
+        score: number
+        correctCount: number
+        totalQuestions: number
+        timeTaken: number
+        answers: any[]
+    }
+) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, error: 'Unauthorized' }
+    }
+
+    try {
+        const verification = await prisma.goalVerification.findUnique({
+            where: { goalId }
+        })
+
+        if (!verification) {
+            return { success: false, error: 'Verification not found' }
+        }
+
+        // Create quiz attempt record
+        await prisma.goalQuizAttempt.create({
+            data: {
+                verificationId: verification.id,
+                userId: session.user.id,
+                score: results.score,
+                correctCount: results.correctCount,
+                totalQuestions: results.totalQuestions,
+                timeTaken: results.timeTaken,
+                answers: results.answers,
+                startedAt: new Date(Date.now() - results.timeTaken * 1000),
+            }
+        })
+
+        // Update verification status
+        const passed = results.score >= 75
+        await prisma.goalVerification.update({
+            where: { id: verification.id },
+            data: {
+                quizScore: results.score,
+                quizStatus: passed ? 'PASSED' : 'FAILED',
+                quizResults: results,
+            }
+        })
+
+        await checkAndUpdateOverallVerification(goalId)
+        revalidatePath(`/goals/${goalId}/verify`)
+
+        return { success: true, passed }
+
+    } catch (error) {
+        console.error('Error submitting quiz:', error)
+        return { success: false, error: 'Failed to submit quiz' }
+    }
+}
+
+// Submit Coding Results
+export async function submitCodingVerification(
+    goalId: string,
+    problemId: string,
+    submission: {
+        code: string
+        language: string
+        passed: boolean
+        testResults: any[]
+    }
+) {
+    // Similar implementation...
+}
+
+// Submit Mock Interview Results
+export async function submitMockVerification(
+    goalId: string,
+    results: {
+        conversationId: string
+        score: number
+        feedback: any
+        transcript: any
+        duration: number
+    }
+) {
+    // Similar implementation...
+}
+
+// Submit Project
+export async function submitProjectVerification(
+    goalId: string,
+    project: {
+        method: 'coderz' | 'portfolio'
+        coderzProjectId?: string
+        portfolioProject?: {
+            name: string
+            githubUrl: string
+            liveUrl?: string
+            technologies: string[]
+        }
+    }
+) {
+    // If portfolio method, create PortfolioProject entry
+    // Update verification status
+}
+
+// Check if all sections are complete and update overall status
+async function checkAndUpdateOverallVerification(goalId: string) {
+    const verification = await prisma.goalVerification.findUnique({
+        where: { goalId }
+    })
+
+    if (!verification) return
+
+    const allComplete = 
+        verification.quizStatus !== 'PENDING' &&
+        verification.codingStatus !== 'PENDING' &&
+        verification.mockStatus !== 'PENDING' &&
+        verification.projectStatus !== 'PENDING'
+
+    if (allComplete) {
+        const allPassed = 
+            (verification.quizStatus === 'PASSED' || verification.quizStatus === 'COMPLETED') &&
+            (verification.codingStatus === 'PASSED' || verification.codingStatus === 'COMPLETED') &&
+            (verification.mockStatus === 'PASSED' || verification.mockStatus === 'COMPLETED') &&
+            (verification.projectStatus === 'PASSED' || verification.projectStatus === 'COMPLETED')
+
+        // Calculate overall score
+        const scores = [
+            verification.quizScore,
+            verification.codingScore,
+            verification.mockScore,
+        ].filter(s => s !== null) as number[]
+        
+        const overallScore = scores.length > 0 
+            ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+            : 0
+
+        await prisma.goalVerification.update({
+            where: { goalId },
+            data: {
+                status: allPassed ? 'PASSED' : 'FAILED',
+                overallScore,
+                completedAt: new Date(),
+            }
+        })
+
+        // Update learning goal status
+        await prisma.learningGoal.update({
+            where: { id: goalId },
+            data: {
+                status: allPassed ? 'VERIFIED' : 'COMPLETED',
+                verifiedAt: allPassed ? new Date() : null,
+                completedAt: new Date(),
+            }
+        })
+    }
+}
+```
+
+================================================================================
+10. USER FLOW DIAGRAMS
+================================================================================
+
+10.1 COMPLETE USER JOURNEY
+────────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         COMPLETE USER JOURNEY                                    │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+        ┌────────────────────┐
+        │      /goals        │
+        │   Goals Dashboard  │
+        └─────────┬──────────┘
+                  │
+                  │ Click "+ Add Goal"
+                  ▼
+        ┌────────────────────┐
+        │   Bottom Sheet     │
+        │   Goal Creation    │
+        │   (click-click)    │
+        └─────────┬──────────┘
+                  │
+                  │ Submit
+                  ▼
+        ┌────────────────────┐
+        │   Server Action:   │
+        │   createGoal()     │
+        │   + OpenAI API     │
+        └─────────┬──────────┘
+                  │
+                  │ Redirect
+                  ▼
+        ┌────────────────────┐
+        │   /goals/[goalId]  │
+        │   Goal Details     │
+        │                    │
+        │  ┌──────┐ ┌─────┐  │
+        │  │Studio│ │ AI  │  │
+        │  │Editor│ │Panel│  │
+        │  └──────┘ └─────┘  │
+        │                    │
+        │ [Assignments]      │
+        │ [Mark Complete]    │
+        └─────────┬──────────┘
+                  │
+                  │ User learns & practices
+                  │ (days/weeks)
+                  │
+                  │ Click "Mark Complete"
+                  ▼
+        ┌────────────────────┐
+        │  Confirmation      │
+        │  Dialog            │
+        │  "Ready to verify?"│
+        └─────────┬──────────┘
+                  │
+                  │ Yes, proceed
+                  ▼
+        ┌────────────────────┐
+        │ /goals/[id]/verify │
+        │                    │
+        │ ┌──────────────────┤
+        │ │ Tab-Based        │
+        │ │ Verification     │
+        │ │                  │
+        │ │ [Quiz] [Coding]  │
+        │ │ [Mock] [Project] │
+        │ │                  │
+        │ │ (Only relevant   │
+        │ │  tabs shown)     │
+        │ └──────────────────┤
+        └─────────┬──────────┘
+                  │
+                  │ Complete all sections
+                  ▼
+        ┌────────────────────┐
+        │   All Passed?      │
+        └─────────┬──────────┘
+                  │
+          ┌───────┴───────┐
+          │               │
+          ▼               ▼
+    ┌──────────┐    ┌──────────┐
+    │   YES    │    │    NO    │
+    │ ✅ Goal  │    │ ❌ Show  │
+    │ Verified │    │ Feedback │
+    │          │    │ & Retry  │
+    └────┬─────┘    └──────────┘
+         │
+         ▼
+    ┌──────────┐
+    │ Social   │
+    │ Sharing  │
+    │ (opt.)   │
+    └────┬─────┘
+         │
+         ▼
+    ┌──────────┐
+    │ KnowMe   │
+    │ Training │
+    │ Data     │
+    └──────────┘
+
+10.2 VERIFICATION PAGE FLOW (DETAILED)
+────────────────────────────────────────────────────────────────────────────────
+
+                    ┌──────────────────────────────────────┐
+                    │         /goals/[goalId]/verify       │
+                    │              page.tsx                │
+                    │          (Server Component)          │
+                    └──────────────────┬───────────────────┘
+                                       │
+                                       │ Fetch goal data
+                                       ▼
+                    ┌──────────────────────────────────────┐
+                    │     await getGoalWithAssignments()   │
+                    └──────────────────┬───────────────────┘
+                                       │
+                                       │ Pass to client
+                                       ▼
+                    ┌──────────────────────────────────────┐
+                    │       VerificationContent            │
+                    │        (Client Component)            │
+                    ├──────────────────────────────────────┤
+                    │                                      │
+                    │   assignmentTypes = ["quiz",         │
+                    │     "coding", "mock"]                │
+                    │                                      │
+                    │   ┌─────────────────────────────────┐│
+                    │   │       TABS COMPONENT            ││
+                    │   │   (Dynamic based on types)      ││
+                    │   └────────────────┬────────────────┘│
+                    │                    │                 │
+                    └────────────────────┼─────────────────┘
+                                         │
+                ┌────────────────────────┼────────────────────────┐
+                │                        │                        │
+                ▼                        ▼                        ▼
+    ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
+    │  QuizVerification   │  │ CodingVerification  │  │  MockVerification   │
+    │    Component        │  │    Component        │  │    Component        │
+    │                     │  │                     │  │                     │
+    │  Uses: Quiz.tsx     │  │ Uses: CodeEditor.tsx│  │ Uses: Voice.tsx     │
+    │                     │  │                     │  │                     │
+    │  Props:             │  │  Props:             │  │  Props:             │
+    │  - quizData         │  │  - codingData       │  │  - mockData         │
+    │  - onComplete       │  │  - onComplete       │  │  - onComplete       │
+    └─────────┬───────────┘  └─────────┬───────────┘  └─────────┬───────────┘
+              │                        │                        │
+              │ Submit                 │ Submit                 │ End session
+              ▼                        ▼                        ▼
+    ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
+    │ submitQuizVerif()   │  │ submitCodingVerif() │  │ submitMockVerif()   │
+    │ Server Action       │  │ Server Action       │  │ Server Action       │
+    └─────────────────────┘  └─────────────────────┘  └─────────────────────┘
+
+================================================================================
+11. TECHNICAL IMPLEMENTATION DETAILS
+================================================================================
+
+11.1 SERVER COMPONENT STRUCTURE (page.tsx)
+────────────────────────────────────────────────────────────────────────────────
+
+All page.tsx files are SERVER COMPONENTS that:
+1. Fetch data using server actions
+2. Pass data to client components
+3. Handle authentication/authorization
+
+Example: /goals/[goalId]/verify/page.tsx
+
+```typescript
+// apps/main/app/(main)/goals/[goalId]/verify/page.tsx
+import { redirect } from 'next/navigation'
+import { getGoalWithAssignments } from '@/actions/(main)/goals'
+import { VerificationContent } from './_components/verification-content'
+
+interface VerifyPageProps {
+    params: { goalId: string }
+}
+
+export default async function VerifyPage({ params }: VerifyPageProps) {
+    const result = await getGoalWithAssignments(params.goalId)
+    
+    if (!result.success || !result.goal) {
+        redirect('/goals')
+    }
+
+    const { goal } = result
+    const assignments = goal.assignments
+    
+    if (!assignments) {
+        redirect(`/goals/${params.goalId}`)
+    }
+
+    return (
+        <div className="h-screen flex flex-col">
+            <VerificationContent
+                goal={goal}
+                assignmentTypes={assignments.assignmentTypes}
+                quizData={assignments.quizData}
+                codingData={assignments.codingData}
+                mockData={assignments.mockData}
+                projectData={assignments.projectData}
+                verification={goal.verification}
+            />
+        </div>
+    )
+}
+```
+
+11.2 OPENAI ASSISTANT SETUP
+────────────────────────────────────────────────────────────────────────────────
+
+Environment Variables:
+- OPENAI_API_KEY: Your OpenAI API key
+- LEARNING_GOALS_ASSISTANT_ID: The Assistant ID for goal assignment generation
+
+Assistant Creation (via OpenAI Platform or API):
+1. Create an Assistant with the system instructions from Section 5.1
+2. Attach the JSON schema as a file or include in instructions
+3. Set response_format to JSON
+4. Use gpt-4o or gpt-4-turbo-preview model
+
+11.3 COMPONENT REUSE PATTERNS
+────────────────────────────────────────────────────────────────────────────────
+
+QUIZ REUSE:
+```typescript
+import Quiz from '@/components/main/quiz'
+
+<Quiz
+    quizId={`goal-${goalId}-quiz`}
+    questions={quizData.questions}
+    title={quizData.title}
+    mode="assessment"
+    immediateResults={true}
+    allowHints={true}
+    onComplete={handleQuizComplete}
+/>
+```
+
+CODE EDITOR REUSE:
+```typescript
+import CodeEditor from '@/components/main/code-editor'
+
+<CodeEditor
+    code={problem.starterCode}
+    language={problem.language}
+    showRunButton={true}
+    showSubmitButton={true}
+    enableExecution={true}
+    onSubmit={handleCodeSubmit}
+    onExecutionComplete={handleTestResults}
+/>
+```
+
+VOICE REUSE:
+```typescript
+import { Voice } from '@/components/main/voice'
+
+<Voice
+    config={{
+        agentId: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID!,
+        knowledgeBase: mockData.knowledgeBase,
+        title: mockData.title,
+    }}
+    callbacks={{
+        onEnd: handleMockComplete,
+    }}
+    showProcessingDialog={true}
+/>
+```
+
+================================================================================
+12. SOCIAL MEDIA & KNOWME INTEGRATION
+================================================================================
+
+After successful verification (overall score >= 75%), the system:
+
+1. Shows social sharing modal (existing flow from V1)
+2. Generates achievement post using AI
+3. Allows posting to Twitter/LinkedIn
+4. Feeds verified learning data to KnowMe AI training
+
+KnowMe Integration:
+- Verified skills are added to user's skill graph
+- Quiz Q&A pairs become training data
+- Coding solutions become code examples
+- Mock interview transcripts enhance context
+
+================================================================================
+13. GAMIFICATION SYSTEM
+================================================================================
+
+Same as V1 document with these additions:
+
+VERIFICATION REWARDS:
+────────────────────────────────────────────────────────────────────────────────
+Action                                  XP Reward    Credits
+────────────────────────────────────────────────────────────────────────────────
+Complete Quiz Verification (Pass)       +50 XP       -
+Complete Coding Verification (Pass)     +75 XP       -
+Complete Mock Verification (Pass)       +100 XP      -
+Complete Project Verification           +50 XP       -
+Overall Verification Pass (75-84%)      +150 XP      +10 Credits
+Overall Verification Pass (85-94%)      +200 XP      +20 Credits
+Overall Verification Pass (95-100%)     +300 XP      +35 Credits
+First Goal Verified Badge               +100 XP      -
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

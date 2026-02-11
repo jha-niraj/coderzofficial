@@ -1,0 +1,388 @@
+// ================================================================================
+// PATHFINDER - AI-VERIFIED LEARNING GOALS MODULE
+// Minimal schema - reuses existing models (MockInterviewVoice, MockVoiceSession, Studio)
+// ================================================================================
+
+enum PathfinderCategory {
+    DSA
+    WEB_DEVELOPMENT
+    FRONTEND
+    BACKEND
+    DEVOPS
+    AI_ML
+    DATABASE
+    SYSTEM_DESIGN
+    MOBILE
+    OTHER
+}
+
+enum PathfinderLevel {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+    EXPERT
+}
+
+enum PathfinderStatus {
+    ACTIVE           // User is working on the goal
+    VERIFICATION     // User started verification process
+    COMPLETED        // All verification done, passed
+    FAILED           // Verification failed (can retry)
+    ABANDONED        // User abandoned the goal
+}
+
+enum VerificationSectionStatus {
+    LOCKED           // Previous sections not complete
+    PENDING          // Available to start
+    IN_PROGRESS      // User started
+    COMPLETED        // Passed
+    FAILED           // Failed (can retry)
+}
+
+enum SubGoalStatus {
+    PENDING          // Not started
+    IN_PROGRESS      // Working on it
+    COMPLETED        // Done
+    SKIPPED          // User skipped
+}
+
+// ================================================================================
+// GROUPS/FOLDERS FOR ORGANIZING GOALS
+// ================================================================================
+
+model PathfinderGroup {
+    id              String              @id @default(cuid())
+    
+    // User relation
+    userId          String
+    user            User                @relation("UserPathfinderGroups", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Group info
+    name            String              // e.g., "Frontend", "Backend", "DSA"
+    emoji           String?             @default("📁")
+    color           String?             @default("#7c3aed") // Default violet
+    description     String?
+    
+    // Order for display
+    order           Int                 @default(0)
+    
+    // Goals in this group
+    goals           PathfinderGoal[]    @relation("GroupGoals")
+    
+    // Timestamps
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+    
+    @@unique([userId, name])
+    @@index([userId])
+}
+
+// ================================================================================
+// MAIN MODEL: PathfinderGoal
+// ================================================================================
+
+model PathfinderGoal {
+    id              String              @id @default(cuid())
+    
+    // User relation
+    userId          String
+    user            User                @relation("UserPathfinderGoals", fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Group relation (optional - can be ungrouped)
+    groupId         String?
+    group           PathfinderGroup?    @relation("GroupGoals", fields: [groupId], references: [id], onDelete: SetNull)
+    
+    // Basic Info
+    title           String
+    category        PathfinderCategory
+    level           PathfinderLevel
+    focusAreas      String[]            // Array of focus areas selected
+    targetDate      DateTime?           // Optional target completion date
+    
+    // AI-Generated Content (stored as JSON for flexibility)
+    // Contains: quizQuestions, codingQuestions, mockInterview, projects (NOT dailyTasks)
+    aiGeneratedPlan Json?               
+    
+    // Extracted metadata from AI plan
+    overview        String?             @db.Text
+    estimatedDays   Int?
+    estimatedHours  Int?
+    learningObjectives String[]
+    prerequisites   String[]
+    
+    // Status & Progress
+    status          PathfinderStatus    @default(ACTIVE)
+    progressPercent Int                 @default(0)
+    
+    // Stats for display on card
+    totalSubGoals       Int             @default(0)
+    completedSubGoals   Int             @default(0)
+    totalQuizAnswered   Int             @default(0)
+    totalCodingSolved   Int             @default(0)
+    streakDays          Int             @default(0)
+    lastActivityAt      DateTime?
+    
+    // Timestamps
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+    startedAt       DateTime?
+    verificationStartedAt DateTime?
+    completedAt     DateTime?
+    
+    // ================================================================================
+    // RELATIONS TO EXISTING MODELS (Back-relations)
+    // ================================================================================
+    
+    // Studio Integration - reuses existing Studio model
+    studioId        String?             @unique
+    studio          Studio?             @relation("PathfinderStudio", fields: [studioId], references: [id], onDelete: SetNull)
+    
+    // Mock Interview Integration - reuses existing MockInterviewVoice model
+    mockInterviewId String?             @unique
+    mockInterview   MockInterviewVoice? @relation("PathfinderMockInterview", fields: [mockInterviewId], references: [id], onDelete: SetNull)
+    
+    // ================================================================================
+    // PATHFINDER-SPECIFIC RELATIONS
+    // ================================================================================
+    
+    // Daily sub-goals (user-created daily tasks)
+    subGoals        PathfinderSubGoal[]
+    
+    // Daily sessions (tracks each day's practice)
+    dailySessions   PathfinderDailySession[]
+    
+    // Verification tracking
+    verification    PathfinderVerification?
+    
+    // Quiz attempts (for daily quizzes and verification)
+    quizAttempts    PathfinderQuizAttempt[]
+    
+    // Coding submissions
+    codingSubmissions PathfinderCodingSubmission[]
+    
+    @@index([userId])
+    @@index([groupId])
+    @@index([status])
+    @@index([category])
+    @@index([createdAt])
+}
+
+// ================================================================================
+// DAILY SUB-GOALS (User-created tasks for each day)
+// ================================================================================
+
+model PathfinderSubGoal {
+    id              String          @id @default(cuid())
+    
+    // Goal relation
+    goalId          String
+    goal            PathfinderGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // Session relation
+    sessionId       String
+    session         PathfinderDailySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+    
+    // Sub-goal info
+    title           String
+    description     String?         @db.Text
+    
+    // Source: "text" or "voice" (if created via voice recording)
+    source          String          @default("text")
+    voiceTranscript String?         @db.Text   // Original voice transcript if source is voice
+    
+    // Status
+    status          SubGoalStatus   @default(PENDING)
+    
+    // Order for display
+    order           Int             @default(0)
+    
+    // AI-Generated content for this sub-goal (quiz questions, optional coding)
+    aiQuizQuestions Json?           // Array of quiz questions
+    aiCodingProblem Json?           // Optional coding problem
+    hasCoding       Boolean         @default(false)
+    
+    // Progress tracking
+    quizCompleted   Boolean         @default(false)
+    quizScore       Int?
+    codingCompleted Boolean         @default(false)
+    codingPassed    Boolean         @default(false)
+    
+    // Timestamps
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+    completedAt     DateTime?
+    
+    @@index([goalId])
+    @@index([sessionId])
+    @@index([status])
+}
+
+// ================================================================================
+// DAILY SESSIONS (One session per day of practice)
+// ================================================================================
+
+model PathfinderDailySession {
+    id              String          @id @default(cuid())
+    
+    // Goal relation
+    goalId          String
+    goal            PathfinderGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // User relation
+    userId          String
+    
+    // Date (only date part, no time)
+    date            DateTime        @db.Date
+    
+    // Session stats
+    totalSubGoals       Int         @default(0)
+    completedSubGoals   Int         @default(0)
+    totalQuizQuestions  Int         @default(0)
+    correctQuizAnswers  Int         @default(0)
+    totalCodingProblems Int         @default(0)
+    solvedCodingProblems Int        @default(0)
+    
+    // Time tracking
+    totalTimeMinutes    Int         @default(0)
+    
+    // Notes for the day
+    notes           String?         @db.Text
+    
+    // Sub-goals for this session
+    subGoals        PathfinderSubGoal[]
+    
+    // Timestamps
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+    
+    @@unique([goalId, date])
+    @@index([goalId])
+    @@index([userId])
+    @@index([date])
+}
+
+// ================================================================================
+// VERIFICATION TRACKING
+// ================================================================================
+
+model PathfinderVerification {
+    id              String          @id @default(cuid())
+    
+    // Goal relation (one-to-one)
+    goalId          String          @unique
+    goal            PathfinderGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // Overall Status
+    overallScore    Int?            // Final overall score (0-100)
+    passed          Boolean         @default(false)
+    
+    // Section Statuses
+    quizStatus      VerificationSectionStatus   @default(PENDING)
+    codingStatus    VerificationSectionStatus   @default(LOCKED)
+    mockStatus      VerificationSectionStatus   @default(LOCKED)
+    projectStatus   VerificationSectionStatus   @default(LOCKED)
+    
+    // Section Scores
+    quizScore       Int?            // Score out of 100
+    codingScore     Int?            // Score out of 100
+    mockScore       Int?            // Score out of 100
+    projectComplete Boolean         @default(false)
+    
+    // Section Attempts
+    quizAttempts    Int             @default(0)
+    codingAttempts  Int             @default(0)
+    mockAttempts    Int             @default(0)
+    
+    // Mock Session Reference (links to existing MockVoiceSession)
+    mockSessionId   String?
+    
+    // Project Submission (if applicable)
+    projectType     String?         // "CODERZ" | "PORTFOLIO"
+    projectId       String?         // Reference to ProjectV2 or PortfolioProject
+    
+    // Timestamps
+    startedAt       DateTime        @default(now())
+    quizCompletedAt DateTime?
+    codingCompletedAt DateTime?
+    mockCompletedAt DateTime?
+    projectCompletedAt DateTime?
+    completedAt     DateTime?
+    
+    @@index([goalId])
+}
+
+// ================================================================================
+// QUIZ ATTEMPTS (for both daily and verification quizzes)
+// ================================================================================
+
+model PathfinderQuizAttempt {
+    id              String          @id @default(cuid())
+    
+    // Goal relation
+    goalId          String
+    goal            PathfinderGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // User relation
+    userId          String
+    
+    // Quiz type
+    quizType        String          // "DAILY" | "VERIFICATION"
+    dayNumber       Int?            // Only for daily quizzes
+    
+    // Results
+    score           Int             // Score out of 100
+    correctCount    Int
+    totalQuestions  Int
+    timeTaken       Int             // In seconds
+    
+    // Detailed answers (stored as JSON)
+    answers         Json            // Array of { questionId, selectedAnswer, isCorrect, timeTaken }
+    
+    // Timestamps
+    startedAt       DateTime
+    completedAt     DateTime        @default(now())
+    
+    @@index([goalId])
+    @@index([userId])
+    @@index([quizType])
+}
+
+// ================================================================================
+// CODING SUBMISSIONS
+// ================================================================================
+
+model PathfinderCodingSubmission {
+    id              String          @id @default(cuid())
+    
+    // Goal relation
+    goalId          String
+    goal            PathfinderGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    
+    // User relation
+    userId          String
+    
+    // Submission type
+    submissionType  String          // "DAILY" | "VERIFICATION"
+    dayNumber       Int?            // Only for daily challenges
+    problemId       String          // Reference to the coding question ID
+    
+    // Submission details
+    code            String          @db.Text
+    language        String          // "javascript" | "python" | "java" etc.
+    
+    // Results
+    passed          Boolean         @default(false)
+    testsPassed     Int             @default(0)
+    totalTests      Int             @default(0)
+    executionTime   Int?            // In milliseconds
+    
+    // Detailed test results (stored as JSON)
+    testResults     Json?           // Array of { testId, passed, input, expected, actual, error }
+    
+    // Timestamps
+    submittedAt     DateTime        @default(now())
+    
+    @@index([goalId])
+    @@index([userId])
+    @@index([problemId])
+}

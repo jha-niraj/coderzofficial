@@ -548,6 +548,12 @@ model User {
     studioFlashcardSessions StudioFlashcardSession[] @relation("UserFlashcardSessions")
 
     // ===============================================
+    // PATHFINDER (AI-VERIFIED LEARNING GOALS) RELATIONS
+    // ===============================================
+    pathfinderGoals         PathfinderGoal[]         @relation("UserPathfinderGoals")
+    pathfinderGroups        PathfinderGroup[]        @relation("UserPathfinderGroups")
+
+    // ===============================================
     // CHAT SYSTEM RELATIONS
     // ===============================================
     // Follow System

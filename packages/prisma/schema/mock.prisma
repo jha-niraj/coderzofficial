@@ -59,6 +59,9 @@ model MockInterviewVoice {
     sessions MockVoiceSession[]
     ratings  MockVoiceRating[]
 
+    // Pathfinder (Learning Goals) back-relation
+    pathfinderGoal PathfinderGoal? @relation("PathfinderMockInterview")
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 

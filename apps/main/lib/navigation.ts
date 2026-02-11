@@ -2,7 +2,7 @@ import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Trophy, Video, Brain, Cable, LayoutDashboard,
     Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon,
-    GraduationCap, Rocket, Activity, Share2
+    GraduationCap, Rocket, Activity, Share2, Target
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -75,6 +75,12 @@ export const mainNavigation: NavigationConfig = {
                     icon: Globe
                 }
             ]
+        },
+        {
+            name: "Pathfinder",
+            path: "pathfinder",
+            icon: Target,
+            status: "active"
         },
         {
             name: "Communities",
