@@ -12,10 +12,11 @@
 	},
 	"dependencies": {
 		"@prisma/client": "6.14.0",
+		"@repo/auth": "workspace:*",
 		"@repo/prisma": "workspace:*",
 		"@repo/ui": "workspace:*",
-		"@repo/auth": "workspace:*",
 		"bcryptjs": "^3.0.3",
+		"cloudinary": "^2.8.0",
 		"clsx": "^2.1.1",
 		"date-fns": "^4.1.0",
 		"framer-motion": "^12.23.26",

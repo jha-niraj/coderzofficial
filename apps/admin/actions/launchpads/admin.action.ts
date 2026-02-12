@@ -128,7 +128,7 @@ export async function adminUploadImage(formData: FormData) {
                     ],
                     timeout: 60000
                 },
-                (error, result) => {
+                (error: Error | undefined, result: CloudinaryUploadResult | undefined) => {
                     if (error) {
                         console.error('Cloudinary upload error:', error)
                         reject(error)
