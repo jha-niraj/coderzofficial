@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, SkillsTab,
-    ProjectsTab, ActivityTab, ResumeTab, AboutTab, ShareProfileModal,
+    ProjectsTab, ResumeTab, AboutTab, ShareProfileModal,
     type ProfileTab
 } from "@/components/profile";
 import { trackProfileView } from "@/actions/(main)/user/profile.action";
@@ -101,12 +101,6 @@ export function PublicProfileClient({
                         isOwnProfile={isOwnProfile}
                     />
                 );
-            case "activity":
-                return (
-                    <ActivityTab
-                        {...tabContentProps}
-                    />
-                );
             case "skills":
                 return (
                     <SkillsTab
@@ -124,7 +118,12 @@ export function PublicProfileClient({
                     />
                 );
             case "resume":
-                return <ResumeTab {...tabContentProps} />;
+                return (
+                    <ResumeTab
+                        {...tabContentProps}
+                        onUploadResume={isOwnProfile ? () => router.push("/profile") : undefined}
+                    />
+                );
             case "about":
                 return <AboutTab {...tabContentProps} />;
             default:

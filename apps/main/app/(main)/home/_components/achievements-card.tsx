@@ -80,7 +80,7 @@ export default function AchievementsCard({ achievements }: AchievementsCardProps
                         <CardTitle className="text-lg">Achievements</CardTitle>
                     </div>
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href="/profile?tab=achievements">
+                        <Link href="/achievements">
                             View all <ArrowRight className="ml-1 h-3 w-3" />
                         </Link>
                     </Button>

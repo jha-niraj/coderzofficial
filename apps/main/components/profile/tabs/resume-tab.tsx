@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
@@ -8,16 +9,20 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
     FileText, Download, Briefcase, GraduationCap, Award, Calendar,
-    ExternalLink, Building, Eye
+    ExternalLink, Building, Eye, Loader2
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import toast from "@repo/ui/components/ui/sonner";
+import { uploadResume } from "@/actions/(main)/user/resume.action";
+import { getResumeSignedUrl } from "@/actions/(main)/user/resume.action";
 
 interface ResumeTabProps {
     user: {
         id: string;
         resume: string | null;
         hasResume: boolean;
+        resumeUrl?: string | null;
         university: string | null;
         experiences: Array<{
             id: string;
@@ -39,7 +44,7 @@ interface ResumeTabProps {
         }>;
     };
     isOwnProfile: boolean;
-    onUploadResume?: () => void;
+    onUploadResume?: () => void | Promise<void>;
 }
 
 // Format date range
@@ -101,8 +106,54 @@ export function ResumeTab({
     isOwnProfile,
     onUploadResume,
 }: ResumeTabProps) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [resumeViewUrl, setResumeViewUrl] = useState<string | null>(null);
+
     const experiences = user.experiences || [];
     const certifications = user.certifications || [];
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type)) {
+            toast.error("Please upload a PDF or DOC/DOCX file");
+            return;
+        }
+        setUploading(true);
+        try {
+            const result = await uploadResume(file);
+            if (result.url || result.success) {
+                toast.success("Resume uploaded successfully!");
+                await onUploadResume?.();
+            } else {
+                toast.error(result.message || "Upload failed");
+            }
+        } catch {
+            toast.error("Failed to upload resume");
+        } finally {
+            setUploading(false);
+            e.target.value = "";
+        }
+    };
+
+    const handleViewResume = async () => {
+        if (resumeViewUrl) {
+            window.open(resumeViewUrl, "_blank");
+            return;
+        }
+        const res = await getResumeSignedUrl();
+        if (res?.url) {
+            setResumeViewUrl(res.url);
+            window.open(res.url, "_blank");
+        } else {
+            toast.error("Could not load resume");
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -129,29 +180,46 @@ export function ResumeTab({
                                 </div>
                             </div>
                             <div className="flex gap-2">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".pdf,.doc,.docx"
+                                    className="hidden"
+                                    onChange={handleFileChange}
+                                />
                                 {
                                     user.hasResume && user.resume ? (
                                         <>
-                                            <a href={user.resume} target="_blank" rel="noopener noreferrer">
-                                                <Button variant="outline" size="sm" className="gap-2">
-                                                    <Eye className="w-4 h-4" />
-                                                    View
-                                                </Button>
-                                            </a>
-                                            <a href={user.resume} download>
-                                                <Button size="sm" className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600">
-                                                    <Download className="w-4 h-4" />
-                                                    Download
-                                                </Button>
-                                            </a>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="gap-2"
+                                                onClick={handleViewResume}
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                View
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
+                                                onClick={handleViewResume}
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                Download
+                                            </Button>
                                         </>
                                     ) : isOwnProfile ? (
                                         <Button
-                                            onClick={onUploadResume}
+                                            onClick={handleUploadClick}
+                                            disabled={uploading}
                                             className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
                                         >
-                                            <FileText className="w-4 h-4" />
-                                            Upload Resume
+                                            {uploading ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <FileText className="w-4 h-4" />
+                                            )}
+                                            {uploading ? "Uploading..." : "Upload Resume"}
                                         </Button>
                                     ) : null
                                 }

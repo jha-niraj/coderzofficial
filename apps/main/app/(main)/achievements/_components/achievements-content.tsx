@@ -1,19 +1,22 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { 
-    Trophy, Award, Star, Crown, Sparkles, Share2,
-    Search, Gift, Zap, TrendingUp, Target, Medal, Flame
+import {
+    Trophy, Award, Star, Crown, Sparkles, Share2, Search, Gift,
+    Zap, TrendingUp, Target, Medal, Flame
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from '@repo/ui/components/ui/tabs'
 import Link from 'next/link'
 import { cn } from '@repo/ui/lib/utils'
 import type { AchievementsContentProps } from '@/types/achievements'
+import type { BadgeWithProgress } from '@/actions/(main)/achievements/achievements.action'
 import { BadgeCard } from './badge-card'
 import { LevelProgress } from './level-progress'
 import { ClaimBadgeSheet } from './claim-badge-sheet'
@@ -40,12 +43,12 @@ const RARITY_COLORS = {
     MYTHIC: { bg: 'bg-pink-50 dark:bg-pink-950', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-300 dark:border-pink-700' },
 }
 
-export function AchievementsContent({ 
-    badges, 
-    stats, 
-    levelInfo, 
+export function AchievementsContent({
+    badges,
+    stats,
+    levelInfo,
     socialConnections,
-    levels 
+    levels
 }: AchievementsContentProps) {
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [searchQuery, setSearchQuery] = useState('')
@@ -61,8 +64,8 @@ export function AchievementsContent({
             if (filterRarity && badge.rarity !== filterRarity) return false
             if (searchQuery) {
                 const query = searchQuery.toLowerCase()
-                return badge.name.toLowerCase().includes(query) || 
-                       badge.description.toLowerCase().includes(query)
+                return badge.name.toLowerCase().includes(query) ||
+                    badge.description.toLowerCase().includes(query)
             }
             return true
         })
@@ -83,7 +86,6 @@ export function AchievementsContent({
         <div className="h-screen bg-neutral-50 dark:bg-neutral-950">
             <ScrollArea className="h-full">
                 <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-                    {/* Header */}
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Achievements</h1>
@@ -96,15 +98,10 @@ export function AchievementsContent({
                             </Button>
                         </Link>
                     </div>
-
-                    {/* Stats & Level Row */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        {/* Level Progress Card */}
                         <div className="lg:col-span-1">
                             <LevelProgress levelInfo={levelInfo} levels={levels} />
                         </div>
-
-                        {/* Stats Cards */}
                         <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <StatsCard
                                 icon={<Trophy className="w-5 h-5" />}
@@ -134,8 +131,6 @@ export function AchievementsContent({
                             />
                         </div>
                     </div>
-
-                    {/* Rarity Distribution */}
                     <div className="bg-white dark:bg-neutral-900 rounded-xl p-4 border border-neutral-200 dark:border-neutral-800">
                         <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Badge Collection</h3>
                         <div className="flex flex-wrap gap-2">
@@ -147,50 +142,52 @@ export function AchievementsContent({
                         </div>
                     </div>
 
-                    {/* Ready to Claim Section */}
-                    {readyToClaim.length > 0 && (
-                        <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/5 dark:to-teal-500/5 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                    <Gift className="w-5 h-5 text-emerald-500" />
-                                    <h3 className="font-semibold text-neutral-900 dark:text-white">Ready to Claim!</h3>
-                                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                                        {readyToClaim.length}
-                                    </Badge>
+                    {
+                        readyToClaim.length > 0 && (
+                            <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/5 dark:to-teal-500/5 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Gift className="w-5 h-5 text-emerald-500" />
+                                        <h3 className="font-semibold text-neutral-900 dark:text-white">Ready to Claim!</h3>
+                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                                            {readyToClaim.length}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                    {
+                                        readyToClaim.slice(0, 5).map(badge => (
+                                            <BadgeCard
+                                                key={badge.id}
+                                                badge={badge}
+                                                onClick={() => setSelectedBadge(badge)}
+                                                compact
+                                            />
+                                        ))
+                                    }
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                {readyToClaim.slice(0, 5).map(badge => (
-                                    <BadgeCard
-                                        key={badge.id}
-                                        badge={badge}
-                                        onClick={() => setSelectedBadge(badge)}
-                                        compact
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                        )
+                    }
 
-                    {/* Main Tabs */}
+
                     <Tabs defaultValue="all" className="space-y-4">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            {/* Category Tabs */}
                             <TabsList className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-1 flex-wrap h-auto">
-                                {CATEGORIES.map(cat => (
-                                    <TabsTrigger
-                                        key={cat.id}
-                                        value={cat.id}
-                                        onClick={() => setSelectedCategory(cat.id)}
-                                        className="gap-1.5 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800"
-                                    >
-                                        <cat.icon className="w-3.5 h-3.5" />
-                                        <span className="hidden sm:inline">{cat.name}</span>
-                                    </TabsTrigger>
-                                ))}
+                                {
+                                    CATEGORIES.map(cat => (
+                                        <TabsTrigger
+                                            key={cat.id}
+                                            value={cat.id}
+                                            onClick={() => setSelectedCategory(cat.id)}
+                                            className="gap-1.5 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800"
+                                        >
+                                            <cat.icon className="w-3.5 h-3.5" />
+                                            <span className="hidden sm:inline">{cat.name}</span>
+                                        </TabsTrigger>
+                                    ))
+                                }
                             </TabsList>
-
-                            {/* Search */}
                             <div className="relative w-full sm:w-64">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                                 <Input
@@ -201,66 +198,70 @@ export function AchievementsContent({
                                 />
                             </div>
                         </div>
-
-                        {/* Badge Grid */}
                         <TabsContent value={selectedCategory} className="mt-4">
-                            {filteredBadges.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <Trophy className="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-700 mb-3" />
-                                    <p className="text-neutral-500">No badges found</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                                    {filteredBadges.map(badge => (
-                                        <BadgeCard
-                                            key={badge.id}
-                                            badge={badge}
-                                            onClick={() => setSelectedBadge(badge)}
-                                            onShare={() => handleShare(badge)}
-                                        />
-                                    ))}
-                                </div>
-                            )}
+                            {
+                                filteredBadges.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <Trophy className="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-700 mb-3" />
+                                        <p className="text-neutral-500">No badges found</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                                        {
+                                            filteredBadges.map(badge => (
+                                                <BadgeCard
+                                                    key={badge.id}
+                                                    badge={badge}
+                                                    onClick={() => setSelectedBadge(badge)}
+                                                    onShare={() => handleShare(badge)}
+                                                />
+                                            ))
+                                        }
+                                    </div>
+                                )
+                            }
                         </TabsContent>
                     </Tabs>
 
-                    {/* In Progress Section */}
-                    {inProgress.length > 0 && (
-                        <div className="bg-white dark:bg-neutral-900 rounded-xl p-4 border border-neutral-200 dark:border-neutral-800">
-                            <div className="flex items-center gap-2 mb-4">
-                                <TrendingUp className="w-5 h-5 text-blue-500" />
-                                <h3 className="font-semibold text-neutral-900 dark:text-white">In Progress</h3>
-                                <Badge variant="secondary">{inProgress.length}</Badge>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {inProgress.slice(0, 6).map(badge => (
-                                    <div
-                                        key={badge.id}
-                                        className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                                        onClick={() => setSelectedBadge(badge)}
-                                    >
-                                        <div 
-                                            className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                            style={{ background: badge.bgGradient || badge.color }}
-                                        >
-                                            {badge.icon}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">{badge.name}</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Progress value={badge.progressPercent} className="h-1.5 flex-1" />
-                                                <span className="text-xs text-neutral-500">{badge.progressPercent}%</span>
+                    {
+                        inProgress.length > 0 && (
+                            <div className="bg-white dark:bg-neutral-900 rounded-xl p-4 border border-neutral-200 dark:border-neutral-800">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <TrendingUp className="w-5 h-5 text-blue-500" />
+                                    <h3 className="font-semibold text-neutral-900 dark:text-white">In Progress</h3>
+                                    <Badge variant="secondary">{inProgress.length}</Badge>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {
+                                        inProgress.slice(0, 6).map(badge => (
+                                            <div
+                                                key={badge.id}
+                                                className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                                                onClick={() => setSelectedBadge(badge)}
+                                            >
+                                                <div
+                                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                                                    style={{ background: badge.bgGradient || badge.color }}
+                                                >
+                                                    {badge.icon}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">{badge.name}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <Progress value={badge.progressPercent} className="h-1.5 flex-1" />
+                                                        <span className="text-xs text-neutral-500">{badge.progressPercent}%</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                        ))
+                                    }
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
                 </div>
             </ScrollArea>
 
-            {/* Claim Badge Sheet */}
             <ClaimBadgeSheet
                 badge={selectedBadge}
                 open={!!selectedBadge}
@@ -269,7 +270,6 @@ export function AchievementsContent({
                 socialConnections={socialConnections}
             />
 
-            {/* Share Sheet */}
             <ShareSheet
                 badge={shareBadge}
                 open={shareSheetOpen}
@@ -281,14 +281,14 @@ export function AchievementsContent({
 }
 
 // Stats Card Component
-function StatsCard({ 
-    icon, 
-    label, 
-    value, 
-    total, 
-    color, 
-    highlight 
-}: { 
+function StatsCard({
+    icon,
+    label,
+    value,
+    total,
+    color,
+    highlight
+}: {
     icon: React.ReactNode
     label: string
     value: string | number
@@ -304,9 +304,11 @@ function StatsCard({
             <div className={cn("mb-2", color)}>{icon}</div>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                 {value}
-                {total !== undefined && (
-                    <span className="text-sm font-normal text-neutral-400">/{total}</span>
-                )}
+                {
+                    total !== undefined && (
+                        <span className="text-sm font-normal text-neutral-400">/{total}</span>
+                    )
+                }
             </p>
             <p className="text-xs text-neutral-500 mt-1">{label}</p>
         </div>
@@ -314,12 +316,12 @@ function StatsCard({
 }
 
 // Rarity Badge Component
-function RarityBadge({ 
-    rarity, 
-    count, 
-    onClick, 
-    active 
-}: { 
+function RarityBadge({
+    rarity,
+    count,
+    onClick,
+    active
+}: {
     rarity: keyof typeof RARITY_COLORS
     count: number
     onClick: () => void
@@ -334,9 +336,9 @@ function RarityBadge({
                 colors.bg, colors.border, colors.text,
                 active && "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-neutral-900",
                 active && (rarity === 'COMMON' ? 'ring-neutral-400' :
-                          rarity === 'RARE' ? 'ring-blue-400' :
-                          rarity === 'EPIC' ? 'ring-purple-400' :
-                          rarity === 'LEGENDARY' ? 'ring-amber-400' : 'ring-pink-400')
+                    rarity === 'RARE' ? 'ring-blue-400' :
+                        rarity === 'EPIC' ? 'ring-purple-400' :
+                            rarity === 'LEGENDARY' ? 'ring-amber-400' : 'ring-pink-400')
             )}
         >
             <span className="text-sm font-medium capitalize">{rarity.toLowerCase()}</span>

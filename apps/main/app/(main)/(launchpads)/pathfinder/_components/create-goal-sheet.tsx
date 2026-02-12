@@ -15,10 +15,13 @@ import {
     Link as LinkIcon, FolderPlus, Loader2
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
-import { createPathfinderGoal, createPathfinderGroup } from '@/actions/(main)/pathfinder'
+import {
+    createPathfinderGoal, createPathfinderGroup
+} from '@/actions/(main)/pathfinder'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
 import { cn } from '@repo/ui/lib/utils'
 import type { PathfinderGoal, PathfinderGroup } from '@/types/pathfinder'
+import { GOAL_DURATION_OPTIONS } from '@/types/pathfinder'
 
 type Group = PathfinderGroup
 
@@ -80,6 +83,8 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
         title: '',
         category: '' as PathfinderCategory | '',
         level: 'INTERMEDIATE' as PathfinderLevel,
+        duration: 'ONE_MONTH' as string,
+        customDays: null as number | null,
         focusAreas: [] as string[],
         groupId: null as string | null,
     })
@@ -116,6 +121,8 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
             title: '',
             category: '',
             level: 'INTERMEDIATE',
+            duration: 'ONE_MONTH',
+            customDays: null,
             focusAreas: [],
             groupId: null,
         })
@@ -180,6 +187,8 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                     name: result.group.name,
                     emoji: result.group.emoji,
                     color: result.group.color,
+                    description: result.group.description ?? null,
+                    order: result.group.order ?? 0,
                     _count: { goals: 0 }
                 }
                 setLocalGroups(prev => [...prev, newGroup])
@@ -212,6 +221,8 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                 slug: slugPreview,
                 category: formData.category as PathfinderCategory,
                 level: formData.level,
+                duration: formData.duration as 'ONE_WEEK' | 'FORTNIGHT' | 'ONE_MONTH' | 'TWO_MONTHS' | 'THREE_MONTHS' | 'SIX_MONTHS' | 'CUSTOM',
+                estimatedDays: formData.duration === 'CUSTOM' ? formData.customDays ?? undefined : undefined,
                 focusAreas: formData.focusAreas,
                 groupId: formData.groupId,
             })
@@ -259,393 +270,459 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                             Set your goal and let AI create a personalized plan
                         </SheetDescription>
                     </SheetHeader>
-
                     <AnimatePresence mode="wait">
-                        {processing ? (
-                            <motion.div
-                                key="processing"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex flex-col items-center justify-center py-16"
-                            >
-                                <div className="relative mb-6">
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                        className="w-20 h-20 rounded-full border-2 border-neutral-200 dark:border-neutral-700 border-t-neutral-900 dark:border-t-white"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        {progressPercent === 100 ? (
-                                            <CheckCircle className="w-8 h-8 text-emerald-500" />
-                                        ) : (
-                                            <Brain className="w-8 h-8 text-neutral-400" />
-                                        )}
-                                    </div>
-                                </div>
-
-                                <h3 className="text-lg font-medium mb-1 text-neutral-900 dark:text-white">
-                                    {progressPercent === 100 ? 'Goal Created!' : 'Creating Goal...'}
-                                </h3>
-                                <p className="text-sm text-neutral-500 mb-6">
-                                    {progressPercent < 50 ? 'Setting up...' : 'AI generating plan...'}
-                                </p>
-
-                                <div className="w-full max-w-xs">
-                                    <Progress value={progressPercent} className="h-1.5" />
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="form"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                            >
-                                {/* Progress */}
-                                <div className="mb-6">
-                                    <div className="flex justify-between mb-2">
-                                        {steps.map((s, index) => (
-                                            <div key={s.id} className="flex-1 text-center">
-                                                <div className={cn(
-                                                    "w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center text-xs font-medium transition-all",
-                                                    index < step ? "bg-emerald-500 text-white" :
-                                                        index === step ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900" :
-                                                            "bg-neutral-200 dark:bg-neutral-700 text-neutral-400"
-                                                )}>
-                                                    {index < step ? <Check className="w-4 h-4" /> : index + 1}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <Progress value={((step + 1) / steps.length) * 100} className="h-1" />
-                                </div>
-
-                                {/* Step Content */}
-                                <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={step}
-                                        initial={{ opacity: 0, x: 10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -10 }}
-                                        className="space-y-4"
-                                    >
-                                        {/* Step 0: Title */}
-                                        {step === 0 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-4">
-                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                                                        {steps[0]?.title}
-                                                    </h3>
-                                                    <p className="text-sm text-neutral-500">Be specific about your goal</p>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs text-neutral-500">Goal Title</Label>
-                                                    <Input
-                                                        placeholder="e.g., Master Arrays and Strings in DSA"
-                                                        value={formData.title}
-                                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                                        className="h-12"
-                                                        autoFocus
-                                                    />
-                                                </div>
-                                                
-                                                {/* Slug Preview */}
-                                                {formData.title.trim() && (
-                                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
-                                                        <LinkIcon className="w-3.5 h-3.5 text-neutral-400" />
-                                                        <span className="text-xs text-neutral-500">URL:</span>
-                                                        <code className="text-xs text-neutral-700 dark:text-neutral-300 font-mono">
-                                                            /pathfinder/{slugPreview || '...'}
-                                                        </code>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex flex-wrap gap-1.5 mt-3">
-                                                    {['Learn React Hooks', 'Master SQL', 'DSA with Python'].map((ex) => (
-                                                        <Badge
-                                                            key={ex}
-                                                            variant="outline"
-                                                            className="cursor-pointer text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                            onClick={() => setFormData({ ...formData, title: ex })}
-                                                        >
-                                                            {ex}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Step 1: Category + Level (merged) */}
-                                        {step === 1 && (
-                                            <div className="space-y-6">
-                                                <div className="text-center mb-4">
-                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                                                        {steps[1]?.title}
-                                                    </h3>
-                                                </div>
-
-                                                {/* Category */}
-                                                <div>
-                                                    <Label className="text-xs text-neutral-500 mb-2 block">Category</Label>
-                                                    <div className="grid grid-cols-5 gap-2">
-                                                        {categories.map((cat) => (
-                                                            <button
-                                                                key={cat.value}
-                                                                onClick={() => setFormData({ ...formData, category: cat.value })}
-                                                                className={cn(
-                                                                    "p-2 rounded-lg border text-center transition-all",
-                                                                    formData.category === cat.value
-                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                )}
-                                                            >
-                                                                <span className="text-lg">{cat.emoji}</span>
-                                                                <p className="text-[10px] text-neutral-600 dark:text-neutral-400 mt-0.5 truncate">
-                                                                    {cat.label}
-                                                                </p>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Level */}
-                                                <div>
-                                                    <Label className="text-xs text-neutral-500 mb-2 block">Experience Level</Label>
-                                                    <div className="grid grid-cols-4 gap-2">
-                                                        {levels.map((level) => (
-                                                            <button
-                                                                key={level.value}
-                                                                onClick={() => setFormData({ ...formData, level: level.value })}
-                                                                className={cn(
-                                                                    "p-2.5 rounded-lg border text-center transition-all",
-                                                                    formData.level === level.value
-                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                )}
-                                                            >
-                                                                <p className="text-xs font-medium text-neutral-900 dark:text-white">
-                                                                    {level.label}
-                                                                </p>
-                                                                <p className="text-[10px] text-neutral-500 mt-0.5">
-                                                                    {level.desc}
-                                                                </p>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Step 2: Focus Areas */}
-                                        {step === 2 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-4">
-                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                                                        {steps[2]?.title}
-                                                    </h3>
-                                                    <p className="text-sm text-neutral-500">Select at least one</p>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {focusOptions.map((focus) => (
-                                                        <button
-                                                            key={focus.id}
-                                                            onClick={() => toggleFocus(focus.id)}
-                                                            className={cn(
-                                                                "p-3 rounded-lg border text-left transition-all flex items-center justify-between",
-                                                                formData.focusAreas.includes(focus.id)
-                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                            )}
-                                                        >
-                                                            <span className="text-sm text-neutral-900 dark:text-white">{focus.label}</span>
-                                                            {formData.focusAreas.includes(focus.id) && (
-                                                                <Check className="w-4 h-4 text-emerald-500" />
-                                                            )}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Step 3: Group (always shown) */}
-                                        {step === 3 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-4">
-                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                                                        {steps[3]?.title}
-                                                    </h3>
-                                                    <p className="text-sm text-neutral-500">Group your goal for better organization</p>
-                                                </div>
-
-                                                {!showNewGroup ? (
-                                                    <div className="space-y-2">
-                                                        {/* No Group Option */}
-                                                        <button
-                                                            onClick={() => setFormData({ ...formData, groupId: null })}
-                                                            className={cn(
-                                                                "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
-                                                                formData.groupId === null
-                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                            )}
-                                                        >
-                                                            <div className="w-8 h-8 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-sm">
-                                                                📋
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">No Group</p>
-                                                                <p className="text-xs text-neutral-500">Keep ungrouped</p>
-                                                            </div>
-                                                            {formData.groupId === null && <Check className="w-4 h-4 text-emerald-500" />}
-                                                        </button>
-
-                                                        {/* Existing Groups */}
-                                                        {localGroups.map((group) => (
-                                                            <button
-                                                                key={group.id}
-                                                                onClick={() => setFormData({ ...formData, groupId: group.id })}
-                                                                className={cn(
-                                                                    "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
-                                                                    formData.groupId === group.id
-                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                )}
-                                                            >
-                                                                <div
-                                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                                                                    style={{ backgroundColor: `${group.color || '#7c3aed'}20` }}
-                                                                >
-                                                                    {group.emoji || '📁'}
-                                                                </div>
-                                                                <div className="flex-1">
-                                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">{group.name}</p>
-                                                                </div>
-                                                                {formData.groupId === group.id && <Check className="w-4 h-4 text-emerald-500" />}
-                                                            </button>
-                                                        ))}
-
-                                                        {/* Create New Group Button */}
-                                                        <button
-                                                            onClick={() => setShowNewGroup(true)}
-                                                            className="w-full p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-left transition-all flex items-center gap-3 hover:border-neutral-400 dark:hover:border-neutral-600"
-                                                        >
-                                                            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                                                                <FolderPlus className="w-4 h-4 text-neutral-500" />
-                                                            </div>
-                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Create New Group</p>
-                                                        </button>
-                                                    </div>
+                        {
+                            processing ? (
+                                <motion.div
+                                    key="processing"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="flex flex-col items-center justify-center py-16"
+                                >
+                                    <div className="relative mb-6">
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                            className="w-20 h-20 rounded-full border-2 border-neutral-200 dark:border-neutral-700 border-t-neutral-900 dark:border-t-white"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            {
+                                                progressPercent === 100 ? (
+                                                    <CheckCircle className="w-8 h-8 text-emerald-500" />
                                                 ) : (
-                                                    /* New Group Form */
-                                                    <div className="space-y-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+                                                    <Brain className="w-8 h-8 text-neutral-400" />
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-medium mb-1 text-neutral-900 dark:text-white">
+                                        {progressPercent === 100 ? 'Goal Created!' : 'Creating Goal...'}
+                                    </h3>
+                                    <p className="text-sm text-neutral-500 mb-6">
+                                        {progressPercent < 50 ? 'Setting up...' : 'AI generating plan...'}
+                                    </p>
+
+                                    <div className="w-full max-w-xs">
+                                        <Progress value={progressPercent} className="h-1.5" />
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="form"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                >
+                                    <div className="mb-6">
+                                        <div className="flex justify-between mb-2">
+                                            {
+                                                steps.map((s, index) => (
+                                                    <div key={s.id} className="flex-1 text-center">
+                                                        <div className={cn(
+                                                            "w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center text-xs font-medium transition-all",
+                                                            index < step ? "bg-emerald-500 text-white" :
+                                                                index === step ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900" :
+                                                                    "bg-neutral-200 dark:bg-neutral-700 text-neutral-400"
+                                                        )}>
+                                                            {index < step ? <Check className="w-4 h-4" /> : index + 1}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                        <Progress value={((step + 1) / steps.length) * 100} className="h-1" />
+                                    </div>
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={step}
+                                            initial={{ opacity: 0, x: 10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="space-y-4"
+                                        >
+                                            {
+                                                step === 0 && (
+                                                    <div className="space-y-4">
+                                                        <div className="text-center mb-4">
+                                                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
+                                                                {steps[0]?.title}
+                                                            </h3>
+                                                            <p className="text-sm text-neutral-500">Be specific about your goal</p>
+                                                        </div>
                                                         <div className="space-y-2">
-                                                            <Label className="text-xs text-neutral-500">Group Name</Label>
+                                                            <Label className="text-xs text-neutral-500">Goal Title</Label>
                                                             <Input
-                                                                placeholder="e.g., Frontend, DSA Practice"
-                                                                value={newGroupName}
-                                                                onChange={(e) => setNewGroupName(e.target.value)}
-                                                                className="h-10"
+                                                                placeholder="e.g., Master Arrays and Strings in DSA"
+                                                                value={formData.title}
+                                                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                                                className="h-12"
                                                                 autoFocus
                                                             />
                                                         </div>
 
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs text-neutral-500">Icon</Label>
-                                                            <div className="flex gap-1.5">
-                                                                {defaultEmojis.map((emoji) => (
-                                                                    <button
-                                                                        key={emoji}
-                                                                        onClick={() => setNewGroupEmoji(emoji)}
-                                                                        className={cn(
-                                                                            "w-8 h-8 rounded flex items-center justify-center text-sm transition-all",
-                                                                            newGroupEmoji === emoji
-                                                                                ? "bg-neutral-200 dark:bg-neutral-700 ring-2 ring-neutral-400"
-                                                                                : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                                                                        )}
+                                                        {
+                                                            formData.title.trim() && (
+                                                                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                                                    <LinkIcon className="w-3.5 h-3.5 text-neutral-400" />
+                                                                    <span className="text-xs text-neutral-500">URL:</span>
+                                                                    <code className="text-xs text-neutral-700 dark:text-neutral-300 font-mono">
+                                                                        /pathfinder/{slugPreview || '...'}
+                                                                    </code>
+                                                                </div>
+                                                            )
+                                                        }
+
+                                                        <div className="flex flex-wrap gap-1.5 mt-3">
+                                                            {
+                                                                ['Learn React Hooks', 'Master SQL', 'DSA with Python'].map((ex) => (
+                                                                    <Badge
+                                                                        key={ex}
+                                                                        variant="outline"
+                                                                        className="cursor-pointer text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                                        onClick={() => setFormData({ ...formData, title: ex })}
                                                                     >
-                                                                        {emoji}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs text-neutral-500">Color</Label>
-                                                            <div className="flex gap-1.5">
-                                                                {defaultColors.map((color) => (
-                                                                    <button
-                                                                        key={color}
-                                                                        onClick={() => setNewGroupColor(color)}
-                                                                        className={cn(
-                                                                            "w-8 h-8 rounded transition-all",
-                                                                            newGroupColor === color && "ring-2 ring-neutral-400 ring-offset-2"
-                                                                        )}
-                                                                        style={{ backgroundColor: color }}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex gap-2 pt-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => setShowNewGroup(false)}
-                                                                className="flex-1"
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={handleCreateGroup}
-                                                                disabled={!newGroupName.trim() || creatingGroup}
-                                                                className="flex-1"
-                                                            >
-                                                                {creatingGroup ? (
-                                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                                ) : (
-                                                                    'Create Group'
-                                                                )}
-                                                            </Button>
+                                                                        {ex}
+                                                                    </Badge>
+                                                                ))
+                                                            }
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                </AnimatePresence>
+                                                )
+                                            }
 
-                                {/* Navigation */}
-                                <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={prevStep}
-                                        disabled={step === 0}
-                                        className="text-neutral-600"
-                                    >
-                                        <ArrowLeft className="w-4 h-4 mr-1" />
-                                        Back
-                                    </Button>
-                                    <Button
-                                        onClick={nextStep}
-                                        disabled={!canProceed()}
-                                    >
-                                        {step === steps.length - 1 ? (
-                                            <>
-                                                <Sparkles className="w-4 h-4 mr-1" />
-                                                Create Goal
-                                            </>
-                                        ) : (
-                                            <>
-                                                Next
-                                                <ArrowRight className="w-4 h-4 ml-1" />
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        )}
+                                            {
+                                                step === 1 && (
+                                                    <div className="space-y-6">
+                                                        <div className="text-center mb-4">
+                                                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
+                                                                {steps[1]?.title}
+                                                            </h3>
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-xs text-neutral-500 mb-2 block">Category</Label>
+                                                            <div className="grid grid-cols-5 gap-2">
+                                                                {
+                                                                    categories.map((cat) => (
+                                                                        <button
+                                                                            key={cat.value}
+                                                                            onClick={() => setFormData({ ...formData, category: cat.value })}
+                                                                            className={cn(
+                                                                                "p-2 rounded-lg border text-center transition-all",
+                                                                                formData.category === cat.value
+                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                            )}
+                                                                        >
+                                                                            <span className="text-lg">{cat.emoji}</span>
+                                                                            <p className="text-[10px] text-neutral-600 dark:text-neutral-400 mt-0.5 truncate">
+                                                                                {cat.label}
+                                                                            </p>
+                                                                        </button>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-xs text-neutral-500 mb-2 block">Experience Level</Label>
+                                                            <div className="grid grid-cols-4 gap-2">
+                                                                {
+                                                                    levels.map((level) => (
+                                                                        <button
+                                                                            key={level.value}
+                                                                            onClick={() => setFormData({ ...formData, level: level.value })}
+                                                                            className={cn(
+                                                                                "p-2.5 rounded-lg border text-center transition-all",
+                                                                                formData.level === level.value
+                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                            )}
+                                                                        >
+                                                                            <p className="text-xs font-medium text-neutral-900 dark:text-white">
+                                                                                {level.label}
+                                                                            </p>
+                                                                            <p className="text-[10px] text-neutral-500 mt-0.5">
+                                                                                {level.desc}
+                                                                            </p>
+                                                                        </button>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-xs text-neutral-500 mb-2 block">Expected duration</Label>
+                                                            <div className="grid grid-cols-4 gap-2">
+                                                                {
+                                                                    GOAL_DURATION_OPTIONS.filter((o) => o.value !== 'CUSTOM').map((opt) => (
+                                                                        <button
+                                                                            key={opt.value}
+                                                                            type="button"
+                                                                            onClick={() => setFormData({ ...formData, duration: opt.value })}
+                                                                            className={cn(
+                                                                                "p-2 rounded-lg border text-center transition-all",
+                                                                                formData.duration === opt.value
+                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                            )}
+                                                                        >
+                                                                            <p className="text-xs font-medium text-neutral-900 dark:text-white">{opt.label}</p>
+                                                                        </button>
+                                                                    ))
+                                                                }
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setFormData({ ...formData, duration: 'CUSTOM' })}
+                                                                    className={cn(
+                                                                        "p-2 rounded-lg border text-center transition-all",
+                                                                        formData.duration === 'CUSTOM'
+                                                                            ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                            : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                    )}
+                                                                >
+                                                                    <p className="text-xs font-medium text-neutral-900 dark:text-white">Custom</p>
+                                                                </button>
+                                                            </div>
+                                                            {
+                                                                formData.duration === 'CUSTOM' && (
+                                                                    <div className="mt-2">
+                                                                        <Input
+                                                                            type="number"
+                                                                            min={1}
+                                                                            max={365}
+                                                                            placeholder="Days"
+                                                                            value={formData.customDays ?? ''}
+                                                                            onChange={(e) => setFormData({ ...formData, customDays: e.target.value ? parseInt(e.target.value, 10) : null })}
+                                                                        />
+                                                                    </div>
+                                                                )
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                )
+                                            }
+
+                                            {
+                                                step === 2 && (
+                                                    <div className="space-y-4">
+                                                        <div className="text-center mb-4">
+                                                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
+                                                                {steps[2]?.title}
+                                                            </h3>
+                                                            <p className="text-sm text-neutral-500">Select at least one</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            {
+                                                                focusOptions.map((focus) => (
+                                                                    <button
+                                                                        key={focus.id}
+                                                                        onClick={() => toggleFocus(focus.id)}
+                                                                        className={cn(
+                                                                            "p-3 rounded-lg border text-left transition-all flex items-center justify-between",
+                                                                            formData.focusAreas.includes(focus.id)
+                                                                                ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                        )}
+                                                                    >
+                                                                        <span className="text-sm text-neutral-900 dark:text-white">{focus.label}</span>
+                                                                        {
+                                                                            formData.focusAreas.includes(focus.id) && (
+                                                                                <Check className="w-4 h-4 text-emerald-500" />
+                                                                            )
+                                                                        }
+                                                                    </button>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                )
+                                            }
+
+                                            {
+                                                step === 3 && (
+                                                    <div className="space-y-4">
+                                                        <div className="text-center mb-4">
+                                                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
+                                                                {steps[3]?.title}
+                                                            </h3>
+                                                            <p className="text-sm text-neutral-500">Group your goal for better organization</p>
+                                                        </div>
+
+                                                        {!showNewGroup ? (
+                                                            <div className="space-y-2">
+                                                                {/* No Group Option */}
+                                                                <button
+                                                                    onClick={() => setFormData({ ...formData, groupId: null })}
+                                                                    className={cn(
+                                                                        "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
+                                                                        formData.groupId === null
+                                                                            ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                            : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                    )}
+                                                                >
+                                                                    <div className="w-8 h-8 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-sm">
+                                                                        📋
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">No Group</p>
+                                                                        <p className="text-xs text-neutral-500">Keep ungrouped</p>
+                                                                    </div>
+                                                                    {formData.groupId === null && <Check className="w-4 h-4 text-emerald-500" />}
+                                                                </button>
+
+                                                                {
+                                                                    localGroups.map((group) => (
+                                                                        <button
+                                                                            key={group.id}
+                                                                            onClick={() => setFormData({ ...formData, groupId: group.id })}
+                                                                            className={cn(
+                                                                                "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
+                                                                                formData.groupId === group.id
+                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                            )}
+                                                                        >
+                                                                            <div
+                                                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                                                                                style={{ backgroundColor: `${group.color || '#7c3aed'}20` }}
+                                                                            >
+                                                                                {group.emoji || '📁'}
+                                                                            </div>
+                                                                            <div className="flex-1">
+                                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">{group.name}</p>
+                                                                            </div>
+                                                                            {formData.groupId === group.id && <Check className="w-4 h-4 text-emerald-500" />}
+                                                                        </button>
+                                                                    ))
+                                                                }
+
+                                                                <button
+                                                                    onClick={() => setShowNewGroup(true)}
+                                                                    className="w-full p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-left transition-all flex items-center gap-3 hover:border-neutral-400 dark:hover:border-neutral-600"
+                                                                >
+                                                                    <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                                                                        <FolderPlus className="w-4 h-4 text-neutral-500" />
+                                                                    </div>
+                                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Create New Group</p>
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs text-neutral-500">Group Name</Label>
+                                                                    <Input
+                                                                        placeholder="e.g., Frontend, DSA Practice"
+                                                                        value={newGroupName}
+                                                                        onChange={(e) => setNewGroupName(e.target.value)}
+                                                                        className="h-10"
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs text-neutral-500">Icon</Label>
+                                                                    <div className="flex gap-1.5">
+                                                                        {
+                                                                            defaultEmojis.map((emoji) => (
+                                                                                <button
+                                                                                    key={emoji}
+                                                                                    onClick={() => setNewGroupEmoji(emoji)}
+                                                                                    className={cn(
+                                                                                        "w-8 h-8 rounded flex items-center justify-center text-sm transition-all",
+                                                                                        newGroupEmoji === emoji
+                                                                                            ? "bg-neutral-200 dark:bg-neutral-700 ring-2 ring-neutral-400"
+                                                                                            : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                                                                                    )}
+                                                                                >
+                                                                                    {emoji}
+                                                                                </button>
+                                                                            ))
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs text-neutral-500">Color</Label>
+                                                                    <div className="flex gap-1.5">
+                                                                        {
+                                                                            defaultColors.map((color) => (
+                                                                                <button
+                                                                                    key={color}
+                                                                                    onClick={() => setNewGroupColor(color)}
+                                                                                    className={cn(
+                                                                                        "w-8 h-8 rounded transition-all",
+                                                                                        newGroupColor === color && "ring-2 ring-neutral-400 ring-offset-2"
+                                                                                    )}
+                                                                                    style={{ backgroundColor: color }}
+                                                                                />
+                                                                            ))
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex gap-2 pt-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => setShowNewGroup(false)}
+                                                                        className="flex-1"
+                                                                    >
+                                                                        Cancel
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={handleCreateGroup}
+                                                                        disabled={!newGroupName.trim() || creatingGroup}
+                                                                        className="flex-1"
+                                                                    >
+                                                                        {
+                                                                            creatingGroup ? (
+                                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                                            ) : (
+                                                                                'Create Group'
+                                                                            )
+                                                                        }
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+                                        </motion.div>
+                                    </AnimatePresence>
+                                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={prevStep}
+                                            disabled={step === 0}
+                                            className="text-neutral-600"
+                                        >
+                                            <ArrowLeft className="w-4 h-4 mr-1" />
+                                            Back
+                                        </Button>
+                                        <Button
+                                            onClick={nextStep}
+                                            disabled={!canProceed()}
+                                        >
+                                            {
+                                                step === steps.length - 1 ? (
+                                                    <>
+                                                        <Sparkles className="w-4 h-4 mr-1" />
+                                                        Create Goal
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        Next
+                                                        <ArrowRight className="w-4 h-4 ml-1" />
+                                                    </>
+                                                )
+
+
+
+                                            }
+                                        </Button>
+                                    </div>
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
                 </div>
             </SheetContent>

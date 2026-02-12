@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@repo/ui/components/ui/button";
@@ -9,7 +9,6 @@ import {
 	Camera, Edit2, Share2, Settings, MapPin, Briefcase, Calendar,
 	Link as LinkIcon, Mail, Check, Copy
 } from "lucide-react";
-import { cn } from "@repo/ui/lib/utils";
 import toast from "@repo/ui/components/ui/sonner";
 import Link from "next/link";
 
@@ -28,7 +27,6 @@ interface ProfileHeaderProps {
 		currentLevel: number;
 		totalXp: number;
 		userProfile?: {
-			coverImage: string | null;
 			coverGradient: string | null;
 			tagline: string | null;
 			theme: string;
@@ -54,15 +52,6 @@ interface ProfileHeaderProps {
 	onFollowToggle?: () => void;
 }
 
-// Theme gradients
-const THEME_GRADIENTS = {
-	OCEAN_BLUE: "from-blue-600 via-cyan-500 to-teal-400",
-	SUNSET_ORANGE: "from-orange-500 via-amber-500 to-yellow-400",
-	FOREST_GREEN: "from-emerald-600 via-green-500 to-lime-400",
-	PURPLE_DREAM: "from-purple-600 via-violet-500 to-pink-400",
-	DARK_MODE: "from-gray-800 via-gray-700 to-gray-600",
-};
-
 export function ProfileHeader({
 	user,
 	stats,
@@ -74,12 +63,6 @@ export function ProfileHeader({
 	onFollowToggle,
 }: ProfileHeaderProps) {
 	const [copied, setCopied] = useState(false);
-	const fileInputRef = useRef<HTMLInputElement>(null);
-
-	const coverGradient =
-		user.userProfile?.coverGradient ||
-		THEME_GRADIENTS[user.userProfile?.theme as keyof typeof THEME_GRADIENTS] ||
-		THEME_GRADIENTS.OCEAN_BLUE;
 
 	const copyProfileLink = () => {
 		const url = `${window.location.origin}/u/${user.username}`;
@@ -102,40 +85,8 @@ export function ProfileHeader({
 
 	return (
 		<div className="relative max-w-7xl mx-auto">
-			<div
-				className={cn(
-					"relative h-48 md:h-64 lg:h-72 w-full overflow-hidden rounded-t-2xl",
-					!user.userProfile?.coverImage && `bg-gradient-to-r ${coverGradient}`
-				)}
-			>
-				{
-					user.userProfile?.coverImage && (
-						<Image
-							src={user.userProfile.coverImage}
-							alt="Cover"
-							fill
-							className="object-cover"
-							priority
-						/>
-					)
-				}
-				<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-				{
-					isOwnProfile && (
-						<Button
-							size="sm"
-							variant="secondary"
-							className="absolute top-4 right-4 gap-2 opacity-80 hover:opacity-100 transition-opacity"
-							onClick={() => fileInputRef.current?.click()}
-						>
-							<Camera className="w-4 h-4" />
-							Edit Cover
-						</Button>
-					)
-				}
-			</div>
-			<div className="relative px-4 md:px-8 pb-4">
-				<div className="absolute -top-16 md:-top-20 left-4 md:left-8">
+			<div className="relative px-4 md:px-8 pt-8 pb-4">
+				<div className="relative">
 					<motion.div
 						initial={{ scale: 0.8, opacity: 0 }}
 						animate={{ scale: 1, opacity: 1 }}
@@ -157,12 +108,12 @@ export function ProfileHeader({
 							LVL {stats.level}
 						</div>
 						{
-							isOwnProfile && (
+							isOwnProfile && onEditProfile && (
 								<Button
 									size="icon"
 									variant="secondary"
 									className="absolute bottom-0 left-0 w-8 h-8 rounded-full shadow-lg"
-									onClick={() => fileInputRef.current?.click()}
+									onClick={onEditProfile}
 								>
 									<Camera className="w-4 h-4" />
 								</Button>
@@ -324,19 +275,6 @@ export function ProfileHeader({
 					</div>
 				</div>
 			</div>
-			<input
-				ref={fileInputRef}
-				type="file"
-				accept="image/*"
-				className="hidden"
-				onChange={(e) => {
-					// Handle image upload
-					const file = e.target.files?.[0];
-					if (file) {
-						toast.info("Image upload coming soon!");
-					}
-				}}
-			/>
 		</div>
 	);
 }

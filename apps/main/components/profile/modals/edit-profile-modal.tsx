@@ -47,7 +47,6 @@ interface EditProfileModalProps {
         occupation: string | null;
         website: string | null;
         userProfile?: {
-            coverImage: string | null;
             coverGradient: string | null;
             tagline: string | null;
             theme: string;

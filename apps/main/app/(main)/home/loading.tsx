@@ -1,5 +1,5 @@
 import {
-    GreetingHeaderSkeleton, ContinueLearningSkeleton, WeeklyGoalsSkeleton,
+    GreetingHeaderSkeleton, ContinueLearningSkeleton, PathfinderGoalsSkeleton,
     QuickActionsSkeleton, ActivityCalendarSkeleton, AchievementsCardSkeleton,
     LeaderboardPositionSkeleton, FeatureDiscoverySkeleton, RecentActivitySkeleton,
     ShareCreditsSkeleton, ReferralsSkeleton, CommunityHighlightsSkeleton
@@ -15,7 +15,7 @@ export default function HomeLoading() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                     <div className="lg:col-span-3 space-y-6">
-                        <WeeklyGoalsSkeleton />
+                        <PathfinderGoalsSkeleton />
                         <QuickActionsSkeleton />
                     </div>
                     <div className="lg:col-span-2 space-y-6">

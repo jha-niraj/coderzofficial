@@ -38,11 +38,11 @@ export interface LaunchpadProduct {
     category: LaunchpadCategory | string
     tags: string[]
     techStack: string[]
-    features: string[]
+    features?: string[] | null
     websiteUrl: string | null
     demoUrl: string | null
     githubUrl: string | null
-    twitterUrl: string | null
+    twitterUrl?: string | null
     viewCount: number
     likeCount: number
     commentCount: number

@@ -8,7 +8,7 @@ import {
 // Components
 import GreetingHeader from "./_components/greeting-header";
 import ContinueLearning from "./_components/continue-learning";
-import WeeklyGoals from "./_components/weekly-goals";
+import PathfinderGoalsCard from "./_components/pathfinder-goals-card";
 import QuickActions from "./_components/quick-actions";
 import ActivityCalendar from "./_components/activity-calendar";
 import AchievementsCard from "./_components/achievements-card";
@@ -21,7 +21,7 @@ import CommunityHighlights from "./_components/community-highlights";
 
 import {
 	GreetingHeaderSkeleton, ContinueLearningSkeleton,
-	WeeklyGoalsSkeleton, QuickActionsSkeleton,
+	PathfinderGoalsSkeleton, QuickActionsSkeleton,
 	ActivityCalendarSkeleton, AchievementsCardSkeleton,
 	LeaderboardPositionSkeleton, FeatureDiscoverySkeleton,
 	RecentActivitySkeleton, ShareCreditsSkeleton,
@@ -57,8 +57,7 @@ export default async function HomePage() {
 		user,
 		inProgressProjects,
 		recentStudios,
-		weeklyGoals,
-		weeklyGoalProgress,
+		pathfinderGoals,
 		recentActivity,
 		activityCalendar,
 		achievements,
@@ -93,11 +92,8 @@ export default async function HomePage() {
 				<div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
 					<div className="md:col-span-7 lg:col-span-8 space-y-6 flex flex-col h-full">
 
-						<Suspense fallback={<WeeklyGoalsSkeleton />}>
-							<WeeklyGoals
-								goals={weeklyGoals}
-								progress={weeklyGoalProgress}
-							/>
+						<Suspense fallback={<PathfinderGoalsSkeleton />}>
+							<PathfinderGoalsCard goals={pathfinderGoals} />
 						</Suspense>
 
 						<Suspense fallback={<ActivityCalendarSkeleton />}>

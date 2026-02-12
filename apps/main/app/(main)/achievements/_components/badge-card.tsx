@@ -1,7 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Lock, Check, Gift, Share2, Pin } from 'lucide-react'
+import {
+    Lock, Check, Gift, Share2, Pin
+} from 'lucide-react'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { cn } from '@repo/ui/lib/utils'
 import type { BadgeWithProgress } from '@/actions/(main)/achievements/achievements.action'
@@ -50,57 +52,59 @@ export function BadgeCard({ badge, onClick, onShare, compact = false }: BadgeCar
                 compact && "p-3"
             )}
         >
-            {/* Pinned indicator */}
-            {badge.isPinned && (
-                <div className="absolute top-2 right-2">
-                    <Pin className="w-3 h-3 text-amber-500 fill-amber-500" />
-                </div>
-            )}
-
-            {/* Status indicator */}
-            {isReady && (
-                <div className="absolute -top-1 -right-1">
-                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center animate-pulse">
-                        <Gift className="w-3 h-3 text-white" />
+            {
+                badge.isPinned && (
+                    <div className="absolute top-2 right-2">
+                        <Pin className="w-3 h-3 text-amber-500 fill-amber-500" />
                     </div>
-                </div>
-            )}
-            {isClaimed && (
-                <div className="absolute -top-1 -right-1">
-                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                    </div>
-                </div>
-            )}
+                )
+            }
 
-            {/* Badge Icon */}
+            {
+                isReady && (
+                    <div className="absolute -top-1 -right-1">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center animate-pulse">
+                            <Gift className="w-3 h-3 text-white" />
+                        </div>
+                    </div>
+                )
+            }
+            {
+                isClaimed && (
+                    <div className="absolute -top-1 -right-1">
+                        <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                        </div>
+                    </div>
+                )
+            }
+
             <div className="flex flex-col items-center">
-                <div 
+                <div
                     className={cn(
                         "relative w-14 h-14 rounded-xl flex items-center justify-center text-2xl transition-transform",
                         compact && "w-12 h-12 text-xl",
                         isLocked && "grayscale"
                     )}
-                    style={{ 
+                    style={{
                         background: isLocked ? '#e5e5e5' : (badge.bgGradient || badge.color),
                     }}
                 >
-                    {isLocked ? (
-                        <Lock className="w-5 h-5 text-neutral-400" />
-                    ) : (
-                        badge.icon
-                    )}
+                    {
+                        isLocked ? (
+                            <Lock className="w-5 h-5 text-neutral-400" />
+                        ) : (
+                            badge.icon
+                        )
+                    }
                 </div>
 
-                {/* Name */}
                 <h4 className={cn(
                     "mt-2 text-sm font-medium text-neutral-900 dark:text-white text-center line-clamp-2",
                     compact && "text-xs mt-1.5"
                 )}>
                     {badge.name}
                 </h4>
-
-                {/* Rarity */}
                 <span className={cn(
                     "mt-1 text-xs capitalize",
                     badge.rarity === 'COMMON' && "text-neutral-500",
@@ -112,39 +116,46 @@ export function BadgeCard({ badge, onClick, onShare, compact = false }: BadgeCar
                     {badge.rarity.toLowerCase()}
                 </span>
 
-                {/* Progress bar for in-progress badges */}
-                {isInProgress && badge.progressPercent > 0 && !compact && (
-                    <div className="w-full mt-2">
-                        <Progress value={badge.progressPercent} className="h-1.5" />
-                        <p className="text-xs text-neutral-500 text-center mt-1">{badge.progressPercent}%</p>
-                    </div>
-                )}
+                {
+                    isInProgress && badge.progressPercent > 0 && !compact && (
+                        <div className="w-full mt-2">
+                            <Progress value={badge.progressPercent} className="h-1.5" />
+                            <p className="text-xs text-neutral-500 text-center mt-1">{badge.progressPercent}%</p>
+                        </div>
+                    )
+                }
 
-                {/* Rewards preview */}
-                {!compact && (
-                    <div className="flex items-center gap-2 mt-2">
-                        {badge.xpReward > 0 && (
-                            <span className="text-xs text-blue-500 font-medium">+{badge.xpReward} XP</span>
-                        )}
-                        {badge.creditsReward > 0 && (
-                            <span className="text-xs text-purple-500 font-medium">+{badge.creditsReward} 💎</span>
-                        )}
-                    </div>
-                )}
+                {
+                    !compact && (
+                        <div className="flex items-center gap-2 mt-2">
+                            {
+                                badge.xpReward > 0 && (
+                                    <span className="text-xs text-blue-500 font-medium">+{badge.xpReward} XP</span>
+                                )
+                            }
+                            {
+                                badge.creditsReward > 0 && (
+                                    <span className="text-xs text-purple-500 font-medium">+{badge.creditsReward} 💎</span>
+                                )
+                            }
+                        </div>
+                    )
+                }
 
-                {/* Share button for claimed badges */}
-                {isClaimed && onShare && !compact && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onShare()
-                        }}
-                        className="mt-2 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1"
-                    >
-                        <Share2 className="w-3 h-3" />
-                        Share
-                    </button>
-                )}
+                {
+                    isClaimed && onShare && !compact && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onShare()
+                            }}
+                            className="mt-2 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 flex items-center gap-1"
+                        >
+                            <Share2 className="w-3 h-3" />
+                            Share
+                        </button>
+                    )
+                }
             </div>
         </motion.div>
     )

@@ -1,6 +1,8 @@
 import { auth } from '@repo/auth'
 import { redirect } from 'next/navigation'
-import { getUserAchievements } from '@/actions/(main)/achievements/achievements.action'
+import { 
+    getUserAchievements 
+} from '@/actions/(main)/achievements/achievements.action'
 import { AchievementsContent } from './_components/achievements-content'
 
 export const metadata = {

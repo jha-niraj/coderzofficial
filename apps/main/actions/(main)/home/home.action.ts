@@ -3,7 +3,6 @@
 import prisma from "@repo/prisma";
 import { auth } from '@repo/auth';
 import { revalidatePath } from "next/cache";
-import { GoalType } from "@repo/prisma/client";
 
 // Get user's home page data
 export async function getHomeData() {
@@ -20,7 +19,7 @@ export async function getHomeData() {
             user,
             inProgressProjects,
             recentStudios,
-            weeklyGoals,
+            pathfinderGoals,
             recentActivity,
             activityCalendar,
             achievements,
@@ -98,15 +97,23 @@ export async function getHomeData() {
                 take: 6,
             }),
 
-            // Weekly goals
-            prisma.weeklyGoal.findMany({
-                where: {
-                    userId,
-                    createdAt: {
-                        gte: getWeekStart(),
-                    },
+            // Pathfinder goals (replaces weekly goals)
+            prisma.pathfinderGoal.findMany({
+                where: { userId },
+                orderBy: { createdAt: "desc" },
+                take: 10,
+                select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                    category: true,
+                    status: true,
+                    progressPercent: true,
+                    estimatedDays: true,
+                    duration: true,
+                    totalSubGoals: true,
+                    completedSubGoals: true,
                 },
-                orderBy: { createdAt: "asc" },
             }),
 
             // Recent activity from ActivityEntry (limit 10)
@@ -132,11 +139,23 @@ export async function getHomeData() {
                 orderBy: { date: "asc" },
             }),
 
-            // Recent achievements (limit 5)
-            prisma.userAchievement.findMany({
-                where: { userId },
-                orderBy: { unlockedAt: "desc" },
+            // Recent achievements from new badges system (limit 5)
+            prisma.userBadge.findMany({
+                where: { userId, status: "CLAIMED" },
+                orderBy: { claimedAt: "desc" },
                 take: 5,
+                include: {
+                    badge: {
+                        select: {
+                            id: true,
+                            name: true,
+                            description: true,
+                            icon: true,
+                            xpReward: true,
+                            rarity: true,
+                        },
+                    },
+                },
             }),
 
             // Leaderboard position
@@ -163,8 +182,28 @@ export async function getHomeData() {
             getReferralStats(userId),
         ]);
 
-        // Calculate weekly goal progress
-        const weeklyGoalProgress = calculateWeeklyProgress(weeklyGoals);
+        // Transform pathfinder goals for home
+        const pathfinderGoalsForHome = pathfinderGoals.map((g) => ({
+            id: g.id,
+            slug: g.slug,
+            title: g.title,
+            category: g.category,
+            status: g.status,
+            progressPercent: g.progressPercent,
+            estimatedDays: g.estimatedDays,
+            duration: g.duration,
+            totalSubGoals: g.totalSubGoals,
+            completedSubGoals: g.completedSubGoals,
+            lastActivityAt: null as Date | null,
+            streakDays: 0,
+            overview: null as string | null,
+            createdAt: new Date(),
+            startedAt: null as Date | null,
+            completedAt: null as Date | null,
+            groupId: null as string | null,
+            studioId: null as string | null,
+            focusAreas: [] as string[],
+        }));
 
         // Transform data for client
         const transformedUser = user
@@ -192,18 +231,18 @@ export async function getHomeData() {
             createdAt: activity.createdAt,
         }));
 
-        // Transform achievements (UserAchievement has the fields directly)
-        const transformedAchievements = achievements.map((achievement) => ({
-            id: achievement.id,
+        // Transform achievements from new badges system
+        const transformedAchievementsFromBadges = achievements.map((ub) => ({
+            id: ub.id,
             achievement: {
-                id: achievement.id,
-                name: achievement.title,
-                description: achievement.description,
-                icon: achievement.badgeIcon,
-                xpReward: achievement.creditsAwarded,
-                rarity: achievement.achievementType,
+                id: ub.badge.id,
+                name: ub.badge.name,
+                description: ub.badge.description,
+                icon: ub.badge.icon,
+                xpReward: ub.badge.xpReward,
+                rarity: ub.badge.rarity,
             },
-            unlockedAt: achievement.unlockedAt,
+            unlockedAt: ub.claimedAt ?? ub.completedAt ?? ub.unlockedAt ?? new Date(),
         }));
 
         return {
@@ -212,11 +251,10 @@ export async function getHomeData() {
                 user: transformedUser,
                 inProgressProjects,
                 recentStudios,
-                weeklyGoals,
-                weeklyGoalProgress,
+                pathfinderGoals: pathfinderGoalsForHome,
                 recentActivity: transformedActivity,
                 activityCalendar: transformedCalendar,
-                achievements: transformedAchievements,
+                achievements: transformedAchievementsFromBadges,
                 leaderboardRank,
                 recentTransfers,
                 referralStats,
@@ -226,27 +264,6 @@ export async function getHomeData() {
         console.error("Error fetching home data:", error);
         return { success: false, error: "Failed to fetch home data" };
     }
-}
-
-// Get week start date (Monday)
-function getWeekStart(): Date {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const weekStart = new Date(now.setDate(diff));
-    weekStart.setHours(0, 0, 0, 0);
-    return weekStart;
-}
-
-// Calculate weekly progress
-function calculateWeeklyProgress(goals: any[]) {
-    if (!goals.length) return { completed: 0, total: 0, percentage: 0 };
-
-    const completed = goals.filter((g) => g.completed).length;
-    const total = goals.length;
-    const percentage = Math.round((completed / total) * 100);
-
-    return { completed, total, percentage };
 }
 
 // Get leaderboard position
@@ -300,68 +317,6 @@ async function getReferralStats(userId: string) {
         };
     } catch {
         return { totalReferrals: 0, creditsEarned: 0, recentReferrals: [] };
-    }
-}
-
-// Add weekly goal
-export async function addWeeklyGoal(data: {
-    title: string;
-    category?: string;
-    type?: GoalType;
-}) {
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Not authenticated" };
-        }
-
-        const goal = await prisma.weeklyGoal.create({
-            data: {
-                userId: session.user.id,
-                title: data.title,
-                category: data.category || "general",
-                type: data.type || GoalType.CUSTOM,
-                completed: false,
-            },
-        });
-
-        revalidatePath("/home");
-        return { success: true, goal };
-    } catch (error) {
-        console.error("Error adding weekly goal:", error);
-        return { success: false, error: "Failed to add goal" };
-    }
-}
-
-// Toggle weekly goal completion
-export async function toggleWeeklyGoal(goalId: string) {
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Not authenticated" };
-        }
-
-        const goal = await prisma.weeklyGoal.findUnique({
-            where: { id: goalId },
-        });
-
-        if (!goal || goal.userId !== session.user.id) {
-            return { success: false, error: "Goal not found" };
-        }
-
-        const updatedGoal = await prisma.weeklyGoal.update({
-            where: { id: goalId },
-            data: {
-                completed: !goal.completed,
-                completedAt: !goal.completed ? new Date() : null,
-            },
-        });
-
-        revalidatePath("/home");
-        return { success: true, goal: updatedGoal };
-    } catch (error) {
-        console.error("Error toggling goal:", error);
-        return { success: false, error: "Failed to update goal" };
     }
 }
 

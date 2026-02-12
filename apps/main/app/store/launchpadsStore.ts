@@ -1,37 +1,7 @@
 "use client";
 
 import { create } from 'zustand';
-
-// ==========================================
-// TYPES
-// ==========================================
-
-export interface LaunchpadProduct {
-    id: string;
-    slug: string;
-    name: string;
-    tagline: string;
-    description: string;
-    logo: string | null;
-    coverImage: string | null;
-    category: string;
-    tags: string[];
-    techStack: string[];
-    websiteUrl: string | null;
-    demoUrl: string | null;
-    githubUrl: string | null;
-    viewCount: number;
-    likeCount: number;
-    commentCount: number;
-    isFeatured: boolean;
-    type: string;
-    createdBy?: {
-        id: string;
-        name: string | null;
-        username: string | null;
-        image: string | null;
-    } | null;
-}
+import type { LaunchpadProduct } from '@/types/launchpads';
 
 // ==========================================
 // STORE STATE

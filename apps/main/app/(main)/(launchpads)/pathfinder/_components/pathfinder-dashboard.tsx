@@ -7,9 +7,8 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
-    Target, Plus, CheckCircle2, Trophy, Flame, FolderOpen, 
-    MoreVertical, MoveRight, BookOpen, Code2, Brain, 
-    BarChart3, Zap, ChevronRight,
+    Target, Plus, CheckCircle2, Trophy, Flame, FolderOpen, MoreVertical,
+    MoveRight, BookOpen, Code2, Brain, BarChart3, Zap, ChevronRight,
     Play, PauseCircle, CheckCircle, XCircle
 } from 'lucide-react'
 import Link from 'next/link'
@@ -24,12 +23,19 @@ import {
     Collapsible, CollapsibleContent, CollapsibleTrigger
 } from '@repo/ui/components/ui/collapsible'
 import { cn } from '@repo/ui/lib/utils'
-import { usePathfinderStore, type PathfinderGoal, type PathfinderGroup } from '@/app/store/pathfinderStore'
+import {
+    usePathfinderStore, type PathfinderGoal, type PathfinderGroup
+} from '@/app/store/pathfinderStore'
 import { PATHFINDER_CATEGORIES } from '@/types/pathfinder'
 
 // Use store types for consistency
 type Goal = PathfinderGoal
 type Group = PathfinderGroup
+
+interface PathfinderDashboardProps {
+    initialGoals: PathfinderGoal[]
+    initialGroups: PathfinderGroup[]
+}
 
 const categoryConfig = PATHFINDER_CATEGORIES
 
@@ -53,7 +59,7 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
         ? Math.round((goal.completedSubGoals / goal.totalSubGoals) * 100)
         : 0
 
-    const lastActivity = goal.lastActivityAt 
+    const lastActivity = goal.lastActivityAt
         ? new Date(goal.lastActivityAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         : null
 
@@ -65,7 +71,6 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
         >
             <Link href={`/pathfinder/${goal.slug}`}>
                 <div className="p-4 rounded-xl border border-neutral-200/60 dark:border-neutral-800/60 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all cursor-pointer bg-white dark:bg-neutral-900/50 hover:shadow-sm">
-                    {/* Header */}
                     <div className="flex items-start gap-3 mb-3">
                         <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0", category.bg)}>
                             {category.emoji}
@@ -85,8 +90,6 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
                             </div>
                         </div>
                     </div>
-
-                    {/* Stats Row */}
                     <div className="flex items-center gap-3 text-[11px] text-neutral-500 mb-3">
                         <div className="flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3 text-emerald-500" />
@@ -100,18 +103,20 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
                             <Code2 className="w-3 h-3 text-blue-500" />
                             <span>{goal.totalCodingSolved}</span>
                         </div>
-                        {goal.streakDays > 0 && (
-                            <div className="flex items-center gap-1 text-orange-500">
-                                <Flame className="w-3 h-3" />
-                                <span>{goal.streakDays}d</span>
-                            </div>
-                        )}
-                        {lastActivity && (
-                            <span className="text-neutral-400 ml-auto text-[10px]">{lastActivity}</span>
-                        )}
+                        {
+                            goal.streakDays > 0 && (
+                                <div className="flex items-center gap-1 text-orange-500">
+                                    <Flame className="w-3 h-3" />
+                                    <span>{goal.streakDays}d</span>
+                                </div>
+                            )
+                        }
+                        {
+                            lastActivity && (
+                                <span className="text-neutral-400 ml-auto text-[10px]">{lastActivity}</span>
+                            )
+                        }
                     </div>
-
-                    {/* Progress Bar */}
                     <div className="relative">
                         <div className="flex items-center justify-between text-[10px] text-neutral-400 mb-1">
                             <span>Progress</span>
@@ -119,8 +124,6 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
                         </div>
                         <Progress value={progressPercent} className="h-1" />
                     </div>
-
-                    {/* Quick Actions */}
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800/50">
                         <Link href={`/pathfinder/${goal.slug}/practice`} className="flex-1" onClick={(e) => e.stopPropagation()}>
                             <Button variant="ghost" size="sm" className="w-full text-[11px] h-7 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">
@@ -128,19 +131,19 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
                                 Practice
                             </Button>
                         </Link>
-                        {goal.studioId && (
-                            <Link href={`/studio/${goal.studioId}`} className="flex-1" onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="sm" className="w-full text-[11px] h-7 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">
-                                    <Code2 className="w-3 h-3 mr-1" />
-                                    Studio
-                                </Button>
-                            </Link>
-                        )}
+                        {
+                            goal.studioId && (
+                                <Link href={`/studio/${goal.studioId}`} className="flex-1" onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" size="sm" className="w-full text-[11px] h-7 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">
+                                        <Code2 className="w-3 h-3 mr-1" />
+                                        Studio
+                                    </Button>
+                                </Link>
+                            )
+                        }
                     </div>
                 </div>
             </Link>
-
-            {/* Menu Button */}
             <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
@@ -196,18 +199,22 @@ function GroupSection({
                 )} />
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-2 space-y-2">
-                {goals.map((goal) => (
-                    <GoalCard
-                        key={goal.id}
-                        goal={goal}
-                        onAssign={() => onAssignGoal(goal.id)}
-                    />
-                ))}
-                {goals.length === 0 && (
-                    <p className="text-xs text-neutral-400 py-3 text-center">
-                        No goals in this group
-                    </p>
-                )}
+                {
+                    goals.map((goal) => (
+                        <GoalCard
+                            key={goal.id}
+                            goal={goal}
+                            onAssign={() => onAssignGoal(goal.id)}
+                        />
+                    ))
+                }
+                {
+                    goals.length === 0 && (
+                        <p className="text-xs text-neutral-400 py-3 text-center">
+                            No goals in this group
+                        </p>
+                    )
+                }
             </CollapsibleContent>
         </Collapsible>
     )
@@ -237,15 +244,17 @@ function StatsSection({ goals, groups: _groups }: { goals: Goal[]; groups: Group
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {stats.map((stat) => (
-                <div key={stat.label} className={cn("p-3 rounded-xl", stat.bg)}>
-                    <div className="flex items-center gap-2 mb-1">
-                        <div className={stat.color}>{stat.icon}</div>
-                        <span className="text-[11px] text-neutral-500">{stat.label}</span>
+            {
+                stats.map((stat) => (
+                    <div key={stat.label} className={cn("p-3 rounded-xl", stat.bg)}>
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className={stat.color}>{stat.icon}</div>
+                            <span className="text-[11px] text-neutral-500">{stat.label}</span>
+                        </div>
+                        <div className={cn("text-lg font-semibold", stat.color)}>{stat.value}</div>
                     </div>
-                    <div className={cn("text-lg font-semibold", stat.color)}>{stat.value}</div>
-                </div>
-            ))}
+                ))
+            }
         </div>
     )
 }
@@ -266,27 +275,31 @@ function RecentActivity({ goals }: { goals: Goal[] }) {
         <div className="mt-6">
             <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Recent Activity</h3>
             <div className="space-y-2">
-                {recentGoals.map((goal) => {
-                    const category = categoryConfig[goal.category]
-                    return (
-                        <Link key={goal.id} href={`/pathfinder/${goal.slug}`}>
-                            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors">
-                                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm", category.bg)}>
-                                    {category.emoji}
+                {
+                    recentGoals.map((goal) => {
+                        const category = categoryConfig[goal.category]
+                        return (
+                            <Link key={goal.id} href={`/pathfinder/${goal.slug}`}>
+                                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors">
+                                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm", category.bg)}>
+                                        {category.emoji}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-neutral-700 dark:text-neutral-300 truncate">{goal.title}</p>
+                                        <p className="text-[10px] text-neutral-400">
+                                            {
+                                                goal.lastActivityAt && new Date(goal.lastActivityAt).toLocaleDateString('en-US', {
+                                                    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+                                                })
+                                            }
+                                        </p>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-neutral-400" />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-neutral-700 dark:text-neutral-300 truncate">{goal.title}</p>
-                                    <p className="text-[10px] text-neutral-400">
-                                        {goal.lastActivityAt && new Date(goal.lastActivityAt).toLocaleDateString('en-US', { 
-                                            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' 
-                                        })}
-                                    </p>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-neutral-400" />
-                            </div>
-                        </Link>
-                    )
-                })}
+                            </Link>
+                        )
+                    })
+                }
             </div>
         </div>
     )
@@ -324,11 +337,11 @@ function EmptyState({ onCreateGoal }: { onCreateGoal: () => void }) {
 // QUICK ACTIONS PANEL
 // ================================================================================
 
-function QuickActions({ 
-    onCreateGoal, 
+function QuickActions({
+    onCreateGoal,
     onCreateGroup,
-    hasGoals: _hasGoals 
-}: { 
+    hasGoals: _hasGoals
+}: {
     onCreateGoal: () => void
     onCreateGroup: () => void
     hasGoals: boolean
@@ -340,21 +353,23 @@ function QuickActions({
 
     return (
         <div className="flex items-center gap-2">
-            {actions.map((action) => (
-                <Button
-                    key={action.label}
-                    variant={action.primary ? "default" : "outline"}
-                    size="sm"
-                    onClick={action.onClick}
-                    className={cn(
-                        "h-8 text-xs",
-                        action.primary && "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
-                    )}
-                >
-                    {action.icon}
-                    <span className="ml-1.5">{action.label}</span>
-                </Button>
-            ))}
+            {
+                actions.map((action) => (
+                    <Button
+                        key={action.label}
+                        variant={action.primary ? "default" : "outline"}
+                        size="sm"
+                        onClick={action.onClick}
+                        className={cn(
+                            "h-8 text-xs",
+                            action.primary && "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+                        )}
+                    >
+                        {action.icon}
+                        <span className="ml-1.5">{action.label}</span>
+                    </Button>
+                ))
+            }
         </div>
     )
 }
@@ -365,7 +380,7 @@ function QuickActions({
 
 export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderDashboardProps) {
     // Initialize store with props
-    const { 
+    const {
         goals, groups, initialize,
         setCreateSheetOpen, setCreateGroupSheetOpen, setAssignSheetOpen,
         createSheetOpen, createGroupSheetOpen, assignSheetOpen,
@@ -414,7 +429,6 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
 
     return (
         <div className="h-screen flex flex-col bg-neutral-50/50 dark:bg-neutral-950">
-            {/* Header */}
             <div className="shrink-0 px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900/80 backdrop-blur-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -426,125 +440,133 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
                             <p className="text-xs text-neutral-500">Track your learning goals</p>
                         </div>
                     </div>
-                    <QuickActions 
-                        onCreateGoal={() => setCreateSheetOpen(true)} 
+                    <QuickActions
+                        onCreateGoal={() => setCreateSheetOpen(true)}
                         onCreateGroup={() => setCreateGroupSheetOpen(true)}
                         hasGoals={displayGoals.length > 0}
                     />
                 </div>
             </div>
-
-            {/* Main Content */}
             <div className="flex-1 overflow-hidden">
                 <div className="h-full max-w-7xl mx-auto flex">
-                    {/* Left - Goals List */}
                     <div className="w-full lg:w-[400px] xl:w-[440px] border-r border-neutral-200/60 dark:border-neutral-800/60 flex flex-col bg-white dark:bg-neutral-900/30">
                         <ScrollArea className="flex-1">
                             <div className="p-4">
                                 <AnimatePresence mode="wait">
-                                    {displayGoals.length === 0 ? (
-                                        <EmptyState onCreateGoal={() => setCreateSheetOpen(true)} />
-                                    ) : (
-                                        <div>
-                                            {/* Groups with goals */}
-                                            {groupedGoals.filter(g => g.goals.length > 0).map(({ group, goals: groupGoals }) => (
-                                                <GroupSection
-                                                    key={group.id}
-                                                    group={group}
-                                                    goals={groupGoals}
-                                                    onAssignGoal={handleAssignGoal}
-                                                />
-                                            ))}
+                                    {
+                                        displayGoals.length === 0 ? (
+                                            <EmptyState onCreateGoal={() => setCreateSheetOpen(true)} />
+                                        ) : (
+                                            <div>
+                                                {
+                                                    groupedGoals.filter(g => g.goals.length > 0).map(({ group, goals: groupGoals }) => (
+                                                        <GroupSection
+                                                            key={group.id}
+                                                            group={group}
+                                                            goals={groupGoals}
+                                                            onAssignGoal={handleAssignGoal}
+                                                        />
+                                                    ))
+                                                }
 
-                                            {/* Empty groups */}
-                                            {groupedGoals.filter(g => g.goals.length === 0).length > 0 && (
-                                                <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/50">
-                                                    <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2 px-2">Empty Groups</p>
-                                                    {groupedGoals.filter(g => g.goals.length === 0).map(({ group }) => (
-                                                        <div key={group.id} className="flex items-center gap-2 px-2 py-1.5 text-xs text-neutral-400">
-                                                            <span style={{ backgroundColor: `${group.color || '#7c3aed'}20` }} className="w-4 h-4 rounded flex items-center justify-center text-[10px]">
-                                                                {group.emoji || '📁'}
-                                                            </span>
-                                                            {group.name}
+                                                {
+                                                    groupedGoals.filter(g => g.goals.length === 0).length > 0 && (
+                                                        <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/50">
+                                                            <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2 px-2">Empty Groups</p>
+                                                            {
+                                                                groupedGoals.filter(g => g.goals.length === 0).map(({ group }) => (
+                                                                    <div key={group.id} className="flex items-center gap-2 px-2 py-1.5 text-xs text-neutral-400">
+                                                                        <span style={{ backgroundColor: `${group.color || '#7c3aed'}20` }} className="w-4 h-4 rounded flex items-center justify-center text-[10px]">
+                                                                            {group.emoji || '📁'}
+                                                                        </span>
+                                                                        {group.name}
+                                                                    </div>
+                                                                ))
+                                                            }
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                    )
+                                                }
 
-                                            {/* Ungrouped Goals */}
-                                            {ungroupedGoals.length > 0 && (
-                                                <div className={cn(displayGroups.length > 0 && "mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/50")}>
-                                                    {displayGroups.length > 0 && (
-                                                        <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2 px-2">
-                                                            Ungrouped ({ungroupedGoals.length})
-                                                        </p>
-                                                    )}
-                                                    <div className="space-y-2">
-                                                        {ungroupedGoals.map((goal) => (
-                                                            <GoalCard
-                                                                key={goal.id}
-                                                                goal={goal}
-                                                                onAssign={() => handleAssignGoal(goal.id)}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                                {
+                                                    ungroupedGoals.length > 0 && (
+                                                        <div className={cn(displayGroups.length > 0 && "mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/50")}>
+                                                            {
+                                                                displayGroups.length > 0 && (
+                                                                    <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-2 px-2">
+                                                                        Ungrouped ({ungroupedGoals.length})
+                                                                    </p>
+                                                                )
+                                                            }
+                                                            <div className="space-y-2">
+                                                                {
+                                                                    ungroupedGoals.map((goal) => (
+                                                                        <GoalCard
+                                                                            key={goal.id}
+                                                                            goal={goal}
+                                                                            onAssign={() => handleAssignGoal(goal.id)}
+                                                                        />
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                            </div>
+                                        )
+                                    }
                                 </AnimatePresence>
                             </div>
                         </ScrollArea>
                     </div>
-
-                    {/* Right - Stats & Activity */}
                     <div className="hidden lg:flex flex-1 flex-col">
                         <ScrollArea className="flex-1">
                             <div className="p-6">
-                                {displayGoals.length > 0 ? (
-                                    <>
-                                        <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Overview</h2>
-                                        <StatsSection goals={displayGoals} groups={displayGroups} />
-                                        <RecentActivity goals={displayGoals} />
-                                        
-                                        {/* Categories breakdown */}
-                                        <div className="mt-6">
-                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">By Category</h3>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {Object.entries(
-                                                    displayGoals.reduce((acc, g) => {
-                                                        acc[g.category] = (acc[g.category] || 0) + 1
-                                                        return acc
-                                                    }, {} as Record<string, number>)
-                                                ).map(([cat, count]) => {
-                                                    const config = categoryConfig[cat as PathfinderCategory]
-                                                    return (
-                                                        <div key={cat} className={cn("flex items-center gap-2 p-2 rounded-lg", config.bg)}>
-                                                            <span>{config.emoji}</span>
-                                                            <span className="text-xs text-neutral-600 dark:text-neutral-400 flex-1 capitalize">
-                                                                {cat.toLowerCase().replace('_', ' ')}
-                                                            </span>
-                                                            <span className={cn("text-xs font-medium", config.color)}>{count}</span>
-                                                        </div>
-                                                    )
-                                                })}
+                                {
+                                    displayGoals.length > 0 ? (
+                                        <>
+                                            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Overview</h2>
+                                            <StatsSection goals={displayGoals} groups={displayGroups} />
+                                            <RecentActivity goals={displayGoals} />
+
+                                            <div className="mt-6">
+                                                <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">By Category</h3>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {
+                                                        Object.entries(
+                                                            displayGoals.reduce((acc, g) => {
+                                                                acc[g.category] = (acc[g.category] || 0) + 1
+                                                                return acc
+                                                            }, {} as Record<string, number>)
+                                                        ).map(([cat, count]) => {
+                                                            const config = categoryConfig[cat as PathfinderCategory]
+                                                            return (
+                                                                <div key={cat} className={cn("flex items-center gap-2 p-2 rounded-lg", config.bg)}>
+                                                                    <span>{config.emoji}</span>
+                                                                    <span className="text-xs text-neutral-600 dark:text-neutral-400 flex-1 capitalize">
+                                                                        {cat.toLowerCase().replace('_', ' ')}
+                                                                    </span>
+                                                                    <span className={cn("text-xs font-medium", config.color)}>{count}</span>
+                                                                </div>
+                                                            )
+                                                        })
+                                                    }
+                                                </div>
                                             </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                                            <BarChart3 className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mb-4" />
+                                            <h3 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">No stats yet</h3>
+                                            <p className="text-xs text-neutral-400">Create your first goal to see stats here</p>
                                         </div>
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                                        <BarChart3 className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mb-4" />
-                                        <h3 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">No stats yet</h3>
-                                        <p className="text-xs text-neutral-400">Create your first goal to see stats here</p>
-                                    </div>
-                                )}
+                                    )
+                                }
                             </div>
                         </ScrollArea>
                     </div>
                 </div>
             </div>
 
-            {/* Sheets */}
             <CreateGoalSheet
                 open={createSheetOpen}
                 onOpenChange={setCreateSheetOpen}

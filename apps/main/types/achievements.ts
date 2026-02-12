@@ -72,6 +72,29 @@ export interface BadgeWithProgress extends Badge {
     isPinned: boolean
 }
 
+/** Shape returned by getAchievements action (subset of BadgeWithProgress) */
+export interface AchievementBadgeWithProgress {
+    id: string
+    slug: string
+    name: string
+    description: string
+    icon: string
+    color: string
+    bgGradient: string | null
+    category: string
+    rarity: string
+    tier: number
+    requirements: BadgeRequirements
+    xpReward: number
+    creditsReward: number
+    isLimited: boolean
+    status: AchievementStatus
+    progress: BadgeProgress | null
+    progressPercent: number
+    claimedAt: Date | null
+    isPinned: boolean
+}
+
 export interface BadgeProgress {
     current: number
     target?: number
@@ -150,6 +173,9 @@ export interface LevelPerks {
     features?: string[]
 }
 
+/** Shape returned by getAchievements (perks as JsonValue from Prisma) */
+export type AchievementLevel = Omit<Level, 'perks'> & { perks?: LevelPerks | null | unknown }
+
 export interface LevelInfo {
     level: number
     title: string
@@ -224,6 +250,14 @@ export interface SocialConnection {
     lastUsedAt: Date | null
 }
 
+/** Minimal shape returned by getAchievements (provider info only) */
+export interface SocialConnectionSummary {
+    provider: SocialProvider
+    accountName: string | null
+    accountHandle: string | null
+    accountImage: string | null
+}
+
 export interface SocialShare {
     id: string
     provider: SocialProvider
@@ -267,11 +301,11 @@ export interface AchievementNotification {
 // =========================================
 
 export interface AchievementsContentProps {
-    badges: BadgeWithProgress[]
+    badges: AchievementBadgeWithProgress[]
     stats: AchievementStats
     levelInfo: LevelInfo
-    socialConnections: SocialConnection[]
-    levels: Level[]
+    socialConnections: SocialConnectionSummary[]
+    levels: AchievementLevel[]
 }
 
 export interface BadgeCardProps {

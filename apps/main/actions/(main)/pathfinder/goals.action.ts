@@ -17,6 +17,8 @@ export interface CreateGoalInput {
     level: PathfinderLevel
     focusAreas: string[]
     targetDate?: Date
+    duration?: 'ONE_WEEK' | 'FORTNIGHT' | 'ONE_MONTH' | 'TWO_MONTHS' | 'THREE_MONTHS' | 'SIX_MONTHS' | 'CUSTOM' | null
+    estimatedDays?: number
     groupId?: string | null
 }
 
@@ -124,6 +126,19 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
             ? await generateAndCheckSlug(input.slug, session.user.id)
             : await generateAndCheckSlug(input.title, session.user.id)
 
+        // Map duration to estimatedDays if not custom
+        const DURATION_DAYS: Record<string, number> = {
+            ONE_WEEK: 7,
+            FORTNIGHT: 14,
+            ONE_MONTH: 30,
+            TWO_MONTHS: 60,
+            THREE_MONTHS: 90,
+            SIX_MONTHS: 180,
+        }
+        const estimatedDays = input.duration && input.duration !== 'CUSTOM'
+            ? DURATION_DAYS[input.duration] ?? input.estimatedDays
+            : input.estimatedDays ?? null
+
         // Create the goal first
         const goal = await prisma.pathfinderGoal.create({
             data: {
@@ -134,6 +149,8 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
                 level: input.level,
                 focusAreas: input.focusAreas,
                 targetDate: input.targetDate,
+                duration: input.duration ?? null,
+                estimatedDays,
                 groupId: input.groupId || null,
                 status: 'ACTIVE',
             },

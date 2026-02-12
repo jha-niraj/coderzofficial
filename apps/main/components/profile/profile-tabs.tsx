@@ -4,13 +4,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@repo/ui/lib/utils";
 import {
-	LayoutGrid, FolderKanban, Activity, Code2, FileText, User, Plug
+	LayoutGrid, FolderKanban, Code2, FileText, User, Plug
 } from "lucide-react";
 
 export type ProfileTab =
 	| "overview"
 	| "projects"
-	| "activity"
 	| "skills"
 	| "resume"
 	| "about"
@@ -39,12 +38,6 @@ const tabs: {
 			label: "Projects",
 			icon: FolderKanban,
 			description: "Completed and ongoing projects",
-		},
-		{
-			id: "activity",
-			label: "Activity",
-			icon: Activity,
-			description: "Recent contributions and activity",
 		},
 		{
 			id: "skills",

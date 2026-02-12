@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, ProjectsTab,
-    ActivityTab, SkillsTab, ResumeTab, AboutTab, IntegrationsTab, 
+    SkillsTab, ResumeTab, AboutTab, IntegrationsTab, 
     ShareProfileModal, EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
@@ -58,7 +58,7 @@ interface ProfileData {
         id: string;
         title: string;
         description: string;
-        createdAt: Date;
+        createdAt?: Date;
     }>;
     portfolioProjects?: Array<{
         id: string;
@@ -127,7 +127,6 @@ interface ProfileData {
     }>;
     userProfile?: {
         showEmail: boolean;
-        coverImage: string | null;
         coverGradient: string | null;
         tagline: string | null;
         theme: string;
@@ -200,6 +199,9 @@ export default function ProfilePage() {
             toast.error(result.error || "Failed to endorse skill");
         }
     };
+
+    // Resume upload refreshes profile
+    const handleUploadResume = () => loadProfile();
 
     // Loading state
     if (isLoading || storeLoading) {
@@ -316,22 +318,20 @@ export default function ProfilePage() {
                         isOwnProfile={true}
                     />
                 );
-            case "activity":
-                return <ActivityTab {...commonProps} />;
             case "skills":
                 return (
                     <SkillsTab
                         {...commonProps}
                         currentUserId={profileData?.id}
                         onEndorseSkill={handleEndorseSkill}
-                        onAddSkill={() => toast.info("Skill management coming soon!")}
+                        onAddSkill={() => router.push("/profile/settings?tab=skills")}
                     />
                 );
             case "resume":
                 return (
                     <ResumeTab
                         {...commonProps}
-                        onUploadResume={() => toast.info("Resume upload coming soon!")}
+                        onUploadResume={handleUploadResume}
                     />
                 );
             case "about":

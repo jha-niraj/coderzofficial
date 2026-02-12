@@ -483,7 +483,16 @@ export async function getOwnProfile() {
                     orderBy: { createdAt: "desc" },
                     take: 20,
                 },
-                achievements: true,
+                userAchievements: {
+                    orderBy: { unlockedAt: "desc" },
+                    take: 10,
+                },
+                userBadges: {
+                    where: { status: "CLAIMED" },
+                    orderBy: { claimedAt: "desc" },
+                    take: 10,
+                    include: { badge: true },
+                },
                 experiences: {
                     orderBy: { startDate: "desc" },
                 },
@@ -498,7 +507,21 @@ export async function getOwnProfile() {
             return { success: false, error: "User not found" };
         }
 
-        return { success: true, user };
+        // Merge achievements from userAchievements (legacy) and userBadges (new system)
+        const legacyAchievements = (user as { userAchievements?: { id: string; title: string; description: string }[] }).userAchievements?.map((a) => ({
+            id: a.id,
+            title: a.title,
+            description: a.description,
+        })) ?? [];
+        const badgeAchievements = (user as { userBadges?: { id: string; badge: { name: string; description: string } }[] }).userBadges?.map((ub) => ({
+            id: ub.id,
+            title: ub.badge.name,
+            description: ub.badge.description,
+        })) ?? [];
+        const achievements = [...badgeAchievements, ...legacyAchievements].slice(0, 10);
+
+        const { userAchievements: _ua, userBadges: _ub, ...rest } = user as { userAchievements?: unknown; userBadges?: unknown } & typeof user;
+        return { success: true, user: { ...rest, achievements } };
     } catch (error) {
         console.error("Error fetching own profile:", error);
         return { success: false, error: "Failed to fetch profile" };
@@ -533,7 +556,16 @@ export async function getPublicProfile(username: string) {
                     orderBy: { createdAt: "desc" },
                     take: 20,
                 },
-                achievements: true,
+                userAchievements: {
+                    orderBy: { unlockedAt: "desc" },
+                    take: 10,
+                },
+                userBadges: {
+                    where: { status: "CLAIMED" },
+                    orderBy: { claimedAt: "desc" },
+                    take: 10,
+                    include: { badge: true },
+                },
                 experiences: {
                     orderBy: { startDate: "desc" },
                 },
@@ -590,9 +622,19 @@ export async function getPublicProfile(username: string) {
             // Track profile view
             await trackProfileView(profile.id, viewerId || null, "direct");
 
-            // Filter out private information
+            // Merge achievements for display
+            const pubLegacy = (profileOwner as { userAchievements?: { id: string; title: string; description: string }[] }).userAchievements?.map((a) => ({
+                id: a.id, title: a.title, description: a.description,
+            })) ?? [];
+            const pubBadges = (profileOwner as { userBadges?: { id: string; badge: { name: string; description: string } }[] }).userBadges?.map((ub) => ({
+                id: ub.id, title: ub.badge.name, description: ub.badge.description,
+            })) ?? [];
+            const pubAchievements = [...pubBadges, ...pubLegacy].slice(0, 10);
+
+            const { userAchievements: _pua, userBadges: _pub, ...pubRest } = profileOwner as { userAchievements?: unknown; userBadges?: unknown } & typeof profileOwner;
             const filteredUser = {
-                ...profileOwner,
+                ...pubRest,
+                achievements: pubAchievements,
                 email: profile.showEmail ? profileOwner.email : null,
                 phone: null,
                 resume: profile.showResume ? profileOwner.resume : null,
@@ -608,9 +650,19 @@ export async function getPublicProfile(username: string) {
             };
         }
 
+        // Merge achievements for own profile view
+        const ownLegacy = (profileOwner as { userAchievements?: { id: string; title: string; description: string }[] }).userAchievements?.map((a) => ({
+            id: a.id, title: a.title, description: a.description,
+        })) ?? [];
+        const ownBadges = (profileOwner as { userBadges?: { id: string; badge: { name: string; description: string } }[] }).userBadges?.map((ub) => ({
+            id: ub.id, title: ub.badge.name, description: ub.badge.description,
+        })) ?? [];
+        const ownAchievements = [...ownBadges, ...ownLegacy].slice(0, 10);
+        const { userAchievements: _oa, userBadges: _ob, ...ownRest } = profileOwner as { userAchievements?: unknown; userBadges?: unknown } & typeof profileOwner;
+
         return {
             success: true,
-            user: profileOwner,
+            user: { ...ownRest, achievements: ownAchievements },
             isOwnProfile: true,
             canEdit: true,
         };
@@ -668,7 +720,6 @@ export async function trackProfileView(
  * Update profile settings
  */
 export async function updateProfileSettings(data: {
-    coverImage?: string;
     coverGradient?: string;
     theme?: ProfileTheme;
     layout?: ProfileLayout;
@@ -697,7 +748,6 @@ export async function updateProfileSettings(data: {
         const updatedProfile = await prisma.userProfile.update({
             where: { id: profile.id },
             data: {
-                ...(data.coverImage && { coverImage: data.coverImage }),
                 ...(data.coverGradient && { coverGradient: data.coverGradient }),
                 ...(data.theme && { theme: data.theme }),
                 ...(data.layout && { layout: data.layout }),
@@ -961,7 +1011,7 @@ export async function calculateNewProfileCompletion(userId: string) {
         if (user.location) score += 5;
 
         // Profile customization (10 points)
-        if (user.userProfile?.coverImage || user.userProfile?.coverGradient)
+        if (user.userProfile?.coverGradient)
             score += 5;
         if (user.userProfile?.tagline) score += 3;
         if (user.userProfile?.theme) score += 2;

@@ -1,7 +1,10 @@
 'use server'
 
-import { prisma, Prisma } from '@repo/prisma'
-import type { BadgeRequirements, BadgeProgress } from '@/types/achievements'
+import { prisma } from '@repo/prisma'
+import { Prisma } from '@repo/prisma/client'
+import type { 
+    BadgeRequirements, BadgeProgress 
+} from '@/types/achievements'
 
 // ================================================================================
 // BADGE PROGRESS UTILITIES
@@ -84,7 +87,7 @@ export async function updateBadgeProgress({ userId, target, increment = 1, value
         const updates: Prisma.PrismaPromise<unknown>[] = []
 
         for (const badge of badges) {
-            const req = badge.requirements as BadgeRequirements
+            const req = badge.requirements as unknown as BadgeRequirements
 
             // Get or create user badge entry
             let userBadge = await prisma.userBadge.findUnique({
@@ -108,7 +111,7 @@ export async function updateBadgeProgress({ userId, target, increment = 1, value
             if (userBadge.status === 'CLAIMED') continue
 
             // Update progress based on requirement type
-            const progress = (userBadge.progress as BadgeProgress) || { current: 0, items: [] }
+            const progress = (userBadge.progress as unknown as BadgeProgress) || { current: 0, items: [] }
             const targetCount = req.count || 1
 
             if (req.type === 'count') {
@@ -132,7 +135,7 @@ export async function updateBadgeProgress({ userId, target, increment = 1, value
                 prisma.userBadge.update({
                     where: { id: userBadge.id },
                     data: {
-                        progress,
+                        progress: progress as unknown as Prisma.InputJsonValue,
                         progressPercent,
                         status: isComplete ? 'READY_TO_CLAIM' : 'IN_PROGRESS',
                         completedAt: isComplete && !userBadge.completedAt ? new Date() : userBadge.completedAt,
@@ -213,7 +216,7 @@ export async function checkLevelMilestones(userId: string, level: number) {
         })
 
         for (const badge of badges) {
-            const req = badge.requirements as BadgeRequirements
+            const req = badge.requirements as unknown as BadgeRequirements
             if (level >= (req.level ?? 0)) {
                 let userBadge = await prisma.userBadge.findUnique({
                     where: { userId_badgeId: { userId, badgeId: badge.id } },

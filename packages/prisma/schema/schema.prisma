@@ -429,7 +429,6 @@ model User {
     dailyActivities  DailyActivity[]
     activityEntries  ActivityEntry[]   @relation("UserActivityEntries")
     userStats        UserStats?
-    weeklyGoals      WeeklyGoal[]
     streakRewards    StreakReward[]
     userAchievements UserAchievement[]
     userBadges       UserBadge[]
@@ -901,7 +900,6 @@ model UserProfile {
     user   User   @relation("UserProfile", fields: [userId], references: [id], onDelete: Cascade)
 
     // Visual Customization
-    coverImage    String? // Custom cover image URL
     coverGradient String?       @default("#F59E0B,#FBBF24") // Default yellow-amber gradient
     theme         ProfileTheme  @default(OCEAN_BLUE)
     layout        ProfileLayout @default(DEFAULT)

@@ -1,6 +1,17 @@
 // Pathfinder Types - Centralized type definitions for the Pathfinder (AI Learning Goals) feature
 import { PathfinderStatus, PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
 
+// Goal duration presets (matches PathfinderGoalDuration enum)
+export const GOAL_DURATION_OPTIONS = [
+    { value: 'ONE_WEEK', label: '1 Week', days: 7 },
+    { value: 'FORTNIGHT', label: 'Fortnight', days: 14 },
+    { value: 'ONE_MONTH', label: '1 Month', days: 30 },
+    { value: 'TWO_MONTHS', label: '2 Months', days: 60 },
+    { value: 'THREE_MONTHS', label: '3 Months', days: 90 },
+    { value: 'SIX_MONTHS', label: '6 Months', days: 180 },
+    { value: 'CUSTOM', label: 'Custom', days: null },
+] as const
+
 // =========================================
 // Core Types
 // =========================================
@@ -21,12 +32,28 @@ export interface PathfinderGoal {
     streakDays: number
     lastActivityAt: Date | null
     estimatedDays: number | null
+    duration?: string | null
     overview: string | null
     createdAt: Date
     startedAt: Date | null
     completedAt: Date | null
     groupId: string | null
     studioId: string | null
+}
+
+/** Minimal shape for home page goals (from home action) */
+export interface PathfinderGoalSummary {
+    id: string
+    slug: string
+    title: string
+    category: PathfinderCategory
+    status: PathfinderStatus
+    progressPercent: number
+    totalSubGoals: number
+    completedSubGoals: number
+    estimatedDays: number | null
+    duration?: string | null
+    focusAreas: string[]
 }
 
 export interface PathfinderGroup {
@@ -78,12 +105,12 @@ export interface CodingProblem {
     description: string
     difficulty: 'EASY' | 'MEDIUM' | 'HARD'
     starterCode?: string
-    testCases?: TestCase[]
+    testCases?: PathfinderTestCase[]
     hints?: string[]
     solution?: string
 }
 
-export interface TestCase {
+export interface PathfinderTestCase {
     input: string
     expectedOutput: string
     isHidden?: boolean
@@ -250,6 +277,7 @@ export interface CreateGoalInput {
     level: PathfinderLevel
     focusAreas: string[]
     estimatedDays?: number
+    duration?: 'ONE_WEEK' | 'FORTNIGHT' | 'ONE_MONTH' | 'TWO_MONTHS' | 'THREE_MONTHS' | 'SIX_MONTHS' | 'CUSTOM' | null
     groupId?: string | null
 }
 

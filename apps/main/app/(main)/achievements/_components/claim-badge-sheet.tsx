@@ -17,14 +17,14 @@ import {
 } from '@/actions/(main)/achievements/achievements.action'
 import type { BadgeWithProgress } from '@/actions/(main)/achievements/achievements.action'
 import confetti from 'canvas-confetti'
-import type { SocialConnection } from '@/types/achievements'
+import type { SocialConnectionSummary } from '@/types/achievements'
 
 interface ClaimBadgeSheetProps {
     badge: BadgeWithProgress | null
     open: boolean
     onOpenChange: (open: boolean) => void
     onShare: (badge: BadgeWithProgress) => void
-    socialConnections: SocialConnection[]
+    socialConnections: SocialConnectionSummary[]
 }
 
 const RARITY_CONFIG = {

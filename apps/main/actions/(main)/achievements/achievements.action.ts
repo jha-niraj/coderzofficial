@@ -2,9 +2,11 @@
 
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
-import type { BadgeCategory } from '@repo/prisma/client'
+import { BadgeCategory } from '@repo/prisma/client'
 import { revalidatePath } from 'next/cache'
-import type { BadgeRequirements, BadgeProgress } from '@/types/achievements'
+import type { 
+    BadgeRequirements, BadgeProgress 
+} from '@/types/achievements'
 
 // ================================================================================
 // TYPES
@@ -102,12 +104,12 @@ export async function getUserAchievements() {
                 category: badge.category,
                 rarity: badge.rarity,
                 tier: badge.tier,
-                requirements: badge.requirements,
+                requirements: (badge.requirements ?? {}) as unknown as BadgeRequirements,
                 xpReward: badge.xpReward,
                 creditsReward: badge.creditsReward,
                 isLimited: badge.isLimited,
                 status: userBadge?.status || 'LOCKED',
-                progress: userBadge?.progress || null,
+                progress: (userBadge?.progress ?? null) as BadgeProgress | null,
                 progressPercent: userBadge?.progressPercent || 0,
                 claimedAt: userBadge?.claimedAt || null,
                 isPinned: userBadge?.isPinned || false,

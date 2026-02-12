@@ -71,7 +71,7 @@ export function ContinueLearningSkeleton() {
 }
 
 // Weekly Goals Skeleton
-export function WeeklyGoalsSkeleton() {
+export function PathfinderGoalsSkeleton() {
     return (
         <Card>
             <CardHeader className="pb-4">

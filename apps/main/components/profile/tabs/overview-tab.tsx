@@ -39,14 +39,14 @@ interface OverviewTabProps {
 			id: string;
 			activityType: string | null;
 			description: string | null;
-			createdAt: Date;
-		}>;
-		achievements: Array<{
+			createdAt?: Date | null;
+		} | null>;
+		achievements: Array<{	
 			id: string;
 			title: string;
 			description: string;
-			createdAt: Date;
-		}>;
+			createdAt?: Date | null;
+		} | null>;
 	};
 	stats: {
 		projectsCount: number;
@@ -264,21 +264,21 @@ export function OverviewTab({
 										{
 											recentActivity.slice(0, 5).map((activity) => {
 												const config =
-													activityConfig[activity.activityType || "DEFAULT"] ||
+													activityConfig[activity?.activityType || "DEFAULT"] ||
 													activityConfig.DEFAULT;
 												return (
 													<div
-														key={activity.id}
+														key={activity?.id}
 														className="flex items-start gap-3 text-sm"
 													>
 														<span className="text-lg flex-shrink-0">{config!.icon}</span>
 														<div className="flex-1 min-w-0">
 															<p className="text-foreground line-clamp-1">
-																{activity.description || activity.activityType}
+																{activity?.description || activity?.activityType}
 															</p>
 															<p className="text-xs text-muted-foreground">
 																{
-																	new Date(activity.createdAt).toLocaleDateString("en-US", {
+																	new Date(activity?.createdAt || new Date()).toLocaleDateString("en-US", {
 																		month: "short",
 																		day: "numeric",
 																	})
@@ -326,7 +326,7 @@ export function OverviewTab({
 										{
 											recentAchievements.map((achievement) => (
 												<div
-													key={achievement.id}
+													key={achievement?.id}
 													className="flex items-start gap-3 p-2 rounded-lg bg-muted/50"
 												>
 													<div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500/20 to-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -334,10 +334,10 @@ export function OverviewTab({
 													</div>
 													<div className="flex-1 min-w-0">
 														<p className="font-medium text-sm line-clamp-1">
-															{achievement.title}
+															{achievement?.title}
 														</p>
 														<p className="text-xs text-muted-foreground line-clamp-1">
-															{achievement.description}
+															{achievement?.description}
 														</p>
 													</div>
 												</div>
