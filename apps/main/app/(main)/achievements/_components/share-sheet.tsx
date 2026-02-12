@@ -166,7 +166,7 @@ export function ShareSheet({ badge, open, onOpenChange, socialConnections }: Sha
                                         <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                                             Connect your accounts for a better sharing experience.
                                         </p>
-                                        <Link href="/settings/social-integrations">
+                                        <Link href="/settings/integrations">
                                             <Button variant="link" className="text-amber-600 p-0 h-auto text-xs mt-2">
                                                 Connect accounts →
                                             </Button>

@@ -85,7 +85,7 @@ export function ProfileHeader({
 
 	return (
 		<div className="relative max-w-7xl mx-auto">
-			<div className="relative px-4 md:px-8 pt-8 pb-4">
+			<div className="relative px-4 md:px-8 pt-4 pb-4">
 				<div className="relative">
 					<motion.div
 						initial={{ scale: 0.8, opacity: 0 }}
@@ -121,7 +121,7 @@ export function ProfileHeader({
 						}
 					</motion.div>
 				</div>
-				<div className="pt-16 md:pt-20 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+				<div className="pt-12 md:pt-14 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
 							<h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">

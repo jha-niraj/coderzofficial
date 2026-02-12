@@ -91,7 +91,7 @@ export function AchievementsContent({
                             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Achievements</h1>
                             <p className="text-neutral-500 mt-1">Track your progress and earn badges</p>
                         </div>
-                        <Link href="/settings/social-integrations">
+                        <Link href="/settings/integrations">
                             <Button variant="outline" size="sm" className="gap-2">
                                 <Share2 className="w-4 h-4" />
                                 {hasConnectedSocials ? 'Social Connected' : 'Connect Social'}

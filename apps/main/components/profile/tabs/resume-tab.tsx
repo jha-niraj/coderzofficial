@@ -9,7 +9,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
     FileText, Download, Briefcase, GraduationCap, Award, Calendar,
-    ExternalLink, Building, Eye, Loader2
+    ExternalLink, Building, Eye, Loader2, Pencil
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -29,11 +29,28 @@ interface ResumeTabProps {
             companyName: string;
             companyLogo: string | null;
             roleTitle: string;
-            description: string | null;
+            description?: string | null;
+            bulletPoints?: string[];
             startDate: Date;
             endDate: Date | null;
             isCurrentlyWorking: boolean;
             companyWebsite: string | null;
+        }>;
+        portfolioProjects?: Array<{
+            id: string;
+            projectName: string;
+            description?: string | null;
+            bulletPoints?: string[];
+            technologies: string[];
+            startDate: Date;
+            endDate: Date | null;
+        }>;
+        educations?: Array<{
+            id: string;
+            degree: string | null;
+            institution: string;
+            startDate: Date;
+            endDate: Date | null;
         }>;
         certifications: Array<{
             id: string;
@@ -42,6 +59,7 @@ interface ResumeTabProps {
             issuedDate: Date;
             link: string;
         }>;
+        skills?: Array<{ id: string; name: string; category: string }>;
     };
     isOwnProfile: boolean;
     onUploadResume?: () => void | Promise<void>;
@@ -179,7 +197,7 @@ export function ResumeTab({
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -187,6 +205,16 @@ export function ResumeTab({
                                     className="hidden"
                                     onChange={handleFileChange}
                                 />
+                                {
+                                    isOwnProfile && (
+                                        <Button variant="outline" size="sm" className="gap-2" asChild>
+                                            <Link href="/ai/resumecreator">
+                                                <Pencil className="w-4 h-4" />
+                                                Edit in Resume Creator
+                                            </Link>
+                                        </Button>
+                                    )
+                                }
                                 {
                                     user.hasResume && user.resume ? (
                                         <>
@@ -242,8 +270,10 @@ export function ResumeTab({
                             </CardTitle>
                             {
                                 isOwnProfile && (
-                                    <Button variant="ghost" size="sm">
-                                        Add Experience
+                                    <Button variant="ghost" size="sm" asChild>
+                                        <Link href="/ai/resumecreator">
+                                            Add Experience
+                                        </Link>
                                     </Button>
                                 )
                             }
@@ -335,11 +365,17 @@ export function ResumeTab({
                                                             </div>
                                                         </div>
                                                         {
-                                                            exp.description && (
+                                                            ((exp as { bulletPoints?: string[] }).bulletPoints?.length ?? 0) > 0 ? (
+                                                                <ul className="text-sm text-muted-foreground mt-3 space-y-1 list-disc list-inside">
+                                                                    {(exp as { bulletPoints?: string[] }).bulletPoints?.map((point, i) => (
+                                                                        <li key={i}>{point}</li>
+                                                                    ))}
+                                                                </ul>
+                                                            ) : exp.description ? (
                                                                 <p className="text-sm text-muted-foreground mt-3 whitespace-pre-line">
                                                                     {exp.description}
                                                                 </p>
-                                                            )
+                                                            ) : null
                                                         }
                                                     </div>
                                                 </motion.div>
@@ -353,8 +389,8 @@ export function ResumeTab({
                                     <p className="text-sm">No work experience added yet</p>
                                     {
                                         isOwnProfile && (
-                                            <Button variant="outline" size="sm" className="mt-3">
-                                                Add your first experience
+                                            <Button variant="outline" size="sm" className="mt-3" asChild>
+                                                <Link href="/ai/resumecreator">Add your first experience</Link>
                                             </Button>
                                         )
                                     }
@@ -371,14 +407,43 @@ export function ResumeTab({
             >
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <GraduationCap className="w-5 h-5 text-purple-500" />
-                            Education
-                        </CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <GraduationCap className="w-5 h-5 text-purple-500" />
+                                Education
+                            </CardTitle>
+                            {
+                                isOwnProfile && (
+                                    <Button variant="ghost" size="sm" asChild>
+                                        <Link href="/ai/resumecreator">Edit</Link>
+                                    </Button>
+                                )
+                            }
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {
-                            user.university ? (
+                            (user.educations && user.educations.length > 0) ? (
+                                <div className="space-y-4">
+                                    {user.educations.map((edu) => (
+                                        <div key={edu.id} className="flex items-start gap-4">
+                                            <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                                                <GraduationCap className="w-6 h-6 text-purple-500" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold">
+                                                    {edu.degree ? `${edu.degree}, ` : ""}{edu.institution}
+                                                </h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {new Date(edu.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                                                    {" - "}
+                                                    {edu.endDate ? new Date(edu.endDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Present"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : user.university ? (
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
                                         <GraduationCap className="w-6 h-6 text-purple-500" />
@@ -392,6 +457,13 @@ export function ResumeTab({
                                 <div className="text-center py-8 text-muted-foreground">
                                     <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                     <p className="text-sm">No education information added</p>
+                                    {
+                                        isOwnProfile && (
+                                            <Button variant="outline" size="sm" className="mt-3" asChild>
+                                                <Link href="/ai/resumecreator">Add education</Link>
+                                            </Button>
+                                        )
+                                    }
                                 </div>
                             )
                         }

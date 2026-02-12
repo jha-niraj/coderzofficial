@@ -4,16 +4,16 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@repo/ui/lib/utils";
 import {
-	LayoutGrid, FolderKanban, Code2, FileText, User, Plug
+	LayoutGrid, FolderKanban, Code2, Briefcase, GraduationCap, User
 } from "lucide-react";
 
 export type ProfileTab =
 	| "overview"
 	| "projects"
 	| "skills"
-	| "resume"
-	| "about"
-	| "integrations";
+	| "work_experience"
+	| "education"
+	| "about";
 
 interface ProfileTabsProps {
 	activeTab: ProfileTab;
@@ -46,22 +46,22 @@ const tabs: {
 			description: "Technical skills and endorsements",
 		},
 		{
-			id: "resume",
-			label: "Resume",
-			icon: FileText,
-			description: "Experience and qualifications",
+			id: "work_experience",
+			label: "Work Experience",
+			icon: Briefcase,
+			description: "Work experience and platform resume",
+		},
+		{
+			id: "education",
+			label: "Education",
+			icon: GraduationCap,
+			description: "Education and qualifications",
 		},
 		{
 			id: "about",
 			label: "About",
 			icon: User,
 			description: "Personal information and bio",
-		},
-		{
-			id: "integrations",
-			label: "Integrations",
-			icon: Plug,
-			description: "Connected accounts and services",
 		},
 	];
 

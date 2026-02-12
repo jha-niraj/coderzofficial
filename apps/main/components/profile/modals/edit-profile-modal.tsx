@@ -3,8 +3,8 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle
-} from "@repo/ui/components/ui/dialog";
+    Sheet, SheetContent, SheetHeader, SheetTitle
+} from "@repo/ui/components/ui/sheet";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Textarea } from "@repo/ui/components/ui/textarea";
@@ -13,9 +13,10 @@ import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs";
 import {
-    User, Camera, Briefcase, MapPin, Globe, Loader2, Check, ImageIcon, Sparkles,
-    Building, Target, GraduationCap, X, Plus
+    User, Camera, Briefcase, MapPin, Globe, Loader2, Check, Sparkles,
+    Building, Target, X, Plus
 } from "lucide-react";
+import Link from "next/link";
 import toast from "@repo/ui/components/ui/sonner";
 import { useUserStore } from "@/app/store/useUserStore";
 import { updateProfileSettings } from "@/actions/(main)/user/profile.action";
@@ -116,7 +117,6 @@ export function EditProfileModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState("basic");
     const avatarInputRef = useRef<HTMLInputElement>(null);
-    const coverInputRef = useRef<HTMLInputElement>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -128,10 +128,7 @@ export function EditProfileModal({
         occupation: user.occupation || "",
         website: user.website || "",
         theme: user.userProfile?.theme || "OCEAN_BLUE",
-        // Career fields
-        university: user.university || "",
-        semester: user.semester || "",
-        careerGoals: user.careerGoals?.[0] || "", // Assuming single choice for input
+        careerGoals: user.careerGoals?.[0] || "",
         targetCompanies: user.targetCompanies || [] as string[],
         expectedSalary: user.expectedSalary || "",
         noticePeriod: user.noticePeriod || "",
@@ -156,7 +153,7 @@ export function EditProfileModal({
     };
 
     const addCompany = (company: string) => {
-        if (company && !formData.targetCompanies.includes(company)) {
+        if (company && !formData.targetCompanies?.includes(company)) {
             setFormData(prev => ({
                 ...prev,
                 targetCompanies: [...prev.targetCompanies, company]
@@ -168,7 +165,7 @@ export function EditProfileModal({
     const removeCompany = (company: string) => {
         setFormData(prev => ({
             ...prev,
-            targetCompanies: prev.targetCompanies.filter(c => c !== company)
+            targetCompanies: prev.targetCompanies?.filter(c => c !== company)
         }));
     };
 
@@ -183,9 +180,6 @@ export function EditProfileModal({
                 company: formData.company,
                 occupation: formData.occupation,
                 website: formData.website,
-                // Career fields
-                university: formData.university,
-                semester: formData.semester,
                 careerGoals: formData.careerGoals ? [formData.careerGoals] : [],
                 targetCompanies: formData.targetCompanies,
                 expectedSalary: formData.expectedSalary,
@@ -215,34 +209,23 @@ export function EditProfileModal({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                    <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+        <Sheet open={isOpen} onOpenChange={onClose}>
+            <SheetContent side="bottom" className="h-[90vh] w-full rounded-t-2xl p-0 flex flex-col">
+                <div className="w-full max-w-7xl mx-auto flex flex-col h-full">
+                <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+                    <SheetTitle className="text-xl font-semibold flex items-center gap-2">
                         <User className="w-5 h-5" />
                         Edit Profile
-                    </DialogTitle>
-                </DialogHeader>
-                <div className="overflow-y-auto max-h-[calc(90vh-180px)]">
+                    </SheetTitle>
+                </SheetHeader>
+                <div className="overflow-y-auto flex-1">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="w-full justify-start px-6 pt-2 bg-transparent border-b rounded-none h-auto gap-4">
+                        <TabsList className="w-full justify-start px-6 pt-2 bg-transparent border-b rounded-none h-auto gap-4 sticky top-0 bg-background z-10">
                             <TabsTrigger
                                 value="basic"
                                 className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
                             >
                                 Basic Info
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="appearance"
-                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
-                            >
-                                Appearance
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="work"
-                                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
-                            >
-                                Work & Education
                             </TabsTrigger>
                             <TabsTrigger
                                 value="career"
@@ -324,147 +307,41 @@ export function EditProfileModal({
                                     {formData.bio.length}/500 characters
                                 </p>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="location" className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4" />
-                                    Location
-                                </Label>
-                                <Input
-                                    id="location"
-                                    value={formData.location}
-                                    onChange={(e) => handleChange("location", e.target.value)}
-                                    placeholder="City, Country"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="website" className="flex items-center gap-2">
-                                    <Globe className="w-4 h-4" />
-                                    Website
-                                </Label>
-                                <Input
-                                    id="website"
-                                    type="url"
-                                    value={formData.website}
-                                    onChange={(e) => handleChange("website", e.target.value)}
-                                    placeholder="https://yourwebsite.com"
-                                />
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="appearance" className="px-6 py-4 space-y-5 mt-0">
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2">
-                                    <ImageIcon className="w-4 h-4" />
-                                    Cover Image
-                                </Label>
-                                <div
-                                    className={cn(
-                                        "relative h-32 rounded-lg overflow-hidden cursor-pointer group",
-                                        `bg-gradient-to-r ${THEME_OPTIONS.find((t) => t.id === formData.theme)?.gradient}`
-                                    )}
-                                    onClick={() => coverInputRef.current?.click()}
-                                >
-                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <div className="text-white text-sm flex items-center gap-2">
-                                            <Camera className="w-5 h-5" />
-                                            Upload Cover
-                                        </div>
-                                    </div>
-                                    <input
-                                        ref={coverInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={() => toast.info("Cover upload coming soon!")}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                <Label>Profile Theme</Label>
-                                <div className="grid grid-cols-5 gap-3">
-                                    {
-                                        THEME_OPTIONS.map((theme) => (
-                                            <motion.button
-                                                key={theme.id}
-                                                type="button"
-                                                onClick={() => handleChange("theme", theme.id)}
-                                                className={cn(
-                                                    "relative h-16 rounded-lg overflow-hidden transition-all",
-                                                    `bg-gradient-to-r ${theme.gradient}`,
-                                                    formData.theme === theme.id
-                                                        ? "ring-2 ring-primary ring-offset-2"
-                                                        : "hover:scale-105"
-                                                )}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                {
-                                                    formData.theme === theme.id && (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                                            <Check className="w-5 h-5 text-white" />
-                                                        </div>
-                                                    )
-                                                }
-                                            </motion.button>
-                                        ))
-                                    }
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                    Selected: {THEME_OPTIONS.find((t) => t.id === formData.theme)?.name}
-                                </p>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="work" className="px-6 py-4 space-y-5 mt-0">
-                            <div className="space-y-2">
-                                <Label htmlFor="occupation" className="flex items-center gap-2">
-                                    <Briefcase className="w-4 h-4" />
-                                    Job Title / Role
-                                </Label>
-                                <Input
-                                    id="occupation"
-                                    value={formData.occupation}
-                                    onChange={(e) => handleChange("occupation", e.target.value)}
-                                    placeholder="e.g. Full Stack Developer"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="company">Company / Organization</Label>
-                                <Input
-                                    id="company"
-                                    value={formData.company}
-                                    onChange={(e) => handleChange("company", e.target.value)}
-                                    placeholder="Where do you work?"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="university" className="flex items-center gap-2">
-                                        <GraduationCap className="w-4 h-4" />
-                                        University
+                                    <Label htmlFor="location" className="flex items-center gap-2">
+                                        <MapPin className="w-4 h-4" />
+                                        Location
                                     </Label>
                                     <Input
-                                        id="university"
-                                        value={formData.university}
-                                        onChange={(e) => handleChange("university", e.target.value)}
-                                        placeholder="University Name"
+                                        id="location"
+                                        value={formData.location}
+                                        onChange={(e) => handleChange("location", e.target.value)}
+                                        placeholder="City, Country"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="semester">Semester</Label>
-                                    <Select
-                                        value={formData.semester}
-                                        onValueChange={(val) => handleChange("semester", val)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select semester" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {
-                                            SEMESTERS.map((sem) => (
-                                                <SelectItem key={sem} value={sem}>{sem}</SelectItem>
-                                            ))
-                                            }
-                                        </SelectContent>
-                                    </Select>
+                                    <Label htmlFor="website" className="flex items-center gap-2">
+                                        <Globe className="w-4 h-4" />
+                                        Website
+                                    </Label>
+                                    <Input
+                                        id="website"
+                                        type="url"
+                                        value={formData.website}
+                                        onChange={(e) => handleChange("website", e.target.value)}
+                                        placeholder="https://yourwebsite.com"
+                                    />
                                 </div>
+                            </div>
+                            <div className="p-4 rounded-lg bg-muted/50 border border-dashed">
+                                <p className="text-sm text-muted-foreground">
+                                    To add work experience, education, skills, or social links, use the{" "}
+                                    <Link href="/ai/resumecreator" className="text-primary hover:underline font-medium">
+                                        Resume Creator
+                                    </Link>
+                                    .
+                                </p>
                             </div>
                         </TabsContent>
                         <TabsContent value="career" className="px-6 py-4 space-y-5 mt-0">
@@ -482,9 +359,9 @@ export function EditProfileModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {
-                                        JOB_PREFERENCES.map((job) => (
-                                            <SelectItem key={job.id} value={job.id}>{job.label}</SelectItem>
-                                        ))
+                                            JOB_PREFERENCES.map((job) => (
+                                                <SelectItem key={job.id} value={job.id}>{job.label}</SelectItem>
+                                            ))
                                         }
                                     </SelectContent>
                                 </Select>
@@ -501,9 +378,9 @@ export function EditProfileModal({
                                         </SelectTrigger>
                                         <SelectContent>
                                             {
-                                            WORK_EXPERIENCE.map((exp) => (
-                                                <SelectItem key={exp} value={exp}>{exp}</SelectItem>
-                                            ))
+                                                WORK_EXPERIENCE.map((exp) => (
+                                                    <SelectItem key={exp} value={exp}>{exp}</SelectItem>
+                                                ))
                                             }
                                         </SelectContent>
                                     </Select>
@@ -528,9 +405,9 @@ export function EditProfileModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {
-                                        NOTICE_PERIODS.map((period) => (
-                                            <SelectItem key={period} value={period}>{period}</SelectItem>
-                                        ))
+                                            NOTICE_PERIODS.map((period) => (
+                                                <SelectItem key={period} value={period}>{period}</SelectItem>
+                                            ))
                                         }
                                     </SelectContent>
                                 </Select>
@@ -542,17 +419,17 @@ export function EditProfileModal({
                                 </Label>
                                 <div className="flex flex-wrap gap-2 mb-2">
                                     {
-                                    formData.targetCompanies.map((company) => (
-                                        <Badge key={company} variant="secondary" className="gap-1 pl-2 pr-1">
-                                            {company}
-                                            <button
-                                                onClick={() => removeCompany(company)}
-                                                className="hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-full p-0.5"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </Badge>
-                                    ))
+                                        formData.targetCompanies?.map((company) => (
+                                            <Badge key={company} variant="secondary" className="gap-1 pl-2 pr-1">
+                                                {company}
+                                                <button
+                                                    onClick={() => removeCompany(company)}
+                                                    className="hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-full p-0.5"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </Badge>
+                                        ))
                                     }
                                 </div>
                                 <Popover open={openCompanyPicker} onOpenChange={setOpenCompanyPicker}>
@@ -586,27 +463,27 @@ export function EditProfileModal({
                                             </CommandEmpty>
                                             <CommandGroup className="max-h-64 overflow-auto">
                                                 {
-                                                companies
-                                                    .filter(company => !formData.targetCompanies.includes(company))
-                                                    .map((company) => (
-                                                        <CommandItem
-                                                            key={company}
-                                                            value={company}
-                                                            onSelect={(currentValue) => {
-                                                                addCompany(currentValue);
-                                                                setOpenCompanyPicker(false);
-                                                            }}
-                                                        >
-                                                            <Check
-                                                                className={cn(
-                                                                    "mr-2 h-4 w-4",
-                                                                    formData.targetCompanies.includes(company) ? "opacity-100" : "opacity-0"
-                                                                )}
-                                                            />
-                                                            {company}
-                                                        </CommandItem>
-                                                    ))
-                                                    }
+                                                    companies
+                                                        .filter(company => !formData.targetCompanies?.includes(company))
+                                                        .map((company) => (
+                                                            <CommandItem
+                                                                key={company}
+                                                                value={company}
+                                                                onSelect={(currentValue) => {
+                                                                    addCompany(currentValue);
+                                                                    setOpenCompanyPicker(false);
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        formData.targetCompanies?.includes(company) ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {company}
+                                                            </CommandItem>
+                                                        ))
+                                                }
                                             </CommandGroup>
                                         </Command>
                                     </PopoverContent>
@@ -615,7 +492,7 @@ export function EditProfileModal({
                         </TabsContent>
                     </Tabs>
                 </div>
-                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-muted/30">
+                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-muted/30 shrink-0">
                     <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
                         Cancel
                     </Button>
@@ -635,7 +512,8 @@ export function EditProfileModal({
                         }
                     </Button>
                 </div>
-            </DialogContent>
-        </Dialog>
+                </div>
+            </SheetContent>
+        </Sheet>
     );
 }

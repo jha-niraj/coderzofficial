@@ -44,6 +44,7 @@ export type UserSkill = {
     name: string
     level: string | number
     category?: SkillCategory
+    order?: number
 }
 
 export type UserCertification = {

@@ -57,7 +57,8 @@ export async function getUserProfile() {
             id: skill.id,
             name: skill.name,
             level: skill.level,
-            category: skill.category
+            category: skill.category,
+            order: skill.order,
         })),
         certifications: user.certifications.map(cert => ({
             id: cert.id,
@@ -102,8 +103,8 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
         expectedSalary: data.expectedSalary,
         noticePeriod: data.noticePeriod,
         workExperience: data.workExperience,
-        socials: data.socials as any
-    }
+        socials: data.socials as any,
+    };
 
     const updatedUser = await prisma.user.update({
         where: {
@@ -186,13 +187,12 @@ export async function updateUserSkills(skills: UserSkill[]) {
     for (const skill of skills) {
         if (skill.id) {
             await prisma.skills.update({
-                where: {
-                    id: skill.id
-                },
+                where: { id: skill.id },
                 data: {
                     name: skill.name,
                     level: typeof skill.level === 'number' ? String(skill.level) : skill.level,
                     category: skill.category || SkillCategory.FRONTEND,
+                    ...(skill.order !== undefined && { order: skill.order }),
                 }
             })
         } else {
@@ -201,6 +201,7 @@ export async function updateUserSkills(skills: UserSkill[]) {
                     name: skill.name,
                     level: typeof skill.level === 'number' ? String(skill.level) : skill.level,
                     category: skill.category || SkillCategory.FRONTEND,
+                    order: skill.order ?? 0,
                     userId: user.id
                 }
             })
@@ -222,14 +223,39 @@ export async function updateUserSkills(skills: UserSkill[]) {
     }
 
     revalidatePath('/profile')
+    revalidatePath('/ai/resumecreator')
 
     return updatedUser.skills.map(skill => ({
         id: skill.id,
         name: skill.name,
         level: skill.level,
-        category: skill.category
+        category: skill.category,
+        order: skill.order,
     })) as UserSkill[]
 }
+
+export async function deleteSkill(id: string) {
+    const session = await auth()
+    if (!session?.user?.email) {
+        throw new Error("User not authenticated")
+    }
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+    })
+    if (!user) throw new Error("User not found")
+    const skill = await prisma.skills.findUnique({
+        where: { id },
+        select: { userId: true },
+    })
+    if (!skill || skill.userId !== user.id) {
+        throw new Error("Unauthorized to delete this skill")
+    }
+    await prisma.skills.delete({ where: { id } })
+    revalidatePath("/profile")
+    revalidatePath("/ai/resumecreator")
+}
+
 export async function updateUserCertifications(certifications: UserCertification[]) {
     const session = await auth()
 

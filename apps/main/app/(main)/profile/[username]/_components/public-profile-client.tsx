@@ -110,9 +110,7 @@ export function PublicProfileClient({
                         }}
                         onAddSkill={
                             isOwnProfile
-                                ? async () => {
-                                    toast.info("Add skill feature coming soon!");
-                                }
+                                ? () => router.push("/ai/resumecreator")
                                 : undefined
                         }
                     />

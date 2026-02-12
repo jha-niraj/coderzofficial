@@ -34,6 +34,7 @@ export async function addWorkExperience(data: {
     roleTitle: string;
     companyWebsite?: string;
     description?: string;
+    bulletPoints?: string[];
     startDate: Date;
     endDate?: Date;
     isCurrentlyWorking: boolean;
@@ -65,6 +66,7 @@ export async function updateWorkExperience(id: string, data: {
     roleTitle?: string;
     companyWebsite?: string;
     description?: string;
+    bulletPoints?: string[];
     startDate?: Date;
     endDate?: Date;
     isCurrentlyWorking?: boolean;
@@ -154,14 +156,15 @@ export async function addPortfolioProject(data: {
     projectName: string;
     projectType: string;
     description?: string;
+    bulletPoints?: string[];
     status: string;
     visibility: string;
     technologies: string[];
     startDate: Date;
     endDate?: Date;
     thumbnailUrl?: string;
-    links?: { linkType: string; url: string; description?: string }[];
-    media?: { mediaUrl: string; mediaType: string; caption?: string }[];
+    links?: { linkType: string; url: string; description?: string | null }[];
+    media?: { mediaUrl: string; mediaType: string; caption?: string | null }[];
 }) {
     try {
         const session = await auth();
@@ -200,12 +203,15 @@ export async function updatePortfolioProject(id: string, data: {
     projectName?: string;
     projectType?: string;
     description?: string;
+    bulletPoints?: string[];
     status?: string;
     visibility?: string;
     technologies?: string[];
     startDate?: Date;
     endDate?: Date;
     thumbnailUrl?: string;
+    links?: { linkType: string; url: string; description?: string | null }[];
+    media?: { mediaUrl: string; mediaType: string; caption?: string | null }[];
 }) {
     try {
         const session = await auth();
@@ -213,7 +219,6 @@ export async function updatePortfolioProject(id: string, data: {
             return { success: false, message: "Authentication required" };
         }
 
-        // Verify ownership
         const existing = await prisma.portfolioProject.findUnique({
             where: { id },
             select: { userId: true }
@@ -223,12 +228,50 @@ export async function updatePortfolioProject(id: string, data: {
             return { success: false, message: "Unauthorized" };
         }
 
-        const project = await prisma.portfolioProject.update({
+        const { links, media, ...projectData } = data;
+
+        await prisma.$transaction(async (tx) => {
+            await tx.portfolioProject.update({
+                where: { id },
+                data: projectData
+            });
+
+            if (links !== undefined) {
+                await tx.projectLink.deleteMany({ where: { projectId: id } });
+                if (links.filter((l) => l.url?.trim()).length > 0) {
+                    await tx.projectLink.createMany({
+                        data: links.filter((l) => l.url?.trim()).map((l) => ({
+                            projectId: id,
+                            linkType: l.linkType,
+                            url: l.url,
+                            description: l.description || null,
+                        })),
+                    });
+                }
+            }
+
+            if (media !== undefined) {
+                await tx.projectMedia.deleteMany({ where: { projectId: id } });
+                if (media.filter((m) => m.mediaUrl?.trim()).length > 0) {
+                    await tx.projectMedia.createMany({
+                        data: media.filter((m) => m.mediaUrl?.trim()).map((m) => ({
+                            projectId: id,
+                            mediaUrl: m.mediaUrl,
+                            mediaType: m.mediaType,
+                            caption: m.caption || null,
+                        })),
+                    });
+                }
+            }
+        });
+
+        const project = await prisma.portfolioProject.findUnique({
             where: { id },
-            data
+            include: { projectLinks: true, projectMedia: true }
         });
 
         revalidatePath("/profile");
+        revalidatePath("/ai/resumecreator");
         return { success: true, message: "Project updated successfully", data: project };
     } catch (error) {
         console.error("Error updating portfolio project:", error);
@@ -274,7 +317,7 @@ export async function getSocialLinks() {
 
         const socialLinks = await prisma.socialLink.findMany({
             where: { userId: session.user.id },
-            orderBy: { createdAt: 'desc' }
+            orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
         });
 
         return { success: true, data: socialLinks };
@@ -287,6 +330,8 @@ export async function getSocialLinks() {
 export async function addSocialLink(data: {
     platform: string;
     url: string;
+    label?: string;
+    order?: number;
 }) {
     try {
         const session = await auth();
@@ -312,6 +357,8 @@ export async function addSocialLink(data: {
 export async function updateSocialLink(id: string, data: {
     platform?: string;
     url?: string;
+    label?: string;
+    order?: number;
 }) {
     try {
         const session = await auth();
@@ -366,6 +413,151 @@ export async function deleteSocialLink(id: string) {
     } catch (error) {
         console.error("Error deleting social link:", error);
         return { success: false, message: "Failed to delete social link" };
+    }
+}
+
+// ================= USER EDUCATION ACTIONS =================
+
+export async function getUserEducations() {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, message: "Authentication required", data: [] };
+        }
+
+        const educations = await prisma.userEducation.findMany({
+            where: { userId: session.user.id },
+            orderBy: [{ order: 'asc' }, { startDate: 'desc' }]
+        });
+
+        return { success: true, data: educations };
+    } catch (error) {
+        console.error("Error fetching educations:", error);
+        return { success: false, message: "Failed to fetch educations", data: [] };
+    }
+}
+
+export async function addUserEducation(data: {
+    degree?: string;
+    institution: string;
+    startDate: Date;
+    endDate?: Date;
+    bulletPoints?: string[];
+    order?: number;
+}) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, message: "Authentication required" };
+        }
+
+        const education = await prisma.userEducation.create({
+            data: {
+                userId: session.user.id,
+                ...data
+            }
+        });
+
+        revalidatePath("/profile");
+        revalidatePath("/ai/resumecreator");
+        return { success: true, message: "Education added successfully", data: education };
+    } catch (error) {
+        console.error("Error adding education:", error);
+        return { success: false, message: "Failed to add education" };
+    }
+}
+
+export async function updateUserEducation(id: string, data: {
+    degree?: string;
+    institution?: string;
+    startDate?: Date;
+    endDate?: Date;
+    bulletPoints?: string[];
+    order?: number;
+}) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, message: "Authentication required" };
+        }
+
+        const existing = await prisma.userEducation.findUnique({
+            where: { id },
+            select: { userId: true }
+        });
+
+        if (!existing || existing.userId !== session.user.id) {
+            return { success: false, message: "Unauthorized" };
+        }
+
+        const education = await prisma.userEducation.update({
+            where: { id },
+            data
+        });
+
+        revalidatePath("/profile");
+        revalidatePath("/ai/resumecreator");
+        return { success: true, message: "Education updated successfully", data: education };
+    } catch (error) {
+        console.error("Error updating education:", error);
+        return { success: false, message: "Failed to update education" };
+    }
+}
+
+export async function deleteUserEducation(id: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, message: "Authentication required" };
+        }
+
+        const existing = await prisma.userEducation.findUnique({
+            where: { id },
+            select: { userId: true }
+        });
+
+        if (!existing || existing.userId !== session.user.id) {
+            return { success: false, message: "Unauthorized" };
+        }
+
+        await prisma.userEducation.delete({ where: { id } });
+
+        revalidatePath("/profile");
+        revalidatePath("/ai/resumecreator");
+        return { success: true, message: "Education deleted successfully" };
+    } catch (error) {
+        console.error("Error deleting education:", error);
+        return { success: false, message: "Failed to delete education" };
+    }
+}
+
+/**
+ * Get public resume by username (shareable URL: /resume/[username])
+ */
+export async function getPublicResumeByUsername(username: string) {
+    try {
+        const user = await prisma.user.findFirst({
+            where: { username },
+            select: {
+                id: true,
+                name: true,
+                username: true,
+                occupation: true,
+                location: true,
+                image: true,
+                experiences: { orderBy: [{ isCurrentlyWorking: "desc" }, { startDate: "desc" }] },
+                portfolioProjects: { orderBy: { startDate: "desc" }, include: { projectLinks: true } },
+                skills: { orderBy: [{ order: "asc" }, { name: "asc" }] },
+                educations: { orderBy: [{ order: "asc" }, { startDate: "desc" }] },
+                certifications: { orderBy: { issuedDate: "desc" } },
+                socialLinks: { orderBy: { order: "asc" } },
+            },
+        });
+        if (!user) return { success: false, error: "Resume not found" };
+        return { success: true, user };
+    } catch (error) {
+        console.error("Error fetching public resume:", error);
+        return { success: false, error: "Failed to load resume" };
     }
 }
 
@@ -499,7 +691,12 @@ export async function getOwnProfile() {
                 certifications: {
                     orderBy: { issuedDate: "desc" },
                 },
-                socialLinks: true,
+                socialLinks: {
+                    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+                },
+                educations: {
+                    orderBy: [{ order: "asc" }, { startDate: "desc" }],
+                },
             },
         });
 
@@ -572,7 +769,12 @@ export async function getPublicProfile(username: string) {
                 certifications: {
                     orderBy: { issuedDate: "desc" },
                 },
-                socialLinks: true,
+                socialLinks: {
+                    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+                },
+                educations: {
+                    orderBy: [{ order: "asc" }, { startDate: "desc" }],
+                },
             },
         });
 

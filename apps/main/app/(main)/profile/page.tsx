@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "@/app/store/useUserStore";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, ProjectsTab,
-    SkillsTab, ResumeTab, AboutTab, IntegrationsTab, 
+    SkillsTab, WorkExperienceTab, EducationTab, AboutTab,
     ShareProfileModal, EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
@@ -144,7 +144,7 @@ interface ProfileData {
 
 export default function ProfilePage() {
     const router = useRouter();
-    const { isLoading: storeLoading, error: storeError, fetchUser } = useUserStore();
+    const { user: storeUser, isLoading: storeLoading, error: storeError, fetchUser } = useUserStore();
     const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
     const [profileData, setProfileData] = useState<ProfileData | null>(null);
     const [stats, setStats] = useState<ProfileStats | null>(null);
@@ -202,6 +202,26 @@ export default function ProfilePage() {
 
     // Resume upload refreshes profile
     const handleUploadResume = () => loadProfile();
+
+    // Merge store user into profile for instant updates when Edit Profile saves (no full refetch)
+    const displayProfile = useMemo(() => {
+        if (!profileData) return null;
+        if (!storeUser) return profileData;
+        return {
+            ...profileData,
+            name: storeUser.name ?? profileData.name,
+            bio: storeUser.bio ?? profileData.bio,
+            location: storeUser.location ?? profileData.location,
+            company: storeUser.company ?? profileData.company,
+            occupation: storeUser.occupation ?? profileData.occupation,
+            website: storeUser.website ?? profileData.website,
+            careerGoals: storeUser.careerGoals ?? profileData.careerGoals,
+            targetCompanies: storeUser.targetCompanies ?? profileData.targetCompanies,
+            expectedSalary: storeUser.expectedSalary ?? profileData.expectedSalary,
+            noticePeriod: storeUser.noticePeriod ?? profileData.noticePeriod,
+            workExperience: storeUser.workExperience ?? profileData.workExperience,
+        };
+    }, [profileData, storeUser]);
 
     // Loading state
     if (isLoading || storeLoading) {
@@ -297,7 +317,7 @@ export default function ProfilePage() {
     // Render tab content
     const renderTabContent = () => {
         const commonProps = {
-            user: profileData,
+            user: displayProfile ?? profileData,
             isOwnProfile: true,
         };
 
@@ -316,24 +336,27 @@ export default function ProfilePage() {
                             portfolioProjects: profileData?.portfolioProjects || [],
                         }}
                         isOwnProfile={true}
+                        onProjectAdded={loadProfile}
                     />
                 );
             case "skills":
                 return (
                     <SkillsTab
                         {...commonProps}
-                        currentUserId={profileData?.id}
+                        currentUserId={(displayProfile ?? profileData)?.id}
                         onEndorseSkill={handleEndorseSkill}
-                        onAddSkill={() => router.push("/profile/settings?tab=skills")}
+                        onAddSkill={() => router.push("/ai/resumecreator")}
                     />
                 );
-            case "resume":
+            case "work_experience":
                 return (
-                    <ResumeTab
+                    <WorkExperienceTab
                         {...commonProps}
                         onUploadResume={handleUploadResume}
                     />
                 );
+            case "education":
+                return <EducationTab {...commonProps} />;
             case "about":
                 return (
                     <AboutTab
@@ -341,8 +364,6 @@ export default function ProfilePage() {
                         onEditProfile={() => setEditModalOpen(true)}
                     />
                 );
-            case "integrations":
-                return <IntegrationsTab {...commonProps} />;
             default:
                 return null;
         }
@@ -351,12 +372,12 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
             <ProfileHeader
-                user={profileData}
+                user={displayProfile ?? profileData}
                 stats={profileStats}
                 isOwnProfile={true}
                 onEditProfile={() => setEditModalOpen(true)}
                 onShareProfile={() => setShareModalOpen(true)}
-                onOpenSettings={() => router.push("/profile/settings")}
+                onOpenSettings={() => router.push("/settings/account")}
             />
             <ProfileTabs
                 activeTab={activeTab}
@@ -386,7 +407,7 @@ export default function ProfilePage() {
                             transition={{ delay: 0.1 }}
                         >
                             <ProfileSidebar
-                                user={profileData}
+                                user={displayProfile ?? profileData}
                                 stats={profileStats}
                                 isOwnProfile={true}
                             />
@@ -397,15 +418,15 @@ export default function ProfilePage() {
             <ShareProfileModal
                 isOpen={shareModalOpen}
                 onClose={() => setShareModalOpen(false)}
-                username={profileData?.username || ""}
-                name={profileData?.name}
-                image={profileData?.image}
+                username={(displayProfile ?? profileData)?.username || ""}
+                name={(displayProfile ?? profileData)?.name}
+                image={(displayProfile ?? profileData)?.image}
             />
             <EditProfileModal
                 isOpen={editModalOpen}
                 onClose={() => setEditModalOpen(false)}
-                user={profileData}
-                onUpdate={loadProfile}
+                user={displayProfile ?? profileData}
+                onUpdate={() => {}}
             />
         </div>
     );

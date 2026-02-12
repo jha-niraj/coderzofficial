@@ -281,7 +281,7 @@ export function ClaimBadgeSheet({ badge, open, onOpenChange, onShare, socialConn
                                     <Button
                                         variant="link"
                                         className="text-blue-600 dark:text-blue-400 p-0 h-auto mt-1"
-                                        onClick={() => window.location.href = '/settings/social-integrations'}
+                                        onClick={() => window.location.href = '/settings/integrations'}
                                     >
                                         Connect accounts →
                                     </Button>

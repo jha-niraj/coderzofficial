@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@repo/prisma"
+import { auth } from "@repo/auth"
 import { sendEmail } from "@/utils/mail"
 import bcryptjs from "bcryptjs"
 
@@ -235,5 +236,52 @@ export async function resetPasswordWithOTP(email: string, otp: string, newPasswo
     } catch (error) {
         console.error("Reset password with OTP error:", error)
         return { success: false, error: "Failed to reset password" }
+    }
+}
+
+export async function changePassword(
+    currentPassword: string,
+    newPassword: string
+): Promise<AuthResponse> {
+    try {
+        const session = await auth()
+        if (!session?.user?.email) {
+            return { success: false, error: "Not authenticated" }
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+        })
+
+        if (!user) {
+            return { success: false, error: "User not found" }
+        }
+
+        if (!user.hashedPassword) {
+            return { success: false, error: "You signed up with a social account. Set a password first or use the provider to sign in." }
+        }
+
+        const isValid = await bcryptjs.compare(currentPassword, user.hashedPassword)
+        if (!isValid) {
+            return { success: false, error: "Current password is incorrect" }
+        }
+
+        if (newPassword.length < 8) {
+            return { success: false, error: "New password must be at least 8 characters" }
+        }
+
+        const hashedPassword = await bcryptjs.hash(newPassword, 10)
+        await prisma.user.update({
+            where: { email: session.user.email },
+            data: {
+                hashedPassword,
+                mustChangePassword: false,
+            },
+        })
+
+        return { success: true, message: "Password updated successfully" }
+    } catch (error) {
+        console.error("Change password error:", error)
+        return { success: false, error: "Failed to update password" }
     }
 }

@@ -10,6 +10,8 @@ export { ProjectsTab } from "./tabs/projects-tab";
 export { ActivityTab } from "./tabs/activity-tab";
 export { SkillsTab } from "./tabs/skills-tab";
 export { ResumeTab } from "./tabs/resume-tab";
+export { WorkExperienceTab } from "./tabs/work-experience-tab";
+export { EducationTab } from "./tabs/education-tab";
 export { AboutTab } from "./tabs/about-tab";
 export { IntegrationsTab } from "./integrations-tab";
 

@@ -11,11 +11,12 @@ import {
 } from "@repo/ui/components/ui/select";
 import {
     Search, Grid3X3, List, ExternalLink, Github, CheckCircle2,
-    Clock3, Circle, FolderKanban, Eye, EyeOff, Globe, Calendar
+    Clock3, Circle, FolderKanban, Eye, EyeOff, Globe, Calendar, Plus
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
+import { AddProjectSheet } from "@/components/profile/sheets/add-project-sheet";
 
 // PortfolioProject type matching the database model
 interface PortfolioProject {
@@ -42,6 +43,7 @@ interface ProjectsTabProps {
         portfolioProjects?: PortfolioProject[];
     };
     isOwnProfile?: boolean;
+    onProjectAdded?: () => void;
 }
 
 const defaultStatusConfig = {
@@ -75,8 +77,10 @@ const visibilityConfig: Record<string, { icon: typeof Globe; label: string; colo
 export function ProjectsTab({
     user,
     isOwnProfile = false,
+    onProjectAdded,
 }: ProjectsTabProps) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [addProjectOpen, setAddProjectOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [typeFilter, setTypeFilter] = useState<string>("all");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -242,7 +246,25 @@ export function ProjectsTab({
                 <span>
                     Showing {sortedProjects.length} of {projects.length} projects
                 </span>
+                {
+                    isOwnProfile && (
+                        <Button size="sm" className="gap-1.5" onClick={() => setAddProjectOpen(true)}>
+                            <Plus className="w-4 h-4" />
+                            Add Project
+                        </Button>
+                    )
+                }
             </div>
+
+            {
+                isOwnProfile && (
+                    <AddProjectSheet
+                        open={addProjectOpen}
+                        onOpenChange={setAddProjectOpen}
+                        onSuccess={onProjectAdded ?? (() => {})}
+                    />
+                )
+            }
 
             {
                 sortedProjects.length > 0 ? (
@@ -260,7 +282,7 @@ export function ProjectsTab({
                                 const visibilityConf = visibilityConfig[project.visibility] ?? defaultVisibilityConfig;
                                 const VisibilityIcon = visibilityConf.icon;
                                 const githubUrl = getLink(project, "GITHUB");
-                                const liveUrl = getLink(project, "LIVE");
+                                const liveUrl = getLink(project, "LIVE SITE") || getLink(project, "LIVE") || getLink(project, "DEMO");
 
                                 if (viewMode === "list") {
                                     return (

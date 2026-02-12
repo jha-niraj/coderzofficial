@@ -88,6 +88,11 @@ enum SkillCategory {
     DATABASE
     DEVOPS
     CLOUD
+    // Resume-style grouped categories
+    FRAMEWORKS_LIBRARIES
+    TOOLS_DATABASES
+    PLATFORMS
+    AI_TOOLS
 }
 
 enum FeedbackCategory {
@@ -358,7 +363,7 @@ model User {
     image               String?          @default("https://tse4.mm.bing.net/th?id=OIP.-BS8Y2nH1k93GJiitUVBCAHaHa&pid=Api&P=0")
     role                Role             @default(Student)
     hasResume           Boolean          @default(false)
-    resume              String?
+    resume              String?          // Uploaded PDF URL
     resumeText          String?
     creditsShared       Int?             @default(0)
     totalCreditsShared  Int?             @default(0)
@@ -448,6 +453,7 @@ model User {
     experiences       WorkExperience[]   @relation("UserExperiences")
     portfolioProjects PortfolioProject[] @relation("UserPortfolioProjects")
     socialLinks       SocialLink[]       @relation("UserSocialLinks")
+    educations        UserEducation[]    @relation("UserEducations")
 
     ProjectV2                  ProjectV2[]
     UserProjectV2Progress      UserProjectV2Progress[]
@@ -744,7 +750,8 @@ model Skills {
     id        String        @id @default(uuid())
     name      String
     level     String
-    category  SkillCategory
+    category  SkillCategory // Groups: LANGUAGES, FRAMEWORKS_LIBRARIES, TOOLS_DATABASES, PLATFORMS, AI_TOOLS, etc.
+    order     Int           @default(0) // Display order within category group
     userId    String
     user      User          @relation(fields: [userId], references: [id])
     createdAt DateTime      @default(now())
@@ -772,7 +779,8 @@ model WorkExperience {
     companyLogo        String?
     roleTitle          String
     companyWebsite     String?
-    description        String?
+    description        String?   // Kept for backward compat; prefer bulletPoints
+    bulletPoints       String[]  @default([]) // Point-wise descriptions for resume/profile
     startDate          DateTime
     endDate            DateTime?
     isCurrentlyWorking Boolean   @default(false)
@@ -789,9 +797,10 @@ model PortfolioProject {
     user         User           @relation("UserPortfolioProjects", fields: [userId], references: [id], onDelete: Cascade)
     projectName  String
     projectType  String
-    description  String?
-    status       String // In Progress, Completed, Archived
-    visibility   String // Public, Private
+    description  String?        // Kept for backward compat; prefer bulletPoints
+    bulletPoints String[]       @default([]) // Point-wise descriptions for resume/profile
+    status       String         // In Progress, Completed, Archived
+    visibility   String         // Public, Private
     technologies String[]
     startDate    DateTime
     endDate      DateTime?
@@ -830,17 +839,36 @@ model ProjectMedia {
     @@index([projectId])
 }
 
-// Social Links Model
+// Social Links Model - Used by both profile and resume
 model SocialLink {
     id        String   @id @default(uuid())
     userId    String
     user      User     @relation("UserSocialLinks", fields: [userId], references: [id], onDelete: Cascade)
-    platform  String // github, linkedin, twitter, portfolio, etc.
+    platform  String   // GITHUB, LINKEDIN, TWITTER, PORTFOLIO, GMAIL, etc.
     url       String
+    label     String?  // Optional display label
+    order     Int      @default(0)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     @@unique([userId, platform])
+    @@index([userId])
+}
+
+// User Education - Multiple entries (degree, school, etc.) for profile and resume
+model UserEducation {
+    id          String   @id @default(uuid())
+    userId      String
+    user        User     @relation("UserEducations", fields: [userId], references: [id], onDelete: Cascade)
+    degree      String?  // e.g. "Bachelor of Technology"
+    institution String
+    startDate   DateTime
+    endDate     DateTime?
+    bulletPoints String[] @default([])
+    order       Int      @default(0)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
     @@index([userId])
 }
 

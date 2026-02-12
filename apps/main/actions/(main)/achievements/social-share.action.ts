@@ -63,7 +63,7 @@ export async function disconnectSocialAccount(provider: 'TWITTER' | 'LINKEDIN') 
             where: { userId: session.user.id, provider },
         })
 
-        revalidatePath('/settings/social-integrations')
+        revalidatePath('/settings/integrations')
         return { success: true }
     } catch (error) {
         console.error('Error disconnecting social account:', error)
