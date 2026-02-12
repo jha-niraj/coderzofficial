@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, SkillsTab,
-    ProjectsTab, ResumeTab, AboutTab, ShareProfileModal,
+    ProjectsTab, WorkExperienceTab, EducationTab, AboutTab, ShareProfileModal,
     type ProfileTab
 } from "@/components/profile";
 import { trackProfileView } from "@/actions/(main)/user/profile.action";
@@ -115,13 +115,15 @@ export function PublicProfileClient({
                         }
                     />
                 );
-            case "resume":
+            case "work_experience":
                 return (
-                    <ResumeTab
+                    <WorkExperienceTab
                         {...tabContentProps}
                         onUploadResume={isOwnProfile ? () => router.push("/profile") : undefined}
                     />
                 );
+            case "education":
+                return <EducationTab {...tabContentProps} />;
             case "about":
                 return <AboutTab {...tabContentProps} />;
             default:
@@ -131,7 +133,6 @@ export function PublicProfileClient({
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-            {/* Profile Header */}
             <ProfileHeader
                 user={user}
                 stats={stats}
@@ -143,13 +144,10 @@ export function PublicProfileClient({
                 onFollowToggle={handleFollow}
             />
 
-            {/* Profile Tabs */}
             <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} isOwnProfile={isOwnProfile} />
 
-            {/* Main Content */}
             <div className="container mx-auto px-4 py-6">
                 <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Main Content Area */}
                     <motion.div
                         className="flex-1 order-2 lg:order-1"
                         initial={{ opacity: 0 }}
@@ -166,8 +164,6 @@ export function PublicProfileClient({
                             </motion.div>
                         </AnimatePresence>
                     </motion.div>
-
-                    {/* Sidebar */}
                     <motion.div
                         className="w-full lg:w-80 shrink-0 order-1 lg:order-2"
                         initial={{ opacity: 0, x: 20 }}
@@ -185,7 +181,6 @@ export function PublicProfileClient({
                 </div>
             </div>
 
-            {/* Share Profile Modal */}
             <ShareProfileModal
                 isOpen={shareModalOpen}
                 onClose={() => setShareModalOpen(false)}

@@ -2,9 +2,11 @@
 
 import { useRef, useState } from "react"
 import { motion } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
+import { Card } from "@repo/ui/components/ui/card"
 import { Button } from "@repo/ui/components/ui/button"
-import { FileText, Eye, Loader2, Pencil } from "lucide-react"
+import {
+    FileText, Eye, Loader2, Pencil
+} from "lucide-react"
 import Link from "next/link"
 import toast from "@repo/ui/components/ui/sonner"
 import { uploadResume } from "@/actions/(main)/user/resume.action"
@@ -126,7 +128,6 @@ export function WorkExperienceTab({
 
     return (
         <div className="space-y-6">
-            {/* Uploaded Resume PDF */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <Card className="overflow-hidden">
                     <div className="bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-orange-500/10 p-6">
@@ -152,65 +153,69 @@ export function WorkExperienceTab({
                                     className="hidden"
                                     onChange={handleFileChange}
                                 />
-                                {isOwnProfile && (
-                                    <Button variant="outline" size="sm" className="gap-2" asChild>
-                                        <Link href="/ai/resumecreator">
-                                            <Pencil className="w-4 h-4" />
-                                            Edit in Resume Creator
-                                        </Link>
-                                    </Button>
-                                )}
-                                {user.hasResume && user.resume ? (
-                                    <>
-                                        <Button variant="outline" size="sm" className="gap-2" onClick={handleViewResume}>
-                                            <Eye className="w-4 h-4" />
-                                            View
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
-                                            onClick={handleViewResume}
-                                        >
-                                            Download
-                                        </Button>
-                                    </>
-                                ) : (
+                                {
                                     isOwnProfile && (
-                                        <Button
-                                            onClick={handleUploadClick}
-                                            disabled={uploading}
-                                            className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
-                                        >
-                                            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                                            {uploading ? "Uploading..." : "Upload Resume"}
+                                        <Button variant="outline" size="sm" className="gap-2" asChild>
+                                            <Link href="/ai/resumecreator">
+                                                <Pencil className="w-4 h-4" />
+                                                Edit in Resume Creator
+                                            </Link>
                                         </Button>
                                     )
-                                )}
+                                }
+                                {
+                                    user.hasResume && user.resume ? (
+                                        <>
+                                            <Button variant="outline" size="sm" className="gap-2" onClick={handleViewResume}>
+                                                <Eye className="w-4 h-4" />
+                                                View
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
+                                                onClick={handleViewResume}
+                                            >
+                                                Download
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        isOwnProfile && (
+                                            <Button
+                                                onClick={handleUploadClick}
+                                                disabled={uploading}
+                                                className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
+                                            >
+                                                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                                                {uploading ? "Uploading..." : "Upload Resume"}
+                                            </Button>
+                                        )
+                                    )
+                                }
                             </div>
                         </div>
                     </div>
                 </Card>
             </motion.div>
-
-            {/* Platform-generated resume */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="font-semibold">Platform Resume</h3>
-                    {isOwnProfile && user.username && (
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" asChild>
-                                <Link href={`/resume/${user.username}`} target="_blank" rel="noopener noreferrer">
-                                    View public resume
-                                </Link>
-                            </Button>
-                            <Button variant="outline" size="sm" asChild>
-                                <Link href="/ai/resumecreator">
-                                    <Pencil className="w-4 h-4 mr-1" />
-                                    Edit
-                                </Link>
-                            </Button>
-                        </div>
-                    )}
+                    {
+                        isOwnProfile && user.username && (
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/resume/${user.username}`} target="_blank" rel="noopener noreferrer">
+                                        View public resume
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href="/ai/resumecreator">
+                                        <Pencil className="w-4 h-4 mr-1" />
+                                        Edit
+                                    </Link>
+                                </Button>
+                            </div>
+                        )
+                    }
                 </div>
                 <ResumePublicView user={resumeData} embedded />
             </motion.div>

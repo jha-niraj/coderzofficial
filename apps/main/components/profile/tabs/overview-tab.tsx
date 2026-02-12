@@ -4,14 +4,10 @@ import { motion } from "framer-motion";
 import {
 	Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card";
-import { Button } from "@repo/ui/components/ui/button";
-import { Badge } from "@repo/ui/components/ui/badge";
 import { Progress } from "@repo/ui/components/ui/progress";
 import {
-	FolderKanban, ArrowRight, Trophy, TrendingUp, 
-	Globe, CheckCircle2, Clock3, Star
+	FolderKanban, Trophy, TrendingUp, Star
 } from "lucide-react";
-import Link from "next/link";
 
 interface PortfolioProject {
 	id: string;
@@ -56,8 +52,8 @@ export function OverviewTab({
 	stats,
 	isOwnProfile,
 }: OverviewTabProps) {
-	// Get featured projects (public, completed first, max 6)
-	const featuredProjects = (user.portfolioProjects || [])
+	// Get featured projects (public, completed first, max 6) - reserved for future use
+	const _featuredProjects = (user.portfolioProjects || [])
 		.filter(p => p.visibility === "PUBLIC" || isOwnProfile)
 		.sort((a, b) => {
 			if (a.status === "COMPLETED" && b.status !== "COMPLETED") return -1;
@@ -66,7 +62,7 @@ export function OverviewTab({
 		})
 		.slice(0, 6);
 
-	const recentAchievements = user.achievements?.slice(0, 3) || [];
+	const _recentAchievements = user.achievements?.slice(0, 3) || [];
 
 	// Calculate XP progress to next level
 	const xpToNextLevel = (user.currentLevel + 1) * 1000;

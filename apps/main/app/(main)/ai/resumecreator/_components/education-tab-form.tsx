@@ -5,10 +5,14 @@ import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
 import { Textarea } from "@repo/ui/components/ui/textarea"
-import { Plus, Trash2, Loader2, CalendarIcon } from "lucide-react"
+import {
+    Plus, Trash2, Loader2, CalendarIcon
+} from "lucide-react"
 import { format } from "date-fns"
 import { Calendar } from "@repo/ui/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/components/ui/popover"
+import {
+    Popover, PopoverContent, PopoverTrigger
+} from "@repo/ui/components/ui/popover"
 import toast from "@repo/ui/components/ui/sonner"
 
 type Education = {
@@ -81,24 +85,28 @@ export function EducationTabForm({
                 </Button>
             </div>
 
-            {educations.length === 0 ? (
-                <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-                    No education yet. Click &quot;Add Education&quot; to add one.
-                </div>
-            ) : (
-                <div className="space-y-6">
-                    {educations.map((edu) => (
-                        <EducationCard
-                            key={edu.id}
-                            edu={edu}
-                            descStr={descStr}
-                            onUpdate={onUpdate}
-                            onDelete={() => handleDelete(edu.id)}
-                            onSuccess={onSuccess}
-                        />
-                    ))}
-                </div>
-            )}
+            {
+                educations.length === 0 ? (
+                    <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+                        No education yet. Click &quot;Add Education&quot; to add one.
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {
+                            educations.map((edu) => (
+                                <EducationCard
+                                    key={edu.id}
+                                    edu={edu}
+                                    descStr={descStr}
+                                    onUpdate={onUpdate}
+                                    onDelete={() => handleDelete(edu.id)}
+                                    onSuccess={onSuccess}
+                                />
+                            ))
+                        }
+                    </div>
+                )
+            }
         </div>
     )
 }
@@ -184,7 +192,6 @@ function EducationCard({
                     <Trash2 className="w-4 h-4" />
                 </Button>
             </div>
-
             <div>
                 <Label>Details (Optional)</Label>
                 <Textarea
@@ -197,7 +204,6 @@ function EducationCard({
                     className="resize-none"
                 />
             </div>
-
             <div className="flex flex-wrap gap-4 items-end">
                 <div>
                     <Label>Start Date</Label>
@@ -231,9 +237,11 @@ function EducationCard({
                                 className="w-[200px] justify-start text-left font-normal"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {local.endDate
-                                    ? format(new Date(local.endDate), "MMMM d, yyyy")
-                                    : "Select"}
+                                {
+                                    local.endDate
+                                        ? format(new Date(local.endDate), "MMMM d, yyyy")
+                                        : "Select"
+                                }
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -252,13 +260,14 @@ function EducationCard({
                     </Popover>
                 </div>
             </div>
-
             <Button onClick={handleSave} disabled={saving} size="sm">
-                {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    "Save Changes"
-                )}
+                {
+                    saving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        "Save Changes"
+                    )
+                }
             </Button>
         </div>
     )

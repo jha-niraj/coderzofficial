@@ -2,25 +2,22 @@
 
 import { useState } from "react"
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
+    Sheet, SheetContent, SheetHeader, SheetTitle
 } from "@repo/ui/components/ui/sheet"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
 import { Textarea } from "@repo/ui/components/ui/textarea"
-import { Plus, Trash2, Loader2, CalendarIcon, Link2, Image } from "lucide-react"
+import {
+    Plus, Trash2, Loader2, CalendarIcon, Link2, Image
+} from "lucide-react"
 import { format } from "date-fns"
 import { Calendar } from "@repo/ui/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/components/ui/popover"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Popover, PopoverContent, PopoverTrigger
+} from "@repo/ui/components/ui/popover"
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import { TechSelect } from "@/app/(main)/ai/resumecreator/_components/projects-tab-form"
 import toast from "@repo/ui/components/ui/sonner"
@@ -87,9 +84,9 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
         const lines = form.description.split("\n").filter(Boolean)
         const res = await addPortfolioProject({
             projectName: form.projectName.trim(),
-            projectType: form.projectType,
-            status: form.status,
-            visibility: form.visibility,
+            projectType: form.projectType ?? "PERSONAL",
+            status: form.status ?? "IN_PROGRESS",
+            visibility: form.visibility ?? "PUBLIC",
             technologies: form.technologies,
             bulletPoints: lines,
             startDate: form.startDate,
@@ -134,7 +131,6 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
                                     placeholder="Project name"
                                 />
                             </div>
-
                             <div className="flex flex-wrap gap-4">
                                 <div className="min-w-[140px]">
                                     <Label>Project Type</Label>
@@ -167,7 +163,6 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
                                     </Select>
                                 </div>
                             </div>
-
                             <div>
                                 <Label>Description</Label>
                                 <Textarea
@@ -180,20 +175,21 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
                                 />
                                 <p className="text-xs text-muted-foreground mt-1">{form.description.length}/5000</p>
                             </div>
-
                             <div>
                                 <Label>Technologies</Label>
                                 <div className="flex flex-wrap gap-2 mt-1">
-                                    {form.technologies.map((tech) => (
-                                        <button
-                                            key={tech}
-                                            type="button"
-                                            onClick={() => toggleTech(tech)}
-                                            className="px-2 py-1 rounded text-xs border bg-primary text-primary-foreground border-primary"
-                                        >
-                                            {tech} ×
-                                        </button>
-                                    ))}
+                                    {
+                                        form.technologies.map((tech) => (
+                                            <button
+                                                key={tech}
+                                                type="button"
+                                                onClick={() => toggleTech(tech)}
+                                                className="px-2 py-1 rounded text-xs border bg-primary text-primary-foreground border-primary"
+                                            >
+                                                {tech} ×
+                                            </button>
+                                        ))
+                                    }
                                     <TechSelect
                                         options={TECH_OPTIONS}
                                         selected={form.technologies}
@@ -207,60 +203,61 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
                                     />
                                 </div>
                             </div>
-
                             <div>
                                 <Label className="flex items-center gap-2"><Link2 className="w-4 h-4" /> Project Links</Label>
                                 <div className="space-y-3 mt-2">
-                                    {form.links.map((link, i) => (
-                                        <div key={i} className="flex gap-2 items-start flex-wrap">
-                                            <Select
-                                                value={link.linkType}
-                                                onValueChange={(v) =>
-                                                    setForm((p) => ({ ...p, links: p.links.map((l, j) => (j === i ? { ...l, linkType: v } : l)) }))
-                                                }
-                                            >
-                                                <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {LINK_TYPES.map((lt) => <SelectItem key={lt} value={lt}>{lt}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            <Input className="flex-1 min-w-[180px]" placeholder="https://..." value={link.url} onChange={(e) => setForm((p) => ({ ...p, links: p.links.map((l, j) => (j === i ? { ...l, url: e.target.value } : l)) }))} />
-                                            <Input className="w-[180px]" placeholder="Description" value={link.description || ""} onChange={(e) => setForm((p) => ({ ...p, links: p.links.map((l, j) => (j === i ? { ...l, description: e.target.value } : l)) }))} />
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setForm((p) => ({ ...p, links: p.links.filter((_, j) => j !== i) }))}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
+                                    {
+                                        form.links.map((link, i) => (
+                                            <div key={i} className="flex gap-2 items-start flex-wrap">
+                                                <Select
+                                                    value={link.linkType}
+                                                    onValueChange={(v) =>
+                                                        setForm((p) => ({ ...p, links: p.links.map((l, j) => (j === i ? { ...l, linkType: v } : l)) }))
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {LINK_TYPES.map((lt) => <SelectItem key={lt} value={lt}>{lt}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input className="flex-1 min-w-[180px]" placeholder="https://..." value={link.url} onChange={(e) => setForm((p) => ({ ...p, links: p.links.map((l, j) => (j === i ? { ...l, url: e.target.value } : l)) }))} />
+                                                <Input className="w-[180px]" placeholder="Description" value={link.description || ""} onChange={(e) => setForm((p) => ({ ...p, links: p.links.map((l, j) => (j === i ? { ...l, description: e.target.value } : l)) }))} />
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setForm((p) => ({ ...p, links: p.links.filter((_, j) => j !== i) }))}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        ))
+                                    }
                                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setForm((p) => ({ ...p, links: [...p.links, { linkType: "GITHUB", url: "", description: null }] }))}>
                                         <Plus className="w-4 h-4" /> Add Link
                                     </Button>
                                 </div>
                             </div>
-
                             <div>
                                 <Label className="flex items-center gap-2"><Image className="w-4 h-4" /> Project Media</Label>
                                 <div className="space-y-3 mt-2">
-                                    {form.media.map((med, i) => (
-                                        <div key={i} className="flex gap-2 items-start flex-wrap p-3 rounded-lg border bg-muted/30">
-                                            <Select value={med.mediaType} onValueChange={(v) => setForm((p) => ({ ...p, media: p.media.map((m, j) => (j === i ? { ...m, mediaType: v } : m)) }))}>
-                                                <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {MEDIA_TYPES.map((mt) => <SelectItem key={mt} value={mt}>{mt}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            <Input className="flex-1 min-w-[200px]" placeholder="https://..." value={med.mediaUrl} onChange={(e) => setForm((p) => ({ ...p, media: p.media.map((m, j) => (j === i ? { ...m, mediaUrl: e.target.value } : m)) }))} />
-                                            <Input className="w-[180px]" placeholder="Description" value={med.caption || ""} onChange={(e) => setForm((p) => ({ ...p, media: p.media.map((m, j) => (j === i ? { ...m, caption: e.target.value } : m)) }))} />
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setForm((p) => ({ ...p, media: p.media.filter((_, j) => j !== i) }))}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
+                                    {
+                                        form.media.map((med, i) => (
+                                            <div key={i} className="flex gap-2 items-start flex-wrap p-3 rounded-lg border bg-muted/30">
+                                                <Select value={med.mediaType} onValueChange={(v) => setForm((p) => ({ ...p, media: p.media.map((m, j) => (j === i ? { ...m, mediaType: v } : m)) }))}>
+                                                    <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {MEDIA_TYPES.map((mt) => <SelectItem key={mt} value={mt}>{mt}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input className="flex-1 min-w-[200px]" placeholder="https://..." value={med.mediaUrl} onChange={(e) => setForm((p) => ({ ...p, media: p.media.map((m, j) => (j === i ? { ...m, mediaUrl: e.target.value } : m)) }))} />
+                                                <Input className="w-[180px]" placeholder="Description" value={med.caption || ""} onChange={(e) => setForm((p) => ({ ...p, media: p.media.map((m, j) => (j === i ? { ...m, caption: e.target.value } : m)) }))} />
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setForm((p) => ({ ...p, media: p.media.filter((_, j) => j !== i) }))}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        ))
+                                    }
                                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setForm((p) => ({ ...p, media: [...p.media, { mediaUrl: "", mediaType: "Image", caption: null }] }))}>
                                         <Plus className="w-4 h-4" /> Add Media
                                     </Button>
                                 </div>
                             </div>
-
                             <div className="flex flex-wrap gap-4 items-end">
                                 <div>
                                     <Label>Start Date</Label>

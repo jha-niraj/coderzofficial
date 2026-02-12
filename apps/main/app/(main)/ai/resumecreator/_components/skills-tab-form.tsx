@@ -4,13 +4,11 @@ import { useState } from "react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
-import { Plus, Trash2, Loader2 } from "lucide-react"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Plus, Trash2, Loader2
+} from "lucide-react"
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import Link from "next/link"
 import toast from "@repo/ui/components/ui/sonner"
@@ -105,14 +103,15 @@ export function SkillsTabForm({
             <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Skills</h3>
                 <Button onClick={handleSave} disabled={saving} size="sm">
-                    {saving ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        "Save Changes"
-                    )}
+                    {
+                        saving ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            "Save Changes"
+                        )
+                    }
                 </Button>
             </div>
-
             <div className="rounded-xl border bg-card p-6 space-y-4">
                 <div className="flex flex-wrap gap-3 items-end">
                     <div className="flex-1 min-w-[150px]">
@@ -136,11 +135,13 @@ export function SkillsTabForm({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {CATEGORIES.map((c) => (
-                                    <SelectItem key={c.value} value={c.value}>
-                                        {c.label}
-                                    </SelectItem>
-                                ))}
+                                {
+                                    CATEGORIES.map((c) => (
+                                        <SelectItem key={c.value} value={c.value}>
+                                            {c.label}
+                                        </SelectItem>
+                                    ))
+                                }
                             </SelectContent>
                         </Select>
                     </div>
@@ -150,60 +151,66 @@ export function SkillsTabForm({
                     </Button>
                 </div>
 
-                {local.length > 0 ? (
-                    <div className="space-y-2">
-                        <Label>Your skills</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {local.map((skill) => (
-                                <div
-                                    key={skill.id}
-                                    className="flex items-center gap-2 rounded-lg border px-3 py-2 bg-muted/30"
-                                >
-                                    <Input
-                                        value={skill.name}
-                                        onChange={(e) =>
-                                            handleSkillChange(skill.id, "name", e.target.value)
-                                        }
-                                        className="h-8 w-24 border-0 bg-transparent p-0 focus-visible:ring-0"
-                                    />
-                                    <Select
-                                        value={skill.category || "FRONTEND"}
-                                        onValueChange={(v) =>
-                                            handleSkillChange(skill.id, "category", v)
-                                        }
-                                    >
-                                        <SelectTrigger className="h-8 w-[140px] border-0 bg-transparent">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {CATEGORIES.map((c) => (
-                                                <SelectItem key={c.value} value={c.value}>
-                                                    {c.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-destructive"
-                                        onClick={() => handleRemove(skill.id)}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            ))}
+                {
+                    local.length > 0 ? (
+                        <div className="space-y-2">
+                            <Label>Your skills</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {
+                                    local.map((skill) => (
+                                        <div
+                                            key={skill.id}
+                                            className="flex items-center gap-2 rounded-lg border px-3 py-2 bg-muted/30"
+                                        >
+                                            <Input
+                                                value={skill.name}
+                                                onChange={(e) =>
+                                                    handleSkillChange(skill.id, "name", e.target.value)
+                                                }
+                                                className="h-8 w-24 border-0 bg-transparent p-0 focus-visible:ring-0"
+                                            />
+                                            <Select
+                                                value={skill.category || "FRONTEND"}
+                                                onValueChange={(v) =>
+                                                    handleSkillChange(skill.id, "category", v)
+                                                }
+                                            >
+                                                <SelectTrigger className="h-8 w-[140px] border-0 bg-transparent">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {
+                                                        CATEGORIES.map((c) => (
+                                                            <SelectItem key={c.value} value={c.value}>
+                                                                {c.label}
+                                                            </SelectItem>
+                                                        ))
+                                                    }
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-destructive"
+                                                onClick={() => handleRemove(skill.id)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    ))
+                                }
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <p className="text-sm text-muted-foreground">
-                        No skills yet. Add skills above. You can also manage skills in{" "}
-                        <Link href="/profile/settings?tab=skills" className="text-primary hover:underline">
-                            Profile Settings
-                        </Link>
-                        .
-                    </p>
-                )}
+                    ) : (
+                        <p className="text-sm text-muted-foreground">
+                            No skills yet. Add skills above. You can also manage skills in{" "}
+                            <Link href="/profile/settings?tab=skills" className="text-primary hover:underline">
+                                Profile Settings
+                            </Link>
+                            .
+                        </p>
+                    )
+                }
             </div>
         </div>
     )

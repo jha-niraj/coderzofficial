@@ -84,6 +84,7 @@ export function IntegrationsContent({ socialConnections }: IntegrationsContentPr
 
     useEffect(() => {
         loadGitHubProfile()
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run once on mount
     }, [])
 
     const loadGitHubProfile = async () => {

@@ -5,13 +5,18 @@ import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
 import { Textarea } from "@repo/ui/components/ui/textarea"
-import { Plus, Trash2, Loader2, CalendarIcon, Sparkles, Mic, Square } from "lucide-react"
+import {
+    Plus, Trash2, Loader2, CalendarIcon, Sparkles, Mic, Square
+} from "lucide-react"
 import { format } from "date-fns"
 import { Calendar } from "@repo/ui/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/components/ui/popover"
-import { cn } from "@repo/ui/lib/utils"
+import {
+    Popover, PopoverContent, PopoverTrigger
+} from "@repo/ui/components/ui/popover"
 import toast from "@repo/ui/components/ui/sonner"
-import { polishWorkExperienceBullets, transcribeAndPolishWorkExperience } from "@/actions/(main)/ai/resume-ai.action"
+import {
+    polishWorkExperienceBullets, transcribeAndPolishWorkExperience
+} from "@/actions/(main)/ai/resume-ai.action"
 
 type Experience = {
     id: string
@@ -81,7 +86,7 @@ export function ExperienceTabForm({
         const tempExp: Experience = {
             id: tempId,
             companyName: "New Company",
-            roleTitle: ROLE_OPTIONS[0],
+            roleTitle: ROLE_OPTIONS[0] ?? "Software Engineer",
             startDate: new Date(),
             isCurrentlyWorking: false,
         }
@@ -159,25 +164,29 @@ export function ExperienceTabForm({
                 </Button>
             </div>
 
-            {localExperiences.length === 0 ? (
-                <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-                    No work experience yet. Click &quot;Add Experience&quot; to add one.
-                </div>
-            ) : (
-                <div className="space-y-6">
-                    {localExperiences.map((exp) => (
-                        <ExperienceCard
-                            key={exp.id}
-                            exp={exp}
-                            descriptionToString={descriptionToString}
-                            onSave={(data) => handleSave(exp, data)}
-                            onDelete={() => handleDelete(exp.id)}
-                            saving={saving === exp.id}
-                            roleOptions={ROLE_OPTIONS}
-                        />
-                    ))}
-                </div>
-            )}
+            {
+                localExperiences.length === 0 ? (
+                    <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+                        No work experience yet. Click &quot;Add Experience&quot; to add one.
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {
+                            localExperiences.map((exp) => (
+                                <ExperienceCard
+                                    key={exp.id}
+                                    exp={exp}
+                                    descriptionToString={descriptionToString}
+                                    onSave={(data) => handleSave(exp, data)}
+                                    onDelete={() => handleDelete(exp.id)}
+                                    saving={saving === exp.id}
+                                    roleOptions={ROLE_OPTIONS}
+                                />
+                            ))
+                        }
+                    </div>
+                )
+            }
         </div>
     )
 }
@@ -222,7 +231,7 @@ function ExperienceCard({
     const [voiceLoading, setVoiceLoading] = useState(false)
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
-    const handleField = (field: string, value: string | Date | boolean) => {
+    const handleField = (field: string, value: string | Date | boolean | null) => {
         setLocal((p) => ({ ...p, [field]: value }))
     }
 
@@ -258,9 +267,11 @@ function ExperienceCard({
                             value={local.roleTitle}
                             onChange={(e) => handleField("roleTitle", e.target.value)}
                         >
-                            {roleOptions.map((r) => (
-                                <option key={r} value={r}>{r}</option>
-                            ))}
+                            {
+                                roleOptions.map((r) => (
+                                    <option key={r} value={r}>{r}</option>
+                                ))
+                            }
                         </select>
                     </div>
                 </div>
@@ -278,7 +289,6 @@ function ExperienceCard({
                     </Button>
                 </div>
             </div>
-
             <div>
                 <Label>Company Website (Optional)</Label>
                 <Input
@@ -287,7 +297,6 @@ function ExperienceCard({
                     placeholder="https://company.com"
                 />
             </div>
-
             <div>
                 <div className="flex items-center justify-between gap-2 mb-1">
                     <Label>Description / Bullet Points</Label>
@@ -361,7 +370,7 @@ function ExperienceCard({
                                     mediaRecorderRef.current = recorder
                                     setVoiceRecording(true)
                                     setVoiceLoading(true)
-                                } catch (e) {
+                                } catch {
                                     toast.error("Microphone access denied")
                                     setVoiceLoading(false)
                                 }
@@ -384,7 +393,6 @@ function ExperienceCard({
                     {local.description.length}/2000 characters
                 </p>
             </div>
-
             <div className="flex flex-wrap gap-4 items-end">
                 <div>
                     <Label>Start Date</Label>
@@ -408,56 +416,49 @@ function ExperienceCard({
                         </PopoverContent>
                     </Popover>
                 </div>
-                {!local.isCurrentlyWorking && (
-                    <div>
-                        <Label>End Date</Label>
-                        <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className="w-[200px] justify-start text-left font-normal"
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {local.endDate
-                                        ? format(new Date(local.endDate), "MMMM d, yyyy")
-                                        : "Select"}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={
-                                        local.endDate
-                                            ? new Date(local.endDate)
-                                            : undefined
-                                    }
-                                    onSelect={(d) =>
-                                        handleField("endDate", d ?? null)
-                                    }
-                                    onDayClick={() => setEndDateOpen(false)}
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                )}
-                <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        checked={local.isCurrentlyWorking}
-                        onChange={(e) =>
-                            handleField("isCurrentlyWorking", e.target.checked)
-                        }
-                    />
-                    <span className="text-sm">I currently work here</span>
-                </label>
+                {
+                    !local.isCurrentlyWorking && (
+                        <div>
+                            <Label>End Date</Label>
+                            <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-[200px] justify-start text-left font-normal"
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {
+                                            local.endDate
+                                                ? format(new Date(local.endDate), "MMMM d, yyyy")
+                                                : "Select"
+                                        }
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={
+                                            local.endDate
+                                                ? new Date(local.endDate)
+                                                : undefined
+                                        }
+                                        onSelect={(d) =>
+                                            handleField("endDate", d ?? null)
+                                        } onDayClick={() => setEndDateOpen(false)} />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                    )
+                }
             </div>
-
             <Button onClick={save} disabled={saving} size="sm">
-                {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    "Save Changes"
-                )}
+                {
+                    saving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        "Save Changes"
+                    )
+                }
             </Button>
         </div>
     )

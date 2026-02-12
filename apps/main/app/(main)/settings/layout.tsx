@@ -1,7 +1,5 @@
 import { auth } from '@repo/auth'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { SettingsLayoutClient } from './_components/settings-layout-client'
 
 export const metadata = {

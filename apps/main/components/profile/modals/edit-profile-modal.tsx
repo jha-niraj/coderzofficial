@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { motion } from "framer-motion";
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle
 } from "@repo/ui/components/ui/sheet";
@@ -13,7 +12,7 @@ import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs";
 import {
-    User, Camera, Briefcase, MapPin, Globe, Loader2, Check, Sparkles,
+    User, Camera, MapPin, Globe, Loader2, Check, Sparkles,
     Building, Target, X, Plus
 } from "lucide-react";
 import Link from "next/link";
@@ -63,8 +62,8 @@ interface EditProfileModalProps {
     onUpdate?: () => void;
 }
 
-// Theme options
-const THEME_OPTIONS = [
+// Theme options (reserved for future use)
+const _THEME_OPTIONS = [
     { id: "OCEAN_BLUE", name: "Ocean Blue", gradient: "from-blue-600 via-cyan-500 to-teal-400" },
     { id: "SUNSET_ORANGE", name: "Sunset", gradient: "from-orange-500 via-amber-500 to-yellow-400" },
     { id: "FOREST_GREEN", name: "Forest", gradient: "from-emerald-600 via-green-500 to-lime-400" },
@@ -72,7 +71,7 @@ const THEME_OPTIONS = [
     { id: "DARK_MODE", name: "Dark", gradient: "from-gray-800 via-gray-700 to-gray-600" },
 ];
 
-const SEMESTERS = [
+const _SEMESTERS = [
     "1st Semester", "2nd Semester", "3rd Semester", "4th Semester",
     "5th Semester", "6th Semester", "7th Semester", "8th Semester",
     "Graduate", "Post-Graduate", "Other"

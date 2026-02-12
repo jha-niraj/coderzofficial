@@ -8,7 +8,9 @@ import {
     ArrowLeft, Loader2, ExternalLink, Copy, Check
 } from "lucide-react"
 import { Button } from "@repo/ui/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from "@repo/ui/components/ui/tabs"
 import toast from "@repo/ui/components/ui/sonner"
 import { EditProfileModal } from "@/components/profile/modals/edit-profile-modal"
 import { getOwnProfile } from "@/actions/(main)/user/profile.action"
@@ -59,6 +61,7 @@ export function ResumeCreatorTabs() {
 
     useEffect(() => {
         loadProfile(true)
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run once on mount
     }, [])
 
     if (isLoading && !profile) {
@@ -157,7 +160,6 @@ export function ResumeCreatorTabs() {
                         )
                     }
                 </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr,420px] gap-8">
                     <div className="min-w-0">
                         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
@@ -187,7 +189,6 @@ export function ResumeCreatorTabs() {
                                     SKILLS
                                 </TabsTrigger>
                             </TabsList>
-
                             <TabsContent value="basic" className="mt-6">
                                 <div className="rounded-xl border bg-card p-6 space-y-4">
                                     <h3 className="font-semibold">Basic Information</h3>
@@ -202,7 +203,6 @@ export function ResumeCreatorTabs() {
                                     </Button>
                                 </div>
                             </TabsContent>
-
                             <TabsContent value="experience" className="mt-6">
                                 <ExperienceTabForm
                                     experiences={profile.experiences}
@@ -212,7 +212,6 @@ export function ResumeCreatorTabs() {
                                     onSuccess={handleFormSuccess}
                                 />
                             </TabsContent>
-
                             <TabsContent value="projects" className="mt-6">
                                 <ProjectsTabForm
                                     projects={profile.portfolioProjects as Parameters<typeof ProjectsTabForm>[0]["projects"]}
@@ -222,7 +221,6 @@ export function ResumeCreatorTabs() {
                                     onSuccess={handleFormSuccess}
                                 />
                             </TabsContent>
-
                             <TabsContent value="socials" className="mt-6">
                                 <SocialsTabForm
                                     socialLinks={profile.socialLinks}
@@ -231,7 +229,6 @@ export function ResumeCreatorTabs() {
                                     onSuccess={handleFormSuccess}
                                 />
                             </TabsContent>
-
                             <TabsContent value="education" className="mt-6">
                                 <EducationTabForm
                                     educations={profile.educations}
@@ -241,7 +238,6 @@ export function ResumeCreatorTabs() {
                                     onSuccess={handleFormSuccess}
                                 />
                             </TabsContent>
-
                             <TabsContent value="skills" className="mt-6">
                                 <SkillsTabForm
                                     skills={profile.skills}

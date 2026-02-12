@@ -4,13 +4,11 @@ import { useState } from "react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
-import { Plus, Trash2, Loader2 } from "lucide-react"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    Plus, Trash2, Loader2
+} from "lucide-react"
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import toast from "@repo/ui/components/ui/sonner"
 
@@ -39,7 +37,7 @@ export function SocialsTabForm({
     onSuccess: () => void | Promise<void>
 }) {
     const [adding, setAdding] = useState(false)
-    const [newPlatform, setNewPlatform] = useState(PLATFORMS[0].value)
+    const [newPlatform, setNewPlatform] = useState(PLATFORMS[0]?.value ?? "GITHUB")
     const [newUrl, setNewUrl] = useState("")
 
     const handleAdd = async () => {
@@ -84,15 +82,16 @@ export function SocialsTabForm({
                     className="gap-1.5"
                     disabled={adding || !newUrl.trim()}
                 >
-                    {adding ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <Plus className="w-4 h-4" />
-                    )}
+                    {
+                        adding ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Plus className="w-4 h-4" />
+                        )
+                    }
                     Add Social
                 </Button>
             </div>
-
             <div className="rounded-xl border bg-card p-6 space-y-4">
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="flex-1 min-w-[200px]">
@@ -105,24 +104,28 @@ export function SocialsTabForm({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {PLATFORMS.filter(
-                                    (p) => !usedPlatforms.includes(p.value)
-                                ).map((p) => (
-                                    <SelectItem key={p.value} value={p.value}>
-                                        {p.label}
-                                    </SelectItem>
-                                ))}
-                                {PLATFORMS.filter((p) =>
-                                    usedPlatforms.includes(p.value)
-                                ).map((p) => (
-                                    <SelectItem
-                                        key={p.value}
-                                        value={p.value}
-                                        disabled
-                                    >
-                                        {p.label} (added)
-                                    </SelectItem>
-                                ))}
+                                {
+                                    PLATFORMS.filter(
+                                        (p) => !usedPlatforms.includes(p.value)
+                                    ).map((p) => (
+                                        <SelectItem key={p.value} value={p.value}>
+                                            {p.label}
+                                        </SelectItem>
+                                    ))
+                                }
+                                {
+                                    PLATFORMS.filter((p) =>
+                                        usedPlatforms.includes(p.value)
+                                    ).map((p) => (
+                                        <SelectItem
+                                            key={p.value}
+                                            value={p.value}
+                                            disabled
+                                        >
+                                            {p.label} (added)
+                                        </SelectItem>
+                                    ))
+                                }
                             </SelectContent>
                         </Select>
                     </div>
@@ -140,40 +143,44 @@ export function SocialsTabForm({
                 </div>
             </div>
 
-            {socialLinks.length > 0 && (
-                <div className="space-y-3">
-                    <Label>Your links</Label>
-                    <div className="space-y-2">
-                        {socialLinks.map((link) => (
-                            <div
-                                key={link.id}
-                                className="flex items-center justify-between gap-4 rounded-lg border p-4"
-                            >
-                                <div>
-                                    <p className="font-medium">
-                                        {
-                                            PLATFORMS.find(
-                                                (p) => p.value === link.platform
-                                            )?.label || link.platform
-                                        }
-                                    </p>
-                                    <p className="text-sm text-muted-foreground truncate max-w-[300px]">
-                                        {link.url}
-                                    </p>
-                                </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDelete(link.id)}
-                                    className="text-destructive shrink-0"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        ))}
+            {
+                socialLinks.length > 0 && (
+                    <div className="space-y-3">
+                        <Label>Your links</Label>
+                        <div className="space-y-2">
+                            {
+                                socialLinks.map((link) => (
+                                    <div
+                                        key={link.id}
+                                        className="flex items-center justify-between gap-4 rounded-lg border p-4"
+                                    >
+                                        <div>
+                                            <p className="font-medium">
+                                                {
+                                                    PLATFORMS.find(
+                                                        (p) => p.value === link.platform
+                                                    )?.label || link.platform
+                                                }
+                                            </p>
+                                            <p className="text-sm text-muted-foreground truncate max-w-[300px]">
+                                                {link.url}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleDelete(link.id)}
+                                            className="text-destructive shrink-0"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                ))
+                            }
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div>
     )
 }
