@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card"
 import { Button } from "@repo/ui/components/ui/button"
@@ -30,7 +30,7 @@ import {
 import {
     Rocket, Users, Eye, ThumbsUp, MessageSquare, Plus,
     CheckCircle, XCircle, Clock, Star, Trash2,
-    AlertCircle, Loader2, Package
+    AlertCircle, Loader2, Package, Upload, Image as ImageIcon, X
 } from "lucide-react"
 import toast from "@repo/ui/components/ui/sonner"
 import Image from "next/image"
@@ -40,7 +40,8 @@ import {
     adminVerifyProduct,
     adminRejectProduct,
     adminDeleteProduct,
-    adminToggleFeatured
+    adminToggleFeatured,
+    adminUploadImage
 } from "@/actions/launchpads/admin.action"
 import { useRouter } from "next/navigation"
 
@@ -306,18 +307,82 @@ export function LaunchpadsAdminDashboard({
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [showAddDialog, setShowAddDialog] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isUploading, setIsUploading] = useState(false)
+    const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [newProduct, setNewProduct] = useState({
         name: '',
         tagline: '',
         description: '',
         logo: '',
-        coverImage: '',
         websiteUrl: '',
         demoUrl: '',
         githubUrl: '',
         category: 'OTHER',
         isFeatured: false
     })
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        if (!validTypes.includes(file.type)) {
+            toast.error('Please upload a JPG, PNG, or WebP image')
+            return
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image must be smaller than 5MB')
+            return
+        }
+
+        // Show preview immediately
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            setLogoPreview(event.target?.result as string)
+        }
+        reader.readAsDataURL(file)
+
+        // Upload to server
+        setIsUploading(true)
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            
+            const result = await adminUploadImage(formData)
+            
+            if (result.success && result.url) {
+                setNewProduct(prev => ({ ...prev, logo: result.url! }))
+                toast.success('Logo uploaded successfully')
+            } else {
+                toast.error(result.message || 'Failed to upload logo')
+                setLogoPreview(null)
+            }
+        } catch {
+            toast.error('Failed to upload logo')
+            setLogoPreview(null)
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const resetForm = () => {
+        setNewProduct({
+            name: '',
+            tagline: '',
+            description: '',
+            logo: '',
+            websiteUrl: '',
+            demoUrl: '',
+            githubUrl: '',
+            category: 'OTHER',
+            isFeatured: false
+        })
+        setLogoPreview(null)
+    }
 
     const handleVerify = (productId: string) => {
         startTransition(async () => {
@@ -376,22 +441,14 @@ export function LaunchpadsAdminDashboard({
         }
 
         startTransition(async () => {
-            const result = await adminCreateProduct(newProduct)
+            const result = await adminCreateProduct({
+                ...newProduct,
+                coverImage: '' // No longer using coverImage
+            })
             if (result.success) {
                 toast.success('Product created!')
                 setShowAddDialog(false)
-                setNewProduct({
-                    name: '',
-                    tagline: '',
-                    description: '',
-                    logo: '',
-                    coverImage: '',
-                    websiteUrl: '',
-                    demoUrl: '',
-                    githubUrl: '',
-                    category: 'OTHER',
-                    isFeatured: false
-                })
+                resetForm()
                 router.refresh()
             } else {
                 toast.error(result.error || 'Failed to create')
@@ -477,24 +534,80 @@ export function LaunchpadsAdminDashboard({
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label>Logo URL</Label>
-                                    <Input
-                                        placeholder="https://..."
-                                        value={newProduct.logo}
-                                        onChange={(e) => setNewProduct({ ...newProduct, logo: e.target.value })}
-                                        className="mt-1"
-                                    />
-                                </div>
-                                <div>
-                                    <Label>Cover Image URL</Label>
-                                    <Input
-                                        placeholder="https://..."
-                                        value={newProduct.coverImage}
-                                        onChange={(e) => setNewProduct({ ...newProduct, coverImage: e.target.value })}
-                                        className="mt-1"
-                                    />
+                            {/* Logo Upload */}
+                            <div>
+                                <Label>Product Logo</Label>
+                                <p className="text-xs text-muted-foreground mt-1 mb-3">
+                                    Upload a square image (256x256px recommended)
+                                </p>
+                                <div className="flex items-start gap-4">
+                                    {/* Preview */}
+                                    <div className="relative">
+                                        {logoPreview || newProduct.logo ? (
+                                            <div className="relative w-20 h-20 rounded-xl overflow-hidden border">
+                                                <Image
+                                                    src={logoPreview || newProduct.logo}
+                                                    alt="Logo preview"
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                />
+                                                {isUploading && (
+                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="w-20 h-20 rounded-xl border-2 border-dashed flex items-center justify-center bg-muted">
+                                                <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Upload Button */}
+                                    <div className="flex-1">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                                            onChange={handleLogoUpload}
+                                            className="hidden"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isUploading}
+                                            className="h-10"
+                                        >
+                                            {isUploading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Uploading...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Upload className="w-4 h-4 mr-2" />
+                                                    {logoPreview || newProduct.logo ? 'Change' : 'Upload'}
+                                                </>
+                                            )}
+                                        </Button>
+                                        {(logoPreview || newProduct.logo) && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setLogoPreview(null)
+                                                    setNewProduct(prev => ({ ...prev, logo: '' }))
+                                                }}
+                                                className="ml-2 text-red-500 hover:text-red-600"
+                                            >
+                                                <X className="w-4 h-4 mr-1" />
+                                                Remove
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

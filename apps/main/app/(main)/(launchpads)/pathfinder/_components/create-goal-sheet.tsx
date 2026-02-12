@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
@@ -11,30 +11,28 @@ import { Label } from '@repo/ui/components/ui/label'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
-    Target, CheckCircle, Sparkles, ArrowRight, ArrowLeft, Brain, Check
+    Target, CheckCircle, Sparkles, ArrowRight, ArrowLeft, Brain, Check,
+    Link as LinkIcon, FolderPlus, Loader2
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
-import { createPathfinderGoal } from '@/actions/(main)/pathfinder'
+import { createPathfinderGoal, createPathfinderGroup } from '@/actions/(main)/pathfinder'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
 import { cn } from '@repo/ui/lib/utils'
+import type { PathfinderGoal, PathfinderGroup } from '@/types/pathfinder'
 
-interface Group {
-    id: string
-    name: string
-    emoji: string | null
-    color: string | null
-}
+type Group = PathfinderGroup
 
 interface CreateGoalSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess?: (goalId: string) => void
+    onSuccess?: (goalId: string, goal?: PathfinderGoal) => void
     groups?: Group[]
+    onGroupCreated?: (group: Group) => void
 }
 
 const categories: { value: PathfinderCategory; label: string; emoji: string }[] = [
     { value: 'DSA', label: 'DSA', emoji: '🧮' },
-    { value: 'WEB_DEVELOPMENT', label: 'Web Development', emoji: '🌐' },
+    { value: 'WEB_DEVELOPMENT', label: 'Web Dev', emoji: '🌐' },
     { value: 'FRONTEND', label: 'Frontend', emoji: '🎨' },
     { value: 'BACKEND', label: 'Backend', emoji: '⚙️' },
     { value: 'DEVOPS', label: 'DevOps', emoji: '🚀' },
@@ -45,11 +43,11 @@ const categories: { value: PathfinderCategory; label: string; emoji: string }[] 
     { value: 'OTHER', label: 'Other', emoji: '📚' },
 ]
 
-const levels: { value: PathfinderLevel; label: string; description: string }[] = [
-    { value: 'BEGINNER', label: 'Beginner', description: 'Just starting out' },
-    { value: 'INTERMEDIATE', label: 'Intermediate', description: 'Know the basics' },
-    { value: 'ADVANCED', label: 'Advanced', description: 'Deep dive' },
-    { value: 'EXPERT', label: 'Expert', description: 'Master level' },
+const levels: { value: PathfinderLevel; label: string; desc: string }[] = [
+    { value: 'BEGINNER', label: 'Beginner', desc: 'Just starting' },
+    { value: 'INTERMEDIATE', label: 'Intermediate', desc: 'Know basics' },
+    { value: 'ADVANCED', label: 'Advanced', desc: 'Deep dive' },
+    { value: 'EXPERT', label: 'Expert', desc: 'Master level' },
 ]
 
 const focusOptions: { id: string; label: string }[] = [
@@ -61,7 +59,20 @@ const focusOptions: { id: string; label: string }[] = [
     { id: 'patterns', label: 'Design Patterns' },
 ]
 
-export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: CreateGoalSheetProps) {
+const defaultEmojis = ['📁', '🎯', '💻', '📚', '🔥', '⭐', '🚀', '💡']
+const defaultColors = ['#7c3aed', '#059669', '#dc2626', '#2563eb', '#d97706', '#db2777', '#0891b2', '#4f46e5']
+
+function generateSlug(title: string): string {
+    return title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .slice(0, 60)
+}
+
+export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], onGroupCreated }: CreateGoalSheetProps) {
     const [step, setStep] = useState(0)
     const [processing, setProcessing] = useState(false)
     const [progressPercent, setProgressPercent] = useState(0)
@@ -73,12 +84,28 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
         groupId: null as string | null,
     })
 
+    // Group creation state
+    const [showNewGroup, setShowNewGroup] = useState(false)
+    const [newGroupName, setNewGroupName] = useState('')
+    const [newGroupEmoji, setNewGroupEmoji] = useState('📁')
+    const [newGroupColor, setNewGroupColor] = useState('#7c3aed')
+    const [creatingGroup, setCreatingGroup] = useState(false)
+    const [localGroups, setLocalGroups] = useState<Group[]>(groups)
+
+    // Update local groups when props change
+    useEffect(() => {
+        setLocalGroups(groups)
+    }, [groups])
+
+    // Generate slug preview
+    const slugPreview = useMemo(() => generateSlug(formData.title), [formData.title])
+
+    // Steps: Title -> Category + Level -> Focus -> Group
     const steps = [
         { id: 'title', title: 'What do you want to learn?' },
-        { id: 'category', title: 'Choose a category' },
-        { id: 'level', title: 'Select your level' },
+        { id: 'category-level', title: 'Category & Level' },
         { id: 'focus', title: 'Focus areas' },
-        ...(groups.length > 0 ? [{ id: 'group', title: 'Add to group (optional)' }] : []),
+        { id: 'group', title: 'Organize (optional)' },
     ]
 
     const resetForm = () => {
@@ -92,15 +119,18 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
             focusAreas: [],
             groupId: null,
         })
+        setShowNewGroup(false)
+        setNewGroupName('')
+        setNewGroupEmoji('📁')
+        setNewGroupColor('#7c3aed')
     }
 
     const canProceed = () => {
         switch (step) {
             case 0: return formData.title.trim().length >= 3
-            case 1: return formData.category !== ''
-            case 2: return Boolean(formData.level) // Level always has a default
-            case 3: return formData.focusAreas.length > 0
-            case 4: return true // Group is optional
+            case 1: return formData.category !== '' && Boolean(formData.level)
+            case 2: return formData.focusAreas.length > 0
+            case 3: return true // Group is optional
             default: return false
         }
     }
@@ -130,6 +160,44 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
         }))
     }
 
+    const handleCreateGroup = async () => {
+        if (!newGroupName.trim()) {
+            toast.error('Please enter a group name')
+            return
+        }
+
+        setCreatingGroup(true)
+        try {
+            const result = await createPathfinderGroup({
+                name: newGroupName.trim(),
+                emoji: newGroupEmoji,
+                color: newGroupColor,
+            })
+
+            if (result.success && result.group) {
+                const newGroup = {
+                    id: result.group.id,
+                    name: result.group.name,
+                    emoji: result.group.emoji,
+                    color: result.group.color,
+                    _count: { goals: 0 }
+                }
+                setLocalGroups(prev => [...prev, newGroup])
+                setFormData(prev => ({ ...prev, groupId: result.group!.id }))
+                onGroupCreated?.(newGroup)
+                toast.success('Group created!')
+                setShowNewGroup(false)
+                setNewGroupName('')
+            } else {
+                toast.error(result.error || 'Failed to create group')
+            }
+        } catch {
+            toast.error('Failed to create group')
+        } finally {
+            setCreatingGroup(false)
+        }
+    }
+
     const handleSubmit = async () => {
         setProcessing(true)
         setProgressPercent(10)
@@ -141,6 +209,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
         try {
             const result = await createPathfinderGoal({
                 title: formData.title,
+                slug: slugPreview,
                 category: formData.category as PathfinderCategory,
                 level: formData.level,
                 focusAreas: formData.focusAreas,
@@ -162,7 +231,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
                 if (onSuccess && result.goalId) {
                     onSuccess(result.goalId)
                 }
-            }, 1000)
+            }, 800)
         } catch (error) {
             clearInterval(progressInterval)
             console.error('Error creating goal:', error)
@@ -178,16 +247,16 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
             if (!isOpen) resetForm()
         }}>
             <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-                <div className="max-w-xl mx-auto">
+                <div className="max-w-lg mx-auto">
                     <SheetHeader className="mb-6">
-                        <SheetTitle className="text-2xl flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl">
-                                <Target className="w-6 h-6 text-white" />
+                        <SheetTitle className="text-xl flex items-center gap-2">
+                            <div className="p-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                                <Target className="w-5 h-5 text-neutral-700 dark:text-neutral-300" />
                             </div>
                             Create Learning Goal
                         </SheetTitle>
-                        <SheetDescription>
-                            Set your goal and let AI create a personalized learning plan
+                        <SheetDescription className="text-sm">
+                            Set your goal and let AI create a personalized plan
                         </SheetDescription>
                     </SheetHeader>
 
@@ -195,42 +264,35 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
                         {processing ? (
                             <motion.div
                                 key="processing"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="flex flex-col items-center justify-center py-20"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="flex flex-col items-center justify-center py-16"
                             >
-                                <div className="relative mb-8">
-                                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 blur-2xl opacity-30 animate-pulse" />
+                                <div className="relative mb-6">
                                     <motion.div
                                         animate={{ rotate: 360 }}
-                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                        className="relative w-32 h-32 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-pink-500 flex items-center justify-center"
-                                    >
-                                        <div className="w-28 h-28 rounded-full bg-white dark:bg-neutral-950 flex items-center justify-center">
-                                            <motion.div
-                                                animate={{ scale: [1, 1.1, 1] }}
-                                                transition={{ duration: 1.5, repeat: Infinity }}
-                                            >
-                                                {progressPercent === 100 ? (
-                                                    <CheckCircle className="w-12 h-12 text-green-500" />
-                                                ) : (
-                                                    <Brain className="w-12 h-12 text-purple-500" />
-                                                )}
-                                            </motion.div>
-                                        </div>
-                                    </motion.div>
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                        className="w-20 h-20 rounded-full border-2 border-neutral-200 dark:border-neutral-700 border-t-neutral-900 dark:border-t-white"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        {progressPercent === 100 ? (
+                                            <CheckCircle className="w-8 h-8 text-emerald-500" />
+                                        ) : (
+                                            <Brain className="w-8 h-8 text-neutral-400" />
+                                        )}
+                                    </div>
                                 </div>
 
-                                <h3 className="text-2xl font-bold mb-2 text-neutral-900 dark:text-white">
-                                    {progressPercent === 100 ? 'Goal Created!' : 'Creating Your Goal'}
+                                <h3 className="text-lg font-medium mb-1 text-neutral-900 dark:text-white">
+                                    {progressPercent === 100 ? 'Goal Created!' : 'Creating Goal...'}
                                 </h3>
-                                <p className="text-neutral-500 dark:text-neutral-400 mb-8">
-                                    {progressPercent < 50 ? 'Setting up your learning path...' : 'AI is generating your plan...'}
+                                <p className="text-sm text-neutral-500 mb-6">
+                                    {progressPercent < 50 ? 'Setting up...' : 'AI generating plan...'}
                                 </p>
 
-                                <div className="w-full max-w-md space-y-4">
-                                    <Progress value={progressPercent} className="h-3" />
+                                <div className="w-full max-w-xs">
+                                    <Progress value={progressPercent} className="h-1.5" />
                                 </div>
                             </motion.div>
                         ) : (
@@ -240,273 +302,344 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [] }: 
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                             >
-                                {/* Progress Indicator */}
-                                <div className="mb-8">
+                                {/* Progress */}
+                                <div className="mb-6">
                                     <div className="flex justify-between mb-2">
                                         {steps.map((s, index) => (
                                             <div key={s.id} className="flex-1 text-center">
                                                 <div className={cn(
-                                                    "w-10 h-10 rounded-full mx-auto mb-1 flex items-center justify-center text-sm font-medium transition-all",
-                                                    index < step ? "bg-green-500 text-white" :
-                                                        index === step ? "bg-violet-500 text-white" :
-                                                            "bg-neutral-200 dark:bg-neutral-700 text-neutral-500"
+                                                    "w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center text-xs font-medium transition-all",
+                                                    index < step ? "bg-emerald-500 text-white" :
+                                                        index === step ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900" :
+                                                            "bg-neutral-200 dark:bg-neutral-700 text-neutral-400"
                                                 )}>
-                                                    {index < step ? <Check className="w-5 h-5" /> : index + 1}
+                                                    {index < step ? <Check className="w-4 h-4" /> : index + 1}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                    <Progress value={((step + 1) / steps.length) * 100} className="h-2" />
+                                    <Progress value={((step + 1) / steps.length) * 100} className="h-1" />
                                 </div>
 
                                 {/* Step Content */}
                                 <AnimatePresence mode="wait">
                                     <motion.div
                                         key={step}
-                                        initial={{ opacity: 0, x: 20 }}
+                                        initial={{ opacity: 0, x: 10 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-6"
+                                        exit={{ opacity: 0, x: -10 }}
+                                        className="space-y-4"
                                     >
                                         {/* Step 0: Title */}
                                         {step === 0 && (
                                             <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
                                                         {steps[0]?.title}
                                                     </h3>
-                                                    <p className="text-neutral-500">Be specific about your learning goal</p>
+                                                    <p className="text-sm text-neutral-500">Be specific about your goal</p>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label>Goal Title</Label>
+                                                    <Label className="text-xs text-neutral-500">Goal Title</Label>
                                                     <Input
                                                         placeholder="e.g., Master Arrays and Strings in DSA"
                                                         value={formData.title}
                                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                                        className="h-14 text-lg"
+                                                        className="h-12"
                                                         autoFocus
                                                     />
                                                 </div>
-                                                <div className="flex flex-wrap gap-2 mt-4">
-                                                    {['Learn React Hooks', 'Master SQL Queries', 'DSA with Python'].map((example) => (
+                                                
+                                                {/* Slug Preview */}
+                                                {formData.title.trim() && (
+                                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                                        <LinkIcon className="w-3.5 h-3.5 text-neutral-400" />
+                                                        <span className="text-xs text-neutral-500">URL:</span>
+                                                        <code className="text-xs text-neutral-700 dark:text-neutral-300 font-mono">
+                                                            /pathfinder/{slugPreview || '...'}
+                                                        </code>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                                    {['Learn React Hooks', 'Master SQL', 'DSA with Python'].map((ex) => (
                                                         <Badge
-                                                            key={example}
+                                                            key={ex}
                                                             variant="outline"
-                                                            className="cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                            onClick={() => setFormData({ ...formData, title: example })}
+                                                            className="cursor-pointer text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                            onClick={() => setFormData({ ...formData, title: ex })}
                                                         >
-                                                            {example}
+                                                            {ex}
                                                         </Badge>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* Step 1: Category */}
+                                        {/* Step 1: Category + Level (merged) */}
                                         {step === 1 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
+                                            <div className="space-y-6">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
                                                         {steps[1]?.title}
                                                     </h3>
-                                                    <p className="text-neutral-500">Select the primary category</p>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    {categories.map((cat) => (
-                                                        <motion.button
-                                                            key={cat.value}
-                                                            onClick={() => setFormData({ ...formData, category: cat.value })}
-                                                            whileHover={{ scale: 1.02 }}
-                                                            whileTap={{ scale: 0.98 }}
-                                                            className={cn(
-                                                                "p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3",
-                                                                formData.category === cat.value
-                                                                    ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
-                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                            )}
-                                                        >
-                                                            <span className="text-2xl">{cat.emoji}</span>
-                                                            <span className="font-medium text-neutral-900 dark:text-white">{cat.label}</span>
-                                                            {formData.category === cat.value && (
-                                                                <Check className="w-5 h-5 text-violet-500 ml-auto" />
-                                                            )}
-                                                        </motion.button>
-                                                    ))}
+
+                                                {/* Category */}
+                                                <div>
+                                                    <Label className="text-xs text-neutral-500 mb-2 block">Category</Label>
+                                                    <div className="grid grid-cols-5 gap-2">
+                                                        {categories.map((cat) => (
+                                                            <button
+                                                                key={cat.value}
+                                                                onClick={() => setFormData({ ...formData, category: cat.value })}
+                                                                className={cn(
+                                                                    "p-2 rounded-lg border text-center transition-all",
+                                                                    formData.category === cat.value
+                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                )}
+                                                            >
+                                                                <span className="text-lg">{cat.emoji}</span>
+                                                                <p className="text-[10px] text-neutral-600 dark:text-neutral-400 mt-0.5 truncate">
+                                                                    {cat.label}
+                                                                </p>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Level */}
+                                                <div>
+                                                    <Label className="text-xs text-neutral-500 mb-2 block">Experience Level</Label>
+                                                    <div className="grid grid-cols-4 gap-2">
+                                                        {levels.map((level) => (
+                                                            <button
+                                                                key={level.value}
+                                                                onClick={() => setFormData({ ...formData, level: level.value })}
+                                                                className={cn(
+                                                                    "p-2.5 rounded-lg border text-center transition-all",
+                                                                    formData.level === level.value
+                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                )}
+                                                            >
+                                                                <p className="text-xs font-medium text-neutral-900 dark:text-white">
+                                                                    {level.label}
+                                                                </p>
+                                                                <p className="text-[10px] text-neutral-500 mt-0.5">
+                                                                    {level.desc}
+                                                                </p>
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* Step 2: Level */}
+                                        {/* Step 2: Focus Areas */}
                                         {step === 2 && (
                                             <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
                                                         {steps[2]?.title}
                                                     </h3>
-                                                    <p className="text-neutral-500">Your current experience level</p>
+                                                    <p className="text-sm text-neutral-500">Select at least one</p>
                                                 </div>
-                                                <div className="space-y-3">
-                                                    {levels.map((level) => (
-                                                        <motion.button
-                                                            key={level.value}
-                                                            onClick={() => setFormData({ ...formData, level: level.value })}
-                                                            whileHover={{ scale: 1.01 }}
-                                                            whileTap={{ scale: 0.99 }}
-                                                            className={cn(
-                                                                "w-full p-4 rounded-xl border-2 transition-all text-left flex items-center justify-between",
-                                                                formData.level === level.value
-                                                                    ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
-                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                            )}
-                                                        >
-                                                            <div>
-                                                                <div className="font-semibold text-neutral-900 dark:text-white">
-                                                                    {level.label}
-                                                                </div>
-                                                                <div className="text-sm text-neutral-500">
-                                                                    {level.description}
-                                                                </div>
-                                                            </div>
-                                                            {formData.level === level.value && (
-                                                                <Check className="w-5 h-5 text-violet-500" />
-                                                            )}
-                                                        </motion.button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Step 3: Focus Areas */}
-                                        {step === 3 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
-                                                        {steps[3]?.title}
-                                                    </h3>
-                                                    <p className="text-neutral-500">Select at least one focus area</p>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3">
+                                                <div className="grid grid-cols-2 gap-2">
                                                     {focusOptions.map((focus) => (
-                                                        <motion.button
+                                                        <button
                                                             key={focus.id}
                                                             onClick={() => toggleFocus(focus.id)}
-                                                            whileHover={{ scale: 1.02 }}
-                                                            whileTap={{ scale: 0.98 }}
                                                             className={cn(
-                                                                "p-4 rounded-xl border-2 transition-all text-left flex items-center justify-between",
+                                                                "p-3 rounded-lg border text-left transition-all flex items-center justify-between",
                                                                 formData.focusAreas.includes(focus.id)
-                                                                    ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
+                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
                                                                     : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
                                                             )}
                                                         >
-                                                            <span className="font-medium text-neutral-900 dark:text-white">{focus.label}</span>
+                                                            <span className="text-sm text-neutral-900 dark:text-white">{focus.label}</span>
                                                             {formData.focusAreas.includes(focus.id) && (
-                                                                <Check className="w-5 h-5 text-violet-500" />
+                                                                <Check className="w-4 h-4 text-emerald-500" />
                                                             )}
-                                                        </motion.button>
+                                                        </button>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* Step 4: Group (Optional) */}
-                                        {step === 4 && groups.length > 0 && (
+                                        {/* Step 3: Group (always shown) */}
+                                        {step === 3 && (
                                             <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
-                                                        {steps[4]?.title}
+                                                <div className="text-center mb-4">
+                                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
+                                                        {steps[3]?.title}
                                                     </h3>
-                                                    <p className="text-neutral-500">Organize your goal into a group. You can change this later.</p>
+                                                    <p className="text-sm text-neutral-500">Group your goal for better organization</p>
                                                 </div>
-                                                <div className="space-y-3">
-                                                    {/* No Group Option */}
-                                                    <motion.button
-                                                        onClick={() => setFormData({ ...formData, groupId: null })}
-                                                        whileHover={{ scale: 1.01 }}
-                                                        whileTap={{ scale: 0.99 }}
-                                                        className={cn(
-                                                            "w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3",
-                                                            formData.groupId === null
-                                                                ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
-                                                                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                        )}
-                                                    >
-                                                        <div className="w-10 h-10 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-lg">
-                                                            📋
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-semibold text-neutral-900 dark:text-white">
-                                                                No Group
-                                                            </div>
-                                                            <div className="text-sm text-neutral-500">
-                                                                Keep this goal ungrouped
-                                                            </div>
-                                                        </div>
-                                                        {formData.groupId === null && (
-                                                            <Check className="w-5 h-5 text-violet-500" />
-                                                        )}
-                                                    </motion.button>
 
-                                                    {/* Groups */}
-                                                    {groups.map((group) => (
-                                                        <motion.button
-                                                            key={group.id}
-                                                            onClick={() => setFormData({ ...formData, groupId: group.id })}
-                                                            whileHover={{ scale: 1.01 }}
-                                                            whileTap={{ scale: 0.99 }}
+                                                {!showNewGroup ? (
+                                                    <div className="space-y-2">
+                                                        {/* No Group Option */}
+                                                        <button
+                                                            onClick={() => setFormData({ ...formData, groupId: null })}
                                                             className={cn(
-                                                                "w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3",
-                                                                formData.groupId === group.id
-                                                                    ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
+                                                                "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
+                                                                formData.groupId === null
+                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
                                                                     : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
                                                             )}
                                                         >
-                                                            <div
-                                                                className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                                                style={{ backgroundColor: group.color || '#7c3aed' }}
-                                                            >
-                                                                {group.emoji || '📁'}
+                                                            <div className="w-8 h-8 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-sm">
+                                                                📋
                                                             </div>
                                                             <div className="flex-1">
-                                                                <div className="font-semibold text-neutral-900 dark:text-white">
-                                                                    {group.name}
-                                                                </div>
+                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">No Group</p>
+                                                                <p className="text-xs text-neutral-500">Keep ungrouped</p>
                                                             </div>
-                                                            {formData.groupId === group.id && (
-                                                                <Check className="w-5 h-5 text-violet-500" />
-                                                            )}
-                                                        </motion.button>
-                                                    ))}
-                                                </div>
+                                                            {formData.groupId === null && <Check className="w-4 h-4 text-emerald-500" />}
+                                                        </button>
+
+                                                        {/* Existing Groups */}
+                                                        {localGroups.map((group) => (
+                                                            <button
+                                                                key={group.id}
+                                                                onClick={() => setFormData({ ...formData, groupId: group.id })}
+                                                                className={cn(
+                                                                    "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
+                                                                    formData.groupId === group.id
+                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                )}
+                                                            >
+                                                                <div
+                                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                                                                    style={{ backgroundColor: `${group.color || '#7c3aed'}20` }}
+                                                                >
+                                                                    {group.emoji || '📁'}
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">{group.name}</p>
+                                                                </div>
+                                                                {formData.groupId === group.id && <Check className="w-4 h-4 text-emerald-500" />}
+                                                            </button>
+                                                        ))}
+
+                                                        {/* Create New Group Button */}
+                                                        <button
+                                                            onClick={() => setShowNewGroup(true)}
+                                                            className="w-full p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-left transition-all flex items-center gap-3 hover:border-neutral-400 dark:hover:border-neutral-600"
+                                                        >
+                                                            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                                                                <FolderPlus className="w-4 h-4 text-neutral-500" />
+                                                            </div>
+                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Create New Group</p>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    /* New Group Form */
+                                                    <div className="space-y-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs text-neutral-500">Group Name</Label>
+                                                            <Input
+                                                                placeholder="e.g., Frontend, DSA Practice"
+                                                                value={newGroupName}
+                                                                onChange={(e) => setNewGroupName(e.target.value)}
+                                                                className="h-10"
+                                                                autoFocus
+                                                            />
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs text-neutral-500">Icon</Label>
+                                                            <div className="flex gap-1.5">
+                                                                {defaultEmojis.map((emoji) => (
+                                                                    <button
+                                                                        key={emoji}
+                                                                        onClick={() => setNewGroupEmoji(emoji)}
+                                                                        className={cn(
+                                                                            "w-8 h-8 rounded flex items-center justify-center text-sm transition-all",
+                                                                            newGroupEmoji === emoji
+                                                                                ? "bg-neutral-200 dark:bg-neutral-700 ring-2 ring-neutral-400"
+                                                                                : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                                                                        )}
+                                                                    >
+                                                                        {emoji}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs text-neutral-500">Color</Label>
+                                                            <div className="flex gap-1.5">
+                                                                {defaultColors.map((color) => (
+                                                                    <button
+                                                                        key={color}
+                                                                        onClick={() => setNewGroupColor(color)}
+                                                                        className={cn(
+                                                                            "w-8 h-8 rounded transition-all",
+                                                                            newGroupColor === color && "ring-2 ring-neutral-400 ring-offset-2"
+                                                                        )}
+                                                                        style={{ backgroundColor: color }}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex gap-2 pt-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => setShowNewGroup(false)}
+                                                                className="flex-1"
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={handleCreateGroup}
+                                                                disabled={!newGroupName.trim() || creatingGroup}
+                                                                className="flex-1"
+                                                            >
+                                                                {creatingGroup ? (
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                ) : (
+                                                                    'Create Group'
+                                                                )}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </motion.div>
                                 </AnimatePresence>
 
                                 {/* Navigation */}
-                                <div className="flex items-center justify-between mt-8 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
                                     <Button
-                                        variant="outline"
+                                        variant="ghost"
                                         onClick={prevStep}
                                         disabled={step === 0}
+                                        className="text-neutral-600"
                                     >
-                                        <ArrowLeft className="w-4 h-4 mr-2" />
+                                        <ArrowLeft className="w-4 h-4 mr-1" />
                                         Back
                                     </Button>
                                     <Button
                                         onClick={nextStep}
                                         disabled={!canProceed()}
-                                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90 text-white"
                                     >
                                         {step === steps.length - 1 ? (
                                             <>
-                                                <Sparkles className="w-4 h-4 mr-2" />
+                                                <Sparkles className="w-4 h-4 mr-1" />
                                                 Create Goal
                                             </>
                                         ) : (
                                             <>
                                                 Next
-                                                <ArrowRight className="w-4 h-4 ml-2" />
+                                                <ArrowRight className="w-4 h-4 ml-1" />
                                             </>
                                         )}
                                     </Button>

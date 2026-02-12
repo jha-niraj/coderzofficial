@@ -94,10 +94,13 @@ model PathfinderGoal {
     
     // Basic Info
     title           String
+    slug            String
     category        PathfinderCategory
     level           PathfinderLevel
     focusAreas      String[]            // Array of focus areas selected
     targetDate      DateTime?           // Optional target completion date
+    
+    @@unique([userId, slug])
     
     // AI-Generated Content (stored as JSON for flexibility)
     // Contains: quizQuestions, codingQuestions, mockInterview, projects (NOT dailyTasks)

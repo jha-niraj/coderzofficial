@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { motion } from "framer-motion"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { Button } from "@repo/ui/components/ui/button"
@@ -17,12 +17,17 @@ import {
 } from "@repo/ui/components/ui/select"
 import { 
     Rocket, ArrowLeft, Plus, X, Globe, Github, 
-    Twitter, CheckCircle, Info, Sparkles, Loader2
+    Twitter, CheckCircle, Info, Sparkles, Loader2,
+    Upload, Image as ImageIcon
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import toast from "@repo/ui/components/ui/sonner"
 import { createLaunchpadProduct } from "@/actions/(main)/launchpads"
+import { uploadImageToCloudinary } from "@/actions/(common)/shared/upload.action"
+import { useLaunchpadsStore } from "@/app/store/launchpadsStore"
+import type { LaunchpadProduct } from "@/types/launchpads"
 
 const categories = [
     { value: 'LEARNING', label: 'Learning & Education' },
@@ -37,13 +42,14 @@ const categories = [
 export default function SubmitProductPage() {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const { addCommunityProduct } = useLaunchpadsStore()
     
     const [formData, setFormData] = useState({
         name: '',
         tagline: '',
         description: '',
         logo: '',
-        coverImage: '',
         websiteUrl: '',
         demoUrl: '',
         githubUrl: '',
@@ -58,6 +64,8 @@ export default function SubmitProductPage() {
     const [featureInput, setFeatureInput] = useState('')
     const [techStack, setTechStack] = useState<string[]>([])
     const [techInput, setTechInput] = useState('')
+    const [isUploading, setIsUploading] = useState(false)
+    const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
     const addTag = () => {
         if (tagInput.trim() && !tags.includes(tagInput.trim().toLowerCase())) {
@@ -92,6 +100,53 @@ export default function SubmitProductPage() {
         setTechStack(techStack.filter(t => t !== tech))
     }
 
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        if (!validTypes.includes(file.type)) {
+            toast.error('Please upload a JPG, PNG, or WebP image')
+            return
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image must be smaller than 5MB')
+            return
+        }
+
+        // Show preview immediately
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            setLogoPreview(event.target?.result as string)
+        }
+        reader.readAsDataURL(file)
+
+        // Upload to cloudinary
+        setIsUploading(true)
+        try {
+            const formDataUpload = new FormData()
+            formDataUpload.append('file', file)
+            
+            const result = await uploadImageToCloudinary(formDataUpload)
+            
+            if (result.success && result.url) {
+                setFormData(prev => ({ ...prev, logo: result.url! }))
+                toast.success('Logo uploaded successfully')
+            } else {
+                toast.error(result.message || 'Failed to upload logo')
+                setLogoPreview(null)
+            }
+        } catch {
+            toast.error('Failed to upload logo')
+            setLogoPreview(null)
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
     const handleSubmit = () => {
         if (!formData.name || !formData.tagline || !formData.description) {
             toast.error('Please fill in all required fields')
@@ -101,12 +156,15 @@ export default function SubmitProductPage() {
         startTransition(async () => {
             const result = await createLaunchpadProduct({
                 ...formData,
+                coverImage: '', // No longer using coverImage
                 tags,
                 features,
                 techStack
             })
 
-            if (result.success) {
+            if (result.success && result.product) {
+                // Add to store for instant update
+                addCommunityProduct(result.product as LaunchpadProduct)
                 toast.success('Product submitted successfully! It will be reviewed shortly.')
                 router.push('/launchpads')
             } else {
@@ -138,7 +196,7 @@ export default function SubmitProductPage() {
                     </div>
                     <Button
                         onClick={handleSubmit}
-                        disabled={isPending}
+                        disabled={isPending || isUploading}
                         className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-full px-6"
                     >
                         {isPending ? (
@@ -172,7 +230,7 @@ export default function SubmitProductPage() {
                                 </h3>
                                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
                                     Your product will be reviewed by our team before being published. 
-                                    Make sure to provide accurate information and high-quality images.
+                                    Make sure to provide accurate information and a high-quality logo.
                                 </p>
                             </div>
                         </div>
@@ -280,43 +338,87 @@ export default function SubmitProductPage() {
                             </div>
                         </div>
 
-                        {/* Media */}
+                        {/* Logo Upload */}
                         <div className="space-y-6">
                             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                                Media
+                                Logo
                             </h2>
                             
-                            <div className="space-y-4">
-                                <div>
-                                    <Label htmlFor="logo" className="text-neutral-900 dark:text-white">
-                                        Logo URL
-                                    </Label>
-                                    <Input
-                                        id="logo"
-                                        placeholder="https://example.com/logo.png"
-                                        value={formData.logo}
-                                        onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                                        className="mt-2 h-12 border-neutral-200 dark:border-neutral-800"
-                                    />
-                                    <p className="text-xs text-neutral-500 mt-1">
-                                        Recommended: Square image, at least 256x256px
-                                    </p>
-                                </div>
+                            <div>
+                                <Label className="text-neutral-900 dark:text-white">
+                                    Product Logo
+                                </Label>
+                                <p className="text-xs text-neutral-500 mt-1 mb-3">
+                                    Upload a square image, at least 256x256px (JPG, PNG, or WebP)
+                                </p>
+                                
+                                <div className="flex items-start gap-4">
+                                    {/* Preview */}
+                                    <div className="relative">
+                                        {logoPreview || formData.logo ? (
+                                            <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800">
+                                                <Image
+                                                    src={logoPreview || formData.logo}
+                                                    alt="Logo preview"
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                                {isUploading && (
+                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+                                                <ImageIcon className="w-8 h-8 text-neutral-400" />
+                                            </div>
+                                        )}
+                                    </div>
 
-                                <div>
-                                    <Label htmlFor="coverImage" className="text-neutral-900 dark:text-white">
-                                        Cover Image URL
-                                    </Label>
-                                    <Input
-                                        id="coverImage"
-                                        placeholder="https://example.com/cover.png"
-                                        value={formData.coverImage}
-                                        onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                                        className="mt-2 h-12 border-neutral-200 dark:border-neutral-800"
-                                    />
-                                    <p className="text-xs text-neutral-500 mt-1">
-                                        Recommended: 1200x600px or similar aspect ratio
-                                    </p>
+                                    {/* Upload Button */}
+                                    <div className="flex-1">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                                            onChange={handleLogoUpload}
+                                            className="hidden"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isUploading}
+                                            className="h-12"
+                                        >
+                                            {isUploading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Uploading...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Upload className="w-4 h-4 mr-2" />
+                                                    {logoPreview || formData.logo ? 'Change Logo' : 'Upload Logo'}
+                                                </>
+                                            )}
+                                        </Button>
+                                        {(logoPreview || formData.logo) && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setLogoPreview(null)
+                                                    setFormData(prev => ({ ...prev, logo: '' }))
+                                                }}
+                                                className="ml-2 text-red-500 hover:text-red-600"
+                                            >
+                                                <X className="w-4 h-4 mr-1" />
+                                                Remove
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -519,7 +621,7 @@ export default function SubmitProductPage() {
                         <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800">
                             <Button
                                 onClick={handleSubmit}
-                                disabled={isPending}
+                                disabled={isPending || isUploading}
                                 className="w-full h-14 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-xl text-lg font-medium"
                             >
                                 {isPending ? (

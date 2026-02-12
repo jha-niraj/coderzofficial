@@ -60,7 +60,6 @@ function UniSidebarContent({ universityName, credits }: UniSidebarProps) {
         return pathname.startsWith(`/${path}`) && path !== "uni"
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const renderNavItem = (item: NavigationItem, _isSecondary = false) => {
         const Icon = item.icon
         const active = isActive(item.path)

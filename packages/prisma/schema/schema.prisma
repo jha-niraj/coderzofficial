@@ -287,18 +287,7 @@ enum BadgeType {
     SEASONAL
 }
 
-enum BadgeCategory {
-    BUG_HUNTER
-    CODE_DETECTIVE
-    SYNTAX_SAGE
-    LOGIC_LORD
-    PERFORMANCE_PRO
-    TEACHING_TITAN
-    TOURNAMENT_WINNER
-    STREAK_MASTER
-    COMMUNITY_CHAMPION
-    PLATFORM_PIONEER
-}
+// BadgeCategory enum moved to achievements.prisma
 
 // ===============================================
 // CONCEPTS HUB ENUMS
@@ -689,6 +678,14 @@ model User {
     jobMockSessions        JobMockSession[]        @relation("UserJobMockSessions")
     interviewPrepProgress  InterviewPrepProgress[] @relation("UserInterviewPrepProgress")
     createdCompanies       Company[]               @relation("CompanyCreator")
+
+    // ===============================================
+    // ACHIEVEMENTS SYSTEM RELATIONS
+    // ===============================================
+    socialConnections        SocialConnection[]          @relation("UserSocialConnections")
+    socialShares             SocialShare[]               @relation("UserSocialShares")
+    achievementNotifications AchievementNotification[]   @relation("UserAchievementNotifications")
+    achievementStats         UserAchievementStats?       @relation("UserAchievementStats")
 
     @@index([username])
     @@index([email])

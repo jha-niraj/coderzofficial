@@ -3,12 +3,17 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Progress } from '@repo/ui/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
 import {
-    Target, ArrowLeft, CheckCircle2, XCircle, Lock, Brain, Code, Mic, Wrench, Trophy
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from '@repo/ui/components/ui/tabs'
+import {
+    Target, ArrowLeft, CheckCircle2, XCircle, Lock, Brain, Code,
+    Mic, Wrench, Trophy
 } from 'lucide-react'
 import Link from 'next/link'
-import { PathfinderCategory, PathfinderLevel, VerificationSectionStatus } from '@repo/prisma/client'
+import {
+    PathfinderCategory, PathfinderLevel, VerificationSectionStatus
+} from '@repo/prisma/client'
 import { QuizVerification } from './quiz-verification'
 import { CodingVerification } from './coding-verification'
 import { MockVerification } from './mock-verification'
@@ -123,9 +128,11 @@ function SectionTab({
                     {icon}
                     <span>{label}</span>
                 </div>
-                {score !== null && score !== undefined && (
-                    <span className="text-xs text-neutral-500">{score}%</span>
-                )}
+                {
+                    score !== null && score !== undefined && (
+                        <span className="text-xs text-neutral-500">{score}%</span>
+                    )
+                }
             </div>
         </div>
     )
@@ -143,19 +150,23 @@ function CompletionScreen({ verification }: { verification: Verification }) {
         >
             <div className="text-center max-w-md">
                 <div className={`w-24 h-24 mx-auto rounded-full ${passed ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center mb-6`}>
-                    {passed ? (
-                        <Trophy className="w-12 h-12 text-white" />
-                    ) : (
-                        <XCircle className="w-12 h-12 text-white" />
-                    )}
+                    {
+                        passed ? (
+                            <Trophy className="w-12 h-12 text-white" />
+                        ) : (
+                            <XCircle className="w-12 h-12 text-white" />
+                        )
+                    }
                 </div>
                 <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">
                     {passed ? 'Congratulations!' : 'Keep Practicing'}
                 </h2>
                 <p className="text-neutral-500 dark:text-neutral-400 mb-4">
-                    {passed
-                        ? 'You have successfully completed all verification sections.'
-                        : 'You need to pass all sections to complete this goal.'}
+                    {
+                        passed
+                            ? 'You have successfully completed all verification sections.'
+                            : 'You need to pass all sections to complete this goal.'
+                    }
                 </p>
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">Overall Score:</span>
@@ -236,22 +247,23 @@ export function VerificationContent({ goal, verification }: VerificationContentP
                                     score={verification?.mockScore}
                                 />
                             </TabsTrigger>
-                            {hasProject && (
-                                <TabsTrigger
-                                    value="project"
-                                    disabled={verification?.projectStatus === 'LOCKED'}
-                                    className="pb-3 px-0 rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:bg-transparent bg-transparent"
-                                >
-                                    <SectionTab
-                                        icon={<Wrench className="w-4 h-4" />}
-                                        label="Project"
-                                        status={verification?.projectStatus || 'LOCKED'}
-                                    />
-                                </TabsTrigger>
-                            )}
+                            {
+                                hasProject && (
+                                    <TabsTrigger
+                                        value="project"
+                                        disabled={verification?.projectStatus === 'LOCKED'}
+                                        className="pb-3 px-0 rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:bg-transparent bg-transparent"
+                                    >
+                                        <SectionTab
+                                            icon={<Wrench className="w-4 h-4" />}
+                                            label="Project"
+                                            status={verification?.projectStatus || 'LOCKED'}
+                                        />
+                                    </TabsTrigger>
+                                )
+                            }
                         </TabsList>
                     </div>
-
                     <div className="flex-1 overflow-hidden">
                         <TabsContent value="quiz" className="h-full m-0">
                             <QuizVerification
@@ -268,12 +280,10 @@ export function VerificationContent({ goal, verification }: VerificationContentP
                                 questions={aiPlan?.codingQuestions || []}
                                 status={verification?.codingStatus || 'LOCKED'}
                                 score={verification?.codingScore ?? null}
-                                attempts={verification?.codingAttempts || 0}
                             />
                         </TabsContent>
                         <TabsContent value="mock" className="h-full m-0">
                             <MockVerification
-                                goalId={goal.id}
                                 mockInterviewId={goal.mockInterviewId}
                                 mockConfig={aiPlan?.mockInterview}
                                 status={verification?.mockStatus || 'LOCKED'}
@@ -281,17 +291,19 @@ export function VerificationContent({ goal, verification }: VerificationContentP
                                 attempts={verification?.mockAttempts || 0}
                             />
                         </TabsContent>
-                        {hasProject && (
-                            <TabsContent value="project" className="h-full m-0">
-                                <ProjectVerification
-                                    goalId={goal.id}
-                                    minorProject={aiPlan?.minorProject}
-                                    majorProject={aiPlan?.majorProject}
-                                    status={verification?.projectStatus || 'LOCKED'}
-                                    complete={verification?.projectComplete || false}
-                                />
-                            </TabsContent>
-                        )}
+                        {
+                            hasProject && (
+                                <TabsContent value="project" className="h-full m-0">
+                                    <ProjectVerification
+                                        goalId={goal.id}
+                                        minorProject={aiPlan?.minorProject}
+                                        majorProject={aiPlan?.majorProject}
+                                        status={verification?.projectStatus || 'LOCKED'}
+                                        complete={verification?.projectComplete || false}
+                                    />
+                                </TabsContent>
+                            )
+                        }
                     </div>
                 </Tabs>
             </div>
@@ -316,7 +328,6 @@ function VerificationHeader({ goal, verification }: { goal: Goal; verification: 
                 <ArrowLeft className="w-4 h-4" />
                 Back to Goal
             </Link>
-
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
@@ -329,7 +340,6 @@ function VerificationHeader({ goal, verification }: { goal: Goal; verification: 
                         <p className="text-sm text-neutral-500">{goal.title}</p>
                     </div>
                 </div>
-
                 <div className="flex items-center gap-4">
                     <div className="text-right">
                         <div className="text-sm text-neutral-500">Progress</div>

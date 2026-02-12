@@ -5,7 +5,9 @@ import { motion } from 'framer-motion'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs'
+import {
+    Tabs, TabsContent, TabsList, TabsTrigger
+} from '@repo/ui/components/ui/tabs'
 import {
     CheckCircle2, Code, Play, Lightbulb, ChevronRight, Lock
 } from 'lucide-react'
@@ -34,10 +36,9 @@ interface CodingVerificationProps {
     questions: CodingQuestion[]
     status: VerificationSectionStatus
     score: number | null
-    attempts: number
 }
 
-export function CodingVerification({ goalId, questions, status, score, attempts: _attempts }: CodingVerificationProps) {
+export function CodingVerification({ goalId, questions, status, score }: CodingVerificationProps) {
     const [currentProblem, setCurrentProblem] = useState(0)
     const [code, setCode] = useState<Record<string, string>>({})
     const [language, setLanguage] = useState<'javascript' | 'python'>('javascript')
@@ -154,7 +155,6 @@ export function CodingVerification({ goalId, questions, status, score, attempts:
 
     return (
         <div className="flex-1 flex overflow-hidden">
-            {/* Problem List Sidebar */}
             <div className="w-64 border-r border-neutral-200 dark:border-neutral-800 flex flex-col">
                 <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">
                     <h3 className="font-semibold text-neutral-900 dark:text-white">Problems</h3>
@@ -162,40 +162,42 @@ export function CodingVerification({ goalId, questions, status, score, attempts:
                 </div>
                 <ScrollArea className="flex-1">
                     <div className="p-2 space-y-1">
-                        {questions.map((q, index) => {
-                            const isSolved = solvedProblems.has(q.id)
-                            return (
-                                <button
-                                    key={q.id}
-                                    onClick={() => setCurrentProblem(index)}
-                                    className={cn(
-                                        "w-full p-3 rounded-lg text-left transition-all flex items-center justify-between",
-                                        currentProblem === index
-                                            ? "bg-violet-100 dark:bg-violet-900/30"
-                                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                    )}
-                                >
-                                    <div>
-                                        <div className="font-medium text-sm text-neutral-900 dark:text-white truncate">
-                                            {q.title}
+                        {
+                            questions.map((q, index) => {
+                                const isSolved = solvedProblems.has(q.id)
+                                return (
+                                    <button
+                                        key={q.id}
+                                        onClick={() => setCurrentProblem(index)}
+                                        className={cn(
+                                            "w-full p-3 rounded-lg text-left transition-all flex items-center justify-between",
+                                            currentProblem === index
+                                                ? "bg-violet-100 dark:bg-violet-900/30"
+                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                        )}
+                                    >
+                                        <div>
+                                            <div className="font-medium text-sm text-neutral-900 dark:text-white truncate">
+                                                {q.title}
+                                            </div>
+                                            <Badge variant="secondary" className="capitalize mt-1 text-[10px]">
+                                                {q.difficulty.toLowerCase()}
+                                            </Badge>
                                         </div>
-                                        <Badge variant="secondary" className="capitalize mt-1 text-[10px]">
-                                            {q.difficulty.toLowerCase()}
-                                        </Badge>
-                                    </div>
-                                    {isSolved ? (
-                                        <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                                    ) : (
-                                        <ChevronRight className="w-4 h-4 text-neutral-400 flex-shrink-0" />
-                                    )}
-                                </button>
-                            )
-                        })}
+                                        {
+                                            isSolved ? (
+                                                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                            ) : (
+                                                <ChevronRight className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+                                            )
+                                        }
+                                    </button>
+                                )
+                            })
+                        }
                     </div>
                 </ScrollArea>
             </div>
-
-            {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Tabs defaultValue="problem" className="flex-1 flex flex-col overflow-hidden">
                     <div className="border-b border-neutral-200 dark:border-neutral-800 px-4">
@@ -214,9 +216,7 @@ export function CodingVerification({ goalId, questions, status, score, attempts:
                             </TabsTrigger>
                         </TabsList>
                     </div>
-
                     <div className="flex-1 flex overflow-hidden">
-                        {/* Problem Description */}
                         <TabsContent value="problem" className="flex-1 m-0 flex overflow-hidden">
                             <div className="w-1/2 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden">
                                 <ScrollArea className="flex-1 p-4">
@@ -230,44 +230,45 @@ export function CodingVerification({ goalId, questions, status, score, attempts:
                                                 <Badge variant="outline">{problem.category}</Badge>
                                             </div>
                                         </div>
-
                                         <div>
                                             <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
                                                 {problem.description}
                                             </p>
                                         </div>
-
                                         <div>
                                             <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">Constraints:</h4>
                                             <ul className="list-disc list-inside text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                                                {problem.constraints.map((c, i) => (
-                                                    <li key={i}>{c}</li>
-                                                ))}
+                                                {
+                                                    problem.constraints.map((c, i) => (
+                                                        <li key={i}>{c}</li>
+                                                    ))
+                                                }
                                             </ul>
                                         </div>
-
                                         <div>
                                             <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">Examples:</h4>
-                                            {problem.examples.map((ex, i) => (
-                                                <div key={i} className="mb-4 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
-                                                    <div className="text-sm">
-                                                        <div className="mb-1">
-                                                            <span className="font-medium">Input:</span> {ex.input}
-                                                        </div>
-                                                        <div className="mb-1">
-                                                            <span className="font-medium">Output:</span> {ex.output}
-                                                        </div>
-                                                        {ex.explanation && (
-                                                            <div className="text-neutral-500">
-                                                                <span className="font-medium">Explanation:</span> {ex.explanation}
+                                            {
+                                                problem.examples.map((ex, i) => (
+                                                    <div key={i} className="mb-4 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                                                        <div className="text-sm">
+                                                            <div className="mb-1">
+                                                                <span className="font-medium">Input:</span> {ex.input}
                                                             </div>
-                                                        )}
+                                                            <div className="mb-1">
+                                                                <span className="font-medium">Output:</span> {ex.output}
+                                                            </div>
+                                                            {
+                                                                ex.explanation && (
+                                                                    <div className="text-neutral-500">
+                                                                        <span className="font-medium">Explanation:</span> {ex.explanation}
+                                                                    </div>
+                                                                )
+                                                            }
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))
+                                            }
                                         </div>
-
-                                        {/* Hints */}
                                         <div>
                                             <Button
                                                 variant="outline"
@@ -277,37 +278,41 @@ export function CodingVerification({ goalId, questions, status, score, attempts:
                                                 <Lightbulb className="w-4 h-4 mr-2" />
                                                 {showHints ? 'Hide Hints' : 'Show Hints'}
                                             </Button>
-                                            {showHints && (
-                                                <div className="mt-3 space-y-2">
-                                                    {problem.hints.slice(0, hintLevel + 1).map((hint, i) => (
-                                                        <motion.div
-                                                            key={i}
-                                                            initial={{ opacity: 0, y: -10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
-                                                        >
-                                                            <span className="text-sm text-yellow-800 dark:text-yellow-200">
-                                                                Hint {i + 1}: {hint}
-                                                            </span>
-                                                        </motion.div>
-                                                    ))}
-                                                    {hintLevel < problem.hints.length - 1 && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => setHintLevel(h => h + 1)}
-                                                        >
-                                                            Show next hint
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            )}
+                                            {
+                                                showHints && (
+                                                    <div className="mt-3 space-y-2">
+                                                        {
+                                                            problem.hints.slice(0, hintLevel + 1).map((hint, i) => (
+                                                                <motion.div
+                                                                    key={i}
+                                                                    initial={{ opacity: 0, y: -10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
+                                                                >
+                                                                    <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                                                                        Hint {i + 1}: {hint}
+                                                                    </span>
+                                                                </motion.div>
+                                                            ))
+                                                        }
+                                                        {
+                                                            hintLevel < problem.hints.length - 1 && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => setHintLevel(h => h + 1)}
+                                                                >
+                                                                    Show next hint
+                                                                </Button>
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
                                         </div>
                                     </div>
                                 </ScrollArea>
                             </div>
-
-                            {/* Code Editor */}
                             <div className="w-1/2 flex flex-col overflow-hidden">
                                 <div className="p-2 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                                     <Tabs value={language} onValueChange={handleLanguageChange}>
@@ -335,8 +340,6 @@ export function CodingVerification({ goalId, questions, status, score, attempts:
                                 </div>
                             </div>
                         </TabsContent>
-
-                        {/* Solution Tab */}
                         <TabsContent value="solution" className="flex-1 m-0 overflow-hidden">
                             <ScrollArea className="h-full p-6">
                                 <div className="max-w-3xl space-y-6">

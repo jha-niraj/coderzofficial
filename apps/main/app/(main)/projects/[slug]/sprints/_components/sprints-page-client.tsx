@@ -126,7 +126,6 @@ export default function SprintsPageClient({
     project,
     currentUserId,
     userCredits,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     currentUser: _currentUser
 }: SprintsPageClientProps) {
     const router = useRouter()

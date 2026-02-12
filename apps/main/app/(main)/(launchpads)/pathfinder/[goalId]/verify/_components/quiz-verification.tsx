@@ -7,10 +7,13 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import {
-    CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft, Flag, Brain, RotateCcw
+    CheckCircle2, XCircle, Clock, ArrowRight, ArrowLeft, Flag, Brain,
+    RotateCcw
 } from 'lucide-react'
 import { VerificationSectionStatus } from '@repo/prisma/client'
-import { submitVerificationQuiz, retryVerificationSection } from '@/actions/(main)/pathfinder'
+import {
+    submitVerificationQuiz, retryVerificationSection
+} from '@/actions/(main)/pathfinder'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 
@@ -45,23 +48,6 @@ export function QuizVerification({ goalId, questions, status, score, attempts }:
     const [questionTimes, setQuestionTimes] = useState<Record<number, number>>({})
     const [lastQuestionTime, setLastQuestionTime] = useState<number | null>(null)
 
-    // Timer
-    useEffect(() => {
-        if (!quizStarted || quizCompleted) return
-
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    handleSubmit()
-                    return 0
-                }
-                return prev - 1
-            })
-        }, 1000)
-
-        return () => clearInterval(timer)
-    }, [quizStarted, quizCompleted])
-
     // Track time per question
     useEffect(() => {
         if (!quizStarted) return
@@ -75,7 +61,7 @@ export function QuizVerification({ goalId, questions, status, score, attempts }:
             }))
         }
         setLastQuestionTime(now)
-    }, [currentQuestion, quizStarted])
+    }, [currentQuestion, quizStarted, lastQuestionTime])
 
     const startQuiz = () => {
         setQuizStarted(true)
@@ -139,6 +125,23 @@ export function QuizVerification({ goalId, questions, status, score, attempts }:
 
         setIsSubmitting(false)
     }, [answers, goalId, questions, questionTimes, startTime, timeLeft, isSubmitting])
+
+    // Timer
+    useEffect(() => {
+        if (!quizStarted || quizCompleted) return
+
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    handleSubmit()
+                    return 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+
+        return () => clearInterval(timer)
+    }, [quizStarted, quizCompleted, handleSubmit])
 
     const handleRetry = async () => {
         const result = await retryVerificationSection(goalId, 'quiz')
@@ -246,9 +249,7 @@ export function QuizVerification({ goalId, questions, status, score, attempts }:
 
     return (
         <div className="flex-1 flex overflow-hidden">
-            {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Header */}
                 <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Badge variant="outline">{currentQuestion + 1} of {questions.length}</Badge>
@@ -275,8 +276,6 @@ export function QuizVerification({ goalId, questions, status, score, attempts }:
                         </Button>
                     </div>
                 </div>
-
-                {/* Question */}
                 <ScrollArea className="flex-1 p-6">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -289,43 +288,45 @@ export function QuizVerification({ goalId, questions, status, score, attempts }:
                                 {question.question}
                             </h3>
 
-                            {question.codeSnippet && (
-                                <pre className="p-4 rounded-lg bg-neutral-900 text-neutral-100 text-sm overflow-x-auto mb-6">
-                                    <code>{question.codeSnippet}</code>
-                                </pre>
-                            )}
+                            {
+                                question.codeSnippet && (
+                                    <pre className="p-4 rounded-lg bg-neutral-900 text-neutral-100 text-sm overflow-x-auto mb-6">
+                                        <code>{question.codeSnippet}</code>
+                                    </pre>
+                                )
+                            }
 
                             <div className="space-y-3">
-                                {question.options.map((option, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => selectAnswer(index)}
-                                        className={cn(
-                                            "w-full p-4 rounded-xl border-2 text-left transition-all",
-                                            answers[currentQuestion] === index
-                                                ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
-                                                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn(
-                                                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                                {
+                                    question.options.map((option, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => selectAnswer(index)}
+                                            className={cn(
+                                                "w-full p-4 rounded-xl border-2 text-left transition-all",
                                                 answers[currentQuestion] === index
-                                                    ? "bg-violet-500 text-white"
-                                                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
-                                            )}>
-                                                {String.fromCharCode(65 + index)}
+                                                    ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
+                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn(
+                                                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                                                    answers[currentQuestion] === index
+                                                        ? "bg-violet-500 text-white"
+                                                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                                                )}>
+                                                    {String.fromCharCode(65 + index)}
+                                                </div>
+                                                <span className="text-neutral-900 dark:text-white">{option}</span>
                                             </div>
-                                            <span className="text-neutral-900 dark:text-white">{option}</span>
-                                        </div>
-                                    </button>
-                                ))}
+                                        </button>
+                                    ))
+                                }
                             </div>
                         </motion.div>
                     </AnimatePresence>
                 </ScrollArea>
-
-                {/* Navigation */}
                 <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                     <Button
                         variant="outline"
@@ -336,46 +337,48 @@ export function QuizVerification({ goalId, questions, status, score, attempts }:
                         Previous
                     </Button>
                     <Progress value={(answeredCount / questions.length) * 100} className="w-32 h-2" />
-                    {currentQuestion === questions.length - 1 ? (
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={isSubmitting}
-                            className="bg-gradient-to-r from-violet-600 to-purple-600"
-                        >
-                            {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={() => goToQuestion(currentQuestion + 1)}
-                        >
-                            Next
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                    )}
+                    {
+                        currentQuestion === questions.length - 1 ? (
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={isSubmitting}
+                                className="bg-gradient-to-r from-violet-600 to-purple-600"
+                            >
+                                {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={() => goToQuestion(currentQuestion + 1)}
+                            >
+                                Next
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                            </Button>
+                        )
+                    }
                 </div>
             </div>
-
-            {/* Question Navigator */}
             <div className="w-64 border-l border-neutral-200 dark:border-neutral-800 p-4">
                 <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Questions</h4>
                 <div className="grid grid-cols-5 gap-2">
-                    {questions.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => goToQuestion(index)}
-                            className={cn(
-                                "w-10 h-10 rounded-lg text-sm font-medium transition-all",
-                                currentQuestion === index
-                                    ? "bg-violet-500 text-white"
-                                    : answers[index] !== undefined
-                                        ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400",
-                                flagged.has(index) && "ring-2 ring-yellow-500"
-                            )}
-                        >
-                            {index + 1}
-                        </button>
-                    ))}
+                    {
+                        questions.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => goToQuestion(index)}
+                                className={cn(
+                                    "w-10 h-10 rounded-lg text-sm font-medium transition-all",
+                                    currentQuestion === index
+                                        ? "bg-violet-500 text-white"
+                                        : answers[index] !== undefined
+                                            ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                                            : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400",
+                                    flagged.has(index) && "ring-2 ring-yellow-500"
+                                )}
+                            >
+                                {index + 1}
+                            </button>
+                        ))
+                    }
                 </div>
                 <div className="mt-6 space-y-2 text-xs">
                     <div className="flex items-center gap-2">

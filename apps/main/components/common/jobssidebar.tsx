@@ -56,7 +56,6 @@ function JobsSidebarContent() {
         return pathname.startsWith(`/${path}`) && path !== "jobs" && path !== "companies"
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const renderNavItem = (item: NavigationItem, _isSecondary = false) => {
         const Icon = item.icon
         const active = isActive(item.path)

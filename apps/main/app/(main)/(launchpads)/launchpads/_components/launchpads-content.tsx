@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
@@ -12,39 +12,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-
-interface Product {
-    id: string
-    slug: string
-    name: string
-    tagline: string
-    description: string
-    logo: string | null
-    coverImage: string | null
-    category: string
-    tags: string[]
-    techStack: string[]
-    websiteUrl: string | null
-    demoUrl: string | null
-    githubUrl: string | null
-    viewCount: number
-    likeCount: number
-    commentCount: number
-    isFeatured: boolean
-    type: string
-    createdBy?: {
-        id: string
-        name: string | null
-        username: string | null
-        image: string | null
-    } | null
-}
-
-interface LaunchpadsContentProps {
-    coderzProducts: Product[]
-    communityProducts: Product[]
-    featuredProducts: Product[]
-}
+import { useLaunchpadsStore } from "@/app/store/launchpadsStore"
+import type { LaunchpadsContentProps } from "@/types/launchpads"
 
 // Category icons
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -223,32 +192,34 @@ function EmptyState({ type }: { type: 'coderz' | 'community' }) {
 }
 
 export function LaunchpadsContent({ 
-    coderzProducts, 
-    communityProducts, 
-    featuredProducts 
+    coderzProducts: initialCoderzProducts, 
+    communityProducts: initialCommunityProducts, 
+    featuredProducts: initialFeaturedProducts 
 }: LaunchpadsContentProps) {
-    const [activeTab, setActiveTab] = useState<'coderz' | 'community'>('coderz')
+    const { 
+        coderzProducts, communityProducts, featuredProducts,
+        activeTab, setActiveTab, initialize 
+    } = useLaunchpadsStore()
 
-    const currentProducts = activeTab === 'coderz' ? coderzProducts : communityProducts
+    // Initialize store with props
+    useEffect(() => {
+        initialize(initialCoderzProducts, initialCommunityProducts, initialFeaturedProducts)
+    }, [initialCoderzProducts, initialCommunityProducts, initialFeaturedProducts, initialize])
+
+    // Use store data (falls back to initial if store not yet hydrated)
+    const displayCoderzProducts = coderzProducts.length > 0 ? coderzProducts : initialCoderzProducts
+    const displayCommunityProducts = communityProducts.length > 0 ? communityProducts : initialCommunityProducts
+    const displayFeaturedProducts = featuredProducts.length > 0 ? featuredProducts : initialFeaturedProducts
+    const currentProducts = activeTab === 'coderz' ? displayCoderzProducts : displayCommunityProducts
 
     return (
         <div className="flex-1 flex overflow-hidden">
             {/* Left Sidebar - Products List */}
             <div className="w-full md:w-[400px] lg:w-[450px] border-r border-neutral-200 dark:border-neutral-800 flex flex-col">
-                {/* Tabs */}
+                {/* Tabs - Community first */}
                 <div className="flex-shrink-0 p-4 border-b border-neutral-100 dark:border-neutral-800">
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'coderz' | 'community')}>
                         <TabsList className="w-full bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
-                            <TabsTrigger 
-                                value="coderz" 
-                                className="flex-1 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm"
-                            >
-                                <Rocket className="w-4 h-4 mr-2" />
-                                Coderz Labs
-                                <Badge variant="secondary" className="ml-2 bg-neutral-200 dark:bg-neutral-700 text-xs">
-                                    {coderzProducts.length}
-                                </Badge>
-                            </TabsTrigger>
                             <TabsTrigger 
                                 value="community" 
                                 className="flex-1 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm"
@@ -256,7 +227,17 @@ export function LaunchpadsContent({
                                 <Users className="w-4 h-4 mr-2" />
                                 Community
                                 <Badge variant="secondary" className="ml-2 bg-neutral-200 dark:bg-neutral-700 text-xs">
-                                    {communityProducts.length}
+                                    {displayCommunityProducts.length}
+                                </Badge>
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="coderz" 
+                                className="flex-1 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:shadow-sm"
+                            >
+                                <Rocket className="w-4 h-4 mr-2" />
+                                Coderz Labs
+                                <Badge variant="secondary" className="ml-2 bg-neutral-200 dark:bg-neutral-700 text-xs">
+                                    {displayCoderzProducts.length}
                                 </Badge>
                             </TabsTrigger>
                         </TabsList>
@@ -298,7 +279,7 @@ export function LaunchpadsContent({
                         </div>
 
                         {/* Featured Products */}
-                        {featuredProducts.length > 0 && (
+                        {displayFeaturedProducts.length > 0 && (
                             <div className="mt-10">
                                 <div className="flex items-center gap-2 mb-6">
                                     <Trophy className="w-5 h-5 text-amber-500" />
@@ -307,7 +288,7 @@ export function LaunchpadsContent({
                                     </h3>
                                 </div>
                                 <div className="grid gap-4">
-                                    {featuredProducts.map((product) => (
+                                    {displayFeaturedProducts.map((product) => (
                                         <FeaturedProductCard key={product.id} product={product} />
                                     ))}
                                 </div>
@@ -317,27 +298,27 @@ export function LaunchpadsContent({
                         {/* Quick Stats */}
                         <div className="mt-10 grid grid-cols-3 gap-4">
                             <div className="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center">
-                                <Rocket className="w-8 h-8 mx-auto text-neutral-700 dark:text-neutral-300 mb-3" />
-                                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                    {coderzProducts.length}
-                                </div>
-                                <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                                    Coderz Products
-                                </div>
-                            </div>
-                            <div className="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center">
                                 <Users className="w-8 h-8 mx-auto text-neutral-700 dark:text-neutral-300 mb-3" />
                                 <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                    {communityProducts.length}
+                                    {displayCommunityProducts.length}
                                 </div>
                                 <div className="text-sm text-neutral-500 dark:text-neutral-400">
                                     Community Products
                                 </div>
                             </div>
                             <div className="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center">
+                                <Rocket className="w-8 h-8 mx-auto text-neutral-700 dark:text-neutral-300 mb-3" />
+                                <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                    {displayCoderzProducts.length}
+                                </div>
+                                <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                                    Coderz Products
+                                </div>
+                            </div>
+                            <div className="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center">
                                 <Trophy className="w-8 h-8 mx-auto text-amber-500 mb-3" />
                                 <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                    {featuredProducts.length}
+                                    {displayFeaturedProducts.length}
                                 </div>
                                 <div className="text-sm text-neutral-500 dark:text-neutral-400">
                                     Featured

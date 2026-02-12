@@ -1,6 +1,7 @@
 import { prisma } from '@repo/prisma'
 import bcrypt from 'bcryptjs'
 import { seedOpenSourceLearn } from './seed/opensource-git-learn'
+import { seedAchievements } from './seed/achievements-seed'
 
 async function main() {
 	console.log('🌱 Starting database seeding...\n')
@@ -102,6 +103,16 @@ async function main() {
 		console.log('✅ Git learning content seeded successfully!')
 	} catch (error) {
 		console.error('⚠️ Error seeding Git learning content:', error)
+		// Don't throw - allow other seeds to continue
+	}
+
+	// Seed Achievements (Badges & Levels)
+	console.log('\n🏆 Seeding Achievements System...')
+	try {
+		await seedAchievements()
+		console.log('✅ Achievements system seeded successfully!')
+	} catch (error) {
+		console.error('⚠️ Error seeding achievements:', error)
 		// Don't throw - allow other seeds to continue
 	}
 

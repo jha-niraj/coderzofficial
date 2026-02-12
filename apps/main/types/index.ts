@@ -358,3 +358,12 @@ export * from './assessment'
 
 // Re-export common types
 export * from './common'
+
+// Re-export pathfinder types
+export * from './pathfinder'
+
+// Re-export launchpads types
+export * from './launchpads'
+
+// Re-export achievements types
+export * from './achievements'

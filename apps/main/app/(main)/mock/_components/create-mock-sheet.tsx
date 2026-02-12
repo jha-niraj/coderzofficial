@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from '@repo/ui/components/ui/sheet'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
@@ -17,7 +17,7 @@ import {
 } from '@repo/ui/components/ui/select'
 import {
     Sparkles, FileText, Globe, Lock, Loader2, CheckCircle, AlertCircle,
-    Brain, ArrowRight, ArrowLeft, BookOpen, Check, Mic
+    Brain, ArrowRight, ArrowLeft, BookOpen, Check
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import { createCustomMockVoice } from '@/actions/(main)/mockvoice/voice.action'
@@ -36,7 +36,7 @@ interface CreateMockSheetProps {
     onOpenChange?: (open: boolean) => void
 }
 
-export function CreateMockSheet({ trigger, userCredits = 0, onSuccess, spaceId, open: controlledOpen, onOpenChange }: CreateMockSheetProps) {
+export function CreateMockSheet({ trigger: _trigger, userCredits = 0, onSuccess, spaceId, open: controlledOpen, onOpenChange }: CreateMockSheetProps) {
     const router = useRouter()
     const [internalOpen, setInternalOpen] = useState(false)
     const open = controlledOpen !== undefined ? controlledOpen : internalOpen
@@ -190,14 +190,6 @@ export function CreateMockSheet({ trigger, userCredits = 0, onSuccess, spaceId, 
             setOpen(isOpen)
             if (!isOpen) resetForm()
         }}>
-            <SheetTrigger asChild>
-                {trigger || (
-                    <Button className="flex items-center gap-2">
-                        <Mic className="w-4 h-4" />
-                        Create Mock Interview
-                    </Button>
-                )}
-            </SheetTrigger>
             <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
                 <div className="max-w-2xl mx-auto">
                     <SheetHeader className="mb-6">
@@ -211,418 +203,428 @@ export function CreateMockSheet({ trigger, userCredits = 0, onSuccess, spaceId, 
                             Design your personalized AI-powered interview practice
                         </SheetDescription>
                     </SheetHeader>
-
                     <AnimatePresence mode="wait">
-                        {processing ? (
-                            <motion.div
-                                key="processing"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="flex flex-col items-center justify-center py-20"
-                            >
-                                <div className="relative mb-8">
-                                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 blur-2xl opacity-30 animate-pulse" />
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                        className="relative w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-500 flex items-center justify-center"
-                                    >
-                                        <div className="w-28 h-28 rounded-full bg-white dark:bg-neutral-950 flex items-center justify-center">
-                                            <motion.div
-                                                animate={{ scale: [1, 1.1, 1] }}
-                                                transition={{ duration: 1.5, repeat: Infinity }}
-                                            >
-                                                {progressPercent === 100 ? (
-                                                    <CheckCircle className="w-12 h-12 text-green-500" />
-                                                ) : (
-                                                    <Brain className="w-12 h-12 text-purple-500" />
-                                                )}
-                                            </motion.div>
+                        {
+                            processing ? (
+                                <motion.div
+                                    key="processing"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="flex flex-col items-center justify-center py-20"
+                                >
+                                    <div className="relative mb-8">
+                                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 blur-2xl opacity-30 animate-pulse" />
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                            className="relative w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-500 flex items-center justify-center"
+                                        >
+                                            <div className="w-28 h-28 rounded-full bg-white dark:bg-neutral-950 flex items-center justify-center">
+                                                <motion.div
+                                                    animate={{ scale: [1, 1.1, 1] }}
+                                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                                >
+                                                    {
+                                                        progressPercent === 100 ? (
+                                                            <CheckCircle className="w-12 h-12 text-green-500" />
+                                                        ) : (
+                                                            <Brain className="w-12 h-12 text-purple-500" />
+                                                        )
+                                                    }
+                                                </motion.div>
+                                            </div>
+                                        </motion.div>
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-2 text-neutral-900 dark:text-white">
+                                        {progressPercent === 100 ? 'Mock Interview Created!' : 'Creating Your Interview'}
+                                    </h3>
+                                    <p className="text-neutral-500 dark:text-neutral-400 mb-8">
+                                        {getStatusMessage()}
+                                    </p>
+                                    <div className="w-full max-w-md space-y-4">
+                                        <Progress value={progressPercent} className="h-3" />
+                                        <div className="flex justify-between text-sm text-neutral-500">
+                                            <span>{progressPercent}% complete</span>
                                         </div>
-                                    </motion.div>
-                                </div>
-
-                                <h3 className="text-2xl font-bold mb-2 text-neutral-900 dark:text-white">
-                                    {progressPercent === 100 ? 'Mock Interview Created!' : 'Creating Your Interview'}
-                                </h3>
-                                <p className="text-neutral-500 dark:text-neutral-400 mb-8">
-                                    {getStatusMessage()}
-                                </p>
-
-                                <div className="w-full max-w-md space-y-4">
-                                    <Progress value={progressPercent} className="h-3" />
-                                    <div className="flex justify-between text-sm text-neutral-500">
-                                        <span>{progressPercent}% complete</span>
                                     </div>
-                                </div>
-
-                                {/* Generation Steps */}
-                                <div className="mt-8 space-y-3 text-sm text-left w-full max-w-md">
-                                    {[
-                                        { label: 'Analyzing requirements', threshold: 10, icon: Brain },
-                                        { label: 'Generating questions', threshold: 40, icon: Sparkles },
-                                        { label: 'Building knowledge base', threshold: 70, icon: BookOpen },
-                                        { label: 'Finalizing interview', threshold: 95, icon: CheckCircle },
-                                    ].map((item, idx) => {
-                                        return (
-                                            <motion.div
-                                                key={item.label}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: progressPercent >= item.threshold ? 1 : 0.4, x: 0 }}
-                                                transition={{ delay: idx * 0.1 }}
-                                                className="flex items-center gap-3"
-                                            >
-                                                {progressPercent >= item.threshold + 20 ? (
-                                                    <Check className="w-5 h-5 text-green-500" />
-                                                ) : progressPercent >= item.threshold ? (
-                                                    <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                                                ) : (
-                                                    <div className="w-5 h-5 rounded-full border-2 border-neutral-300 dark:border-neutral-700" />
-                                                )}
-                                                <span className={cn(
-                                                    progressPercent >= item.threshold
-                                                        ? "text-neutral-900 dark:text-white"
-                                                        : "text-neutral-400"
-                                                )}>
-                                                    {item.label}
-                                                </span>
-                                            </motion.div>
-                                        )
-                                    })}
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="form"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                            >
-                                {/* Progress Indicator */}
-                                <div className="mb-8">
-                                    <div className="flex justify-between mb-2">
-                                        {steps.map((s, index) => (
-                                            <div key={s.id} className="flex-1 text-center">
-                                                <div className={cn(
-                                                    "w-10 h-10 rounded-full mx-auto mb-1 flex items-center justify-center text-sm font-medium transition-all",
-                                                    index < step ? "bg-green-500 text-white" :
-                                                        index === step ? "bg-purple-500 text-white" :
-                                                            "bg-neutral-200 dark:bg-neutral-700 text-neutral-500"
-                                                )}>
-                                                    {index < step ? <Check className="w-5 h-5" /> : index + 1}
-                                                </div>
-                                                <p className="text-xs text-neutral-500">{s.title}</p>
-                                            </div>
-                                        ))}
+                                    <div className="mt-8 space-y-3 text-sm text-left w-full max-w-md">
+                                        {
+                                            [
+                                                { label: 'Analyzing requirements', threshold: 10, icon: Brain },
+                                                { label: 'Generating questions', threshold: 40, icon: Sparkles },
+                                                { label: 'Building knowledge base', threshold: 70, icon: BookOpen },
+                                                { label: 'Finalizing interview', threshold: 95, icon: CheckCircle },
+                                            ].map((item, idx) => {
+                                                return (
+                                                    <motion.div
+                                                        key={item.label}
+                                                        initial={{ opacity: 0, x: -20 }}
+                                                        animate={{ opacity: progressPercent >= item.threshold ? 1 : 0.4, x: 0 }}
+                                                        transition={{ delay: idx * 0.1 }}
+                                                        className="flex items-center gap-3"
+                                                    >
+                                                        {
+                                                            progressPercent >= item.threshold + 20 ? (
+                                                                <Check className="w-5 h-5 text-green-500" />
+                                                            ) : progressPercent >= item.threshold ? (
+                                                                <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                                                            ) : (
+                                                                <div className="w-5 h-5 rounded-full border-2 border-neutral-300 dark:border-neutral-700" />
+                                                            )
+                                                        }
+                                                        <span className={cn(
+                                                            progressPercent >= item.threshold
+                                                                ? "text-neutral-900 dark:text-white"
+                                                                : "text-neutral-400"
+                                                        )}>
+                                                            {item.label}
+                                                        </span>
+                                                    </motion.div>
+                                                )
+                                            })
+                                        }
                                     </div>
-                                    <Progress value={((step + 1) / steps.length) * 100} className="h-2" />
-                                </div>
-
-                                {/* Credit Info */}
-                                <div className="flex items-center gap-3 mb-6 p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
-                                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                                    <div className="flex-1">
-                                        <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                                            {totalCredits} Credits Required
-                                        </span>
-                                        <span className="text-sm text-purple-600 dark:text-purple-400 ml-2">
-                                            (You have {userCredits})
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Step Content */}
-                                <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={step}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-6"
-                                    >
-                                        {/* Step 0: Basic Info */}
-                                        {step === 0 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
-                                                        Tell us about the role
-                                                    </h3>
-                                                    <p className="text-neutral-500">What position are you preparing for?</p>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Position Title *</Label>
-                                                    <Input
-                                                        placeholder="e.g., Senior Frontend Developer, SDE-2"
-                                                        value={formData.title}
-                                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                                        className="h-12"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Description *</Label>
-                                                    <Textarea
-                                                        placeholder="Describe the key areas you want to focus on..."
-                                                        value={formData.description}
-                                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                        rows={3}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label>Category</Label>
-                                                        <Select
-                                                            value={formData.category}
-                                                            onValueChange={(value) => setFormData({ ...formData, category: value as MockCategory })}
-                                                        >
-                                                            <SelectTrigger className="h-12">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {MOCK_CATEGORIES.filter(c => c.value !== 'ALL').map((cat) => (
-                                                                    <SelectItem key={cat.value} value={cat.value}>
-                                                                        <span className="flex items-center gap-2">
-                                                                            <span>{cat.icon}</span>
-                                                                            <span>{cat.label}</span>
-                                                                        </span>
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Level</Label>
-                                                        <Select
-                                                            value={formData.level}
-                                                            onValueChange={(value) => setFormData({ ...formData, level: value })}
-                                                        >
-                                                            <SelectTrigger className="h-12">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {MOCK_LEVELS.filter(l => l.value !== 'ALL').map((level) => (
-                                                                    <SelectItem key={level.value} value={level.value}>
-                                                                        {level.label}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label>Duration</Label>
-                                                        <Select
-                                                            value={formData.duration.toString()}
-                                                            onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
-                                                        >
-                                                            <SelectTrigger className="h-12">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="10">10 min</SelectItem>
-                                                                <SelectItem value="15">15 min</SelectItem>
-                                                                <SelectItem value="20">20 min</SelectItem>
-                                                                <SelectItem value="30">30 min</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Questions</Label>
-                                                        <Select
-                                                            value={formData.questionsCount.toString()}
-                                                            onValueChange={(value) => setFormData({ ...formData, questionsCount: parseInt(value) })}
-                                                        >
-                                                            <SelectTrigger className="h-12">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="3">3 questions</SelectItem>
-                                                                <SelectItem value="5">5 questions</SelectItem>
-                                                                <SelectItem value="7">7 questions</SelectItem>
-                                                                <SelectItem value="10">10 questions</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Step 1: Knowledge Base */}
-                                        {step === 1 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
-                                                        Knowledge Base (Optional)
-                                                    </h3>
-                                                    <p className="text-neutral-500">Add study materials for focused questions</p>
-                                                </div>
-                                                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                                                    <div className="flex gap-2">
-                                                        <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                                                        <div className="text-sm text-blue-900 dark:text-blue-100">
-                                                            <p className="font-medium mb-1">Pro Tip</p>
-                                                            <p className="text-blue-700 dark:text-blue-300">
-                                                                Adding your syllabus helps the AI ask more targeted questions.
-                                                            </p>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="form"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                >
+                                    <div className="mb-8">
+                                        <div className="flex justify-between mb-2">
+                                            {
+                                                steps.map((s, index) => (
+                                                    <div key={s.id} className="flex-1 text-center">
+                                                        <div className={cn(
+                                                            "w-10 h-10 rounded-full mx-auto mb-1 flex items-center justify-center text-sm font-medium transition-all",
+                                                            index < step ? "bg-green-500 text-white" :
+                                                                index === step ? "bg-purple-500 text-white" :
+                                                                    "bg-neutral-200 dark:bg-neutral-700 text-neutral-500"
+                                                        )}>
+                                                            {index < step ? <Check className="w-5 h-5" /> : index + 1}
                                                         </div>
+                                                        <p className="text-xs text-neutral-500">{s.title}</p>
                                                     </div>
-                                                </div>
-                                                <Textarea
-                                                    placeholder="Paste your study materials, syllabus, or notes here..."
-                                                    value={formData.knowledgeBase}
-                                                    onChange={(e) => setFormData({ ...formData, knowledgeBase: e.target.value })}
-                                                    rows={10}
-                                                    className="font-mono text-sm"
-                                                />
-                                                <div className="flex items-center justify-between text-sm text-neutral-500">
-                                                    <span>{formData.knowledgeBase.length} characters</span>
-                                                    {formData.knowledgeBase.length > 0 && (
-                                                        <Check className="w-4 h-4 text-green-500" />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Step 2: Settings */}
-                                        {step === 2 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
-                                                        Additional Options
-                                                    </h3>
-                                                    <p className="text-neutral-500">Configure resume context and visibility</p>
-                                                </div>
-                                                <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-start gap-3">
-                                                            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                                                            <div>
-                                                                <div className="font-medium text-neutral-900 dark:text-white">
-                                                                    Include Resume Context
-                                                                </div>
-                                                                <div className="text-sm text-neutral-500">
-                                                                    AI asks questions based on your experience
-                                                                </div>
-                                                                <Badge variant="outline" className="text-xs mt-1">+5 credits</Badge>
+                                                ))
+                                            }
+                                        </div>
+                                        <Progress value={((step + 1) / steps.length) * 100} className="h-2" />
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-6 p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
+                                        <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                        <div className="flex-1">
+                                            <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                                                {totalCredits} Credits Required
+                                            </span>
+                                            <span className="text-sm text-purple-600 dark:text-purple-400 ml-2">
+                                                (You have {userCredits})
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={step}
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-6"
+                                        >
+                                            {
+                                                step === 0 && (
+                                                    <div className="space-y-4">
+                                                        <div className="text-center mb-6">
+                                                            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
+                                                                Tell us about the role
+                                                            </h3>
+                                                            <p className="text-neutral-500">What position are you preparing for?</p>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Position Title *</Label>
+                                                            <Input
+                                                                placeholder="e.g., Senior Frontend Developer, SDE-2"
+                                                                value={formData.title}
+                                                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                                                className="h-12"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Description *</Label>
+                                                            <Textarea
+                                                                placeholder="Describe the key areas you want to focus on..."
+                                                                value={formData.description}
+                                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                                rows={3}
+                                                            />
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-2">
+                                                                <Label>Category</Label>
+                                                                <Select
+                                                                    value={formData.category}
+                                                                    onValueChange={(value) => setFormData({ ...formData, category: value as MockCategory })}
+                                                                >
+                                                                    <SelectTrigger className="h-12">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {
+                                                                            MOCK_CATEGORIES.filter(c => c.value !== 'ALL').map((cat) => (
+                                                                                <SelectItem key={cat.value} value={cat.value}>
+                                                                                    <span className="flex items-center gap-2">
+                                                                                        <span>{cat.icon}</span>
+                                                                                        <span>{cat.label}</span>
+                                                                                    </span>
+                                                                                </SelectItem>
+                                                                            ))
+                                                                        }
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label>Level</Label>
+                                                                <Select
+                                                                    value={formData.level}
+                                                                    onValueChange={(value) => setFormData({ ...formData, level: value })}
+                                                                >
+                                                                    <SelectTrigger className="h-12">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {
+                                                                            MOCK_LEVELS.filter(l => l.value !== 'ALL').map((level) => (
+                                                                                <SelectItem key={level.value} value={level.value}>
+                                                                                    {level.label}
+                                                                                </SelectItem>
+                                                                            ))
+                                                                        }
+                                                                    </SelectContent>
+                                                                </Select>
                                                             </div>
                                                         </div>
-                                                        <Switch
-                                                            checked={formData.includeResume}
-                                                            onCheckedChange={(checked) => setFormData({ ...formData, includeResume: checked })}
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-2">
+                                                                <Label>Duration</Label>
+                                                                <Select
+                                                                    value={formData.duration.toString()}
+                                                                    onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
+                                                                >
+                                                                    <SelectTrigger className="h-12">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="10">10 min</SelectItem>
+                                                                        <SelectItem value="15">15 min</SelectItem>
+                                                                        <SelectItem value="20">20 min</SelectItem>
+                                                                        <SelectItem value="30">30 min</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label>Questions</Label>
+                                                                <Select
+                                                                    value={formData.questionsCount.toString()}
+                                                                    onValueChange={(value) => setFormData({ ...formData, questionsCount: parseInt(value) })}
+                                                                >
+                                                                    <SelectTrigger className="h-12">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="3">3 questions</SelectItem>
+                                                                        <SelectItem value="5">5 questions</SelectItem>
+                                                                        <SelectItem value="7">7 questions</SelectItem>
+                                                                        <SelectItem value="10">10 questions</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            }
+                                            {
+                                                step === 1 && (
+                                                    <div className="space-y-4">
+                                                        <div className="text-center mb-6">
+                                                            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
+                                                                Knowledge Base (Optional)
+                                                            </h3>
+                                                            <p className="text-neutral-500">Add study materials for focused questions</p>
+                                                        </div>
+                                                        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                                                            <div className="flex gap-2">
+                                                                <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                                                <div className="text-sm text-blue-900 dark:text-blue-100">
+                                                                    <p className="font-medium mb-1">Pro Tip</p>
+                                                                    <p className="text-blue-700 dark:text-blue-300">
+                                                                        Adding your syllabus helps the AI ask more targeted questions.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Textarea
+                                                            placeholder="Paste your study materials, syllabus, or notes here..."
+                                                            value={formData.knowledgeBase}
+                                                            onChange={(e) => setFormData({ ...formData, knowledgeBase: e.target.value })}
+                                                            rows={10}
+                                                            className="font-mono text-sm"
                                                         />
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <motion.button
-                                                        onClick={() => setFormData({ ...formData, isPublic: false })}
-                                                        whileHover={{ scale: 1.02 }}
-                                                        className={cn(
-                                                            "p-4 rounded-xl border-2 transition-all text-left",
-                                                            !formData.isPublic
-                                                                ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30"
-                                                                : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
-                                                        )}
-                                                    >
-                                                        <Lock className="w-5 h-5 text-neutral-500 mb-2" />
-                                                        <div className="font-medium text-neutral-900 dark:text-white">Private</div>
-                                                        <div className="text-xs text-neutral-500">Only you can access</div>
-                                                    </motion.button>
-                                                    <motion.button
-                                                        onClick={() => setFormData({ ...formData, isPublic: true })}
-                                                        whileHover={{ scale: 1.02 }}
-                                                        className={cn(
-                                                            "p-4 rounded-xl border-2 transition-all text-left",
-                                                            formData.isPublic
-                                                                ? "border-green-500 bg-green-50 dark:bg-green-950/30"
-                                                                : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
-                                                        )}
-                                                    >
-                                                        <Globe className="w-5 h-5 text-green-500 mb-2" />
-                                                        <div className="font-medium text-neutral-900 dark:text-white">Public</div>
-                                                        <div className="text-xs text-green-600">50% discount!</div>
-                                                    </motion.button>
-                                                </div>
-
-                                                {/* Cost Summary */}
-                                                <div className="p-5 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-200 dark:border-neutral-800">
-                                                    <h4 className="font-semibold text-base mb-3">Cost Summary</h4>
-                                                    <div className="space-y-2 text-sm">
-                                                        <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                                                            <span>Duration ({formData.duration}min)</span>
-                                                            <span>{baseCredits}c</span>
-                                                        </div>
-                                                        <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                                                            <span>Questions ({formData.questionsCount})</span>
-                                                            <span>{questionCredits}c</span>
-                                                        </div>
-                                                        {formData.isPublic && (
-                                                            <div className="flex justify-between text-green-600">
-                                                                <span>Public discount</span>
-                                                                <span>-50%</span>
-                                                            </div>
-                                                        )}
-                                                        {formData.includeResume && (
-                                                            <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                                                                <span>Resume context</span>
-                                                                <span>+{resumeCredits}c</span>
-                                                            </div>
-                                                        )}
-                                                        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-2" />
-                                                        <div className="flex justify-between font-bold text-lg">
-                                                            <span>Total</span>
-                                                            <span className="text-purple-600 dark:text-purple-400">{totalCredits} credits</span>
+                                                        <div className="flex items-center justify-between text-sm text-neutral-500">
+                                                            <span>{formData.knowledgeBase.length} characters</span>
+                                                            {
+                                                                formData.knowledgeBase.length > 0 && (
+                                                                    <Check className="w-4 h-4 text-green-500" />
+                                                                )
+                                                            }
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                {userCredits < totalCredits && (
-                                                    <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
-                                                        <div className="flex gap-2">
-                                                            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                                                            <div className="text-sm text-red-900 dark:text-red-100">
-                                                                Insufficient credits.{' '}
-                                                                <Link href="/purchase" className="underline">Purchase credits</Link>
+                                                )
+                                            }
+                                            {
+                                                step === 2 && (
+                                                    <div className="space-y-4">
+                                                        <div className="text-center mb-6">
+                                                            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
+                                                                Additional Options
+                                                            </h3>
+                                                            <p className="text-neutral-500">Configure resume context and visibility</p>
+                                                        </div>
+                                                        <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex items-start gap-3">
+                                                                    <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                                                                    <div>
+                                                                        <div className="font-medium text-neutral-900 dark:text-white">
+                                                                            Include Resume Context
+                                                                        </div>
+                                                                        <div className="text-sm text-neutral-500">
+                                                                            AI asks questions based on your experience
+                                                                        </div>
+                                                                        <Badge variant="outline" className="text-xs mt-1">+5 credits</Badge>
+                                                                    </div>
+                                                                </div>
+                                                                <Switch
+                                                                    checked={formData.includeResume}
+                                                                    onCheckedChange={(checked) => setFormData({ ...formData, includeResume: checked })}
+                                                                />
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                </AnimatePresence>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <motion.button
+                                                                onClick={() => setFormData({ ...formData, isPublic: false })}
+                                                                whileHover={{ scale: 1.02 }}
+                                                                className={cn(
+                                                                    "p-4 rounded-xl border-2 transition-all text-left",
+                                                                    !formData.isPublic
+                                                                        ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30"
+                                                                        : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
+                                                                )}
+                                                            >
+                                                                <Lock className="w-5 h-5 text-neutral-500 mb-2" />
+                                                                <div className="font-medium text-neutral-900 dark:text-white">Private</div>
+                                                                <div className="text-xs text-neutral-500">Only you can access</div>
+                                                            </motion.button>
+                                                            <motion.button
+                                                                onClick={() => setFormData({ ...formData, isPublic: true })}
+                                                                whileHover={{ scale: 1.02 }}
+                                                                className={cn(
+                                                                    "p-4 rounded-xl border-2 transition-all text-left",
+                                                                    formData.isPublic
+                                                                        ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                                                                        : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
+                                                                )}
+                                                            >
+                                                                <Globe className="w-5 h-5 text-green-500 mb-2" />
+                                                                <div className="font-medium text-neutral-900 dark:text-white">Public</div>
+                                                                <div className="text-xs text-green-600">50% discount!</div>
+                                                            </motion.button>
+                                                        </div>
+                                                        <div className="p-5 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                                                            <h4 className="font-semibold text-base mb-3">Cost Summary</h4>
+                                                            <div className="space-y-2 text-sm">
+                                                                <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                                                                    <span>Duration ({formData.duration}min)</span>
+                                                                    <span>{baseCredits}c</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                                                                    <span>Questions ({formData.questionsCount})</span>
+                                                                    <span>{questionCredits}c</span>
+                                                                </div>
+                                                                {
+                                                                    formData.isPublic && (
+                                                                        <div className="flex justify-between text-green-600">
+                                                                            <span>Public discount</span>
+                                                                            <span>-50%</span>
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                                {
+                                                                    formData.includeResume && (
+                                                                        <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                                                                            <span>Resume context</span>
+                                                                            <span>+{resumeCredits}c</span>
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                                <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-2" />
+                                                                <div className="flex justify-between font-bold text-lg">
+                                                                    <span>Total</span>
+                                                                    <span className="text-purple-600 dark:text-purple-400">{totalCredits} credits</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
 
-                                {/* Navigation */}
-                                <div className="flex items-center justify-between mt-8 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                                    <Button
-                                        variant="outline"
-                                        onClick={prevStep}
-                                        disabled={step === 0}
-                                    >
-                                        <ArrowLeft className="w-4 h-4 mr-2" />
-                                        Back
-                                    </Button>
-                                    <Button
-                                        onClick={nextStep}
-                                        disabled={!canProceed() || (step === 2 && userCredits < totalCredits)}
-                                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white"
-                                    >
-                                        {step === steps.length - 1 ? (
-                                            <>
-                                                <Sparkles className="w-4 h-4 mr-2" />
-                                                Create Mock ({totalCredits} credits)
-                                            </>
-                                        ) : (
-                                            <>
-                                                Next
-                                                <ArrowRight className="w-4 h-4 ml-2" />
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        )}
+                                                        {
+                                                            userCredits < totalCredits && (
+                                                                <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                                                    <div className="flex gap-2">
+                                                                        <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                                                        <div className="text-sm text-red-900 dark:text-red-100">
+                                                                            Insufficient credits.{' '}
+                                                                            <Link href="/purchase" className="underline">Purchase credits</Link>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+                                        </motion.div>
+                                    </AnimatePresence>
+                                    <div className="flex items-center justify-between mt-8 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                                        <Button
+                                            variant="outline"
+                                            onClick={prevStep}
+                                            disabled={step === 0}
+                                        >
+                                            <ArrowLeft className="w-4 h-4 mr-2" />
+                                            Back
+                                        </Button>
+                                        <Button
+                                            onClick={nextStep}
+                                            disabled={!canProceed() || (step === 2 && userCredits < totalCredits)}
+                                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white"
+                                        >
+                                            {
+                                                step === steps.length - 1 ? (
+                                                    <>
+                                                        <Sparkles className="w-4 h-4 mr-2" />
+                                                        Create Mock ({totalCredits} credits)
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        Next
+                                                        <ArrowRight className="w-4 h-4 ml-2" />
+                                                    </>
+                                                )
+                                            }
+                                        </Button>
+                                    </div>
+                                </motion.div>
+                            )
+                        }
                     </AnimatePresence>
                 </div>
             </SheetContent>

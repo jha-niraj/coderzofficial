@@ -236,7 +236,6 @@ export function MixedMode({
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const _handlePrevious = () => {
         if (currentIndex > 0 && context === "practice") {
             setCurrentIndex((prev) => prev - 1);

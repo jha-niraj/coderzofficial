@@ -269,6 +269,16 @@ export async function createLaunchpadProduct(input: CreateProductInput) {
                 type: 'COMMUNITY',
                 status: 'PENDING_REVIEW',
                 createdById: session.user.id
+            },
+            include: {
+                createdBy: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        image: true
+                    }
+                }
             }
         })
 
@@ -276,6 +286,27 @@ export async function createLaunchpadProduct(input: CreateProductInput) {
 
         return {
             success: true,
+            product: {
+                id: product.id,
+                slug: product.slug,
+                name: product.name,
+                tagline: product.tagline,
+                description: product.description,
+                logo: product.logo,
+                coverImage: product.coverImage,
+                category: product.category,
+                tags: product.tags,
+                techStack: product.techStack,
+                websiteUrl: product.websiteUrl,
+                demoUrl: product.demoUrl,
+                githubUrl: product.githubUrl,
+                viewCount: product.viewCount,
+                likeCount: product.likeCount,
+                commentCount: product.commentCount,
+                isFeatured: product.isFeatured,
+                type: product.type,
+                createdBy: product.createdBy
+            },
             data: {
                 id: product.id,
                 slug: product.slug,

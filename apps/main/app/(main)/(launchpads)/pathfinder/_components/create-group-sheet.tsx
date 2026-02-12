@@ -13,43 +13,50 @@ import {
 } from '@repo/ui/components/ui/sheet'
 import { FolderPlus, Loader2 } from 'lucide-react'
 import { createPathfinderGroup } from '@/actions/(main)/pathfinder'
-import { useRouter } from 'next/navigation'
+import { cn } from '@repo/ui/lib/utils'
+import toast from '@repo/ui/components/ui/sonner'
+
+interface Group {
+    id: string
+    name: string
+    emoji: string | null
+    color: string | null
+    _count?: { goals: number }
+}
 
 interface CreateGroupSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    onSuccess?: (group: Group) => void
 }
 
 const colorOptions = [
-    '#7c3aed', // violet
-    '#3b82f6', // blue
-    '#10b981', // green
-    '#f59e0b', // amber
-    '#ef4444', // red
-    '#ec4899', // pink
-    '#8b5cf6', // purple
-    '#06b6d4', // cyan
+    '#7c3aed', '#3b82f6', '#10b981', '#f59e0b', 
+    '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4',
 ]
 
 const emojiOptions = ['📁', '🎯', '💻', '🚀', '📚', '🧠', '⚡', '🔥', '💡', '🎨']
 
-export function CreateGroupSheet({ open, onOpenChange }: CreateGroupSheetProps) {
-    const router = useRouter()
+export function CreateGroupSheet({ open, onOpenChange, onSuccess }: CreateGroupSheetProps) {
     const [name, setName] = useState('')
     const [emoji, setEmoji] = useState('📁')
     const [color, setColor] = useState('#7c3aed')
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+
+    const resetForm = () => {
+        setName('')
+        setEmoji('📁')
+        setColor('#7c3aed')
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!name.trim()) {
-            setError('Please enter a group name')
+            toast.error('Please enter a group name')
             return
         }
 
         setIsLoading(true)
-        setError(null)
 
         try {
             const result = await createPathfinderGroup({
@@ -58,129 +65,134 @@ export function CreateGroupSheet({ open, onOpenChange }: CreateGroupSheetProps) 
                 color,
             })
 
-            if (result.success) {
-                setName('')
-                setEmoji('📁')
-                setColor('#7c3aed')
+            if (result.success && result.group) {
+                const newGroup: Group = {
+                    id: result.group.id,
+                    name: result.group.name,
+                    emoji: result.group.emoji,
+                    color: result.group.color,
+                    _count: { goals: 0 }
+                }
+                toast.success('Group created!')
+                resetForm()
                 onOpenChange(false)
-                router.refresh()
+                onSuccess?.(newGroup)
             } else {
-                setError(result.error || 'Failed to create group')
+                toast.error(result.error || 'Failed to create group')
             }
         } catch {
-            setError('An error occurred')
+            toast.error('An error occurred')
         } finally {
             setIsLoading(false)
         }
     }
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-2xl">
-                <SheetHeader className="text-center mb-6">
-                    <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg mb-3">
-                        <FolderPlus className="w-6 h-6 text-white" />
-                    </div>
-                    <SheetTitle>Create New Group</SheetTitle>
-                    <SheetDescription>
-                        Organize your learning goals into groups for better management.
-                    </SheetDescription>
-                </SheetHeader>
+        <Sheet open={open} onOpenChange={(isOpen) => {
+            onOpenChange(isOpen)
+            if (!isOpen) resetForm()
+        }}>
+            <SheetContent side="bottom" className="h-auto max-h-[70vh]">
+                <div className="max-w-md mx-auto">
+                    <SheetHeader className="text-center mb-6">
+                        <div className="w-11 h-11 mx-auto rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-3">
+                            <FolderPlus className="w-5 h-5 text-neutral-700 dark:text-neutral-300" />
+                        </div>
+                        <SheetTitle className="text-lg">Create Group</SheetTitle>
+                        <SheetDescription className="text-sm">
+                            Organize your learning goals into groups
+                        </SheetDescription>
+                    </SheetHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto">
-                    {/* Group Name */}
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Group Name</Label>
-                        <Input
-                            id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., Frontend, Backend, DSA"
-                            className="h-11"
-                        />
-                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        {/* Group Name */}
+                        <div className="space-y-2">
+                            <Label className="text-xs text-neutral-500">Group Name</Label>
+                            <Input
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="e.g., Frontend, Backend, DSA"
+                                className="h-10"
+                                autoFocus
+                            />
+                        </div>
 
-                    {/* Emoji Selection */}
-                    <div className="space-y-2">
-                        <Label>Emoji</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {emojiOptions.map((e) => (
-                                <button
-                                    key={e}
-                                    type="button"
-                                    onClick={() => setEmoji(e)}
-                                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
-                                        emoji === e
-                                            ? 'bg-violet-100 dark:bg-violet-900/30 ring-2 ring-violet-500'
-                                            : 'bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-                                    }`}
+                        {/* Emoji Selection */}
+                        <div className="space-y-2">
+                            <Label className="text-xs text-neutral-500">Icon</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {emojiOptions.map((e) => (
+                                    <button
+                                        key={e}
+                                        type="button"
+                                        onClick={() => setEmoji(e)}
+                                        className={cn(
+                                            "w-9 h-9 rounded-lg flex items-center justify-center text-base transition-all",
+                                            emoji === e
+                                                ? "bg-neutral-200 dark:bg-neutral-700 ring-2 ring-neutral-400"
+                                                : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                                        )}
+                                    >
+                                        {e}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Color Selection */}
+                        <div className="space-y-2">
+                            <Label className="text-xs text-neutral-500">Color</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                                {colorOptions.map((c) => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => setColor(c)}
+                                        className={cn(
+                                            "w-8 h-8 rounded-lg transition-all",
+                                            color === c && "ring-2 ring-offset-2 ring-neutral-400"
+                                        )}
+                                        style={{ backgroundColor: c }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Preview */}
+                        <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="w-9 h-9 rounded-lg flex items-center justify-center text-base"
+                                    style={{ backgroundColor: `${color}20` }}
                                 >
-                                    {e}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Color Selection */}
-                    <div className="space-y-2">
-                        <Label>Color</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {colorOptions.map((c) => (
-                                <button
-                                    key={c}
-                                    type="button"
-                                    onClick={() => setColor(c)}
-                                    className={`w-8 h-8 rounded-lg transition-all ${
-                                        color === c ? 'ring-2 ring-offset-2 ring-neutral-400' : ''
-                                    }`}
-                                    style={{ backgroundColor: c }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Preview */}
-                    <div className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-                        <div className="flex items-center gap-3">
-                            <div
-                                className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                style={{ backgroundColor: color }}
-                            >
-                                {emoji}
-                            </div>
-                            <div>
-                                <div className="font-medium text-neutral-900 dark:text-white">
-                                    {name || 'Group Name'}
+                                    {emoji}
                                 </div>
-                                <div className="text-xs text-neutral-500">Preview</div>
+                                <div>
+                                    <div className="text-sm font-medium text-neutral-900 dark:text-white">
+                                        {name || 'Group Name'}
+                                    </div>
+                                    <div className="text-[10px] text-neutral-400">Preview</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Error */}
-                    {error && (
-                        <p className="text-sm text-red-500 text-center">{error}</p>
-                    )}
-
-                    {/* Submit */}
-                    <Button
-                        type="submit"
-                        className="w-full h-11 bg-gradient-to-r from-violet-600 to-purple-600"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Creating...
-                            </>
-                        ) : (
-                            <>
-                                <FolderPlus className="w-4 h-4 mr-2" />
-                                Create Group
-                            </>
-                        )}
-                    </Button>
-                </form>
+                        {/* Submit */}
+                        <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={isLoading || !name.trim()}
+                        >
+                            {isLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <>
+                                    <FolderPlus className="w-4 h-4 mr-1.5" />
+                                    Create Group
+                                </>
+                            )}
+                        </Button>
+                    </form>
+                </div>
             </SheetContent>
         </Sheet>
     )

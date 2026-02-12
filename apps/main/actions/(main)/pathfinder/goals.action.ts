@@ -12,6 +12,7 @@ import { PathfinderCategory, PathfinderLevel, PathfinderStatus } from '@repo/pri
 
 export interface CreateGoalInput {
     title: string
+    slug?: string
     category: PathfinderCategory
     level: PathfinderLevel
     focusAreas: string[]
@@ -19,8 +20,56 @@ export interface CreateGoalInput {
     groupId?: string | null
 }
 
+// ================================================================================
+// SLUG UTILITIES
+// ================================================================================
+
+function generateSlug(title: string): string {
+    return title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Remove multiple hyphens
+        .slice(0, 60) // Limit length
+}
+
+export async function checkSlugAvailability(slug: string, userId: string): Promise<{ available: boolean; suggestedSlug?: string }> {
+    const existing = await prisma.pathfinderGoal.findUnique({
+        where: { userId_slug: { userId, slug } },
+    })
+    
+    if (!existing) {
+        return { available: true }
+    }
+    
+    // Generate alternative with number suffix
+    let suffix = 1
+    let newSlug = `${slug}-${suffix}`
+    
+    while (suffix < 100) {
+        const exists = await prisma.pathfinderGoal.findUnique({
+            where: { userId_slug: { userId, slug: newSlug } },
+        })
+        if (!exists) {
+            return { available: false, suggestedSlug: newSlug }
+        }
+        suffix++
+        newSlug = `${slug}-${suffix}`
+    }
+    
+    return { available: false, suggestedSlug: `${slug}-${Date.now()}` }
+}
+
+export async function generateAndCheckSlug(title: string, userId: string): Promise<string> {
+    const baseSlug = generateSlug(title)
+    const { available, suggestedSlug } = await checkSlugAvailability(baseSlug, userId)
+    return available ? baseSlug : (suggestedSlug || `${baseSlug}-${Date.now()}`)
+}
+
 export interface GoalWithRelations {
     id: string
+    slug: string
     title: string
     category: PathfinderCategory
     level: PathfinderLevel
@@ -70,11 +119,17 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
             }
         }
 
+        // Generate or validate slug
+        const slug = input.slug 
+            ? await generateAndCheckSlug(input.slug, session.user.id)
+            : await generateAndCheckSlug(input.title, session.user.id)
+
         // Create the goal first
         const goal = await prisma.pathfinderGoal.create({
             data: {
                 userId: session.user.id,
                 title: input.title,
+                slug,
                 category: input.category,
                 level: input.level,
                 focusAreas: input.focusAreas,
@@ -88,7 +143,7 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
         generateAIPlanForGoal(goal.id, input, session.user.id)
 
         revalidatePath('/pathfinder')
-        return { success: true, goalId: goal.id }
+        return { success: true, goalId: goal.id, slug: goal.slug }
     } catch (error) {
         console.error('Error creating goal:', error)
         return { success: false, error: 'Failed to create goal' }

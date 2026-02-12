@@ -19,7 +19,6 @@ interface MockConfig {
 }
 
 interface MockVerificationProps {
-    goalId: string
     mockInterviewId: string | null
     mockConfig?: MockConfig
     status: VerificationSectionStatus
@@ -28,7 +27,6 @@ interface MockVerificationProps {
 }
 
 export function MockVerification({
-    goalId: _goalId,
     mockInterviewId,
     mockConfig,
     status,
@@ -81,7 +79,6 @@ export function MockVerification({
                 <p className="text-neutral-500 mb-6">
                     {mockConfig?.description || 'Complete an AI-powered voice interview to demonstrate your knowledge.'}
                 </p>
-
                 <div className="grid grid-cols-3 gap-4 mb-8">
                     <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                         <div className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -100,7 +97,6 @@ export function MockVerification({
                         <div className="text-xs text-neutral-500">To Pass</div>
                     </div>
                 </div>
-
                 <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-left">
                         <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Before you start:</h4>
@@ -112,36 +108,40 @@ export function MockVerification({
                         </ul>
                     </div>
 
-                    {mockInterviewId ? (
-                        <Link href={`/mock/voice/interview/${mockInterviewId}`}>
-                            <Button size="lg" className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90">
-                                <Play className="w-5 h-5 mr-2" />
-                                Start Mock Interview
-                            </Button>
-                        </Link>
-                    ) : (
-                        <>
-                            <Button
-                                size="lg"
-                                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90"
-                                onClick={() => setShowMockSheet(true)}
-                            >
-                                <Play className="w-5 h-5 mr-2" />
-                                Create & Start Interview
-                            </Button>
-                            <CreateMockSheet
-                                open={showMockSheet}
-                                onOpenChange={setShowMockSheet}
-                                trigger={<></>}
-                            />
-                        </>
-                    )}
+                    {
+                        mockInterviewId ? (
+                            <Link href={`/mock/voice/interview/${mockInterviewId}`}>
+                                <Button size="lg" className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90">
+                                    <Play className="w-5 h-5 mr-2" />
+                                    Start Mock Interview
+                                </Button>
+                            </Link>
+                        ) : (
+                            <>
+                                <Button
+                                    size="lg"
+                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90"
+                                    onClick={() => setShowMockSheet(true)}
+                                >
+                                    <Play className="w-5 h-5 mr-2" />
+                                    Create & Start Interview
+                                </Button>
+                                <CreateMockSheet
+                                    open={showMockSheet}
+                                    onOpenChange={setShowMockSheet}
+                                    trigger={<></>}
+                                />
+                            </>
+                        )
+                    }
 
-                    {attempts > 0 && (
-                        <p className="text-sm text-neutral-500">
-                            Previous attempts: {attempts}
-                        </p>
-                    )}
+                    {
+                        attempts > 0 && (
+                            <p className="text-sm text-neutral-500">
+                                Previous attempts: {attempts}
+                            </p>
+                        )
+                    }
                 </div>
             </div>
         </div>
