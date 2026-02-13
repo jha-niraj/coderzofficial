@@ -28,7 +28,9 @@ import { SocialsTabForm } from "./socials-tab-form"
 import { EducationTabForm } from "./education-tab-form"
 import { SkillsTabForm } from "./skills-tab-form"
 import { useResumeCreatorStore } from "@/app/store/resumeCreatorStore"
-import type { ResumeExperience, ResumePortfolioProject, ResumeEducation, ResumeSocialLink } from "@/types/resume"
+import type { 
+    ResumeExperience, ResumePortfolioProject, ResumeEducation, ResumeSocialLink 
+} from "@/types/resume"
 import { normalizeToResumeProfile } from "@/types/resume"
 
 type TabId = "basic" | "experience" | "projects" | "socials" | "education" | "skills"

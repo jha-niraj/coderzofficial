@@ -691,6 +691,7 @@ model User {
     socialShares             SocialShare[]               @relation("UserSocialShares")
     achievementNotifications AchievementNotification[]   @relation("UserAchievementNotifications")
     achievementStats         UserAchievementStats?       @relation("UserAchievementStats")
+    featureNotifyInterests   FeatureNotifyInterest[]
 
     @@index([username])
     @@index([email])
@@ -1022,6 +1023,38 @@ model Message {
     createdAt DateTime @default(now())
 
     @@map("contact_submissions")
+}
+
+// Notify me / launch interest for upcoming features
+enum FeatureNotifySection {
+    AI_TOOLS
+    MOCK_VIDEO
+    MOCK_COMPANYWISE
+    MOCK_PEERTOPEER
+    MOCK_CONNECT
+    AI_PORTFOLIO_AUDIT
+    AI_SYSTEM_ARCHITECT
+    AI_PROJECT_SCOPER
+    AI_OSS_SCOUT
+    AI_DOCUSMITH
+    AI_CODE_SENTINEL
+    AI_TEST_FORGE
+}
+
+model FeatureNotifyInterest {
+    id          String               @id @default(cuid())
+    userId      String
+    user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+    email       String
+    section     FeatureNotifySection
+    title       String               // e.g. "System Architect"
+    description String?              // Optional feature description
+    createdAt   DateTime             @default(now())
+
+    @@unique([userId, section, title])
+    @@index([userId])
+    @@index([section])
+    @@index([createdAt])
 }
 
 // ===============================================

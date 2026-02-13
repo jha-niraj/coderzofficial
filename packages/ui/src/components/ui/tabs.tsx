@@ -14,23 +14,23 @@ const Tabs = TabsPrimitive.Root
  * - Light / Dark support
  */
 const TabsList = React.forwardRef<
-	React.ElementRef<typeof TabsPrimitive.List>,
-	React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+  React.ElementRef<typeof TabsPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => (
-	<TabsPrimitive.List
-		ref={ref}
-		className={cn(
-			`
+  <TabsPrimitive.List
+    ref={ref}
+    className={cn(
+      `
       flex w-full
       rounded-xl border
       bg-white dark:bg-neutral-900
       border-gray-200 dark:border-neutral-700
       overflow-hidden
       `,
-			className
-		)}
-		{...props}
-	/>
+      className
+    )}
+    {...props}
+  />
 ))
 TabsList.displayName = TabsPrimitive.List.displayName
 
@@ -42,13 +42,13 @@ TabsList.displayName = TabsPrimitive.List.displayName
  * - Handles icon + text: centers content, supports icon-only and text-only
  */
 const TabsTrigger = React.forwardRef<
-	React.ElementRef<typeof TabsPrimitive.Trigger>,
-	React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, children, ...props }, ref) => (
-	<TabsPrimitive.Trigger
-		ref={ref}
-		className={cn(
-			`
+  <TabsPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      `
       flex-1
       flex items-center justify-center gap-1.5
       py-3 rounded-2xl
@@ -73,12 +73,12 @@ const TabsTrigger = React.forwardRef<
       disabled:opacity-50
       [&>svg]:shrink-0
       `,
-			className
-		)}
-		{...props}
-	>
-		{children}
-	</TabsPrimitive.Trigger>
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </TabsPrimitive.Trigger>
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
@@ -88,23 +88,23 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
  * - Content styling should live in the page
  */
 const TabsContent = React.forwardRef<
-	React.ElementRef<typeof TabsPrimitive.Content>,
-	React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
 >(({ className, ...props }, ref) => (
-	<TabsPrimitive.Content
-		ref={ref}
-		className={cn(
-			`
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      `
       mt-2
       focus-visible:outline-none
       focus-visible:ring-2
       focus-visible:ring-ring
       focus-visible:ring-offset-2
       `,
-			className
-		)}
-		{...props}
-	/>
+      className
+    )}
+    {...props}
+  />
 ))
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
