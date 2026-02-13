@@ -169,8 +169,8 @@ export function ResumeCreatorTabs() {
                         )
                     }
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr,420px] gap-8">
-                    <div className="min-w-0">
+                <div className="flex flex-col md:flex-row gap-8 min-h-0">
+                    <div className="flex-1 min-w-0 md:overflow-y-auto">
                         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
                             <TabsList className="w-full flex-wrap h-auto gap-1 bg-muted/50 p-1">
                                 <TabsTrigger value="basic" className="gap-1.5 text-xs">
@@ -274,7 +274,7 @@ export function ResumeCreatorTabs() {
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="lg:sticky lg:top-24 h-fit"
+                        className="md:w-[420px] md:flex-shrink-0 md:sticky md:top-24 md:self-start"
                     >
                         <div className="rounded-xl border bg-card p-6">
                             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
