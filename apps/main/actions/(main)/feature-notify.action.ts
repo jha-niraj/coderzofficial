@@ -2,7 +2,7 @@
 
 import prisma from "@repo/prisma";
 import { auth } from "@repo/auth";
-import { FeatureNotifySection } from "@repo/prisma";
+import { FeatureNotifySection } from "@repo/prisma/client";
 
 export type NotifyInterestInput = {
     section: FeatureNotifySection;

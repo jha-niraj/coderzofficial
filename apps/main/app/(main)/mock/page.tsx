@@ -12,13 +12,15 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@repo/ui/components/ui/dialog'
 import {
-    ArrowRight, Brain, Video, Building2, Users, Phone, Sparkles, CheckCircle, TrendingUp, 
-    Trophy, Target, Zap, Star, MessageSquare, Mic, Award, Timer, Shield, Lock
+    ArrowRight, Brain, Video, Building2, Users, Phone, Sparkles, 
+    CheckCircle, TrendingUp, Trophy, Target, Zap, Star, MessageSquare, 
+    Mic, Award, Timer, Shield, Lock
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getMockInterviewStats } from '@/actions/(main)/mockvoice/stats.action'
 import { saveFeatureNotifyInterest } from '@/actions/(main)/feature-notify.action'
+import type { FeatureNotifySection } from '@repo/prisma/client'
 
 const mockInterviewTypes = [
     {
@@ -500,26 +502,31 @@ export default function MockInterviewLandingPage() {
                                 Get notified when this feature launches. We&apos;ll send you an email.
                             </DialogDescription>
                         </DialogHeader>
-                        {selectedLockedType && (
+                        {
+                        selectedLockedType && (
                             <div className="py-4">
                                 <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4 border border-neutral-100 dark:border-neutral-800">
                                     <h3 className="font-semibold text-lg mb-2">{selectedLockedType.title}</h3>
                                     <p className="text-sm text-neutral-500 dark:text-neutral-400">{selectedLockedType.description}</p>
                                 </div>
                             </div>
-                        )}
+                        )
+                        }
                         <div className="flex gap-3">
                             <Button onClick={() => setNotifyDialogOpen(false)} variant="outline" className="flex-1 rounded-full">
                                 Close
                             </Button>
                             <Button
                                 onClick={async () => {
-                                    if (!selectedLockedType || !('notifySection' in selectedLockedType)) return
+                                    const section = selectedLockedType && 'notifySection' in selectedLockedType
+                                        ? selectedLockedType.notifySection
+                                        : undefined;
+                                    if (!section) return;
                                     setNotifyLoading(true)
                                     const res = await saveFeatureNotifyInterest({
-                                        section: selectedLockedType.notifySection,
-                                        title: selectedLockedType.title,
-                                        description: selectedLockedType.description,
+                                        section: section as FeatureNotifySection,
+                                        title: selectedLockedType!.title,
+                                        description: selectedLockedType!.description,
                                     })
                                     setNotifyLoading(false)
                                     if (res.success) {

@@ -5,14 +5,15 @@ import { useKnowmeSheet } from "./knowme-sheet-provider";
 import { motion } from "framer-motion";
 import {
     FolderKanban, Mic, Briefcase, FileText, BookOpen, ClipboardCheck,
-    Bot, Layout, Users, Map, Lock, ArrowRight, Rocket
+    Bot, Layout, Users, Map, Lock, Rocket
 } from "lucide-react";
 import Link from "next/link";
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
 import {
-    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogDescription, DialogHeader, 
+    DialogTitle
 } from "@repo/ui/components/ui/dialog";
 
 const activeActions = [

@@ -15,7 +15,7 @@ import {
 import { useRouter } from "next/navigation"
 import toast from "@repo/ui/components/ui/sonner"
 import { saveFeatureNotifyInterest } from "@/actions/(main)/feature-notify.action"
-import { FeatureNotifySection } from "@repo/prisma"
+import { FeatureNotifySection } from "@repo/prisma/client"
 
 // Active tools - Job Interview Assistant & Resume Creator only
 const tools = [
