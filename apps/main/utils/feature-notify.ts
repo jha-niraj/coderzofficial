@@ -1,5 +1,5 @@
 import { saveFeatureNotifyInterest } from "@/actions/(main)/feature-notify.action";
-import { FeatureNotifySection } from "@repo/prisma";
+import { FeatureNotifySection } from "@repo/prisma/client";
 
 export type NotifyParams = {
     section: FeatureNotifySection;
