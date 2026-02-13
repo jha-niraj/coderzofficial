@@ -1,7 +1,7 @@
 import {
     GreetingHeaderSkeleton, ContinueLearningSkeleton, PathfinderGoalsSkeleton,
     QuickActionsSkeleton, ActivityCalendarSkeleton, AchievementsCardSkeleton,
-    LeaderboardPositionSkeleton, FeatureDiscoverySkeleton, RecentActivitySkeleton,
+    LeaderboardPositionSkeleton, FeatureDiscoverySkeleton,
     ShareCreditsSkeleton, ReferralsSkeleton, CommunityHighlightsSkeleton
 } from "./_components/skeletons";
 
@@ -13,25 +13,20 @@ export default function HomeLoading() {
 
                 <ContinueLearningSkeleton />
 
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                    <div className="lg:col-span-3 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div className="md:col-span-7 lg:col-span-8 space-y-6">
                         <PathfinderGoalsSkeleton />
-                        <QuickActionsSkeleton />
-                    </div>
-                    <div className="lg:col-span-2 space-y-6">
                         <ActivityCalendarSkeleton />
-                        <AchievementsCardSkeleton />
-                        <LeaderboardPositionSkeleton />
+                        <FeatureDiscoverySkeleton />
                     </div>
-                </div>
-
-                <FeatureDiscoverySkeleton />
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <RecentActivitySkeleton />
-                    <div className="space-y-6">
-                        <ShareCreditsSkeleton />
-                        <ReferralsSkeleton />
+                    <div className="md:col-span-5 lg:col-span-4 space-y-6">
+                        <QuickActionsSkeleton />
+                        <LeaderboardPositionSkeleton />
+                        <AchievementsCardSkeleton />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
+                            <ShareCreditsSkeleton />
+                            <ReferralsSkeleton />
+                        </div>
                     </div>
                 </div>
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
@@ -9,16 +8,10 @@ import { Button } from "@repo/ui/components/ui/button";
 import {
     Avatar, AvatarFallback, AvatarImage
 } from "@repo/ui/components/ui/avatar";
-import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
-    DialogTitle, DialogTrigger
-} from "@repo/ui/components/ui/dialog";
-import { Input } from "@repo/ui/components/ui/input";
-import { Label } from "@repo/ui/components/ui/label";
+import Link from "next/link";
 import {
     Coins, Send, ArrowDownLeft, Sparkles
 } from "lucide-react";
-import toast from "@repo/ui/components/ui/sonner";
 
 interface Transfer {
     id: string;
@@ -45,43 +38,6 @@ interface ShareCreditsProps {
 }
 
 export default function ShareCredits({ transfers, currentCredits }: ShareCreditsProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [shareData, setShareData] = useState({
-        username: "",
-        amount: 10,
-        reason: "",
-    });
-
-    const handleShare = async () => {
-        if (!shareData.username.trim()) {
-            toast.error("Please enter a username");
-            return;
-        }
-        if (shareData.amount <= 0) {
-            toast.error("Please enter a valid amount");
-            return;
-        }
-        if (shareData.amount > currentCredits) {
-            toast.error("Insufficient credits");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            // TODO: Implement share credits action
-            toast.success(`Sent ${shareData.amount} credits to @${shareData.username}`);
-            setIsOpen(false);
-            setShareData({ username: "", amount: 10, reason: "" });
-        } catch {
-            toast.error("Failed to send credits");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // Note: formatTimeAgo utility moved to shared utils if needed in future
-
     return (
         <Card className="border-primary/10">
             <CardHeader className="pb-3">
@@ -92,88 +48,12 @@ export default function ShareCredits({ transfers, currentCredits }: ShareCredits
                         </div>
                         <CardTitle className="text-lg">Credits</CardTitle>
                     </div>
-                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <Send className="h-3 w-3 mr-1" />
-                                Share
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Share Credits</DialogTitle>
-                                <DialogDescription>
-                                    Send credits to another user
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                    <span className="text-sm text-muted-foreground">
-                                        Your balance
-                                    </span>
-                                    <span className="font-semibold text-green-500">
-                                        {currentCredits.toLocaleString()} credits
-                                    </span>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="username">Username</Label>
-                                    <Input
-                                        id="username"
-                                        placeholder="@username"
-                                        value={shareData.username}
-                                        onChange={(e) =>
-                                            setShareData({
-                                                ...shareData,
-                                                username: e.target.value.replace("@", ""),
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="amount">Amount</Label>
-                                    <Input
-                                        id="amount"
-                                        type="number"
-                                        min={1}
-                                        max={currentCredits}
-                                        value={shareData.amount}
-                                        onChange={(e) =>
-                                            setShareData({
-                                                ...shareData,
-                                                amount: parseInt(e.target.value) || 0,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="reason">Reason (optional)</Label>
-                                    <Input
-                                        id="reason"
-                                        placeholder="Thanks for helping me!"
-                                        value={shareData.reason}
-                                        onChange={(e) =>
-                                            setShareData({
-                                                ...shareData,
-                                                reason: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setIsOpen(false)}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button onClick={handleShare} disabled={isSubmitting}>
-                                    {isSubmitting ? "Sending..." : "Send Credits"}
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                    <Link href="/sharecredits">
+                        <Button variant="outline" size="sm">
+                            <Send className="h-3 w-3 mr-1" />
+                            Share
+                        </Button>
+                    </Link>
                 </div>
             </CardHeader>
             <CardContent>

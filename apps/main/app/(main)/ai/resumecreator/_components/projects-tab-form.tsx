@@ -128,6 +128,9 @@ export function ProjectsTabForm({
     onAdd,
     onUpdate,
     onDelete,
+    onAddSuccess,
+    onUpdateSuccess,
+    onDeleteSuccess,
 }: {
     projects: Project[]
     onAdd: (data: {

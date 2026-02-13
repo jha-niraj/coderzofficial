@@ -320,6 +320,57 @@ async function getReferralStats(userId: string) {
     }
 }
 
+// Get activities for a specific date (for activity day detail sheet)
+export async function getActivitiesByDate(dateStr: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Not authenticated", data: [] };
+        }
+
+        const date = new Date(dateStr);
+        date.setHours(0, 0, 0, 0);
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        const dailyActivity = await prisma.dailyActivity.findFirst({
+            where: {
+                userId: session.user.id,
+                date: {
+                    gte: date,
+                    lt: nextDay,
+                },
+            },
+            select: { id: true },
+        });
+
+        if (!dailyActivity) {
+            return { success: true, data: [] };
+        }
+
+        const activities = await prisma.activityEntry.findMany({
+            where: {
+                dailyActivityId: dailyActivity.id,
+            },
+            orderBy: { createdAt: "desc" },
+        });
+
+        const transformed = activities.map((a) => ({
+            id: a.id,
+            type: a.activityType,
+            title: a.title,
+            description: a.description,
+            xpEarned: a.xpEarned,
+            createdAt: a.createdAt,
+        }));
+
+        return { success: true, data: transformed };
+    } catch (error) {
+        console.error("Error fetching activities by date:", error);
+        return { success: false, error: "Failed to fetch activities", data: [] };
+    }
+}
+
 // Get community highlights
 export async function getCommunityHighlights() {
     try {

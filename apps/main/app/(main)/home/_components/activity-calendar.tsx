@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
     Card, CardContent, CardHeader, CardTitle
@@ -9,6 +9,7 @@ import { CalendarDays, Flame } from "lucide-react";
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
+import ActivityDaySheet from "./activity-day-sheet";
 
 interface ActivityData {
     date: Date;
@@ -21,6 +22,9 @@ interface ActivityCalendarProps {
 }
 
 export default function ActivityCalendar({ data }: ActivityCalendarProps) {
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [sheetOpen, setSheetOpen] = useState(false);
+
     // Generate last 365 days
     const calendarData = useMemo(() => {
         const days: { date: Date; xp: number; count: number }[] = [];
@@ -80,6 +84,11 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
         });
     };
 
+    const handleDayClick = (day: { date: Date; xp: number; count: number }) => {
+        setSelectedDate(day.date);
+        setSheetOpen(true);
+    };
+
     // Calculate streak
     const currentStreak = useMemo(() => {
         let streak = 0;
@@ -125,58 +134,59 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     return (
-        <Card className="border-primary/10">
-            <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2.5 rounded-lg bg-green-500/10">
-                            <CalendarDays className="h-5 w-5 text-green-500" />
-                        </div>
-                        <CardTitle className="text-xl">Activity</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2 text-base">
-                        <Flame className="h-5 w-5 text-orange-500" />
-                        <span className="font-bold text-lg">{currentStreak}</span>
-                        <span className="text-muted-foreground">day streak</span>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="p-6">
-                <TooltipProvider delayDuration={100}>
-                    <div className="overflow-x-auto pb-4 -mx-2">
-                        <div className="flex gap-1 mb-2 ml-8 text-xs text-muted-foreground min-w-max">
-                            {
-                                weeks.map((week, weekIndex) => {
-                                    const firstValidDay = week.find((d) => d.xp !== -1);
-                                    if (
-                                        firstValidDay &&
-                                        firstValidDay.date.getDate() <= 7 &&
-                                        weekIndex % 4 === 0
-                                    ) {
-                                        return (
-                                            <span key={weekIndex} className="w-4 inline-block">
-                                                {months[firstValidDay.date.getMonth()]}
-                                            </span>
-                                        );
-                                    }
-                                    return <span key={weekIndex} className="w-4 inline-block" />;
-                                })
-                            }
-                        </div>
-                        <div className="flex gap-1">
-                            <div className="flex flex-col gap-1 text-xs text-muted-foreground pr-2">
-                                <span className="h-4"></span>
-                                <span className="h-4 leading-4">Mon</span>
-                                <span className="h-4"></span>
-                                <span className="h-4 leading-4">Wed</span>
-                                <span className="h-4"></span>
-                                <span className="h-4 leading-4">Fri</span>
-                                <span className="h-4"></span>
+        <>
+            <Card className="border-primary/10">
+                <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2.5 rounded-lg bg-green-500/10">
+                                <CalendarDays className="h-5 w-5 text-green-500" />
                             </div>
-                            {
-                                weeks.map((week, weekIndex) => (
-                                    <div key={weekIndex} className="flex flex-col gap-1">
-                                        {week.map((day, dayIndex) => {
+                            <CardTitle className="text-xl">Activity</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2 text-base">
+                            <Flame className="h-5 w-5 text-orange-500" />
+                            <span className="font-bold text-lg">{currentStreak}</span>
+                            <span className="text-muted-foreground">day streak</span>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                    <TooltipProvider delayDuration={100}>
+                        <div className="overflow-x-auto pb-4 -mx-2">
+                            <div className="flex gap-1 mb-2 ml-8 text-xs text-muted-foreground min-w-max">
+                                {
+                                    weeks.map((week, weekIndex) => {
+                                        const firstValidDay = week.find((d) => d.xp !== -1);
+                                        if (
+                                            firstValidDay &&
+                                            firstValidDay.date.getDate() <= 7 &&
+                                            weekIndex % 4 === 0
+                                        ) {
+                                            return (
+                                                <span key={weekIndex} className="w-4 inline-block">
+                                                    {months[firstValidDay.date.getMonth()]}
+                                                </span>
+                                            );
+                                        }
+                                        return <span key={weekIndex} className="w-4 inline-block" />;
+                                    })
+                                }
+                            </div>
+                            <div className="flex gap-1">
+                                <div className="flex flex-col gap-1 text-xs text-muted-foreground pr-2">
+                                    <span className="h-4"></span>
+                                    <span className="h-4 leading-4">Mon</span>
+                                    <span className="h-4"></span>
+                                    <span className="h-4 leading-4">Wed</span>
+                                    <span className="h-4"></span>
+                                    <span className="h-4 leading-4">Fri</span>
+                                    <span className="h-4"></span>
+                                </div>
+                                {
+                                    weeks.map((week, weekIndex) => (
+                                        <div key={weekIndex} className="flex flex-col gap-1">
+                                            {week.map((day, dayIndex) => {
                                                 if (day.xp === -1) {
                                                     return (
                                                         <div
@@ -197,6 +207,7 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                                                                     delay:
                                                                         (weekIndex * 7 + dayIndex) * 0.001,
                                                                 }}
+                                                                onClick={() => handleDayClick(day)}
                                                                 className={`w-4 h-4 rounded ${getLevelColor(
                                                                     level
                                                                 )} cursor-pointer transition-transform hover:scale-125 min-w-[16px]`}
@@ -210,6 +221,9 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                                                                 {day.xp > 0
                                                                     ? `${day.xp} XP • ${day.count} activities`
                                                                     : "No activity"}
+                                                            </p>
+                                                            <p className="text-muted-foreground/80 mt-0.5">
+                                                                Click to view details
                                                             </p>
                                                         </TooltipContent>
                                                     </Tooltip>
@@ -238,5 +252,12 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                 </TooltipProvider>
             </CardContent>
         </Card>
+
+        <ActivityDaySheet
+            open={sheetOpen}
+            onOpenChange={setSheetOpen}
+            date={selectedDate}
+        />
+    </>
     );
 }

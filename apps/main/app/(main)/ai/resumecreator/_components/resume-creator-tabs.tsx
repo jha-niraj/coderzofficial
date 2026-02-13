@@ -112,10 +112,6 @@ export function ResumeCreatorTabs() {
         }
     }
 
-    const handleFormSuccess = () => {
-        loadProfile(false)
-    }
-
     const editProfileUser = {
         id: profile.id,
         name: profile.name,

@@ -14,9 +14,11 @@ import ActivityCalendar from "./_components/activity-calendar";
 import AchievementsCard from "./_components/achievements-card";
 import LeaderboardPosition from "./_components/leaderboard-position";
 import FeatureDiscovery from "./_components/feature-discovery";
-import RecentActivity from "./_components/recent-activity";
 import ShareCredits from "./_components/share-credits";
+import { KnowmeSheetProvider } from "./_components/knowme-sheet-provider";
 import Referrals from "./_components/referrals";
+import ProjectsPreview from "./_components/projects-preview";
+import MockVoiceSection from "./_components/mock-voice-section";
 import CommunityHighlights from "./_components/community-highlights";
 
 import {
@@ -24,7 +26,7 @@ import {
 	PathfinderGoalsSkeleton, QuickActionsSkeleton,
 	ActivityCalendarSkeleton, AchievementsCardSkeleton,
 	LeaderboardPositionSkeleton, FeatureDiscoverySkeleton,
-	RecentActivitySkeleton, ShareCreditsSkeleton,
+	ShareCreditsSkeleton,
 	ReferralsSkeleton, CommunityHighlightsSkeleton,
 } from "./_components/skeletons";
 
@@ -58,7 +60,6 @@ export default async function HomePage() {
 		inProgressProjects,
 		recentStudios,
 		pathfinderGoals,
-		recentActivity,
 		activityCalendar,
 		achievements,
 		leaderboardRank,
@@ -69,50 +70,53 @@ export default async function HomePage() {
 	const communityPosts = communityResult.posts || [];
 
 	return (
-		<main className="w-full min-h-screen pb-12">
-			<div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+		<KnowmeSheetProvider>
+			<main className="w-full min-h-screen pb-12">
+				<div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-				<Suspense fallback={<GreetingHeaderSkeleton />}>
-					<GreetingHeader user={user} />
-				</Suspense>
+					<Suspense fallback={<GreetingHeaderSkeleton />}>
+						<GreetingHeader user={user} />
+					</Suspense>
 
-				{
-					(inProgressProjects.length > 0 || recentStudios.length > 0) && (
-						<Suspense fallback={<ContinueLearningSkeleton />}>
-							<div className="w-full">
-								<ContinueLearning
-									projects={inProgressProjects}
-									studios={recentStudios}
-								/>
-							</div>
-						</Suspense>
-					)
-				}
+					{
+						(inProgressProjects.length > 0 || recentStudios.length > 0) && (
+							<Suspense fallback={<ContinueLearningSkeleton />}>
+								<div className="w-full">
+									<ContinueLearning
+										projects={inProgressProjects}
+										studios={recentStudios}
+									/>
+								</div>
+							</Suspense>
+						)
+					}
 
-				<div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-					<div className="md:col-span-7 lg:col-span-8 space-y-6 flex flex-col h-full">
+					<div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+						<div className="md:col-span-7 lg:col-span-8 space-y-6 flex flex-col h-full">
 
 						<Suspense fallback={<PathfinderGoalsSkeleton />}>
 							<PathfinderGoalsCard goals={pathfinderGoals} />
 						</Suspense>
 
+						{inProgressProjects.length > 0 && (
+							<ProjectsPreview projects={inProgressProjects} />
+						)}
+
 						<Suspense fallback={<ActivityCalendarSkeleton />}>
-							<ActivityCalendar data={activityCalendar} />
-						</Suspense>
+								<ActivityCalendar data={activityCalendar} />
+							</Suspense>
 
-						<Suspense fallback={<RecentActivitySkeleton />}>
-							<RecentActivity activities={recentActivity} />
-						</Suspense>
+							<Suspense fallback={<FeatureDiscoverySkeleton />}>
+								<FeatureDiscovery />
+							</Suspense>
+						</div>
 
-						<Suspense fallback={<FeatureDiscoverySkeleton />}>
-							<FeatureDiscovery />
-						</Suspense>
-					</div>
-
-					<div className="md:col-span-5 lg:col-span-4 space-y-6 flex flex-col h-full sticky top-6">
+						<div className="md:col-span-5 lg:col-span-4 space-y-6 flex flex-col h-full sticky top-6">
 						<Suspense fallback={<QuickActionsSkeleton />}>
 							<QuickActions />
 						</Suspense>
+
+						<MockVoiceSection />
 
 						<Suspense fallback={<LeaderboardPositionSkeleton />}>
 							<LeaderboardPosition rank={leaderboardRank} />
@@ -133,14 +137,15 @@ export default async function HomePage() {
 								<Referrals stats={referralStats} />
 							</Suspense>
 						</div>
+						</div>
+					</div>
+					<div className="pt-4 border-t border-border">
+						<Suspense fallback={<CommunityHighlightsSkeleton />}>
+							<CommunityHighlights posts={communityPosts} />
+						</Suspense>
 					</div>
 				</div>
-				<div className="pt-4 border-t border-border">
-					<Suspense fallback={<CommunityHighlightsSkeleton />}>
-						<CommunityHighlights posts={communityPosts} />
-					</Suspense>
-				</div>
-			</div>
-		</main>
+			</main>
+		</KnowmeSheetProvider>
 	);
 }
