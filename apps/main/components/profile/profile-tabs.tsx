@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 export type ProfileTab =
-	| "overview"
+	| "at_a_glance"
 	| "projects"
 	| "skills"
 	| "work_experience"
@@ -27,8 +27,8 @@ const tabs: {
 	description: string;
 }[] = [
 		{
-			id: "overview",
-			label: "Overview",
+			id: "at_a_glance",
+			label: "At a Glance",
 			icon: LayoutGrid,
 			description: "Profile summary and highlights",
 		},

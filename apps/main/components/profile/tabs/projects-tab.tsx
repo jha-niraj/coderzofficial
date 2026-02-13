@@ -38,12 +38,50 @@ interface PortfolioProject {
     }>;
 }
 
+interface PlatformProject {
+    id: string;
+    status: string;
+    project: {
+        id: string;
+        slug: string;
+        title: string;
+        shortDescription: string | null;
+        description: string;
+        technologies: string[];
+        generationType: string;
+        difficulty: string;
+    };
+}
+
 interface ProjectsTabProps {
     user: {
         portfolioProjects?: PortfolioProject[];
+        UserProjectV2Progress?: PlatformProject[];
     };
     isOwnProfile?: boolean;
     onProjectAdded?: () => void;
+}
+
+// Normalize platform project to unified project shape
+function platformToUnified(p: PlatformProject): PortfolioProject {
+    const statusMap: Record<string, string> = {
+        NOT_STARTED: "PLANNED",
+        IN_PROGRESS: "IN_PROGRESS",
+        COMPLETED: "COMPLETED",
+    };
+    return {
+        id: `platform-${p.id}`,
+        projectName: p.project.title,
+        projectType: p.project.generationType,
+        description: p.project.shortDescription ?? p.project.description,
+        status: statusMap[p.status] ?? "PLANNED",
+        visibility: "PUBLIC",
+        technologies: p.project.technologies ?? [],
+        startDate: new Date(0),
+        endDate: null,
+        thumbnailUrl: null,
+        projectLinks: [],
+    };
 }
 
 const defaultStatusConfig = {
@@ -85,10 +123,13 @@ export function ProjectsTab({
     const [typeFilter, setTypeFilter] = useState<string>("all");
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-    // Memoize projects to prevent unnecessary re-renders
+    // Merge portfolio projects and platform projects
     const projects = useMemo(() => {
-        return user.portfolioProjects || [];
-    }, [user.portfolioProjects]);
+        const portfolio = user.portfolioProjects ?? [];
+        const platform = (user as { UserProjectV2Progress?: PlatformProject[] }).UserProjectV2Progress ?? [];
+        const platformMapped = platform.map(platformToUnified);
+        return [...portfolio, ...platformMapped];
+    }, [user]);
 
     // Get unique project types for filter
     const projectTypes = useMemo(() => {

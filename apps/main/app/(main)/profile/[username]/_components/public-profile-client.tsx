@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, SkillsTab,
+    ProfileHeader, ProfileTabs, ProfileSidebar, AtAGlanceTab, SkillsTab,
     ProjectsTab, WorkExperienceTab, EducationTab, ShareProfileModal,
     type ProfileTab
 } from "@/components/profile";
@@ -25,7 +25,7 @@ export function PublicProfileClient({
     isFollowing: initialIsFollowing,
 }: PublicProfileClientProps) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
+    const [activeTab, setActiveTab] = useState<ProfileTab>("at_a_glance");
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
@@ -90,9 +90,9 @@ export function PublicProfileClient({
         };
 
         switch (activeTab) {
-            case "overview":
+            case "at_a_glance":
                 return (
-                    <OverviewTab
+                    <AtAGlanceTab
                         {...tabContentProps}
                         stats={stats}
                         onEditProfile={isOwnProfile ? handleEditProfile : undefined}
@@ -103,6 +103,7 @@ export function PublicProfileClient({
                     <ProjectsTab
                         user={{
                             portfolioProjects: user.portfolioProjects || [],
+                            UserProjectV2Progress: user.UserProjectV2Progress || [],
                         }}
                         isOwnProfile={isOwnProfile}
                     />
@@ -132,7 +133,7 @@ export function PublicProfileClient({
                 return <EducationTab {...tabContentProps} />;
             default:
                 return (
-                    <OverviewTab
+                    <AtAGlanceTab
                         {...tabContentProps}
                         stats={stats}
                         onEditProfile={isOwnProfile ? handleEditProfile : undefined}

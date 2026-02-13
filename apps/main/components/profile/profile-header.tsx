@@ -5,9 +5,10 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
+import { Progress } from "@repo/ui/components/ui/progress";
 import {
 	Camera, Edit2, Share2, Settings, MapPin, Briefcase, Calendar,
-	Link as LinkIcon, Mail, Check, Copy
+	Link as LinkIcon, Mail, Check, Copy, Eye, TrendingUp
 } from "lucide-react";
 import toast from "@repo/ui/components/ui/sonner";
 import Link from "next/link";
@@ -26,6 +27,7 @@ interface ProfileHeaderProps {
 		createdAt: Date;
 		currentLevel: number;
 		totalXp: number;
+		currentXp?: number;
 		userProfile?: {
 			coverGradient: string | null;
 			tagline: string | null;
@@ -73,14 +75,16 @@ export function ProfileHeader({
 	};
 
 	const profileViews = user.userProfile?.profileViews ?? 0;
+	const xpToNextLevel = (stats.level + 1) * 1000;
+	const currentXp = user.currentXp ?? stats.xp;
+	const xpProgress = Math.min((currentXp / xpToNextLevel) * 100, 100);
+
 	const statItems = [
-		{ label: "Profile Views", value: profileViews },
 		{ label: "Projects", value: stats.projectsCount },
 		{ label: "Skills", value: stats.skillsCount },
 		{ label: "Followers", value: stats.followersCount },
 		{ label: "Following", value: stats.followingCount },
 		{ label: "XP", value: stats.xp.toLocaleString() },
-		{ label: "Level", value: stats.level },
 		{ label: "Credits", value: stats.credits },
 		{ label: "Badges", value: stats.achievementsCount },
 	];
@@ -105,9 +109,6 @@ export function ProfileHeader({
 								fill
 								className="object-cover"
 							/>
-						</div>
-						<div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg border-2 border-background">
-							LVL {stats.level}
 						</div>
 						{
 							isOwnProfile && onEditProfile && (
@@ -257,23 +258,58 @@ export function ProfileHeader({
 					</div>
 				</div>
 				<div className="mt-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-muted/50 border-y overflow-x-auto">
-					<div className="flex items-center gap-6 md:gap-8 min-w-max">
-						{
-							statItems.map((stat, index) => (
-								<motion.div
-									key={stat.label}
-									initial={{ opacity: 0, y: 10 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: index * 0.05 }}
-									className="flex flex-col items-center"
-								>
-									<span className="text-lg md:text-xl font-bold text-foreground">
-										{stat.value}
-									</span>
-									<span className="text-xs text-muted-foreground">{stat.label}</span>
-								</motion.div>
-							))
-						}
+					<div className="flex items-center justify-between gap-4 min-h-[52px]">
+						<div className="flex items-center gap-6 md:gap-8 min-w-max">
+							{
+								statItems.map((stat, index) => (
+									<motion.div
+										key={stat.label}
+										initial={{ opacity: 0, y: 10 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: index * 0.05 }}
+										className="flex flex-col items-center"
+									>
+										<span className="text-lg md:text-xl font-bold text-foreground">
+											{stat.value}
+										</span>
+										<span className="text-xs text-muted-foreground">{stat.label}</span>
+									</motion.div>
+								))
+							}
+						</div>
+						<div className="flex items-center gap-4 sm:gap-6 flex-shrink-0 ml-auto">
+							{
+								isOwnProfile && (
+									<motion.div
+										initial={{ opacity: 0, y: 10 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: 0.3 }}
+										className="flex items-center gap-2 px-4 py-2 rounded-lg bg-background/80 border shadow-sm"
+									>
+										<Eye className="w-5 h-5 text-primary" />
+										<div className="flex flex-col items-start">
+											<span className="text-lg font-bold text-foreground leading-none">{profileViews}</span>
+											<span className="text-[10px] text-muted-foreground uppercase tracking-wider">Views</span>
+										</div>
+									</motion.div>
+								)
+							}
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.35 }}
+								className="hidden sm:flex items-center gap-3 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20 min-w-[180px]"
+							>
+								<TrendingUp className="w-5 h-5 text-amber-600 shrink-0" />
+								<div className="flex-1 min-w-0">
+									<div className="flex items-center justify-between text-xs mb-1">
+										<span className="font-medium text-foreground">Level {stats.level}</span>
+										<span className="font-semibold text-amber-600">{Math.round(xpProgress)}%</span>
+									</div>
+									<Progress value={xpProgress} className="h-2 bg-amber-200/50" />
+								</div>
+							</motion.div>
+						</div>
 					</div>
 				</div>
 			</div>

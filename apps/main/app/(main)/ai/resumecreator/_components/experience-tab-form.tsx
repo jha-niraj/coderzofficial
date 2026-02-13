@@ -8,6 +8,10 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
     Plus, Trash2, Loader2, CalendarIcon, Sparkles, Mic, Square
 } from "lucide-react"
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@repo/ui/components/ui/select"
+import { Switch } from "@repo/ui/components/ui/switch"
 import { format } from "date-fns"
 import { Calendar } from "@repo/ui/components/ui/calendar"
 import {
@@ -41,6 +45,7 @@ const ROLE_OPTIONS = [
     "DevOps Engineer",
     "ML Engineer",
     "Other",
+    "Custom",
 ]
 
 function mapToExperience(raw: {
@@ -290,23 +295,45 @@ function ExperienceCard({
                     </div>
                     <div>
                         <Label>Role Title</Label>
-                        <select
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            value={local.roleTitle}
-                            onChange={(e) => handleField("roleTitle", e.target.value)}
+                        <Select
+                            value={roleOptions.includes(local.roleTitle) ? local.roleTitle : "Custom"}
+                            onValueChange={(v) => handleField("roleTitle", v === "Custom" ? local.roleTitle : v)}
                         >
-                            {
-                                roleOptions.map((r) => (
-                                    <option key={r} value={r}>{r}</option>
-                                ))
-                            }
-                        </select>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {
+                                    roleOptions.filter((r) => r !== "Custom").map((r) => (
+                                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                                    ))
+                                }
+                                <SelectItem value="Custom">Custom</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {
+                            !roleOptions.includes(local.roleTitle) && (
+                                <Input
+                                    className="mt-2"
+                                    value={local.roleTitle}
+                                    onChange={(e) => handleField("roleTitle", e.target.value)}
+                                    placeholder="Enter your role title"
+                                />
+                            )
+                        }
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                        {local.isCurrentlyWorking ? "CURRENT" : "PAST"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            id={`currently-working-${exp.id}`}
+                            checked={local.isCurrentlyWorking}
+                            onCheckedChange={(v) => handleField("isCurrentlyWorking", v)}
+                        />
+                        <Label htmlFor={`currently-working-${exp.id}`} className="text-xs font-normal cursor-pointer">
+                            Currently working here
+                        </Label>
+                    </div>
                     <Button
                         variant="ghost"
                         size="icon"

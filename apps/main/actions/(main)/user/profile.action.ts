@@ -666,6 +666,23 @@ export async function getOwnProfile() {
                     },
                     orderBy: { startDate: "desc" },
                 },
+                UserProjectV2Progress: {
+                    include: {
+                        project: {
+                            select: {
+                                id: true,
+                                slug: true,
+                                title: true,
+                                shortDescription: true,
+                                description: true,
+                                technologies: true,
+                                generationType: true,
+                                difficulty: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: "desc" },
+                },
                 skills: {
                     include: {
                         endorsements: true,
@@ -743,6 +760,23 @@ export async function getPublicProfile(username: string) {
                         projectLinks: true,
                     },
                     orderBy: { startDate: "desc" },
+                },
+                UserProjectV2Progress: {
+                    include: {
+                        project: {
+                            select: {
+                                id: true,
+                                slug: true,
+                                title: true,
+                                shortDescription: true,
+                                description: true,
+                                technologies: true,
+                                generationType: true,
+                                difficulty: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: "desc" },
                 },
                 skills: {
                     include: {
@@ -1363,7 +1397,8 @@ export async function getProfileByUsername(username: string) {
 export async function getUserProfileStats(userId: string) {
     try {
         const [
-            projectsCount,
+            portfolioCount,
+            platformCount,
             skillsCount,
             achievementsCount,
             experienceCount,
@@ -1371,12 +1406,15 @@ export async function getUserProfileStats(userId: string) {
             followingCount,
         ] = await Promise.all([
             prisma.portfolioProject.count({ where: { userId } }),
+            prisma.userProjectV2Progress.count({ where: { userId } }),
             prisma.skills.count({ where: { userId } }),
             prisma.achievements.count({ where: { userId } }),
             prisma.workExperience.count({ where: { userId } }),
             prisma.follow.count({ where: { followingId: userId } }),
             prisma.follow.count({ where: { followerId: userId } }),
         ]);
+
+        const projectsCount = portfolioCount + platformCount;
 
         // Get XP and Level
         const user = await prisma.user.findUnique({

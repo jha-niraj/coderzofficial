@@ -303,24 +303,6 @@ export function ProfileSidebar({ user, isOwnProfile }: ProfileSidebarProps) {
 					</motion.div>
 				)
 			}
-			{
-				isOwnProfile && user.userProfile?.profileViews !== undefined && (
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: 0.35 }}
-					>
-						<Card className="bg-muted/50">
-							<CardContent className="py-4 text-center">
-								<p className="text-3xl font-bold text-foreground">
-									{user.userProfile.profileViews}
-								</p>
-								<p className="text-xs text-muted-foreground">Profile Views</p>
-							</CardContent>
-						</Card>
-					</motion.div>
-				)
-			}
 		</div>
 	);
 }

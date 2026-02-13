@@ -5,7 +5,7 @@ export type { ProfileTab } from "./profile-tabs";
 export { ProfileSidebar } from "./profile-sidebar";
 
 // Tab Components
-export { OverviewTab } from "./tabs/overview-tab";
+export { AtAGlanceTab } from "./tabs/at-a-glance-tab";
 export { ProjectsTab } from "./tabs/projects-tab";
 export { ActivityTab } from "./tabs/activity-tab";
 export { SkillsTab } from "./tabs/skills-tab";

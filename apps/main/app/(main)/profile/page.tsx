@@ -9,7 +9,7 @@ import {
     AlertCircle, User as UserIcon, RefreshCw
 } from "lucide-react";
 import {
-    ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, ProjectsTab,
+    ProfileHeader, ProfileTabs, ProfileSidebar, AtAGlanceTab, ProjectsTab,
     SkillsTab, WorkExperienceTab, EducationTab,
     ShareProfileModal, EditProfileModal
 } from "@/components/profile";
@@ -78,6 +78,20 @@ interface ProfileData {
             description: string | null;
         }>;
     }>;
+    UserProjectV2Progress?: Array<{
+        id: string;
+        status: string;
+        project: {
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription: string | null;
+            description: string;
+            technologies: string[];
+            generationType: string;
+            difficulty: string;
+        };
+    }>;
     skills: Array<{
         id: string;
         name: string;
@@ -145,7 +159,7 @@ interface ProfileData {
 export default function ProfilePage() {
     const router = useRouter();
     const { user: storeUser, isLoading: storeLoading, error: storeError, fetchUser } = useUserStore();
-    const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
+    const [activeTab, setActiveTab] = useState<ProfileTab>("at_a_glance");
     const [profileData, setProfileData] = useState<ProfileData | null>(null);
     const [stats, setStats] = useState<ProfileStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -340,9 +354,9 @@ export default function ProfilePage() {
         };
 
         switch (activeTab) {
-            case "overview":
+            case "at_a_glance":
                 return (
-                    <OverviewTab
+                    <AtAGlanceTab
                         {...commonProps}
                         stats={profileStats}
                         onEditProfile={() => setEditModalOpen(true)}
@@ -352,7 +366,8 @@ export default function ProfilePage() {
                 return (
                     <ProjectsTab
                         user={{
-                            portfolioProjects: profileData?.portfolioProjects || [],
+                            portfolioProjects: profileData?.portfolioProjects ?? [],
+                            UserProjectV2Progress: profileData?.UserProjectV2Progress ?? [],
                         }}
                         isOwnProfile={true}
                         onProjectAdded={loadProfile}
