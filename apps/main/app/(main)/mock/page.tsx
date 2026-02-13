@@ -9,11 +9,16 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from '@repo/ui/components/ui/card'
 import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from '@repo/ui/components/ui/dialog'
+import {
     ArrowRight, Brain, Video, Building2, Users, Phone, Sparkles, CheckCircle, TrendingUp, 
     Trophy, Target, Zap, Star, MessageSquare, Mic, Award, Timer, Shield, Lock
 } from 'lucide-react'
+import toast from '@repo/ui/components/ui/sonner'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getMockInterviewStats } from '@/actions/(main)/mockvoice/stats.action'
+import { saveFeatureNotifyInterest } from '@/actions/(main)/feature-notify.action'
 
 const mockInterviewTypes = [
     {
@@ -34,7 +39,8 @@ const mockInterviewTypes = [
         href: '/mock/video',
         features: ['Video analysis', 'Body language', 'Facial expressions'],
         badge: 'Coming Soon',
-        isLocked: true
+        isLocked: true,
+        notifySection: 'MOCK_VIDEO' as const
     },
     {
         id: 'companywise',
@@ -44,7 +50,8 @@ const mockInterviewTypes = [
         href: '/mock/companywise',
         features: ['FAANG focused', 'Company culture', 'Real questions'],
         badge: 'Coming Soon',
-        isLocked: true
+        isLocked: true,
+        notifySection: 'MOCK_COMPANYWISE' as const
     },
     {
         id: 'peertopeer',
@@ -54,7 +61,8 @@ const mockInterviewTypes = [
         href: '/mock/peertopeer',
         features: ['Live sessions', 'Community driven', 'Collaborative'],
         badge: 'Coming Soon',
-        isLocked: true
+        isLocked: true,
+        notifySection: 'MOCK_PEERTOPEER' as const
     },
     {
         id: 'connect',
@@ -64,7 +72,8 @@ const mockInterviewTypes = [
         href: '/mock/connect',
         features: ['Expert mentors', 'Personalized', '1-on-1 sessions'],
         badge: 'Coming Soon',
-        isLocked: true
+        isLocked: true,
+        notifySection: 'MOCK_CONNECT' as const
     },
 ]
 
@@ -132,6 +141,9 @@ export default function MockInterviewLandingPage() {
         averageRating: '4.8',
         successRate: '85'
     })
+    const [notifyDialogOpen, setNotifyDialogOpen] = useState(false)
+    const [selectedLockedType, setSelectedLockedType] = useState<typeof mockInterviewTypes[0] | null>(null)
+    const [notifyLoading, setNotifyLoading] = useState(false)
 
     useEffect(() => {
         async function loadStats() {
@@ -338,6 +350,13 @@ export default function MockInterviewLandingPage() {
                                         </Card>
                                     );
 
+                                    const handleLockedClick = () => {
+                                        if (isLocked && 'notifySection' in type) {
+                                            setSelectedLockedType(type)
+                                            setNotifyDialogOpen(true)
+                                        }
+                                    }
+
                                     return (
                                         <motion.div
                                             key={type.id}
@@ -348,7 +367,7 @@ export default function MockInterviewLandingPage() {
                                         >
                                             {
                                                 isLocked ? (
-                                                    <div>{cardContent}</div>
+                                                    <div onClick={handleLockedClick} className="cursor-pointer">{cardContent}</div>
                                                 ) : (
                                                     <Link href={type.href}>{cardContent}</Link>
                                                 )
@@ -470,7 +489,56 @@ export default function MockInterviewLandingPage() {
                         </motion.div>
                     </div>
                 </section>
+                <Dialog open={notifyDialogOpen} onOpenChange={setNotifyDialogOpen}>
+                    <DialogContent className="sm:max-w-[425px] bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                                <Lock className="w-5 h-5 text-neutral-400" />
+                                Coming Soon
+                            </DialogTitle>
+                            <DialogDescription>
+                                Get notified when this feature launches. We&apos;ll send you an email.
+                            </DialogDescription>
+                        </DialogHeader>
+                        {selectedLockedType && (
+                            <div className="py-4">
+                                <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4 border border-neutral-100 dark:border-neutral-800">
+                                    <h3 className="font-semibold text-lg mb-2">{selectedLockedType.title}</h3>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{selectedLockedType.description}</p>
+                                </div>
+                            </div>
+                        )}
+                        <div className="flex gap-3">
+                            <Button onClick={() => setNotifyDialogOpen(false)} variant="outline" className="flex-1 rounded-full">
+                                Close
+                            </Button>
+                            <Button
+                                onClick={async () => {
+                                    if (!selectedLockedType || !('notifySection' in selectedLockedType)) return
+                                    setNotifyLoading(true)
+                                    const res = await saveFeatureNotifyInterest({
+                                        section: selectedLockedType.notifySection,
+                                        title: selectedLockedType.title,
+                                        description: selectedLockedType.description,
+                                    })
+                                    setNotifyLoading(false)
+                                    if (res.success) {
+                                        setNotifyDialogOpen(false)
+                                        toast.success("You'll receive an email at launch!", {
+                                            description: "We'll notify you when this feature is ready.",
+                                        })
+                                    } else {
+                                        toast.error(res.error || "Please sign in to get notified.")
+                                    }
+                                }}
+                                disabled={notifyLoading}
+                                className="flex-1 rounded-full bg-neutral-900 dark:bg-white dark:text-neutral-900"
+                            >
+                                {notifyLoading ? "Saving..." : "Notify Me"}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </main>
-        // </SmoothScroll>
     )
 }

@@ -2,7 +2,7 @@ import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Trophy, Video, Brain, Cable, LayoutDashboard,
     Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon,
-    GraduationCap, Rocket, Activity, Share2, Target
+    GraduationCap, Rocket, Activity, Share2, Target, FileText
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -132,6 +132,11 @@ export const mainNavigation: NavigationConfig = {
                     name: 'Job Interview', 
                     path: 'ai/jobinterviewassistant', 
                     icon: Briefcase 
+                },
+                { 
+                    name: 'Resume Creator', 
+                    path: 'ai/resumecreator', 
+                    icon: FileText 
                 },
             ]
         },

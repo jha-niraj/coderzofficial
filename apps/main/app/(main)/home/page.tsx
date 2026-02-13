@@ -13,11 +13,11 @@ import QuickActions from "./_components/quick-actions";
 import ActivityCalendar from "./_components/activity-calendar";
 import AchievementsCard from "./_components/achievements-card";
 import LeaderboardPosition from "./_components/leaderboard-position";
-import FeatureDiscovery from "./_components/feature-discovery";
 import ShareCredits from "./_components/share-credits";
 import { KnowmeSheetProvider } from "./_components/knowme-sheet-provider";
 import Referrals from "./_components/referrals";
 import ProjectsPreview from "./_components/projects-preview";
+import MockVoicePreview from "./_components/mock-voice-preview";
 import MockVoiceSection from "./_components/mock-voice-section";
 import CommunityHighlights from "./_components/community-highlights";
 
@@ -25,7 +25,7 @@ import {
 	GreetingHeaderSkeleton, ContinueLearningSkeleton,
 	PathfinderGoalsSkeleton, QuickActionsSkeleton,
 	ActivityCalendarSkeleton, AchievementsCardSkeleton,
-	LeaderboardPositionSkeleton, FeatureDiscoverySkeleton,
+	LeaderboardPositionSkeleton,
 	ShareCreditsSkeleton,
 	ReferralsSkeleton, CommunityHighlightsSkeleton,
 } from "./_components/skeletons";
@@ -65,6 +65,7 @@ export default async function HomePage() {
 		leaderboardRank,
 		recentTransfers,
 		referralStats,
+		recentMockSessions,
 	} = homeDataResult.data;
 
 	const communityPosts = communityResult.posts || [];
@@ -98,16 +99,11 @@ export default async function HomePage() {
 							<PathfinderGoalsCard goals={pathfinderGoals} />
 						</Suspense>
 
-						{inProgressProjects.length > 0 && (
-							<ProjectsPreview projects={inProgressProjects} />
-						)}
+						<ProjectsPreview projects={inProgressProjects} />
 
+						<MockVoicePreview sessions={recentMockSessions} />
 						<Suspense fallback={<ActivityCalendarSkeleton />}>
 								<ActivityCalendar data={activityCalendar} />
-							</Suspense>
-
-							<Suspense fallback={<FeatureDiscoverySkeleton />}>
-								<FeatureDiscovery />
 							</Suspense>
 						</div>
 

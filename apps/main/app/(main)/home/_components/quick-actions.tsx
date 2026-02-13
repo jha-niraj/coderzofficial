@@ -4,9 +4,6 @@ import { useState } from "react";
 import { useKnowmeSheet } from "./knowme-sheet-provider";
 import { motion } from "framer-motion";
 import {
-    Card, CardContent, CardHeader, CardTitle
-} from "@repo/ui/components/ui/card";
-import {
     FolderKanban, Mic, Briefcase, FileText, BookOpen, ClipboardCheck,
     Bot, Layout, Users, Map, Lock, ArrowRight, Rocket
 } from "lucide-react";
@@ -133,69 +130,50 @@ export default function QuickActions({
 
     return (
         <>
-            <Card className="border-primary/10">
-                <CardHeader className="pb-4">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                            <Rocket className="h-4 w-4 text-primary" />
-                        </div>
-                        <CardTitle className="text-lg">Quick Actions</CardTitle>
+            <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
+                <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                        <Rocket className="h-4 w-4 text-primary" />
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="grid grid-cols-2 sm:grid-cols-3 gap-3"
-                    >
+                    <h3 className="font-semibold text-lg">Quick Actions</h3>
+                </div>
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-3 justify-items-center"
+                >
                         {activeActions.map((action) => (
-                            <motion.div key={action.title} variants={itemVariants}>
+                            <motion.div key={action.title} variants={itemVariants} className="w-full max-w-[140px]">
                                 {action.isKnowme && onKnowmeClick ? (
                                     <div
                                         onClick={handleKnowmeClick}
-                                        className={`p-4 rounded-xl ${action.bgColor} transition-all duration-200 cursor-pointer group`}
+                                        className={`p-4 rounded-xl ${action.bgColor} transition-all duration-200 cursor-pointer group flex flex-col items-center text-center`}
                                     >
-                                        <div className="flex flex-col gap-3">
-                                            <div
-                                                className={`w-10 h-10 rounded-lg bg-gradient-to-br ${action.color} flex items-center justify-center`}
-                                            >
-                                                <action.icon className="h-5 w-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-1">
-                                                    <p className="font-semibold text-sm">{action.title}</p>
-                                                    <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                </div>
-                                                <p className="text-xs text-muted-foreground line-clamp-1">
-                                                    {action.description}
-                                                </p>
-                                            </div>
+                                        <div
+                                            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-lg shadow-black/10 mb-2`}
+                                        >
+                                            <action.icon className="h-6 w-6 text-white" strokeWidth={2} />
                                         </div>
+                                        <p className="font-semibold text-sm">{action.title}</p>
+                                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                            {action.description}
+                                        </p>
                                     </div>
                                 ) : (
-                                    <Link href={action.href}>
+                                    <Link href={action.href} className="block">
                                         <div
-                                            className={`p-4 rounded-xl ${action.bgColor} transition-all duration-200 cursor-pointer group`}
+                                            className={`p-4 rounded-xl ${action.bgColor} transition-all duration-200 cursor-pointer group flex flex-col items-center text-center h-full`}
                                         >
-                                            <div className="flex flex-col gap-3">
-                                                <div
-                                                    className={`w-10 h-10 rounded-lg bg-gradient-to-br ${action.color} flex items-center justify-center`}
-                                                >
-                                                    <action.icon className="h-5 w-5 text-white" />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-1">
-                                                        <p className="font-semibold text-sm">
-                                                            {action.title}
-                                                        </p>
-                                                        <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground line-clamp-1">
-                                                        {action.description}
-                                                    </p>
-                                                </div>
+                                            <div
+                                                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-lg shadow-black/10 mb-2`}
+                                            >
+                                                <action.icon className="h-6 w-6 text-white" strokeWidth={2} />
                                             </div>
+                                            <p className="font-semibold text-sm">{action.title}</p>
+                                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                                {action.description}
+                                            </p>
                                         </div>
                                     </Link>
                                 )}
@@ -203,26 +181,22 @@ export default function QuickActions({
                         ))}
                         <TooltipProvider>
                             {lockedActions.map((action) => (
-                                <motion.div key={action.title} variants={itemVariants}>
+                                <motion.div key={action.title} variants={itemVariants} className="w-full max-w-[140px]">
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <div
                                                 onClick={() => handleLockedClick(action.title)}
-                                                className="p-4 rounded-xl bg-muted/50 opacity-75 cursor-not-allowed hover:opacity-90 transition-all group border border-dashed border-muted-foreground/30"
+                                                className="p-4 rounded-xl bg-muted/50 opacity-75 cursor-not-allowed hover:opacity-90 transition-all group border border-dashed border-muted-foreground/30 flex flex-col items-center text-center"
                                             >
-                                                <div className="flex flex-col gap-3">
-                                                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                                                        <Lock className="h-5 w-5 text-muted-foreground" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold text-sm text-muted-foreground">
-                                                            {action.title}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground line-clamp-1">
-                                                            {action.description}
-                                                        </p>
-                                                    </div>
+                                                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-2">
+                                                    <Lock className="h-6 w-6 text-muted-foreground" />
                                                 </div>
+                                                <p className="font-semibold text-sm text-muted-foreground">
+                                                    {action.title}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                                    {action.description}
+                                                </p>
                                             </div>
                                         </TooltipTrigger>
                                         <TooltipContent>
@@ -233,8 +207,7 @@ export default function QuickActions({
                             ))}
                         </TooltipProvider>
                     </motion.div>
-                </CardContent>
-            </Card>
+                </div>
 
             <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
                 <DialogContent>

@@ -1,120 +1,55 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import {
     ArrowRight, Sparkles, Users, Zap, Trophy, Briefcase, GitPullRequest,
-    LayoutTemplate, BrainCircuit, ChevronRight, Lock, Clock, CheckCircle2,
+    LayoutTemplate, BrainCircuit, ChevronRight, Lock, CheckCircle2,
     ScanSearch, FileText, ShieldCheck, TestTube2
 } from "lucide-react"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
 import {
-    Tabs, TabsList, TabsTrigger
-} from "@repo/ui/components/ui/tabs"
-import {
-    Dialog, DialogContent, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@repo/ui/components/ui/dialog"
-import SmoothScroll from "@/components/smoothscroll"
 import { useRouter } from "next/navigation"
+import toast from "@repo/ui/components/ui/sonner"
+import { saveFeatureNotifyInterest } from "@/actions/(main)/feature-notify.action"
+import { FeatureNotifySection } from "@repo/prisma"
 
-// --- Curated High-Value Tools ---
-const toolCategories = [
-    { id: "career", label: "Career Engineering" },
-    { id: "architecture", label: "System Design" },
-    { id: "quality", label: "Code Quality" },
-    { id: "contribution", label: "Open Source" },
-]
-
+// Active tools - Job Interview Assistant & Resume Creator only
 const tools = [
     {
         id: "jobinterviewassistant",
         icon: Briefcase,
-        name: "Interview Assistant",
+        name: "Job Interview Assistant",
         description: "Context-aware simulation that ingests your specific resume and the target job description to generate high-probability technical questions.",
         features: ["Resume Parsing", "Role-Specific Scenarios", "STAR Method Feedback"],
         status: "Live",
-        category: "career",
         credits: 25,
-        access: "public"
+        href: "/ai/jobinterviewassistant"
     },
     {
-        id: "portfolio-audit",
-        icon: ScanSearch,
-        name: "Portfolio Audit",
-        description: "Stop guessing why you aren't getting callbacks. We scan your GitHub and Portfolio site to identify red flags, missing projects, and weak case studies.",
-        features: ["GitHub Activity Analysis", "Project Impact Scoring", "Recruiter View Simulation"],
-        status: "Beta",
-        category: "career",
-        credits: 15,
-        access: "public"
-    },
-    {
-        id: "system-architect",
-        icon: LayoutTemplate,
-        name: "System Architect",
-        description: "Don't just code—design. Input your project idea and get a complete database schema, API endpoint structure, and tech stack recommendation.",
-        features: ["DB Schema Generation", "API Route Planning", "Tech Stack Analysis"],
-        status: "Beta",
-        category: "architecture",
-        credits: 40,
-        access: "public"
-    },
-    {
-        id: "project-scoper",
-        icon: BrainCircuit,
-        name: "Project Scoper",
-        description: "Turn a vague startup idea into a development roadmap. Generates user stories, MVP requirements, and estimated development cycles.",
-        features: ["MVP Definition", "Sprint Planning", "Feature Prioritization"],
-        status: "In Development",
-        category: "architecture",
-        credits: 0,
-        access: "waitlist"
-    },
-    {
-        id: "oss-scout",
-        icon: GitPullRequest,
-        name: "Open Source Scout",
-        description: "Stop scrolling GitHub aimlessly. We analyze your tech stack and find 'Good First Issues' in reputable repositories that actually match your skill level.",
-        features: ["Repo Vetting", "Issue Complexity Analysis", "Contribution Guide"],
-        status: "In Development",
-        category: "contribution",
-        credits: 0,
-        access: "waitlist"
-    },
-    {
-        id: "docusmith",
+        id: "resumecreator",
         icon: FileText,
-        name: "DocuSmith",
-        description: "Engineers hate writing docs. We generate beautiful, comprehensive API documentation (OpenAPI/Swagger) and 'How-to' guides directly from your code.",
-        features: ["Auto-Swagger Generation", "Readme Optimization", "Usage Examples"],
-        status: "In Development",
-        category: "opensource",
+        name: "Resume Creator",
+        description: "Build ATS-friendly resumes with AI. Sync work experience, education, skills & projects to your profile.",
+        features: ["Profile Sync", "Live Preview", "ATS Optimization"],
+        status: "Live",
         credits: 0,
-        access: "waitlist"
+        href: "/ai/resumecreator"
     },
-    {
-        id: "code-sentinel",
-        icon: ShieldCheck,
-        name: "Code Sentinel",
-        description: "An automated Senior Engineer that reviews your PRs. It ignores style nits and focuses on security vulnerabilities, memory leaks, and anti-patterns.",
-        features: ["Security Vulnerability Scan", "Performance Audit", "Anti-Pattern Detection"],
-        status: "Beta",
-        category: "quality",
-        credits: 30,
-        access: "public"
-    },
-    {
-        id: "test-forge",
-        icon: TestTube2,
-        name: "Test Forge",
-        description: "Stop writing boilerplate. Generates comprehensive integration tests and edge-case scenarios for your API endpoints automatically.",
-        features: ["Integration Test Generation", "Edge Case Discovery", "Mock Data Creation"],
-        status: "In Development",
-        category: "quality",
-        credits: 0,
-        access: "waitlist"
-    },
+]
+
+// Locked / Notify Me tools
+const lockedTools = [
+    { id: "portfolio-audit", icon: ScanSearch, name: "Portfolio Audit", description: "Scan your GitHub and Portfolio to identify red flags and weak case studies.", section: "AI_PORTFOLIO_AUDIT" as const },
+    { id: "system-architect", icon: LayoutTemplate, name: "System Architect", description: "Get DB schema, API structure, and tech stack for your project.", section: "AI_SYSTEM_ARCHITECT" as const },
+    { id: "project-scoper", icon: BrainCircuit, name: "Project Scoper", description: "Turn ideas into development roadmaps with MVP and sprint planning.", section: "AI_PROJECT_SCOPER" as const },
+    { id: "oss-scout", icon: GitPullRequest, name: "Open Source Scout", description: "Find Good First Issues matching your tech stack.", section: "AI_OSS_SCOUT" as const },
+    { id: "docusmith", icon: FileText, name: "DocuSmith", description: "Generate API docs and How-to guides from your code.", section: "AI_DOCUSMITH" as const },
+    { id: "code-sentinel", icon: ShieldCheck, name: "Code Sentinel", description: "Automated PR reviews for security and anti-patterns.", section: "AI_CODE_SENTINEL" as const },
+    { id: "test-forge", icon: TestTube2, name: "Test Forge", description: "Generate integration tests for APIs.", section: "AI_TEST_FORGE" as const },
 ]
 
 const stats = [
@@ -124,24 +59,41 @@ const stats = [
     { label: "Uptime", value: "99.9", icon: Zap, suffix: "%" },
 ]
 
+type LockedTool = typeof lockedTools[0];
+
 export default function AiToolsPage() {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState("career");
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [selectedTool, setSelectedTool] = useState<typeof tools[0] | null>(null);
+    const [selectedTool, setSelectedTool] = useState<LockedTool | null>(null);
+    const [notifyLoading, setNotifyLoading] = useState(false);
 
-    const handleToolClick = (tool: typeof tools[0]) => {
-        if (tool.status === "Live" || tool.status === "Beta") {
-            router.push(`/ai/${tool.id}`);
+    const handleLockedClick = (tool: LockedTool) => {
+        setSelectedTool(tool);
+        setDialogOpen(true);
+    };
+
+    const handleNotifyMe = async () => {
+        if (!selectedTool) return;
+        setNotifyLoading(true);
+        const res = await saveFeatureNotifyInterest({
+            section: selectedTool.section as FeatureNotifySection,
+            title: selectedTool.name,
+            description: selectedTool.description,
+        });
+        setNotifyLoading(false);
+        if (res.success) {
+            setDialogOpen(false);
+            setSelectedTool(null);
+            toast.success("You'll receive an email at launch!", {
+                description: "We'll notify you when this feature is ready.",
+            });
         } else {
-            setSelectedTool(tool);
-            setDialogOpen(true);
+            toast.error(res.error || "Failed. Please try again.");
         }
     };
 
     return (
-        <SmoothScroll>
-            <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
+        <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
 
                 <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden border-b border-neutral-100 dark:border-neutral-800">
                     <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-neutral-950 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
@@ -235,105 +187,69 @@ export default function AiToolsPage() {
                                 </p>
                             </div>
                         </div>
-                        <Tabs defaultValue="career" value={activeTab} onValueChange={setActiveTab} className="w-full mb-12">
-                            <TabsList className="bg-transparent p-0 gap-2 h-auto flex flex-wrap justify-start">
-                                {
-                                    toolCategories.map((cat) => (
-                                        <TabsTrigger
-                                            key={cat.id}
-                                            value={cat.id}
-                                            className="data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-neutral-900 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 px-6 py-2.5 rounded-full text-sm font-medium transition-all"
-                                        >
-                                            {cat.label}
-                                        </TabsTrigger>
-                                    ))
-                                }
-                                <TabsTrigger value="all" className="data-[state=active]:bg-neutral-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-neutral-900 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 px-6 py-2.5 rounded-full text-sm font-medium transition-all">
-                                    View All
-                                </TabsTrigger>
-                            </TabsList>
-                            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-2 gap-8">
-                                <AnimatePresence mode="popLayout">
-                                    {
-                                        tools
-                                            .filter(t => activeTab === 'all' || t.category === activeTab)
-                                            .map((tool, index) => (
-                                                <motion.div
-                                                    key={tool.id}
-                                                    layout
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, scale: 0.95 }}
-                                                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                                                    onClick={() => handleToolClick(tool)}
-                                                    className="cursor-pointer"
-                                                >
-                                                    <div className="group relative h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-neutral-900/5 dark:hover:shadow-black/50 transition-all duration-500">
-                                                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neutral-200 via-neutral-500 to-neutral-200 dark:from-neutral-800 dark:via-neutral-500 dark:to-neutral-800 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                                                        <div className="p-8">
-                                                            <div className="flex items-start justify-between mb-6">
-                                                                <div className="w-14 h-14 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 flex items-center justify-center text-neutral-900 dark:text-white group-hover:bg-neutral-100 dark:group-hover:bg-neutral-700 transition-colors">
-                                                                    <tool.icon className="w-7 h-7" />
-                                                                </div>
-                                                                <div className="flex flex-col items-end gap-2">
-                                                                    <Badge variant="secondary" className={`
-                                                                font-medium px-3 py-1 
-                                                                ${tool.status === 'Live' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'}
-                                                            `}>
-                                                                        {tool.status}
-                                                                    </Badge>
-                                                                    {
-                                                                        tool.status === 'Live' && (
-                                                                            <span className="text-xs text-neutral-400 font-medium">{tool.credits} Credits</span>
-                                                                        )
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                            <div className="mb-6">
-                                                                <div className="text-xs font-bold text-neutral-400 dark:text-neutral-500 mb-2 uppercase tracking-wider">
-                                                                    {tool.category.replace("-", " ")}
-                                                                </div>
-                                                                <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
-                                                                    {tool.name}
-                                                                </h3>
-                                                                <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed text-base">
-                                                                    {tool.description}
-                                                                </p>
-                                                            </div>
-                                                            <div className="space-y-3 mb-8">
-                                                                {
-                                                                    tool.features.map((feature, idx) => (
-                                                                        <div key={idx} className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-300">
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-600" />
-                                                                            {feature}
-                                                                        </div>
-                                                                    ))
-                                                                }
-                                                            </div>
-                                                            <div className="flex items-center justify-between pt-6 border-t border-neutral-100 dark:border-neutral-800">
-                                                                <div className="text-sm font-medium text-neutral-400 dark:text-neutral-500 flex items-center gap-2">
-                                                                    {
-                                                                        tool.access === 'waitlist' ? (
-                                                                            <><Lock className="w-3.5 h-3.5" /> Private Beta</>
-                                                                        ) : (
-                                                                            <><Users className="w-3.5 h-3.5" /> Public Access</>
-                                                                        )
-                                                                    }
-                                                                </div>
-                                                                <div className="flex items-center text-sm font-bold text-neutral-900 dark:text-white group-hover:translate-x-1 transition-transform">
-                                                                    {tool.status === 'Live' ? 'Launch' : 'Notify Me'}
-                                                                    <ChevronRight className="ml-1 w-4 h-4" />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            ))
-                                    }
-                                </AnimatePresence>
-                            </div>
-                        </Tabs>
+                        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {tools.map((tool, index) => (
+                                <motion.div
+                                    key={tool.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                                    onClick={() => router.push(tool.href)}
+                                    className="cursor-pointer"
+                                >
+                                    <div className="group relative h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-neutral-900/5 dark:hover:shadow-black/50 transition-all duration-500">
+                                        <div className="p-8">
+                                            <div className="flex items-start justify-between mb-6">
+                                                <div className="w-14 h-14 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 flex items-center justify-center text-neutral-900 dark:text-white">
+                                                    <tool.icon className="w-7 h-7" />
+                                                </div>
+                                                <Badge className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                                                    {tool.status}
+                                                </Badge>
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">{tool.name}</h3>
+                                            <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed text-base mb-6">
+                                                {tool.description}
+                                            </p>
+                                            <div className="flex items-center justify-end text-sm font-bold text-neutral-900 dark:text-white group-hover:translate-x-1 transition-transform">
+                                                Launch <ChevronRight className="ml-1 w-4 h-4" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                            {lockedTools.map((tool, index) => (
+                                <motion.div
+                                    key={tool.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: (tools.length + index) * 0.1 }}
+                                    onClick={() => handleLockedClick(tool)}
+                                    className="cursor-pointer"
+                                >
+                                    <div className="group relative h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-neutral-900/5 dark:hover:shadow-black/50 transition-all duration-500 opacity-90">
+                                        <div className="p-8">
+                                            <div className="flex items-start justify-between mb-6">
+                                                <div className="w-14 h-14 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 flex items-center justify-center text-neutral-500">
+                                                    <tool.icon className="w-7 h-7" />
+                                                </div>
+                                                <Badge variant="outline" className="border-neutral-300 text-neutral-500">
+                                                    <Lock className="w-3 h-3 mr-1" />
+                                                    Notify Me
+                                                </Badge>
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">{tool.name}</h3>
+                                            <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed text-base mb-6">
+                                                {tool.description}
+                                            </p>
+                                            <div className="flex items-center justify-end text-sm font-bold text-neutral-500 group-hover:translate-x-1 transition-transform">
+                                                Notify Me <ChevronRight className="ml-1 w-4 h-4" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 </section>
                 <section className="py-24 relative overflow-hidden bg-white dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800">
@@ -380,40 +296,38 @@ export default function AiToolsPage() {
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                                 <Lock className="w-5 h-5 text-neutral-400" />
-                                Private Beta
+                                Coming Soon
                             </DialogTitle>
+                            <DialogDescription>
+                                Get notified when this feature launches. We&apos;ll send you an email.
+                            </DialogDescription>
                         </DialogHeader>
                         <div className="py-6">
-                            <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4 border border-neutral-100 dark:border-neutral-800 mb-4">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
-                                        {selectedTool && <selectedTool.icon className="w-5 h-5" />}
+                            {selectedTool && (
+                                <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4 border border-neutral-100 dark:border-neutral-800 mb-4">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                                            <selectedTool.icon className="w-5 h-5" />
+                                        </div>
+                                        <span className="font-semibold text-lg">{selectedTool.name}</span>
                                     </div>
-                                    <span className="font-semibold text-lg">{selectedTool?.name}</span>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                        {selectedTool.description}
+                                    </p>
                                 </div>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                                    {selectedTool?.description}
-                                </p>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-3">
-                                    <Clock className="w-5 h-5 text-neutral-400 mt-0.5" />
-                                    <div>
-                                        <p className="font-medium text-sm text-neutral-900 dark:text-white">Coming Soon</p>
-                                        <p className="text-xs text-neutral-500">This tool is currently undergoing final stress testing with our alpha group.</p>
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
                         <div className="flex gap-3">
                             <Button onClick={() => setDialogOpen(false)} variant="outline" className="flex-1 rounded-full border-neutral-200 dark:border-neutral-800">
                                 Close
+                            </Button>
+                            <Button onClick={handleNotifyMe} disabled={notifyLoading} className="flex-1 rounded-full bg-neutral-900 dark:bg-white dark:text-neutral-900">
+                                {notifyLoading ? "Saving..." : "Notify Me"}
                             </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
 
             </div>
-        </SmoothScroll>
     )
 }

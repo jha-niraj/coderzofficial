@@ -26,6 +26,7 @@ export async function getHomeData() {
             leaderboardRank,
             recentTransfers,
             referralStats,
+            recentMockSessions,
         ] = await Promise.all([
             // User stats with UserStats relation for streaks
             prisma.user.findUnique({
@@ -180,6 +181,22 @@ export async function getHomeData() {
 
             // Referral stats
             getReferralStats(userId),
+
+            // Recent mock voice sessions (limit 6)
+            prisma.mockVoiceSession.findMany({
+                where: { userId },
+                include: {
+                    mock: {
+                        select: {
+                            id: true,
+                            title: true,
+                            category: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: "desc" },
+                take: 6,
+            }),
         ]);
 
         // Transform pathfinder goals for home
@@ -258,6 +275,7 @@ export async function getHomeData() {
                 leaderboardRank,
                 recentTransfers,
                 referralStats,
+                recentMockSessions: recentMockSessions || [],
             },
         };
     } catch (error) {

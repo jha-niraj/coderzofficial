@@ -2,9 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import {
-    Card, CardContent, CardHeader, CardTitle
-} from "@repo/ui/components/ui/card";
 import { CalendarDays, Flame } from "lucide-react";
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
@@ -133,25 +130,26 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
 
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+    const boxSize = "w-5 h-5";
+    const boxMinSize = "min-w-[20px]";
+
     return (
         <>
-            <Card className="border-primary/10">
-                <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2.5 rounded-lg bg-green-500/10">
-                                <CalendarDays className="h-5 w-5 text-green-500" />
-                            </div>
-                            <CardTitle className="text-xl">Activity</CardTitle>
+            <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2.5 rounded-lg bg-green-500/10">
+                            <CalendarDays className="h-5 w-5 text-green-500" />
                         </div>
-                        <div className="flex items-center gap-2 text-base">
-                            <Flame className="h-5 w-5 text-orange-500" />
-                            <span className="font-bold text-lg">{currentStreak}</span>
-                            <span className="text-muted-foreground">day streak</span>
-                        </div>
+                        <h3 className="font-semibold text-xl">Activity</h3>
                     </div>
-                </CardHeader>
-                <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-base">
+                        <Flame className="h-5 w-5 text-orange-500" />
+                        <span className="font-bold text-lg">{currentStreak}</span>
+                        <span className="text-muted-foreground">day streak</span>
+                    </div>
+                </div>
+                <div className="p-4">
                     <TooltipProvider delayDuration={100}>
                         <div className="overflow-x-auto pb-4 -mx-2">
                             <div className="flex gap-1 mb-2 ml-8 text-xs text-muted-foreground min-w-max">
@@ -164,12 +162,12 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                                             weekIndex % 4 === 0
                                         ) {
                                             return (
-                                                <span key={weekIndex} className="w-4 inline-block">
+                                                <span key={weekIndex} className="w-5 inline-block">
                                                     {months[firstValidDay.date.getMonth()]}
                                                 </span>
                                             );
                                         }
-                                        return <span key={weekIndex} className="w-4 inline-block" />;
+                                        return <span key={weekIndex} className="w-5 inline-block" />;
                                     })
                                 }
                             </div>
@@ -191,7 +189,7 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                                                     return (
                                                         <div
                                                             key={dayIndex}
-                                                            className="w-4 h-4 rounded"
+                                                            className={`${boxSize} rounded`}
                                                         />
                                                     );
                                                 }
@@ -208,9 +206,9 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                                                                         (weekIndex * 7 + dayIndex) * 0.001,
                                                                 }}
                                                                 onClick={() => handleDayClick(day)}
-                                                                className={`w-4 h-4 rounded ${getLevelColor(
+                                                                className={`${boxSize} rounded ${getLevelColor(
                                                                     level
-                                                                )} cursor-pointer transition-transform hover:scale-125 min-w-[16px]`}
+                                                                )} cursor-pointer transition-transform hover:scale-110 ${boxMinSize}`}
                                                             />
                                                         </TooltipTrigger>
                                                         <TooltipContent side="top" className="text-xs">
@@ -240,7 +238,7 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                                 [0, 1, 2, 3, 4].map((level) => (
                                     <div
                                         key={level}
-                                        className={`w-4 h-4 rounded ${getLevelColor(
+                                        className={`${boxSize} rounded ${getLevelColor(
                                             level
                                         )}`}
                                     />
@@ -250,8 +248,8 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
                         </div>
                     </div>
                 </TooltipProvider>
-            </CardContent>
-        </Card>
+                </div>
+            </div>
 
         <ActivityDaySheet
             open={sheetOpen}

@@ -1,57 +1,57 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FolderKanban, ChevronRight } from "lucide-react";
+import { Mic, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
-interface Project {
+interface MockSession {
     id: string;
-    project: {
+    status: string;
+    createdAt: Date;
+    mock: {
         id: string;
         title: string;
-        slug: string;
-        description: string | null;
-        difficulty: string;
+        category: string;
     };
 }
 
-interface ProjectsPreviewProps {
-    projects: Project[];
+interface MockVoicePreviewProps {
+    sessions: MockSession[];
 }
 
-export default function ProjectsPreview({ projects }: ProjectsPreviewProps) {
-    const displayProjects = projects.slice(0, 4);
+export default function MockVoicePreview({ sessions }: MockVoicePreviewProps) {
+    const displaySessions = sessions.slice(0, 4);
 
     return (
-        <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
+        <div className="rounded-xl border border-amber-500/20 bg-card/50 p-4">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-blue-500/10">
-                        <FolderKanban className="h-4 w-4 text-blue-500" />
+                    <div className="p-2 rounded-lg bg-amber-500/10">
+                        <Mic className="h-4 w-4 text-amber-500" />
                     </div>
-                    <h3 className="font-semibold text-base">My Projects</h3>
+                    <h3 className="font-semibold text-base">Mock Voice</h3>
                 </div>
                 <Link
-                    href="/projects"
+                    href="/mock/voice"
                     className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
                 >
                     View all
                     <ChevronRight className="h-3 w-3" />
                 </Link>
             </div>
-            {displayProjects.length > 0 ? (
+            {displaySessions.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                    {displayProjects.map((progress) => (
+                    {displaySessions.map((session) => (
                         <Link
-                            key={progress.id}
-                            href={`/projects/${progress.project.slug}`}
+                            key={session.id}
+                            href={`/mock/voice/results/${session.id}`}
                         >
                             <motion.div
                                 whileHover={{ scale: 1.02 }}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium transition-colors"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-sm font-medium transition-colors"
                             >
                                 <span className="truncate max-w-[160px]">
-                                    {progress.project.title}
+                                    {session.mock.title}
                                 </span>
                                 <ChevronRight className="h-3 w-3 shrink-0 opacity-70" />
                             </motion.div>
@@ -61,15 +61,15 @@ export default function ProjectsPreview({ projects }: ProjectsPreviewProps) {
             ) : (
                 <div className="py-4 text-center">
                     <p className="text-sm text-muted-foreground mb-3">
-                        No projects in progress
+                        No mock sessions yet. Start practicing!
                     </p>
-                    <Link href="/projects">
+                    <Link href="/mock/voice">
                         <motion.span
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-sm font-medium cursor-pointer"
                         >
-                            Show My Projects
+                            Start Practice
                             <ChevronRight className="h-3 w-3" />
                         </motion.span>
                     </Link>
