@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
@@ -29,7 +29,9 @@ export function EducationTabForm({
     onAdd,
     onUpdate,
     onDelete,
-    onSuccess,
+    onAddSuccess,
+    onUpdateSuccess,
+    onDeleteSuccess,
 }: {
     educations: Education[]
     onAdd: (data: {
@@ -38,35 +40,54 @@ export function EducationTabForm({
         startDate: Date
         endDate?: Date
         bulletPoints?: string[]
-    }) => Promise<{ success: boolean; message?: string }>
+    }) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onUpdate: (id: string, data: Partial<{
         institution: string
         degree: string
         startDate: Date
         endDate: Date
         bulletPoints: string[]
-    }>) => Promise<{ success: boolean; message?: string }>
+    }>) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onDelete: (id: string) => Promise<{ success: boolean; message?: string }>
-    onSuccess: () => void | Promise<void>
+    onAddSuccess?: (edu: Education) => void
+    onUpdateSuccess?: (edu: Education) => void
+    onDeleteSuccess?: (id: string) => void
 }) {
+    const [localEducations, setLocalEducations] = useState(educations)
+    useEffect(() => { setLocalEducations(educations) }, [educations])
+
     const handleAdd = async () => {
-        const res = await onAdd({
-            institution: "New Institution",
-            startDate: new Date(),
-        })
-        if (res.success) {
-            toast.success("Education added")
-            await onSuccess()
-        } else {
+        const tempId = `temp-edu-${Date.now()}`
+        const tempEdu: Education = { id: tempId, institution: "New Institution", startDate: new Date() }
+        setLocalEducations((prev) => [...prev, tempEdu])
+        const res = await onAdd({ institution: tempEdu.institution, startDate: tempEdu.startDate })
+        if (res.success && res.data && typeof res.data === "object" && "id" in res.data) {
+            const raw = res.data as { id: string; institution: string; degree?: string | null; startDate: Date; endDate?: Date | null; bulletPoints?: string[] }
+            const realEdu: Education = {
+                id: raw.id,
+                institution: raw.institution,
+                degree: raw.degree ?? undefined,
+                startDate: new Date(raw.startDate),
+                endDate: raw.endDate ? new Date(raw.endDate) : undefined,
+                bulletPoints: raw.bulletPoints,
+            }
+            setLocalEducations((prev) => prev.map((e) => (e.id === tempId ? realEdu : e)))
+            onAddSuccess?.(realEdu)
+        } else if (!res.success) {
+            setLocalEducations((prev) => prev.filter((e) => e.id !== tempId))
             toast.error(res.message || "Failed to add")
         }
     }
 
     const handleDelete = async (id: string) => {
+        if (id.startsWith("temp-")) {
+            setLocalEducations((prev) => prev.filter((e) => e.id !== id))
+            return
+        }
         const res = await onDelete(id)
         if (res.success) {
-            toast.success("Education removed")
-            await onSuccess()
+            setLocalEducations((prev) => prev.filter((e) => e.id !== id))
+            onDeleteSuccess?.(id)
         } else {
             toast.error(res.message || "Failed to remove")
         }
@@ -86,21 +107,21 @@ export function EducationTabForm({
             </div>
 
             {
-                educations.length === 0 ? (
+                localEducations.length === 0 ? (
                     <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
                         No education yet. Click &quot;Add Education&quot; to add one.
                     </div>
                 ) : (
                     <div className="space-y-6">
                         {
-                            educations.map((edu) => (
+                            localEducations.map((edu) => (
                                 <EducationCard
                                     key={edu.id}
                                     edu={edu}
                                     descStr={descStr}
                                     onUpdate={onUpdate}
                                     onDelete={() => handleDelete(edu.id)}
-                                    onSuccess={onSuccess}
+                                    onUpdateSuccess={onUpdateSuccess}
                                 />
                             ))
                         }
@@ -116,7 +137,7 @@ function EducationCard({
     descStr,
     onUpdate,
     onDelete,
-    onSuccess,
+    onUpdateSuccess,
 }: {
     edu: Education
     descStr: (e: Education) => string
@@ -126,9 +147,9 @@ function EducationCard({
         startDate: Date
         endDate: Date
         bulletPoints: string[]
-    }>) => Promise<{ success: boolean; message?: string }>
+    }>) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onDelete: () => void
-    onSuccess: () => void | Promise<void>
+    onUpdateSuccess?: (edu: Education) => void
 }) {
     const [saving, setSaving] = useState(false)
     const [local, setLocal] = useState({
@@ -150,10 +171,10 @@ function EducationCard({
             endDate: local.endDate ? new Date(local.endDate) : undefined,
         })
         setSaving(false)
-        if (res.success) {
-            toast.success("Saved")
-            await onSuccess()
-        } else {
+        if (res.success && res.data && typeof res.data === "object" && "id" in res.data) {
+            const raw = res.data as { id: string; institution: string; degree?: string | null; startDate: Date; endDate?: Date | null; bulletPoints?: string[] }
+            onUpdateSuccess?.({ id: raw.id, institution: raw.institution, degree: raw.degree ?? undefined, startDate: new Date(raw.startDate), endDate: raw.endDate ? new Date(raw.endDate) : undefined, bulletPoints: raw.bulletPoints })
+        } else if (!res.success) {
             toast.error(res.message || "Failed to save")
         }
     }

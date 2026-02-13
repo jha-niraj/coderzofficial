@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
@@ -35,14 +35,13 @@ export function SkillsTabForm({
     skills,
     onUpdate,
     onDeleteSkill,
-    onSuccess,
 }: {
     skills: Skill[]
     onUpdate: (skills: UserSkill[]) => Promise<UserSkill[]>
     onDeleteSkill?: (id: string) => Promise<void>
-    onSuccess: () => void | Promise<void>
 }) {
     const [local, setLocal] = useState<Skill[]>(skills)
+    useEffect(() => { setLocal(skills) }, [skills])
     const [saving, setSaving] = useState(false)
     const [newName, setNewName] = useState("")
     const [newCategory, setNewCategory] = useState<SkillCategory>("LANGUAGES")
@@ -89,8 +88,6 @@ export function SkillsTabForm({
                 category: (s.category as SkillCategory) || "FRONTEND",
             }))
             await onUpdate(toSend)
-            toast.success("Skills saved")
-            await onSuccess()
         } catch {
             toast.error("Failed to save skills")
         } finally {

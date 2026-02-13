@@ -9,7 +9,9 @@ import {
 import { 
 	deleteResume, uploadResume 
 } from "@/actions/(main)/user/resume.action";
-import { fetchXpAndCredit, transferCredits } from "@/actions/(main)/subscription/credits.action";
+import { 
+	fetchXpAndCredit, transferCredits 
+} from "@/actions/(main)/subscription/credits.action";
 import toast from "@repo/ui/components/ui/sonner";
 
 interface UserState {
@@ -75,8 +77,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 		try {
 			const updatedUser = await updateUserProfile(userData)
 			set({ user: updatedUser })
-			// Refresh the user data to get latest from server
-			await get().fetchUser()
+			// Don't call fetchUser - it triggers isLoading and unmounts the page/modal
 			return updatedUser
 		} catch (error) {
 			set({ error: error instanceof Error ? error.message : 'Failed to update user data' })

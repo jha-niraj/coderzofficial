@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
 	Card, CardContent, CardHeader, CardTitle
@@ -13,13 +14,16 @@ import {
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import Link from "next/link";
+import { ProfileStrengthSheet } from "./sheets/profile-strength-sheet";
 
 interface ProfileSidebarProps {
 	user: {
 		id: string;
 		name: string | null;
 		username: string | null;
+		image?: string | null;
 		bio: string | null;
+		location?: string | null;
 		skills: Array<{
 			id: string;
 			name: string;
@@ -41,6 +45,14 @@ interface ProfileSidebarProps {
 			completionScore: number;
 			profileViews: number;
 		} | null;
+		experiences?: Array<unknown>;
+		portfolioProjects?: Array<unknown>;
+		university?: string | null;
+		certifications?: Array<unknown>;
+		careerGoals?: string[];
+		targetCompanies?: string[];
+		expectedSalary?: string | null;
+		website?: string | null;
 	};
 	stats?: {
 		projectsCount: number;
@@ -63,6 +75,7 @@ const socialIcons: Record<string, React.ComponentType<{ className?: string }>> =
 };
 
 export function ProfileSidebar({ user, isOwnProfile }: ProfileSidebarProps) {
+	const [strengthSheetOpen, setStrengthSheetOpen] = useState(false);
 	const completionScore = user.userProfile?.completionScore || 0;
 	const topSkills = user.skills?.slice(0, 6) || [];
 	const recentAchievements = user.achievements?.slice(0, 3) || [];
@@ -95,13 +108,14 @@ export function ProfileSidebar({ user, isOwnProfile }: ProfileSidebarProps) {
 									{
 										completionScore < 100 ? (
 											<>
-												Complete your profile to unlock more features
+												Complete your profile to unlock more features{" "}
 												<Button
 													variant="link"
 													size="sm"
-													className="h-auto p-0 ml-1 text-xs text-primary"
+													className="h-auto p-0 ml-0 text-xs text-primary font-normal"
+													onClick={() => setStrengthSheetOpen(true)}
 												>
-													Complete now <ArrowRight className="w-3 h-3 ml-1" />
+													Complete now <ArrowRight className="w-3 h-3 ml-1 inline" />
 												</Button>
 											</>
 										) : (
@@ -114,6 +128,12 @@ export function ProfileSidebar({ user, isOwnProfile }: ProfileSidebarProps) {
 					</motion.div>
 				)
 			}
+			<ProfileStrengthSheet
+				open={strengthSheetOpen}
+				onOpenChange={setStrengthSheetOpen}
+				completionScore={completionScore}
+				user={user}
+			/>
 			{
 				isOwnProfile && (
 					<motion.div

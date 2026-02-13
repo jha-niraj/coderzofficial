@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, SkillsTab,
-    ProjectsTab, WorkExperienceTab, EducationTab, AboutTab, ShareProfileModal,
+    ProjectsTab, WorkExperienceTab, EducationTab, ShareProfileModal,
     type ProfileTab
 } from "@/components/profile";
 import { trackProfileView } from "@/actions/(main)/user/profile.action";
@@ -91,7 +91,13 @@ export function PublicProfileClient({
 
         switch (activeTab) {
             case "overview":
-                return <OverviewTab {...tabContentProps} stats={stats} />;
+                return (
+                    <OverviewTab
+                        {...tabContentProps}
+                        stats={stats}
+                        onEditProfile={isOwnProfile ? handleEditProfile : undefined}
+                    />
+                );
             case "projects":
                 return (
                     <ProjectsTab
@@ -124,10 +130,14 @@ export function PublicProfileClient({
                 );
             case "education":
                 return <EducationTab {...tabContentProps} />;
-            case "about":
-                return <AboutTab {...tabContentProps} />;
             default:
-                return <OverviewTab {...tabContentProps} stats={stats} />;
+                return (
+                    <OverviewTab
+                        {...tabContentProps}
+                        stats={stats}
+                        onEditProfile={isOwnProfile ? handleEditProfile : undefined}
+                    />
+                );
         }
     };
 

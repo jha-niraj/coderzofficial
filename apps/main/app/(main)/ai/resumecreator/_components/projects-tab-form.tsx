@@ -128,7 +128,6 @@ export function ProjectsTabForm({
     onAdd,
     onUpdate,
     onDelete,
-    onSuccess,
 }: {
     projects: Project[]
     onAdd: (data: {
@@ -141,7 +140,7 @@ export function ProjectsTabForm({
         endDate?: Date
         description?: string
         bulletPoints?: string[]
-    }) => Promise<{ success: boolean; message?: string }>
+    }) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onUpdate: (id: string, data: Partial<{
         projectName: string
         projectType: string
@@ -156,7 +155,9 @@ export function ProjectsTabForm({
         media: ProjectMedia[]
     }>) => Promise<{ success: boolean; message?: string }>
     onDelete: (id: string) => Promise<{ success: boolean; message?: string }>
-    onSuccess: () => void | Promise<void>
+    onAddSuccess?: (proj: Project) => void
+    onUpdateSuccess?: (proj: Project) => void
+    onDeleteSuccess?: (id: string) => void
 }) {
     const [localProjects, setLocalProjects] = useState(projects)
 
@@ -184,10 +185,24 @@ export function ProjectsTabForm({
             technologies: tempProj.technologies,
             startDate: tempProj.startDate,
         })
-        if (res.success) {
-            toast.success("Project added")
-            await onSuccess()
-        } else {
+        if (res.success && res.data && typeof res.data === "object" && "id" in res.data) {
+            const raw = res.data as { id: string; projectName: string; projectType: string; status: string; visibility: string; technologies: string[]; startDate: Date; endDate?: Date | null; bulletPoints?: string[]; projectLinks?: { linkType: string; url: string; description?: string | null }[]; projectMedia?: { mediaUrl: string; mediaType: string; caption?: string | null }[] }
+            const realProj: Project = {
+                id: raw.id,
+                projectName: raw.projectName,
+                projectType: raw.projectType,
+                status: raw.status,
+                visibility: raw.visibility,
+                technologies: raw.technologies ?? [],
+                startDate: new Date(raw.startDate),
+                endDate: raw.endDate ? new Date(raw.endDate) : undefined,
+                bulletPoints: raw.bulletPoints,
+                projectLinks: raw.projectLinks?.map((l) => ({ linkType: l.linkType, url: l.url, description: l.description ?? null })),
+                projectMedia: raw.projectMedia?.map((m) => ({ mediaUrl: m.mediaUrl, mediaType: m.mediaType, caption: m.caption ?? null })),
+            }
+            setLocalProjects((prev) => prev.map((p) => (p.id === tempId ? realProj : p)))
+            onAddSuccess?.(realProj)
+        } else if (!res.success) {
             setLocalProjects((prev) => prev.filter((p) => p.id !== tempId))
             toast.error(res.message || "Failed to add")
         }
@@ -200,8 +215,8 @@ export function ProjectsTabForm({
         }
         const res = await onDelete(id)
         if (res.success) {
-            toast.success("Project removed")
-            await onSuccess()
+            setLocalProjects((prev) => prev.filter((p) => p.id !== id))
+            onDeleteSuccess?.(id)
         } else {
             toast.error(res.message || "Failed to remove")
         }
@@ -235,7 +250,7 @@ export function ProjectsTabForm({
                                     descStr={descStr}
                                     onUpdate={onUpdate}
                                     onDelete={() => handleDelete(proj.id)}
-                                    onSuccess={onSuccess}
+                                    onUpdateSuccess={onUpdateSuccess}
                                 />
                             ))
                         }
@@ -251,13 +266,13 @@ function ProjectCard({
     descStr,
     onUpdate,
     onDelete,
-    onSuccess,
+    onUpdateSuccess,
 }: {
     project: Project
     descStr: (p: Project) => string
-    onUpdate: (id: string, data: Parameters<typeof ProjectsTabForm>[0]["onUpdate"] extends (id: string, data: infer D) => unknown ? D : never) => Promise<{ success: boolean; message?: string }>
+    onUpdate: (id: string, data: Parameters<typeof ProjectsTabForm>[0]["onUpdate"] extends (id: string, data: infer D) => unknown ? D : never) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onDelete: () => void
-    onSuccess: () => void | Promise<void>
+    onUpdateSuccess?: (proj: Project) => void
 }) {
     const [saving, setSaving] = useState(false)
     const [startDateOpen, setStartDateOpen] = useState(false)
@@ -292,10 +307,23 @@ function ProjectCard({
             media: local.media.filter((m) => m.mediaUrl.trim()),
         } as Parameters<typeof onUpdate>[1])
         setSaving(false)
-        if (res.success) {
-            toast.success("Saved")
-            await onSuccess()
-        } else {
+        if (res.success && res.data && typeof res.data === "object" && "id" in res.data) {
+            const raw = res.data as { id: string; projectName: string; projectType: string; status: string; visibility: string; technologies: string[]; startDate: Date; endDate?: Date | null; bulletPoints?: string[]; projectLinks?: { linkType: string; url: string; description?: string | null }[]; projectMedia?: { mediaUrl: string; mediaType: string; caption?: string | null }[] }
+            const realProj: Project = {
+                id: raw.id,
+                projectName: raw.projectName,
+                projectType: raw.projectType,
+                status: raw.status,
+                visibility: raw.visibility,
+                technologies: raw.technologies ?? [],
+                startDate: new Date(raw.startDate),
+                endDate: raw.endDate ? new Date(raw.endDate) : undefined,
+                bulletPoints: raw.bulletPoints,
+                projectLinks: raw.projectLinks?.map((l) => ({ linkType: l.linkType, url: l.url, description: l.description ?? null })),
+                projectMedia: raw.projectMedia?.map((m) => ({ mediaUrl: m.mediaUrl, mediaType: m.mediaType, caption: m.caption ?? null })),
+            }
+            onUpdateSuccess?.(realProj)
+        } else if (!res.success) {
             toast.error(res.message || "Failed to save")
         }
     }

@@ -43,12 +43,38 @@ const ROLE_OPTIONS = [
     "Other",
 ]
 
+function mapToExperience(raw: {
+        id: string
+        companyName: string
+        roleTitle: string
+        companyWebsite?: string | null
+        description?: string | null
+        bulletPoints?: string[]
+        startDate: Date
+        endDate?: Date | null
+        isCurrentlyWorking: boolean
+    }): Experience {
+    return {
+        id: raw.id,
+        companyName: raw.companyName,
+        roleTitle: raw.roleTitle,
+        companyWebsite: raw.companyWebsite ?? undefined,
+        description: raw.description ?? undefined,
+        bulletPoints: raw.bulletPoints,
+        startDate: new Date(raw.startDate),
+        endDate: raw.endDate ? new Date(raw.endDate) : null,
+        isCurrentlyWorking: raw.isCurrentlyWorking,
+    }
+}
+
 export function ExperienceTabForm({
     experiences,
     onAdd,
     onUpdate,
     onDelete,
-    onSuccess,
+    onAddSuccess,
+    onUpdateSuccess,
+    onDeleteSuccess,
 }: {
     experiences: Experience[]
     onAdd: (data: {
@@ -60,7 +86,7 @@ export function ExperienceTabForm({
         startDate: Date
         endDate?: Date
         isCurrentlyWorking: boolean
-    }) => Promise<{ success: boolean; message?: string }>
+    }) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onUpdate: (id: string, data: Partial<{
         companyName: string
         roleTitle: string
@@ -70,9 +96,11 @@ export function ExperienceTabForm({
         startDate: Date
         endDate: Date
         isCurrentlyWorking: boolean
-    }>) => Promise<{ success: boolean; message?: string }>
+    }>) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onDelete: (id: string) => Promise<{ success: boolean; message?: string }>
-    onSuccess: () => void | Promise<void>
+    onAddSuccess?: (exp: Experience) => void
+    onUpdateSuccess?: (exp: Experience) => void
+    onDeleteSuccess?: (id: string) => void
 }) {
     const [saving, setSaving] = useState<string | null>(null)
     const [localExperiences, setLocalExperiences] = useState(experiences)
@@ -97,10 +125,11 @@ export function ExperienceTabForm({
             startDate: tempExp.startDate,
             isCurrentlyWorking: tempExp.isCurrentlyWorking,
         })
-        if (res.success) {
-            toast.success("Experience added")
-            await onSuccess()
-        } else {
+        if (res.success && res.data && typeof res.data === "object" && "id" in res.data) {
+            const realExp = mapToExperience(res.data as Parameters<typeof mapToExperience>[0])
+            setLocalExperiences((prev) => prev.map((e) => (e.id === tempId ? realExp : e)))
+            onAddSuccess?.(realExp)
+        } else if (!res.success) {
             setLocalExperiences((prev) => prev.filter((e) => e.id !== tempId))
             toast.error(res.message || "Failed to add")
         }
@@ -113,8 +142,8 @@ export function ExperienceTabForm({
         }
         const res = await onDelete(id)
         if (res.success) {
-            toast.success("Experience removed")
-            await onSuccess()
+            setLocalExperiences((prev) => prev.filter((e) => e.id !== id))
+            onDeleteSuccess?.(id)
         } else {
             toast.error(res.message || "Failed to remove")
         }
@@ -141,10 +170,9 @@ export function ExperienceTabForm({
         }
         const res = await onUpdate(exp.id, toSend as Parameters<typeof onUpdate>[1])
         setSaving(null)
-        if (res.success) {
-            toast.success("Saved")
-            await onSuccess()
-        } else {
+        if (res.success && res.data && typeof res.data === "object" && "id" in res.data) {
+            onUpdateSuccess?.(mapToExperience(res.data as Parameters<typeof mapToExperience>[0]))
+        } else if (!res.success) {
             toast.error(res.message || "Failed to save")
         }
     }

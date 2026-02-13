@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
@@ -29,13 +29,17 @@ export function SocialsTabForm({
     socialLinks,
     onAdd,
     onDelete,
-    onSuccess,
+    onAddSuccess,
+    onDeleteSuccess,
 }: {
     socialLinks: SocialLink[]
-    onAdd: (data: { platform: string; url: string }) => Promise<{ success: boolean; message?: string }>
+    onAdd: (data: { platform: string; url: string }) => Promise<{ success: boolean; message?: string; data?: unknown }>
     onDelete: (id: string) => Promise<{ success: boolean; message?: string }>
-    onSuccess: () => void | Promise<void>
+    onAddSuccess?: (link: SocialLink) => void
+    onDeleteSuccess?: (id: string) => void
 }) {
+    const [localLinks, setLocalLinks] = useState(socialLinks)
+    useEffect(() => { setLocalLinks(socialLinks) }, [socialLinks])
     const [adding, setAdding] = useState(false)
     const [newPlatform, setNewPlatform] = useState(PLATFORMS[0]?.value ?? "GITHUB")
     const [newUrl, setNewUrl] = useState("")
@@ -46,16 +50,15 @@ export function SocialsTabForm({
             return
         }
         setAdding(true)
-        const res = await onAdd({
-            platform: newPlatform,
-            url: newUrl.trim(),
-        })
+        const res = await onAdd({ platform: newPlatform, url: newUrl.trim() })
         setAdding(false)
-        if (res.success) {
-            toast.success("Social link added")
+        if (res.success && res.data && typeof res.data === "object" && "id" in res.data) {
+            const raw = res.data as { id: string; platform: string; url: string }
+            const newLink: SocialLink = { id: raw.id, platform: raw.platform, url: raw.url }
+            setLocalLinks((prev) => [...prev, newLink])
             setNewUrl("")
-            await onSuccess()
-        } else {
+            onAddSuccess?.(newLink)
+        } else if (!res.success) {
             toast.error(res.message || "Failed to add")
         }
     }
@@ -63,14 +66,14 @@ export function SocialsTabForm({
     const handleDelete = async (id: string) => {
         const res = await onDelete(id)
         if (res.success) {
-            toast.success("Link removed")
-            await onSuccess()
+            setLocalLinks((prev) => prev.filter((l) => l.id !== id))
+            onDeleteSuccess?.(id)
         } else {
             toast.error(res.message || "Failed to remove")
         }
     }
 
-    const usedPlatforms = socialLinks.map((l) => l.platform)
+    const usedPlatforms = localLinks.map((l) => l.platform)
 
     return (
         <div className="space-y-6">
@@ -144,12 +147,12 @@ export function SocialsTabForm({
             </div>
 
             {
-                socialLinks.length > 0 && (
+                localLinks.length > 0 && (
                     <div className="space-y-3">
                         <Label>Your links</Label>
                         <div className="space-y-2">
                             {
-                                socialLinks.map((link) => (
+                                localLinks.map((link) => (
                                     <div
                                         key={link.id}
                                         className="flex items-center justify-between gap-4 rounded-lg border p-4"

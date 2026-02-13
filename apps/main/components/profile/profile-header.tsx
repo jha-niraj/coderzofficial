@@ -30,7 +30,7 @@ interface ProfileHeaderProps {
 			coverGradient: string | null;
 			tagline: string | null;
 			theme: string;
-			profileViews: number;
+			profileViews?: number;
 			completionScore: number;
 		} | null;
 	};
@@ -72,7 +72,9 @@ export function ProfileHeader({
 		setTimeout(() => setCopied(false), 2000);
 	};
 
+	const profileViews = user.userProfile?.profileViews ?? 0;
 	const statItems = [
+		{ label: "Profile Views", value: profileViews },
 		{ label: "Projects", value: stats.projectsCount },
 		{ label: "Skills", value: stats.skillsCount },
 		{ label: "Followers", value: stats.followersCount },
@@ -86,14 +88,14 @@ export function ProfileHeader({
 	return (
 		<div className="relative max-w-7xl mx-auto">
 			<div className="relative px-4 md:px-8 pt-4 pb-4">
-				<div className="relative">
+				<div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
 					<motion.div
 						initial={{ scale: 0.8, opacity: 0 }}
 						animate={{ scale: 1, opacity: 1 }}
 						transition={{ duration: 0.3 }}
-						className="relative"
+						className="relative flex-shrink-0"
 					>
-						<div className="relative w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-background overflow-hidden bg-background shadow-xl">
+						<div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-background shadow-xl">
 							<Image
 								src={
 									user.image ||
@@ -120,38 +122,37 @@ export function ProfileHeader({
 							)
 						}
 					</motion.div>
-				</div>
-				<div className="pt-12 md:pt-14 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-					<div className="flex-1 min-w-0">
-						<div className="flex items-center gap-2 flex-wrap">
-							<h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">
-								{user.name || "Anonymous User"}
-							</h1>
+					<div className="flex-1 min-w-0 pt-0 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+						<div className="flex-1 min-w-0">
+							<div className="flex items-center gap-2 flex-wrap">
+								<h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">
+									{user.name || "Anonymous User"}
+								</h1>
+								{
+									user.userProfile?.completionScore === 100 && (
+										<Badge
+											variant="secondary"
+											className="bg-green-500/10 text-green-600 border-green-500/20"
+										>
+											<Check className="w-3 h-3 mr-1" />
+											Verified
+										</Badge>
+									)
+								}
+							</div>
 							{
-								user.userProfile?.completionScore === 100 && (
-									<Badge
-										variant="secondary"
-										className="bg-green-500/10 text-green-600 border-green-500/20"
-									>
-										<Check className="w-3 h-3 mr-1" />
-										Verified
-									</Badge>
+								user.username && (
+									<p className="text-muted-foreground">@{user.username}</p>
 								)
 							}
-						</div>
-						{
-							user.username && (
-								<p className="text-muted-foreground">@{user.username}</p>
-							)
-						}
-						{
-							user.userProfile?.tagline && (
-								<p className="text-sm md:text-base text-muted-foreground mt-1 max-w-xl">
-									{user.userProfile.tagline}
-								</p>
-							)
-						}
-						<div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
+							{
+								user.userProfile?.tagline && (
+									<p className="text-sm md:text-base text-muted-foreground mt-1 max-w-xl">
+										{user.userProfile.tagline}
+									</p>
+								)
+							}
+							<div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
 							{
 								user.occupation && (
 									<span className="flex items-center gap-1.5">
@@ -196,9 +197,9 @@ export function ProfileHeader({
 									})
 								}
 							</span>
+							</div>
 						</div>
-					</div>
-					<div className="flex items-center gap-2 flex-shrink-0">
+						<div className="flex items-center gap-2 flex-shrink-0">
 						{
 							isOwnProfile ? (
 								<>
@@ -252,6 +253,7 @@ export function ProfileHeader({
 								</>
 							)
 						}
+					</div>
 					</div>
 				</div>
 				<div className="mt-6 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-muted/50 border-y overflow-x-auto">

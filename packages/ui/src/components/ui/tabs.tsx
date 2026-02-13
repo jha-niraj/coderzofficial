@@ -39,16 +39,18 @@ TabsList.displayName = TabsPrimitive.List.displayName
  * - Equal-width tabs
  * - Taller height
  * - Clear active / hover states
+ * - Handles icon + text: centers content, supports icon-only and text-only
  */
 const TabsTrigger = React.forwardRef<
 	React.ElementRef<typeof TabsPrimitive.Trigger>,
 	React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
 	<TabsPrimitive.Trigger
 		ref={ref}
 		className={cn(
 			`
       flex-1
+      flex items-center justify-center gap-1.5
       py-3 rounded-2xl
       text-center text-sm font-semibold
       cursor-pointer
@@ -69,11 +71,14 @@ const TabsTrigger = React.forwardRef<
 
       disabled:pointer-events-none
       disabled:opacity-50
+      [&>svg]:shrink-0
       `,
 			className
 		)}
 		{...props}
-	/>
+	>
+		{children}
+	</TabsPrimitive.Trigger>
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 

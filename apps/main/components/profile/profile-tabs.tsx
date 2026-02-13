@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@repo/ui/lib/utils";
 import {
-	LayoutGrid, FolderKanban, Code2, Briefcase, GraduationCap, User
+	LayoutGrid, FolderKanban, Code2, Briefcase, GraduationCap
 } from "lucide-react";
 
 export type ProfileTab =
@@ -12,8 +12,7 @@ export type ProfileTab =
 	| "projects"
 	| "skills"
 	| "work_experience"
-	| "education"
-	| "about";
+	| "education";
 
 interface ProfileTabsProps {
 	activeTab: ProfileTab;
@@ -56,12 +55,6 @@ const tabs: {
 			label: "Education",
 			icon: GraduationCap,
 			description: "Education and qualifications",
-		},
-		{
-			id: "about",
-			label: "About",
-			icon: User,
-			description: "Personal information and bio",
 		},
 	];
 

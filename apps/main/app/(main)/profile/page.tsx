@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, OverviewTab, ProjectsTab,
-    SkillsTab, WorkExperienceTab, EducationTab, AboutTab,
+    SkillsTab, WorkExperienceTab, EducationTab,
     ShareProfileModal, EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
@@ -185,6 +185,24 @@ export default function ProfilePage() {
         }
     }, [fetchUser]);
 
+    // Silent refresh - no loading spinner, for post-edit profile updates (tagline, theme)
+    const refreshProfileData = useCallback(async () => {
+        try {
+            const profileResult = await getOwnProfile();
+            if (profileResult.success && profileResult.user) {
+                setProfileData(profileResult.user);
+                if (profileResult.user.id) {
+                    const statsResult = await getUserProfileStats(profileResult.user.id);
+                    if (statsResult.success && statsResult.stats) {
+                        setStats(statsResult.stats);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error refreshing profile:", err);
+        }
+    }, []);
+
     useEffect(() => {
         loadProfile();
     }, [loadProfile]);
@@ -223,8 +241,8 @@ export default function ProfilePage() {
         };
     }, [profileData, storeUser]);
 
-    // Loading state
-    if (isLoading || storeLoading) {
+    // Loading state - only full-page loading on initial load (no profileData yet)
+    if ((isLoading || storeLoading) && !profileData) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <motion.div
@@ -327,6 +345,7 @@ export default function ProfilePage() {
                     <OverviewTab
                         {...commonProps}
                         stats={profileStats}
+                        onEditProfile={() => setEditModalOpen(true)}
                     />
                 );
             case "projects":
@@ -357,13 +376,6 @@ export default function ProfilePage() {
                 );
             case "education":
                 return <EducationTab {...commonProps} />;
-            case "about":
-                return (
-                    <AboutTab
-                        {...commonProps}
-                        onEditProfile={() => setEditModalOpen(true)}
-                    />
-                );
             default:
                 return null;
         }
@@ -426,7 +438,7 @@ export default function ProfilePage() {
                 isOpen={editModalOpen}
                 onClose={() => setEditModalOpen(false)}
                 user={displayProfile ?? profileData}
-                onUpdate={() => {}}
+                onUpdate={refreshProfileData}
             />
         </div>
     );

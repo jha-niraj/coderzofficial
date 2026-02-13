@@ -28,6 +28,7 @@ import { SocialsTabForm } from "./socials-tab-form"
 import { EducationTabForm } from "./education-tab-form"
 import { SkillsTabForm } from "./skills-tab-form"
 import { useResumeCreatorStore } from "@/app/store/resumeCreatorStore"
+import type { ResumeExperience, ResumePortfolioProject, ResumeEducation, ResumeSocialLink } from "@/types/resume"
 import { normalizeToResumeProfile } from "@/types/resume"
 
 type TabId = "basic" | "experience" | "projects" | "socials" | "education" | "skills"
@@ -45,6 +46,16 @@ export function ResumeCreatorTabs() {
         loadFromProfile,
         setLoading,
         setError,
+        mergeExperience,
+        removeExperience,
+        mergeProject,
+        removeProject,
+        mergeEducation,
+        removeEducation,
+        mergeSocialLink,
+        removeSocialLink,
+        mergeSkills,
+        removeSkill,
     } = useResumeCreatorStore()
 
     const loadProfile = async (showLoading = false) => {
@@ -209,7 +220,9 @@ export function ResumeCreatorTabs() {
                                     onAdd={addWorkExperience}
                                     onUpdate={updateWorkExperience}
                                     onDelete={deleteWorkExperience}
-                                    onSuccess={handleFormSuccess}
+                                    onAddSuccess={(exp) => mergeExperience(exp as ResumeExperience)}
+                                    onUpdateSuccess={(exp) => mergeExperience(exp as ResumeExperience)}
+                                    onDeleteSuccess={removeExperience}
                                 />
                             </TabsContent>
                             <TabsContent value="projects" className="mt-6">
@@ -218,7 +231,9 @@ export function ResumeCreatorTabs() {
                                     onAdd={addPortfolioProject}
                                     onUpdate={updatePortfolioProject}
                                     onDelete={deletePortfolioProject}
-                                    onSuccess={handleFormSuccess}
+                                    onAddSuccess={(p) => mergeProject(p as ResumePortfolioProject)}
+                                    onUpdateSuccess={(p) => mergeProject(p as ResumePortfolioProject)}
+                                    onDeleteSuccess={removeProject}
                                 />
                             </TabsContent>
                             <TabsContent value="socials" className="mt-6">
@@ -226,7 +241,8 @@ export function ResumeCreatorTabs() {
                                     socialLinks={profile.socialLinks}
                                     onAdd={addSocialLink}
                                     onDelete={deleteSocialLink}
-                                    onSuccess={handleFormSuccess}
+                                    onAddSuccess={(l) => mergeSocialLink(l as ResumeSocialLink)}
+                                    onDeleteSuccess={removeSocialLink}
                                 />
                             </TabsContent>
                             <TabsContent value="education" className="mt-6">
@@ -235,29 +251,27 @@ export function ResumeCreatorTabs() {
                                     onAdd={addUserEducation}
                                     onUpdate={updateUserEducation}
                                     onDelete={deleteUserEducation}
-                                    onSuccess={handleFormSuccess}
+                                    onAddSuccess={(e) => mergeEducation(e as ResumeEducation)}
+                                    onUpdateSuccess={(e) => mergeEducation(e as ResumeEducation)}
+                                    onDeleteSuccess={removeEducation}
                                 />
                             </TabsContent>
                             <TabsContent value="skills" className="mt-6">
                                 <SkillsTabForm
                                     skills={profile.skills}
-                                    onUpdate={updateUserSkills}
+                                    onUpdate={async (skills) => {
+                                        const updated = await updateUserSkills(skills)
+                                        mergeSkills(updated as Parameters<typeof mergeSkills>[0])
+                                        return updated
+                                    }}
                                     onDeleteSkill={async (id) => {
                                         await deleteSkill(id)
-                                        await handleFormSuccess()
+                                        removeSkill(id)
                                     }}
-                                    onSuccess={handleFormSuccess}
                                 />
                             </TabsContent>
                         </Tabs>
                     </div>
-
-                    <EditProfileModal
-                        isOpen={editProfileOpen}
-                        onClose={() => setEditProfileOpen(false)}
-                        user={editProfileUser}
-                        onUpdate={() => loadProfile(false)}
-                    />
 
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
@@ -272,6 +286,12 @@ export function ResumeCreatorTabs() {
                         </div>
                     </motion.div>
                 </div>
+                <EditProfileModal
+                    isOpen={editProfileOpen}
+                    onClose={() => setEditProfileOpen(false)}
+                    user={editProfileUser}
+                    onUpdate={() => loadProfile(false)}
+                />
             </div>
         </div>
     )

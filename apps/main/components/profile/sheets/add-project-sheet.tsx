@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle
 } from "@repo/ui/components/ui/sheet"
@@ -116,13 +117,24 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col w-full">
-                <div className="w-full max-w-7xl mx-auto flex flex-col h-full">
+            <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col w-full max-w-none">
+                <div className="w-full max-w-5xl mx-auto flex flex-col h-full">
                     <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                         <SheetTitle>Add Project</SheetTitle>
+                        <p className="text-sm text-muted-foreground mt-1 font-normal">
+                            You can also add projects in the{" "}
+                            <Link
+                                href="/ai/resumecreator"
+                                className="text-primary hover:underline"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Resume Creator
+                            </Link>
+                            , where you can polish project descriptions using AI.
+                        </p>
                     </SheetHeader>
-                    <div className="flex-1 overflow-y-auto px-6 py-4">
-                        <div className="space-y-6 max-w-2xl">
+                    <div className="flex-1 overflow-y-auto px-6 py-4 w-full">
+                        <div className="space-y-6 w-full max-w-3xl">
                             <div>
                                 <Label>Project Name</Label>
                                 <Input
