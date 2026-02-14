@@ -1,7 +1,9 @@
-import PathfinderComingSoon from './_components/pathfinder-coming-soon'
+import { PathfinderDashboard } from './_components/pathfinder-dashboard'
+import { getUserPathfinderGoals } from '@/actions/(main)/pathfinder'
 
 export const dynamic = 'force-dynamic'
 
-export default function PathfinderPage() {
-    return <PathfinderComingSoon />
+export default async function PathfinderPage() {
+    const { goals = [], groups = [] } = await getUserPathfinderGoals()
+    return <PathfinderDashboard initialGoals={goals} initialGroups={groups} />
 }

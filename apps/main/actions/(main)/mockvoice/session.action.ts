@@ -8,6 +8,8 @@ interface CreateSessionInput {
     mockId: string
     mockType: 'predefined' | 'custom'
     includesResume?: boolean
+    /** When set, charge this amount instead of mock.creditsRequired (e.g. half for retake) */
+    retakeCredits?: number
 }
 
 interface SessionVariables {
@@ -65,12 +67,14 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
             return { success: false, error: 'Mock interview not found' }
         }
 
+        const creditsToCharge = input.retakeCredits ?? mock.creditsRequired
+
         // Check if user has enough credits
-        if (user.credits < mock.creditsRequired) {
+        if (user.credits < creditsToCharge) {
             return {
                 success: false,
                 error: 'Insufficient credits',
-                required: mock.creditsRequired,
+                required: creditsToCharge,
                 available: user.credits
             }
         }
@@ -100,7 +104,7 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
                     status: 'SCHEDULED',
                     agentId: process.env.NEXT_PUBLIC_ELEVENLABS_MOCKVOICE!,
                     variables: variables as any,
-                    creditsUsed: mock.creditsRequired,
+                    creditsUsed: creditsToCharge,
                     scheduledFor: new Date()
                 },
                 select: {
@@ -115,7 +119,7 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
                 where: { id: userId },
                 data: {
                     credits: {
-                        decrement: mock.creditsRequired
+                        decrement: creditsToCharge
                     }
                 }
             })
@@ -124,9 +128,9 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
             await tx.creditTransaction.create({
                 data: {
                     userId: userId,
-                    amount: -mock.creditsRequired,
+                    amount: -creditsToCharge,
                     type: 'SPEND',
-                    description: `Mock Voice Interview: ${mock.title}`,
+                    description: input.retakeCredits ? `Mock Voice Retake: ${mock.title}` : `Mock Voice Interview: ${mock.title}`,
                     currency: "INR"
                 }
             })

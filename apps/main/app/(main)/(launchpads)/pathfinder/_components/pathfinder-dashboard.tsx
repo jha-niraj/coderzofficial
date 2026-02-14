@@ -12,7 +12,9 @@ import {
     Play, PauseCircle, CheckCircle, XCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { PathfinderStatus, PathfinderCategory } from '@repo/prisma/client'
+import { 
+    PathfinderStatus, PathfinderCategory 
+} from '@repo/prisma/client'
 import { CreateGoalSheet } from './create-goal-sheet'
 import { CreateGroupSheet } from './create-group-sheet'
 import { AssignGoalSheet } from './assign-goal-sheet'
@@ -409,7 +411,8 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
         if (newGoal) {
             addGoal(newGoal)
         }
-        window.location.href = `/pathfinder/${goalId}`
+        const slug = (newGoal as { slug?: string })?.slug ?? goalId
+        window.location.href = `/pathfinder/${slug}`
     }
 
     const handleGroupCreated = (newGroup: Group) => {
@@ -430,7 +433,7 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
     return (
         <div className="h-screen flex flex-col bg-neutral-50/50 dark:bg-neutral-950">
             <div className="shrink-0 px-4 py-3 border-b border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900/80 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="w-full mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800">
                             <Target className="w-5 h-5 text-neutral-700 dark:text-neutral-300" />
@@ -448,7 +451,7 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
                 </div>
             </div>
             <div className="flex-1 overflow-hidden">
-                <div className="h-full max-w-7xl mx-auto flex">
+                <div className="h-full w-full mx-auto flex">
                     <div className="w-full lg:w-[400px] xl:w-[440px] border-r border-neutral-200/60 dark:border-neutral-800/60 flex flex-col bg-white dark:bg-neutral-900/30">
                         <ScrollArea className="flex-1">
                             <div className="p-4">

@@ -1,18 +1,21 @@
-import { getPathfinderGoal, getVerificationStatus } from '@/actions/(main)/pathfinder'
+import { 
+    getPathfinderGoal, getVerificationStatus 
+} from '@/actions/(main)/pathfinder'
 import { VerificationContent } from './_components/verification-content'
 import { notFound, redirect } from 'next/navigation'
+import type { PathfinderVerification } from '@repo/prisma/client'
 
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-    params: Promise<{ goalId: string }>
+    params: Promise<{ slug: string }>
 }
 
 export default async function VerificationPage({ params }: PageProps) {
-    const { goalId } = await params
+    const { slug } = await params
     const [{ goal }, { verification }] = await Promise.all([
-        getPathfinderGoal(goalId),
-        getVerificationStatus(goalId)
+        getPathfinderGoal(slug),
+        getVerificationStatus(slug)
     ])
 
     if (!goal) {
@@ -21,8 +24,13 @@ export default async function VerificationPage({ params }: PageProps) {
 
     // If not in verification status, redirect back
     if (goal.status !== 'VERIFICATION' && goal.status !== 'COMPLETED') {
-        redirect(`/pathfinder/${goalId}`)
+        redirect(`/pathfinder/${slug}`)
     }
 
-    return <VerificationContent goal={goal} verification={verification} />
+    return (
+        <VerificationContent
+            goal={goal}
+            verification={verification as PathfinderVerification | null}
+        />
+    )
 }

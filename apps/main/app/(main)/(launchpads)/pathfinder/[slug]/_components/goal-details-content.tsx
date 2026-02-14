@@ -54,6 +54,7 @@ interface DailySession {
 
 interface Goal {
     id: string
+    slug: string
     title: string
     category: PathfinderCategory
     level: PathfinderLevel
@@ -76,8 +77,8 @@ interface Goal {
     studioId: string | null
     mockInterviewId: string | null
     groupId: string | null
-    group: { name: string; emoji: string | null; color: string | null } | null
-    dailySessions: DailySession[]
+    group?: { name: string; emoji: string | null; color: string | null } | null
+    dailySessions?: DailySession[]
 }
 
 const categoryEmoji: Record<PathfinderCategory, string> = {
@@ -104,12 +105,12 @@ function GoalHeader({ goal }: { goal: Goal }) {
 
     const handleStartVerification = async () => {
         setLoading(true)
-        const result = await startVerification(goal.id)
+        const result = await startVerification(goal.id) // API uses id
         setLoading(false)
 
         if (result.success) {
             setVerifyDialogOpen(false)
-            router.push(`/pathfinder/${goal.id}/verify`)
+            router.push(`/pathfinder/${goal.slug}/verify`)
         } else {
             toast.error(result.error || 'Failed to start verification')
         }
@@ -163,7 +164,7 @@ function GoalHeader({ goal }: { goal: Goal }) {
                                 </Button>
                             </Link>
                         )}
-                        <Link href={`/pathfinder/${goal.id}/practice`}>
+                        <Link href={`/pathfinder/${goal.slug}/practice`}>
                             <Button variant="outline" size="sm">
                                 <BookOpen className="w-4 h-4 mr-2" />
                                 Daily Practice
@@ -180,7 +181,7 @@ function GoalHeader({ goal }: { goal: Goal }) {
                             </Button>
                         )}
                         {goal.status === 'VERIFICATION' && (
-                            <Link href={`/pathfinder/${goal.id}/verify`}>
+                            <Link href={`/pathfinder/${goal.slug}/verify`}>
                                 <Button size="sm" className="bg-gradient-to-r from-violet-600 to-purple-600">
                                     <Play className="w-4 h-4 mr-2" />
                                     Continue Verification
@@ -359,7 +360,7 @@ export function GoalDetailsContent({ goal }: { goal: Goal }) {
 
                     {/* Quick Actions */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        <Link href={`/pathfinder/${goal.id}/practice`}>
+                        <Link href={`/pathfinder/${goal.slug}/practice`}>
                             <motion.div
                                 whileHover={{ scale: 1.01 }}
                                 className="p-6 rounded-xl border-2 border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30 cursor-pointer"

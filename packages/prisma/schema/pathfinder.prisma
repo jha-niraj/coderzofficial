@@ -214,12 +214,18 @@ model PathfinderSubGoal {
     aiQuizQuestions Json?           // Array of quiz questions
     aiCodingProblem Json?           // Optional coding problem
     hasCoding       Boolean         @default(false)
+
+    // AI-Generated resources (videos, docs, content, code examples, flashcards)
+    aiResources     Json?           // { videos, documentations, content, codeExamples, dosDonts, flashcards }
     
     // Progress tracking
     quizCompleted   Boolean         @default(false)
     quizScore       Int?
     codingCompleted Boolean         @default(false)
     codingPassed    Boolean         @default(false)
+
+    // Mock interview for practice (created from Mock Practice tab)
+    practiceMock   MockInterviewVoice? @relation("PathfinderSubGoalMock")
     
     // Timestamps
     createdAt       DateTime        @default(now())

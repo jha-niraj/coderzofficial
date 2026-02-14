@@ -8,7 +8,7 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import {
     Brain, Sparkles, TrendingUp, Trophy, Users, Zap, ArrowRight, Plus, Target,
-    Clock, Star, Mic, Award, Timer, ChevronRight, Shield
+    Clock, Star, Mic, Award, Timer, ChevronRight, Shield, Calendar
 } from 'lucide-react'
 import { useUserStore } from '@/app/store/useUserStore'
 import { MockInterviewCard } from '../_components/mock-interview-card'
@@ -247,10 +247,16 @@ export default function VoiceMockInterviewPage() {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.5 }}
                         >
-                            <Link href="/mock/voice/publicmocks">
+                            <Link href="/mock/voice/allmocks">
                                 <Button variant="ghost" size="sm" className="text-neutral-600 dark:text-neutral-400">
                                     <Users className="w-4 h-4 mr-2" />
-                                    Public Mocks
+                                    All Mocks
+                                </Button>
+                            </Link>
+                            <Link href="/mock/voice/mysessions">
+                                <Button variant="ghost" size="sm" className="text-neutral-600 dark:text-neutral-400">
+                                    <Calendar className="w-4 h-4 mr-2" />
+                                    My Sessions
                                 </Button>
                             </Link>
                             <Link href="/mock/voice/mymocks">
@@ -304,7 +310,7 @@ export default function VoiceMockInterviewPage() {
                                         Top-rated mocks created by the community (4+ stars)
                                     </p>
                                 </div>
-                                <Link href="/mock/voice/publicmocks">
+                                <Link href="/mock/voice/allmocks">
                                     <Button variant="outline" className="border-neutral-300 dark:border-neutral-700">
                                         View All
                                         <ArrowRight className="w-4 h-4 ml-2" />

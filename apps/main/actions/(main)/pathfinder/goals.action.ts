@@ -374,18 +374,20 @@ export async function getUserPathfinderGoals() {
     }
 }
 
-export async function getPathfinderGoal(goalId: string) {
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export async function getPathfinderGoal(slugOrId: string) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', goal: null }
         }
 
+        const isUuid = UUID_REGEX.test(slugOrId)
         const goal = await prisma.pathfinderGoal.findFirst({
-            where: {
-                id: goalId,
-                userId: session.user.id,
-            },
+            where: isUuid
+                ? { id: slugOrId, userId: session.user.id }
+                : { userId: session.user.id, slug: slugOrId },
             include: {
                 verification: true,
                 group: true,

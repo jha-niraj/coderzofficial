@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import { createCustomMockVoice } from '@/actions/(main)/mockvoice/voice.action'
+import { createMockVoiceSession } from '@/actions/(main)/mockvoice/session.action'
 import { MOCK_CATEGORIES, MOCK_LEVELS } from '../voice/_constants/mock-categories'
 import { MockCategory } from '@repo/prisma/client'
 import { useRouter } from 'next/navigation'
@@ -151,23 +152,43 @@ export function CreateMockSheet({ trigger: _trigger, userCredits = 0, onSuccess,
                 throw new Error(result.error || 'Failed to create mock')
             }
 
+            setProgressPercent(90)
+            const mockId = result.mockId!
+
+            // Create session and redirect to interview (deducts credits)
+            const sessionResult = await createMockVoiceSession({
+                mockId,
+                mockType: 'custom',
+                includesResume: formData.includeResume
+            })
+
             setProgressPercent(100)
-            setCreatedMockId(result.mockId!)
+            setCreatedMockId(mockId)
 
-            toast.success('Mock interview created!')
-
-            setTimeout(() => {
-                setOpen(false)
-                resetForm()
-
-                if (onSuccess && result.mockId) {
-                    onSuccess(result.mockId)
-                } else if (spaceId) {
-                    // When called from space, don't redirect
-                } else {
-                    router.push('/mock/voice/mymocks')
+            if (sessionResult.success && sessionResult.sessionId) {
+                toast.success('Mock interview created! Starting your interview...')
+                setTimeout(() => {
+                    setOpen(false)
+                    resetForm()
+                    if (onSuccess) onSuccess(mockId)
+                    if (!spaceId) {
+                        router.push(`/mock/voice/interview/${sessionResult.sessionId}`)
+                    }
+                }, 800)
+            } else {
+                toast.success('Mock interview created!')
+                if (sessionResult.error) {
+                    toast.info(sessionResult.error + ' You can start from My Mocks when ready.')
                 }
-            }, 1500)
+                setTimeout(() => {
+                    setOpen(false)
+                    resetForm()
+                    if (onSuccess) onSuccess(mockId)
+                    if (!spaceId) {
+                        router.push('/mock/voice/mymocks')
+                    }
+                }, 1500)
+            }
         } catch (error) {
             clearInterval(progressInterval)
             console.error('Error creating mock:', error)

@@ -324,7 +324,7 @@ function VerificationHeader({ goal, verification }: { goal: Goal; verification: 
 
     return (
         <div className="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-6 py-4">
-            <Link href={`/pathfinder/${goal.id}`} className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white mb-4">
+            <Link href={`/pathfinder/${(goal as { slug?: string }).slug ?? goal.id}`} className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white mb-4">
                 <ArrowLeft className="w-4 h-4" />
                 Back to Goal
             </Link>

@@ -1,0 +1,219 @@
+================================================================================
+PATHFINDER PRACTICE PAGE - SPECIFICATION & FLOWCHART
+================================================================================
+Document Version: 1.0
+Date: 2025
+Purpose: Specify improvements for Pathfinder Practice experience, Studio vs Practice
+         decision, and resource/learning flow for subgoals.
+
+================================================================================
+1. CURRENT STATE
+================================================================================
+
+1.1 URL Structure (UPDATED)
+--------------------------
+- Goals use slug in URLs: /pathfinder/[slug] (e.g. /pathfinder/learn-react)
+- Practice: /pathfinder/[slug]/practice
+- Verify: /pathfinder/[slug]/verify
+- All internal links updated to use slug instead of goalId
+
+1.2 Practice Page - Current Tabs
+--------------------------------
+- Quiz tab
+- Coding tab
+- (No resources/learning tab)
+
+1.3 Flow - Current
+------------------
+User creates goal (e.g. "Learn React in 30 days")
+  -> AI generates plan with subgoals, quiz questions, coding challenges
+  -> User adds custom subgoals (e.g. "Beginner React concepts")
+  -> Practice page shows: Quiz + Coding only
+  -> Missing: Resources to study before attempting quiz/coding
+
+1.4 Studio vs Practice - Current
+--------------------------------
+- Pathfinder goals have studioId (linked to Studio)
+- Practice page has "Studio" button when studioId exists
+- User requested: Remove Studio link for now; use Practice as primary
+- Studio integration: deferred to future
+
+================================================================================
+2. SCREEN FLOWCHART (ASCII)
+================================================================================
+
+[PATHFINDER DASHBOARD]
+         |
+         | Click goal
+         v
+[GOAL DETAILS PAGE] /pathfinder/[slug]
+         |
+         +---> [Practice] ---> [PRACTICE PAGE] (current: Quiz | Coding)
+         |                           |
+         |                           |  FUTURE: Resources | Quiz | Coding
+         |                           |
+         +---> [Verification] ---> [VERIFY PAGE]
+         |
+         +---> [Studio] ---> REMOVE FOR NOW
+
+[PRACTICE PAGE - PROPOSED STRUCTURE]
+         |
+         +---> Tab 1: RESOURCES (NEW)
+         |         - Learning content for this subgoal
+         |         - What is X? How does it work?
+         |         - Video links (YouTube)
+         |         - Code examples (read-only in code editor)
+         |         - Do's and Don'ts
+         |
+         +---> Tab 2: QUIZ
+         |         - Multiple choice / concept questions
+         |         - (current behavior)
+         |
+         +---> Tab 3: CODING
+         |         - Hands-on coding challenges
+         |         - (current behavior)
+
+================================================================================
+3. PROPOSED IMPROVEMENTS
+================================================================================
+
+3.1 Add Resources Tab (Before Quiz & Coding)
+--------------------------------------------
+When user adds a subgoal (e.g. "Learn beginner React"):
+- Generate or fetch learning content:
+  * Overview: What is React? Key concepts
+  * Resources: Curated YouTube videos, docs links
+  * Code examples: Snippets in read-only code editor
+  * Best practices: Do's and Don'ts for the topic
+- Display in a dedicated "Resources" or "Learn" tab
+- Order: Resources first -> then Quiz -> then Coding
+- Rationale: User should study before being tested
+
+3.2 Subgoal-Level Resources
+----------------------------
+- Each subgoal gets its own resource set
+- AI-generated or manually curated per topic
+- When subgoal = "Beginner React": show React intro resources
+- When subgoal = "Hooks": show Hooks-specific resources
+- Quiz and Coding stay aligned to the subgoal
+
+3.3 Studio Removal (For Now)
+----------------------------
+- Remove "Studio" button from Practice page header
+- Remove studioId linkage from Pathfinder goal flow
+- Keep Studio as separate product; integrate later if needed
+- Practice page becomes the single learning hub for a goal
+
+3.4 Code Examples - Read-Only
+-----------------------------
+- Use code editor component in read-only mode
+- Show syntax-highlighted examples
+- No edit/practice in this tab (that's the Coding tab)
+- Future: "Try it" could open a sandbox (out of scope for now)
+
+================================================================================
+4. USER FLOW (DETAILED)
+================================================================================
+
+Step 1: User creates goal "Learn React - 30 days"
+Step 2: AI generates plan with subgoals
+Step 3: User adds/edits subgoals (e.g. "JSX basics", "Components", "Hooks")
+Step 4: User opens Practice for a subgoal
+Step 5: NEW - User sees Resources tab first
+        - Reads overview
+        - Watches recommended videos
+        - Studies code examples
+Step 6: User switches to Quiz tab
+        - Attempts concept questions
+        - Gets feedback
+Step 7: User switches to Coding tab
+        - Solves coding challenges
+        - Submits for verification
+Step 8: When ready, user goes to Verification
+        - Quiz section
+        - Coding section
+        - Mock interview
+        - Project submission (if applicable)
+
+================================================================================
+5. IMPLEMENTATION NOTES
+================================================================================
+
+5.1 Resource Generation
+-----------------------
+- Option A: AI-generated at subgoal creation (like quiz/coding)
+- Option B: Static templates per topic/category
+- Option C: Hybrid - AI for custom subgoals, templates for common topics
+
+5.2 Tab Order
+-------------
+Resources | Quiz | Coding
+(Resources always first to encourage study-before-practice)
+
+5.3 Data Model
+--------------
+- SubGoal may need: resources (JSON or relation)
+- Or: Generate on-the-fly from subgoal title + goal category
+- Store generated resources to avoid re-generation
+
+5.4 Studio Unlink
+-----------------
+- In goal-details-content: remove Studio button/link
+- In practice header: remove Studio button
+- Keep studioId in DB for future (don't delete), just don't display
+
+================================================================================
+6. FLOWCHART - SCREENS
+================================================================================
+
++------------------+
+| Pathfinder       |
+| Dashboard        |
+| /pathfinder      |
++--------+---------+
+         |
+         | [Goal cards - by slug]
+         v
++------------------+
+| Goal Details     |
+| /pathfinder/slug |
++--------+---------+
+         |
+         +--[Practice]--> +------------------+
+         |                | Practice Page     |
+         |                | /pathfinder/slug |
+         |                |     /practice    |
+         |                +--------+---------+
+         |                         |
+         |                         +--[Resources]--> Learn content
+         |                         +--[Quiz]--------> Concept questions
+         |                         +--[Coding]------> Coding challenges
+         |
+         +--[Verify]-----> +------------------+
+                           | Verification     |
+                           | /pathfinder/slug |
+                           |     /verify      |
+                           +------------------+
+
+================================================================================
+7. SUMMARY
+================================================================================
+
+CURRENT:
+- Pathfinder uses slug in URLs (DONE)
+- Practice has Quiz + Coding
+- Studio link visible when studioId exists
+
+TO DO (No code yet - spec only):
+- Add Resources/Learn tab before Quiz and Coding
+- Populate with study content (AI or templates)
+- Remove Studio link from Practice/GoalDetails
+- Ensure subgoal resources align with quiz/coding content
+
+FUTURE:
+- Studio integration when ready
+- "Try it" sandbox for code examples
+- Spaced repetition for quiz
+- More resource types (articles, interactive)
+
+================================================================================

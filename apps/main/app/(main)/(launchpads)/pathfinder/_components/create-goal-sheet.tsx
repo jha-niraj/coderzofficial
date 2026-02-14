@@ -240,7 +240,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                 onOpenChange(false)
                 resetForm()
                 if (onSuccess && result.goalId) {
-                    onSuccess(result.goalId)
+                    onSuccess(result.goalId, result.slug ? { id: result.goalId, slug: result.slug } as Parameters<typeof onSuccess>[1] : undefined)
                 }
             }, 800)
         } catch (error) {

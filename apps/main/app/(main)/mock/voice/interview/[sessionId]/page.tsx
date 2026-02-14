@@ -104,8 +104,8 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
         onDisconnect: () => {
             console.log('[MockInterview] Disconnected from ElevenLabs, intentional:', intentionalEndRef.current)
             setAgentState(null)
-            // Only trigger end processing if this was an intentional end and we have a conversation
-            if (intentionalEndRef.current && conversationIdRef.current) {
+            // Process when we have a conversation - supports both user click and 11 Labs AI-ended interview
+            if (conversationIdRef.current && !isProcessingRef.current) {
                 handleConversationEnd()
             }
         },
@@ -131,7 +131,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
 
                 if (!result.success || !result.session) {
                     toast.error('Session not found')
-                    router.push('/mockinterview/voice')
+                    router.push('/mock/voice')
                     return
                 }
 
@@ -155,7 +155,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             } catch (error) {
                 console.error('Error loading session:', error)
                 toast.error('Failed to load session')
-                router.push('/mockinterview/voice')
+                    router.push('/mock/voice')
             } finally {
                 setIsLoading(false)
             }
@@ -273,13 +273,30 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                     className="w-full max-w-2xl"
                 >
                     <div className="relative w-full aspect-square max-w-md mx-auto mb-8">
-                        <Orb
-                            agentState={agentState}
-                            volumeMode="auto"
-                            getInputVolume={conversation.getInputVolume}
-                            getOutputVolume={conversation.getOutputVolume}
-                            colors={['#6366f1', '#8b5cf6']}
-                        />
+                        {!hasStarted ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-900/30">
+                                <div className="text-6xl mb-4">🎙️</div>
+                                <h3 className="font-semibold text-lg mb-2">Interview Details</h3>
+                                <div className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 text-center">
+                                    {sessionData?.mock?.duration && (
+                                        <p>Duration: {sessionData.mock.duration} minutes</p>
+                                    )}
+                                    {sessionData?.mock?.category && (
+                                        <p>Category: {sessionData.mock.category}</p>
+                                    )}
+                                    <p className="mt-2">Voice-based AI interview with real-time feedback</p>
+                                    <p>Ensure your microphone is ready before starting</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <Orb
+                                agentState={agentState}
+                                volumeMode="auto"
+                                getInputVolume={conversation.getInputVolume}
+                                getOutputVolume={conversation.getOutputVolume}
+                                colors={['#6366f1', '#8b5cf6']}
+                            />
+                        )}
                     </div>
                     <div className="text-center mb-8">
                         <AnimatePresence mode="wait">

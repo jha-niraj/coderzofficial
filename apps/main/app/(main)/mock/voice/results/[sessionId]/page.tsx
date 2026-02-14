@@ -65,7 +65,7 @@ export default function ResultsPage({
 
                 if (!result.success || !result.session) {
                     toast.error('Session not found')
-                    router.push('/mockinterview/voice')
+                    router.push('/mock/voice')
                     return
                 }
 
@@ -178,7 +178,7 @@ export default function ResultsPage({
                     }
                 </motion.div>
                 <div className="mb-8">
-                    <Link href="/mockinterview/voice">
+                    <Link href="/mock/voice">
                         <Button variant="ghost" className="mb-4">
                             <ArrowLeft className="w-4 h-4 mr-2" />
                             Back to Mock Interviews
@@ -372,7 +372,7 @@ export default function ResultsPage({
                 }
                 <div className="flex flex-wrap gap-4 justify-center">
                     <Button asChild>
-                        <Link href="/mockinterview/voice">
+                        <Link href="/mock/voice">
                             Try Another Mock
                         </Link>
                     </Button>

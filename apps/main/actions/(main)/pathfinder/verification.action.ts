@@ -83,15 +83,21 @@ export async function startVerification(goalId: string) {
 // GET VERIFICATION STATUS
 // ================================================================================
 
-export async function getVerificationStatus(goalId: string) {
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const CUID_REGEX = /^c[a-z0-9]{24}$/i
+
+export async function getVerificationStatus(slugOrId: string) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', verification: null }
         }
 
+        const isId = UUID_REGEX.test(slugOrId) || CUID_REGEX.test(slugOrId)
         const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
+            where: isId
+                ? { id: slugOrId, userId: session.user.id }
+                : { userId: session.user.id, slug: slugOrId },
             include: { verification: true },
         })
 
@@ -99,7 +105,7 @@ export async function getVerificationStatus(goalId: string) {
             return { success: false, error: 'Goal not found', verification: null }
         }
 
-        return { success: true, verification: goal.verification }
+        return { success: true, verification: goal.verification ?? null }
     } catch (error) {
         console.error('Error fetching verification status:', error)
         return { success: false, error: 'Failed to fetch status', verification: null }

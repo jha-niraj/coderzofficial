@@ -4,6 +4,7 @@ import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
 import OpenAI from 'openai'
+import { generateSubGoalResources } from './resources.action'
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -220,11 +221,24 @@ export async function createSubGoal(input: CreateSubGoalInput) {
             },
         })
 
-        // Generate AI content for this sub-goal (async, don't wait)
-        generateAIContentForSubGoal(subGoal.id, input.title, goal.category, goal.level)
+        // Generate AI content AND resources in parallel (await both)
+        const [, resources] = await Promise.all([
+            generateAIContentForSubGoal(subGoal.id, input.title, goal.category, goal.level),
+            generateSubGoalResources(subGoal.id, input.title, goal.category, goal.level),
+        ])
+
+        // Refetch sub-goal with all generated content
+        const updatedSubGoal = await prisma.pathfinderSubGoal.findUnique({
+            where: { id: subGoal.id },
+            include: { goal: true },
+        })
 
         revalidatePath(`/pathfinder/${input.goalId}`)
-        return { success: true, subGoal }
+        return {
+            success: true,
+            subGoal: updatedSubGoal ?? subGoal,
+            aiResources: resources ?? undefined,
+        }
     } catch (error) {
         console.error('Error creating sub-goal:', error)
         return { success: false, error: 'Failed to create sub-goal' }

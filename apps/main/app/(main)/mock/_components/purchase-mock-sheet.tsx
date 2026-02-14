@@ -93,7 +93,7 @@ export function PurchaseMockSheet({ isOpen, onClose, mock, userCredits }: Purcha
             onClose()
 
             // Redirect to interview page
-            router.push(`/mockinterview/voice/interview/${result.sessionId}`)
+            router.push(`/mock/voice/interview/${result.sessionId}`)
         } catch (error) {
             console.error('Error starting interview:', error)
             toast.error(error instanceof Error ? error.message : 'Failed to start interview')

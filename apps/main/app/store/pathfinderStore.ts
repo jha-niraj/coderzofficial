@@ -43,6 +43,36 @@ export interface PathfinderGroup {
     _count: { goals: number };
 }
 
+export interface SubGoalResources {
+    videos: { 
+        url: string; 
+        duration: string; 
+        description?: string 
+    }[];
+    documentations: { 
+        url: string; 
+        type: string; 
+        description?: string 
+    }[];
+    content: string;
+    codeExamples: { 
+        title: string; 
+        language: string; 
+        code: string; 
+        explanation?: string 
+    }[];
+    dosDonts: { 
+        dos: string[]; 
+        donts: string[] 
+    };
+    flashcards: { 
+        id: string; 
+        front: string; 
+        back: string; 
+        hint?: string 
+    }[];
+}
+
 export interface PathfinderStats {
     totalGoals: number;
     activeGoals: number;
@@ -64,6 +94,7 @@ interface PathfinderStoreState {
     goals: PathfinderGoal[];
     groups: PathfinderGroup[];
     stats: PathfinderStats;
+    subGoalResources: Record<string, SubGoalResources>;
     
     // Loading states
     isLoading: boolean;
@@ -96,6 +127,10 @@ interface PathfinderStoreState {
     
     // Actions - Stats
     updateStats: () => void;
+
+    // Actions - SubGoal Resources (for instant display when sheet closes)
+    setSubGoalResources: (subGoalId: string, resources: SubGoalResources) => void;
+    getSubGoalResources: (subGoalId: string) => SubGoalResources | undefined;
     
     // Actions - UI
     setSelectedGoalId: (goalId: string | null) => void;
@@ -138,10 +173,11 @@ function calculateStats(goals: PathfinderGoal[]): PathfinderStats {
 // STORE IMPLEMENTATION
 // ==========================================
 
-export const usePathfinderStore = create<PathfinderStoreState>()((set, _get) => ({
+export const usePathfinderStore = create<PathfinderStoreState>()((set, get) => ({
     // Initial state
     goals: [],
     groups: [],
+    subGoalResources: {},
     stats: {
         totalGoals: 0,
         activeGoals: 0,
@@ -264,6 +300,17 @@ export const usePathfinderStore = create<PathfinderStoreState>()((set, _get) => 
             stats: calculateStats(state.goals),
         }));
     },
+
+    // SubGoal Resources
+    setSubGoalResources: (subGoalId, resources) => {
+        set((state) => ({
+            subGoalResources: {
+                ...state.subGoalResources,
+                [subGoalId]: resources,
+            },
+        }));
+    },
+    getSubGoalResources: (subGoalId) => get().subGoalResources[subGoalId],
     
     // UI actions
     setSelectedGoalId: (goalId) => set({ selectedGoalId: goalId }),

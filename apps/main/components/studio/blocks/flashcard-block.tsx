@@ -25,9 +25,11 @@ interface StudioFlashcardBlockProps {
 		cards: FlashCard[];
 	};
 	topic?: string;
+	/** Skip saving to studio (e.g. for pathfinder practice) */
+	skipSave?: boolean;
 }
 
-export default function StudioFlashcardBlock({ deck }: StudioFlashcardBlockProps) {
+export default function StudioFlashcardBlock({ deck, skipSave }: StudioFlashcardBlockProps) {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isFlipped, setIsFlipped] = useState(false);
 	const [showHint, setShowHint] = useState(false);
@@ -87,21 +89,23 @@ export default function StudioFlashcardBlock({ deck }: StudioFlashcardBlockProps
 			setIsFlipped(false);
 			setShowHint(false);
 		} else {
-			// Complete session
-			const studyTime = Math.floor((Date.now() - startTime) / 1000);
-			await saveFlashcardSession(deck.id, {
-				cardsStudied: cards.length,
-				correctCount: correctCount + (isCorrect ? 1 : 0),
-				studyTime,
-				cardProgress: {
-					...cardProgress,
-					[card?.id || ""]: {
-						correct: (cardProgress[card?.id || ""]?.correct || 0) + (isCorrect ? 1 : 0),
-						incorrect: (cardProgress[card?.id || ""]?.incorrect || 0) + (isCorrect ? 0 : 1),
-						lastSeen: new Date(),
+			// Complete session (skip save for pathfinder etc)
+			if (!skipSave && deck?.id) {
+				const studyTime = Math.floor((Date.now() - startTime) / 1000);
+				await saveFlashcardSession(deck.id, {
+					cardsStudied: cards.length,
+					correctCount: correctCount + (isCorrect ? 1 : 0),
+					studyTime,
+					cardProgress: {
+						...cardProgress,
+						[card?.id || ""]: {
+							correct: (cardProgress[card?.id || ""]?.correct || 0) + (isCorrect ? 1 : 0),
+							incorrect: (cardProgress[card?.id || ""]?.incorrect || 0) + (isCorrect ? 0 : 1),
+							lastSeen: new Date(),
+						},
 					},
-				},
-			});
+				});
+			}
 			setIsComplete(true);
 		}
 	};
