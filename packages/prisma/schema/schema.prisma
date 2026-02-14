@@ -546,6 +546,7 @@ model User {
     // ===============================================
     pathfinderGoals         PathfinderGoal[]         @relation("UserPathfinderGoals")
     pathfinderGroups        PathfinderGroup[]        @relation("UserPathfinderGroups")
+    pathfinderGoalPurchases PathfinderGoalPurchase[] @relation("PathfinderGoalPurchases")
 
     // ===============================================
     // CHAT SYSTEM RELATIONS

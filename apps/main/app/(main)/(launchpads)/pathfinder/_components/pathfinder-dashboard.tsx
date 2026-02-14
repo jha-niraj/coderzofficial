@@ -9,7 +9,7 @@ import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Target, Plus, CheckCircle2, Trophy, Flame, FolderOpen, MoreVertical,
     MoveRight, Code2, Brain, BarChart3, Zap, ChevronRight,
-    Play, PauseCircle, CheckCircle, XCircle
+    Play, PauseCircle, CheckCircle, XCircle, Compass
 } from 'lucide-react'
 import Link from 'next/link'
 import { 
@@ -333,26 +333,43 @@ function QuickActions({
     const actions = [
         { label: 'New Goal', icon: <Target className="w-4 h-4" />, onClick: onCreateGoal, primary: true },
         { label: 'New Group', icon: <FolderOpen className="w-4 h-4" />, onClick: onCreateGroup, primary: false },
+        { label: 'Explore', icon: <Compass className="w-4 h-4" />, href: '/pathfinder/explore', primary: false },
     ]
 
     return (
         <div className="flex items-center gap-2">
             {
-                actions.map((action) => (
-                    <Button
-                        key={action.label}
-                        variant={action.primary ? "default" : "outline"}
-                        size="sm"
-                        onClick={action.onClick}
-                        className={cn(
-                            "h-8 text-xs",
-                            action.primary && "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
-                        )}
-                    >
-                        {action.icon}
-                        <span className="ml-1.5">{action.label}</span>
-                    </Button>
-                ))
+                actions.map((action) => {
+                    if ('href' in action && action.href) {
+                        return (
+                            <Link key={action.label} href={action.href}>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                >
+                                    {action.icon}
+                                    <span className="ml-1.5">{action.label}</span>
+                                </Button>
+                            </Link>
+                        )
+                    }
+                    return (
+                        <Button
+                            key={action.label}
+                            variant={action.primary ? "default" : "outline"}
+                            size="sm"
+                            onClick={action.onClick}
+                            className={cn(
+                                "h-8 text-xs",
+                                action.primary && "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+                            )}
+                        >
+                            {action.icon}
+                            <span className="ml-1.5">{action.label}</span>
+                        </Button>
+                    )
+                })
             }
         </div>
     )

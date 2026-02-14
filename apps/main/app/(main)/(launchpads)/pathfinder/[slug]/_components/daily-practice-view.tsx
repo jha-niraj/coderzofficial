@@ -7,7 +7,7 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2, 
-    Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles
+    Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles, Coins
 } from 'lucide-react'
 import Link from 'next/link'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
@@ -24,6 +24,7 @@ import { SubGoalCoding } from './subgoal-coding'
 import { CreateSubGoalSheet } from './create-subgoal-sheet'
 import { SubGoalContentTabs } from './subgoal-content-tabs'
 import { PathfinderUsageWidget } from './pathfinder-usage-widget'
+import { CreatorEarningsSheet } from './creator-earnings-sheet'
 
 interface SubGoal {
     id: string
@@ -61,6 +62,7 @@ interface Goal {
     category: PathfinderCategory
     level: PathfinderLevel
     studioId: string | null
+    isPublic?: boolean
 }
 
 interface DailyPracticeViewProps {
@@ -72,7 +74,7 @@ interface DailyPracticeViewProps {
 // HEADER COMPONENT
 // ================================================================================
 
-function PracticeHeader({ goal }: { goal: Goal }) {
+function PracticeHeader({ goal, onOpenEarnings }: { goal: Goal; onOpenEarnings?: () => void }) {
     return (
         <div className="flex-shrink-0 p-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
             <div className="flex items-center justify-between">
@@ -94,6 +96,17 @@ function PracticeHeader({ goal }: { goal: Goal }) {
                 </div>
                 <div className="flex items-center gap-2">
                     <PathfinderUsageWidget goalId={goal.id} />
+                    {goal.isPublic && onOpenEarnings && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={onOpenEarnings}
+                        >
+                            <Coins className="w-3 h-3 mr-1" />
+                            Earnings
+                        </Button>
+                    )}
                     <Link href={`/pathfinder/${goal.slug ?? goal.id}/verify`}>
                         <Button variant="outline" size="sm" className="h-8 text-xs">
                             <Trophy className="w-3 h-3 mr-1" />
@@ -271,6 +284,7 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
     const [session, setSession] = useState(initialSession)
     const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoal | null>(null)
     const [createSheetOpen, setCreateSheetOpen] = useState(false)
+    const [earningsSheetOpen, setEarningsSheetOpen] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
 
     // Auto-refresh to check for AI content generation
@@ -360,7 +374,17 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
-            <PracticeHeader goal={goal} />
+            <PracticeHeader
+                goal={goal}
+                onOpenEarnings={goal.isPublic ? () => setEarningsSheetOpen(true) : undefined}
+            />
+            <CreatorEarningsSheet
+                open={earningsSheetOpen}
+                onOpenChange={setEarningsSheetOpen}
+                goalId={goal.id}
+                goalTitle={goal.title}
+                isPublic={goal.isPublic ?? false}
+            />
 
             <div className="flex-1 flex overflow-hidden">
                 <div className="w-[350px] border-r border-neutral-200 dark:border-neutral-800 flex flex-col bg-white dark:bg-neutral-950">

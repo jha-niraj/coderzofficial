@@ -114,6 +114,7 @@ model PathfinderGoal {
     // Visibility & Credits
     isPublic        Boolean             @default(true)  // false = private (costs 5 credits), true = free
     forkedFromId    String?             // If copied from another user's public goal
+    creditPrice     Int?                // null = free. Creator sets price for public goals (in credits).
 
     @@unique([userId, slug])
     
@@ -178,6 +179,7 @@ model PathfinderGoal {
     // Coding submissions
     codingSubmissions PathfinderCodingSubmission[]
     usageLedger      PathfinderUsageLedger[]
+    purchases       PathfinderGoalPurchase[]
 
     @@index([userId])
     @@index([groupId])
@@ -438,4 +440,22 @@ model PathfinderUsageLedger {
     @@index([goalId])
     @@index([userId])
     @@index([createdAt])
+}
+
+// ================================================================================
+// GOAL PURCHASE - When a user copies a paid public goal
+// ================================================================================
+
+model PathfinderGoalPurchase {
+    id          String   @id @default(cuid())
+    goalId      String
+    goal        PathfinderGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    buyerId     String
+    buyer       User     @relation("PathfinderGoalPurchases", fields: [buyerId], references: [id], onDelete: Cascade)
+    creditsPaid Int
+    createdAt   DateTime @default(now())
+
+    @@unique([goalId, buyerId]) // One purchase per goal per user
+    @@index([goalId])
+    @@index([buyerId])
 }

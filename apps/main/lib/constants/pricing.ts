@@ -1,14 +1,16 @@
 /**
  * AI API pricing constants for Pathfinder credit calculations.
- * Sources: https://openai.com/api/pricing, https://exa.ai/pricing
+ * Sources:
+ * - OpenAI: https://openai.com/api/pricing (GPT-4o-mini)
+ * - Exa: https://exa.ai/pricing
  * Last updated: February 2025
  */
 
 // -----------------------------------------------------------------------------
 // OPENAI (GPT-4o-mini - used for sub-goal content, verification, etc.)
+// Per 1M tokens: Input $0.15, Output $0.60 (from OpenAI pricing page)
 // -----------------------------------------------------------------------------
 export const OPENAI_PRICING = {
-    // GPT-4o-mini: $0.15/1M input, $0.60/1M output tokens
     gpt4oMini: {
         inputPerMillion: 0.15,
         outputPerMillion: 0.6,

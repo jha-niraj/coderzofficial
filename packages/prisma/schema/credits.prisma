@@ -1,4 +1,50 @@
 // Credits and Referral related models
+
+// -----------------------------------------------------------------------------
+// MODULE ENUM - Track which platform module a transaction belongs to
+// -----------------------------------------------------------------------------
+enum Module {
+    PATHFINDER
+    // Add more as needed: MOCK_INTERVIEW, JOB_ASSISTANT, etc.
+}
+
+// -----------------------------------------------------------------------------
+// SUB-TRANSACTION - Module-specific transaction linking to CreditTransaction
+// -----------------------------------------------------------------------------
+model SubTransaction {
+    id                    String   @id @default(cuid())
+    creditTransactionId   String   @unique
+    creditTransaction     CreditTransaction @relation(fields: [creditTransactionId], references: [id], onDelete: Cascade)
+    module                Module
+    referenceId           String?  // e.g. goalId for Pathfinder, sessionId for Mock, etc.
+    metadata              Json?   // Additional context (buyerId, creatorId, etc.)
+
+    createdAt             DateTime @default(now())
+
+    @@index([module])
+    @@index([referenceId])
+    @@index([module, referenceId])
+}
+
+// -----------------------------------------------------------------------------
+// EARNING - Track creator/platform earnings per module
+// -----------------------------------------------------------------------------
+model Earning {
+    id          String   @id @default(cuid())
+    userId      String
+    module      Module
+    referenceId String?  // e.g. goalId for Pathfinder
+    amount      Int      // Credits earned
+    sourceUserId String? // Who paid (buyer)
+
+    createdAt   DateTime @default(now())
+
+    @@index([userId])
+    @@index([module])
+    @@index([referenceId])
+    @@index([userId, module])
+}
+
 model Referral {
     id             String   @id @default(uuid())
     referrerId     String
@@ -38,8 +84,9 @@ model CreditTransaction {
     createdAt   DateTime   @default(now())
     paymentId   String? // Link to Payment if this is a purchase
 
-    user    User     @relation(fields: [userId], references: [id])
-    payment Payment? @relation("PaymentToCreditTransaction", fields: [paymentId], references: [id])
+    user         User          @relation(fields: [userId], references: [id])
+    payment      Payment?      @relation("PaymentToCreditTransaction", fields: [paymentId], references: [id])
+    subTransaction SubTransaction?
 
     @@index([userId])
     @@index([paymentId])
