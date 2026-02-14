@@ -74,6 +74,16 @@ export interface SubGoalResources {
     }[];
 }
 
+export interface GoalUsageSummary {
+    goalId: string
+    pendingCredits: number
+    totalInputTokens: number
+    totalOutputTokens: number
+    exaCalls: number
+    isBlocked: boolean
+    ledgerCount: number
+}
+
 export interface PathfinderStats {
     totalGoals: number;
     activeGoals: number;
@@ -97,6 +107,7 @@ interface PathfinderStoreState {
     stats: PathfinderStats;
     subGoalResources: Record<string, SubGoalResources>;
     verificationAIPlan: Record<string, VerificationAIPlan>;
+    goalUsage: Record<string, GoalUsageSummary>;
     
     // Loading states
     isLoading: boolean;
@@ -135,6 +146,8 @@ interface PathfinderStoreState {
     getSubGoalResources: (subGoalId: string) => SubGoalResources | undefined;
     setVerificationAIPlan: (goalId: string, plan: VerificationAIPlan) => void;
     getVerificationAIPlan: (goalId: string) => VerificationAIPlan | undefined;
+    setGoalUsage: (goalId: string, usage: GoalUsageSummary) => void;
+    getGoalUsage: (goalId: string) => GoalUsageSummary | undefined;
     
     // Actions - UI
     setSelectedGoalId: (goalId: string | null) => void;
@@ -183,6 +196,7 @@ export const usePathfinderStore = create<PathfinderStoreState>()((set, get) => (
     groups: [],
     subGoalResources: {},
     verificationAIPlan: {},
+    goalUsage: {},
     stats: {
         totalGoals: 0,
         activeGoals: 0,
@@ -325,6 +339,12 @@ export const usePathfinderStore = create<PathfinderStoreState>()((set, get) => (
         }));
     },
     getVerificationAIPlan: (goalId) => get().verificationAIPlan[goalId],
+    setGoalUsage: (goalId, usage) => {
+        set((state) => ({
+            goalUsage: { ...state.goalUsage, [goalId]: usage },
+        }));
+    },
+    getGoalUsage: (goalId) => get().goalUsage[goalId],
     
     // UI actions
     setSelectedGoalId: (goalId) => set({ selectedGoalId: goalId }),

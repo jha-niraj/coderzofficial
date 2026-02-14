@@ -3,6 +3,7 @@
 import Exa from 'exa-js'
 import OpenAI from 'openai'
 import { prisma } from '@repo/prisma'
+import { logPathfinderUsage } from './usage.action'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -152,7 +153,7 @@ async function fetchOpenAIResources(
     title: string,
     category: string,
     level: string
-): Promise<OpenAIResourcesResult> {
+): Promise<OpenAIResourcesResult & { inputTokens: number; outputTokens: number }> {
     const prompt = `You are an expert educator. Generate comprehensive learning content for "${title}".
 Category: ${category}, Level: ${level}.
 
@@ -201,6 +202,9 @@ Rules:
         if (!raw) throw new Error('No content from OpenAI')
 
         const parsed = JSON.parse(raw) as OpenAIResourcesResult
+        const inputTokens = response.usage?.prompt_tokens ?? 0
+        const outputTokens = response.usage?.completion_tokens ?? 0
+
         return {
             content: parsed.content || '',
             codeExamples: parsed.codeExamples || [],
@@ -208,7 +212,9 @@ Rules:
             flashcards: (parsed.flashcards || []).map((f, i) => ({
                 ...f,
                 id: f.id || `fc-${i}`
-            }))
+            })),
+            inputTokens,
+            outputTokens,
         }
     } catch (error) {
         console.error('OpenAI resources error:', error)
@@ -216,7 +222,9 @@ Rules:
             content: '',
             codeExamples: [],
             dosDonts: { dos: [], donts: [] },
-            flashcards: []
+            flashcards: [],
+            inputTokens: 0,
+            outputTokens: 0,
         }
     }
 }
@@ -225,12 +233,21 @@ Rules:
 // COMBINED - Run Exa and OpenAI in parallel
 // ================================================================================
 
+export interface GenerateSubGoalResourcesResult {
+    resources: SubGoalResources | null
+    usageCost: number
+    inputTokens: number
+    outputTokens: number
+}
+
 export async function generateSubGoalResources(
     subGoalId: string,
+    goalId: string,
+    userId: string,
     title: string,
     category: string,
     level: string
-): Promise<SubGoalResources | null> {
+): Promise<GenerateSubGoalResourcesResult> {
     try {
         const [exaResult, openaiResult] = await Promise.all([
             fetchExaResources(title, category, level),
@@ -251,9 +268,42 @@ export async function generateSubGoalResources(
             data: { aiResources: resources as unknown as object }
         })
 
-        return resources
+        // Log usage
+        let totalCost = 0
+        if (openaiResult.inputTokens > 0 || openaiResult.outputTokens > 0) {
+            const openaiLog = await logPathfinderUsage({
+                goalId,
+                userId,
+                action: 'subgoal_content',
+                provider: 'openai',
+                inputTokens: openaiResult.inputTokens,
+                outputTokens: openaiResult.outputTokens,
+            })
+            totalCost += openaiLog.creditsCost
+        }
+        if (exaResult.videos.length > 0 || exaResult.documentations.length > 0) {
+            const exaLog = await logPathfinderUsage({
+                goalId,
+                userId,
+                action: 'subgoal_content',
+                provider: 'exa',
+            })
+            totalCost += exaLog.creditsCost
+        }
+
+        return {
+            resources,
+            usageCost: totalCost,
+            inputTokens: openaiResult.inputTokens,
+            outputTokens: openaiResult.outputTokens,
+        }
     } catch (error) {
         console.error('generateSubGoalResources error:', error)
-        return null
+        return {
+            resources: null,
+            usageCost: 0,
+            inputTokens: 0,
+            outputTokens: 0,
+        }
     }
 }

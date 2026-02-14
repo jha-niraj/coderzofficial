@@ -10,7 +10,9 @@ import {
     Loader2, Sparkles, Target 
 } from 'lucide-react'
 import { createSubGoal } from '@/actions/(main)/pathfinder/subgoals.action'
-import type { SubGoalResources } from '@/app/store/pathfinderStore'
+import type { SubGoalResources, GoalUsageSummary } from '@/app/store/pathfinderStore'
+import { usePathfinderStore } from '@/app/store/pathfinderStore'
+import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
 interface CreateSubGoalSheetProps {
     open: boolean
@@ -31,7 +33,7 @@ interface CreateSubGoalSheetProps {
         codingPassed: boolean
         order: number
         aiResources?: unknown
-    }, aiResources?: SubGoalResources) => void
+    }, aiResources?: SubGoalResources, usageSummary?: GoalUsageSummary) => void
 }
 
 export function CreateSubGoalSheet({
@@ -43,6 +45,7 @@ export function CreateSubGoalSheet({
     const [title, setTitle] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const setGoalUsage = usePathfinderStore((s) => s.setGoalUsage)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -59,12 +62,27 @@ export function CreateSubGoalSheet({
             })
 
             if (!result.success) {
-                setError(result.error ?? 'Failed to create sub-goal')
+                const err = result as { code?: string; pendingCredits?: number }
+                if (err.code === 'USAGE_BLOCKED') {
+                    setError(
+                        `AI usage limit reached (${err.pendingCredits ?? 0} credits pending). ` +
+                        `Add credits to continue. Threshold: ${PATHFINDER_CREDITS.usageBlockThreshold} credits.`
+                    )
+                } else {
+                    setError(result.error ?? 'Failed to create sub-goal')
+                }
                 return
             }
 
             if (result.subGoal) {
-                onSuccess(result.subGoal as Parameters<typeof onSuccess>[0], result.aiResources)
+                if (result.usageSummary) {
+                    setGoalUsage(goalId, result.usageSummary)
+                }
+                onSuccess(
+                    result.subGoal as Parameters<typeof onSuccess>[0],
+                    result.aiResources,
+                    result.usageSummary
+                )
                 setTitle('')
                 onOpenChange(false)
             }
@@ -94,6 +112,7 @@ export function CreateSubGoalSheet({
                     </SheetTitle>
                     <SheetDescription>
                         What do you want to learn today? We&apos;ll generate resources, videos, docs, and practice content.
+                        Cost is ~1-2 credits per sub-goal (Exa + OpenAI). Usage shown in top-right.
                     </SheetDescription>
                 </SheetHeader>
 

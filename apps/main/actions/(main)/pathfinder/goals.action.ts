@@ -3,7 +3,8 @@
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
-import { PathfinderCategory, PathfinderLevel, PathfinderStatus } from '@repo/prisma/client'
+import { PathfinderCategory, PathfinderLevel, PathfinderStatus, Currency } from '@repo/prisma/client'
+import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
 // ================================================================================
 // TYPES
@@ -19,6 +20,8 @@ export interface CreateGoalInput {
     duration?: 'ONE_WEEK' | 'FORTNIGHT' | 'ONE_MONTH' | 'TWO_MONTHS' | 'THREE_MONTHS' | 'SIX_MONTHS' | 'CUSTOM' | null
     estimatedDays?: number
     groupId?: string | null
+    /** false = private (5 credits), true = public (free) */
+    isPublic?: boolean
 }
 
 // ================================================================================
@@ -138,25 +141,67 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
             ? DURATION_DAYS[input.duration] ?? input.estimatedDays
             : input.estimatedDays ?? null
 
+        const isPublic = input.isPublic ?? true
+
+        // Private goals cost 5 credits
+        if (!isPublic) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { credits: true },
+            })
+            const required = PATHFINDER_CREDITS.privateGoalCreation
+            if (!user || user.credits < required) {
+                return {
+                    success: false,
+                    error: `Insufficient credits. Private goals require ${required} credits.`,
+                    code: 'INSUFFICIENT_CREDITS',
+                    required,
+                    available: user?.credits ?? 0,
+                }
+            }
+        }
+
         // Create the goal (no OpenAI assistant at creation - verification questions generated on demand)
-        const goal = await prisma.pathfinderGoal.create({
-            data: {
-                userId: session.user.id,
-                title: input.title,
-                slug,
-                category: input.category,
-                level: input.level,
-                focusAreas: input.focusAreas,
-                targetDate: input.targetDate,
-                duration: input.duration ?? null,
-                estimatedDays,
-                groupId: input.groupId || null,
-                status: 'ACTIVE',
-                overview: `Learn ${input.title} - Add daily tasks and practice to build your skills.`,
-                learningObjectives: [],
-                prerequisites: [],
-                startedAt: new Date(),
-            },
+        const goal = await prisma.$transaction(async (tx) => {
+            const g = await tx.pathfinderGoal.create({
+                data: {
+                    userId: session.user.id,
+                    title: input.title,
+                    slug,
+                    category: input.category,
+                    level: input.level,
+                    focusAreas: input.focusAreas,
+                    targetDate: input.targetDate,
+                    duration: input.duration ?? null,
+                    estimatedDays,
+                    groupId: input.groupId || null,
+                    isPublic,
+                    status: 'ACTIVE',
+                    overview: `Learn ${input.title} - Add daily tasks and practice to build your skills.`,
+                    learningObjectives: [],
+                    prerequisites: [],
+                    startedAt: new Date(),
+                },
+            })
+
+            if (!isPublic) {
+                const required = PATHFINDER_CREDITS.privateGoalCreation
+                await tx.user.update({
+                    where: { id: session.user.id },
+                    data: { credits: { decrement: required } },
+                })
+                await tx.creditTransaction.create({
+                    data: {
+                        userId: session.user.id,
+                        amount: -required,
+                        type: 'SPEND',
+                        description: `Pathfinder Private Goal: ${input.title}`,
+                        currency: Currency.INR,
+                    },
+                })
+            }
+
+            return g
         })
 
         // Create verification record (questions generated when user clicks Verify)

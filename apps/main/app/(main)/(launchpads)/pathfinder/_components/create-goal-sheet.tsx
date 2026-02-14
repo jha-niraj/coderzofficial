@@ -18,6 +18,8 @@ import toast from '@repo/ui/components/ui/sonner'
 import {
     createPathfinderGoal, createPathfinderGroup
 } from '@/actions/(main)/pathfinder'
+import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
+import { useUserStore } from '@/app/store/useUserStore'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
 import { cn } from '@repo/ui/lib/utils'
 import type { PathfinderGoal, PathfinderGroup } from '@/types/pathfinder'
@@ -76,6 +78,7 @@ function generateSlug(title: string): string {
 }
 
 export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], onGroupCreated }: CreateGoalSheetProps) {
+    const { credits } = useUserStore()
     const [step, setStep] = useState(0)
     const [processing, setProcessing] = useState(false)
     const [progressPercent, setProgressPercent] = useState(0)
@@ -87,6 +90,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
         customDays: null as number | null,
         focusAreas: [] as string[],
         groupId: null as string | null,
+        isPublic: true as boolean,
     })
 
     // Group creation state
@@ -125,6 +129,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
             customDays: null,
             focusAreas: [],
             groupId: null,
+            isPublic: true as boolean,
         })
         setShowNewGroup(false)
         setNewGroupName('')
@@ -221,9 +226,17 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                 estimatedDays: formData.duration === 'CUSTOM' ? formData.customDays ?? undefined : undefined,
                 focusAreas: formData.focusAreas,
                 groupId: formData.groupId,
+                isPublic: formData.isPublic,
             })
 
             if (!result.success) {
+                const err = result as { code?: string; required?: number; available?: number }
+                if (err.code === 'INSUFFICIENT_CREDITS') {
+                    throw new Error(
+                        `Insufficient credits. Private goals require ${err.required ?? PATHFINDER_CREDITS.privateGoalCreation} credits. ` +
+                        `You have ${err.available ?? 0}.`
+                    )
+                }
                 throw new Error(result.error || 'Failed to create goal')
             }
 
@@ -538,6 +551,45 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                                                 {steps[3]?.title}
                                                             </h3>
                                                             <p className="text-sm text-neutral-500">Group your goal for better organization</p>
+                                                        </div>
+
+                                                        {/* Visibility */}
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs text-neutral-500">Visibility</Label>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setFormData(prev => ({ ...prev, isPublic: true }))}
+                                                                    className={cn(
+                                                                        "p-3 rounded-lg border text-left transition-all",
+                                                                        formData.isPublic
+                                                                            ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
+                                                                            : "border-neutral-200 dark:border-neutral-700"
+                                                                    )}
+                                                                >
+                                                                    <p className="font-medium text-sm">Public</p>
+                                                                    <p className="text-xs text-neutral-500">Free • Others can copy</p>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setFormData(prev => ({ ...prev, isPublic: false }))}
+                                                                    className={cn(
+                                                                        "p-3 rounded-lg border text-left transition-all",
+                                                                        !formData.isPublic
+                                                                            ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
+                                                                            : "border-neutral-200 dark:border-neutral-700"
+                                                                    )}
+                                                                >
+                                                                    <p className="font-medium text-sm">Private</p>
+                                                                    <p className="text-xs text-neutral-500">{PATHFINDER_CREDITS.privateGoalCreation} credits</p>
+                                                                    {(credits ?? 0) < PATHFINDER_CREDITS.privateGoalCreation && (
+                                                                        <p className="text-xs text-amber-600 mt-0.5">Need {PATHFINDER_CREDITS.privateGoalCreation - (credits ?? 0)} more</p>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                            <p className="text-xs text-neutral-400 mt-1">
+                                                                You have <span className="font-medium">{credits ?? 0} credits</span>
+                                                            </p>
                                                         </div>
 
                                                         {!showNewGroup ? (

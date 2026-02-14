@@ -1,0 +1,418 @@
+================================================================================
+PATHFINDER CREDIT SYSTEM - SPECIFICATION & DESIGN DOCUMENT
+================================================================================
+Version: 1.0
+Date: February 2025
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+The Pathfinder credit system introduces a flexible monetization model that:
+- Charges for privacy (private goals) vs free public goals
+- Tracks and charges for AI token usage (transparent, usage-based)
+- Uses a verification fee with score-based refunds (gamification + fairness)
+- Enables a marketplace for public Pathfinders that others can purchase/join
+
+================================================================================
+2. CORE CREDIT FLOWS
+================================================================================
+
+2.1 GOAL CREATION FLOW
+--------------------------------------------------------------------------------
+
+    +------------------+
+    | User creates     |
+    | Pathfinder Goal  |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Visibility       |
+    | choice?          |
+    +--------+---------+
+             |
+       +-----+-----+
+       |           |
+       v           v
+  [PRIVATE]    [PUBLIC]
+       |           |
+       v           v
+  +---------+  +---------+
+  | Charge  |  | No     |
+  | 5 creds |  | charge |
+  +----+----+  +----+----+
+       |           |
+       +-----+-----+
+             |
+             v
+    +------------------+
+    | Goal created     |
+    | Usage meter      |
+    | starts tracking  |
+    +------------------+
+
+2.2 AI USAGE TRACKING FLOW
+--------------------------------------------------------------------------------
+
+    +------------------+
+    | Any AI action    |
+    | (Exa, OpenAI,    |
+    | generation, etc) |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Log input +      |
+    | output tokens    |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Calculate cost   |
+    | (tokens * rate)  |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Add to goal's    |
+    | usage ledger     |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Deduct from      |
+    | user credits     |
+    | (batch or real)  |
+    +------------------+
+
+
+2.3 VERIFICATION FLOW (WITH REFUND)
+--------------------------------------------------------------------------------
+
+    +------------------+
+    | User starts      |
+    | Verification     |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Charge fixed     |
+    | fee (e.g. 20     |
+    | credits)         |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | User completes   |
+    | Quiz + Coding +  |
+    | Mock             |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Calculate        |
+    | overall score %  |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Refund =         |
+    | fee * (score/100)|
+    | e.g. 70% score   |
+    | = 14 creds back  |
+    +------------------+
+
+
+2.4 PUBLIC PATHFINDER MARKETPLACE FLOW
+--------------------------------------------------------------------------------
+
+    +------------------+
+    | Creator sets     |
+    | goal as PUBLIC   |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Goal appears in  |
+    | /pathfinder/     |
+    | explore (or      |
+    | marketplace)     |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | Viewer browses   |
+    | public goals     |
+    +--------+---------+
+             |
+             v
+    +------------------+
+    | "Join" or        |
+    | "Get Access"     |
+    +--------+---------+
+             |
+       +-----+-----+
+       |           |
+       v           v
+  [FREE JOIN]  [PAID]
+       |           |
+       v           v
+  Clone/copy   Pay credits
+  to own       to unlock
+  (tracked)    full access
+
+
+================================================================================
+3. DETAILED SPECIFICATION
+================================================================================
+
+3.1 PRIVATE VS PUBLIC GOALS
+--------------------------------------------------------------------------------
+
+PRIVATE GOAL:
+- Initial cost: 5 credits (one-time, at creation)
+- Visibility: Only creator can see and access
+- AI usage: Charged per token (input + output) for all AI operations
+- Use cases: Personal learning, confidential prep, competitive advantage
+
+PUBLIC GOAL:
+- Initial cost: 0 credits
+- Visibility: Listed in marketplace/explore; others can discover and join
+- AI usage: Creator pays for their own usage; joiners pay for theirs
+- Creator incentive: Can set a "join price" (credits) for others to get full access
+
+3.2 AI TOKEN USAGE & COST CALCULATION
+--------------------------------------------------------------------------------
+
+TRACKED ACTIONS:
+1. Goal creation (AI plan generation) - OpenAI
+2. Sub-goal content (quiz, coding, resources) - OpenAI + Exa
+3. Verification content generation - OpenAI
+4. Any future AI features
+
+COST MODEL (example rates, adjust per your pricing):
+- GPT-4o-mini: ~$0.15/1M input, ~$0.60/1M output
+- Exa API: Per-call or tier-based
+- Map to credits: 1 credit = X tokens (e.g., 1 credit = 10K input tokens)
+
+DISPLAY:
+- "Usage this month: 47,230 tokens (~3 credits)"
+- Real-time or daily batch deduction
+- History/breakdown per goal
+
+3.3 VERIFICATION CREDIT SYSTEM
+--------------------------------------------------------------------------------
+
+FIXED FEE: 15-20 credits (recommend 20 for premium feel)
+
+REFUND FORMULA:
+  refund = floor(verification_fee * (overall_score / 100))
+
+Examples (20 credit fee):
+- 100% score -> 20 credits back (full refund)
+- 70% score -> 14 credits back
+- 50% score -> 10 credits back
+- 0% score  -> 0 credits back
+
+OVERALL SCORE CALCULATION:
+- Option A: Simple average of (quiz% + coding% + mock%) / 3
+- Option B: Weighted (e.g., quiz 40%, coding 40%, mock 20%)
+- Option C: Minimum threshold per section (e.g., must complete all three)
+
+RECOMMENDATION: Weighted average, all three sections required to qualify for refund.
+
+
+================================================================================
+4. PUBLIC PATHFINDER MARKETPLACE
+================================================================================
+
+4.1 NEW PAGES NEEDED
+--------------------------------------------------------------------------------
+
+1. /pathfinder/explore (or /pathfinder/public)
+   - Browse public Pathfinder goals
+   - Filter by: category, level, popularity, creator
+   - Preview: title, description, stats, creator info
+   - CTA: "Join Free" or "Unlock for X credits"
+
+2. /pathfinder/explore/[slug]
+   - Full preview of a public goal (read-only)
+   - What you get: structure, topics, verification info
+   - Pricing: creator-set join price (0 = free, N = paid)
+   - "Get Access" button
+
+3. /pathfinder/my-pathfinders (or enhance existing)
+   - List of goals user owns/joined
+   - Distinguish: Created by me | Joined (from marketplace)
+
+4.2 ACCESS MODELS
+--------------------------------------------------------------------------------
+
+FREE JOIN (creator set price = 0):
+- User gets a "copy" or "fork" of the goal
+- Their own instance: their progress, their usage
+- Creator's goal stays as-is; no revenue share needed
+
+PAID JOIN (creator set price > 0):
+- User pays X credits to unlock
+- Revenue split? Options:
+  a) 100% to creator (incentivizes quality)
+  b) 70/30 platform/creator
+  c) 100% platform initially, creator rewards later
+
+4.3 CREATOR CONTROLS
+--------------------------------------------------------------------------------
+
+When creating/setting goal to PUBLIC:
+- [ ] Allow free joins (default)
+- [ ] Set join price (0-100 credits)
+- [ ] Allow/disallow forking (copy structure only)
+- [ ] Featured/promote (future: paid promotion)
+
+
+================================================================================
+5. IMPROVEMENTS & RECOMMENDATIONS
+================================================================================
+
+5.1 CREDIT SYSTEM IMPROVEMENTS
+--------------------------------------------------------------------------------
+
+1. USAGE BATCHING
+   - Don't deduct per-request; batch hourly/daily
+   - Reduces transaction noise, easier reconciliation
+   - Show "Pending usage" vs "Deducted"
+
+2. CREDIT ALERTS
+   - Low balance warning (e.g., < 10 credits)
+   - Usage cap: "Stop AI when credits reach 0" vs "Allow negative" (not recommended)
+
+3. TRANSPARENCY
+   - Clear breakdown: "This action used ~2,400 tokens (~0.2 credits)"
+   - Monthly statement per goal
+   - Export usage history
+
+4. VERIFICATION REFINEMENTS
+   - Partial refund tiers: 50%, 70%, 90%, 100% thresholds
+   - Bonus for first-time pass: +5% refund
+   - Retake cost: half of original (like mock interviews)
+
+5.2 MARKETPLACE IMPROVEMENTS
+--------------------------------------------------------------------------------
+
+1. DISCOVERABILITY
+   - Trending, most joined, highest rated
+   - Categories/tags
+   - "Similar to what you're learning"
+
+2. QUALITY SIGNALS
+   - Completion rate of joiners
+   - Average verification score
+   - Creator reputation (other goals, ratings)
+
+3. SOCIAL PROOF
+   - "1,234 learners joined this path"
+   - Reviews/testimonials
+   - Creator profile link
+
+4. MONETIZATION FOR CREATORS
+   - Revenue share on paid joins
+   - "Top creator" badge, leaderboard
+   - Payout/withdrawal (if credits convertible)
+
+5.3 GAMIFICATION
+--------------------------------------------------------------------------------
+
+- Badges: "Verified in 7 days", "Quiz master", "First verification pass"
+- Streak bonuses: 7-day streak = 1 free credit
+- Referral: Invite friend, both get 5 credits
+- Achievement unlocks: Free verification attempt at 10 completed sub-goals
+
+
+================================================================================
+6. IMPLEMENTATION CHECKLIST
+================================================================================
+
+6.1 SCHEMA CHANGES
+--------------------------------------------------------------------------------
+[ ] Add to PathfinderGoal:
+    - isPublic: boolean (default true for backward compat, or false)
+    - joinPrice: number (credits, 0 = free)
+    - creatorEarnings: number (track revenue from joins)
+
+[ ] Add PathfinderUsageLedger (or similar):
+    - goalId, userId, action, tokensIn, tokensOut, creditsCharged, createdAt
+
+[ ] Add PathfinderJoin (or similar):
+    - goalId, userId, joinPrice, joinedAt, accessType (clone/full)
+
+6.2 NEW ACTIONS / API
+--------------------------------------------------------------------------------
+[ ] createPathfinderGoal: check isPublic, deduct 5 if private
+[ ] trackAIUsage(goalId, action, tokensIn, tokensOut): log + calc cost
+[ ] startVerification: deduct fixed fee (20)
+[ ] completeVerification: calculate score, issue refund
+[ ] joinPathfinder(goalId): clone/fork or purchase access
+[ ] getPublicPathfinders: list with filters
+
+6.3 UI COMPONENTS
+--------------------------------------------------------------------------------
+[ ] Usage meter widget (top of goal/practice page)
+[ ] Visibility toggle + join price (create goal sheet)
+[ ] /pathfinder/explore page
+[ ] /pathfinder/explore/[slug] preview + join CTA
+[ ] Verification fee + refund policy (before starting)
+[ ] Credit transaction history (settings or dedicated page)
+
+
+================================================================================
+7. FLOWCHART SUMMARY - END-TO-END USER JOURNEY
+================================================================================
+
+    CREATE GOAL
+         |
+    +----+----+
+    |         |
+  PRIVATE   PUBLIC
+  (5 cred) (0 cred)
+    |         |
+    +----+----+
+         |
+         v
+    USE PATHFINDER (practice, sub-goals, AI content)
+         |
+         v
+    [Usage tracked per token -> Credits deducted]
+         |
+         v
+    COMPLETE LEARNING
+         |
+         v
+    START VERIFICATION (pay 20 credits)
+         |
+         v
+    COMPLETE QUIZ + CODING + MOCK
+         |
+         v
+    SCORE CALCULATED
+         |
+         v
+    REFUND = 20 * (score/100) credited back
+         |
+         v
+    [If PUBLIC] Goal discoverable; others can join/buy
+
+
+================================================================================
+8. OPEN QUESTIONS
+================================================================================
+
+1. Credit-to-currency conversion? (e.g., 1 credit = ₹2)
+2. Refund as credits only, or allow cash refund for high scores?
+3. Creator payout: When? Minimum threshold? Currency?
+4. Free tier: X free private goals per month?
+5. Usage caps for free users vs paid?
+
+================================================================================
+END OF DOCUMENT
+================================================================================

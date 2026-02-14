@@ -23,6 +23,7 @@ import { SubGoalQuiz } from './subgoal-quiz'
 import { SubGoalCoding } from './subgoal-coding'
 import { CreateSubGoalSheet } from './create-subgoal-sheet'
 import { SubGoalContentTabs } from './subgoal-content-tabs'
+import { PathfinderUsageWidget } from './pathfinder-usage-widget'
 
 interface SubGoal {
     id: string
@@ -76,7 +77,7 @@ function PracticeHeader({ goal }: { goal: Goal }) {
         <div className="flex-shrink-0 p-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Link href="/pathfinder">
+                    <Link href={`/pathfinder/${goal.slug ?? goal.id}`}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <ArrowLeft className="w-4 h-4" />
                         </Button>
@@ -92,6 +93,7 @@ function PracticeHeader({ goal }: { goal: Goal }) {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <PathfinderUsageWidget goalId={goal.id} />
                     <Link href={`/pathfinder/${goal.slug ?? goal.id}/verify`}>
                         <Button variant="outline" size="sm" className="h-8 text-xs">
                             <Trophy className="w-3 h-3 mr-1" />
@@ -265,6 +267,7 @@ function SessionStats({ session }: { session: DailySession | null }) {
 export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewProps) {
     const router = useRouter()
     const setSubGoalResources = usePathfinderStore((s) => s.setSubGoalResources)
+    const setGoalUsage = usePathfinderStore((s) => s.setGoalUsage)
     const [session, setSession] = useState(initialSession)
     const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoal | null>(null)
     const [createSheetOpen, setCreateSheetOpen] = useState(false)
@@ -299,7 +302,8 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
 
     const handleSubGoalAdded = (
         subGoal: SubGoal,
-        aiResources?: SubGoalResources
+        aiResources?: SubGoalResources,
+        usageSummary?: import('@/app/store/pathfinderStore').GoalUsageSummary
     ) => {
         // Add to session instantly (no reload)
         const newSubGoal: SubGoal = {
@@ -329,6 +333,9 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
         setSelectedSubGoal(newSubGoal)
         if (aiResources) {
             setSubGoalResources(subGoal.id, aiResources)
+        }
+        if (usageSummary) {
+            setGoalUsage(goal.id, usageSummary)
         }
     }
 

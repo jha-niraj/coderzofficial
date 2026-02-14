@@ -110,7 +110,11 @@ model PathfinderGoal {
     focusAreas      String[]            // Array of focus areas selected
     targetDate      DateTime?           // Optional target completion date
     duration        PathfinderGoalDuration?  // 1 week, fortnight, month, etc. or CUSTOM
-    
+
+    // Visibility & Credits
+    isPublic        Boolean             @default(true)  // false = private (costs 5 credits), true = free
+    forkedFromId    String?             // If copied from another user's public goal
+
     @@unique([userId, slug])
     
     // AI-Generated Content (stored as JSON for flexibility)
@@ -173,7 +177,8 @@ model PathfinderGoal {
     
     // Coding submissions
     codingSubmissions PathfinderCodingSubmission[]
-    
+    usageLedger      PathfinderUsageLedger[]
+
     @@index([userId])
     @@index([groupId])
     @@index([status])
@@ -312,6 +317,9 @@ model PathfinderVerification {
     quizAttempts    Int             @default(0)
     codingAttempts  Int             @default(0)
     mockAttempts    Int             @default(0)
+
+    // Credits (charge when generating, refund on completion)
+    verificationCreditsCharged Int   @default(0)
     
     // Mock Session Reference (links to existing MockVoiceSession)
     mockSessionId   String?
@@ -405,4 +413,29 @@ model PathfinderCodingSubmission {
     @@index([goalId])
     @@index([userId])
     @@index([problemId])
+}
+
+// ================================================================================
+// USAGE LEDGER (AI token usage per goal - for credit calculation)
+// ================================================================================
+
+model PathfinderUsageLedger {
+    id              String          @id @default(cuid())
+
+    goalId          String
+    goal            PathfinderGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+    userId          String
+
+    action          String          // "subgoal_content" | "verification_gen" | "goal_plan" etc.
+    provider        String          // "openai" | "exa"
+    inputTokens     Int             @default(0)
+    outputTokens    Int             @default(0)
+    creditsCost     Int             @default(0)   // Calculated cost in credits
+    deducted        Boolean         @default(false)  // Whether credits were deducted
+
+    createdAt       DateTime        @default(now())
+
+    @@index([goalId])
+    @@index([userId])
+    @@index([createdAt])
 }

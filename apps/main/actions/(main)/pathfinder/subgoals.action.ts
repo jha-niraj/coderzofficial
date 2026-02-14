@@ -5,6 +5,7 @@ import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
 import OpenAI from 'openai'
 import { generateSubGoalResources } from './resources.action'
+import { canRunPathfinderAI, getGoalUsageSummary } from './usage.action'
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -177,6 +178,17 @@ export async function createSubGoal(input: CreateSubGoalInput) {
             return { success: false, error: 'Goal not found' }
         }
 
+        // Check if user can run AI (usage limit)
+        const canRun = await canRunPathfinderAI(input.goalId)
+        if (!canRun.allowed) {
+            return {
+                success: false,
+                error: canRun.reason ?? 'AI usage limit reached',
+                code: 'USAGE_BLOCKED',
+                pendingCredits: canRun.pendingCredits,
+            }
+        }
+
         // Get or create today's session
         const sessionResult = await getOrCreateDailySession(input.goalId)
         if (!sessionResult.success || !sessionResult.session) {
@@ -222,10 +234,27 @@ export async function createSubGoal(input: CreateSubGoalInput) {
         })
 
         // Generate AI content AND resources in parallel (await both)
-        const [, resources] = await Promise.all([
-            generateAIContentForSubGoal(subGoal.id, input.title, goal.category, goal.level),
-            generateSubGoalResources(subGoal.id, input.title, goal.category, goal.level),
+        const [, resourcesResult] = await Promise.all([
+            generateAIContentForSubGoal(
+                subGoal.id,
+                input.goalId,
+                session.user.id,
+                input.title,
+                goal.category,
+                goal.level
+            ),
+            generateSubGoalResources(
+                subGoal.id,
+                input.goalId,
+                session.user.id,
+                input.title,
+                goal.category,
+                goal.level
+            ),
         ])
+
+        const resources = resourcesResult?.resources ?? null
+        const usageCost = resourcesResult?.usageCost ?? 0
 
         // Refetch sub-goal with all generated content
         const updatedSubGoal = await prisma.pathfinderSubGoal.findUnique({
@@ -233,11 +262,16 @@ export async function createSubGoal(input: CreateSubGoalInput) {
             include: { goal: true },
         })
 
+        // Get updated usage summary for instant UI
+        const usageSummary = await getGoalUsageSummary(input.goalId)
+
         revalidatePath(`/pathfinder/${input.goalId}`)
         return {
             success: true,
             subGoal: updatedSubGoal ?? subGoal,
             aiResources: resources ?? undefined,
+            usageCost,
+            usageSummary: usageSummary ?? undefined,
         }
     } catch (error) {
         console.error('Error creating sub-goal:', error)
@@ -251,6 +285,8 @@ export async function createSubGoal(input: CreateSubGoalInput) {
 
 async function generateAIContentForSubGoal(
     subGoalId: string,
+    goalId: string,
+    userId: string,
     title: string,
     category: string,
     level: string
@@ -307,6 +343,21 @@ Return ONLY valid JSON, no markdown or code blocks.`
         if (!content) {
             console.error('No content from OpenAI')
             return
+        }
+
+        // Log usage
+        const { logPathfinderUsage } = await import('./usage.action')
+        const inputTokens = response.usage?.prompt_tokens ?? 0
+        const outputTokens = response.usage?.completion_tokens ?? 0
+        if (inputTokens > 0 || outputTokens > 0) {
+            await logPathfinderUsage({
+                goalId,
+                userId,
+                action: 'subgoal_quiz_coding',
+                provider: 'openai',
+                inputTokens,
+                outputTokens,
+            })
         }
 
         const aiContent = JSON.parse(content)

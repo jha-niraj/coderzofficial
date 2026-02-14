@@ -4,8 +4,9 @@ import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
 import OpenAI from 'openai'
-import { VerificationSectionStatus } from '@repo/prisma/client'
+import { VerificationSectionStatus, Currency } from '@repo/prisma/client'
 import type { VerificationAIPlan } from '@/types/pathfinder'
+import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
 // ================================================================================
 // TYPES
@@ -142,6 +143,43 @@ export async function generateVerificationContent(goalId: string) {
         if (!goal) {
             return { success: false, error: 'Goal not found', plan: null }
         }
+
+        // Charge verification fee (20 credits) before generating
+        const fee = PATHFINDER_CREDITS.verificationFee
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { credits: true },
+        })
+        if (!user || user.credits < fee) {
+            return {
+                success: false,
+                error: `Insufficient credits. Verification requires ${fee} credits.`,
+                plan: null,
+                code: 'INSUFFICIENT_CREDITS',
+                required: fee,
+                available: user?.credits ?? 0,
+            }
+        }
+
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: session.user.id },
+                data: { credits: { decrement: fee } },
+            }),
+            prisma.creditTransaction.create({
+                data: {
+                    userId: session.user.id,
+                    amount: -fee,
+                    type: 'SPEND',
+                    description: `Pathfinder Verification: ${goal.title}`,
+                    currency: Currency.INR,
+                },
+            }),
+            prisma.pathfinderVerification.update({
+                where: { goalId },
+                data: { verificationCreditsCharged: fee },
+            }),
+        ])
 
         const assistantId = process.env.PATHFINDER_ASSISTANT_ID
         if (!assistantId) {
@@ -547,39 +585,52 @@ async function checkVerificationCompletion(verificationId: string) {
         : true
 
     if (quizComplete && codingComplete && mockComplete && projectComplete) {
-        // Calculate overall score
-        const scores = [
-            verification.quizScore || 0,
-            verification.codingScore || 0,
-            verification.mockScore || 0,
-        ]
-        if (projectRequired && verification.projectComplete) {
-            scores.push(100) // Project is binary pass/fail
-        }
+        // Weighted score: Quiz 30%, Coding 35%, Mock 35%
+        const w = PATHFINDER_CREDITS.verificationWeights
+        const weightedScore = Math.round(
+            (verification.quizScore || 0) * w.quiz +
+            (verification.codingScore || 0) * w.coding +
+            (verification.mockScore || 0) * w.mock
+        )
+        const overallScore = weightedScore
 
-        const overallScore = Math.round(
-            scores.reduce((a, b) => a + b, 0) / scores.length
+        const refundCredits = Math.floor(
+            (verification.verificationCreditsCharged || 0) * (weightedScore / 100)
         )
 
-        // Update verification and goal
-        await prisma.$transaction([
-            prisma.pathfinderVerification.update({
+        await prisma.$transaction(async (tx) => {
+            await tx.pathfinderVerification.update({
                 where: { id: verificationId },
                 data: {
                     passed: true,
                     overallScore,
                     completedAt: new Date(),
                 },
-            }),
-            prisma.pathfinderGoal.update({
+            })
+            await tx.pathfinderGoal.update({
                 where: { id: verification.goalId },
                 data: {
                     status: 'COMPLETED',
                     completedAt: new Date(),
                     progressPercent: 100,
                 },
-            }),
-        ])
+            })
+            if (refundCredits > 0) {
+                await tx.user.update({
+                    where: { id: verification.goal.userId },
+                    data: { credits: { increment: refundCredits } },
+                })
+                await tx.creditTransaction.create({
+                    data: {
+                        userId: verification.goal.userId,
+                        amount: refundCredits,
+                        type: 'REWARD',
+                        description: `Pathfinder Verification Refund: ${weightedScore}% score (${refundCredits} credits)`,
+                        currency: Currency.INR,
+                    },
+                })
+            }
+        })
 
         // TODO: Award XP, achievements, etc.
     }
