@@ -1,8 +1,8 @@
 import { 
     getPathfinderGoal, getVerificationStatus 
 } from '@/actions/(main)/pathfinder'
-import { VerificationContent } from './_components/verification-content'
-import { notFound, redirect } from 'next/navigation'
+import { VerificationPageClient } from './_components/verification-page-client'
+import { notFound } from 'next/navigation'
 import type { PathfinderVerification } from '@repo/prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -22,13 +22,8 @@ export default async function VerificationPage({ params }: PageProps) {
         notFound()
     }
 
-    // If not in verification status, redirect back
-    if (goal.status !== 'VERIFICATION' && goal.status !== 'COMPLETED') {
-        redirect(`/pathfinder/${slug}`)
-    }
-
     return (
-        <VerificationContent
+        <VerificationPageClient
             goal={goal}
             verification={verification as PathfinderVerification | null}
         />

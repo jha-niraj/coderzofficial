@@ -8,7 +8,7 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Target, Plus, CheckCircle2, Trophy, Flame, FolderOpen, MoreVertical,
-    MoveRight, BookOpen, Code2, Brain, BarChart3, Zap, ChevronRight,
+    MoveRight, Code2, Brain, BarChart3, Zap, ChevronRight,
     Play, PauseCircle, CheckCircle, XCircle
 } from 'lucide-react'
 import Link from 'next/link'
@@ -125,24 +125,6 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
                             <span>{progressPercent}%</span>
                         </div>
                         <Progress value={progressPercent} className="h-1" />
-                    </div>
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800/50">
-                        <Link href={`/pathfinder/${goal.slug}/practice`} className="flex-1" onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="sm" className="w-full text-[11px] h-7 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">
-                                <BookOpen className="w-3 h-3 mr-1" />
-                                Practice
-                            </Button>
-                        </Link>
-                        {
-                            goal.studioId && (
-                                <Link href={`/studio/${goal.studioId}`} className="flex-1" onClick={(e) => e.stopPropagation()}>
-                                    <Button variant="ghost" size="sm" className="w-full text-[11px] h-7 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">
-                                        <Code2 className="w-3 h-3 mr-1" />
-                                        Studio
-                                    </Button>
-                                </Link>
-                            )
-                        }
                     </div>
                 </div>
             </Link>

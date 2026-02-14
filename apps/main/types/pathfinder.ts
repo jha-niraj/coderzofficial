@@ -166,6 +166,48 @@ export interface VerificationProject {
     feedback?: string
 }
 
+/** AI-generated verification content (from OpenAI assistant on verify) */
+export interface VerificationAIPlan {
+    subject?: string
+    category?: string
+    level?: string
+    overview?: string
+    learningObjectives?: string[]
+    prerequisites?: string[]
+    quizQuestions?: Array<{
+        id: string
+        question: string
+        options: string[]
+        correctAnswer: number
+        explanation: string
+        difficulty: string
+        category: string
+        codeSnippet?: string | null
+    }>
+    codingQuestions?: Array<{
+        id: string
+        title: string
+        description: string
+        difficulty: string
+        category: string
+        constraints: string[]
+        examples: Array<{ input: string; output: string; explanation?: string }>
+        hints: string[]
+        starterCode: { javascript: string; python: string; java?: string }
+        solution: { javascript: string; python: string; explanation: string; timeComplexity: string; spaceComplexity: string }
+        testCases: Array<{ input: string; expectedOutput: string; isHidden: boolean }>
+    }>
+    mockInterview?: {
+        title: string
+        description: string
+        duration: number
+        questionsCount: number
+        knowledgeBase: string
+    }
+    minorProject?: { title: string; description: string; technologies: string[] } | null
+    majorProject?: { title: string; description: string; technologies: string[]; features: string[] } | null
+}
+
 // =========================================
 // Learning Plan Types (from OpenAI Assistant)
 // =========================================

@@ -3,7 +3,9 @@
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
+import OpenAI from 'openai'
 import { VerificationSectionStatus } from '@repo/prisma/client'
+import type { VerificationAIPlan } from '@/types/pathfinder'
 
 // ================================================================================
 // TYPES
@@ -105,10 +107,120 @@ export async function getVerificationStatus(slugOrId: string) {
             return { success: false, error: 'Goal not found', verification: null }
         }
 
-        return { success: true, verification: goal.verification ?? null }
+        const verification = (goal as { verification?: { id: string } | null }).verification
+        return { success: true, verification: verification ?? null }
     } catch (error) {
         console.error('Error fetching verification status:', error)
         return { success: false, error: 'Failed to fetch status', verification: null }
+    }
+}
+
+// ================================================================================
+// GENERATE VERIFICATION CONTENT (on-demand with user learning context)
+// ================================================================================
+
+export async function generateVerificationContent(goalId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: 'Unauthorized', plan: null }
+        }
+
+        const goal = await prisma.pathfinderGoal.findFirst({
+            where: { id: goalId, userId: session.user.id },
+            include: {
+                dailySessions: {
+                    orderBy: { date: 'desc' },
+                    take: 14,
+                    include: {
+                        subGoals: { orderBy: { order: 'asc' }, select: { title: true, quizCompleted: true, codingCompleted: true } },
+                    },
+                },
+            },
+        })
+
+        if (!goal) {
+            return { success: false, error: 'Goal not found', plan: null }
+        }
+
+        const assistantId = process.env.PATHFINDER_ASSISTANT_ID
+        if (!assistantId) {
+            return { success: false, error: 'Verification generation not configured', plan: null }
+        }
+
+        // Build condensed user learning context (avoid token bloat)
+        const subGoalTitles = goal.dailySessions.flatMap((s) => s.subGoals.map((sg) => sg.title))
+        const uniqueTopics = [...new Set(subGoalTitles)].slice(0, 15)
+        const completedCount = goal.dailySessions.reduce((sum, s) => sum + s.completedSubGoals, 0)
+        const quizTotal = goal.dailySessions.reduce((sum, s) => sum + s.correctQuizAnswers, 0)
+        const codingTotal = goal.dailySessions.reduce((sum, s) => sum + s.solvedCodingProblems, 0)
+
+        const userContext = {
+            goal: {
+                title: goal.title,
+                category: goal.category,
+                level: goal.level,
+                focusAreas: goal.focusAreas,
+                overview: goal.overview ?? undefined,
+            },
+            userLearningProgress: {
+                topicsLearned: uniqueTopics,
+                tasksCompleted: completedCount,
+                totalSubGoals: goal.totalSubGoals,
+                quizAnswered: goal.totalQuizAnswered,
+                codingSolved: goal.totalCodingSolved,
+            },
+            instruction: 'Generate verification quiz and coding questions tailored to what this user has actually learned. Focus on the topics they practiced. Return the full pathfinder_learning_plan schema with quizQuestions (20-25), codingQuestions (3-8), mockInterview, minorProject, majorProject.',
+        }
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+        const thread = await openai.beta.threads.create({
+            messages: [{ role: 'user', content: JSON.stringify(userContext) }],
+        })
+
+        const run = await openai.beta.threads.runs.create(thread.id, { assistant_id: assistantId })
+
+        let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
+        let attempts = 0
+        const maxAttempts = 90
+
+        while (runStatus.status !== 'completed' && attempts < maxAttempts) {
+            await new Promise((r) => setTimeout(r, 1000))
+            runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
+            attempts++
+            if (runStatus.status === 'failed' || runStatus.status === 'cancelled') {
+                return { success: false, error: 'Generation failed', plan: null }
+            }
+        }
+
+        if (runStatus.status !== 'completed') {
+            return { success: false, error: 'Generation timed out', plan: null }
+        }
+
+        const messages = await openai.beta.threads.messages.list(thread.id)
+        const assistantMessage = messages.data.find((m) => m.role === 'assistant')
+        const content = assistantMessage?.content?.[0]
+        if (!content || content.type !== 'text') {
+            return { success: false, error: 'No response from assistant', plan: null }
+        }
+
+        const aiPlan = JSON.parse(content.text.value) as VerificationAIPlan
+
+        await prisma.pathfinderGoal.update({
+            where: { id: goalId },
+            data: {
+                aiGeneratedPlan: aiPlan as object,
+                overview: aiPlan.overview ?? goal.overview,
+                learningObjectives: aiPlan.learningObjectives ?? goal.learningObjectives,
+                prerequisites: aiPlan.prerequisites ?? goal.prerequisites,
+            },
+        })
+
+        revalidatePath(`/pathfinder/${goal.slug}/verify`)
+        return { success: true, plan: aiPlan }
+    } catch (error) {
+        console.error('generateVerificationContent error:', error)
+        return { success: false, error: 'Failed to generate verification content', plan: null }
     }
 }
 

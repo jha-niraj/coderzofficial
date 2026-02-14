@@ -1,5 +1,5 @@
-import { getPathfinderGoal } from '@/actions/(main)/pathfinder'
-import { GoalDetailsContent } from './_components/goal-details-content'
+import { getPathfinderGoal, getOrCreateDailySession } from '@/actions/(main)/pathfinder'
+import { DailyPracticeView } from './_components/daily-practice-view'
 import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
@@ -16,5 +16,12 @@ export default async function GoalDetailsPage({ params }: PageProps) {
         notFound()
     }
 
-    return <GoalDetailsContent goal={goal} />
+    const { session } = await getOrCreateDailySession(goal.id)
+
+    return (
+        <DailyPracticeView
+            goal={goal}
+            initialSession={session ?? null}
+        />
+    )
 }

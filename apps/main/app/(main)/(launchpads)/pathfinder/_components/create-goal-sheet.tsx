@@ -209,11 +209,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
 
     const handleSubmit = async () => {
         setProcessing(true)
-        setProgressPercent(10)
-
-        const progressInterval = setInterval(() => {
-            setProgressPercent(p => Math.min(p + 5, 85))
-        }, 500)
+        setProgressPercent(20)
 
         try {
             const result = await createPathfinderGoal({
@@ -227,14 +223,12 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                 groupId: formData.groupId,
             })
 
-            clearInterval(progressInterval)
-
             if (!result.success) {
                 throw new Error(result.error || 'Failed to create goal')
             }
 
             setProgressPercent(100)
-            toast.success('Goal created! AI is generating your plan...')
+            toast.success('Goal created!')
 
             setTimeout(() => {
                 onOpenChange(false)
@@ -242,9 +236,8 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                 if (onSuccess && result.goalId) {
                     onSuccess(result.goalId, result.slug ? { id: result.goalId, slug: result.slug } as Parameters<typeof onSuccess>[1] : undefined)
                 }
-            }, 800)
+            }, 400)
         } catch (error) {
-            clearInterval(progressInterval)
             console.error('Error creating goal:', error)
             toast.error(error instanceof Error ? error.message : 'Failed to create goal')
             setProcessing(false)
@@ -300,7 +293,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                         {progressPercent === 100 ? 'Goal Created!' : 'Creating Goal...'}
                                     </h3>
                                     <p className="text-sm text-neutral-500 mb-6">
-                                        {progressPercent < 50 ? 'Setting up...' : 'AI generating plan...'}
+                                        {progressPercent === 100 ? 'Redirecting to your goal' : 'Setting up...'}
                                     </p>
 
                                     <div className="w-full max-w-xs">

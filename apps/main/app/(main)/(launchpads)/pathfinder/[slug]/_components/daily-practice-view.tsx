@@ -7,7 +7,7 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2, 
-    Brain, Trophy, Trash2, ChevronRight, Calendar, Notebook, Sparkles
+    Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
@@ -76,7 +76,7 @@ function PracticeHeader({ goal }: { goal: Goal }) {
         <div className="flex-shrink-0 p-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Link href={`/pathfinder/${goal.slug ?? goal.id}`}>
+                    <Link href="/pathfinder">
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <ArrowLeft className="w-4 h-4" />
                         </Button>
@@ -84,26 +84,18 @@ function PracticeHeader({ goal }: { goal: Goal }) {
                     <div>
                         <h1 className="text-base font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
                             <Target className="w-4 h-4 text-violet-500" />
-                            Daily Practice
+                            {goal.title}
                         </h1>
-                        <p className="text-xs text-neutral-500 truncate max-w-[200px]">{goal.title}</p>
+                        <p className="text-xs text-neutral-500 truncate max-w-[200px]">
+                            Add tasks, take quizzes, solve coding problems
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {
-                    goal.studioId && (
-                        <Link href={`/studio/${goal.studioId}`}>
-                            <Button variant="outline" size="sm" className="h-8 text-xs">
-                                <Notebook className="w-3 h-3 mr-1" />
-                                Studio
-                            </Button>
-                        </Link>
-                    )
-                    }
                     <Link href={`/pathfinder/${goal.slug ?? goal.id}/verify`}>
                         <Button variant="outline" size="sm" className="h-8 text-xs">
                             <Trophy className="w-3 h-3 mr-1" />
-                            Verification
+                            Verify this Goal
                         </Button>
                     </Link>
                 </div>

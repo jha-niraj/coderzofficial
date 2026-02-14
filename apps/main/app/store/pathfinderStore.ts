@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { 
     PathfinderStatus, PathfinderCategory, PathfinderLevel 
     } from '@repo/prisma/client';
+import type { VerificationAIPlan } from '@/types/pathfinder';
 
 // ==========================================
 // TYPES
@@ -95,6 +96,7 @@ interface PathfinderStoreState {
     groups: PathfinderGroup[];
     stats: PathfinderStats;
     subGoalResources: Record<string, SubGoalResources>;
+    verificationAIPlan: Record<string, VerificationAIPlan>;
     
     // Loading states
     isLoading: boolean;
@@ -131,6 +133,8 @@ interface PathfinderStoreState {
     // Actions - SubGoal Resources (for instant display when sheet closes)
     setSubGoalResources: (subGoalId: string, resources: SubGoalResources) => void;
     getSubGoalResources: (subGoalId: string) => SubGoalResources | undefined;
+    setVerificationAIPlan: (goalId: string, plan: VerificationAIPlan) => void;
+    getVerificationAIPlan: (goalId: string) => VerificationAIPlan | undefined;
     
     // Actions - UI
     setSelectedGoalId: (goalId: string | null) => void;
@@ -178,6 +182,7 @@ export const usePathfinderStore = create<PathfinderStoreState>()((set, get) => (
     goals: [],
     groups: [],
     subGoalResources: {},
+    verificationAIPlan: {},
     stats: {
         totalGoals: 0,
         activeGoals: 0,
@@ -311,6 +316,15 @@ export const usePathfinderStore = create<PathfinderStoreState>()((set, get) => (
         }));
     },
     getSubGoalResources: (subGoalId) => get().subGoalResources[subGoalId],
+    setVerificationAIPlan: (goalId, plan) => {
+        set((state) => ({
+            verificationAIPlan: {
+                ...state.verificationAIPlan,
+                [goalId]: plan,
+            },
+        }));
+    },
+    getVerificationAIPlan: (goalId) => get().verificationAIPlan[goalId],
     
     // UI actions
     setSelectedGoalId: (goalId) => set({ selectedGoalId: goalId }),
