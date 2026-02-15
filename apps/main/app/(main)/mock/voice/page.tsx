@@ -9,6 +9,48 @@ interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
+interface MockData {
+    id: string
+    title: string
+    description: string
+    category?: string
+    level: string
+    duration: number
+    creditsRequired: number
+    questionsCount?: number
+    isPublic?: boolean
+    byAdmin?: boolean
+    isFeatured?: boolean
+    createdAt?: Date
+    popularity?: number
+    totalSessions?: number
+    averageRating?: number | null
+    tags?: string[]
+    createdBy?: {
+        image: string | null
+        name: string | null
+        username: string | null
+    } | null
+}
+
+interface SessionData {
+    id: string
+    status: string
+    createdAt: Date
+    completedAt: Date | null
+    duration: number | null
+    creditsUsed: number
+    mock: {
+        id: string
+        title: string
+        description: string
+        level: string
+        category: string
+        duration: number | null
+        creditsRequired: number
+    }
+}
+
 export default async function VoiceMockInterviewPage({ searchParams }: PageProps) {
     const params = await searchParams
     const view = (params.view as 'all-mocks' | 'my-mocks' | 'my-sessions') || undefined
@@ -22,8 +64,8 @@ export default async function VoiceMockInterviewPage({ searchParams }: PageProps
     if (view) effectiveView = view
     if (category) effectiveView = 'category'
 
-    let mocks: any[] = []
-    let sessions: any[] = []
+    let mocks: MockData[] = []
+    let sessions: SessionData[] = []
     let total = 0
     let totalPages = 1
     let categoryLabel = ''

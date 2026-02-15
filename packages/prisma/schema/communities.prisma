@@ -262,6 +262,7 @@ model CommunityPost {
     // Platform integrations
     linkedProjectId String? // Link to a ProjectV2
     linkedMockId    String? // Link to a mock interview
+    linkedConceptId String? // Link to a Concept
 
     // Official channel for global posts (general, showcase, help, career, wins)
     officialChannel String?

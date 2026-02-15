@@ -2,9 +2,6 @@
 
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-    CardTitle
-} from "@repo/ui/components/ui/card"
 import { Button } from "@repo/ui/components/ui/button"
 import { Progress } from "@repo/ui/components/ui/progress"
 import {

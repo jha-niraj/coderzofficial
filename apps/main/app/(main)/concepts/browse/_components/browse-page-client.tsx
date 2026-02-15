@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
     Grid, List, Clock, Eye, Heart,
-    ChevronLeft, ChevronRight, Plus, SortAsc, Lightbulb
+    ChevronLeft, ChevronRight, Plus, SortAsc, Lightbulb, Coins
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -37,6 +37,8 @@ interface Concept {
     estimatedTime?: number | null;
     viewCount: number;
     likeCount: number;
+    pricingType: string;
+    price: number;
     creator: {
         id: string;
         name?: string | null;
@@ -131,7 +133,6 @@ export default function BrowsePageClient({
 
     return (
         <div className="p-6 lg:p-10 space-y-8 bg-white dark:bg-neutral-950 min-h-screen">
-            {/* Top Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
@@ -183,134 +184,151 @@ export default function BrowsePageClient({
                 </div>
             </div>
 
-            {/* Content Grid */}
-            {concepts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl">
-                    <Lightbulb className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mb-4" />
-                    <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">No concepts found</h3>
-                    <p className="text-neutral-500 max-w-sm mb-6">
-                        {search ? `No results for "${search}".` : "Try adjusting your filters selected on the left."}
-                    </p>
-                    <Link href="/concepts/create">
-                        <Button>Create Concept</Button>
-                    </Link>
-                </div>
-            ) : (
-                <div className={cn(
-                    "grid gap-6",
-                    viewMode === "grid"
-                        ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-                        : "grid-cols-1"
-                )}>
-                    <AnimatePresence>
-                        {concepts.map((concept, index) => (
-                            <motion.div
-                                key={concept.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                            >
-                                <Link href={`/concepts/${concept.slug}`}>
-                                    <Card className={cn(
-                                        "group h-full overflow-hidden border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-lg transition-all duration-300",
-                                        viewMode === "list" && "flex flex-row h-40"
-                                    )}>
-                                        <div className={cn(
-                                            "relative overflow-hidden bg-gradient-to-br from-neutral-100 to-neutral-50 dark:from-neutral-900 dark:to-neutral-950",
-                                            viewMode === "grid" ? "h-40" : "w-48 shrink-0"
-                                        )}>
-                                            {concept.thumbnail ? (
-                                                <Image
-                                                    src={concept.thumbnail}
-                                                    alt={concept.title}
-                                                    fill
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                                />
-                                            ) : (
-                                                <div className="absolute inset-0 flex items-center justify-center text-4xl">
-                                                    {concept.iconEmoji || "📚"}
-                                                </div>
-                                            )}
-                                            <div className="absolute top-2 right-2">
-                                                <Badge className={difficultyConfig[concept.difficulty].color}>
-                                                    {difficultyConfig[concept.difficulty].label}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div className={cn(
-                                            "p-5 flex flex-col justify-between",
-                                            viewMode === "grid" ? "h-[calc(100%-10rem)]" : "w-full"
-                                        )}>
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-neutral-200 dark:border-neutral-800 text-neutral-500">
-                                                        {concept.category.replace(/_/g, " ")}
-                                                    </Badge>
-                                                    <div className="flex items-center gap-1 text-[10px] text-neutral-400">
-                                                        <Clock className="w-3 h-3" />
-                                                        <span>{concept.estimatedTime || 10}m</span>
+            {
+                concepts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl">
+                        <Lightbulb className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mb-4" />
+                        <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">No concepts found</h3>
+                        <p className="text-neutral-500 max-w-sm mb-6">
+                            {search ? `No results for "${search}".` : "Try adjusting your filters selected on the left."}
+                        </p>
+                        <Link href="/concepts/create">
+                            <Button>Create Concept</Button>
+                        </Link>
+                    </div>
+                ) : (
+                    <div className={cn(
+                        "grid gap-6",
+                        viewMode === "grid"
+                            ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+                            : "grid-cols-1"
+                    )}>
+                        <AnimatePresence>
+                            {
+                                concepts.map((concept, index) => (
+                                    <motion.div
+                                        key={concept.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                    >
+                                        <Link href={`/concepts/${concept.slug}`}>
+                                            <Card className={cn(
+                                                "group h-full overflow-hidden border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-lg transition-all duration-300",
+                                                viewMode === "list" && "flex flex-row h-40"
+                                            )}>
+                                                <div className={cn(
+                                                    "relative overflow-hidden bg-gradient-to-br from-neutral-100 to-neutral-50 dark:from-neutral-900 dark:to-neutral-950",
+                                                    viewMode === "grid" ? "h-40" : "w-48 shrink-0"
+                                                )}>
+                                                    {
+                                                        concept.thumbnail ? (
+                                                            <Image
+                                                                src={concept.thumbnail}
+                                                                alt={concept.title}
+                                                                fill
+                                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                            />
+                                                        ) : (
+                                                            <div className="absolute inset-0 flex items-center justify-center text-4xl">
+                                                                {concept.iconEmoji || "📚"}
+                                                            </div>
+                                                        )
+                                                    }
+                                                    <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end">
+                                                        <Badge className={difficultyConfig[concept.difficulty].color}>
+                                                            {difficultyConfig[concept.difficulty].label}
+                                                        </Badge>
+                                                        {
+                                                            concept.pricingType === "PAID" ? (
+                                                                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0">
+                                                                    <Coins className="w-3 h-3 mr-1" />
+                                                                    {concept.price}
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">
+                                                                    Free
+                                                                </Badge>
+                                                            )
+                                                        }
                                                     </div>
                                                 </div>
-                                                <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1.5">
-                                                    {concept.title}
-                                                </h3>
-                                                <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
-                                                    {concept.shortDescription || concept.description}
-                                                </p>
-                                            </div>
+                                                <div className={cn(
+                                                    "p-5 flex flex-col justify-between",
+                                                    viewMode === "grid" ? "h-[calc(100%-10rem)]" : "w-full"
+                                                )}>
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-neutral-200 dark:border-neutral-800 text-neutral-500">
+                                                                {concept.category.replace(/_/g, " ")}
+                                                            </Badge>
+                                                            <div className="flex items-center gap-1 text-[10px] text-neutral-400">
+                                                                <Clock className="w-3 h-3" />
+                                                                <span>{concept.estimatedTime || 10}m</span>
+                                                            </div>
+                                                        </div>
+                                                        <h3 className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1.5">
+                                                            {concept.title}
+                                                        </h3>
+                                                        <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                                                            {concept.shortDescription || concept.description}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Avatar className="w-5 h-5">
+                                                                <AvatarImage src={concept.creator.image || ""} />
+                                                                <AvatarFallback className="text-[10px]">{concept.creator.name?.charAt(0)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <span className="text-xs text-neutral-500">{concept.creator.name}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 text-xs text-neutral-400">
+                                                            <div className="flex items-center gap-1">
+                                                                <Eye className="w-3 h-3" /> {formatCount(concept.viewCount)}
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <Heart className="w-3 h-3" /> {formatCount(concept.likeCount)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        </Link>
+                                    </motion.div>
+                                ))
+                            }
+                        </AnimatePresence>
+                    </div>
+                )
+            }
 
-                                            <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Avatar className="w-5 h-5">
-                                                        <AvatarImage src={concept.creator.image || ""} />
-                                                        <AvatarFallback className="text-[10px]">{concept.creator.name?.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="text-xs text-neutral-500">{concept.creator.name}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3 text-xs text-neutral-400">
-                                                    <div className="flex items-center gap-1">
-                                                        <Eye className="w-3 h-3" /> {formatCount(concept.viewCount)}
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <Heart className="w-3 h-3" /> {formatCount(concept.likeCount)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-            )}
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-8">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => goToPage(pagination.page - 1)}
-                        disabled={pagination.page <= 1}
-                        className="h-8 w-8 p-0"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <span className="text-sm text-neutral-500">
-                        Page {pagination.page} of {pagination.totalPages}
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => goToPage(pagination.page + 1)}
-                        disabled={pagination.page >= pagination.totalPages}
-                        className="h-8 w-8 p-0"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </Button>
-                </div>
-            )}
+            {
+                pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 pt-8">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(pagination.page - 1)}
+                            disabled={pagination.page <= 1}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <span className="text-sm text-neutral-500">
+                            Page {pagination.page} of {pagination.totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(pagination.page + 1)}
+                            disabled={pagination.page >= pagination.totalPages}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
+                )
+            }
         </div>
     );
 }

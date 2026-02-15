@@ -23,9 +23,13 @@ model Concept {
     status      ConceptStatus @default(DRAFT)
     publishedAt DateTime?
 
-    // Monetization
+    // Monetization - Creator Marketplace
+    pricingType       ConceptPricingType @default(FREE)
+    price             Int                @default(0) // Cost in credits
+    platformFeePercent Int               @default(10) // Platform takes this percentage
+    
+    // Legacy field (keeping for backward compatibility)
     isPaid Boolean @default(false)
-    price  Int     @default(0) // Cost in credits
 
     // Metadata
     estimatedTime Int?     @default(10) // in minutes
@@ -41,9 +45,13 @@ model Concept {
     metaTitle       String?
     metaDescription String?
 
-    // Creator
+    // Creator - Now any user can create concepts
     creatorId String
     creator   User   @relation("ConceptCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+    // Verification - Admin approval required before showing to users
+    verifiedAt DateTime?
+    verifiedBy String? // Admin who verified
 
     // Relations
     steps     ConceptStep[]     @relation("ConceptSteps")
@@ -78,6 +86,8 @@ model Concept {
     @@index([viewCount])
     @@index([spaceId])
     @@index([isPaid])
+    @@index([pricingType])
+    @@index([verifiedAt])
 }
 
 // Concept Purchase Model - Track who has unlocked paid concepts
@@ -87,9 +97,11 @@ model ConceptPurchase {
     concept   Concept @relation("ConceptPurchases", fields: [conceptId], references: [id], onDelete: Cascade)
 
     userId String
-    user   User   @relation("ConceptPurchases", fields: [userId], references: [id], onDelete: Cascade)
+    user   User   @relation("UserConceptPurchases", fields: [userId], references: [id], onDelete: Cascade)
 
-    pricePaid Int // Credits paid at time of purchase
+    pricePaid       Int // Credits paid at time of purchase
+    platformFee     Int @default(0) // Platform fee deducted
+    creatorEarnings Int @default(0) // Amount credited to creator
 
     createdAt DateTime @default(now())
 

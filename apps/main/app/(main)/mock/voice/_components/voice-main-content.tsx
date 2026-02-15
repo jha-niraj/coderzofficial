@@ -2,14 +2,12 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useCallback, useTransition } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
     LayoutGrid, List, Search, Loader2, FolderOpen, Brain, Plus,
     Target, Users
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
-import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
@@ -23,7 +21,7 @@ import { SessionCard } from '../../_components/session-card'
 import { CreateMockSheet } from '../../_components/create-mock-sheet'
 import { PurchaseMockSheet } from '../../_components/purchase-mock-sheet'
 import { createMockVoiceSession } from '@/actions/(main)/mockvoice/session.action'
-import { MOCK_LEVELS, MOCK_CATEGORIES } from '../_constants/mock-categories'
+import { MOCK_LEVELS } from '../_constants/mock-categories'
 import { toast } from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 
@@ -353,7 +351,7 @@ export function VoiceMainContent({
                                     No mocks found
                                 </h3>
                                 <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-6">
-                                    We couldn't find any mocks matching your criteria. Try adjusting your filters or create a new one.
+                                    We couldn&apos;t find any mocks matching your criteria. Try adjusting your filters or create a new one.
                                 </p>
                                 <Button onClick={() => setCreateSheetOpen(true)}>
                                     Create Custom Mock

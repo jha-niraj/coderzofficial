@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
     ChevronLeft, ChevronRight, Heart, Bookmark, Share2, MessageSquare,
-    ArrowLeft, CheckCircle2, Sparkles, Eye
+    ArrowLeft, CheckCircle2, Sparkles, Eye, Shield, XCircle, AlertCircle, Coins
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -17,12 +17,18 @@ import {
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from "@repo/ui/components/ui/dialog";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { Alert, AlertDescription } from "@repo/ui/components/ui/alert";
 import toast from "@repo/ui/components/ui/sonner";
 import {
     ConceptCategory, ConceptDifficulty, ConceptStepType
 } from "@repo/prisma/client";
 import {
-    toggleConceptLike, toggleConceptBookmark, updateConceptProgress
+    toggleConceptLike, toggleConceptBookmark, updateConceptProgress,
+    verifyConcept, rejectConcept
 } from "@/actions/(main)/concepts/concept.action";
 import StepCard from "./step-card";
 import AIAssistantPanel from "./ai-assistant-panel";
@@ -55,6 +61,10 @@ interface Concept {
     description: string;
     category: ConceptCategory;
     difficulty: ConceptDifficulty;
+    status: string;
+    pricingType: string;
+    price: number;
+    verifiedAt: Date | null;
     iconEmoji?: string | null;
     accentColor?: string | null;
     estimatedTime?: number | null;
@@ -89,6 +99,10 @@ interface ConceptDetailClientProps {
     isBookmarked: boolean;
     progress: ConceptProgress | null;
     isLoggedIn: boolean;
+    previousConcepts?: { id: string; title: string; slug: string; iconEmoji: string | null }[];
+    nextConcepts?: { id: string; title: string; slug: string; iconEmoji: string | null }[];
+    isAdmin: boolean;
+    isCreator: boolean;
 }
 
 const difficultyConfig: Record<
@@ -107,6 +121,10 @@ export default function ConceptDetailClient({
     isBookmarked: initialIsBookmarked,
     progress: initialProgress,
     isLoggedIn,
+    previousConcepts: _previousConcepts,
+    nextConcepts: _nextConcepts,
+    isAdmin,
+    isCreator: _isCreator,
 }: ConceptDetailClientProps) {
     const router = useRouter();
     const [currentStepIndex, setCurrentStepIndex] = useState(
@@ -119,6 +137,16 @@ export default function ConceptDetailClient({
     const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
     const [likeCount, setLikeCount] = useState(concept._count.likes);
     const [showAIAssistant, setShowAIAssistant] = useState(false);
+    
+    // Admin verification states
+    const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
+
+    const isPendingVerification = concept.status === "PENDING_VERIFICATION";
+    const showAdminActions = isAdmin && isPendingVerification;
 
     const totalSteps = concept.steps.length;
     const currentStep = concept.steps[currentStepIndex];
@@ -189,8 +217,95 @@ export default function ConceptDetailClient({
         }
     };
 
+    const handleVerifyConcept = async () => {
+        setIsVerifying(true);
+        try {
+            const result = await verifyConcept(concept.id);
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success("Concept verified and published!");
+                setVerifyDialogOpen(false);
+                router.refresh();
+            }
+        } catch {
+            toast.error("Failed to verify concept");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleRejectConcept = async () => {
+        if (!rejectReason.trim()) {
+            toast.error("Please provide a reason for rejection");
+            return;
+        }
+        setIsRejecting(true);
+        try {
+            const result = await rejectConcept(concept.id, rejectReason);
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success("Concept rejected");
+                setRejectDialogOpen(false);
+                router.refresh();
+            }
+        } catch {
+            toast.error("Failed to reject concept");
+        } finally {
+            setIsRejecting(false);
+        }
+    };
+
     return (
         <div className="relative">
+            {/* Admin Verification Banner */}
+            {showAdminActions && (
+                <div className="bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                            <div className="flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                                    This concept is pending verification. Review and approve or reject.
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setRejectDialogOpen(true)}
+                                    className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                                >
+                                    <XCircle className="w-4 h-4 mr-1" />
+                                    Reject
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={() => setVerifyDialogOpen(true)}
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                    <Shield className="w-4 h-4 mr-1" />
+                                    Verify & Publish
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Pricing Badge for Paid Concepts */}
+            {concept.pricingType === "PAID" && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+                        <div className="flex items-center justify-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+                            <Coins className="w-4 h-4" />
+                            <span>Premium Concept • {concept.price} credits</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="sticky top-0 z-40 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
@@ -475,6 +590,98 @@ export default function ConceptDetailClient({
                     }
                 </AnimatePresence>
             </div>
+
+            {/* Verify Concept Dialog */}
+            <Dialog open={verifyDialogOpen} onOpenChange={setVerifyDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Shield className="w-5 h-5 text-green-500" />
+                            Verify Concept
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to verify and publish this concept?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Alert className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            <AlertDescription className="text-sm text-green-700 dark:text-green-300">
+                                Once verified, this concept will be visible to all users
+                                {concept.pricingType === "PAID" && " and available for purchase"}.
+                            </AlertDescription>
+                        </Alert>
+                    </div>
+                    <DialogFooter className="gap-3 sm:gap-0">
+                        <Button variant="outline" onClick={() => setVerifyDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleVerifyConcept}
+                            disabled={isVerifying}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            {isVerifying ? (
+                                <>
+                                    <span className="animate-spin mr-2">⏳</span>
+                                    Verifying...
+                                </>
+                            ) : (
+                                <>
+                                    <Shield className="w-4 h-4 mr-2" />
+                                    Verify & Publish
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reject Concept Dialog */}
+            <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <XCircle className="w-5 h-5 text-red-500" />
+                            Reject Concept
+                        </DialogTitle>
+                        <DialogDescription>
+                            Provide a reason for rejecting this concept. The creator will be notified.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Textarea
+                            placeholder="Enter the reason for rejection..."
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            rows={4}
+                            className="resize-none"
+                        />
+                    </div>
+                    <DialogFooter className="gap-3 sm:gap-0">
+                        <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleRejectConcept}
+                            disabled={isRejecting || !rejectReason.trim()}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {isRejecting ? (
+                                <>
+                                    <span className="animate-spin mr-2">⏳</span>
+                                    Rejecting...
+                                </>
+                            ) : (
+                                <>
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Reject Concept
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

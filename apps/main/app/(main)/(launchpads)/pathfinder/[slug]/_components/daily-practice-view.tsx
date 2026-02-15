@@ -287,7 +287,7 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
     const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoal | null>(null)
     const [createSheetOpen, setCreateSheetOpen] = useState(false)
     const [earningsSheetOpen, setEarningsSheetOpen] = useState(false)
-    const [isRefreshing, setIsRefreshing] = useState(false)
+    const [_isRefreshing, setIsRefreshing] = useState(false)
 
     // Auto-refresh to check for AI content generation
     useEffect(() => {

@@ -1,6 +1,5 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import Link from 'next/link'
 import {
     Calendar, Clock, Eye, Play, CheckCircle2
@@ -11,7 +10,6 @@ import {
     Card, CardContent, CardDescription, CardFooter, CardHeader,
     CardTitle
 } from '@repo/ui/components/ui/card'
-import { cn } from '@repo/ui/lib/utils'
 
 interface SessionData {
     id: string

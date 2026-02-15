@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
-    Plus, Trash2, Save, Eye, ArrowLeft, Sparkles,
-    Loader2, BookOpen, Code2, HelpCircle,
-    Zap, BarChart3, CheckCircle2, FileText, Video, Globe,
-    Send, FileEdit, X, GripVertical, Link2, Search
+    Plus, Trash2, Save, Eye, ArrowLeft, Sparkles, Loader2, BookOpen,
+    Code2, HelpCircle, Zap, BarChart3, CheckCircle2, FileText, Video,
+    Globe, Send, FileEdit, X, Link2, Search, FileStack, Coins,
+    AlertCircle
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
@@ -23,19 +23,26 @@ import {
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu";
+import {
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@repo/ui/components/ui/sheet";
 import { Label } from "@repo/ui/components/ui/label";
 import { Switch } from "@repo/ui/components/ui/switch";
 import { Separator } from "@repo/ui/components/ui/separator";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
+import {
+    Alert, AlertDescription
+} from "@repo/ui/components/ui/alert";
 import toast from "@repo/ui/components/ui/sonner";
 import { cn } from "@repo/ui/lib/utils";
 import {
-    ConceptCategory, ConceptDifficulty, ConceptStepType
+    ConceptCategory, ConceptDifficulty, ConceptStepType, ConceptPricingType
 } from "@repo/prisma/client";
 import {
     createConcept, addConceptStep, updateConceptStep, deleteConceptStep,
-    reorderConceptSteps, updateConcept, publishConcept, addCodeBlock,
+    updateConcept, publishConcept, addCodeBlock,
     searchConcepts, addPrerequisiteConcept, removePrerequisiteConcept,
+    getUserDraftConcepts, getConceptForEditing,
 } from "@/actions/(main)/concepts/concept.action";
 import {
     generateStepContent, generateQuizQuestion, generateChallenge,
@@ -43,8 +50,20 @@ import {
 } from "@/actions/(main)/concepts/concept-ai.action";
 import CodeEditor from "@/components/main/code-editor";
 import ReactMarkdown from "react-markdown";
+import { formatDistanceToNow } from "date-fns";
 
 // ==================== TYPES ====================
+
+interface DraftConcept {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    iconEmoji: string | null;
+    status: string;
+    updatedAt: Date;
+    _count: { steps: number };
+}
 
 interface StepBlock {
     id: string;
@@ -87,6 +106,13 @@ function createEmptyBlock(order: number, type: ConceptStepType = "EXPLANATION"):
 
 export default function ConceptBlockEditor() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const editId = searchParams.get("edit");
+
+    // Drafts state
+    const [drafts, setDrafts] = useState<DraftConcept[]>([]);
+    const [draftsOpen, setDraftsOpen] = useState(false);
+    const [loadingDrafts, setLoadingDrafts] = useState(false);
 
     // Concept metadata
     const [conceptId, setConceptId] = useState<string | null>(null);
@@ -100,6 +126,10 @@ export default function ConceptBlockEditor() {
     const [accentColor, setAccentColor] = useState("#3B82F6");
     const [estimatedTime, setEstimatedTime] = useState(10);
     const [prerequisites, setPrerequisites] = useState<string[]>([]);
+
+    // Pricing state
+    const [pricingType, setPricingType] = useState<ConceptPricingType>("FREE");
+    const [price, setPrice] = useState(0);
 
     // Steps (blocks)
     const [blocks, setBlocks] = useState<StepBlock[]>([createEmptyBlock(0)]);
@@ -116,6 +146,93 @@ export default function ConceptBlockEditor() {
     const [prereqResults, setPrereqResults] = useState<{ id: string; title: string; iconEmoji: string | null; slug: string; difficulty: string; category: string }[]>([]);
     const [linkedPrereqs, setLinkedPrereqs] = useState<{ id: string; title: string; iconEmoji: string | null; slug: string }[]>([]);
     const [isSearchingPrereqs, setIsSearchingPrereqs] = useState(false);
+
+    // Load drafts on mount
+    useEffect(() => {
+        loadDrafts();
+    }, []);
+
+    // Load concept for editing if editId is present
+    useEffect(() => {
+        if (editId) {
+            loadConceptForEditing(editId);
+        }
+    }, [editId]);
+
+    const loadDrafts = async () => {
+        setLoadingDrafts(true);
+        try {
+            const result = await getUserDraftConcepts();
+            if (result.drafts) {
+                setDrafts(result.drafts as DraftConcept[]);
+            }
+        } catch (error) {
+            console.error("Failed to load drafts:", error);
+        } finally {
+            setLoadingDrafts(false);
+        }
+    };
+
+    const loadConceptForEditing = async (id: string) => {
+        try {
+            const result = await getConceptForEditing(id);
+            if (result.error) {
+                toast.error(result.error);
+                return;
+            }
+            if (result.concept) {
+                const c = result.concept;
+                setConceptId(c.id);
+                setTitle(c.title);
+                setDescription(c.description);
+                setCategory(c.category);
+                setDifficulty(c.difficulty);
+                setTags(c.tags);
+                setIconEmoji(c.iconEmoji || "📚");
+                setAccentColor(c.accentColor || "#3B82F6");
+                setEstimatedTime(c.estimatedTime || 10);
+                setPrerequisites(c.prerequisites);
+                setPricingType(c.pricingType || "FREE");
+                setPrice(c.price || 0);
+
+                // Load steps
+                if (c.steps && c.steps.length > 0) {
+                    setBlocks(c.steps.map((step, idx) => ({
+                        id: step.id,
+                        localId: `loaded-${step.id}`,
+                        order: step.order,
+                        title: step.title,
+                        type: step.type,
+                        content: step.content,
+                        stepData: (step.stepData as Record<string, unknown> | null) || undefined,
+                        tips: (step.tips as string[] | null) || [],
+                        codeBlocks: step.codeBlocks?.map((cb) => ({
+                            id: cb.id,
+                            order: cb.order,
+                            title: cb.title || "",
+                            language: cb.language,
+                            code: cb.code,
+                            explanation: cb.explanation || "",
+                            isRunnable: cb.isRunnable,
+                        })) || [],
+                        isExpanded: idx === 0,
+                        isSaved: true,
+                        isSaving: false,
+                        isGenerating: false,
+                    })));
+                }
+                toast.success("Concept loaded for editing");
+            }
+        } catch (error) {
+            console.error("Failed to load concept:", error);
+            toast.error("Failed to load concept");
+        }
+    };
+
+    const handleDraftClick = (draft: DraftConcept) => {
+        setDraftsOpen(false);
+        router.push(`/concepts/create?edit=${draft.id}`);
+    };
 
     // Search prerequisites
     const handlePrereqSearch = useCallback(async (query: string) => {
@@ -162,23 +279,27 @@ export default function ConceptBlockEditor() {
                 const result = await updateConcept(conceptId, {
                     title, description, category, difficulty, tags,
                     iconEmoji, accentColor, estimatedTime, prerequisites,
+                    pricingType, price: pricingType === "PAID" ? price : 0,
                 });
                 if (result.error) { toast.error(result.error); return null; }
                 toast.success("Concept updated!");
+                loadDrafts(); // Refresh drafts
                 return conceptId;
             } else {
                 const result = await createConcept({
                     title, description, category, difficulty, tags,
                     iconEmoji, accentColor, estimatedTime, prerequisites,
+                    pricingType, price: pricingType === "PAID" ? price : 0,
                 });
                 if (result.error) { toast.error(result.error); return null; }
                 setConceptId(result.concept!.id);
                 toast.success("Concept created!");
+                loadDrafts(); // Refresh drafts
                 return result.concept!.id;
             }
         } catch { toast.error("Failed to save concept"); return null; }
         finally { setIsSavingConcept(false); }
-    }, [conceptId, title, description, category, difficulty, tags, iconEmoji, accentColor, estimatedTime, prerequisites]);
+    }, [conceptId, title, description, category, difficulty, tags, iconEmoji, accentColor, estimatedTime, prerequisites, pricingType, price]);
 
     // ==================== BLOCK SAVE ====================
 
@@ -332,8 +453,12 @@ export default function ConceptBlockEditor() {
         try {
             const result = await publishConcept(conceptId);
             if (result.error) { toast.error(result.error); return; }
-            toast.success("Concept published! 🎉");
-            router.push("/concepts");
+            if (result.pendingVerification) {
+                toast.success("Concept submitted for verification! 🎉 An admin will review it shortly.");
+            } else {
+                toast.success("Concept published! 🎉");
+            }
+            router.push("/concepts/home");
         } catch { toast.error("Failed to publish"); }
         finally { setIsPublishing(false); }
     };
@@ -356,14 +481,30 @@ export default function ConceptBlockEditor() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDraftsOpen(true)}
+                        className="rounded-full relative"
+                    >
+                        <FileStack className="w-4 h-4 mr-1" />
+                        Drafts
+                        {
+                            drafts.length > 0 && (
+                                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-blue-600">
+                                    {drafts.length}
+                                </Badge>
+                            )
+                        }
+                    </Button>
                     <Button variant="outline" size="sm" onClick={saveConcept} disabled={isSavingConcept} className="rounded-full">
                         {isSavingConcept ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
                         Save Draft
                     </Button>
                     <Button size="sm" onClick={handlePublish} disabled={isPublishing || !conceptId}
                         className="rounded-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
-                        {isPublishing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
-                        Publish
+                        {isPublishing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
+                        Send for Verification
                     </Button>
                 </div>
             </div>
@@ -435,6 +576,89 @@ export default function ConceptBlockEditor() {
                                             onKeyDown={e => { if (e.key === "Enter" && tagInput.trim()) { e.preventDefault(); setTags([...tags, tagInput.trim().toLowerCase()]); setTagInput(""); } }}
                                             placeholder="Type a tag, press Enter" />
                                     </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-neutral-200 dark:border-neutral-800 shadow-sm">
+                                <CardHeader className="pb-2 pt-3 px-4">
+                                    <CardTitle className="text-xs flex items-center gap-1.5">
+                                        <Coins className="w-3.5 h-3.5 text-amber-500" />
+                                        Monetization
+                                    </CardTitle>
+                                    <p className="text-[10px] text-muted-foreground">Set pricing for your concept</p>
+                                </CardHeader>
+                                <CardContent className="px-4 pb-3 space-y-3">
+                                    <div className="w-full flex flex-col">
+                                        <Label className="text-left text-xs font-medium text-muted-foreground mb-2">Access Type</Label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => { setPricingType("FREE"); setPrice(0); }}
+                                                className={cn(
+                                                    "p-3 rounded-lg border-2 transition-all text-left",
+                                                    pricingType === "FREE"
+                                                        ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                                                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Globe className={cn("w-4 h-4", pricingType === "FREE" ? "text-green-600" : "text-muted-foreground")} />
+                                                    <span className={cn("text-xs font-semibold", pricingType === "FREE" ? "text-green-700 dark:text-green-400" : "")}>Free</span>
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground">Anyone can access</p>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPricingType("PAID")}
+                                                className={cn(
+                                                    "p-3 rounded-lg border-2 transition-all text-left",
+                                                    pricingType === "PAID"
+                                                        ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20"
+                                                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Coins className={cn("w-4 h-4", pricingType === "PAID" ? "text-amber-600" : "text-muted-foreground")} />
+                                                    <span className={cn("text-xs font-semibold", pricingType === "PAID" ? "text-amber-700 dark:text-amber-400" : "")}>Paid</span>
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground">Earn credits</p>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {
+                                        pricingType === "PAID" && (
+                                            <div className="space-y-3">
+                                                <div className="w-full flex flex-col">
+                                                    <Label className="text-left text-xs font-medium text-muted-foreground">Price (Credits)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min={1}
+                                                        value={price}
+                                                        onChange={e => setPrice(Math.max(1, Number(e.target.value)))}
+                                                        className="mt-1 h-8 text-xs"
+                                                        placeholder="e.g. 10"
+                                                    />
+                                                </div>
+                                                {
+                                                    price > 0 && (
+                                                        <Alert className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+                                                            <AlertCircle className="h-4 w-4 text-amber-600" />
+                                                            <AlertDescription className="text-xs">
+                                                                <div className="flex justify-between">
+                                                                    <span>Platform fee (10%):</span>
+                                                                    <span className="font-medium">{Math.floor(price * 0.1)} credits</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-green-600 dark:text-green-400 font-semibold">
+                                                                    <span>You earn:</span>
+                                                                    <span>{price - Math.floor(price * 0.1)} credits</span>
+                                                                </div>
+                                                            </AlertDescription>
+                                                        </Alert>
+                                                    )
+                                                }
+                                            </div>
+                                        )
+                                    }
                                 </CardContent>
                             </Card>
                             <Card className="border-neutral-200 dark:border-neutral-800 shadow-sm">
@@ -697,6 +921,83 @@ export default function ConceptBlockEditor() {
                     }
                 </div>
             </div>
+
+            {/* Drafts Sheet */}
+            <Sheet open={draftsOpen} onOpenChange={setDraftsOpen}>
+                <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+                    <SheetHeader className="mb-6">
+                        <SheetTitle className="text-xl flex items-center gap-2">
+                            <FileStack className="w-5 h-5 text-blue-500" />
+                            Your Drafts
+                        </SheetTitle>
+                        <SheetDescription>
+                            {drafts.length === 0
+                                ? "No drafts yet. Start creating to save your work!"
+                                : `${drafts.length} draft${drafts.length > 1 ? 's' : ''} in progress`
+                            }
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    {loadingDrafts ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : drafts.length === 0 ? (
+                        <div className="text-center py-12">
+                            <FileStack className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                            <p className="text-muted-foreground">No drafts found</p>
+                            <p className="text-xs text-muted-foreground mt-1">Your saved concepts will appear here</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {drafts.map(draft => (
+                                <button
+                                    key={draft.id}
+                                    onClick={() => handleDraftClick(draft)}
+                                    className={cn(
+                                        "w-full text-left p-4 rounded-xl border transition-all hover:shadow-md",
+                                        draft.id === conceptId
+                                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
+                                            : "border-neutral-200 dark:border-neutral-800 hover:border-blue-300 bg-white dark:bg-neutral-900"
+                                    )}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-2xl">{draft.iconEmoji || "📚"}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-sm truncate">{draft.title}</h3>
+                                            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                                {draft.description}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className={cn(
+                                                        "text-[10px]",
+                                                        draft.status === "PENDING_VERIFICATION"
+                                                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                                                    )}
+                                                >
+                                                    {draft.status === "PENDING_VERIFICATION" ? "Pending" : "Draft"}
+                                                </Badge>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {draft._count.steps} steps
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    Updated {formatDistanceToNow(new Date(draft.updatedAt), { addSuffix: true })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {draft.id === conceptId && (
+                                            <Badge className="bg-blue-600 text-white text-[10px]">Current</Badge>
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }
@@ -897,7 +1198,7 @@ function ChallengeDataEditor({ block, updateBlock }: { block: StepBlock; updateB
     );
 }
 
-function ComparisonDataViewer({ block, updateBlock, previewMode }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void; previewMode: boolean }) {
+function ComparisonDataViewer({ block, updateBlock: _updateBlock, previewMode: _previewMode }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void; previewMode: boolean }) {
     const data = (block.stepData || {}) as { items?: { title: string; description: string; pros: string[]; cons: string[] }[]; conclusion?: string };
 
     if (!data.items?.length) {

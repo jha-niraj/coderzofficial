@@ -5,7 +5,7 @@ import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
     ConceptCategory, ConceptDifficulty, ConceptStatus, ConceptStepType,
-    ConceptRequestStatus, PrismaValue
+    ConceptRequestStatus, PrismaValue, ConceptPricingType, Module, CreditType, Currency
 } from "@repo/prisma/client";
 
 // ==========================================
@@ -26,6 +26,9 @@ export interface ConceptFormData {
     prerequisites?: string[];
     metaTitle?: string;
     metaDescription?: string;
+    // New monetization fields
+    pricingType?: ConceptPricingType;
+    price?: number;
 }
 
 export interface ConceptStepFormData {
@@ -78,7 +81,24 @@ async function checkIsAdmin() {
         return { isAdmin: false, error: "Unauthorized" };
     }
 
-    return { isAdmin: true, userId: session.user.id };
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+    });
+
+    return { 
+        isAdmin: user?.role === "Admin", 
+        userId: session.user.id,
+        role: user?.role 
+    };
+}
+
+async function checkIsAuthenticated() {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { isAuthenticated: false, error: "Unauthorized" };
+    }
+    return { isAuthenticated: true, userId: session.user.id };
 }
 
 // ==========================================
@@ -100,7 +120,7 @@ export async function getConcepts(filters: ConceptFilters = {}) {
 
         const where: any = {};
 
-        // Only show published concepts to non-admins
+        // Only show verified published concepts to non-admins
         const session = await auth();
         const user = session?.user?.id
             ? await prisma.user.findUnique({
@@ -110,7 +130,9 @@ export async function getConcepts(filters: ConceptFilters = {}) {
             : null;
 
         if (user?.role !== "Admin") {
+            // For regular users, only show verified published concepts
             where.status = ConceptStatus.PUBLISHED;
+            where.verifiedAt = { not: null }; // Must be verified
         } else if (status) {
             where.status = status;
         }
@@ -231,11 +253,35 @@ export async function getConceptBySlug(slug: string) {
             return { error: "Concept not found" };
         }
 
-        // Check access
-        if (concept.status !== ConceptStatus.PUBLISHED) {
-            const adminCheck = await checkIsAdmin();
-            if (!adminCheck.isAdmin && concept.creatorId !== userId) {
+        // Get user role
+        const user = userId 
+            ? await prisma.user.findUnique({
+                where: { id: userId },
+                select: { role: true },
+            })
+            : null;
+        const isAdmin = user?.role === "Admin";
+        const isCreator = concept.creatorId === userId;
+
+        // Check access based on status
+        if (concept.status === ConceptStatus.DRAFT) {
+            // Only creator or admin can see drafts
+            if (!isAdmin && !isCreator) {
                 return { error: "Concept not available" };
+            }
+        }
+
+        if (concept.status === ConceptStatus.PENDING_VERIFICATION) {
+            // Only creator or admin can see pending concepts
+            if (!isAdmin && !isCreator) {
+                return { error: "This concept is pending verification. Please check back later." };
+            }
+        }
+
+        if (concept.status === ConceptStatus.PUBLISHED && !concept.verifiedAt) {
+            // If published but not verified, only creator or admin can see
+            if (!isAdmin && !isCreator) {
+                return { error: "This concept is pending verification. Please check back later." };
             }
         }
 
@@ -243,9 +289,10 @@ export async function getConceptBySlug(slug: string) {
         let isLiked = false;
         let isBookmarked = false;
         let progress = null;
+        let hasPurchased = false;
 
         if (userId) {
-            const [like, bookmark, userProgress] = await Promise.all([
+            const [like, bookmark, userProgress, purchase] = await Promise.all([
                 prisma.conceptLike.findUnique({
                     where: { conceptId_userId: { conceptId: concept.id, userId } },
                 }),
@@ -255,14 +302,32 @@ export async function getConceptBySlug(slug: string) {
                 prisma.conceptProgress.findUnique({
                     where: { conceptId_userId: { conceptId: concept.id, userId } },
                 }),
+                concept.pricingType === "PAID" 
+                    ? prisma.conceptPurchase.findUnique({
+                        where: { conceptId_userId: { conceptId: concept.id, userId } },
+                    })
+                    : null,
             ]);
 
             isLiked = !!like;
             isBookmarked = !!bookmark;
             progress = userProgress;
+            hasPurchased = !!purchase || isCreator || isAdmin;
         }
 
-        return { concept, isLiked, isBookmarked, progress };
+        // Determine access level
+        const hasFullAccess = concept.pricingType === "FREE" || hasPurchased || isCreator || isAdmin;
+
+        return { 
+            concept, 
+            isLiked, 
+            isBookmarked, 
+            progress, 
+            hasPurchased,
+            hasFullAccess,
+            isCreator,
+            isAdmin,
+        };
     } catch (error) {
         console.error("Error fetching concept:", error);
         return { error: "Failed to fetch concept" };
@@ -271,9 +336,10 @@ export async function getConceptBySlug(slug: string) {
 
 export async function createConcept(data: ConceptFormData) {
     try {
-        const adminCheck = await checkIsAdmin();
-        if (!adminCheck.isAdmin) {
-            return { error: adminCheck.error };
+        // Any authenticated user can create concepts now
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
         }
 
         // Generate unique slug
@@ -301,7 +367,11 @@ export async function createConcept(data: ConceptFormData) {
                 metaTitle: data.metaTitle,
                 metaDescription: data.metaDescription,
                 status: ConceptStatus.DRAFT,
-                creatorId: adminCheck.userId!,
+                creatorId: authCheck.userId!,
+                // Monetization
+                pricingType: data.pricingType || ConceptPricingType.FREE,
+                price: data.price || 0,
+                isPaid: data.pricingType === ConceptPricingType.PAID,
             },
         });
 
@@ -315,12 +385,27 @@ export async function createConcept(data: ConceptFormData) {
 
 export async function updateConcept(conceptId: string, data: Partial<ConceptFormData>) {
     try {
-        const adminCheck = await checkIsAdmin();
-        if (!adminCheck.isAdmin) {
-            return { error: adminCheck.error };
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
         }
 
-        const concept = await prisma.concept.update({
+        // Check if user is admin or the creator
+        const concept = await prisma.concept.findUnique({
+            where: { id: conceptId },
+            select: { creatorId: true },
+        });
+
+        if (!concept) {
+            return { error: "Concept not found" };
+        }
+
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin && concept.creatorId !== authCheck.userId) {
+            return { error: "Not authorized to edit this concept" };
+        }
+
+        const updatedConcept = await prisma.concept.update({
             where: { id: conceptId },
             data: {
                 ...(data.title && { title: data.title }),
@@ -337,12 +422,18 @@ export async function updateConcept(conceptId: string, data: Partial<ConceptForm
                 ...(data.prerequisites && { prerequisites: data.prerequisites }),
                 ...(data.metaTitle !== undefined && { metaTitle: data.metaTitle }),
                 ...(data.metaDescription !== undefined && { metaDescription: data.metaDescription }),
+                // Monetization updates
+                ...(data.pricingType && { 
+                    pricingType: data.pricingType,
+                    isPaid: data.pricingType === ConceptPricingType.PAID,
+                }),
+                ...(data.price !== undefined && { price: data.price }),
             },
         });
 
         revalidatePath("/concepts");
-        revalidatePath(`/concepts/${concept.slug}`);
-        return { concept };
+        revalidatePath(`/concepts/${updatedConcept.slug}`);
+        return { concept: updatedConcept };
     } catch (error) {
         console.error("Error updating concept:", error);
         return { error: "Failed to update concept" };
@@ -351,16 +442,74 @@ export async function updateConcept(conceptId: string, data: Partial<ConceptForm
 
 export async function publishConcept(conceptId: string) {
     try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        // Check if user is admin or the creator
+        const concept = await prisma.concept.findUnique({
+            where: { id: conceptId },
+            select: { creatorId: true },
+        });
+
+        if (!concept) {
+            return { error: "Concept not found" };
+        }
+
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin && concept.creatorId !== authCheck.userId) {
+            return { error: "Not authorized to publish this concept" };
+        }
+
+        // If admin publishes, directly verify
+        if (adminCheck.isAdmin) {
+            const updatedConcept = await prisma.concept.update({
+                where: { id: conceptId },
+                data: {
+                    status: ConceptStatus.PUBLISHED,
+                    publishedAt: new Date(),
+                    verifiedAt: new Date(),
+                    verifiedBy: adminCheck.userId,
+                },
+            });
+            revalidatePath("/concepts");
+            revalidatePath(`/concepts/${updatedConcept.slug}`);
+            return { concept: updatedConcept };
+        }
+
+        // For regular users, send for verification
+        const updatedConcept = await prisma.concept.update({
+            where: { id: conceptId },
+            data: {
+                status: ConceptStatus.PENDING_VERIFICATION,
+                publishedAt: new Date(),
+            },
+        });
+
+        revalidatePath("/concepts");
+        revalidatePath(`/concepts/${updatedConcept.slug}`);
+        return { concept: updatedConcept, pendingVerification: true };
+    } catch (error) {
+        console.error("Error publishing concept:", error);
+        return { error: "Failed to publish concept" };
+    }
+}
+
+// Admin-only function to verify concepts
+export async function verifyConcept(conceptId: string) {
+    try {
         const adminCheck = await checkIsAdmin();
         if (!adminCheck.isAdmin) {
-            return { error: adminCheck.error };
+            return { error: "Only admins can verify concepts" };
         }
 
         const concept = await prisma.concept.update({
             where: { id: conceptId },
             data: {
                 status: ConceptStatus.PUBLISHED,
-                publishedAt: new Date(),
+                verifiedAt: new Date(),
+                verifiedBy: adminCheck.userId,
             },
         });
 
@@ -368,8 +517,34 @@ export async function publishConcept(conceptId: string) {
         revalidatePath(`/concepts/${concept.slug}`);
         return { concept };
     } catch (error) {
-        console.error("Error publishing concept:", error);
-        return { error: "Failed to publish concept" };
+        console.error("Error verifying concept:", error);
+        return { error: "Failed to verify concept" };
+    }
+}
+
+// Admin-only function to reject concepts
+export async function rejectConcept(conceptId: string, reason?: string) {
+    try {
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin) {
+            return { error: "Only admins can reject concepts" };
+        }
+
+        const concept = await prisma.concept.update({
+            where: { id: conceptId },
+            data: {
+                status: ConceptStatus.DRAFT,
+            },
+        });
+
+        // TODO: Send notification to creator with rejection reason
+
+        revalidatePath("/concepts");
+        revalidatePath(`/concepts/${concept.slug}`);
+        return { concept };
+    } catch (error) {
+        console.error("Error rejecting concept:", error);
+        return { error: "Failed to reject concept" };
     }
 }
 
@@ -443,9 +618,24 @@ export async function deleteConcept(conceptId: string) {
 
 export async function addConceptStep(conceptId: string, data: ConceptStepFormData) {
     try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        // Check ownership
+        const concept = await prisma.concept.findUnique({
+            where: { id: conceptId },
+            select: { creatorId: true, slug: true },
+        });
+
+        if (!concept) {
+            return { error: "Concept not found" };
+        }
+
         const adminCheck = await checkIsAdmin();
-        if (!adminCheck.isAdmin) {
-            return { error: adminCheck.error };
+        if (!adminCheck.isAdmin && concept.creatorId !== authCheck.userId) {
+            return { error: "Not authorized to edit this concept" };
         }
 
         const step = await prisma.conceptStep.create({
@@ -463,12 +653,7 @@ export async function addConceptStep(conceptId: string, data: ConceptStepFormDat
             },
         });
 
-        const concept = await prisma.concept.findUnique({
-            where: { id: conceptId },
-            select: { slug: true },
-        });
-
-        if (concept) {
+        if (concept.slug) {
             revalidatePath(`/concepts/${concept.slug}`);
         }
 
@@ -481,16 +666,25 @@ export async function addConceptStep(conceptId: string, data: ConceptStepFormDat
 
 export async function updateConceptStep(stepId: string, data: Partial<ConceptStepFormData>) {
     try {
-        const adminCheck = await checkIsAdmin();
-        if (!adminCheck.isAdmin) {
-            return { error: adminCheck.error };
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
         }
 
-        // Get the concept slug first for revalidation
+        // Get the concept slug first for revalidation and authorization check
         const existingStep = await prisma.conceptStep.findUnique({
             where: { id: stepId },
-            select: { conceptId: true, concept: { select: { slug: true } } },
+            select: { conceptId: true, concept: { select: { slug: true, creatorId: true } } },
         });
+
+        if (!existingStep) {
+            return { error: "Step not found" };
+        }
+
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin && existingStep.concept.creatorId !== authCheck.userId) {
+            return { error: "Not authorized to edit this concept" };
+        }
 
         const step = await prisma.conceptStep.update({
             where: { id: stepId },
@@ -519,16 +713,30 @@ export async function updateConceptStep(stepId: string, data: Partial<ConceptSte
 
 export async function deleteConceptStep(stepId: string) {
     try {
-        const adminCheck = await checkIsAdmin();
-        if (!adminCheck.isAdmin) {
-            return { error: adminCheck.error };
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
         }
 
-        const step = await prisma.conceptStep.delete({
+        // Check ownership
+        const step = await prisma.conceptStep.findUnique({
             where: { id: stepId },
             include: {
-                concept: { select: { slug: true } },
+                concept: { select: { slug: true, creatorId: true } },
             },
+        });
+
+        if (!step) {
+            return { error: "Step not found" };
+        }
+
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin && step.concept.creatorId !== authCheck.userId) {
+            return { error: "Not authorized to delete this step" };
+        }
+
+        await prisma.conceptStep.delete({
+            where: { id: stepId },
         });
 
         revalidatePath(`/concepts/${step.concept.slug}`);
@@ -1689,5 +1897,597 @@ export async function getConceptChain(conceptId: string) {
     } catch (error) {
         console.error("Error fetching concept chain:", error);
         return { previous: [], next: [] };
+    }
+}
+
+// ==========================================
+// USER'S DRAFT CONCEPTS (For Continue Editing)
+// ==========================================
+
+export async function getUserDraftConcepts() {
+    try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        const drafts = await prisma.concept.findMany({
+            where: {
+                creatorId: authCheck.userId,
+                status: {
+                    in: [ConceptStatus.DRAFT, ConceptStatus.PENDING_VERIFICATION],
+                },
+            },
+            orderBy: { updatedAt: "desc" },
+            include: {
+                _count: {
+                    select: { steps: true },
+                },
+            },
+        });
+
+        return { drafts };
+    } catch (error) {
+        console.error("Error fetching user drafts:", error);
+        return { error: "Failed to fetch drafts" };
+    }
+}
+
+export async function getConceptForEditing(conceptId: string) {
+    try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        const concept = await prisma.concept.findUnique({
+            where: { id: conceptId },
+            include: {
+                steps: {
+                    orderBy: { order: "asc" },
+                    include: {
+                        codeBlocks: { orderBy: { order: "asc" } },
+                    },
+                },
+            },
+        });
+
+        if (!concept) {
+            return { error: "Concept not found" };
+        }
+
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin && concept.creatorId !== authCheck.userId) {
+            return { error: "Not authorized to edit this concept" };
+        }
+
+        return { concept };
+    } catch (error) {
+        console.error("Error fetching concept for editing:", error);
+        return { error: "Failed to fetch concept" };
+    }
+}
+
+// ==========================================
+// CONCEPT PURCHASE & CREDITS
+// ==========================================
+
+export async function purchaseConcept(conceptId: string) {
+    try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        const concept = await prisma.concept.findUnique({
+            where: { id: conceptId },
+            select: {
+                id: true,
+                title: true,
+                price: true,
+                pricingType: true,
+                platformFeePercent: true,
+                creatorId: true,
+                status: true,
+                verifiedAt: true,
+            },
+        });
+
+        if (!concept) {
+            return { error: "Concept not found" };
+        }
+
+        if (concept.pricingType !== "PAID") {
+            return { error: "This concept is free" };
+        }
+
+        if (concept.status !== ConceptStatus.PUBLISHED || !concept.verifiedAt) {
+            return { error: "This concept is not available for purchase" };
+        }
+
+        // Check if already purchased
+        const existingPurchase = await prisma.conceptPurchase.findUnique({
+            where: {
+                conceptId_userId: { conceptId, userId: authCheck.userId! },
+            },
+        });
+
+        if (existingPurchase) {
+            return { error: "You have already purchased this concept" };
+        }
+
+        // Get user's credit balance
+        const user = await prisma.user.findUnique({
+            where: { id: authCheck.userId },
+            select: { id: true },
+        });
+
+        if (!user) {
+            return { error: "User not found" };
+        }
+
+        // Calculate credits (sum of all credit transactions)
+        const creditBalance = await prisma.creditTransaction.aggregate({
+            where: { userId: authCheck.userId },
+            _sum: { amount: true },
+        });
+
+        const balance = creditBalance._sum.amount || 0;
+        const price = concept.price;
+
+        if (balance < price) {
+            return { error: "Insufficient credits", requiredCredits: price, currentBalance: balance };
+        }
+
+        // Calculate platform fee and creator earnings
+        const platformFee = Math.floor((price * concept.platformFeePercent) / 100);
+        const creatorEarnings = price - platformFee;
+
+        // Execute purchase in transaction
+        await prisma.$transaction(async (tx) => {
+            // 1. Create purchase record
+            await tx.conceptPurchase.create({
+                data: {
+                    conceptId,
+                    userId: authCheck.userId!,
+                    pricePaid: price,
+                    platformFee,
+                    creatorEarnings,
+                },
+            });
+
+            // 2. Deduct credits from buyer
+            const buyerTransaction = await tx.creditTransaction.create({
+                data: {
+                    userId: authCheck.userId!,
+                    amount: -price,
+                    type: CreditType.SPEND,
+                    currency: Currency.NA,
+                    description: `Purchased concept: ${concept.title}`,
+                },
+            });
+
+            // 3. Create sub-transaction for tracking
+            await tx.subTransaction.create({
+                data: {
+                    creditTransactionId: buyerTransaction.id,
+                    module: Module.CONCEPTS,
+                    referenceId: conceptId,
+                    metadata: {
+                        type: "purchase",
+                        conceptTitle: concept.title,
+                        creatorId: concept.creatorId,
+                    },
+                },
+            });
+
+            // 4. Credit earnings to creator
+            const creatorTransaction = await tx.creditTransaction.create({
+                data: {
+                    userId: concept.creatorId,
+                    amount: creatorEarnings,
+                    type: CreditType.REWARD,
+                    currency: Currency.NA,
+                    description: `Earnings from concept: ${concept.title}`,
+                },
+            });
+
+            // 5. Create sub-transaction for creator earning
+            await tx.subTransaction.create({
+                data: {
+                    creditTransactionId: creatorTransaction.id,
+                    module: Module.CONCEPTS,
+                    referenceId: conceptId,
+                    metadata: {
+                        type: "earning",
+                        conceptTitle: concept.title,
+                        buyerId: authCheck.userId,
+                        platformFee,
+                    },
+                },
+            });
+
+            // 6. Record earning
+            await tx.earning.create({
+                data: {
+                    userId: concept.creatorId,
+                    module: Module.CONCEPTS,
+                    referenceId: conceptId,
+                    amount: creatorEarnings,
+                    sourceUserId: authCheck.userId,
+                },
+            });
+        });
+
+        revalidatePath(`/concepts`);
+        return { success: true, message: "Concept purchased successfully!" };
+    } catch (error) {
+        console.error("Error purchasing concept:", error);
+        return { error: "Failed to purchase concept" };
+    }
+}
+
+// ==========================================
+// CREATOR HOME - ANALYTICS & EARNINGS
+// ==========================================
+
+export async function getCreatorConceptStats(userId?: string) {
+    try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        const creatorId = userId || authCheck.userId;
+
+        // Get all concepts by this creator
+        const concepts = await prisma.concept.findMany({
+            where: { creatorId: creatorId! },
+            select: {
+                id: true,
+                slug: true,
+                title: true,
+                iconEmoji: true,
+                status: true,
+                pricingType: true,
+                price: true,
+                viewCount: true,
+                likeCount: true,
+                bookmarkCount: true,
+                commentCount: true,
+                verifiedAt: true,
+                createdAt: true,
+                updatedAt: true,
+                _count: {
+                    select: {
+                        steps: true,
+                        purchases: true,
+                        progress: true,
+                    },
+                },
+            },
+            orderBy: { updatedAt: "desc" },
+        });
+
+        // Get total stats
+        const totalStats = await prisma.concept.aggregate({
+            where: { creatorId: creatorId! },
+            _sum: {
+                viewCount: true,
+                likeCount: true,
+                bookmarkCount: true,
+                commentCount: true,
+            },
+        });
+
+        // Get earnings
+        const earnings = await prisma.earning.aggregate({
+            where: { 
+                userId: creatorId!,
+                module: Module.CONCEPTS,
+            },
+            _sum: { amount: true },
+        });
+
+        // Get recent purchases (last 30 days)
+        const recentPurchases = await prisma.conceptPurchase.findMany({
+            where: {
+                concept: { creatorId: creatorId! },
+                createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+            },
+            include: {
+                user: { select: { id: true, name: true, username: true, image: true } },
+                concept: { select: { title: true, slug: true, iconEmoji: true } },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 10,
+        });
+
+        // Get view statistics (last 7 days)
+        const recentViews = await prisma.conceptView.groupBy({
+            by: ["conceptId"],
+            where: {
+                concept: { creatorId: creatorId! },
+                viewedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+            },
+            _count: true,
+        });
+
+        // Count by status
+        const statusCounts = {
+            draft: concepts.filter(c => c.status === ConceptStatus.DRAFT).length,
+            pending: concepts.filter(c => c.status === ConceptStatus.PENDING_VERIFICATION).length,
+            published: concepts.filter(c => c.status === ConceptStatus.PUBLISHED && c.verifiedAt).length,
+            archived: concepts.filter(c => c.status === ConceptStatus.ARCHIVED).length,
+        };
+
+        return {
+            concepts,
+            totalStats: {
+                totalConcepts: concepts.length,
+                totalViews: totalStats._sum.viewCount || 0,
+                totalLikes: totalStats._sum.likeCount || 0,
+                totalBookmarks: totalStats._sum.bookmarkCount || 0,
+                totalComments: totalStats._sum.commentCount || 0,
+                totalEarnings: earnings._sum.amount || 0,
+                totalPurchases: concepts.reduce((sum, c) => sum + c._count.purchases, 0),
+                totalLearners: concepts.reduce((sum, c) => sum + c._count.progress, 0),
+            },
+            statusCounts,
+            recentPurchases,
+            recentViews,
+        };
+    } catch (error) {
+        console.error("Error fetching creator stats:", error);
+        return { error: "Failed to fetch creator stats" };
+    }
+}
+
+export async function getConceptDetailedStats(conceptId: string) {
+    try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        const concept = await prisma.concept.findUnique({
+            where: { id: conceptId },
+            select: { creatorId: true },
+        });
+
+        if (!concept) {
+            return { error: "Concept not found" };
+        }
+
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin && concept.creatorId !== authCheck.userId) {
+            return { error: "Not authorized to view stats" };
+        }
+
+        // Get detailed views
+        const viewsByDay = await prisma.$queryRaw`
+            SELECT DATE(viewed_at) as date, COUNT(*) as count
+            FROM "ConceptView"
+            WHERE concept_id = ${conceptId}
+            AND viewed_at >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(viewed_at)
+            ORDER BY date DESC
+        ` as { date: Date; count: bigint }[];
+
+        // Get unique visitors
+        const uniqueVisitors = await prisma.conceptView.groupBy({
+            by: ["userId"],
+            where: {
+                conceptId,
+                userId: { not: null },
+            },
+            _count: true,
+        });
+
+        // Get purchases
+        const purchases = await prisma.conceptPurchase.findMany({
+            where: { conceptId },
+            include: {
+                user: { select: { id: true, name: true, username: true, image: true } },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+
+        // Get earnings
+        const earnings = await prisma.earning.aggregate({
+            where: {
+                referenceId: conceptId,
+                module: Module.CONCEPTS,
+            },
+            _sum: { amount: true },
+        });
+
+        // Get progress completion stats
+        const progressStats = await prisma.conceptProgress.aggregate({
+            where: { conceptId },
+            _avg: { progressPercent: true },
+            _count: true,
+        });
+
+        const completedCount = await prisma.conceptProgress.count({
+            where: { conceptId, isCompleted: true },
+        });
+
+        return {
+            viewsByDay: viewsByDay.map(v => ({ date: v.date, count: Number(v.count) })),
+            uniqueVisitors: uniqueVisitors.length,
+            purchases,
+            totalEarnings: earnings._sum.amount || 0,
+            totalLearners: progressStats._count,
+            averageProgress: progressStats._avg.progressPercent || 0,
+            completedCount,
+        };
+    } catch (error) {
+        console.error("Error fetching concept detailed stats:", error);
+        return { error: "Failed to fetch detailed stats" };
+    }
+}
+
+// ==========================================
+// ADMIN - PENDING VERIFICATION
+// ==========================================
+
+export async function getPendingVerificationConcepts() {
+    try {
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin) {
+            return { error: "Only admins can view pending concepts" };
+        }
+
+        const concepts = await prisma.concept.findMany({
+            where: {
+                status: ConceptStatus.PENDING_VERIFICATION,
+            },
+            include: {
+                creator: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        image: true,
+                    },
+                },
+                _count: {
+                    select: { steps: true },
+                },
+            },
+            orderBy: { publishedAt: "asc" },
+        });
+
+        return { concepts };
+    } catch (error) {
+        console.error("Error fetching pending concepts:", error);
+        return { error: "Failed to fetch pending concepts" };
+    }
+}
+
+// ==========================================
+// SHARE TO COMMUNITY
+// ==========================================
+
+export async function shareConceptToCommunity(
+    conceptId: string,
+    communityId: string,
+    message?: string
+) {
+    try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { error: authCheck.error };
+        }
+
+        // Check if concept exists and is published
+        const concept = await prisma.concept.findUnique({
+            where: { id: conceptId },
+            select: {
+                id: true,
+                slug: true,
+                title: true,
+                description: true,
+                iconEmoji: true,
+                status: true,
+                verifiedAt: true,
+            },
+        });
+
+        if (!concept) {
+            return { error: "Concept not found" };
+        }
+
+        if (concept.status !== ConceptStatus.PUBLISHED || !concept.verifiedAt) {
+            return { error: "Only verified published concepts can be shared" };
+        }
+
+        // Check if user is member of the community
+        const membership = await prisma.communityMember.findUnique({
+            where: {
+                communityId_userId: {
+                    communityId,
+                    userId: authCheck.userId!,
+                },
+            },
+        });
+
+        if (!membership || !membership.isApproved) {
+            return { error: "You must be a member of this community to share" };
+        }
+
+        // Create a community post with the linked concept
+        const content = message || 
+            `🚀 Check out this concept: **${concept.title}**\n\n${concept.description.slice(0, 200)}${concept.description.length > 200 ? '...' : ''}\n\n[View Concept](/concepts/${concept.slug})`;
+
+        const post = await prisma.communityPost.create({
+            data: {
+                communityId,
+                authorId: authCheck.userId!,
+                title: `${concept.iconEmoji || "📚"} ${concept.title}`,
+                content,
+                type: "RESOURCE",
+                linkedConceptId: conceptId,
+                tags: ["concept", "learning"],
+            },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        image: true,
+                    },
+                },
+            },
+        });
+
+        // Update share count on concept
+        await prisma.concept.update({
+            where: { id: conceptId },
+            data: {
+                // If you have a shareCount field, increment it
+                // shareCount: { increment: 1 },
+            },
+        });
+
+        return { success: true, post };
+    } catch (error) {
+        console.error("Error sharing concept to community:", error);
+        return { error: "Failed to share concept" };
+    }
+}
+
+export async function getUserCommunities() {
+    try {
+        const authCheck = await checkIsAuthenticated();
+        if (!authCheck.isAuthenticated) {
+            return { communities: [] };
+        }
+
+        const memberships = await prisma.communityMember.findMany({
+            where: {
+                userId: authCheck.userId,
+                isApproved: true,
+            },
+            include: {
+                community: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        logo: true,
+                    },
+                },
+            },
+        });
+
+        return {
+            communities: memberships.map(m => m.community).filter(Boolean),
+        };
+    } catch (error) {
+        console.error("Error fetching user communities:", error);
+        return { communities: [] };
     }
 }
