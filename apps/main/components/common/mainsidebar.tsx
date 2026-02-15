@@ -261,9 +261,11 @@ function SidebarContent() {
                         onClick={handleParentClick}
                         className={cn(
                             "cursor-pointer flex items-center w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
-                            (isChildActive || isParentActive)
-                                ? "text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800/50"
-                                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
+                            isParentActive && !isChildActive
+                                ? "bg-neutral-900 dark:bg-white text-white dark:text-black"
+                                : (isChildActive || isParentActive)
+                                    ? "text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800/50"
+                                    : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/50",
                             isCollapsed && "justify-center px-3"
                         )}
                     >

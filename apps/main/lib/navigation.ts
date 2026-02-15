@@ -1,7 +1,7 @@
 import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Trophy, Video, Brain, Cable, LayoutDashboard,
-    Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles, OrbitIcon,
+    Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles,
     GraduationCap, Rocket, Activity, Share2, Target, FileText, BookOpen
 } from "lucide-react"
 
@@ -37,11 +37,6 @@ export const mainNavigation: NavigationConfig = {
             status: "active",
             children: [
                 {
-                    name: 'Spaces',
-                    path: 'space',
-                    icon: OrbitIcon
-                },
-                {
                     name: 'My Spaces',
                     path: 'space/myspaces',
                     icon: User
@@ -59,11 +54,6 @@ export const mainNavigation: NavigationConfig = {
             icon: Notebook,
             status: "active",
             children: [
-                {
-                    name: 'Studio',
-                    path: 'studio',
-                    icon: Notebook
-                },
                 {
                     name: 'My Studios',
                     path: 'studio/mystudios',
@@ -107,11 +97,6 @@ export const mainNavigation: NavigationConfig = {
             status: "active",
             children: [
                 {
-                    name: 'Projects',
-                    path: 'projects',
-                    icon: FolderKanban
-                },
-                {
                     name: 'Ideas',
                     path: 'projects/ideas',
                     icon: Heading
@@ -153,11 +138,6 @@ export const mainNavigation: NavigationConfig = {
             status: "active",
             children: [
                 {
-                    name: 'Discover',
-                    path: 'launchpads',
-                    icon: Rocket
-                },
-                {
                     name: 'KnowMe AI',
                     path: 'knowme',
                     icon: LucideWandSparkles
@@ -183,15 +163,9 @@ export const mainNavigation: NavigationConfig = {
             status: "active",
             children: [
                 {
-                    name: 'Mock Overview',
-                    path: 'mock',
-                    icon: Brain
-                },
-                {
                     name: 'Voice Mock',
                     path: 'mock/voice',
-                    icon: Brain,
-                    comingSoon: true
+                    icon: Brain
                 },
                 {
                     name: 'Video Mock',

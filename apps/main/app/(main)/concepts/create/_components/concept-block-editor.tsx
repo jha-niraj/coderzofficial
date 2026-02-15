@@ -50,6 +50,9 @@ import {
 } from "@/actions/(main)/concepts/concept-ai.action";
 import CodeEditor from "@/components/main/code-editor";
 import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkGfm from "remark-gfm";
 import { formatDistanceToNow } from "date-fns";
 
 // ==================== TYPES ====================
@@ -921,8 +924,6 @@ export default function ConceptBlockEditor() {
                     }
                 </div>
             </div>
-
-            {/* Drafts Sheet */}
             <Sheet open={draftsOpen} onOpenChange={setDraftsOpen}>
                 <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
                     <SheetHeader className="mb-6">
@@ -931,71 +932,78 @@ export default function ConceptBlockEditor() {
                             Your Drafts
                         </SheetTitle>
                         <SheetDescription>
-                            {drafts.length === 0
-                                ? "No drafts yet. Start creating to save your work!"
-                                : `${drafts.length} draft${drafts.length > 1 ? 's' : ''} in progress`
+                            {
+                                drafts.length === 0
+                                    ? "No drafts yet. Start creating to save your work!"
+                                    : `${drafts.length} draft${drafts.length > 1 ? 's' : ''} in progress`
                             }
                         </SheetDescription>
                     </SheetHeader>
 
-                    {loadingDrafts ? (
-                        <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : drafts.length === 0 ? (
-                        <div className="text-center py-12">
-                            <FileStack className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-                            <p className="text-muted-foreground">No drafts found</p>
-                            <p className="text-xs text-muted-foreground mt-1">Your saved concepts will appear here</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {drafts.map(draft => (
-                                <button
-                                    key={draft.id}
-                                    onClick={() => handleDraftClick(draft)}
-                                    className={cn(
-                                        "w-full text-left p-4 rounded-xl border transition-all hover:shadow-md",
-                                        draft.id === conceptId
-                                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
-                                            : "border-neutral-200 dark:border-neutral-800 hover:border-blue-300 bg-white dark:bg-neutral-900"
-                                    )}
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">{draft.iconEmoji || "📚"}</span>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-sm truncate">{draft.title}</h3>
-                                            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                                                {draft.description}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <Badge
-                                                    variant="secondary"
-                                                    className={cn(
-                                                        "text-[10px]",
-                                                        draft.status === "PENDING_VERIFICATION"
-                                                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-                                                    )}
-                                                >
-                                                    {draft.status === "PENDING_VERIFICATION" ? "Pending" : "Draft"}
-                                                </Badge>
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    {draft._count.steps} steps
-                                                </span>
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    Updated {formatDistanceToNow(new Date(draft.updatedAt), { addSuffix: true })}
-                                                </span>
+                    {
+                        loadingDrafts ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : drafts.length === 0 ? (
+                            <div className="text-center py-12">
+                                <FileStack className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                                <p className="text-muted-foreground">No drafts found</p>
+                                <p className="text-xs text-muted-foreground mt-1">Your saved concepts will appear here</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {
+                                    drafts.map(draft => (
+                                        <button
+                                            key={draft.id}
+                                            onClick={() => handleDraftClick(draft)}
+                                            className={cn(
+                                                "w-full text-left p-4 rounded-xl border transition-all hover:shadow-md",
+                                                draft.id === conceptId
+                                                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
+                                                    : "border-neutral-200 dark:border-neutral-800 hover:border-blue-300 bg-white dark:bg-neutral-900"
+                                            )}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <span className="text-2xl">{draft.iconEmoji || "📚"}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-sm truncate">{draft.title}</h3>
+                                                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                                        {draft.description}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className={cn(
+                                                                "text-[10px]",
+                                                                draft.status === "PENDING_VERIFICATION"
+                                                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                                                    : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                                                            )}
+                                                        >
+                                                            {draft.status === "PENDING_VERIFICATION" ? "Pending" : "Draft"}
+                                                        </Badge>
+                                                        <span className="text-[10px] text-muted-foreground">
+                                                            {draft._count.steps} steps
+                                                        </span>
+                                                        <span className="text-[10px] text-muted-foreground">
+                                                            Updated {formatDistanceToNow(new Date(draft.updatedAt), { addSuffix: true })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {
+                                                    draft.id === conceptId && (
+                                                        <Badge className="bg-blue-600 text-white text-[10px]">Current</Badge>
+                                                    )
+                                                }
                                             </div>
-                                        </div>
-                                        {draft.id === conceptId && (
-                                            <Badge className="bg-blue-600 text-white text-[10px]">Current</Badge>
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                                        </button>
+                                    ))
+                                }
+                            </div>
+                        )
+                    }
                 </SheetContent>
             </Sheet>
         </div>
@@ -1004,19 +1012,73 @@ export default function ConceptBlockEditor() {
 
 // ==================== SUB-COMPONENTS ====================
 
+// Markdown renderer with syntax highlighting
+function MarkdownRenderer({ content }: { content: string }) {
+    return (
+        <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+                code({ className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    const inline = !match;
+                    return inline ? (
+                        <code
+                            className="bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded text-sm font-mono"
+                            {...props}
+                        >
+                            {children}
+                        </code>
+                    ) : (
+                        <SyntaxHighlighter
+                            style={oneDark}
+                            language={match[1]}
+                            PreTag="div"
+                            className="rounded-lg !mt-3 !mb-3 text-sm"
+                        >
+                            {String(children).replace(/\n$/, "")}
+                        </SyntaxHighlighter>
+                    );
+                },
+                h1: ({ children }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-neutral-900 dark:text-white">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-xl font-semibold mt-5 mb-3 text-neutral-900 dark:text-white">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-lg font-semibold mt-4 mb-2 text-neutral-900 dark:text-white">{children}</h3>,
+                p: ({ children }) => <p className="mb-4 text-neutral-700 dark:text-neutral-300 leading-relaxed">{children}</p>,
+                ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-2 text-neutral-700 dark:text-neutral-300">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-2 text-neutral-700 dark:text-neutral-300">{children}</ol>,
+                li: ({ children }) => <li className="ml-2">{children}</li>,
+                blockquote: ({ children }) => (
+                    <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-950/30 rounded-r-lg text-neutral-700 dark:text-neutral-300 italic">
+                        {children}
+                    </blockquote>
+                ),
+                strong: ({ children }) => <strong className="font-semibold text-neutral-900 dark:text-white">{children}</strong>,
+                a: ({ href, children }) => (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 underline">
+                        {children}
+                    </a>
+                ),
+            }}
+        >
+            {content}
+        </ReactMarkdown>
+    );
+}
+
 function ContentEditor({ block, updateBlock, previewMode }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void; previewMode: boolean }) {
     return (
         <div className="space-y-2">
             <Label className="text-xs font-medium text-muted-foreground">Content (Markdown)</Label>
-            {previewMode ? (
-                <div className="p-6 border rounded-xl bg-white dark:bg-neutral-900 prose prose-neutral dark:prose-invert max-w-none min-h-[300px]">
-                    <ReactMarkdown>{block.content || "*No content yet. Use the AI generator above or switch to Edit mode.*"}</ReactMarkdown>
-                </div>
-            ) : (
-                <Textarea value={block.content} onChange={e => updateBlock(block.localId, { content: e.target.value })}
-                    placeholder="Content will be generated by AI, or you can write/edit markdown here..."
-                    rows={16} className="font-mono text-sm" />
-            )}
+            {
+                previewMode ? (
+                    <div className="p-6 border rounded-xl bg-white dark:bg-neutral-900 max-w-none min-h-[300px]">
+                        <MarkdownRenderer content={block.content || "*No content yet. Use the AI generator above or switch to Edit mode.*"} />
+                    </div>
+                ) : (
+                    <Textarea value={block.content} onChange={e => updateBlock(block.localId, { content: e.target.value })}
+                        placeholder="Content will be generated by AI, or you can write/edit markdown here..."
+                        rows={16} className="font-mono text-sm" />
+                )
+            }
         </div>
     );
 }
@@ -1071,8 +1133,8 @@ function CodeBlockEditor({ block, updateBlock, previewMode }: { block: StepBlock
                 <Label className="text-xs font-medium text-muted-foreground">Step Explanation</Label>
                 {
                     previewMode ? (
-                        <div className="p-4 border rounded-xl bg-white dark:bg-neutral-900 prose prose-neutral dark:prose-invert max-w-none min-h-[120px] text-sm">
-                            <ReactMarkdown>{block.content || "*No explanation yet.*"}</ReactMarkdown>
+                        <div className="p-4 border rounded-xl bg-white dark:bg-neutral-900 max-w-none min-h-[120px] text-sm">
+                            <MarkdownRenderer content={block.content || "*No explanation yet.*"} />
                         </div>
                     ) : (
                         <Textarea value={block.content} onChange={e => updateBlock(block.localId, { content: e.target.value })}
