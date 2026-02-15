@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import { auth } from '@repo/auth';
 import {
-    getConcepts, getTrendingConcepts, getCategories, getUserProgress
+    getConcepts, getTrendingConcepts, getCategories, getUserProgress,
+    getPublicConceptStats
 } from "@/actions/(main)/concepts/concept.action";
 import ConceptsHero from "./_components/concepts-hero";
 import {
@@ -29,11 +30,13 @@ export default async function ConceptsPage() {
         categoriesResult,
         recentResult,
         progressResult,
+        stats,
     ] = await Promise.all([
         getTrendingConcepts(6),
         getCategories(),
         getConcepts({ limit: 8, sortBy: "latest" }),
         userId ? getUserProgress() : Promise.resolve({ inProgress: [], completed: [] }),
+        getPublicConceptStats(),
     ]);
 
     const trending = trendingResult.concepts || [];
@@ -44,7 +47,7 @@ export default async function ConceptsPage() {
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
             <Suspense fallback={<ConceptsHeroSkeleton />}>
-                <ConceptsHero />
+                <ConceptsHero totalConcepts={stats.totalConcepts} totalSteps={stats.totalSteps} totalCategories={stats.totalCategories} />
             </Suspense>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">

@@ -4,8 +4,8 @@ import { auth } from '@repo/auth';
 import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
-    ConceptCategory, ConceptDifficulty, ConceptStatus, ConceptStepType, 
-    ConceptRequestStatus
+    ConceptCategory, ConceptDifficulty, ConceptStatus, ConceptStepType,
+    ConceptRequestStatus, PrismaValue
 } from "@repo/prisma/client";
 
 // ==========================================
@@ -33,18 +33,8 @@ export interface ConceptStepFormData {
     title: string;
     type: ConceptStepType;
     content: string;
-    language?: string;
-    visualizationType?: string;
-    visualizationData?: any;
-    comparisonItems?: any;
-    quizQuestion?: string;
-    quizOptions?: any;
-    quizExplanation?: string;
-    challengeDescription?: string;
-    challengeStarterCode?: string;
-    challengeSolution?: string;
-    challengeHints?: string[];
-    challengeTestCases?: any;
+    // Type-specific JSON data (polymorphic)
+    stepData?: Record<string, unknown>;
     tips?: string[];
 }
 
@@ -87,16 +77,7 @@ async function checkIsAdmin() {
     if (!session?.user?.id) {
         return { isAdmin: false, error: "Unauthorized" };
     }
-    
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { role: true },
-    });
-    
-    if (user?.role !== "Admin") {
-        return { isAdmin: false, error: "Admin access required" };
-    }
-    
+
     return { isAdmin: true, userId: session.user.id };
 }
 
@@ -123,9 +104,9 @@ export async function getConcepts(filters: ConceptFilters = {}) {
         const session = await auth();
         const user = session?.user?.id
             ? await prisma.user.findUnique({
-                  where: { id: session.user.id },
-                  select: { role: true },
-              })
+                where: { id: session.user.id },
+                select: { role: true },
+            })
             : null;
 
         if (user?.role !== "Admin") {
@@ -474,19 +455,11 @@ export async function addConceptStep(conceptId: string, data: ConceptStepFormDat
                 title: data.title,
                 type: data.type,
                 content: data.content,
-                language: data.language,
-                visualizationType: data.visualizationType,
-                visualizationData: data.visualizationData,
-                comparisonItems: data.comparisonItems,
-                quizQuestion: data.quizQuestion,
-                quizOptions: data.quizOptions,
-                quizExplanation: data.quizExplanation,
-                challengeDescription: data.challengeDescription,
-                challengeStarterCode: data.challengeStarterCode,
-                challengeSolution: data.challengeSolution,
-                challengeHints: data.challengeHints || [],
-                challengeTestCases: data.challengeTestCases,
+                stepData: data.stepData ? (data.stepData as PrismaValue.InputJsonValue) : PrismaValue.JsonNull,
                 tips: data.tips || [],
+            },
+            include: {
+                codeBlocks: { orderBy: { order: "asc" } },
             },
         });
 
@@ -513,33 +486,30 @@ export async function updateConceptStep(stepId: string, data: Partial<ConceptSte
             return { error: adminCheck.error };
         }
 
+        // Get the concept slug first for revalidation
+        const existingStep = await prisma.conceptStep.findUnique({
+            where: { id: stepId },
+            select: { conceptId: true, concept: { select: { slug: true } } },
+        });
+
         const step = await prisma.conceptStep.update({
             where: { id: stepId },
             data: {
                 ...(data.order !== undefined && { order: data.order }),
                 ...(data.title && { title: data.title }),
                 ...(data.type && { type: data.type }),
-                ...(data.content && { content: data.content }),
-                ...(data.language !== undefined && { language: data.language }),
-                ...(data.visualizationType !== undefined && { visualizationType: data.visualizationType }),
-                ...(data.visualizationData !== undefined && { visualizationData: data.visualizationData }),
-                ...(data.comparisonItems !== undefined && { comparisonItems: data.comparisonItems }),
-                ...(data.quizQuestion !== undefined && { quizQuestion: data.quizQuestion }),
-                ...(data.quizOptions !== undefined && { quizOptions: data.quizOptions }),
-                ...(data.quizExplanation !== undefined && { quizExplanation: data.quizExplanation }),
-                ...(data.challengeDescription !== undefined && { challengeDescription: data.challengeDescription }),
-                ...(data.challengeStarterCode !== undefined && { challengeStarterCode: data.challengeStarterCode }),
-                ...(data.challengeSolution !== undefined && { challengeSolution: data.challengeSolution }),
-                ...(data.challengeHints && { challengeHints: data.challengeHints }),
-                ...(data.challengeTestCases !== undefined && { challengeTestCases: data.challengeTestCases }),
+                ...(data.content !== undefined && { content: data.content }),
+                ...(data.stepData !== undefined && { stepData: data.stepData as PrismaValue.InputJsonValue }),
                 ...(data.tips && { tips: data.tips }),
             },
             include: {
-                concept: { select: { slug: true } },
+                codeBlocks: { orderBy: { order: "asc" } },
             },
         });
 
-        revalidatePath(`/concepts/${step.concept.slug}`);
+        if (existingStep?.concept?.slug) {
+            revalidatePath(`/concepts/${existingStep.concept.slug}`);
+        }
         return { step };
     } catch (error) {
         console.error("Error updating concept step:", error);
@@ -1444,5 +1414,280 @@ export async function getCategories() {
     } catch (error) {
         console.error("Error fetching categories:", error);
         return { error: "Failed to fetch categories" };
+    }
+}
+
+// ==========================================
+// PUBLIC CONCEPT STATS (for hero section)
+// ==========================================
+
+export async function getPublicConceptStats() {
+    try {
+        const [totalConcepts, totalSteps, categories] = await Promise.all([
+            prisma.concept.count({ where: { status: ConceptStatus.PUBLISHED } }),
+            prisma.conceptStep.count({
+                where: { concept: { status: ConceptStatus.PUBLISHED } },
+            }),
+            prisma.concept.groupBy({
+                by: ["category"],
+                where: { status: ConceptStatus.PUBLISHED },
+                _count: true,
+            }),
+        ]);
+
+        return {
+            totalConcepts,
+            totalSteps,
+            totalCategories: categories.length,
+        };
+    } catch (error) {
+        console.error("Error fetching concept stats:", error);
+        return { totalConcepts: 0, totalSteps: 0, totalCategories: 0 };
+    }
+}
+
+// ==========================================
+// CONCEPT RELATIONS (Related & Prerequisites)
+// ==========================================
+
+export async function addRelatedConcept(fromConceptId: string, toConceptId: string) {
+    try {
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin) {
+            return { error: adminCheck.error };
+        }
+
+        // Create bidirectional relation
+        await prisma.$transaction([
+            prisma.conceptRelation.create({
+                data: { fromConceptId, toConceptId },
+            }),
+            prisma.conceptRelation.create({
+                data: { fromConceptId: toConceptId, toConceptId: fromConceptId },
+            }),
+        ]);
+
+        revalidatePath("/concepts");
+        return { success: true };
+    } catch (error) {
+        console.error("Error adding related concept:", error);
+        return { error: "Failed to add related concept" };
+    }
+}
+
+export async function removeRelatedConcept(fromConceptId: string, toConceptId: string) {
+    try {
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin) {
+            return { error: adminCheck.error };
+        }
+
+        await prisma.$transaction([
+            prisma.conceptRelation.deleteMany({
+                where: { fromConceptId, toConceptId },
+            }),
+            prisma.conceptRelation.deleteMany({
+                where: { fromConceptId: toConceptId, toConceptId: fromConceptId },
+            }),
+        ]);
+
+        revalidatePath("/concepts");
+        return { success: true };
+    } catch (error) {
+        console.error("Error removing related concept:", error);
+        return { error: "Failed to remove related concept" };
+    }
+}
+
+export async function addPrerequisiteConcept(conceptId: string, prerequisiteId: string) {
+    try {
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin) {
+            return { error: adminCheck.error };
+        }
+
+        await prisma.conceptPrerequisite.create({
+            data: { conceptId, prerequisiteId },
+        });
+
+        revalidatePath("/concepts");
+        return { success: true };
+    } catch (error) {
+        console.error("Error adding prerequisite:", error);
+        return { error: "Failed to add prerequisite" };
+    }
+}
+
+export async function removePrerequisiteConcept(conceptId: string, prerequisiteId: string) {
+    try {
+        const adminCheck = await checkIsAdmin();
+        if (!adminCheck.isAdmin) {
+            return { error: adminCheck.error };
+        }
+
+        await prisma.conceptPrerequisite.deleteMany({
+            where: { conceptId, prerequisiteId },
+        });
+
+        revalidatePath("/concepts");
+        return { success: true };
+    } catch (error) {
+        console.error("Error removing prerequisite:", error);
+        return { error: "Failed to remove prerequisite" };
+    }
+}
+
+export async function getConceptRelations(conceptId: string) {
+    try {
+        const [relatedConcepts, prerequisites, prerequisiteFor] = await Promise.all([
+            prisma.conceptRelation.findMany({
+                where: { fromConceptId: conceptId },
+                include: {
+                    toConcept: {
+                        select: {
+                            id: true,
+                            slug: true,
+                            title: true,
+                            iconEmoji: true,
+                            difficulty: true,
+                            category: true,
+                            estimatedTime: true,
+                        },
+                    },
+                },
+            }),
+            prisma.conceptPrerequisite.findMany({
+                where: { conceptId },
+                include: {
+                    prerequisite: {
+                        select: {
+                            id: true,
+                            slug: true,
+                            title: true,
+                            iconEmoji: true,
+                            difficulty: true,
+                            category: true,
+                            estimatedTime: true,
+                        },
+                    },
+                },
+            }),
+            prisma.conceptPrerequisite.findMany({
+                where: { prerequisiteId: conceptId },
+                include: {
+                    concept: {
+                        select: {
+                            id: true,
+                            slug: true,
+                            title: true,
+                            iconEmoji: true,
+                            difficulty: true,
+                            category: true,
+                            estimatedTime: true,
+                        },
+                    },
+                },
+            }),
+        ]);
+
+        return {
+            related: relatedConcepts.map(r => r.toConcept),
+            prerequisites: prerequisites.map(p => p.prerequisite),
+            prerequisiteFor: prerequisiteFor.map(p => p.concept),
+        };
+    } catch (error) {
+        console.error("Error fetching concept relations:", error);
+        return { error: "Failed to fetch concept relations" };
+    }
+}
+
+export async function searchConcepts(query: string, excludeId?: string) {
+    try {
+        const concepts = await prisma.concept.findMany({
+            where: {
+                AND: [
+                    {
+                        OR: [
+                            { title: { contains: query, mode: "insensitive" } },
+                            { tags: { hasSome: [query.toLowerCase()] } },
+                        ],
+                    },
+                    ...(excludeId ? [{ NOT: { id: excludeId } }] : []),
+                ],
+            },
+            select: {
+                id: true,
+                slug: true,
+                title: true,
+                iconEmoji: true,
+                difficulty: true,
+                category: true,
+            },
+            take: 10,
+        });
+
+        return { concepts };
+    } catch (error) {
+        console.error("Error searching concepts:", error);
+        return { error: "Failed to search concepts" };
+    }
+}
+
+// ==========================================
+// CONCEPT CHAIN (Previous / Next navigation)
+// ==========================================
+
+export async function getConceptChain(conceptId: string) {
+    try {
+        const [prerequisites, prerequisiteFor] = await Promise.all([
+            // Previous concepts (what this concept requires)
+            prisma.conceptPrerequisite.findMany({
+                where: { conceptId },
+                include: {
+                    prerequisite: {
+                        select: {
+                            id: true,
+                            slug: true,
+                            title: true,
+                            iconEmoji: true,
+                            difficulty: true,
+                            category: true,
+                            estimatedTime: true,
+                            status: true,
+                        },
+                    },
+                },
+            }),
+            // Next concepts (what requires this concept)
+            prisma.conceptPrerequisite.findMany({
+                where: { prerequisiteId: conceptId },
+                include: {
+                    concept: {
+                        select: {
+                            id: true,
+                            slug: true,
+                            title: true,
+                            iconEmoji: true,
+                            difficulty: true,
+                            category: true,
+                            estimatedTime: true,
+                            status: true,
+                        },
+                    },
+                },
+            }),
+        ]);
+
+        return {
+            previous: prerequisites
+                .map(p => p.prerequisite)
+                .filter(c => c.status === ConceptStatus.PUBLISHED),
+            next: prerequisiteFor
+                .map(p => p.concept)
+                .filter(c => c.status === ConceptStatus.PUBLISHED),
+        };
+    } catch (error) {
+        console.error("Error fetching concept chain:", error);
+        return { previous: [], next: [] };
     }
 }

@@ -18,7 +18,6 @@ import { KnowmeSheetProvider } from "./_components/knowme-sheet-provider";
 import Referrals from "./_components/referrals";
 import ProjectsPreview from "./_components/projects-preview";
 import MockVoicePreview from "./_components/mock-voice-preview";
-import MockVoiceSection from "./_components/mock-voice-section";
 import CommunityHighlights from "./_components/community-highlights";
 
 import {
@@ -111,8 +110,6 @@ export default async function HomePage() {
 						<Suspense fallback={<QuickActionsSkeleton />}>
 							<QuickActions />
 						</Suspense>
-
-						<MockVoiceSection />
 
 						<Suspense fallback={<LeaderboardPositionSkeleton />}>
 							<LeaderboardPosition rank={leaderboardRank} />

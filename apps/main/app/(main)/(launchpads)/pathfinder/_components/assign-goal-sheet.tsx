@@ -3,13 +3,11 @@
 import { useState } from 'react'
 import { Button } from '@repo/ui/components/ui/button'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from '@repo/ui/components/ui/sheet'
-import { Check, FolderOpen, Loader2, X } from 'lucide-react'
+import {
+    Check, FolderOpen, Loader2, X
+} from 'lucide-react'
 import { assignGoalToGroup } from '@/actions/(main)/pathfinder'
 import { cn } from '@repo/ui/lib/utils'
 import toast from '@repo/ui/components/ui/sonner'
@@ -98,47 +96,48 @@ export function AssignGoalSheet({ open, onOpenChange, goalId, groups, onAssign }
                     </SheetHeader>
 
                     <div className="space-y-4">
-                        {/* Groups List */}
                         <div className="space-y-2">
-                            {groups.length === 0 ? (
-                                <p className="text-sm text-neutral-500 text-center py-8">
-                                    No groups created yet
-                                </p>
-                            ) : (
-                                groups.map((group) => (
-                                    <button
-                                        key={group.id}
-                                        onClick={() => setSelectedGroupId(group.id === selectedGroupId ? null : group.id)}
-                                        className={cn(
-                                            "w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left",
-                                            selectedGroupId === group.id
-                                                ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                        )}
-                                    >
-                                        <div
-                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-base"
-                                            style={{ backgroundColor: `${group.color || '#7c3aed'}20` }}
+                            {
+                                groups.length === 0 ? (
+                                    <p className="text-sm text-neutral-500 text-center py-8">
+                                        No groups created yet
+                                    </p>
+                                ) : (
+                                    groups.map((group) => (
+                                        <button
+                                            key={group.id}
+                                            onClick={() => setSelectedGroupId(group.id === selectedGroupId ? null : group.id)}
+                                            className={cn(
+                                                "w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left",
+                                                selectedGroupId === group.id
+                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                            )}
                                         >
-                                            {group.emoji || '📁'}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="text-sm font-medium text-neutral-900 dark:text-white">
-                                                {group.name}
+                                            <div
+                                                className="w-9 h-9 rounded-lg flex items-center justify-center text-base"
+                                                style={{ backgroundColor: `${group.color || '#7c3aed'}20` }}
+                                            >
+                                                {group.emoji || '📁'}
                                             </div>
-                                            <div className="text-xs text-neutral-500">
-                                                {group._count?.goals || 0} goals
+                                            <div className="flex-1">
+                                                <div className="text-sm font-medium text-neutral-900 dark:text-white">
+                                                    {group.name}
+                                                </div>
+                                                <div className="text-xs text-neutral-500">
+                                                    {group._count?.goals || 0} goals
+                                                </div>
                                             </div>
-                                        </div>
-                                        {selectedGroupId === group.id && (
-                                            <Check className="w-4 h-4 text-emerald-500" />
-                                        )}
-                                    </button>
-                                ))
-                            )}
+                                            {
+                                                selectedGroupId === group.id && (
+                                                    <Check className="w-4 h-4 text-emerald-500" />
+                                                )
+                                            }
+                                        </button>
+                                    ))
+                                )
+                            }
                         </div>
-
-                        {/* Actions */}
                         <div className="flex gap-2 pt-2">
                             <Button
                                 variant="outline"
@@ -154,14 +153,16 @@ export function AssignGoalSheet({ open, onOpenChange, goalId, groups, onAssign }
                                 disabled={isLoading || !selectedGroupId}
                                 className="flex-1"
                             >
-                                {isLoading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <>
-                                        <Check className="w-4 h-4 mr-1.5" />
-                                        Move
-                                    </>
-                                )}
+                                {
+                                    isLoading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Check className="w-4 h-4 mr-1.5" />
+                                            Move
+                                        </>
+                                    )
+                                }
                             </Button>
                         </div>
                     </div>

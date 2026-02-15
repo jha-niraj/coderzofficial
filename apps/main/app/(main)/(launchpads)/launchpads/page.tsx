@@ -7,7 +7,6 @@ import type { LaunchpadProduct } from "@/types/launchpads"
 
 export const dynamic = 'force-dynamic'
 
-/** Convert Prisma product (features as JsonValue) to LaunchpadProduct */
 function toLaunchpadProduct(p: Record<string, unknown>): LaunchpadProduct {
     const features = p.features
     const featuresArray = Array.isArray(features) ? features : (features ? [] : undefined)
@@ -19,7 +18,6 @@ function toLaunchpadProduct(p: Record<string, unknown>): LaunchpadProduct {
 }
 
 export default async function LaunchpadsPage() {
-    // Fetch data server-side
     const [coderzResult, communityResult, featuredResult] = await Promise.all([
         getCoderzProducts(20),
         getCommunityProducts(20, 0),

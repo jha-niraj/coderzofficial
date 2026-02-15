@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { BookOpen, Lightbulb, Search } from "lucide-react";
+import { 
+    BookOpen, Lightbulb, Search 
+} from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
@@ -11,9 +13,11 @@ import { Input } from "@repo/ui/components/ui/input";
 
 interface ConceptsHeroProps {
     totalConcepts?: number;
+    totalSteps?: number;
+    totalCategories?: number;
 }
 
-export default function ConceptsHero({ totalConcepts = 50 }: ConceptsHeroProps) {
+export default function ConceptsHero({ totalConcepts = 0, totalSteps = 0, totalCategories = 0 }: ConceptsHeroProps) {
     const router = useRouter();
     const [search, setSearch] = useState("");
 
@@ -28,7 +32,7 @@ export default function ConceptsHero({ totalConcepts = 50 }: ConceptsHeroProps) 
         <section className="relative overflow-hidden border-b border-neutral-200 dark:border-neutral-800 bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-950">
             {/* Grid Pattern Background */}
             <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
-            
+
             {/* Floating Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
@@ -53,12 +57,12 @@ export default function ConceptsHero({ totalConcepts = 50 }: ConceptsHeroProps) 
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center max-w-3xl mx-auto"
                 >
-                    <Badge 
-                        variant="outline" 
+                    <Badge
+                        variant="outline"
                         className="mb-6 px-4 py-1.5 rounded-full border-neutral-300 dark:border-neutral-700"
                     >
                         <BookOpen className="w-4 h-4 mr-2" />
-                        {totalConcepts.toLocaleString()}+ Concepts
+                        {totalConcepts > 0 ? totalConcepts.toLocaleString() : ""} Concepts
                     </Badge>
 
                     <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4 tracking-tight">
@@ -111,17 +115,17 @@ export default function ConceptsHero({ totalConcepts = 50 }: ConceptsHeroProps) 
                         className="flex flex-wrap items-center justify-center gap-8 mt-12"
                     >
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-neutral-900 dark:text-white">50+</div>
+                            <div className="text-3xl font-bold text-neutral-900 dark:text-white">{totalConcepts}</div>
                             <div className="text-sm text-neutral-500 dark:text-neutral-400">Concepts</div>
                         </div>
                         <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-700" />
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-neutral-900 dark:text-white">200+</div>
+                            <div className="text-3xl font-bold text-neutral-900 dark:text-white">{totalSteps}</div>
                             <div className="text-sm text-neutral-500 dark:text-neutral-400">Interactive Steps</div>
                         </div>
                         <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-700" />
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-neutral-900 dark:text-white">20+</div>
+                            <div className="text-3xl font-bold text-neutral-900 dark:text-white">{totalCategories}</div>
                             <div className="text-sm text-neutral-500 dark:text-neutral-400">Categories</div>
                         </div>
                     </motion.div>

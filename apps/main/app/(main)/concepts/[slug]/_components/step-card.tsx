@@ -4,27 +4,22 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     CheckCircle2, Code2, Eye, BarChart3, HelpCircle, Zap, Lightbulb, Copy,
-    Check, Play, ChevronDown, ChevronUp
+    Check, Play, ChevronDown, ChevronUp, Video, Globe, ExternalLink
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
-import {
-    Card, CardContent, CardHeader, CardTitle
-} from "@repo/ui/components/ui/card";
-import {
-    RadioGroup, RadioGroupItem
-} from "@repo/ui/components/ui/radio-group";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group";
 import { Label } from "@repo/ui/components/ui/label";
-import { Textarea } from "@repo/ui/components/ui/textarea";
-import {
-    Collapsible, CollapsibleTrigger
-} from "@repo/ui/components/ui/collapsible";
+import { Collapsible, CollapsibleTrigger } from "@repo/ui/components/ui/collapsible";
 import toast from "@repo/ui/components/ui/sonner";
 import { LucideIcon } from "lucide-react";
 import { ConceptStepType } from "@repo/prisma/client";
-import {
-    submitQuizAnswer, submitChallengeCode
-} from "@/actions/(main)/concepts/concept.action";
+import { submitQuizAnswer, submitChallengeCode } from "@/actions/(main)/concepts/concept.action";
+import CodeEditor from "@/components/main/code-editor";
+import ReactMarkdown from "react-markdown";
+
+// ==================== INTERFACES ====================
 
 interface CodeBlock {
     id: string;
@@ -38,37 +33,13 @@ interface CodeBlock {
     isRunnable: boolean;
 }
 
-interface QuizOption {
-    id: number;
-    text: string;
-    isCorrect: boolean;
-}
-
-interface ComparisonItem {
-    title: string;
-    content: string;
-    pros?: string[];
-    cons?: string[];
-}
-
 interface ConceptStep {
     id: string;
     order: number;
     title: string;
     type: ConceptStepType;
     content: string;
-    language?: string | null;
-    visualizationType?: string | null;
-    visualizationData?: unknown;
-    comparisonItems?: unknown;
-    quizQuestion?: string | null;
-    quizOptions?: unknown;
-    quizExplanation?: string | null;
-    challengeDescription?: string | null;
-    challengeStarterCode?: string | null;
-    challengeSolution?: string | null;
-    challengeHints?: unknown;
-    challengeTestCases?: unknown;
+    stepData?: unknown;
     tips?: unknown;
     codeBlocks: CodeBlock[];
 }
@@ -83,10 +54,7 @@ interface StepCardProps {
     isLoggedIn: boolean;
 }
 
-const stepTypeConfig: Record<
-    ConceptStepType,
-    { icon: LucideIcon; label: string; color: string }
-> = {
+const stepTypeConfig: Record<ConceptStepType, { icon: LucideIcon; label: string; color: string }> = {
     EXPLANATION: { icon: Eye, label: "Explanation", color: "text-blue-600" },
     CODE: { icon: Code2, label: "Code", color: "text-green-600" },
     VISUALIZATION: { icon: BarChart3, label: "Visualization", color: "text-purple-600" },
@@ -95,26 +63,36 @@ const stepTypeConfig: Record<
     CHALLENGE: { icon: Zap, label: "Challenge", color: "text-yellow-600" },
     INTERACTIVE: { icon: Play, label: "Interactive", color: "text-cyan-600" },
     SUMMARY: { icon: CheckCircle2, label: "Summary", color: "text-teal-600" },
+    RESOURCE: { icon: Video, label: "Resources", color: "text-purple-600" },
 };
 
-export default function StepCard({
-    step,
-    stepNumber,
-    totalSteps,
-    isCompleted,
-    onComplete,
-    conceptId,
-    isLoggedIn,
-}: StepCardProps) {
+// ==================== HELPERS ====================
+
+function getStepData(step: ConceptStep) {
+    if (!step.stepData) return {};
+    if (typeof step.stepData === "string") {
+        try { return JSON.parse(step.stepData); } catch { return {}; }
+    }
+    return step.stepData as Record<string, unknown>;
+}
+
+// ==================== COMPONENT ====================
+
+export default function StepCard({ step, stepNumber, totalSteps, isCompleted, onComplete, conceptId, isLoggedIn }: StepCardProps) {
     const [selectedQuizOption, setSelectedQuizOption] = useState<number | null>(null);
     const [quizSubmitted, setQuizSubmitted] = useState(false);
     const [quizCorrect, setQuizCorrect] = useState(false);
-    const [challengeCode, setChallengeCode] = useState(step.challengeStarterCode || "");
     const [showSolution, setShowSolution] = useState(false);
     const [showHints, setShowHints] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
-    const TypeIcon = stepTypeConfig[step.type].icon;
+    const data = getStepData(step);
+    const TypeIcon = stepTypeConfig[step.type]?.icon || Eye;
+
+    // Challenge code state – pull from stepData
+    const [challengeCode, setChallengeCode] = useState(
+        (data.starterCode as string) || ""
+    );
 
     const copyCode = async (code: string, id: string) => {
         await navigator.clipboard.writeText(code);
@@ -122,41 +100,24 @@ export default function StepCard({
         setTimeout(() => setCopiedId(null), 2000);
     };
 
+    // Quiz
     const handleQuizSubmit = async () => {
         if (selectedQuizOption === null) return;
-
-        const options = (typeof step.quizOptions === 'string' ? JSON.parse(step.quizOptions) : step.quizOptions) as QuizOption[];
+        const options = (data.options || []) as { id: string; text: string; isCorrect: boolean }[];
         const isCorrect = options[selectedQuizOption]?.isCorrect || false;
-
         setQuizSubmitted(true);
         setQuizCorrect(isCorrect);
-
-        if (isLoggedIn) {
-            await submitQuizAnswer(conceptId, step.id, selectedQuizOption, isCorrect);
-        }
-
-        if (isCorrect) {
-            toast.success("Correct! 🎉");
-            onComplete();
-        } else {
-            toast.error("Not quite right. Try again!");
-        }
+        if (isLoggedIn) await submitQuizAnswer(conceptId, step.id, selectedQuizOption, isCorrect);
+        if (isCorrect) { toast.success("Correct! 🎉"); onComplete(); }
+        else { toast.error("Not quite right. Try again!"); }
     };
 
+    // Challenge
     const handleChallengeSubmit = async () => {
-        // Simplified challenge check - in production, you'd run actual tests
         const passed = challengeCode.trim().length > 10;
-
-        if (isLoggedIn) {
-            await submitChallengeCode(conceptId, step.id, challengeCode, passed);
-        }
-
-        if (passed) {
-            toast.success("Challenge completed! 🎉");
-            onComplete();
-        } else {
-            toast.error("Keep trying! Check the hints.");
-        }
+        if (isLoggedIn) await submitChallengeCode(conceptId, step.id, challengeCode, passed);
+        if (passed) { toast.success("Challenge completed! 🎉"); onComplete(); }
+        else { toast.error("Keep trying! Check the hints."); }
     };
 
     return (
@@ -164,346 +125,270 @@ export default function StepCard({
             <CardHeader className="bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-200 dark:border-neutral-800">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div
-                            className={`p-2 rounded-lg bg-white dark:bg-neutral-800 ${stepTypeConfig[step.type].color}`}
-                        >
+                        <div className={`p-2 rounded-lg bg-white dark:bg-neutral-800 ${stepTypeConfig[step.type]?.color}`}>
                             <TypeIcon className="w-5 h-5" />
                         </div>
                         <div>
-                            <Badge variant="outline" className="mb-1">
-                                {stepTypeConfig[step.type].label}
-                            </Badge>
+                            <Badge variant="outline" className="mb-1">{stepTypeConfig[step.type]?.label}</Badge>
                             <CardTitle className="text-lg">{step.title}</CardTitle>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                            {stepNumber} / {totalSteps}
-                        </span>
-                        {
-                            isCompleted && (
-                                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                            )
-                        }
+                        <span className="text-sm text-muted-foreground">{stepNumber} / {totalSteps}</span>
+                        {isCompleted && <CheckCircle2 className="w-5 h-5 text-green-500" />}
                     </div>
                 </div>
             </CardHeader>
+
             <CardContent className="p-6 space-y-6">
+                {/* Markdown Content */}
                 <div className="prose prose-neutral dark:prose-invert max-w-none">
-                    <div dangerouslySetInnerHTML={{ __html: step.content }} />
+                    <ReactMarkdown>{step.content}</ReactMarkdown>
                 </div>
-                {
-                    step.codeBlocks.length > 0 && (
-                        <div className="space-y-4">
-                            {
-                                step.codeBlocks.map((block) => (
-                                    <div
-                                        key={block.id}
-                                        className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800"
-                                    >
-                                        <div className="flex items-center justify-between px-4 py-2 bg-neutral-900 dark:bg-neutral-950">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-neutral-400">
-                                                    {block.title || block.language}
-                                                </span>
-                                                <Badge variant="secondary" className="text-xs">
-                                                    {block.language}
-                                                </Badge>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 text-neutral-400 hover:text-white"
-                                                onClick={() => copyCode(block.code, block.id)}
-                                            >
-                                                {
-                                                    copiedId === block.id ? (
-                                                        <Check className="w-4 h-4" />
-                                                    ) : (
-                                                        <Copy className="w-4 h-4" />
-                                                    )
-                                                }
-                                            </Button>
-                                        </div>
-                                        <pre className="p-4 overflow-x-auto bg-neutral-900 dark:bg-neutral-950 text-neutral-100 text-sm">
-                                            <code>{block.code}</code>
-                                        </pre>
-                                        {
-                                            block.explanation && (
-                                                <div className="px-4 py-3 bg-neutral-100 dark:bg-neutral-800/50 text-sm text-muted-foreground border-t border-neutral-200 dark:border-neutral-800">
-                                                    {block.explanation}
-                                                </div>
-                                            )
-                                        }
+
+                {/* Code Blocks */}
+                {step.codeBlocks.length > 0 && (
+                    <div className="space-y-4">
+                        {step.codeBlocks.map((block) => (
+                            <div key={block.id} className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800">
+                                <div className="flex items-center justify-between px-4 py-2 bg-neutral-900 dark:bg-neutral-950">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-neutral-400">{block.title || block.language}</span>
+                                        <Badge variant="secondary" className="text-xs">{block.language}</Badge>
                                     </div>
-                                ))
-                            }
-                        </div>
-                    )
-                }
-                {
-                    step.type === "QUIZ" && step.quizQuestion && (
-                        <div className="space-y-4 p-4 rounded-lg bg-pink-50 dark:bg-pink-950/20 border border-pink-200 dark:border-pink-900">
-                            <h4 className="font-semibold text-foreground flex items-center gap-2">
-                                <HelpCircle className="w-5 h-5 text-pink-600" />
-                                {step.quizQuestion}
-                            </h4>
-                            <RadioGroup
-                                value={selectedQuizOption?.toString()}
-                                onValueChange={(val) => setSelectedQuizOption(parseInt(val))}
-                                disabled={quizSubmitted && quizCorrect}
-                            >
-                                {
-                                    ((typeof step.quizOptions === 'string' ? JSON.parse(step.quizOptions) : step.quizOptions) as QuizOption[])?.map((option, index) => (
-                                        <div
-                                            key={option.id || index}
-                                            className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${quizSubmitted
-                                                ? option.isCorrect
-                                                    ? "bg-green-100 dark:bg-green-900/30 border-green-300"
-                                                    : selectedQuizOption === index
-                                                        ? "bg-red-100 dark:bg-red-900/30 border-red-300"
-                                                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700"
-                                                : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 hover:border-pink-300"
-                                                }`}
-                                        >
-                                            <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                                            <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                                                {option.text}
-                                            </Label>
-                                            {
-                                                quizSubmitted && option.isCorrect && (
-                                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                                )
-                                            }
-                                        </div>
-                                    ))
-                                }
-                            </RadioGroup>
-                            {
-                                !quizSubmitted || !quizCorrect ? (
-                                    <Button
-                                        onClick={handleQuizSubmit}
-                                        disabled={selectedQuizOption === null}
-                                        className="w-full"
-                                    >
-                                        Submit Answer
+                                    <Button variant="ghost" size="sm" className="h-7 text-neutral-400 hover:text-white" onClick={() => copyCode(block.code, block.id)}>
+                                        {copiedId === block.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                     </Button>
-                                ) : null
-                            }
-                            {
-                                quizSubmitted && step.quizExplanation && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-sm"
-                                    >
-                                        <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">
-                                            Explanation:
-                                        </p>
-                                        <p className="text-blue-600 dark:text-blue-300">
-                                            {step.quizExplanation}
-                                        </p>
-                                    </motion.div>
-                                )
-                            }
-                        </div>
-                    )
-                }
-                {
-                    step.type === "CHALLENGE" && (
-                        <div className="space-y-4 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900">
-                            <h4 className="font-semibold text-foreground flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-yellow-600" />
-                                Challenge
-                            </h4>
-
-                            {
-                                step.challengeDescription && (
-                                    <p className="text-sm text-muted-foreground">
-                                        {step.challengeDescription}
-                                    </p>
-                                )
-                            }
-
-                            <Textarea
-                                value={challengeCode}
-                                onChange={(e) => setChallengeCode(e.target.value)}
-                                placeholder="Write your code here..."
-                                className="font-mono min-h-[200px]"
-                            />
-
-                            <div className="flex items-center gap-2">
-                                <Button onClick={handleChallengeSubmit} className="flex-1">
-                                    <Play className="w-4 h-4 mr-2" />
-                                    Run Challenge
-                                </Button>
-
-                                {
-                                    Array.isArray(step.challengeHints) && step.challengeHints.length > 0 && (
-                                        <Collapsible open={showHints} onOpenChange={setShowHints}>
-                                            <CollapsibleTrigger asChild>
-                                                <Button variant="outline">
-                                                    <Lightbulb className="w-4 h-4 mr-1" />
-                                                    Hints
-                                                    {
-                                                        showHints ? (
-                                                            <ChevronUp className="w-4 h-4 ml-1" />
-                                                        ) : (
-                                                            <ChevronDown className="w-4 h-4 ml-1" />
-                                                        )
-                                                    }
-                                                </Button>
-                                            </CollapsibleTrigger>
-                                        </Collapsible>
-                                    )
-                                }
-
-                                {
-                                    step.challengeSolution && (
-                                        <Collapsible open={showSolution} onOpenChange={setShowSolution}>
-                                            <CollapsibleTrigger asChild>
-                                                <Button variant="outline">
-                                                    Solution
-                                                    {
-                                                        showSolution ? (
-                                                            <ChevronUp className="w-4 h-4 ml-1" />
-                                                        ) : (
-                                                            <ChevronDown className="w-4 h-4 ml-1" />
-                                                        )
-                                                    }
-                                                </Button>
-                                            </CollapsibleTrigger>
-                                        </Collapsible>
-                                    )
-                                }
+                                </div>
+                                <CodeEditor code={block.code} language={block.language} height="auto" readOnly showRunButton={block.isRunnable} showLanguageSelector={false} />
+                                {block.explanation && (
+                                    <div className="px-4 py-3 bg-neutral-100 dark:bg-neutral-800/50 text-sm text-muted-foreground border-t border-neutral-200 dark:border-neutral-800">
+                                        <ReactMarkdown>{block.explanation}</ReactMarkdown>
+                                    </div>
+                                )}
                             </div>
+                        ))}
+                    </div>
+                )}
 
-                            {
-                                showHints && Array.isArray(step.challengeHints) && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="space-y-2"
-                                    >
-                                        {
-                                            (step.challengeHints as string[]).map((hint, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="p-3 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-sm flex items-start gap-2"
-                                                >
-                                                    <Lightbulb className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                                    <span>{hint}</span>
-                                                </div>
-                                            ))
-                                        }
-                                    </motion.div>
-                                )
-                            }
+                {/* Quiz */}
+                {step.type === "QUIZ" && data.question && (
+                    <div className="space-y-4 p-4 rounded-lg bg-pink-50 dark:bg-pink-950/20 border border-pink-200 dark:border-pink-900">
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
+                            <HelpCircle className="w-5 h-5 text-pink-600" />
+                            {data.question as string}
+                        </h4>
+                        <RadioGroup
+                            value={selectedQuizOption?.toString()}
+                            onValueChange={(val) => setSelectedQuizOption(parseInt(val))}
+                            disabled={quizSubmitted && quizCorrect}
+                        >
+                            {((data.options || []) as { id: string; text: string; isCorrect: boolean }[]).map((option, index) => (
+                                <div key={option.id || index}
+                                    className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${quizSubmitted
+                                        ? option.isCorrect ? "bg-green-100 dark:bg-green-900/30 border-green-300"
+                                            : selectedQuizOption === index ? "bg-red-100 dark:bg-red-900/30 border-red-300"
+                                                : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700"
+                                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 hover:border-pink-300"
+                                        }`}
+                                >
+                                    <RadioGroupItem value={index.toString()} id={`option-${step.id}-${index}`} />
+                                    <Label htmlFor={`option-${step.id}-${index}`} className="flex-1 cursor-pointer">{option.text}</Label>
+                                    {quizSubmitted && option.isCorrect && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+                                </div>
+                            ))}
+                        </RadioGroup>
+                        {(!quizSubmitted || !quizCorrect) && (
+                            <Button onClick={handleQuizSubmit} disabled={selectedQuizOption === null} className="w-full">Submit Answer</Button>
+                        )}
+                        {quizSubmitted && data.explanation && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+                                className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-sm prose prose-sm prose-blue dark:prose-invert max-w-none">
+                                <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Explanation:</p>
+                                <ReactMarkdown>{data.explanation as string}</ReactMarkdown>
+                            </motion.div>
+                        )}
+                    </div>
+                )}
 
-                            {
-                                showSolution && step.challengeSolution && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700"
-                                    >
-                                        <div className="px-4 py-2 bg-neutral-900 text-neutral-400 text-xs">
-                                            Solution
-                                        </div>
-                                        <pre className="p-4 overflow-x-auto bg-neutral-900 text-neutral-100 text-sm">
-                                            <code>{step.challengeSolution}</code>
-                                        </pre>
-                                    </motion.div>
-                                )
-                            }
+                {/* Challenge */}
+                {step.type === "CHALLENGE" && (
+                    <div className="space-y-4 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900">
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-yellow-600" /> Challenge
+                        </h4>
+                        <CodeEditor
+                            code={challengeCode}
+                            language={(data.language as string) || "javascript"}
+                            height="250px"
+                            showRunButton
+                            showLanguageSelector={false}
+                            onChange={(code) => setChallengeCode(code)}
+                        />
+                        <div className="flex items-center gap-2">
+                            <Button onClick={handleChallengeSubmit} className="flex-1">
+                                <Play className="w-4 h-4 mr-2" /> Run Challenge
+                            </Button>
+                            {Array.isArray(data.hints) && (data.hints as string[]).length > 0 && (
+                                <Collapsible open={showHints} onOpenChange={setShowHints}>
+                                    <CollapsibleTrigger asChild>
+                                        <Button variant="outline">
+                                            <Lightbulb className="w-4 h-4 mr-1" /> Hints
+                                            {showHints ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                </Collapsible>
+                            )}
+                            {data.solution && (
+                                <Collapsible open={showSolution} onOpenChange={setShowSolution}>
+                                    <CollapsibleTrigger asChild>
+                                        <Button variant="outline">
+                                            Solution {showSolution ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                </Collapsible>
+                            )}
                         </div>
-                    )
-                }
+                        {showHints && Array.isArray(data.hints) && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+                                {(data.hints as string[]).map((hint, i) => (
+                                    <div key={i} className="p-3 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-sm flex items-start gap-2">
+                                        <Lightbulb className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                        <span>{hint}</span>
+                                    </div>
+                                ))}
+                            </motion.div>
+                        )}
+                        {showSolution && data.solution && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <CodeEditor
+                                    code={data.solution as string}
+                                    language={(data.language as string) || "javascript"}
+                                    height="200px"
+                                    readOnly
+                                    showRunButton={false}
+                                    showLanguageSelector={false}
+                                />
+                            </motion.div>
+                        )}
+                    </div>
+                )}
 
-                {
-                    step.type === "COMPARISON" && (() => {
-                        const items = (typeof step.comparisonItems === 'string' ? JSON.parse(step.comparisonItems) : step.comparisonItems) as ComparisonItem[] | null;
-                        if (!items || !Array.isArray(items)) return null;
-                        return (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {
-                                    items.map((item, index) => (
-                                        <Card key={index}>
-                                            <CardHeader className="pb-3">
-                                                <CardTitle className="text-base">{item.title}</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="space-y-3">
-                                                <p className="text-sm text-muted-foreground">{item.content}</p>
-                                                {
-                                                    item.pros && (
-                                                        <div>
-                                                            <p className="text-xs font-medium text-green-600 mb-1">Pros:</p>
-                                                            <ul className="text-xs text-muted-foreground space-y-1">
-                                                                {
-                                                                    item.pros.map((pro: string, i: number) => (
-                                                                        <li key={i} className="flex items-start gap-1">
-                                                                            <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5" />
-                                                                            {pro}
-                                                                        </li>
-                                                                    ))
-                                                                }
-                                                            </ul>
-                                                        </div>
-                                                    )
-                                                }
-                                                {
-                                                    item.cons && (
-                                                        <div>
-                                                            <p className="text-xs font-medium text-red-600 mb-1">Cons:</p>
-                                                            <ul className="text-xs text-muted-foreground space-y-1">
-                                                                {
-                                                                    item.cons.map((con: string, i: number) => (
-                                                                        <li key={i} className="flex items-start gap-1">
-                                                                            <span className="text-red-500">•</span>
-                                                                            {con}
-                                                                        </li>
-                                                                    ))
-                                                                }
-                                                            </ul>
-                                                        </div>
-                                                    )
-                                                }
-                                            </CardContent>
-                                        </Card>
-                                    ))
-                                }
+                {/* Comparison */}
+                {step.type === "COMPARISON" && Array.isArray(data.items) && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {(data.items as { title: string; description: string; pros?: string[]; cons?: string[]; useCase?: string }[]).map((item, i) => (
+                                <Card key={i}>
+                                    <CardHeader className="pb-3"><CardTitle className="text-base">{item.title}</CardTitle></CardHeader>
+                                    <CardContent className="space-y-3">
+                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                        {item.pros && (
+                                            <div>
+                                                <p className="text-xs font-medium text-green-600 mb-1">Pros:</p>
+                                                <ul className="text-xs text-muted-foreground space-y-1">
+                                                    {item.pros.map((pro, j) => (
+                                                        <li key={j} className="flex items-start gap-1">
+                                                            <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5" /> {pro}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {item.cons && (
+                                            <div>
+                                                <p className="text-xs font-medium text-red-600 mb-1">Cons:</p>
+                                                <ul className="text-xs text-muted-foreground space-y-1">
+                                                    {item.cons.map((con, j) => (
+                                                        <li key={j} className="flex items-start gap-1"><span className="text-red-500">•</span> {con}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {item.useCase && (
+                                            <p className="text-xs italic text-muted-foreground">Best for: {item.useCase}</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                        {data.conclusion && (
+                            <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 prose prose-sm prose-orange dark:prose-invert max-w-none">
+                                <ReactMarkdown>{data.conclusion as string}</ReactMarkdown>
                             </div>
-                        );
-                    })()
-                }
-                {
-                    Array.isArray(step.tips) && step.tips.length > 0 && (
-                        <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900">
-                            <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
-                                <Lightbulb className="w-4 h-4" />
-                                Tips
-                            </h4>
-                            <ul className="space-y-2">
-                                {
-                                    (step.tips as string[]).map((tip, index) => (
-                                        <li key={index} className="text-sm text-blue-600 dark:text-blue-300 flex items-start gap-2">
-                                            <span className="text-blue-400">•</span>
-                                            {tip}
-                                        </li>
-                                    ))
-                                }
-                            </ul>
-                        </div>
-                    )
-                }
-                {
-                    !isCompleted && step.type !== "QUIZ" && step.type !== "CHALLENGE" && (
-                        <Button onClick={onComplete} variant="outline" className="w-full">
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                            Mark as Complete
-                        </Button>
-                    )
-                }
+                        )}
+                    </div>
+                )}
+
+                {/* Resources */}
+                {step.type === "RESOURCE" && (
+                    <div className="space-y-4">
+                        {Array.isArray(data.videos) && (data.videos as { url: string; title?: string; duration?: string; description?: string }[]).length > 0 && (
+                            <div>
+                                <h4 className="font-medium mb-3 flex items-center gap-2"><Video className="w-4 h-4 text-red-500" /> Video Resources</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {(data.videos as { url: string; title?: string; duration?: string; description?: string }[]).map((v, i) => (
+                                        <a key={i} href={v.url} target="_blank" rel="noopener noreferrer"
+                                            className="flex items-start gap-3 p-3 rounded-lg border hover:bg-red-50 dark:hover:bg-red-950/10 transition-colors group">
+                                            <div className="w-10 h-10 rounded bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                                                <Play className="w-5 h-5 text-red-600" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate group-hover:text-red-600">{v.title || "Watch Video"}</p>
+                                                {v.duration && <p className="text-xs text-muted-foreground">{v.duration}</p>}
+                                                {v.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{v.description}</p>}
+                                            </div>
+                                            <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-red-600 flex-shrink-0" />
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {Array.isArray(data.docs) && (data.docs as { url: string; title?: string; type?: string; description?: string }[]).length > 0 && (
+                            <div>
+                                <h4 className="font-medium mb-3 flex items-center gap-2"><Globe className="w-4 h-4 text-blue-500" /> Documentation</h4>
+                                <div className="space-y-2">
+                                    {(data.docs as { url: string; title?: string; type?: string; description?: string }[]).map((d, i) => (
+                                        <a key={i} href={d.url} target="_blank" rel="noopener noreferrer"
+                                            className="flex items-center gap-3 p-3 rounded-lg border hover:bg-blue-50 dark:hover:bg-blue-950/10 transition-colors group">
+                                            <Globe className="w-5 h-5 text-blue-500" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate group-hover:text-blue-600">{d.title || d.url}</p>
+                                                {d.description && <p className="text-xs text-muted-foreground">{d.description}</p>}
+                                            </div>
+                                            {d.type && <Badge variant="outline" className="text-xs">{d.type}</Badge>}
+                                            <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Tips */}
+                {Array.isArray(step.tips) && (step.tips as string[]).length > 0 && (
+                    <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900">
+                        <h4 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
+                            <Lightbulb className="w-4 h-4" /> Tips
+                        </h4>
+                        <ul className="space-y-2">
+                            {(step.tips as string[]).map((tip, index) => (
+                                <li key={index} className="text-sm text-blue-600 dark:text-blue-300 flex items-start gap-2">
+                                    <span className="text-blue-400">•</span>
+                                    <ReactMarkdown>{tip}</ReactMarkdown>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {/* Mark Complete */}
+                {!isCompleted && step.type !== "QUIZ" && step.type !== "CHALLENGE" && (
+                    <Button onClick={onComplete} variant="outline" className="w-full">
+                        <CheckCircle2 className="w-4 h-4 mr-2" /> Mark as Complete
+                    </Button>
+                )}
             </CardContent>
         </Card>
     );

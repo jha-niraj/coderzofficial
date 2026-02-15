@@ -2,7 +2,9 @@
 
 import { Button } from "@repo/ui/components/ui/button"
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Rocket, Plus, Sparkles } from "lucide-react"
+import {
+    Rocket, Plus, Sparkles
+} from "lucide-react"
 import Link from "next/link"
 
 export function LaunchpadsHeader() {

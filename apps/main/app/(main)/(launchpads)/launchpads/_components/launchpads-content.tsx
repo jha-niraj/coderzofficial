@@ -3,19 +3,19 @@
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
-import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs"
+import { 
+    Tabs, TabsList, TabsTrigger 
+} from "@repo/ui/components/ui/tabs"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
-    Rocket, Users, Star, Eye, ThumbsUp,
-    MessageSquare, Zap, Brain, ArrowUpRight,
-    Sparkles, Trophy, TrendingUp
+    Rocket, Users, Star, Eye, ThumbsUp, MessageSquare, Zap, 
+    Brain, ArrowUpRight, Sparkles, Trophy, TrendingUp
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useLaunchpadsStore } from "@/app/store/launchpadsStore"
 import type { LaunchpadsContentProps, LaunchpadProduct } from "@/types/launchpads"
 
-// Category icons
 const categoryIcons: Record<string, React.ReactNode> = {
     LEARNING: <Brain className="w-4 h-4" />,
     PRODUCTIVITY: <Zap className="w-4 h-4" />,
@@ -204,7 +204,6 @@ export function LaunchpadsContent({
         activeTab, setActiveTab, initialize
     } = useLaunchpadsStore()
 
-    // Initialize store with props
     useEffect(() => {
         initialize(initialCoderzProducts, initialCommunityProducts, initialFeaturedProducts)
     }, [initialCoderzProducts, initialCommunityProducts, initialFeaturedProducts, initialize])

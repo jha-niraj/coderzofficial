@@ -33,18 +33,7 @@ interface ConceptStep {
     title: string;
     type: ConceptStepType;
     content: string;
-    language?: string | null;
-    visualizationType?: string | null;
-    visualizationData?: unknown;
-    comparisonItems?: unknown;
-    quizQuestion?: string | null;
-    quizOptions?: unknown;
-    quizExplanation?: string | null;
-    challengeDescription?: string | null;
-    challengeStarterCode?: string | null;
-    challengeSolution?: string | null;
-    challengeHints?: unknown;
-    challengeTestCases?: unknown;
+    stepData?: unknown;
     tips?: unknown;
     codeBlocks: {
         id: string;
@@ -64,7 +53,6 @@ interface Concept {
     slug: string;
     title: string;
     description: string;
-    shortDescription?: string | null;
     category: ConceptCategory;
     difficulty: ConceptDifficulty;
     iconEmoji?: string | null;

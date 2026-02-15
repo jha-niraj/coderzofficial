@@ -552,8 +552,6 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                                             </h3>
                                                             <p className="text-sm text-neutral-500">Group your goal for better organization</p>
                                                         </div>
-
-                                                        {/* Visibility */}
                                                         <div className="space-y-2">
                                                             <Label className="text-xs text-neutral-500">Visibility</Label>
                                                             <div className="grid grid-cols-2 gap-2">
@@ -582,9 +580,11 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                                                 >
                                                                     <p className="font-medium text-sm">Private</p>
                                                                     <p className="text-xs text-neutral-500">{PATHFINDER_CREDITS.privateGoalCreation} credits</p>
-                                                                    {(credits ?? 0) < PATHFINDER_CREDITS.privateGoalCreation && (
-                                                                        <p className="text-xs text-amber-600 mt-0.5">Need {PATHFINDER_CREDITS.privateGoalCreation - (credits ?? 0)} more</p>
-                                                                    )}
+                                                                    {
+                                                                        (credits ?? 0) < PATHFINDER_CREDITS.privateGoalCreation && (
+                                                                            <p className="text-xs text-amber-600 mt-0.5">Need {PATHFINDER_CREDITS.privateGoalCreation - (credits ?? 0)} more</p>
+                                                                        )
+                                                                    }
                                                                 </button>
                                                             </div>
                                                             <p className="text-xs text-neutral-400 mt-1">
@@ -592,141 +592,141 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                                             </p>
                                                         </div>
 
-                                                        {!showNewGroup ? (
-                                                            <div className="space-y-2">
-                                                                {/* No Group Option */}
-                                                                <button
-                                                                    onClick={() => setFormData({ ...formData, groupId: null })}
-                                                                    className={cn(
-                                                                        "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
-                                                                        formData.groupId === null
-                                                                            ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                            : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                    )}
-                                                                >
-                                                                    <div className="w-8 h-8 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-sm">
-                                                                        📋
-                                                                    </div>
-                                                                    <div className="flex-1">
-                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">No Group</p>
-                                                                        <p className="text-xs text-neutral-500">Keep ungrouped</p>
-                                                                    </div>
-                                                                    {formData.groupId === null && <Check className="w-4 h-4 text-emerald-500" />}
-                                                                </button>
+                                                        {
+                                                            !showNewGroup ? (
+                                                                <div className="space-y-2">
+                                                                    <button
+                                                                        onClick={() => setFormData({ ...formData, groupId: null })}
+                                                                        className={cn(
+                                                                            "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
+                                                                            formData.groupId === null
+                                                                                ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                        )}
+                                                                    >
+                                                                        <div className="w-8 h-8 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-sm">
+                                                                            📋
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <p className="text-sm font-medium text-neutral-900 dark:text-white">No Group</p>
+                                                                            <p className="text-xs text-neutral-500">Keep ungrouped</p>
+                                                                        </div>
+                                                                        {formData.groupId === null && <Check className="w-4 h-4 text-emerald-500" />}
+                                                                    </button>
 
-                                                                {
-                                                                    localGroups.map((group) => (
-                                                                        <button
-                                                                            key={group.id}
-                                                                            onClick={() => setFormData({ ...formData, groupId: group.id })}
-                                                                            className={cn(
-                                                                                "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
-                                                                                formData.groupId === group.id
-                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                            )}
-                                                                        >
-                                                                            <div
-                                                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                                                                                style={{ backgroundColor: `${group.color || '#7c3aed'}20` }}
+                                                                    {
+                                                                        localGroups.map((group) => (
+                                                                            <button
+                                                                                key={group.id}
+                                                                                onClick={() => setFormData({ ...formData, groupId: group.id })}
+                                                                                className={cn(
+                                                                                    "w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3",
+                                                                                    formData.groupId === group.id
+                                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                                )}
                                                                             >
-                                                                                {group.emoji || '📁'}
-                                                                            </div>
-                                                                            <div className="flex-1">
-                                                                                <p className="text-sm font-medium text-neutral-900 dark:text-white">{group.name}</p>
-                                                                            </div>
-                                                                            {formData.groupId === group.id && <Check className="w-4 h-4 text-emerald-500" />}
-                                                                        </button>
-                                                                    ))
-                                                                }
-
-                                                                <button
-                                                                    onClick={() => setShowNewGroup(true)}
-                                                                    className="w-full p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-left transition-all flex items-center gap-3 hover:border-neutral-400 dark:hover:border-neutral-600"
-                                                                >
-                                                                    <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                                                                        <FolderPlus className="w-4 h-4 text-neutral-500" />
-                                                                    </div>
-                                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Create New Group</p>
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="space-y-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
-                                                                <div className="space-y-2">
-                                                                    <Label className="text-xs text-neutral-500">Group Name</Label>
-                                                                    <Input
-                                                                        placeholder="e.g., Frontend, DSA Practice"
-                                                                        value={newGroupName}
-                                                                        onChange={(e) => setNewGroupName(e.target.value)}
-                                                                        className="h-10"
-                                                                        autoFocus
-                                                                    />
-                                                                </div>
-                                                                <div className="space-y-2">
-                                                                    <Label className="text-xs text-neutral-500">Icon</Label>
-                                                                    <div className="flex gap-1.5">
-                                                                        {
-                                                                            defaultEmojis.map((emoji) => (
-                                                                                <button
-                                                                                    key={emoji}
-                                                                                    onClick={() => setNewGroupEmoji(emoji)}
-                                                                                    className={cn(
-                                                                                        "w-8 h-8 rounded flex items-center justify-center text-sm transition-all",
-                                                                                        newGroupEmoji === emoji
-                                                                                            ? "bg-neutral-200 dark:bg-neutral-700 ring-2 ring-neutral-400"
-                                                                                            : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                                                                                    )}
+                                                                                <div
+                                                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                                                                                    style={{ backgroundColor: `${group.color || '#7c3aed'}20` }}
                                                                                 >
-                                                                                    {emoji}
-                                                                                </button>
-                                                                            ))
-                                                                        }
+                                                                                    {group.emoji || '📁'}
+                                                                                </div>
+                                                                                <div className="flex-1">
+                                                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white">{group.name}</p>
+                                                                                </div>
+                                                                                {formData.groupId === group.id && <Check className="w-4 h-4 text-emerald-500" />}
+                                                                            </button>
+                                                                        ))
+                                                                    }
+
+                                                                    <button
+                                                                        onClick={() => setShowNewGroup(true)}
+                                                                        className="w-full p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-left transition-all flex items-center gap-3 hover:border-neutral-400 dark:hover:border-neutral-600"
+                                                                    >
+                                                                        <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                                                                            <FolderPlus className="w-4 h-4 text-neutral-500" />
+                                                                        </div>
+                                                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Create New Group</p>
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="space-y-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+                                                                    <div className="space-y-2">
+                                                                        <Label className="text-xs text-neutral-500">Group Name</Label>
+                                                                        <Input
+                                                                            placeholder="e.g., Frontend, DSA Practice"
+                                                                            value={newGroupName}
+                                                                            onChange={(e) => setNewGroupName(e.target.value)}
+                                                                            className="h-10"
+                                                                            autoFocus
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <Label className="text-xs text-neutral-500">Icon</Label>
+                                                                        <div className="flex gap-1.5">
+                                                                            {
+                                                                                defaultEmojis.map((emoji) => (
+                                                                                    <button
+                                                                                        key={emoji}
+                                                                                        onClick={() => setNewGroupEmoji(emoji)}
+                                                                                        className={cn(
+                                                                                            "w-8 h-8 rounded flex items-center justify-center text-sm transition-all",
+                                                                                            newGroupEmoji === emoji
+                                                                                                ? "bg-neutral-200 dark:bg-neutral-700 ring-2 ring-neutral-400"
+                                                                                                : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                                                                                        )}
+                                                                                    >
+                                                                                        {emoji}
+                                                                                    </button>
+                                                                                ))
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <Label className="text-xs text-neutral-500">Color</Label>
+                                                                        <div className="flex gap-1.5">
+                                                                            {
+                                                                                defaultColors.map((color) => (
+                                                                                    <button
+                                                                                        key={color}
+                                                                                        onClick={() => setNewGroupColor(color)}
+                                                                                        className={cn(
+                                                                                            "w-8 h-8 rounded transition-all",
+                                                                                            newGroupColor === color && "ring-2 ring-neutral-400 ring-offset-2"
+                                                                                        )}
+                                                                                        style={{ backgroundColor: color }}
+                                                                                    />
+                                                                                ))
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex gap-2 pt-2">
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            onClick={() => setShowNewGroup(false)}
+                                                                            className="flex-1"
+                                                                        >
+                                                                            Cancel
+                                                                        </Button>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            onClick={handleCreateGroup}
+                                                                            disabled={!newGroupName.trim() || creatingGroup}
+                                                                            className="flex-1"
+                                                                        >
+                                                                            {
+                                                                                creatingGroup ? (
+                                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                                ) : (
+                                                                                    'Create Group'
+                                                                                )
+                                                                            }
+                                                                        </Button>
                                                                     </div>
                                                                 </div>
-                                                                <div className="space-y-2">
-                                                                    <Label className="text-xs text-neutral-500">Color</Label>
-                                                                    <div className="flex gap-1.5">
-                                                                        {
-                                                                            defaultColors.map((color) => (
-                                                                                <button
-                                                                                    key={color}
-                                                                                    onClick={() => setNewGroupColor(color)}
-                                                                                    className={cn(
-                                                                                        "w-8 h-8 rounded transition-all",
-                                                                                        newGroupColor === color && "ring-2 ring-neutral-400 ring-offset-2"
-                                                                                    )}
-                                                                                    style={{ backgroundColor: color }}
-                                                                                />
-                                                                            ))
-                                                                        }
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex gap-2 pt-2">
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        onClick={() => setShowNewGroup(false)}
-                                                                        className="flex-1"
-                                                                    >
-                                                                        Cancel
-                                                                    </Button>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={handleCreateGroup}
-                                                                        disabled={!newGroupName.trim() || creatingGroup}
-                                                                        className="flex-1"
-                                                                    >
-                                                                        {
-                                                                            creatingGroup ? (
-                                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                                            ) : (
-                                                                                'Create Group'
-                                                                            )
-                                                                        }
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        )
+                                                            )
                                                         }
                                                     </div>
                                                 )

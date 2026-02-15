@@ -36,7 +36,6 @@ async function KnowMeContent() {
         return <KnowMeLandingPage isLoggedIn={true} />;
     }
 
-    // If setup incomplete, show landing page with profile for onboarding sheet
     if (profileCheck.data.status === 'SETUP') {
         const profileResult = await getMyKnowMeProfile();
         return <KnowMeLandingPage isLoggedIn={true} profile={profileResult.data} />;

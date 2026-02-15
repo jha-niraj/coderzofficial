@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { 
-    getConceptBySlug, recordConceptView 
+import {
+    getConceptBySlug, recordConceptView, getConceptChain
 } from "@/actions/(main)/concepts/concept.action";
 import { auth } from '@repo/auth';
 import ConceptDetailClient from "./_components/concept-detail-client";
@@ -42,7 +42,10 @@ export default async function ConceptPage({ params }: ConceptPageProps) {
     }
 
     // Record view (non-blocking)
-    recordConceptView(result.concept.id, "direct").catch(() => {});
+    recordConceptView(result.concept.id, "direct").catch(() => { });
+
+    // Fetch learning path chain
+    const chain = await getConceptChain(result.concept.id);
 
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
@@ -53,6 +56,8 @@ export default async function ConceptPage({ params }: ConceptPageProps) {
                     isBookmarked={result.isBookmarked || false}
                     progress={result.progress}
                     isLoggedIn={!!userId}
+                    previousConcepts={chain.previous || []}
+                    nextConcepts={chain.next || []}
                 />
             </Suspense>
         </div>

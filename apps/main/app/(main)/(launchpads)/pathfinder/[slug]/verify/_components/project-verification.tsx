@@ -8,10 +8,12 @@ import { Input } from '@repo/ui/components/ui/input'
 import { Label } from '@repo/ui/components/ui/label'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogDescription, DialogFooter,
+    DialogHeader, DialogTitle
 } from '@repo/ui/components/ui/dialog'
 import {
-    CheckCircle2, Lock, Wrench, Rocket, FolderPlus, ExternalLink, Github
+    CheckCircle2, Lock, Wrench, Rocket, ExternalLink, Github, 
+    FolderPlus
 } from 'lucide-react'
 import { VerificationSectionStatus } from '@repo/prisma/client'
 import { submitProject } from '@/actions/(main)/pathfinder'
@@ -108,10 +110,7 @@ export function ProjectVerification({
                         Build a project to demonstrate your practical skills. Choose one of the options below.
                     </p>
                 </div>
-
-                {/* Project Options */}
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
-                    {/* Build with Coderz */}
                     <motion.div
                         whileHover={{ scale: 1.02 }}
                         className="p-6 rounded-2xl border-2 border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30"
@@ -125,22 +124,28 @@ export function ProjectVerification({
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
                             Use our guided project builder with AI assistance, task management, and built-in collaboration tools.
                         </p>
-                        {(minorProject || majorProject) && (
-                            <div className="space-y-2 mb-4">
-                                {minorProject && (
-                                    <div className="p-3 rounded-lg bg-white dark:bg-neutral-900">
-                                        <Badge variant="secondary" className="mb-1">Minor</Badge>
-                                        <div className="font-medium text-sm">{minorProject.title}</div>
-                                    </div>
-                                )}
-                                {majorProject && (
-                                    <div className="p-3 rounded-lg bg-white dark:bg-neutral-900">
-                                        <Badge className="mb-1 bg-violet-500">Major</Badge>
-                                        <div className="font-medium text-sm">{majorProject.title}</div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        {
+                            (minorProject || majorProject) && (
+                                <div className="space-y-2 mb-4">
+                                    {
+                                        minorProject && (
+                                            <div className="p-3 rounded-lg bg-white dark:bg-neutral-900">
+                                                <Badge variant="secondary" className="mb-1">Minor</Badge>
+                                                <div className="font-medium text-sm">{minorProject.title}</div>
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        majorProject && (
+                                            <div className="p-3 rounded-lg bg-white dark:bg-neutral-900">
+                                                <Badge className="mb-1 bg-violet-500">Major</Badge>
+                                                <div className="font-medium text-sm">{majorProject.title}</div>
+                                            </div>
+                                        )
+                                    }
+                                </div>
+                            )
+                        }
                         <Link href="/projects">
                             <Button className="w-full bg-gradient-to-r from-violet-600 to-purple-600">
                                 <Rocket className="w-4 h-4 mr-2" />
@@ -148,8 +153,6 @@ export function ProjectVerification({
                             </Button>
                         </Link>
                     </motion.div>
-
-                    {/* Add Your Own Project */}
                     <motion.div
                         whileHover={{ scale: 1.02 }}
                         className="p-6 rounded-2xl border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
@@ -188,39 +191,43 @@ export function ProjectVerification({
                     </motion.div>
                 </div>
 
-                {/* Suggested Projects */}
-                {(minorProject || majorProject) && (
-                    <div className="mt-8">
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Suggested Projects</h3>
-                        <div className="space-y-4">
-                            {minorProject && (
-                                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <Badge variant="secondary" className="mb-2">Minor Project</Badge>
-                                            <h4 className="font-semibold text-neutral-900 dark:text-white">{minorProject.title}</h4>
-                                            <p className="text-sm text-neutral-500 mt-1">{minorProject.description}</p>
+                {
+                    (minorProject || majorProject) && (
+                        <div className="mt-8">
+                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Suggested Projects</h3>
+                            <div className="space-y-4">
+                                {
+                                    minorProject && (
+                                        <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <Badge variant="secondary" className="mb-2">Minor Project</Badge>
+                                                    <h4 className="font-semibold text-neutral-900 dark:text-white">{minorProject.title}</h4>
+                                                    <p className="text-sm text-neutral-500 mt-1">{minorProject.description}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
-                            {majorProject && (
-                                <div className="p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <Badge className="mb-2 bg-violet-500">Major Project (Recommended)</Badge>
-                                            <h4 className="font-semibold text-neutral-900 dark:text-white">{majorProject.title}</h4>
-                                            <p className="text-sm text-neutral-500 mt-1">{majorProject.description}</p>
+                                    )
+                                }
+                                {
+                                    majorProject && (
+                                        <div className="p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20">
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <Badge className="mb-2 bg-violet-500">Major Project (Recommended)</Badge>
+                                                    <h4 className="font-semibold text-neutral-900 dark:text-white">{majorProject.title}</h4>
+                                                    <p className="text-sm text-neutral-500 mt-1">{majorProject.description}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
+                                    )
+                                }
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
             </div>
 
-            {/* Add Project Dialog */}
             <Dialog open={showAddProject} onOpenChange={setShowAddProject}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>

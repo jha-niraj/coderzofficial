@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Coins, Zap, AlertTriangle } from 'lucide-react'
+import {
+    Coins, Zap, AlertTriangle
+} from 'lucide-react'
 import { getGoalUsageSummary } from '@/actions/(main)/pathfinder/usage.action'
 import { usePathfinderStore } from '@/app/store/pathfinderStore'
 import { useUserStore } from '@/app/store/useUserStore'
@@ -48,20 +50,24 @@ export function PathfinderUsageWidget({ goalId, className }: PathfinderUsageWidg
                     Pending: {usage?.pendingCredits ?? 0} cred
                 </span>
             </div>
-            {usage?.totalInputTokens !== undefined && usage.totalInputTokens > 0 && (
-                <>
-                    <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-                    <span className="text-xs text-neutral-500">
-                        ~{(usage.totalInputTokens + usage.totalOutputTokens).toLocaleString()} tokens
-                    </span>
-                </>
-            )}
-            {isBlocked && (
-                <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span className="text-xs font-medium">AI paused – add credits</span>
-                </div>
-            )}
+            {
+                usage?.totalInputTokens !== undefined && usage.totalInputTokens > 0 && (
+                    <>
+                        <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+                        <span className="text-xs text-neutral-500">
+                            ~{(usage.totalInputTokens + usage.totalOutputTokens).toLocaleString()} tokens
+                        </span>
+                    </>
+                )
+            }
+            {
+                isBlocked && (
+                    <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span className="text-xs font-medium">AI paused – add credits</span>
+                    </div>
+                )
+            }
         </div>
     )
 }

@@ -1,7 +1,9 @@
 import { getPublicPathfinderGoals } from '@/actions/(main)/pathfinder'
 import { ExploreSidebar } from './_components/explore-sidebar'
 import Link from 'next/link'
-import { Target, ArrowLeft } from 'lucide-react'
+import {
+    Target, ArrowLeft
+} from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 

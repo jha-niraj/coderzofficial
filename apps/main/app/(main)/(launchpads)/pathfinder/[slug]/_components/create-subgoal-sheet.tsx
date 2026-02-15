@@ -6,8 +6,8 @@ import {
 } from '@repo/ui/components/ui/sheet'
 import { Input } from '@repo/ui/components/ui/input'
 import { Button } from '@repo/ui/components/ui/button'
-import { 
-    Loader2, Sparkles, Target 
+import {
+    Loader2, Sparkles, Target
 } from 'lucide-react'
 import { createSubGoal } from '@/actions/(main)/pathfinder/subgoals.action'
 import type { SubGoalResources, GoalUsageSummary } from '@/app/store/pathfinderStore'
@@ -131,35 +131,39 @@ export function CreateSubGoalSheet({
                         />
                     </div>
 
-                    {error && (
-                        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                    )}
+                    {
+                        error && (
+                            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                        )
+                    }
 
-                    {!isLoading ? (
-                        <Button
-                            type="submit"
-                            className="w-full bg-violet-600 hover:bg-violet-700"
-                            disabled={!title.trim()}
-                        >
-                            Generate Content
-                        </Button>
-                    ) : (
-                        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-8 text-center">
-                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+                    {
+                        !isLoading ? (
+                            <Button
+                                type="submit"
+                                className="w-full bg-violet-600 hover:bg-violet-700"
+                                disabled={!title.trim()}
+                            >
+                                Generate Content
+                            </Button>
+                        ) : (
+                            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-8 text-center">
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                                    <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+                                </div>
+                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
+                                    Generating Content
+                                </h3>
+                                <p className="text-sm text-neutral-500 mb-2 flex items-center justify-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-violet-500" />
+                                    Fetching videos & docs (Exa) + creating content (OpenAI)
+                                </p>
+                                <p className="text-xs text-neutral-400">
+                                    This usually takes 5–10 seconds
+                                </p>
                             </div>
-                            <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
-                                Generating Content
-                            </h3>
-                            <p className="text-sm text-neutral-500 mb-2 flex items-center justify-center gap-2">
-                                <Sparkles className="w-4 h-4 text-violet-500" />
-                                Fetching videos & docs (Exa) + creating content (OpenAI)
-                            </p>
-                            <p className="text-xs text-neutral-400">
-                                This usually takes 5–10 seconds
-                            </p>
-                        </div>
-                    )}
+                        )
+                    }
                 </form>
             </SheetContent>
         </Sheet>

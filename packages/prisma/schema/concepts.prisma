@@ -23,6 +23,10 @@ model Concept {
     status      ConceptStatus @default(DRAFT)
     publishedAt DateTime?
 
+    // Monetization
+    isPaid Boolean @default(false)
+    price  Int     @default(0) // Cost in credits
+
     // Metadata
     estimatedTime Int?     @default(10) // in minutes
     prerequisites String[]
@@ -48,6 +52,13 @@ model Concept {
     comments  ConceptComment[]  @relation("ConceptComments")
     views     ConceptView[]     @relation("ConceptViews")
     progress  ConceptProgress[] @relation("ConceptProgress")
+    purchases ConceptPurchase[] @relation("ConceptPurchases")
+
+    // Related & Prerequisite Concepts (self-relations)
+    relatedTo       ConceptRelation[]     @relation("RelatedFrom")
+    relatedFrom     ConceptRelation[]     @relation("RelatedTo")
+    prerequisiteFor ConceptPrerequisite[] @relation("PrerequisiteOf")
+    prerequisiteOf  ConceptPrerequisite[] @relation("PrerequisiteFor")
 
     // Space relation
     spaceId String?
@@ -66,6 +77,59 @@ model Concept {
     @@index([likeCount])
     @@index([viewCount])
     @@index([spaceId])
+    @@index([isPaid])
+}
+
+// Concept Purchase Model - Track who has unlocked paid concepts
+model ConceptPurchase {
+    id        String  @id @default(cuid())
+    conceptId String
+    concept   Concept @relation("ConceptPurchases", fields: [conceptId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation("ConceptPurchases", fields: [userId], references: [id], onDelete: Cascade)
+
+    pricePaid Int // Credits paid at time of purchase
+
+    createdAt DateTime @default(now())
+
+    @@unique([conceptId, userId])
+    @@index([conceptId])
+    @@index([userId])
+}
+
+// Self-relation for related concepts
+model ConceptRelation {
+    id String @id @default(cuid())
+
+    fromConceptId String
+    fromConcept   Concept @relation("RelatedFrom", fields: [fromConceptId], references: [id], onDelete: Cascade)
+
+    toConceptId String
+    toConcept   Concept @relation("RelatedTo", fields: [toConceptId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([fromConceptId, toConceptId])
+    @@index([fromConceptId])
+    @@index([toConceptId])
+}
+
+// Self-relation for prerequisite concepts
+model ConceptPrerequisite {
+    id String @id @default(cuid())
+
+    conceptId String
+    concept   Concept @relation("PrerequisiteFor", fields: [conceptId], references: [id], onDelete: Cascade)
+
+    prerequisiteId String
+    prerequisite   Concept @relation("PrerequisiteOf", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([conceptId, prerequisiteId])
+    @@index([conceptId])
+    @@index([prerequisiteId])
 }
 
 model ConceptStep {
@@ -79,33 +143,23 @@ model ConceptStep {
     title String
     type  ConceptStepType @default(EXPLANATION)
 
-    // Content (varies by type)
+    // Main content in markdown format
     content String @db.Text
 
-    // For CODE type
+    // Type-specific data stored as JSON (polymorphic approach)
+    // For CODE: { language, codeBlocks: [{title, code, explanation}] }
+    // For QUIZ: { question, options: [{id, text, isCorrect}], explanation }
+    // For CHALLENGE: { description, starterCode, solution, hints, testCases, language }
+    // For COMPARISON: { items: [{title, description, pros, cons, useCase}], conclusion }
+    // For VISUALIZATION: { type, imageUrl, description }
+    // For SUMMARY: { keyTakeaways, tips, assignment }
+    // For RESOURCE: { videos: [{url, title, duration}], docs: [{url, title, type}] }
+    stepData Json?
+
+    // For CODE type - keep code blocks as separate model for complex code
     codeBlocks ConceptCodeBlock[] @relation("StepCodeBlocks")
-    language   String?            @default("javascript")
 
-    // For VISUALIZATION type
-    visualizationType String? // "flowchart", "diagram", "animation"
-    visualizationData Json?
-
-    // For COMPARISON type
-    comparisonItems Json? // [{title, content, pros, cons}]
-
-    // For QUIZ type
-    quizQuestion    String?
-    quizOptions     Json? // [{id, text, isCorrect}]
-    quizExplanation String? @db.Text
-
-    // For CHALLENGE type
-    challengeDescription String?  @db.Text
-    challengeStarterCode String?  @db.Text
-    challengeSolution    String?  @db.Text
-    challengeHints       String[]
-    challengeTestCases   Json?
-
-    // Tips/Notes for the step
+    // Tips/Notes for the step (markdown)
     tips String[]
 
     // Timestamps

@@ -1,6 +1,8 @@
 'use client'
 
-import { MousePointerClick } from 'lucide-react'
+import { 
+    MousePointerClick 
+} from 'lucide-react'
 
 export function ExploreContent() {
     return (

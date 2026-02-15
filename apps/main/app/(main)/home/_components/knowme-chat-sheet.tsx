@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Send, MessageSquare, Loader2, ExternalLink } from "lucide-react";
+import {
+    Bot, Send, MessageSquare, Loader2, ExternalLink
+} from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import {
@@ -12,12 +14,10 @@ import {
 import { cn } from "@repo/ui/lib/utils";
 import toast from "@repo/ui/components/ui/sonner";
 import {
-    hasKnowMeProfile,
-    getMyKnowMeProfile,
+    hasKnowMeProfile, getMyKnowMeProfile
 } from "@/actions/(main)/knowme/profile.action";
 import {
-    sendChatMessage,
-    getOrCreateChatSession,
+    sendChatMessage, getOrCreateChatSession
 } from "@/actions/(main)/knowme";
 import type { KnowMeProfileFull } from "@/types/knowme";
 
@@ -93,7 +93,7 @@ export default function KnowmeChatSheet({
                     }
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
     }, [profile?.id, open]);
 
     // Auto-scroll to bottom
@@ -152,120 +152,129 @@ export default function KnowmeChatSheet({
                 </SheetHeader>
 
                 <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                    {isLoadingProfile ? (
-                        <div className="flex-1 flex items-center justify-center">
-                            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : !profile ? (
-                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                                <MessageSquare className="w-8 h-8 text-muted-foreground" />
+                    {
+                        isLoadingProfile ? (
+                            <div className="flex-1 flex items-center justify-center">
+                                <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
                             </div>
-                            <p className="font-medium mb-2">Set up KnowMe first</p>
-                            <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-                                Create your AI portfolio assistant to chat with it from anywhere.
-                            </p>
-                            <Link href="/knowme" onClick={() => onOpenChange(false)}>
-                                <Button>Go to KnowMe</Button>
-                            </Link>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                {messages.length === 0 && (
-                                    <div className="text-center py-8">
-                                        <p className="text-muted-foreground text-sm mb-2">
-                                            Ask a question about yourself
-                                        </p>
-                                        <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
-                                            Try: &quot;What are my skills?&quot; or &quot;Tell me about my projects&quot;
-                                        </p>
-                                    </div>
-                                )}
+                        ) : !profile ? (
+                            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                                    <MessageSquare className="w-8 h-8 text-muted-foreground" />
+                                </div>
+                                <p className="font-medium mb-2">Set up KnowMe first</p>
+                                <p className="text-sm text-muted-foreground mb-4 max-w-xs">
+                                    Create your AI portfolio assistant to chat with it from anywhere.
+                                </p>
+                                <Link href="/knowme" onClick={() => onOpenChange(false)}>
+                                    <Button>Go to KnowMe</Button>
+                                </Link>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                    {
+                                        messages.length === 0 && (
+                                            <div className="text-center py-8">
+                                                <p className="text-muted-foreground text-sm mb-2">
+                                                    Ask a question about yourself
+                                                </p>
+                                                <p className="text-xs text-muted-foreground/80 max-w-xs mx-auto">
+                                                    Try: &quot;What are my skills?&quot; or &quot;Tell me about my projects&quot;
+                                                </p>
+                                            </div>
+                                        )
+                                    }
 
-                                <AnimatePresence>
-                                    {messages.map((message, index) => (
-                                        <motion.div
-                                            key={message.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.03 }}
-                                            className={cn(
-                                                "flex gap-3",
-                                                message.role === "user" && "justify-end"
-                                            )}
-                                        >
-                                            {message.role === "assistant" && (
+                                    <AnimatePresence>
+                                        {
+                                            messages.map((message, index) => (
+                                                <motion.div
+                                                    key={message.id}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.03 }}
+                                                    className={cn(
+                                                        "flex gap-3",
+                                                        message.role === "user" && "justify-end"
+                                                    )}
+                                                >
+                                                    {
+                                                        message.role === "assistant" && (
+                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                                                                <Bot className="w-4 h-4 text-white" />
+                                                            </div>
+                                                        )
+                                                    }
+                                                    <div
+                                                        className={cn(
+                                                            "max-w-[85%] rounded-2xl px-4 py-3 text-sm",
+                                                            message.role === "user"
+                                                                ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                                : "bg-muted rounded-tl-none"
+                                                        )}
+                                                    >
+                                                        <p className="whitespace-pre-wrap">{message.content}</p>
+                                                    </div>
+                                                </motion.div>
+                                            ))
+                                        }
+                                    </AnimatePresence>
+
+                                    {
+                                        isLoading && (
+                                            <div className="flex gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                                                     <Bot className="w-4 h-4 text-white" />
                                                 </div>
-                                            )}
-                                            <div
-                                                className={cn(
-                                                    "max-w-[85%] rounded-2xl px-4 py-3 text-sm",
-                                                    message.role === "user"
-                                                        ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                        : "bg-muted rounded-tl-none"
-                                                )}
-                                            >
-                                                <p className="whitespace-pre-wrap">{message.content}</p>
+                                                <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3">
+                                                    <div className="flex gap-1">
+                                                        <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:0ms]" />
+                                                        <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
+                                                        <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:300ms]" />
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
+                                        )
+                                    }
 
-                                {isLoading && (
-                                    <div className="flex gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                                            <Bot className="w-4 h-4 text-white" />
-                                        </div>
-                                        <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-3">
-                                            <div className="flex gap-1">
-                                                <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:0ms]" />
-                                                <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
-                                                <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:300ms]" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div ref={messagesEndRef} />
-                            </div>
-
-                            <div className="p-4 border-t shrink-0">
-                                <form
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        handleSendMessage();
-                                    }}
-                                    className="flex gap-3"
-                                >
-                                    <Input
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        placeholder="Ask about your skills, projects..."
-                                        className="flex-1 rounded-xl"
-                                        disabled={isLoading}
-                                    />
-                                    <Button
-                                        type="submit"
-                                        disabled={!inputValue.trim() || isLoading}
-                                        className="rounded-xl shrink-0"
+                                    <div ref={messagesEndRef} />
+                                </div>
+                                <div className="p-4 border-t shrink-0">
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            handleSendMessage();
+                                        }}
+                                        className="flex gap-3"
                                     >
-                                        <Send className="w-4 h-4" />
-                                    </Button>
-                                </form>
-                                <Link
-                                    href="/knowme"
-                                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mt-2"
-                                    onClick={() => onOpenChange(false)}
-                                >
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                    Open full KnowMe dashboard
-                                </Link>
-                            </div>
-                        </>
-                    )}
+                                        <Input
+                                            value={inputValue}
+                                            onChange={(e) => setInputValue(e.target.value)}
+                                            placeholder="Ask about your skills, projects..."
+                                            className="flex-1 rounded-xl"
+                                            disabled={isLoading}
+                                        />
+                                        <Button
+                                            type="submit"
+                                            disabled={!inputValue.trim() || isLoading}
+                                            className="rounded-xl shrink-0"
+                                        >
+                                            <Send className="w-4 h-4" />
+                                        </Button>
+                                    </form>
+                                    <Link
+                                        href="/knowme"
+                                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mt-2"
+                                        onClick={() => onOpenChange(false)}
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        Open full KnowMe dashboard
+                                    </Link>
+                                </div>
+                            </>
+                        )
+                    }
                 </div>
             </SheetContent>
         </Sheet>

@@ -6,18 +6,18 @@ import { Button } from '@repo/ui/components/ui/button'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
-    Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2, 
+    Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2,
     Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles, Coins
 } from 'lucide-react'
 import Link from 'next/link'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
 import { cn } from '@repo/ui/lib/utils'
-import { 
-    updateSubGoalStatus,  deleteSubGoal, getSubGoalWithContent
+import {
+    updateSubGoalStatus, deleteSubGoal, getSubGoalWithContent
 } from '@/actions/(main)/pathfinder/subgoals.action'
 import { useRouter } from 'next/navigation'
-import { 
-    usePathfinderStore, type SubGoalResources 
+import {
+    usePathfinderStore, type SubGoalResources
 } from '@/app/store/pathfinderStore'
 import { SubGoalQuiz } from './subgoal-quiz'
 import { SubGoalCoding } from './subgoal-coding'
@@ -96,17 +96,19 @@ function PracticeHeader({ goal, onOpenEarnings }: { goal: Goal; onOpenEarnings?:
                 </div>
                 <div className="flex items-center gap-2">
                     <PathfinderUsageWidget goalId={goal.id} />
-                    {goal.isPublic && onOpenEarnings && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs"
-                            onClick={onOpenEarnings}
-                        >
-                            <Coins className="w-3 h-3 mr-1" />
-                            Earnings
-                        </Button>
-                    )}
+                    {
+                        goal.isPublic && onOpenEarnings && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs"
+                                onClick={onOpenEarnings}
+                            >
+                                <Coins className="w-3 h-3 mr-1" />
+                                Earnings
+                            </Button>
+                        )
+                    }
                     <Link href={`/pathfinder/${goal.slug ?? goal.id}/verify`}>
                         <Button variant="outline" size="sm" className="h-8 text-xs">
                             <Trophy className="w-3 h-3 mr-1" />
@@ -125,13 +127,13 @@ function PracticeHeader({ goal, onOpenEarnings }: { goal: Goal; onOpenEarnings?:
 // SUB-GOAL ITEM COMPONENT
 // ================================================================================
 
-function SubGoalItem({ 
-    subGoal, 
+function SubGoalItem({
+    subGoal,
     isSelected,
     onSelect,
     onStatusChange,
     onDelete,
-}: { 
+}: {
     subGoal: SubGoal
     isSelected: boolean
     onSelect: () => void
@@ -164,7 +166,7 @@ function SubGoalItem({
             onClick={onSelect}
             className={cn(
                 "group flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all",
-                isSelected 
+                isSelected
                     ? "bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800"
                     : "hover:bg-neutral-50 dark:hover:bg-neutral-900 border border-transparent"
             )}
@@ -174,14 +176,14 @@ function SubGoalItem({
                 className="flex-shrink-0 mt-0.5"
             >
                 {
-                subGoal.status === 'COMPLETED' ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                ) : (
-                    <Circle className={cn(
-                        "w-5 h-5 transition-colors",
-                        isSelected ? "text-violet-400" : "text-neutral-300"
-                    )} />
-                )
+                    subGoal.status === 'COMPLETED' ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    ) : (
+                        <Circle className={cn(
+                            "w-5 h-5 transition-colors",
+                            isSelected ? "text-violet-400" : "text-neutral-300"
+                        )} />
+                    )
                 }
             </button>
             <div className="flex-1 min-w-0">
@@ -193,33 +195,33 @@ function SubGoalItem({
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                     {
-                    !hasAiContent && (
-                        <Badge variant="secondary" className="text-[10px] h-4 px-1">
-                            <Loader2 className="w-2 h-2 mr-1 animate-spin" />
-                            Generating...
-                        </Badge>
-                    )
+                        !hasAiContent && (
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                                <Loader2 className="w-2 h-2 mr-1 animate-spin" />
+                                Generating...
+                            </Badge>
+                        )
                     }
                     {
-                    hasAiContent && subGoal.quizCompleted && (
-                        <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-green-100 text-green-700">
-                            <Brain className="w-2 h-2 mr-1" />
-                            Quiz: {subGoal.quizScore}%
-                        </Badge>
-                    )
+                        hasAiContent && subGoal.quizCompleted && (
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-green-100 text-green-700">
+                                <Brain className="w-2 h-2 mr-1" />
+                                Quiz: {subGoal.quizScore}%
+                            </Badge>
+                        )
                     }
                     {
-                    hasAiContent && subGoal.hasCoding && subGoal.codingCompleted && (
-                        <Badge variant="secondary" className={cn(
-                            "text-[10px] h-4 px-1",
-                            subGoal.codingPassed 
-                                ? "bg-green-100 text-green-700" 
-                                : "bg-red-100 text-red-700"
-                        )}>
-                            <Code2 className="w-2 h-2 mr-1" />
-                            {subGoal.codingPassed ? 'Passed' : 'Failed'}
-                        </Badge>
-                    )
+                        hasAiContent && subGoal.hasCoding && subGoal.codingCompleted && (
+                            <Badge variant="secondary" className={cn(
+                                "text-[10px] h-4 px-1",
+                                subGoal.codingPassed
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                            )}>
+                                <Code2 className="w-2 h-2 mr-1" />
+                                {subGoal.codingPassed ? 'Passed' : 'Failed'}
+                            </Badge>
+                        )
                     }
                 </div>
             </div>
@@ -229,11 +231,11 @@ function SubGoalItem({
                 disabled={isDeleting}
             >
                 {
-                isDeleting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    <Trash2 className="w-4 h-4" />
-                )
+                    isDeleting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <Trash2 className="w-4 h-4" />
+                    )
                 }
             </button>
             <ChevronRight className={cn(
@@ -366,10 +368,10 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
         router.refresh()
     }
 
-    const today = new Date().toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'short', 
-        day: 'numeric' 
+    const today = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric'
     })
 
     return (
@@ -417,109 +419,89 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
                         <div className="p-2 space-y-1">
                             <AnimatePresence>
                                 {
-                                session?.subGoals.map((subGoal) => (
-                                    <SubGoalItem
-                                        key={subGoal.id}
-                                        subGoal={subGoal}
-                                        isSelected={selectedSubGoal?.id === subGoal.id}
-                                        onSelect={() => setSelectedSubGoal(subGoal)}
-                                        onStatusChange={(status) => handleStatusChange(subGoal.id, status)}
-                                        onDelete={() => handleDelete(subGoal.id)}
-                                    />
-                                ))
+                                    session?.subGoals.map((subGoal) => (
+                                        <SubGoalItem
+                                            key={subGoal.id}
+                                            subGoal={subGoal}
+                                            isSelected={selectedSubGoal?.id === subGoal.id}
+                                            onSelect={() => setSelectedSubGoal(subGoal)}
+                                            onStatusChange={(status) => handleStatusChange(subGoal.id, status)}
+                                            onDelete={() => handleDelete(subGoal.id)}
+                                        />
+                                    ))
                                 }
                             </AnimatePresence>
 
                             {
-                            (!session || session.subGoals.length === 0) && (
-                                <div className="text-center py-12 text-neutral-400">
-                                    <Target className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                                    <p className="text-sm">No tasks for today</p>
-                                    <p className="text-xs mt-1">Add your first learning task above</p>
-                                </div>
-                            )
+                                (!session || session.subGoals.length === 0) && (
+                                    <div className="text-center py-12 text-neutral-400">
+                                        <Target className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                                        <p className="text-sm">No tasks for today</p>
+                                        <p className="text-xs mt-1">Add your first learning task above</p>
+                                    </div>
+                                )
                             }
                         </div>
                     </ScrollArea>
                 </div>
-                <div className="flex-1 flex flex-col overflow-hidden bg-neutral-50 dark:bg-neutral-900/50">
+                {/* <div className="flex-1 flex flex-col overflow-hidden bg-neutral-50 dark:bg-neutral-900/50"> */}
+                <ScrollArea className="flex-1">
                     {
-                    selectedSubGoal ? (
-                        <>
-                            <div className="flex-shrink-0 p-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h2 className="font-semibold text-neutral-900 dark:text-white">
-                                            {selectedSubGoal.title}
-                                        </h2>
-                                        <p className="text-xs text-neutral-500 mt-0.5">
-                                            {selectedSubGoal.aiQuizQuestions 
-                                                ? 'AI-generated quiz and coding ready'
-                                                : 'Generating AI content...'}
-                                        </p>
-                                    </div>
-                                    {
-                                    isRefreshing && (
-                                        <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
-                                    )
-                                    }
-                                </div>
-                            </div>
-
-                            {/* Tabs: Resources, Videos, Docs, Flashcards, Quiz, Coding, Mock */}
-                            {
-                            selectedSubGoal.aiQuizQuestions ? (
-                                <SubGoalContentTabs
-                                    subGoalId={selectedSubGoal.id}
-                                    subGoalTitle={selectedSubGoal.title}
-                                    aiResources={selectedSubGoal.aiResources as SubGoalResources | undefined}
-                                    aiQuizQuestions={selectedSubGoal.aiQuizQuestions}
-                                    hasCoding={selectedSubGoal.hasCoding}
-                                    aiCodingProblem={selectedSubGoal.aiCodingProblem}
-                                    quizCompleted={selectedSubGoal.quizCompleted}
-                                    quizScore={selectedSubGoal.quizScore}
-                                    codingCompleted={selectedSubGoal.codingCompleted}
-                                    codingPassed={selectedSubGoal.codingPassed}
-                                    onQuizComplete={() => router.refresh()}
-                                    onCodingComplete={() => router.refresh()}
-                                    SubGoalQuizComponent={SubGoalQuiz}
-                                    SubGoalCodingComponent={SubGoalCoding}
-                                    subGoal={selectedSubGoal}
-                                />
-                            ) : (
-                                <div className="flex-1 flex items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                                            <Sparkles className="w-8 h-8 text-violet-500 animate-pulse" />
+                        selectedSubGoal ? (
+                            <>
+                                {
+                                    selectedSubGoal.aiQuizQuestions ? (
+                                        <SubGoalContentTabs
+                                            subGoalId={selectedSubGoal.id}
+                                            subGoalTitle={selectedSubGoal.title}
+                                            aiResources={selectedSubGoal.aiResources as SubGoalResources | undefined}
+                                            aiQuizQuestions={selectedSubGoal.aiQuizQuestions}
+                                            hasCoding={selectedSubGoal.hasCoding}
+                                            aiCodingProblem={selectedSubGoal.aiCodingProblem}
+                                            quizCompleted={selectedSubGoal.quizCompleted}
+                                            quizScore={selectedSubGoal.quizScore}
+                                            codingCompleted={selectedSubGoal.codingCompleted}
+                                            codingPassed={selectedSubGoal.codingPassed}
+                                            onQuizComplete={() => router.refresh()}
+                                            onCodingComplete={() => router.refresh()}
+                                            SubGoalQuizComponent={SubGoalQuiz}
+                                            SubGoalCodingComponent={SubGoalCoding}
+                                            subGoal={selectedSubGoal}
+                                        />
+                                    ) : (
+                                        <div className="flex-1 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                                                    <Sparkles className="w-8 h-8 text-violet-500 animate-pulse" />
+                                                </div>
+                                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
+                                                    Generating Content
+                                                </h3>
+                                                <p className="text-sm text-neutral-500">
+                                                    AI is creating quiz questions and coding problems...
+                                                </p>
+                                            </div>
                                         </div>
-                                        <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
-                                            Generating Content
-                                        </h3>
-                                        <p className="text-sm text-neutral-500">
-                                            AI is creating quiz questions and coding problems...
-                                        </p>
+                                    )
+                                }
+                            </>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center">
+                                <div className="text-center">
+                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                                        <Target className="w-8 h-8 text-neutral-400" />
                                     </div>
+                                    <h3 className="font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                                        Select a Task
+                                    </h3>
+                                    <p className="text-sm text-neutral-500">
+                                        Click on a task to view its quiz and coding challenge
+                                    </p>
                                 </div>
-                            )
-                            }
-                        </>
-                    ) : (
-                        <div className="flex-1 flex items-center justify-center">
-                            <div className="text-center">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                                    <Target className="w-8 h-8 text-neutral-400" />
-                                </div>
-                                <h3 className="font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-                                    Select a Task
-                                </h3>
-                                <p className="text-sm text-neutral-500">
-                                    Click on a task to view its quiz and coding challenge
-                                </p>
                             </div>
-                        </div>
-                    )
+                        )
                     }
-                </div>
+                </ScrollArea>
             </div>
         </div>
     )

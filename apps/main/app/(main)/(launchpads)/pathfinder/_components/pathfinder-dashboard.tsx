@@ -8,8 +8,8 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Target, Plus, CheckCircle2, Trophy, Flame, FolderOpen, MoreVertical,
-    MoveRight, Code2, Brain, BarChart3, Zap, ChevronRight,
-    Play, PauseCircle, CheckCircle, XCircle, Compass
+    MoveRight, Code2, Brain, BarChart3, Zap, ChevronRight, Play, 
+    PauseCircle, CheckCircle, XCircle, Compass
 } from 'lucide-react'
 import Link from 'next/link'
 import { 
@@ -30,7 +30,6 @@ import {
 } from '@/app/store/pathfinderStore'
 import { PATHFINDER_CATEGORIES } from '@/types/pathfinder'
 
-// Use store types for consistency
 type Goal = PathfinderGoal
 type Group = PathfinderGroup
 
@@ -48,10 +47,6 @@ const statusConfig: Record<PathfinderStatus, { label: string; icon: React.ReactN
     FAILED: { label: 'Retry', icon: <XCircle className="w-3 h-3" />, color: 'text-red-600', bg: 'bg-red-500/10' },
     ABANDONED: { label: 'Paused', icon: <PauseCircle className="w-3 h-3" />, color: 'text-neutral-600', bg: 'bg-neutral-500/10' },
 }
-
-// ================================================================================
-// GOAL CARD COMPONENT
-// ================================================================================
 
 function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
     const category = categoryConfig[goal.category]
@@ -147,10 +142,6 @@ function GoalCard({ goal, onAssign }: { goal: Goal; onAssign: () => void }) {
     )
 }
 
-// ================================================================================
-// GROUP SECTION COMPONENT
-// ================================================================================
-
 function GroupSection({
     group,
     goals,
@@ -204,10 +195,6 @@ function GroupSection({
     )
 }
 
-// ================================================================================
-// STATS CARDS
-// ================================================================================
-
 function StatsSection({ goals, groups: _groups }: { goals: Goal[]; groups: Group[] }) {
     const activeGoals = goals.filter(g => g.status === 'ACTIVE' || g.status === 'VERIFICATION')
     const completedGoals = goals.filter(g => g.status === 'COMPLETED')
@@ -242,10 +229,6 @@ function StatsSection({ goals, groups: _groups }: { goals: Goal[]; groups: Group
         </div>
     )
 }
-
-// ================================================================================
-// RECENT ACTIVITY
-// ================================================================================
 
 function RecentActivity({ goals }: { goals: Goal[] }) {
     const recentGoals = [...goals]
@@ -289,10 +272,6 @@ function RecentActivity({ goals }: { goals: Goal[] }) {
     )
 }
 
-// ================================================================================
-// EMPTY STATE
-// ================================================================================
-
 function EmptyState({ onCreateGoal }: { onCreateGoal: () => void }) {
     return (
         <motion.div
@@ -316,10 +295,6 @@ function EmptyState({ onCreateGoal }: { onCreateGoal: () => void }) {
         </motion.div>
     )
 }
-
-// ================================================================================
-// QUICK ACTIONS PANEL
-// ================================================================================
 
 function QuickActions({
     onCreateGoal,
@@ -375,12 +350,7 @@ function QuickActions({
     )
 }
 
-// ================================================================================
-// MAIN DASHBOARD
-// ================================================================================
-
 export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderDashboardProps) {
-    // Initialize store with props
     const {
         goals, groups, initialize,
         setCreateSheetOpen, setCreateGroupSheetOpen, setAssignSheetOpen,
@@ -389,16 +359,13 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
         addGoal, addGroup, assignGoalToGroup
     } = usePathfinderStore()
 
-    // Initialize store on mount
     useEffect(() => {
         initialize(initialGoals, initialGroups)
     }, [initialGoals, initialGroups, initialize])
 
-    // Use store data (falls back to initial if store not yet hydrated)
     const displayGoals = goals.length > 0 ? goals : initialGoals
     const displayGroups = groups.length > 0 ? groups : initialGroups
 
-    // Separate goals by group
     const ungroupedGoals = displayGoals.filter(g => !g.groupId)
     const groupedGoals = displayGroups.map(group => ({
         group,

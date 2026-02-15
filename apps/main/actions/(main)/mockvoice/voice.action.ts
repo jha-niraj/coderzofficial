@@ -872,4 +872,37 @@ export async function deleteCustomMock(mockId: string) {
     }
 }
 
+// Get platform stats for voice mocks
+export async function getVoiceMockStats() {
+    try {
+        const [totalMocks, totalSessions, avgRatingAgg] = await Promise.all([
+            prisma.mockInterviewVoice.count({
+                where: { isPublic: true }
+            }),
+            prisma.mockVoiceSession.count(),
+            prisma.mockInterviewVoice.aggregate({
+                where: { isPublic: true },
+                _avg: {
+                    averageRating: true
+                }
+            })
+        ])
+
+        return {
+            success: true,
+            stats: {
+                totalMocks,
+                totalSessions,
+                avgRating: avgRatingAgg._avg.averageRating || 0
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching voice mock stats:', error)
+        return {
+            success: false,
+            stats: null
+        }
+    }
+}
+
 

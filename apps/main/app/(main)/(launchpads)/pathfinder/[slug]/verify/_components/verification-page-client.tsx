@@ -14,7 +14,9 @@ import Link from 'next/link'
 import { VerificationContent } from './verification-content'
 import { generateVerificationContent } from '@/actions/(main)/pathfinder'
 import { usePathfinderStore } from '@/app/store/pathfinderStore'
-import { PathfinderCategory, PathfinderLevel, VerificationSectionStatus } from '@repo/prisma/client'
+import { 
+    PathfinderCategory, PathfinderLevel, VerificationSectionStatus 
+} from '@repo/prisma/client'
 import type { VerificationAIPlan } from '@/types/pathfinder'
 import toast from '@repo/ui/components/ui/sonner'
 
@@ -111,7 +113,6 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
                         </div>
                     </div>
                 </div>
-
                 <div className="flex-1 flex items-center justify-center p-6">
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -157,7 +158,6 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
                     </motion.div>
                 </div>
             </div>
-
             <Sheet
                 open={generateSheetOpen}
                 onOpenChange={(open) => !isGenerating && setGenerateSheetOpen(open)}

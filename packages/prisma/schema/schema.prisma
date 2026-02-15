@@ -344,6 +344,7 @@ enum ConceptStepType {
     CHALLENGE
     INTERACTIVE
     SUMMARY
+    RESOURCE
 }
 
 enum ConceptRequestStatus {
@@ -363,7 +364,7 @@ model User {
     image               String?          @default("https://tse4.mm.bing.net/th?id=OIP.-BS8Y2nH1k93GJiitUVBCAHaHa&pid=Api&P=0")
     role                Role             @default(Student)
     hasResume           Boolean          @default(false)
-    resume              String?          // Uploaded PDF URL
+    resume              String? // Uploaded PDF URL
     resumeText          String?
     creditsShared       Int?             @default(0)
     totalCreditsShared  Int?             @default(0)
@@ -414,8 +415,8 @@ model User {
 
     // Relations
     accounts      Account[]
-    referredUsers Referral[]    @relation("Referrer")
-    referrer      Referral?     @relation("ReferredUser")
+    referredUsers Referral[] @relation("Referrer")
+    referrer      Referral?  @relation("ReferredUser")
 
     // Credit Transactions
     creditTransactions CreditTransaction[]
@@ -425,7 +426,7 @@ model User {
     sentTransfers      CreditTransfer[]    @relation("Sender")
     receivedTransfers  CreditTransfer[]    @relation("Receiver")
 
-    Feedback            Feedback[]
+    Feedback Feedback[]
 
     xpTransactions XpTransaction[]
 
@@ -489,13 +490,13 @@ model User {
     backgroundJobs BackgroundJob[] @relation("BackgroundJobs")
 
     // Launchpad Relations
-    launchpadProducts    LaunchpadProduct[]        @relation("LaunchpadProducts")
-    launchpadViews       LaunchpadProductView[]    @relation("LaunchpadViews")
-    launchpadClicks      LaunchpadProductClick[]   @relation("LaunchpadClicks")
-    launchpadLikes       LaunchpadProductLike[]    @relation("LaunchpadLikes")
-    launchpadDislikes    LaunchpadProductDislike[] @relation("LaunchpadDislikes")
-    launchpadComments    LaunchpadProductComment[] @relation("LaunchpadComments")
-    launchpadFeedbacks   LaunchpadProductFeedback[] @relation("LaunchpadFeedbacks")
+    launchpadProducts  LaunchpadProduct[]         @relation("LaunchpadProducts")
+    launchpadViews     LaunchpadProductView[]     @relation("LaunchpadViews")
+    launchpadClicks    LaunchpadProductClick[]    @relation("LaunchpadClicks")
+    launchpadLikes     LaunchpadProductLike[]     @relation("LaunchpadLikes")
+    launchpadDislikes  LaunchpadProductDislike[]  @relation("LaunchpadDislikes")
+    launchpadComments  LaunchpadProductComment[]  @relation("LaunchpadComments")
+    launchpadFeedbacks LaunchpadProductFeedback[] @relation("LaunchpadFeedbacks")
 
     // ===============================================
     // COMMUNITY PLATFORM RELATIONS
@@ -675,24 +676,25 @@ model User {
     // ===============================================
     // HIRING PLATFORM RELATIONS
     // ===============================================
-    companyMemberships     CompanyMember[]         @relation("UserCompanyMemberships")
-    followedCompanies      CompanyFollower[]       @relation("UserFollowedCompanies")
-    jobApplications        JobApplication[]        @relation("UserJobApplications")
-    applicationActivities  ApplicationActivity[]   @relation("UserApplicationActivities")
-    jobRecommendations     JobRecommendation[]     @relation("UserJobRecommendations")
-    savedJobs              SavedJob[]              @relation("UserSavedJobs")
-    jobMockSessions        JobMockSession[]        @relation("UserJobMockSessions")
-    interviewPrepProgress  InterviewPrepProgress[] @relation("UserInterviewPrepProgress")
-    createdCompanies       Company[]               @relation("CompanyCreator")
+    companyMemberships    CompanyMember[]         @relation("UserCompanyMemberships")
+    followedCompanies     CompanyFollower[]       @relation("UserFollowedCompanies")
+    jobApplications       JobApplication[]        @relation("UserJobApplications")
+    applicationActivities ApplicationActivity[]   @relation("UserApplicationActivities")
+    jobRecommendations    JobRecommendation[]     @relation("UserJobRecommendations")
+    savedJobs             SavedJob[]              @relation("UserSavedJobs")
+    jobMockSessions       JobMockSession[]        @relation("UserJobMockSessions")
+    interviewPrepProgress InterviewPrepProgress[] @relation("UserInterviewPrepProgress")
+    createdCompanies      Company[]               @relation("CompanyCreator")
 
     // ===============================================
     // ACHIEVEMENTS SYSTEM RELATIONS
     // ===============================================
-    socialConnections        SocialConnection[]          @relation("UserSocialConnections")
-    socialShares             SocialShare[]               @relation("UserSocialShares")
-    achievementNotifications AchievementNotification[]   @relation("UserAchievementNotifications")
-    achievementStats         UserAchievementStats?       @relation("UserAchievementStats")
+    socialConnections        SocialConnection[]        @relation("UserSocialConnections")
+    socialShares             SocialShare[]             @relation("UserSocialShares")
+    achievementNotifications AchievementNotification[] @relation("UserAchievementNotifications")
+    achievementStats         UserAchievementStats?     @relation("UserAchievementStats")
     featureNotifyInterests   FeatureNotifyInterest[]
+    conceptPurchases         ConceptPurchase[]
 
     @@index([username])
     @@index([email])
@@ -781,7 +783,7 @@ model WorkExperience {
     companyLogo        String?
     roleTitle          String
     companyWebsite     String?
-    description        String?   // Kept for backward compat; prefer bulletPoints
+    description        String? // Kept for backward compat; prefer bulletPoints
     bulletPoints       String[]  @default([]) // Point-wise descriptions for resume/profile
     startDate          DateTime
     endDate            DateTime?
@@ -799,10 +801,10 @@ model PortfolioProject {
     user         User           @relation("UserPortfolioProjects", fields: [userId], references: [id], onDelete: Cascade)
     projectName  String
     projectType  String
-    description  String?        // Kept for backward compat; prefer bulletPoints
+    description  String? // Kept for backward compat; prefer bulletPoints
     bulletPoints String[]       @default([]) // Point-wise descriptions for resume/profile
-    status       String         // In Progress, Completed, Archived
-    visibility   String         // Public, Private
+    status       String // In Progress, Completed, Archived
+    visibility   String // Public, Private
     technologies String[]
     startDate    DateTime
     endDate      DateTime?
@@ -846,9 +848,9 @@ model SocialLink {
     id        String   @id @default(uuid())
     userId    String
     user      User     @relation("UserSocialLinks", fields: [userId], references: [id], onDelete: Cascade)
-    platform  String   // GITHUB, LINKEDIN, TWITTER, PORTFOLIO, GMAIL, etc.
+    platform  String // GITHUB, LINKEDIN, TWITTER, PORTFOLIO, GMAIL, etc.
     url       String
-    label     String?  // Optional display label
+    label     String? // Optional display label
     order     Int      @default(0)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -859,17 +861,17 @@ model SocialLink {
 
 // User Education - Multiple entries (degree, school, etc.) for profile and resume
 model UserEducation {
-    id          String   @id @default(uuid())
-    userId      String
-    user        User     @relation("UserEducations", fields: [userId], references: [id], onDelete: Cascade)
-    degree      String?  // e.g. "Bachelor of Technology"
-    institution String
-    startDate   DateTime
-    endDate     DateTime?
-    bulletPoints String[] @default([])
-    order       Int      @default(0)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    id           String    @id @default(uuid())
+    userId       String
+    user         User      @relation("UserEducations", fields: [userId], references: [id], onDelete: Cascade)
+    degree       String? // e.g. "Bachelor of Technology"
+    institution  String
+    startDate    DateTime
+    endDate      DateTime?
+    bulletPoints String[]  @default([])
+    order        Int       @default(0)
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
 
     @@index([userId])
 }
@@ -1048,8 +1050,8 @@ model FeatureNotifyInterest {
     user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
     email       String
     section     FeatureNotifySection
-    title       String               // e.g. "System Architect"
-    description String?              // Optional feature description
+    title       String // e.g. "System Architect"
+    description String? // Optional feature description
     createdAt   DateTime             @default(now())
 
     @@unique([userId, section, title])
