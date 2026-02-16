@@ -55,6 +55,7 @@ export interface CodeBlockFormData {
 export interface ConceptFilters {
     search?: string;
     category?: ConceptCategory;
+    customCategory?: string;  // For filtering by subcategory
     difficulty?: ConceptDifficulty;
     status?: ConceptStatus;
     tags?: string[];
@@ -110,6 +111,7 @@ export async function getConcepts(filters: ConceptFilters = {}) {
         const {
             search,
             category,
+            customCategory,
             difficulty,
             status = ConceptStatus.PUBLISHED,
             tags,
@@ -147,6 +149,11 @@ export async function getConcepts(filters: ConceptFilters = {}) {
 
         if (category) {
             where.category = category;
+        }
+
+        // Filter by subcategory (customCategory)
+        if (customCategory) {
+            where.customCategory = customCategory;
         }
 
         if (difficulty) {
@@ -211,6 +218,49 @@ export async function getConcepts(filters: ConceptFilters = {}) {
     } catch (error) {
         console.error("Error fetching concepts:", error);
         return { error: "Failed to fetch concepts" };
+    }
+}
+
+// Get all unique subcategories grouped by category (from created concepts)
+export async function getSubCategoriesByCategory() {
+    try {
+        // Get all concepts with customCategory and their categories
+        const concepts = await prisma.concept.findMany({
+            where: {
+                status: ConceptStatus.PUBLISHED,
+                verifiedAt: { not: null },
+                customCategory: { not: null },
+            },
+            select: {
+                category: true,
+                customCategory: true,
+            },
+            distinct: ['category', 'customCategory'],
+        });
+
+        // Group subcategories by category
+        const groupedSubCategories: Record<ConceptCategory, string[]> = {} as Record<ConceptCategory, string[]>;
+        
+        for (const concept of concepts) {
+            if (concept.customCategory) {
+                if (!groupedSubCategories[concept.category]) {
+                    groupedSubCategories[concept.category] = [];
+                }
+                if (!groupedSubCategories[concept.category].includes(concept.customCategory)) {
+                    groupedSubCategories[concept.category].push(concept.customCategory);
+                }
+            }
+        }
+
+        // Sort subcategories alphabetically
+        for (const category in groupedSubCategories) {
+            groupedSubCategories[category as ConceptCategory].sort();
+        }
+
+        return { subCategories: groupedSubCategories };
+    } catch (error) {
+        console.error("Error fetching subcategories:", error);
+        return { error: "Failed to fetch subcategories", subCategories: {} };
     }
 }
 
@@ -1151,6 +1201,9 @@ export async function getUserProgress() {
                         category: true,
                         difficulty: true,
                         estimatedTime: true,
+                        _count: {
+                            select: { steps: true },
+                        },
                     },
                 },
             },
@@ -1622,6 +1675,201 @@ export async function getCategories() {
     } catch (error) {
         console.error("Error fetching categories:", error);
         return { error: "Failed to fetch categories" };
+    }
+}
+
+// ==========================================
+// HIERARCHICAL CATEGORIES
+// ==========================================
+
+export async function getHierarchicalCategories() {
+    try {
+        const mainCategories = await prisma.conceptMainCategory.findMany({
+            orderBy: { order: 'asc' },
+            include: {
+                subCategories: {
+                    orderBy: { order: 'asc' },
+                    include: {
+                        topics: {
+                            orderBy: { order: 'asc' },
+                            select: {
+                                id: true,
+                                slug: true,
+                                name: true,
+                                icon: true,
+                                conceptCount: true,
+                            }
+                        },
+                        _count: { select: { concepts: true } }
+                    }
+                },
+                _count: { select: { concepts: true } }
+            }
+        });
+
+        return { categories: mainCategories };
+    } catch (error) {
+        console.error("Error fetching hierarchical categories:", error);
+        return { error: "Failed to fetch categories", categories: [] };
+    }
+}
+
+export async function getConceptsByHierarchicalCategory(params: {
+    mainCategoryId?: string;
+    subCategoryId?: string;
+    topicId?: string;
+    search?: string;
+    difficulty?: ConceptDifficulty;
+    sortBy?: "latest" | "popular" | "views" | "likes" | "trending";
+    page?: number;
+    limit?: number;
+}) {
+    try {
+        const { 
+            mainCategoryId, 
+            subCategoryId, 
+            topicId, 
+            search, 
+            difficulty, 
+            sortBy = "latest", 
+            page = 1, 
+            limit = 12 
+        } = params;
+
+        const where: any = {
+            status: ConceptStatus.PUBLISHED,
+        };
+
+        // Hierarchical filtering
+        if (topicId) {
+            where.topicId = topicId;
+        } else if (subCategoryId) {
+            where.subCategoryId = subCategoryId;
+        } else if (mainCategoryId) {
+            where.mainCategoryId = mainCategoryId;
+        }
+
+        // Search filter
+        if (search?.trim()) {
+            where.OR = [
+                { title: { contains: search.trim(), mode: "insensitive" } },
+                { description: { contains: search.trim(), mode: "insensitive" } },
+                { tags: { has: search.trim().toLowerCase() } },
+            ];
+        }
+
+        // Difficulty filter
+        if (difficulty) {
+            where.difficulty = difficulty;
+        }
+
+        // Sorting
+        let orderBy: any = { createdAt: "desc" };
+        switch (sortBy) {
+            case "popular":
+            case "trending":
+                orderBy = [{ likeCount: "desc" }, { viewCount: "desc" }];
+                break;
+            case "views":
+                orderBy = { viewCount: "desc" };
+                break;
+            case "likes":
+                orderBy = { likeCount: "desc" };
+                break;
+            case "latest":
+            default:
+                orderBy = { createdAt: "desc" };
+        }
+
+        const [concepts, total] = await Promise.all([
+            prisma.concept.findMany({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy,
+                select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                    description: true,
+                    thumbnail: true,
+                    iconEmoji: true,
+                    category: true,
+                    difficulty: true,
+                    estimatedTime: true,
+                    viewCount: true,
+                    likeCount: true,
+                    pricingType: true,
+                    price: true,
+                    createdAt: true,
+                    mainCategory: { select: { id: true, name: true, slug: true } },
+                    subCategory: { select: { id: true, name: true, slug: true } },
+                    topic: { select: { id: true, name: true, slug: true } },
+                    creator: {
+                        select: { id: true, name: true, username: true, image: true },
+                    },
+                    _count: { select: { steps: true, likes: true, comments: true } },
+                },
+            }),
+            prisma.concept.count({ where }),
+        ]);
+
+        return {
+            concepts,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    } catch (error) {
+        console.error("Error fetching concepts by category:", error);
+        return { 
+            error: "Failed to fetch concepts", 
+            concepts: [], 
+            pagination: { total: 0, page: 1, limit: 12, totalPages: 0 } 
+        };
+    }
+}
+
+export async function getRecentConcepts(hours: number = 24, limit: number = 8) {
+    try {
+        const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+        
+        const concepts = await prisma.concept.findMany({
+            where: {
+                status: ConceptStatus.PUBLISHED,
+                createdAt: { gte: since }
+            },
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                slug: true,
+                title: true,
+                description: true,
+                thumbnail: true,
+                iconEmoji: true,
+                category: true,
+                difficulty: true,
+                estimatedTime: true,
+                viewCount: true,
+                likeCount: true,
+                pricingType: true,
+                price: true,
+                createdAt: true,
+                creator: {
+                    select: { id: true, name: true, username: true, image: true },
+                },
+                _count: { select: { steps: true, likes: true, comments: true } },
+            },
+        });
+
+        return { concepts };
+    } catch (error) {
+        console.error("Error fetching recent concepts:", error);
+        return { error: "Failed to fetch recent concepts", concepts: [] };
     }
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
@@ -35,9 +35,31 @@ interface CreateMockSheetProps {
     spaceId?: string
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    /** Pre-filled data for the mock interview */
+    defaultValues?: {
+        title?: string
+        description?: string
+        category?: MockCategory
+        level?: string
+        knowledgeBase?: string
+    }
+    /** If true, just save the mock and don't redirect to session */
+    saveOnly?: boolean
+    /** Concept step ID to link this mock to */
+    conceptStepId?: string
 }
 
-export function CreateMockSheet({ trigger: _trigger, userCredits = 0, onSuccess, spaceId, open: controlledOpen, onOpenChange }: CreateMockSheetProps) {
+export function CreateMockSheet({ 
+    trigger: _trigger, 
+    userCredits = 0, 
+    onSuccess, 
+    spaceId, 
+    open: controlledOpen, 
+    onOpenChange,
+    defaultValues,
+    saveOnly = false,
+    conceptStepId
+}: CreateMockSheetProps) {
     const router = useRouter()
     const [internalOpen, setInternalOpen] = useState(false)
     const open = controlledOpen !== undefined ? controlledOpen : internalOpen
@@ -52,16 +74,30 @@ export function CreateMockSheet({ trigger: _trigger, userCredits = 0, onSuccess,
     const [progressPercent, setProgressPercent] = useState(0)
     const [, setCreatedMockId] = useState<string | null>(null) // Set only, value used internally
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        category: 'GENERAL' as MockCategory,
-        level: 'INTERMEDIATE',
+        title: defaultValues?.title || '',
+        description: defaultValues?.description || '',
+        category: (defaultValues?.category || 'GENERAL') as MockCategory,
+        level: defaultValues?.level || 'INTERMEDIATE',
         includeResume: false,
         isPublic: false,
         duration: 15,
         questionsCount: 5,
-        knowledgeBase: ''
+        knowledgeBase: defaultValues?.knowledgeBase || ''
     })
+
+    // Update form when defaultValues change
+    useEffect(() => {
+        if (defaultValues) {
+            setFormData(prev => ({
+                ...prev,
+                title: defaultValues.title || prev.title,
+                description: defaultValues.description || prev.description,
+                category: (defaultValues.category || prev.category) as MockCategory,
+                level: defaultValues.level || prev.level,
+                knowledgeBase: defaultValues.knowledgeBase || prev.knowledgeBase
+            }))
+        }
+    }, [defaultValues])
 
     const steps = [
         { id: 'basics', title: 'Basic Info', subtitle: 'Position details' },
@@ -143,7 +179,8 @@ export function CreateMockSheet({ trigger: _trigger, userCredits = 0, onSuccess,
                 questionsCount: formData.questionsCount,
                 includeResume: formData.includeResume,
                 isPublic: formData.isPublic,
-                knowledgeBase: formData.knowledgeBase || undefined
+                knowledgeBase: formData.knowledgeBase || undefined,
+                conceptStepId: conceptStepId
             })
 
             clearInterval(progressInterval)
@@ -154,6 +191,19 @@ export function CreateMockSheet({ trigger: _trigger, userCredits = 0, onSuccess,
 
             setProgressPercent(90)
             const mockId = result.mockId!
+
+            // If saveOnly mode (from concepts), just save and close without creating session
+            if (saveOnly) {
+                setProgressPercent(100)
+                setCreatedMockId(mockId)
+                toast.success('Mock interview created and linked!')
+                setTimeout(() => {
+                    setOpen(false)
+                    resetForm()
+                    if (onSuccess) onSuccess(mockId)
+                }, 800)
+                return
+            }
 
             // Create session and redirect to interview (deducts credits)
             const sessionResult = await createMockVoiceSession({

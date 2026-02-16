@@ -271,15 +271,41 @@ Programming Language: ${language}
 Generate a practical coding challenge. The challenge should:
 1. Be solvable in 5-10 minutes
 2. Test practical application
-3. Include starter code with TODO comments
-4. Provide a complete solution
-5. Include 3 progressive hints
+3. Have a clear task description as comments at the top
+4. Include boilerplate/starter code below the task comments
+5. Provide a complete solution (WITHOUT the task comments - clean code only)
+6. Include 3 progressive hints
+
+IMPORTANT: The starterCode MUST follow this format:
+\`\`\`
+// ============================================
+// CHALLENGE: [Challenge Title]
+// ============================================
+// 
+// Task: [Clear description of what to build]
+//
+// Requirements:
+// - [Requirement 1]
+// - [Requirement 2]
+// - [Requirement 3]
+//
+// Example:
+// Input: [example input]
+// Output: [expected output]
+//
+// ============================================
+
+// Your code starts here:
+[boilerplate code for user to complete]
+\`\`\`
+
+The solution should be clean working code WITHOUT the task comments.
 
 Respond in JSON format:
 {
-    "description": "Clear description in **Markdown format**",
-    "starterCode": "// Starter code with TODO comments",
-    "solution": "// Complete solution with comments",
+    "description": "Clear description in **Markdown format** explaining the challenge",
+    "starterCode": "// Comments with task description\\n// followed by boilerplate code",
+    "solution": "// Clean working solution without task comments",
     "hints": ["Subtle hint", "More helpful hint", "Direct hint"],
     "testCases": [
         { "input": "example input", "expectedOutput": "expected result" }
@@ -292,7 +318,7 @@ Respond in JSON format:
             messages: [
                 {
                     role: "system",
-                    content: "You are a helpful assistant that generates coding challenges. Always respond with valid JSON only, no markdown blocks."
+                    content: "You are a helpful assistant that generates coding challenges. Always respond with valid JSON only, no markdown blocks. Make sure starterCode includes clear task comments at the top followed by boilerplate code."
                 },
                 { role: "user", content: prompt }
             ],
@@ -532,6 +558,86 @@ export async function generateResources(
 // ==========================================
 // AI ASSISTANT (Real OpenAI)
 // ==========================================
+
+export async function evaluateChallengeCode(
+    challengeDescription: string,
+    starterCode: string,
+    solution: string,
+    userCode: string,
+    language: string
+): Promise<{ 
+    score: number; 
+    feedback: string; 
+    isCorrect: boolean; 
+    suggestions?: string[];
+    error?: string 
+}> {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { score: 0, feedback: "", isCorrect: false, error: "Please login to submit" };
+        }
+
+        const prompt = `You are an expert code reviewer evaluating a student's coding challenge submission.
+
+Challenge Description:
+${challengeDescription}
+
+Expected Solution:
+\`\`\`${language}
+${solution}
+\`\`\`
+
+Student's Code:
+\`\`\`${language}
+${userCode}
+\`\`\`
+
+Evaluate the student's code based on:
+1. Correctness (Does it solve the problem?) - 40 points
+2. Code Quality (Clean, readable, well-structured) - 30 points
+3. Best Practices (Follows conventions, no anti-patterns) - 20 points
+4. Efficiency (Good time/space complexity) - 10 points
+
+Respond in JSON format:
+{
+    "score": <number 0-100>,
+    "isCorrect": <boolean - true if the solution works correctly>,
+    "feedback": "Detailed feedback in **Markdown format** explaining what they did well and what could be improved",
+    "suggestions": ["Specific suggestion 1", "Specific suggestion 2"]
+}`;
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a helpful code reviewer. Be encouraging but honest. Respond with valid JSON only."
+                },
+                { role: "user", content: prompt }
+            ],
+            temperature: 0.3,
+            response_format: { type: "json_object" }
+        });
+
+        const content = response.choices[0]?.message?.content;
+        if (!content) {
+            return { score: 0, feedback: "Failed to evaluate", isCorrect: false, error: "No response" };
+        }
+
+        const result = JSON.parse(content) as {
+            score: number;
+            isCorrect: boolean;
+            feedback: string;
+            suggestions?: string[];
+        };
+
+        return result;
+    } catch (error) {
+        console.error("Error evaluating challenge:", error);
+        return { score: 0, feedback: "", isCorrect: false, error: "Failed to evaluate code" };
+    }
+}
 
 export async function askConceptAssistant(
     conceptTitle: string,

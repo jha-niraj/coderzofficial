@@ -351,6 +351,9 @@ enum ConceptStepType {
     INTERACTIVE
     SUMMARY
     RESOURCE
+    VISUAL
+    MOCK_INTERVIEW
+    PROJECT
 }
 
 enum ConceptRequestStatus {
@@ -582,13 +585,13 @@ model User {
     // ===============================================
     // CONCEPTS HUB RELATIONS
     // ===============================================
-    createdConcepts  Concept[]         @relation("ConceptCreator")
-    conceptLikes     ConceptLike[]     @relation("ConceptLikes")
-    conceptBookmarks ConceptBookmark[] @relation("ConceptBookmarks")
-    conceptComments  ConceptComment[]  @relation("ConceptCommentAuthor")
-    conceptViews     ConceptView[]     @relation("ConceptViews")
-    conceptProgress  ConceptProgress[] @relation("ConceptProgress")
-    conceptRequests  ConceptRequest[]  @relation("ConceptRequests")
+    createdConcepts           Concept[]              @relation("ConceptCreator")
+    conceptLikes              ConceptLike[]          @relation("ConceptLikes")
+    conceptBookmarks          ConceptBookmark[]      @relation("ConceptBookmarks")
+    conceptComments           ConceptComment[]       @relation("ConceptCommentAuthor")
+    conceptViews              ConceptView[]          @relation("ConceptViews")
+    conceptProgress           ConceptProgress[]      @relation("ConceptProgress")
+    conceptRequests           ConceptRequest[]       @relation("ConceptRequests")
 
     // ===============================================
     // SPACES MODULE RELATIONS
@@ -800,6 +803,13 @@ model WorkExperience {
     @@index([userId])
 }
 
+// Portfolio Project Source - where the project was added from
+enum PortfolioProjectSource {
+    PROFILE       // Added from profile page
+    CONCEPTS      // Added from concept step (minor project)
+    RESUMECREATOR // Added from resume creator
+}
+
 // Portfolio Project Model
 model PortfolioProject {
     id           String         @id @default(uuid())
@@ -820,7 +830,16 @@ model PortfolioProject {
     projectLinks ProjectLink[]  @relation("ProjectLinks")
     projectMedia ProjectMedia[] @relation("ProjectMedia")
 
+    // Source tracking - where this project was added from
+    source PortfolioProjectSource @default(PROFILE)
+
+    // Concept Step reference (for projects added from CONCEPTS step type)
+    conceptStepId String?
+    conceptStep   ConceptStep? @relation("ConceptStepPortfolioProjects", fields: [conceptStepId], references: [id], onDelete: SetNull)
+
     @@index([userId])
+    @@index([conceptStepId])
+    @@index([source])
 }
 
 // Project Links (GitHub, Live Demo, etc.)

@@ -65,6 +65,9 @@ model MockInterviewVoice {
     pathfinderSubGoalId  String?    @unique // Link to subgoal for practice mock
     pathfinderSubGoal    PathfinderSubGoal? @relation("PathfinderSubGoalMock", fields: [pathfinderSubGoalId], references: [id], onDelete: SetNull)
 
+    // Concept Step back-relation (for MOCK_INTERVIEW step type)
+    conceptStep ConceptStep? @relation("ConceptStepMockInterview")
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 

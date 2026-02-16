@@ -1,17 +1,24 @@
-// ===============================================
-// CONCEPTS HUB MODELS
-// ===============================================
 model Concept {
     id          String @id @default(cuid())
     slug        String @unique
     title       String
     description String @db.Text
 
-    // Categorization
+    // Categorization (Legacy - keeping for backward compatibility)
     category       ConceptCategory   @default(PROGRAMMING_FUNDAMENTALS)
     customCategory String? // For CUSTOM category
     difficulty     ConceptDifficulty @default(BEGINNER)
     tags           String[]
+
+    // New Hierarchical Category System
+    mainCategoryId String?
+    mainCategory   ConceptMainCategory? @relation("ConceptMainCategory", fields: [mainCategoryId], references: [id], onDelete: SetNull)
+    
+    subCategoryId String?
+    subCategory   ConceptSubCategory? @relation("ConceptSubCategory", fields: [subCategoryId], references: [id], onDelete: SetNull)
+    
+    topicId String?
+    topic   ConceptTopic? @relation("ConceptTopic", fields: [topicId], references: [id], onDelete: SetNull)
 
     // Media
     thumbnail   String?
@@ -88,6 +95,9 @@ model Concept {
     @@index([isPaid])
     @@index([pricingType])
     @@index([verifiedAt])
+    @@index([mainCategoryId])
+    @@index([subCategoryId])
+    @@index([topicId])
 }
 
 // Concept Purchase Model - Track who has unlocked paid concepts
@@ -166,6 +176,9 @@ model ConceptStep {
     // For VISUALIZATION: { type, imageUrl, description }
     // For SUMMARY: { keyTakeaways, tips, assignment }
     // For RESOURCE: { videos: [{url, title, duration}], docs: [{url, title, type}] }
+    // For VISUAL: { images: [{url, caption, alt}], aiPrompt }
+    // For MOCK_INTERVIEW: { interviewType, duration, topics, questions }
+    // For PROJECT: { projectType, difficulty, estimatedHours, technologies, requirements }
     stepData Json?
 
     // For CODE type - keep code blocks as separate model for complex code
@@ -174,6 +187,18 @@ model ConceptStep {
     // Tips/Notes for the step (markdown)
     tips String[]
 
+    // Linked Mock Interview (for MOCK_INTERVIEW step type)
+    mockInterviewId String?            @unique
+    mockInterview   MockInterviewVoice? @relation("ConceptStepMockInterview", fields: [mockInterviewId], references: [id], onDelete: SetNull)
+
+    // Linked Project (for PROJECT step type - major projects)
+    linkedProjectId String?     @unique
+    linkedProject   ProjectV2?  @relation("ConceptStepProject", fields: [linkedProjectId], references: [id], onDelete: SetNull)
+
+    // Linked Portfolio Projects (for PROJECT step type - minor projects)
+    // Users submit their portfolio projects linked to this step
+    portfolioProjects PortfolioProject[] @relation("ConceptStepPortfolioProjects")
+
     // Timestamps
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -181,6 +206,8 @@ model ConceptStep {
     @@unique([conceptId, order])
     @@index([conceptId])
     @@index([type])
+    @@index([mockInterviewId])
+    @@index([linkedProjectId])
 }
 
 model ConceptCodeBlock {
@@ -375,4 +402,91 @@ model ConceptRequest {
     @@index([category])
     @@index([upvotes])
     @@index([createdAt])
+}
+
+// ===============================================
+// HIERARCHICAL CATEGORY SYSTEM
+// ===============================================
+
+// Main Category (e.g., Frontend, Backend, DevOps)
+model ConceptMainCategory {
+    id          String  @id @default(cuid())
+    slug        String  @unique
+    name        String
+    description String?
+    icon        String? // emoji or icon name
+    color       String? // accent color
+    order       Int     @default(0) // for sorting
+
+    // Hierarchical relation
+    subCategories ConceptSubCategory[]
+    concepts      Concept[]            @relation("ConceptMainCategory")
+
+    // Stats
+    conceptCount Int @default(0)
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([order])
+}
+
+// Sub Category (e.g., React, Next.js, Vue under Frontend)
+model ConceptSubCategory {
+    id          String  @id @default(cuid())
+    slug        String  @unique
+    name        String
+    description String?
+    icon        String?
+    color       String?
+    order       Int     @default(0)
+
+    // Parent relation
+    mainCategoryId String
+    mainCategory   ConceptMainCategory @relation(fields: [mainCategoryId], references: [id], onDelete: Cascade)
+
+    // Topics under this subcategory
+    topics   ConceptTopic[]
+    concepts Concept[]      @relation("ConceptSubCategory")
+
+    // Stats
+    conceptCount Int @default(0)
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([mainCategoryId])
+    @@index([order])
+}
+
+// Topic (e.g., React Basics, React Hooks under React)
+model ConceptTopic {
+    id          String  @id @default(cuid())
+    slug        String  @unique
+    name        String
+    description String?
+    icon        String?
+    order       Int     @default(0)
+
+    // Parent relation
+    subCategoryId String
+    subCategory   ConceptSubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+    // Related concepts
+    concepts Concept[] @relation("ConceptTopic")
+
+    // Stats
+    conceptCount Int @default(0)
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([subCategoryId])
+    @@index([order])
 }

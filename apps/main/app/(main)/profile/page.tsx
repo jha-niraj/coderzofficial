@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, AtAGlanceTab, ProjectsTab,
-    SkillsTab, WorkExperienceTab, EducationTab,
-    ShareProfileModal, EditProfileModal
+    SkillsTab, WorkExperienceTab, EducationTab, ShareProfileModal, 
+    EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
 import toast from "@repo/ui/components/ui/sonner";

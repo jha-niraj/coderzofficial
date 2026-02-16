@@ -1,73 +1,165 @@
-import { Suspense } from "react";
-import { Metadata } from "next";
-import { auth } from '@repo/auth';
-import {
-    getConcepts, getTrendingConcepts, getCategories, getUserProgress,
-    getPublicConceptStats
-} from "@/actions/(main)/concepts/concept.action";
-import ConceptsHero from "./_components/concepts-hero";
-import {
-    ConceptsHeroSkeleton, CategoriesGridSkeleton, TrendingConceptsSkeleton,
-    ContinueLearningSkeleton, RecentConceptsSkeleton
-} from "./_components/skeletons";
-import ContinueLearningSection from "./_components/continue-learning-section";
-import CategoriesGrid from "./_components/categories-grid";
-import TrendingConcepts from "./_components/trending-concepts";
-import RecentConcepts from "./_components/recent-concepts";
+'use client';
 
-export const metadata: Metadata = {
-    title: "Concepts Hub | TheCoderz",
-    description:
-        "Learn programming concepts from basics to advanced. Interactive card-based learning with code examples, quizzes, and challenges.",
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Skeleton } from "@repo/ui/components/ui/skeleton";
+import { ConceptCategory, ConceptDifficulty } from "@repo/prisma/client";
+import { getConcepts, getUserProgress } from "@/actions/(main)/concepts/concept.action";
+import { ConceptsContent } from "./_components/concepts-content";
+import { ConceptsSidebar } from "./_components/concepts-sidebar";
+
+const CATEGORY_LABELS: Record<ConceptCategory, string> = {
+    WEB_DEVELOPMENT: "Web Development",
+    MOBILE_DEVELOPMENT: "Mobile Development",
+    DATA_STRUCTURES: "Data Structures",
+    ALGORITHMS: "Algorithms",
+    SYSTEM_DESIGN: "System Design",
+    DATABASE: "Database",
+    DEVOPS: "DevOps",
+    CLOUD_COMPUTING: "Cloud Computing",
+    MACHINE_LEARNING: "Machine Learning",
+    ARTIFICIAL_INTELLIGENCE: "AI",
+    CYBERSECURITY: "Cybersecurity",
+    BLOCKCHAIN: "Blockchain",
+    PROGRAMMING_FUNDAMENTALS: "Programming Fundamentals",
+    SOFTWARE_ARCHITECTURE: "Software Architecture",
+    API_DESIGN: "API Design",
+    TESTING: "Testing",
+    VERSION_CONTROL: "Version Control",
+    UI_UX_DESIGN: "UI/UX Design",
+    GAME_DEVELOPMENT: "Game Development",
+    NETWORKING: "Networking",
+    OPERATING_SYSTEMS: "Operating Systems",
+    CUSTOM: "Custom",
 };
 
-export default async function ConceptsPage() {
-    const session = await auth();
-    const userId = session?.user?.id;
+function ContentSkeleton() {
+    return (
+        <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-8 w-48" />
+                <div className="flex gap-2">
+                    <Skeleton className="h-9 w-24" />
+                    <Skeleton className="h-9 w-20" />
+                </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(9)].map((_, i) => (
+                    <Skeleton key={i} className="h-64 w-full rounded-xl" />
+                ))}
+            </div>
+        </div>
+    );
+}
 
-    const [
-        trendingResult,
-        categoriesResult,
-        recentResult,
-        progressResult,
-        stats,
-    ] = await Promise.all([
-        getTrendingConcepts(6),
-        getCategories(),
-        getConcepts({ limit: 8, sortBy: "latest" }),
-        userId ? getUserProgress() : Promise.resolve({ inProgress: [], completed: [] }),
-        getPublicConceptStats(),
-    ]);
+export default function ConceptsPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    
+    const [isLoading, setIsLoading] = useState(true);
+    const [concepts, setConcepts] = useState<any[]>([]);
+    const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, totalPages: 0 });
+    const [userProgress, setUserProgress] = useState<any[]>([]);
+    const [completedConcepts, setCompletedConcepts] = useState<any[]>([]);
+    
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+    const [selectedCategory, setSelectedCategory] = useState<ConceptCategory | null>(
+        (searchParams.get("category") as ConceptCategory) || null
+    );
+    const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(
+        searchParams.get("subCategory") || null
+    );
+    const [selectedDifficulty, setSelectedDifficulty] = useState<ConceptDifficulty | null>(
+        (searchParams.get("difficulty") as ConceptDifficulty) || null
+    );
 
-    const trending = trendingResult.concepts || [];
-    const categories = categoriesResult.categories || [];
-    const recentConcepts = recentResult.concepts || [];
-    const inProgress = progressResult.inProgress || [];
+    const loadConcepts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [conceptsResult, progressResult] = await Promise.all([
+                getConcepts({
+                    search: searchQuery || undefined,
+                    category: selectedCategory || undefined,
+                    customCategory: selectedSubCategory || undefined,
+                    difficulty: selectedDifficulty || undefined,
+                    sortBy: "latest",
+                    page: 1,
+                    limit: 12,
+                }),
+                getUserProgress(),
+            ]);
+
+            setConcepts(conceptsResult.concepts || []);
+            setPagination(conceptsResult.pagination || { total: 0, page: 1, limit: 12, totalPages: 0 });
+            setUserProgress(progressResult.inProgress || []);
+            setCompletedConcepts(progressResult.completed || []);
+        } catch (error) {
+            console.error("Failed to load concepts:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [searchQuery, selectedCategory, selectedSubCategory, selectedDifficulty]);
+
+    useEffect(() => {
+        loadConcepts();
+    }, [loadConcepts]);
+
+    // Update URL when filters change
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (searchQuery) params.set("search", searchQuery);
+        if (selectedCategory) params.set("category", selectedCategory);
+        if (selectedSubCategory) params.set("subCategory", selectedSubCategory);
+        if (selectedDifficulty) params.set("difficulty", selectedDifficulty);
+        
+        const newUrl = params.toString() ? `?${params.toString()}` : "";
+        router.replace(`/concepts${newUrl}`, { scroll: false });
+    }, [searchQuery, selectedCategory, selectedSubCategory, selectedDifficulty, router]);
+
+    // Generate title based on selection
+    const getTitle = () => {
+        if (selectedSubCategory) {
+            return selectedSubCategory;
+        }
+        if (selectedCategory) {
+            return CATEGORY_LABELS[selectedCategory];
+        }
+        return "All Concepts";
+    };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
-            <Suspense fallback={<ConceptsHeroSkeleton />}>
-                <ConceptsHero totalConcepts={stats.totalConcepts} totalSteps={stats.totalSteps} totalCategories={stats.totalCategories} />
-            </Suspense>
+        <div className="flex h-[calc(100vh-4rem)]">
+            {/* Sidebar */}
+            <ConceptsSidebar
+                selectedCategory={selectedCategory}
+                selectedSubCategory={selectedSubCategory}
+                selectedDifficulty={selectedDifficulty}
+                onCategoryChange={setSelectedCategory}
+                onSubCategoryChange={setSelectedSubCategory}
+                onDifficultyChange={setSelectedDifficulty}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                totalConcepts={pagination.total}
+            />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
-                {
-                    userId && inProgress.length > 0 && (
-                        <Suspense fallback={<ContinueLearningSkeleton />}>
-                            <ContinueLearningSection progress={inProgress} />
-                        </Suspense>
-                    )
-                }
-                <Suspense fallback={<CategoriesGridSkeleton />}>
-                    <CategoriesGrid categories={categories} />
-                </Suspense>
-                <Suspense fallback={<TrendingConceptsSkeleton />}>
-                    <TrendingConcepts concepts={trending} />
-                </Suspense>
-                <Suspense fallback={<RecentConceptsSkeleton />}>
-                    <RecentConcepts concepts={recentConcepts} />
-                </Suspense>
-            </div>
+            {/* Main Content */}
+            <main className="flex-1 overflow-auto">
+                {isLoading ? (
+                    <ContentSkeleton />
+                ) : (
+                    <Suspense fallback={<ContentSkeleton />}>
+                        <ConceptsContent
+                            concepts={concepts}
+                            pagination={pagination}
+                            userProgress={userProgress}
+                            completedConcepts={completedConcepts}
+                            isLoggedIn={true}
+                            title={getTitle()}
+                        />
+                    </Suspense>
+                )}
+            </main>
         </div>
     );
 }

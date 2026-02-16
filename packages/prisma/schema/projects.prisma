@@ -203,6 +203,9 @@ model ProjectV2 {
     assignmentCredits     Int?      // Credits required for this assignment
     assignmentInstructions String?  @db.Text // Additional instructions from teacher
 
+    // Concept Step back-relation (for PROJECT step type - major projects)
+    conceptStep ConceptStep? @relation("ConceptStepProject")
+
     @@index([createdBy])
     @@index([visibility])
     @@index([difficulty])

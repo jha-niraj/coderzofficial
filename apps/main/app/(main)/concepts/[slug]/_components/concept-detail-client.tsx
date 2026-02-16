@@ -5,12 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
     ChevronLeft, ChevronRight, Heart, Bookmark, Share2, MessageSquare,
-    ArrowLeft, CheckCircle2, Sparkles, Eye, Shield, XCircle, AlertCircle, Coins
+    ArrowLeft, CheckCircle2, Sparkles, Eye, Shield, XCircle, AlertCircle,
+    Coins
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Progress } from "@repo/ui/components/ui/progress";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import {
     Avatar, AvatarFallback, AvatarImage
 } from "@repo/ui/components/ui/avatar";
@@ -18,11 +19,11 @@ import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+    DialogFooter
 } from "@repo/ui/components/ui/dialog";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { Alert, AlertDescription } from "@repo/ui/components/ui/alert";
-// ...existing imports
 import toast from "@repo/ui/components/ui/sonner";
 import {
     ConceptCategory, ConceptDifficulty, ConceptStepType
@@ -140,7 +141,7 @@ export default function ConceptDetailClient({
     const [likeCount, setLikeCount] = useState(concept._count.likes);
     const [showAIAssistant, setShowAIAssistant] = useState(true); // Always show by default
     const [shareOpen, setShareOpen] = useState(false);
-    
+
     // Admin verification states
     const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -150,9 +151,9 @@ export default function ConceptDetailClient({
 
     const isPendingVerification = concept.status === "PENDING_VERIFICATION";
     const showAdminActions = isAdmin && isPendingVerification;
-    
-    const shareUrl = typeof window !== "undefined" 
-        ? `${window.location.origin}/concepts/${concept.slug}` 
+
+    const shareUrl = typeof window !== "undefined"
+        ? `${window.location.origin}/concepts/${concept.slug}`
         : `/concepts/${concept.slug}`;
 
     const totalSteps = concept.steps.length;
@@ -261,57 +262,57 @@ export default function ConceptDetailClient({
 
     return (
         <div className="relative">
-            {/* Admin Verification Banner */}
-            {showAdminActions && (
-                <div className="bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                        <div className="flex items-center justify-between flex-wrap gap-3">
-                            <div className="flex items-center gap-3">
-                                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                                <span className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    This concept is pending verification. Review and approve or reject.
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setRejectDialogOpen(true)}
-                                    className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
-                                >
-                                    <XCircle className="w-4 h-4 mr-1" />
-                                    Reject
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    onClick={() => setVerifyDialogOpen(true)}
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                    <Shield className="w-4 h-4 mr-1" />
-                                    Verify & Publish
-                                </Button>
+            {
+                showAdminActions && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                            <div className="flex items-center justify-between flex-wrap gap-3">
+                                <div className="flex items-center gap-3">
+                                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                    <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                                        This concept is pending verification. Review and approve or reject.
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setRejectDialogOpen(true)}
+                                        className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                                    >
+                                        <XCircle className="w-4 h-4 mr-1" />
+                                        Reject
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setVerifyDialogOpen(true)}
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                        <Shield className="w-4 h-4 mr-1" />
+                                        Verify & Publish
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* Pricing Badge for Paid Concepts */}
-            {concept.pricingType === "PAID" && (
-                <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-                        <div className="flex items-center justify-center gap-2 text-sm text-amber-700 dark:text-amber-300">
-                            <Coins className="w-4 h-4" />
-                            <span>Premium Concept • {concept.price} credits</span>
+                )
+            }
+            {
+                concept.pricingType === "PAID" && (
+                    <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+                            <div className="flex items-center justify-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+                                <Coins className="w-4 h-4" />
+                                <span>Premium Concept • {concept.price} credits</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <div className="sticky top-0 z-40 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-full mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between h-14">
-                        {/* Left: Back button and title */}
                         <div className="flex items-center gap-3 min-w-0">
                             <Button
                                 variant="ghost"
@@ -332,8 +333,6 @@ export default function ConceptDetailClient({
                                 </Badge>
                             </div>
                         </div>
-                        
-                        {/* Center: Step Navigation */}
                         <div className="hidden md:flex items-center gap-2">
                             <Button
                                 variant="outline"
@@ -351,33 +350,33 @@ export default function ConceptDetailClient({
                                 </span>
                                 <Progress value={progressPercent} className="w-24 h-2" />
                             </div>
-                            {currentStepIndex < totalSteps - 1 ? (
-                                <Button
-                                    size="sm"
-                                    onClick={() => goToStep(currentStepIndex + 1)}
-                                    className="h-8"
-                                >
-                                    <span className="hidden lg:inline mr-1">Next</span>
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="sm"
-                                    onClick={() => {
-                                        if (currentStep) {
-                                            markStepComplete(currentStep.order);
-                                        }
-                                        toast.success("🎉 Concept completed!");
-                                    }}
-                                    className="h-8 bg-green-600 hover:bg-green-700"
-                                >
-                                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                                    Complete
-                                </Button>
-                            )}
+                            {
+                                currentStepIndex < totalSteps - 1 ? (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => goToStep(currentStepIndex + 1)}
+                                        className="h-8"
+                                    >
+                                        <span className="hidden lg:inline mr-1">Next</span>
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            if (currentStep) {
+                                                markStepComplete(currentStep.order);
+                                            }
+                                            toast.success("🎉 Concept completed!");
+                                        }}
+                                        className="h-8 bg-green-600 hover:bg-green-700"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4 mr-1" />
+                                        Complete
+                                    </Button>
+                                )
+                            }
                         </div>
-
-                        {/* Right: Actions */}
                         <div className="flex items-center gap-1">
                             <TooltipProvider>
                                 <Tooltip>
@@ -437,18 +436,19 @@ export default function ConceptDetailClient({
                 </div>
             </div>
             <div className="flex">
-                <aside className="hidden lg:block w-72 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 overflow-y-auto h-[calc(100vh-4rem)] sticky top-16">
-                    <div className="p-4">
-                        <h3 className="font-semibold text-sm text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide">
-                            STEPS
-                        </h3>
-                        <div className="space-y-1">
-                            {
-                                concept.steps.map((step, index) => (
-                                    <button
-                                        key={step.id}
-                                        onClick={() => goToStep(index)}
-                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${currentStepIndex === index
+                <aside className="hidden lg:block w-72 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 h-[calc(100vh-4rem)] sticky top-16">
+                    <ScrollArea className="h-full">
+                        <div className="p-4">
+                            <h3 className="font-semibold text-sm text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide">
+                                STEPS
+                            </h3>
+                            <div className="space-y-1">
+                                {
+                                    concept.steps.map((step, index) => (
+                                        <button
+                                            key={step.id}
+                                            onClick={() => goToStep(index)}
+                                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${currentStepIndex === index
                                             ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
                                             : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                             }`}
@@ -473,53 +473,114 @@ export default function ConceptDetailClient({
                                     </button>
                                 ))
                             }
-                        </div>
-                    </div>
-                </aside>
-                <main className="flex-1 min-w-0">
-                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                        <div className="md:hidden mb-4">
-                            <div className="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400 mb-2">
-                                <span>Step {currentStepIndex + 1} of {totalSteps}</span>
-                                <span>{Math.round(progressPercent)}%</span>
                             </div>
-                            <Progress value={progressPercent} className="h-2" />
-                        </div>
-                        <AnimatePresence mode="wait">
-                            {
-                                currentStep && (
-                                    <motion.div
-                                        key={currentStep.id}
-                                        initial={{ opacity: 0, x: 50 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -50 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <StepCard
-                                            step={currentStep}
-                                            stepNumber={currentStepIndex + 1}
-                                            totalSteps={totalSteps}
-                                            isCompleted={completedSteps.includes(currentStep.order)}
-                                            onComplete={() => markStepComplete(currentStep.order)}
-                                            conceptId={concept.id}
-                                            isLoggedIn={isLoggedIn}
-                                        />
-                                    </motion.div>
-                                )
-                            }
-                        </AnimatePresence>
-                        <div className="flex items-center justify-between mt-6">
-                            <Button
-                                variant="outline"
-                                onClick={() => goToStep(currentStepIndex - 1)}
-                                disabled={currentStepIndex === 0}
-                            >
-                                <ChevronLeft className="w-4 h-4 mr-1" />
-                                Previous
-                            </Button>
-                            <div className="hidden sm:flex items-center gap-1">
+
+                            {/* About Section in Sidebar */}
+                            <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                                <h3 className="font-semibold text-sm text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide">
+                                    ABOUT
+                                </h3>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Avatar className="w-10 h-10">
+                                        <AvatarImage src={concept.creator.image || ""} />
+                                        <AvatarFallback>
+                                            {concept.creator.name?.charAt(0) || "A"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                                            {concept.creator.name || "Admin"}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">Creator</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-4">
+                                    {concept.description}
+                                </p>
                                 {
-                                    concept.steps.map((step, index) => (
+                                    concept.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mb-4">
+                                            {
+                                                concept.tags.slice(0, 5).map((tag) => (
+                                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                                        {tag}
+                                                    </Badge>
+                                                ))
+                                            }
+                                            {concept.tags.length > 5 && (
+                                                <Badge variant="outline" className="text-xs">
+                                                    +{concept.tags.length - 5}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    )
+                                }
+                                <div className="space-y-2 text-xs text-neutral-500 dark:text-neutral-400">
+                                    <div className="flex items-center gap-2">
+                                        <Eye className="w-3.5 h-3.5" />
+                                        <span>{concept._count.views} views</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Heart className="w-3.5 h-3.5" />
+                                        <span>{likeCount} likes</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <MessageSquare className="w-3.5 h-3.5" />
+                                        <span>{concept._count.comments} comments</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ScrollArea>
+                </aside>
+                <main className="flex-1 min-w-0 h-[calc(100vh-4rem)]">
+                    <ScrollArea className="h-full">
+                        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            <div className="md:hidden mb-4">
+                                <div className="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400 mb-2">
+                                    <span>Step {currentStepIndex + 1} of {totalSteps}</span>
+                                    <span>{Math.round(progressPercent)}%</span>
+                                </div>
+                                <Progress value={progressPercent} className="h-2" />
+                            </div>
+                            <AnimatePresence mode="wait">
+                                {
+                                    currentStep && (
+                                        <motion.div
+                                            key={currentStep.id}
+                                            initial={{ opacity: 0, x: 50 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -50 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <StepCard
+                                                step={currentStep}
+                                                stepNumber={currentStepIndex + 1}
+                                                totalSteps={totalSteps}
+                                                isCompleted={completedSteps.includes(currentStep.order)}
+                                                onComplete={() => markStepComplete(currentStep.order)}
+                                                conceptId={concept.id}
+                                                isLoggedIn={isLoggedIn}
+                                                allSteps={concept.steps}
+                                                conceptTitle={concept.title}
+                                                userCredits={0}
+                                            />
+                                        </motion.div>
+                                    )
+                                }
+                            </AnimatePresence>
+                            <div className="flex items-center justify-between mt-6">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => goToStep(currentStepIndex - 1)}
+                                    disabled={currentStepIndex === 0}
+                                >
+                                    <ChevronLeft className="w-4 h-4 mr-1" />
+                                    Previous
+                                </Button>
+                                <div className="hidden sm:flex items-center gap-1">
+                                    {
+                                        concept.steps.map((step, index) => (
                                         <button
                                             key={step.id}
                                             onClick={() => goToStep(index)}
@@ -554,66 +615,9 @@ export default function ConceptDetailClient({
                                     </Button>
                                 )
                             }
+                            </div>
                         </div>
-                        <Card className="mt-8 border-neutral-200 dark:border-neutral-800 shadow-sm">
-                            <CardContent className="p-6">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
-                                            About this concept
-                                        </h2>
-                                        <p className="text-neutral-600 dark:text-neutral-400">
-                                            {concept.description}
-                                        </p>
-                                        {
-                                            concept.tags.length > 0 && (
-                                                <div className="flex flex-wrap gap-2 mt-4">
-                                                    {
-                                                        concept.tags.map((tag) => (
-                                                            <Badge key={tag} variant="secondary">
-                                                                {tag}
-                                                            </Badge>
-                                                        ))
-                                                    }
-                                                </div>
-                                            )
-                                        }
-                                    </div>
-                                    <div className="flex items-center gap-3 flex-shrink-0">
-                                        <Avatar>
-                                            <AvatarImage src={concept.creator.image || ""} />
-                                            <AvatarFallback>
-                                                {concept.creator.name?.charAt(0) || "A"}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="text-sm font-medium">
-                                                {concept.creator.name || "Admin"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">Creator</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-6 mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800">
-                                    <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
-                                        <Eye className="w-4 h-4" />
-                                        <span>{concept._count.views} views</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
-                                        <Heart className="w-4 h-4" />
-                                        <span>{likeCount} likes</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
-                                        <MessageSquare className="w-4 h-4" />
-                                        <span>{concept._count.comments} comments</span>
-                                    </div>
-                                    <Badge className={difficultyConfig[concept.difficulty].color}>
-                                        {difficultyConfig[concept.difficulty].label}
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    </ScrollArea>
                 </main>
                 <AnimatePresence>
                     {
@@ -635,8 +639,6 @@ export default function ConceptDetailClient({
                     }
                 </AnimatePresence>
             </div>
-
-            {/* Verify Concept Dialog */}
             <Dialog open={verifyDialogOpen} onOpenChange={setVerifyDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -661,28 +663,28 @@ export default function ConceptDetailClient({
                         <Button variant="outline" onClick={() => setVerifyDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleVerifyConcept}
                             disabled={isVerifying}
                             className="bg-green-600 hover:bg-green-700 text-white"
                         >
-                            {isVerifying ? (
-                                <>
-                                    <span className="animate-spin mr-2">⏳</span>
-                                    Verifying...
-                                </>
-                            ) : (
-                                <>
-                                    <Shield className="w-4 h-4 mr-2" />
-                                    Verify & Publish
-                                </>
-                            )}
+                            {
+                                isVerifying ? (
+                                    <>
+                                        <span className="animate-spin mr-2">⏳</span>
+                                        Verifying...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Shield className="w-4 h-4 mr-2" />
+                                        Verify & Publish
+                                    </>
+                                )
+                            }
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-            {/* Reject Concept Dialog */}
             <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -707,28 +709,29 @@ export default function ConceptDetailClient({
                         <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleRejectConcept}
                             disabled={isRejecting || !rejectReason.trim()}
                             className="bg-red-600 hover:bg-red-700 text-white"
                         >
-                            {isRejecting ? (
-                                <>
-                                    <span className="animate-spin mr-2">⏳</span>
-                                    Rejecting...
-                                </>
-                            ) : (
-                                <>
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    Reject Concept
-                                </>
-                            )}
+                            {
+                                isRejecting ? (
+                                    <>
+                                        <span className="animate-spin mr-2">⏳</span>
+                                        Rejecting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <XCircle className="w-4 h-4 mr-2" />
+                                        Reject Concept
+                                    </>
+                                )
+                            }
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Share Dialog */}
             <ShareDialog
                 open={shareOpen}
                 onOpenChange={setShareOpen}

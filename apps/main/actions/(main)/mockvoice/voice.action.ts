@@ -24,6 +24,7 @@ interface CreateCustomMockInput {
     includeResume: boolean
     isPublic: boolean
     knowledgeBase?: string
+    conceptStepId?: string // Link to concept step
 }
 
 // ==========================================
@@ -421,6 +422,18 @@ Be professional, supportive, and constructive in your approach.`
                     id: true
                 }
             })
+
+            // If concept step ID provided, link the mock to the step
+            if (input.conceptStepId) {
+                await tx.conceptStep.update({
+                    where: { 
+                        id: input.conceptStepId 
+                    },
+                    data: { 
+                        mockInterviewId: mock.id 
+                    }
+                })
+            }
 
             // Deduct credits ONLY AFTER successful mock creation
             await tx.user.update({

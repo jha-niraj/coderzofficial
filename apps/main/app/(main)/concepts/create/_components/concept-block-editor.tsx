@@ -8,7 +8,7 @@ import {
     Plus, Trash2, Save, Eye, ArrowLeft, Sparkles, Loader2, BookOpen,
     Code2, HelpCircle, Zap, BarChart3, CheckCircle2, FileText, Video,
     Globe, Send, FileEdit, X, Link2, Search, FileStack, Coins,
-    AlertCircle
+    AlertCircle, Image as ImageIcon, Mic, FolderGit2
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
@@ -40,8 +40,8 @@ import {
 } from "@repo/prisma/client";
 import {
     createConcept, addConceptStep, updateConceptStep, deleteConceptStep,
-    updateConcept, publishConcept, addCodeBlock, searchConcepts, 
-    addPrerequisiteConcept, removePrerequisiteConcept, getUserDraftConcepts, 
+    updateConcept, publishConcept, addCodeBlock, searchConcepts,
+    addPrerequisiteConcept, removePrerequisiteConcept, getUserDraftConcepts,
     getConceptForEditing,
 } from "@/actions/(main)/concepts/concept.action";
 import {
@@ -51,6 +51,7 @@ import {
 import CodeEditor from "@/components/main/code-editor";
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { formatDistanceToNow } from "date-fns";
+import Image from "next/image";
 
 // ==================== TYPES ====================
 
@@ -74,7 +75,15 @@ interface StepBlock {
     content: string;
     stepData?: Record<string, unknown>;
     tips: string[];
-    codeBlocks: { id?: string; order: number; title: string; language: string; code: string; explanation: string; isRunnable: boolean }[];
+    codeBlocks: {
+        id?: string;
+        order: number;
+        title: string;
+        language: string;
+        code: string;
+        explanation: string;
+        isRunnable: boolean
+    }[];
     isExpanded: boolean;
     isSaved: boolean;
     isSaving: boolean;
@@ -89,10 +98,43 @@ const STEP_TYPES: { value: ConceptStepType; label: string; icon: LucideIcon; col
     { value: "COMPARISON", label: "Comparison", icon: BarChart3, color: "text-orange-500", bgColor: "bg-orange-500/10 border-orange-500/20", description: "Compare approaches" },
     { value: "SUMMARY", label: "Summary", icon: CheckCircle2, color: "text-teal-500", bgColor: "bg-teal-500/10 border-teal-500/20", description: "Key takeaways" },
     { value: "RESOURCE", label: "Resources", icon: Video, color: "text-purple-500", bgColor: "bg-purple-500/10 border-purple-500/20", description: "Videos & docs" },
+    { value: "VISUAL", label: "Visual", icon: ImageIcon, color: "text-cyan-500", bgColor: "bg-cyan-500/10 border-cyan-500/20", description: "Images & diagrams" },
+    { value: "MOCK_INTERVIEW", label: "Mock Interview", icon: Mic, color: "text-red-500", bgColor: "bg-red-500/10 border-red-500/20", description: "Practice interviews" },
+    { value: "PROJECT", label: "Project", icon: FolderGit2, color: "text-indigo-500", bgColor: "bg-indigo-500/10 border-indigo-500/20", description: "Build projects" },
 ];
 
 const CATEGORIES = Object.values(ConceptCategory);
 const DIFFICULTIES = Object.values(ConceptDifficulty);
+
+// Subcategories mapping for each category
+const SUBCATEGORIES_MAP: Record<ConceptCategory, string[]> = {
+    WEB_DEVELOPMENT: ["React", "Next.js", "Vue.js", "Angular", "HTML & CSS", "JavaScript", "TypeScript", "Svelte", "Tailwind CSS"],
+    MOBILE_DEVELOPMENT: ["React Native", "Flutter", "Swift/iOS", "Kotlin/Android", "Expo"],
+    DATA_STRUCTURES: ["Arrays", "Linked Lists", "Trees", "Graphs", "Hash Tables", "Stacks & Queues", "Heaps"],
+    ALGORITHMS: ["Sorting", "Searching", "Dynamic Programming", "Recursion", "Greedy Algorithms", "Backtracking"],
+    SYSTEM_DESIGN: ["Scalability", "Microservices", "Load Balancing", "Caching", "Database Design", "API Gateway"],
+    DATABASE: ["SQL", "NoSQL", "PostgreSQL", "MongoDB", "Redis", "MySQL", "Prisma"],
+    DEVOPS: ["Docker", "Kubernetes", "CI/CD", "Terraform", "Jenkins", "GitHub Actions"],
+    CLOUD_COMPUTING: ["AWS", "Google Cloud", "Azure", "Serverless", "Lambda", "S3"],
+    MACHINE_LEARNING: ["Supervised Learning", "Unsupervised Learning", "Neural Networks", "NLP", "Computer Vision"],
+    ARTIFICIAL_INTELLIGENCE: ["Deep Learning", "Reinforcement Learning", "GPT/LLMs", "Prompt Engineering"],
+    CYBERSECURITY: ["Web Security", "Cryptography", "Network Security", "OWASP", "Penetration Testing"],
+    BLOCKCHAIN: ["Ethereum", "Solidity", "Smart Contracts", "Web3.js", "DeFi"],
+    PROGRAMMING_FUNDAMENTALS: ["Python", "Java", "C++", "Go", "Rust", "C#"],
+    SOFTWARE_ARCHITECTURE: ["Clean Architecture", "Domain-Driven Design", "SOLID Principles", "Design Patterns"],
+    API_DESIGN: ["REST APIs", "GraphQL", "gRPC", "WebSockets", "OpenAPI/Swagger"],
+    TESTING: ["Unit Testing", "Integration Testing", "E2E Testing", "Jest", "Cypress", "Playwright"],
+    VERSION_CONTROL: ["Git Basics", "Git Branching", "GitHub", "GitLab", "Git Flow"],
+    UI_UX_DESIGN: ["Figma", "UI Principles", "UX Research", "Accessibility", "Responsive Design"],
+    GAME_DEVELOPMENT: ["Unity", "Unreal Engine", "Godot", "Game Physics", "2D/3D Graphics"],
+    NETWORKING: ["TCP/IP", "HTTP/HTTPS", "DNS", "WebRTC", "Socket Programming"],
+    OPERATING_SYSTEMS: ["Linux", "Process Management", "Memory Management", "File Systems", "Shell Scripting"],
+    CUSTOM: [],
+};
+
+function getSubCategoriesForCategory(category: ConceptCategory): string[] {
+    return SUBCATEGORIES_MAP[category] || [];
+}
 
 function createEmptyBlock(order: number, type: ConceptStepType = "EXPLANATION"): StepBlock {
     return {
@@ -119,11 +161,12 @@ export default function ConceptBlockEditor() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [category, setCategory] = useState<ConceptCategory>("PROGRAMMING_FUNDAMENTALS");
+    const [subCategory, setSubCategory] = useState("");
+    const [customSubCategory, setCustomSubCategory] = useState("");
     const [difficulty, setDifficulty] = useState<ConceptDifficulty>("BEGINNER");
     const [tags, setTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState("");
     const [iconEmoji, setIconEmoji] = useState("📚");
-    const [accentColor, setAccentColor] = useState("#3B82F6");
     const [estimatedTime, setEstimatedTime] = useState(10);
     const [prerequisites, setPrerequisites] = useState<string[]>([]);
 
@@ -189,7 +232,17 @@ export default function ConceptBlockEditor() {
                 setDifficulty(c.difficulty);
                 setTags(c.tags);
                 setIconEmoji(c.iconEmoji || "📚");
-                setAccentColor(c.accentColor || "#3B82F6");
+                // Load subcategory from customCategory
+                if (c.customCategory) {
+                    const availableSubcats = getSubCategoriesForCategory(c.category);
+                    if (availableSubcats.includes(c.customCategory)) {
+                        setSubCategory(c.customCategory);
+                        setCustomSubCategory("");
+                    } else {
+                        setSubCategory("custom");
+                        setCustomSubCategory(c.customCategory);
+                    }
+                }
                 setEstimatedTime(c.estimatedTime || 10);
                 setPrerequisites(c.prerequisites);
                 setPricingType(c.pricingType || "FREE");
@@ -274,11 +327,13 @@ export default function ConceptBlockEditor() {
         if (!title.trim()) { toast.error("Title is required"); return null; }
         if (!description.trim()) { toast.error("Description is required"); return null; }
         setIsSavingConcept(true);
+        // Determine the customCategory value from subCategory selection
+        const customCategoryValue = subCategory === "custom" ? customSubCategory : subCategory;
         try {
             if (conceptId) {
                 const result = await updateConcept(conceptId, {
                     title, description, category, difficulty, tags,
-                    iconEmoji, accentColor, estimatedTime, prerequisites,
+                    iconEmoji, customCategory: customCategoryValue, estimatedTime, prerequisites,
                     pricingType, price: pricingType === "PAID" ? price : 0,
                 });
                 if (result.error) { toast.error(result.error); return null; }
@@ -288,7 +343,7 @@ export default function ConceptBlockEditor() {
             } else {
                 const result = await createConcept({
                     title, description, category, difficulty, tags,
-                    iconEmoji, accentColor, estimatedTime, prerequisites,
+                    iconEmoji, customCategory: customCategoryValue, estimatedTime, prerequisites,
                     pricingType, price: pricingType === "PAID" ? price : 0,
                 });
                 if (result.error) { toast.error(result.error); return null; }
@@ -299,7 +354,7 @@ export default function ConceptBlockEditor() {
             }
         } catch { toast.error("Failed to save concept"); return null; }
         finally { setIsSavingConcept(false); }
-    }, [conceptId, title, description, category, difficulty, tags, iconEmoji, accentColor, estimatedTime, prerequisites, pricingType, price]);
+    }, [conceptId, title, description, category, difficulty, tags, iconEmoji, subCategory, customSubCategory, estimatedTime, prerequisites, pricingType, price]);
 
     // ==================== BLOCK SAVE ====================
 
@@ -355,8 +410,6 @@ export default function ConceptBlockEditor() {
         setBlocks(prev => prev.map(b => b.localId === localId ? { ...b, ...updates, isSaved: false } : b));
     };
 
-    // ==================== AI GENERATION ====================
-
     const handleAiGenerate = async (prompt: string) => {
         const block = activeBlock;
         if (!block || !prompt.trim()) return;
@@ -369,9 +422,24 @@ export default function ConceptBlockEditor() {
             if (block.type === "QUIZ") {
                 const result = await generateQuizQuestion(title, description, block.title || prompt, block.content || prompt);
                 if (result.quiz) {
+                    // APPEND quiz data - if stepData already has options, merge them
+                    const existingData = (block.stepData || {}) as { options?: unknown[] };
+                    const existingOptions = existingData.options || [];
+
+                    // If there's already quiz content, append the new question info to content
+                    const mergedContent = block.content
+                        ? `${block.content}\n\n## ${result.quiz.question}`
+                        : `## ${block.title || "Quiz"}\n\n${result.quiz.question}`;
+
                     updateBlock(block.localId, {
-                        content: block.content || `## ${block.title || "Quiz"}`,
-                        stepData: { question: result.quiz.question, options: result.quiz.options, explanation: result.quiz.explanation },
+                        content: mergedContent,
+                        stepData: {
+                            question: result.quiz.question,
+                            options: existingOptions.length > 0
+                                ? [...existingOptions, ...result.quiz.options]
+                                : result.quiz.options,
+                            explanation: result.quiz.explanation
+                        },
                         isGenerating: false,
                     });
                     toast.success("Quiz generated!");
@@ -379,11 +447,19 @@ export default function ConceptBlockEditor() {
             } else if (block.type === "CHALLENGE") {
                 const result = await generateChallenge(title, description, block.title || prompt, block.content || prompt);
                 if (result.challenge) {
+                    // For challenge, we want to update but keep any existing content as context
+                    const mergedContent = block.content
+                        ? `${block.content}\n\n---\n\n${result.challenge.description}`
+                        : result.challenge.description;
+
                     updateBlock(block.localId, {
-                        content: result.challenge.description,
+                        content: mergedContent,
                         stepData: {
-                            starterCode: result.challenge.starterCode, solution: result.challenge.solution,
-                            hints: result.challenge.hints, testCases: result.challenge.testCases, language: result.challenge.language,
+                            starterCode: result.challenge.starterCode,
+                            solution: result.challenge.solution,
+                            hints: result.challenge.hints,
+                            testCases: result.challenge.testCases,
+                            language: result.challenge.language,
                         },
                         isGenerating: false,
                     });
@@ -392,9 +468,21 @@ export default function ConceptBlockEditor() {
             } else if (block.type === "RESOURCE") {
                 const result = await generateResources(title, block.title || prompt, category, difficulty);
                 if (result.resources) {
+                    // APPEND resources instead of replacing
+                    const existingData = (block.stepData || {}) as { videos?: unknown[]; docs?: unknown[] };
+                    const existingVideos = existingData.videos || [];
+                    const existingDocs = existingData.docs || [];
+
+                    const mergedContent = block.content
+                        ? `${block.content}\n\n## Additional Resources for ${block.title || title}`
+                        : `## Resources for ${block.title || title}`;
+
                     updateBlock(block.localId, {
-                        content: block.content || `## Resources for ${block.title || title}`,
-                        stepData: { videos: result.resources.videos, docs: result.resources.docs },
+                        content: mergedContent,
+                        stepData: {
+                            videos: [...existingVideos, ...result.resources.videos],
+                            docs: [...existingDocs, ...result.resources.docs]
+                        },
                         isGenerating: false,
                     });
                     toast.success("Resources found!");
@@ -403,9 +491,20 @@ export default function ConceptBlockEditor() {
                 const topics = (block.title || prompt).split(/\s+vs\.?\s+/i);
                 const result = await generateComparison(title, description, block.title || prompt, topics.length > 1 ? topics : [block.title || prompt]);
                 if (result.comparison) {
+                    // APPEND comparison items
+                    const existingData = (block.stepData || {}) as { items?: unknown[] };
+                    const existingItems = existingData.items || [];
+
+                    const mergedContent = block.content
+                        ? `${block.content}\n\n## ${block.title}`
+                        : `## ${block.title}`;
+
                     updateBlock(block.localId, {
-                        content: block.content || `## ${block.title}`,
-                        stepData: { items: result.comparison.items, conclusion: result.comparison.conclusion },
+                        content: mergedContent,
+                        stepData: {
+                            items: [...existingItems, ...result.comparison.items],
+                            conclusion: result.comparison.conclusion
+                        },
                         isGenerating: false,
                     });
                     toast.success("Comparison generated!");
@@ -415,27 +514,54 @@ export default function ConceptBlockEditor() {
                 const result = await generateStepContent(title, description, block.title || prompt, block.type);
                 if (result.content) {
                     if (block.type === "CODE") {
-                        // For CODE type, put generated content into explanation and try to extract code blocks
-                        const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-                        const codeBlocks: StepBlock["codeBlocks"] = [];
+                        // For CODE type, extract code blocks with their explanations
+                        // Pattern: Match code block followed by explanation text until next code block or end
+                        const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```(?:\s*\n*([\s\S]*?)(?=```|\n##|$))?/g;
+                        const newCodeBlocks: StepBlock["codeBlocks"] = [];
                         let match;
-                        let idx = 0;
+                        let idx = block.codeBlocks.length; // Start from existing count to append
                         while ((match = codeBlockRegex.exec(result.content)) !== null) {
-                            codeBlocks.push({
-                                order: idx, title: `Example ${idx + 1}`, language: match[1] || "javascript",
-                                code: match[2]?.trim() || "", explanation: "", isRunnable: false,
+                            const language = match[1] || "javascript";
+                            const code = match[2]?.trim() || "";
+                            // Extract explanation text after the code block (before next code block)
+                            let explanation = match[3]?.trim() || "";
+                            // Clean up explanation - remove leading markdown headers from next section
+                            explanation = explanation.split(/\n##/)[0]?.trim() || "";
+
+                            newCodeBlocks.push({
+                                order: idx,
+                                title: `Example ${idx + 1}`,
+                                language,
+                                code,
+                                explanation, // Put explanation in code block's explanation field
+                                isRunnable: false,
                             });
                             idx++;
                         }
-                        // Remove code blocks from content to get just the explanation
-                        const explanationText = result.content.replace(/```(\w+)?\n[\s\S]*?```/g, "").trim();
+
+                        // Get intro text (content before first code block) for the main content field
+                        const introMatch = result.content.match(/^([\s\S]*?)(?=```)/);
+                        const introText = introMatch ? introMatch[1]?.trim() : "";
+
+                        // APPEND new code blocks to existing ones instead of replacing
+                        const mergedCodeBlocks = [...block.codeBlocks, ...newCodeBlocks];
+
+                        // APPEND intro text to existing content
+                        const mergedContent = block.content
+                            ? `${block.content}\n\n${introText}`
+                            : introText;
+
                         updateBlock(block.localId, {
-                            content: explanationText,
-                            codeBlocks: codeBlocks.length > 0 ? codeBlocks : block.codeBlocks,
+                            content: mergedContent,
+                            codeBlocks: mergedCodeBlocks,
                             isGenerating: false,
                         });
                     } else {
-                        updateBlock(block.localId, { content: result.content, isGenerating: false });
+                        // For other types, APPEND content instead of replacing
+                        const mergedContent = block.content
+                            ? `${block.content}\n\n${result.content}`
+                            : result.content;
+                        updateBlock(block.localId, { content: mergedContent, isGenerating: false });
                     }
                     toast.success("Content generated!");
                 } else { toast.error(result.error || "Failed"); updateBlock(block.localId, { isGenerating: false }); }
@@ -531,13 +657,38 @@ export default function ConceptBlockEditor() {
                                     <div className="grid grid-cols-2 gap-2">
                                         <div className="w-full flex flex-col">
                                             <Label className="text-left text-xs font-medium text-muted-foreground">Category</Label>
-                                            <Select value={category} onValueChange={v => setCategory(v as ConceptCategory)}>
+                                            <Select value={category} onValueChange={v => { setCategory(v as ConceptCategory); setSubCategory(""); }}>
                                                 <SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
                                                     {CATEGORIES.map(c => <SelectItem key={c} value={c} className="text-xs">{c.replace(/_/g, " ")}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                        <div className="w-full flex flex-col">
+                                            <Label className="text-left text-xs font-medium text-muted-foreground">Sub Category</Label>
+                                            <Select value={subCategory} onValueChange={v => setSubCategory(v)}>
+                                                <SelectTrigger className="mt-1 h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
+                                                <SelectContent>
+                                                    {getSubCategoriesForCategory(category).map(sc => (
+                                                        <SelectItem key={sc} value={sc} className="text-xs">{sc}</SelectItem>
+                                                    ))}
+                                                    <SelectItem value="custom" className="text-xs italic">+ Custom</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    {subCategory === "custom" && (
+                                        <div className="w-full flex flex-col">
+                                            <Label className="text-left text-xs font-medium text-muted-foreground">Custom Sub Category</Label>
+                                            <Input 
+                                                value={customSubCategory} 
+                                                onChange={e => setCustomSubCategory(e.target.value)} 
+                                                placeholder="Enter custom sub category" 
+                                                className="mt-1 h-8 text-xs" 
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-2">
                                         <div className="w-full flex flex-col">
                                             <Label className="text-left text-xs font-medium text-muted-foreground">Difficulty</Label>
                                             <Select value={difficulty} onValueChange={v => setDifficulty(v as ConceptDifficulty)}>
@@ -547,18 +698,9 @@ export default function ConceptBlockEditor() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
                                         <div className="flex w-full flex-col">
                                             <Label className="text-left text-xs font-medium text-muted-foreground">Time (min)</Label>
                                             <Input type="number" value={estimatedTime} onChange={e => setEstimatedTime(Number(e.target.value))} className="mt-1 h-8 text-xs" />
-                                        </div>
-                                        <div className="w-full flex flex-col">
-                                            <Label className="text-left text-xs font-medium text-muted-foreground">Accent</Label>
-                                            <div className="flex items-center gap-1 mt-1">
-                                                <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="h-8 w-8 rounded cursor-pointer border-0" />
-                                                <Input value={accentColor} onChange={e => setAccentColor(e.target.value)} className="flex-1 h-8 text-xs" />
-                                            </div>
                                         </div>
                                     </div>
                                     <div className="w-full flex flex-col">
@@ -841,42 +983,13 @@ export default function ConceptBlockEditor() {
                                     </div>
                                 </div>
                                 <ScrollArea className="flex-1">
-                                    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+                                    <div className="p-6 space-y-6 max-w-4xl mx-auto pb-32">
                                         <AnimatePresence mode="wait">
                                             <motion.div
                                                 key={activeBlock.localId + activeBlock.type}
                                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                                                 className="space-y-6"
                                             >
-                                                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20 p-4">
-                                                    <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
-                                                        <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                                                        AI Content Generator
-                                                    </Label>
-                                                    <p className="text-[11px] text-muted-foreground mb-3">
-                                                        {activeBlock.type === "EXPLANATION" && "Describe what you want explained, e.g. \"Create a detailed explanation of React Hooks covering useState, useEffect, and custom hooks\""}
-                                                        {activeBlock.type === "CODE" && "Describe code examples you need, e.g. \"Create code examples for React hooks with detailed comments\""}
-                                                        {activeBlock.type === "QUIZ" && "Describe the quiz topic, e.g. \"Generate a quiz about React useState and useEffect hooks\""}
-                                                        {activeBlock.type === "CHALLENGE" && "Describe the challenge, e.g. \"Create a coding challenge to build a custom useDebounce hook\""}
-                                                        {activeBlock.type === "COMPARISON" && "Describe what to compare, e.g. \"Compare useState vs useReducer for state management\""}
-                                                        {activeBlock.type === "SUMMARY" && "Describe the summary needed, e.g. \"Summarize all React hooks concepts covered\""}
-                                                        {activeBlock.type === "RESOURCE" && "Describe resources to find, e.g. \"Find best YouTube tutorials and docs for React hooks\""}
-                                                    </p>
-                                                    <div className="flex gap-2">
-                                                        <Input
-                                                            value={aiPrompt}
-                                                            onChange={e => setAiPrompt(e.target.value)}
-                                                            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && aiPrompt.trim()) { e.preventDefault(); handleAiGenerate(aiPrompt); } }}
-                                                            placeholder={`Tell AI what to generate for this ${stepTypeInfo?.label} step...`}
-                                                            className="flex-1 bg-white dark:bg-neutral-900 text-sm"
-                                                            disabled={activeBlock.isGenerating}
-                                                        />
-                                                        <Button onClick={() => handleAiGenerate(aiPrompt)} disabled={activeBlock.isGenerating || !aiPrompt.trim()}
-                                                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
-                                                            {activeBlock.isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                                        </Button>
-                                                    </div>
-                                                </div>
                                                 {
                                                     activeBlock.type === "EXPLANATION" && (
                                                         <ContentEditor block={activeBlock} updateBlock={updateBlock} previewMode={previewMode} />
@@ -912,10 +1025,59 @@ export default function ConceptBlockEditor() {
                                                         <ResourceEditor block={activeBlock} updateBlock={updateBlock} />
                                                     )
                                                 }
+                                                {
+                                                    activeBlock.type === "VISUAL" && (
+                                                        <VisualDataEditor block={activeBlock} updateBlock={updateBlock} />
+                                                    )
+                                                }
+                                                {
+                                                    activeBlock.type === "MOCK_INTERVIEW" && (
+                                                        <MockInterviewEditor block={activeBlock} updateBlock={updateBlock} />
+                                                    )
+                                                }
+                                                {
+                                                    activeBlock.type === "PROJECT" && (
+                                                        <ProjectEditor block={activeBlock} updateBlock={updateBlock} />
+                                                    )
+                                                }
                                             </motion.div>
                                         </AnimatePresence>
                                     </div>
                                 </ScrollArea>
+                                <div className="flex-shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-gradient-to-r from-blue-50/80 to-purple-50/80 dark:from-blue-950/30 dark:to-purple-950/30 p-4">
+                                    <div className="max-w-4xl mx-auto">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Sparkles className="w-4 h-4 text-purple-500" />
+                                            <span className="text-xs font-semibold text-muted-foreground">AI Content Generator</span>
+                                            <span className="text-[10px] text-muted-foreground ml-auto">
+                                                {activeBlock.type === "EXPLANATION" && "Describe what to explain..."}
+                                                {activeBlock.type === "CODE" && "Describe code examples needed..."}
+                                                {activeBlock.type === "QUIZ" && "Describe quiz topic..."}
+                                                {activeBlock.type === "CHALLENGE" && "Describe the challenge..."}
+                                                {activeBlock.type === "COMPARISON" && "Describe what to compare..."}
+                                                {activeBlock.type === "SUMMARY" && "Describe summary needed..."}
+                                                {activeBlock.type === "RESOURCE" && "Describe resources to find..."}
+                                                {activeBlock.type === "VISUAL" && "Describe visual/diagram needed..."}
+                                                {activeBlock.type === "MOCK_INTERVIEW" && "Describe interview scenario..."}
+                                                {activeBlock.type === "PROJECT" && "Describe project idea..."}
+                                            </span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={aiPrompt}
+                                                onChange={e => setAiPrompt(e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && aiPrompt.trim()) { e.preventDefault(); handleAiGenerate(aiPrompt); } }}
+                                                placeholder={`Tell AI what to generate for this ${stepTypeInfo?.label} step...`}
+                                                className="flex-1 bg-white dark:bg-neutral-900 text-sm"
+                                                disabled={activeBlock.isGenerating}
+                                            />
+                                            <Button onClick={() => handleAiGenerate(aiPrompt)} disabled={activeBlock.isGenerating || !aiPrompt.trim()}
+                                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                                                {activeBlock.isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
                             </>
                         )
                     }
@@ -1350,6 +1512,401 @@ function ResourceEditor({ block, updateBlock }: { block: StepBlock; updateBlock:
                     </div>
                 )
             }
+        </div>
+    );
+}
+
+function VisualDataEditor({ block, updateBlock }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void }) {
+    const data = (block.stepData || {}) as { images?: { url: string; caption?: string; alt?: string }[]; aiPrompt?: string };
+    const images = data.images || [];
+    const [isUploading, setIsUploading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [aiImagePrompt, setAiImagePrompt] = useState(data.aiPrompt || "");
+
+    const updateData = (key: string, value: unknown) => {
+        updateBlock(block.localId, { stepData: { ...data, [key]: value } });
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            // Using Cloudinary upload (you'll need to implement this action)
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", "coderz_concepts");
+
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                { method: "POST", body: formData }
+            );
+
+            const result = await response.json();
+            if (result.secure_url) {
+                updateData("images", [...images, { url: result.secure_url, caption: "", alt: file.name }]);
+                toast.success("Image uploaded!");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Failed to upload image");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleAiGenerate = async () => {
+        if (!aiImagePrompt.trim()) return;
+        setIsGenerating(true);
+        try {
+            // AI image generation placeholder - would integrate with FalAI
+            toast.info("AI image generation coming soon!");
+            updateData("aiPrompt", aiImagePrompt);
+        } catch {
+            toast.error("Failed to generate image");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="space-y-3">
+                <Label className="text-xs font-bold text-cyan-700 dark:text-cyan-400 uppercase flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5" /> Images & Diagrams
+                </Label>
+                <div className="p-4 border-2 border-dashed border-cyan-200 dark:border-cyan-800 rounded-xl bg-cyan-50/30 dark:bg-cyan-950/10">
+                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" id="visual-upload" disabled={isUploading} />
+                    <label htmlFor="visual-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                        {
+                            isUploading ? (
+                                <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+                            ) : (
+                                <ImageIcon className="w-8 h-8 text-cyan-500" />
+                            )
+                        }
+                        <span className="text-sm font-medium">{isUploading ? "Uploading..." : "Click to upload image"}</span>
+                        <span className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</span>
+                    </label>
+                </div>
+                <div className="flex gap-2">
+                    <Input
+                        value={aiImagePrompt}
+                        onChange={e => setAiImagePrompt(e.target.value)}
+                        placeholder="Describe the diagram/visual you need..."
+                        className="flex-1 text-sm"
+                    />
+                    <Button onClick={handleAiGenerate} disabled={isGenerating || !aiImagePrompt.trim()} variant="outline" size="sm">
+                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    </Button>
+                </div>
+
+                {
+                    images.length > 0 && (
+                        <div className="grid grid-cols-2 gap-4">
+                            {
+                                images.map((img, i) => (
+                                    <div key={i} className="relative group rounded-lg overflow-hidden border">
+                                        <Image
+                                            src={img.url}
+                                            alt={img.alt || ""}
+                                            className="w-full h-40 object-cover"
+                                            fill
+                                        />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => updateData("images", images.filter((_, j) => j !== i))}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <Input
+                                            value={img.caption || ""}
+                                            onChange={e => {
+                                                const updated = [...images];
+                                                updated[i] = { ...img, caption: e.target.value };
+                                                updateData("images", updated);
+                                            }}
+                                            placeholder="Caption..."
+                                            className="absolute bottom-0 left-0 right-0 bg-black/70 border-0 text-white text-xs h-8"
+                                        />
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    )
+                }
+            </div>
+            <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Visual Explanation (Markdown)</Label>
+                <Textarea
+                    value={block.content}
+                    onChange={e => updateBlock(block.localId, { content: e.target.value })}
+                    placeholder="Explain what this visual demonstrates..."
+                    rows={6}
+                    className="font-mono text-sm"
+                />
+            </div>
+        </div>
+    );
+}
+
+function MockInterviewEditor({ block, updateBlock }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void }) {
+    const data = (block.stepData || {}) as {
+        interviewType?: string;
+        duration?: number;
+        topics?: string[];
+        questions?: { question: string; hints?: string[] }[];
+    };
+
+    const updateData = (key: string, value: unknown) => {
+        updateBlock(block.localId, { stepData: { ...data, [key]: value } });
+    };
+
+    const [newTopic, setNewTopic] = useState("");
+    const topics = data.topics || [];
+    const questions = data.questions || [];
+
+    const addTopic = () => {
+        if (!newTopic.trim()) return;
+        updateData("topics", [...topics, newTopic.trim()]);
+        setNewTopic("");
+    };
+
+    const addQuestion = () => {
+        updateData("questions", [...questions, { question: "", hints: [] }]);
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="p-4 rounded-xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900">
+                <div className="flex items-center gap-2 mb-3">
+                    <Mic className="w-5 h-5 text-red-500" />
+                    <span className="font-semibold text-red-700 dark:text-red-400">Mock Interview Configuration</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    Configure an interactive mock interview. Students will practice with AI-powered voice interviews.
+                </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label className="text-xs font-medium">Interview Type</Label>
+                    <Select value={data.interviewType || "technical"} onValueChange={v => updateData("interviewType", v)}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="technical">Technical Interview</SelectItem>
+                            <SelectItem value="behavioral">Behavioral Interview</SelectItem>
+                            <SelectItem value="system-design">System Design</SelectItem>
+                            <SelectItem value="coding">Live Coding</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label className="text-xs font-medium">Duration (minutes)</Label>
+                    <Input
+                        type="number"
+                        value={data.duration || 15}
+                        onChange={e => updateData("duration", parseInt(e.target.value))}
+                        min={5}
+                        max={60}
+                        className="h-9"
+                    />
+                </div>
+            </div>
+            <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase">Topics to Cover</Label>
+                <div className="flex flex-wrap gap-2">
+                    {
+                        topics.map((topic, i) => (
+                            <Badge key={i} variant="secondary" className="gap-1">
+                                {topic}
+                                <button onClick={() => updateData("topics", topics.filter((_, j) => j !== i))} className="hover:text-red-500">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </Badge>
+                        ))
+                    }
+                </div>
+                <div className="flex gap-2">
+                    <Input value={newTopic} onChange={e => setNewTopic(e.target.value)} placeholder="Add topic..." className="h-8 text-xs"
+                        onKeyDown={e => e.key === "Enter" && addTopic()} />
+                    <Button variant="outline" size="sm" onClick={addTopic} className="h-8"><Plus className="w-3 h-3" /></Button>
+                </div>
+            </div>
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase">Practice Questions</Label>
+                    <Button variant="outline" size="sm" onClick={addQuestion} className="h-7 text-xs">
+                        <Plus className="w-3 h-3 mr-1" /> Add Question
+                    </Button>
+                </div>
+                {
+                    questions.map((q, i) => (
+                        <div key={i} className="p-3 rounded-lg border bg-white dark:bg-neutral-900 space-y-2">
+                            <div className="flex items-start gap-2">
+                                <span className="text-xs font-medium text-muted-foreground">Q{i + 1}</span>
+                                <Textarea
+                                    value={q.question}
+                                    onChange={e => {
+                                        const updated = [...questions];
+                                        updated[i] = { ...q, question: e.target.value };
+                                        updateData("questions", updated);
+                                    }}
+                                    placeholder="Enter interview question..."
+                                    rows={2}
+                                    className="flex-1 text-sm"
+                                />
+                                <Button variant="ghost" size="sm" onClick={() => updateData("questions", questions.filter((_, j) => j !== i))} className="h-7 w-7 p-0">
+                                    <Trash2 className="w-3 h-3 text-red-500" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+            <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Instructions (Markdown)</Label>
+                <Textarea
+                    value={block.content}
+                    onChange={e => updateBlock(block.localId, { content: e.target.value })}
+                    placeholder="Instructions for the mock interview..."
+                    rows={4}
+                    className="font-mono text-sm"
+                />
+            </div>
+        </div>
+    );
+}
+
+function ProjectEditor({ block, updateBlock }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void }) {
+    const data = (block.stepData || {}) as {
+        projectType?: "minor" | "major";
+        difficulty?: string;
+        estimatedHours?: number;
+        technologies?: string[];
+        requirements?: string[];
+        deliverables?: string[];
+        rubric?: { criteria: string; points: number }[];
+    };
+
+    const updateData = (key: string, value: unknown) => {
+        updateBlock(block.localId, { stepData: { ...data, [key]: value } });
+    };
+
+    const [newTech, setNewTech] = useState("");
+    const [newReq, setNewReq] = useState("");
+    const technologies = data.technologies || [];
+    const requirements = data.requirements || [];
+    const _deliverables = data.deliverables || [];
+
+    return (
+        <div className="space-y-6">
+            <div className="p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900">
+                <div className="flex items-center gap-2 mb-3">
+                    <FolderGit2 className="w-5 h-5 text-indigo-500" />
+                    <span className="font-semibold text-indigo-700 dark:text-indigo-400">Project Configuration</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    Create a hands-on project for students to build and add to their portfolio.
+                </p>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                    <Label className="text-xs font-medium">Project Type</Label>
+                    <Select value={data.projectType || "minor"} onValueChange={v => updateData("projectType", v)}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="minor">Minor Project (1-3 hrs)</SelectItem>
+                            <SelectItem value="major">Major Project (5+ hrs)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label className="text-xs font-medium">Difficulty</Label>
+                    <Select value={data.difficulty || "BEGINNER"} onValueChange={v => updateData("difficulty", v)}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="BEGINNER">Beginner</SelectItem>
+                            <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+                            <SelectItem value="ADVANCED">Advanced</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label className="text-xs font-medium">Est. Hours</Label>
+                    <Input
+                        type="number"
+                        value={data.estimatedHours || 2}
+                        onChange={e => updateData("estimatedHours", parseInt(e.target.value))}
+                        min={1}
+                        className="h-9"
+                    />
+                </div>
+            </div>
+            <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase">Technologies</Label>
+                <div className="flex flex-wrap gap-2">
+                    {
+                        technologies.map((tech, i) => (
+                            <Badge key={i} variant="secondary" className="gap-1">
+                                {tech}
+                                <button onClick={() => updateData("technologies", technologies.filter((_, j) => j !== i))} className="hover:text-red-500">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </Badge>
+                        ))
+                    }
+                </div>
+                <div className="flex gap-2">
+                    <Input value={newTech} onChange={e => setNewTech(e.target.value)} placeholder="Add technology..." className="h-8 text-xs"
+                        onKeyDown={e => { if (e.key === "Enter") { updateData("technologies", [...technologies, newTech.trim()]); setNewTech(""); } }} />
+                    <Button variant="outline" size="sm" onClick={() => { if (newTech.trim()) { updateData("technologies", [...technologies, newTech.trim()]); setNewTech(""); } }} className="h-8">
+                        <Plus className="w-3 h-3" />
+                    </Button>
+                </div>
+            </div>
+            <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase">Requirements</Label>
+                {
+                    requirements.map((req, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{i + 1}.</span>
+                            <Input
+                                value={req}
+                                onChange={e => {
+                                    const updated = [...requirements];
+                                    updated[i] = e.target.value;
+                                    updateData("requirements", updated);
+                                }}
+                                className="flex-1 h-8 text-xs"
+                            />
+                            <Button variant="ghost" size="sm" onClick={() => updateData("requirements", requirements.filter((_, j) => j !== i))} className="h-7 w-7 p-0">
+                                <X className="w-3 h-3" />
+                            </Button>
+                        </div>
+                    ))
+                }
+                <div className="flex gap-2">
+                    <Input value={newReq} onChange={e => setNewReq(e.target.value)} placeholder="Add requirement..." className="h-8 text-xs"
+                        onKeyDown={e => { if (e.key === "Enter" && newReq.trim()) { updateData("requirements", [...requirements, newReq.trim()]); setNewReq(""); } }} />
+                    <Button variant="outline" size="sm" onClick={() => { if (newReq.trim()) { updateData("requirements", [...requirements, newReq.trim()]); setNewReq(""); } }} className="h-8">
+                        <Plus className="w-3 h-3" />
+                    </Button>
+                </div>
+            </div>
+            <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Project Description (Markdown)</Label>
+                <Textarea
+                    value={block.content}
+                    onChange={e => updateBlock(block.localId, { content: e.target.value })}
+                    placeholder="Detailed project description, goals, and guidelines..."
+                    rows={8}
+                    className="font-mono text-sm"
+                />
+            </div>
         </div>
     );
 }
