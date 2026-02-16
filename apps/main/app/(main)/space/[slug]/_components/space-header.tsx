@@ -11,7 +11,9 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@repo/ui/components/ui/dialog';
 import { Input } from '@repo/ui/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/ui/tabs';
+import { 
+    Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@repo/ui/components/ui/tabs';
 import {
     Avatar, AvatarFallback, AvatarImage
 } from '@repo/ui/components/ui/avatar';

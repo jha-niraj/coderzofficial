@@ -41,17 +41,13 @@ export default async function SpacePage({ params }: SpacePageProps) {
         <div className="w-full h-screen flex flex-col bg-white dark:bg-neutral-950" data-hide-ai-chat="true">
             <SpaceHeader space={space} />
 
-            {/* Two-column layout with fixed height */}
             <div className="flex-1 w-full px-4 py-4 overflow-hidden">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-                    {/* Timeline Column */}
                     <div className="h-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
                         <Suspense fallback={<SpaceTimelineSkeleton />}>
                             <SpaceTimeline space={space} />
                         </Suspense>
                     </div>
-
-                    {/* Sidebar Column */}
                     <div className="h-full overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
                         <SpaceSidebar
                             spaceTitle={space.title}

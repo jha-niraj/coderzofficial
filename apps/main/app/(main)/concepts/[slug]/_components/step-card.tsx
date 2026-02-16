@@ -8,16 +8,22 @@ import {
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { 
+    Card, CardContent, CardHeader, CardTitle 
+} from "@repo/ui/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group";
 import { Label } from "@repo/ui/components/ui/label";
-import { Collapsible, CollapsibleTrigger } from "@repo/ui/components/ui/collapsible";
+import { 
+    Collapsible, CollapsibleTrigger 
+} from "@repo/ui/components/ui/collapsible";
 import toast from "@repo/ui/components/ui/sonner";
 import { LucideIcon } from "lucide-react";
 import { ConceptStepType } from "@repo/prisma/client";
-import { submitQuizAnswer, submitChallengeCode } from "@/actions/(main)/concepts/concept.action";
+import { 
+    submitQuizAnswer, submitChallengeCode 
+} from "@/actions/(main)/concepts/concept.action";
 import CodeEditor from "@/components/main/code-editor";
-import ReactMarkdown from "react-markdown";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 
 // ==================== INTERFACES ====================
 
@@ -142,8 +148,8 @@ export default function StepCard({ step, stepNumber, totalSteps, isCompleted, on
 
             <CardContent className="p-6 space-y-6">
                 {/* Markdown Content */}
-                <div className="prose prose-neutral dark:prose-invert max-w-none">
-                    <ReactMarkdown>{step.content}</ReactMarkdown>
+                <div className="w-full">
+                    <MarkdownRenderer content={step.content} />
                 </div>
 
                 {/* Code Blocks */}
@@ -163,7 +169,7 @@ export default function StepCard({ step, stepNumber, totalSteps, isCompleted, on
                                 <CodeEditor code={block.code} language={block.language} height="auto" readOnly showRunButton={block.isRunnable} showLanguageSelector={false} />
                                 {block.explanation && (
                                     <div className="px-4 py-3 bg-neutral-100 dark:bg-neutral-800/50 text-sm text-muted-foreground border-t border-neutral-200 dark:border-neutral-800">
-                                        <ReactMarkdown>{block.explanation}</ReactMarkdown>
+                                        <MarkdownRenderer content={block.explanation} />
                                     </div>
                                 )}
                             </div>
@@ -203,9 +209,9 @@ export default function StepCard({ step, stepNumber, totalSteps, isCompleted, on
                         )}
                         {quizSubmitted && data.explanation && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                                className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-sm prose prose-sm prose-blue dark:prose-invert max-w-none">
+                                className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-sm">
                                 <p className="font-medium text-blue-700 dark:text-blue-400 mb-1">Explanation:</p>
-                                <ReactMarkdown>{data.explanation as string}</ReactMarkdown>
+                                <MarkdownRenderer content={data.explanation as string} />
                             </motion.div>
                         )}
                     </div>
@@ -313,8 +319,8 @@ export default function StepCard({ step, stepNumber, totalSteps, isCompleted, on
                             ))}
                         </div>
                         {data.conclusion && (
-                            <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 prose prose-sm prose-orange dark:prose-invert max-w-none">
-                                <ReactMarkdown>{data.conclusion as string}</ReactMarkdown>
+                            <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 text-sm">
+                                <MarkdownRenderer content={data.conclusion as string} />
                             </div>
                         )}
                     </div>
@@ -375,8 +381,8 @@ export default function StepCard({ step, stepNumber, totalSteps, isCompleted, on
                         <ul className="space-y-2">
                             {(step.tips as string[]).map((tip, index) => (
                                 <li key={index} className="text-sm text-blue-600 dark:text-blue-300 flex items-start gap-2">
-                                    <span className="text-blue-400">•</span>
-                                    <ReactMarkdown>{tip}</ReactMarkdown>
+                                    <span className="text-blue-400 mt-1">•</span>
+                                    <MarkdownRenderer content={tip} />
                                 </li>
                             ))}
                         </ul>

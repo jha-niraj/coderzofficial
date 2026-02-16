@@ -17,6 +17,7 @@ import { useSidebar } from "@/components/common/sidebarprovider"
 const HIDDEN_PATHS = [
     '/studio/', // Studio detail pages
     '/space/',  // Space detail pages
+    '/concepts/', // Concept detail pages (has built-in AI assistant)
 ]
 
 export function AIChat() {

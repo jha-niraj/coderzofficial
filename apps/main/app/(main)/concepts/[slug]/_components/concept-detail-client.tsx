@@ -22,6 +22,7 @@ import {
 } from "@repo/ui/components/ui/dialog";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { Alert, AlertDescription } from "@repo/ui/components/ui/alert";
+// ...existing imports
 import toast from "@repo/ui/components/ui/sonner";
 import {
     ConceptCategory, ConceptDifficulty, ConceptStepType
@@ -32,6 +33,7 @@ import {
 } from "@/actions/(main)/concepts/concept.action";
 import StepCard from "./step-card";
 import AIAssistantPanel from "./ai-assistant-panel";
+import { ShareDialog } from "@/components/common/share-dialog";
 
 interface ConceptStep {
     id: string;
@@ -136,7 +138,8 @@ export default function ConceptDetailClient({
     const [isLiked, setIsLiked] = useState(initialIsLiked);
     const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
     const [likeCount, setLikeCount] = useState(concept._count.likes);
-    const [showAIAssistant, setShowAIAssistant] = useState(false);
+    const [showAIAssistant, setShowAIAssistant] = useState(true); // Always show by default
+    const [shareOpen, setShareOpen] = useState(false);
     
     // Admin verification states
     const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
@@ -147,6 +150,10 @@ export default function ConceptDetailClient({
 
     const isPendingVerification = concept.status === "PENDING_VERIFICATION";
     const showAdminActions = isAdmin && isPendingVerification;
+    
+    const shareUrl = typeof window !== "undefined" 
+        ? `${window.location.origin}/concepts/${concept.slug}` 
+        : `/concepts/${concept.slug}`;
 
     const totalSteps = concept.steps.length;
     const currentStep = concept.steps[currentStepIndex];
@@ -209,12 +216,7 @@ export default function ConceptDetailClient({
     };
 
     const handleShare = async () => {
-        try {
-            await navigator.clipboard.writeText(window.location.href);
-            toast.success("Link copied to clipboard!");
-        } catch {
-            toast.error("Failed to copy link");
-        }
+        setShareOpen(true);
     };
 
     const handleVerifyConcept = async () => {
@@ -307,9 +309,10 @@ export default function ConceptDetailClient({
             )}
 
             <div className="sticky top-0 z-40 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center gap-4 min-w-0">
+                <div className="max-w-full mx-auto px-4 sm:px-6">
+                    <div className="flex items-center justify-between h-14">
+                        {/* Left: Back button and title */}
+                        <div className="flex items-center gap-3 min-w-0">
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -320,21 +323,62 @@ export default function ConceptDetailClient({
                                 Back
                             </Button>
                             <div className="hidden sm:flex items-center gap-2 min-w-0">
-                                <span className="text-2xl">{concept.iconEmoji || "📚"}</span>
-                                <h1 className="font-semibold text-neutral-900 dark:text-white truncate">
+                                <span className="text-xl">{concept.iconEmoji || "📚"}</span>
+                                <h1 className="font-semibold text-neutral-900 dark:text-white truncate text-sm">
                                     {concept.title}
                                 </h1>
+                                <Badge className={difficultyConfig[concept.difficulty].color}>
+                                    {difficultyConfig[concept.difficulty].label}
+                                </Badge>
                             </div>
                         </div>
-                        <div className="hidden md:flex items-center gap-4 flex-1 max-w-md mx-4">
-                            <div className="flex-1">
-                                <Progress value={progressPercent} className="h-2" />
+                        
+                        {/* Center: Step Navigation */}
+                        <div className="hidden md:flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => goToStep(currentStepIndex - 1)}
+                                disabled={currentStepIndex === 0}
+                                className="h-8"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                <span className="hidden lg:inline ml-1">Previous</span>
+                            </Button>
+                            <div className="flex items-center gap-2 px-3">
+                                <span className="text-sm font-medium">
+                                    Step {currentStepIndex + 1} / {totalSteps}
+                                </span>
+                                <Progress value={progressPercent} className="w-24 h-2" />
                             </div>
-                            <span className="text-sm text-muted-foreground whitespace-nowrap">
-                                {completedSteps.length}/{totalSteps} complete
-                            </span>
+                            {currentStepIndex < totalSteps - 1 ? (
+                                <Button
+                                    size="sm"
+                                    onClick={() => goToStep(currentStepIndex + 1)}
+                                    className="h-8"
+                                >
+                                    <span className="hidden lg:inline mr-1">Next</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        if (currentStep) {
+                                            markStepComplete(currentStep.order);
+                                        }
+                                        toast.success("🎉 Concept completed!");
+                                    }}
+                                    className="h-8 bg-green-600 hover:bg-green-700"
+                                >
+                                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                                    Complete
+                                </Button>
+                            )}
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        {/* Right: Actions */}
+                        <div className="flex items-center gap-1">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -342,9 +386,9 @@ export default function ConceptDetailClient({
                                             variant="ghost"
                                             size="icon"
                                             onClick={handleLike}
-                                            className={isLiked ? "text-red-500" : ""}
+                                            className={`h-8 w-8 ${isLiked ? "text-red-500" : ""}`}
                                         >
-                                            <Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
+                                            <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -357,9 +401,9 @@ export default function ConceptDetailClient({
                                             variant="ghost"
                                             size="icon"
                                             onClick={handleBookmark}
-                                            className={isBookmarked ? "text-blue-500" : ""}
+                                            className={`h-8 w-8 ${isBookmarked ? "text-blue-500" : ""}`}
                                         >
-                                            <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
+                                            <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""}`} />
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -368,8 +412,8 @@ export default function ConceptDetailClient({
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" onClick={handleShare}>
-                                            <Share2 className="w-5 h-5" />
+                                        <Button variant="ghost" size="icon" onClick={handleShare} className="h-8 w-8">
+                                            <Share2 className="w-4 h-4" />
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>Share</TooltipContent>
@@ -380,8 +424,9 @@ export default function ConceptDetailClient({
                                             variant={showAIAssistant ? "secondary" : "ghost"}
                                             size="icon"
                                             onClick={() => setShowAIAssistant(!showAIAssistant)}
+                                            className="h-8 w-8"
                                         >
-                                            <Sparkles className="w-5 h-5" />
+                                            <Sparkles className="w-4 h-4" />
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>AI Assistant</TooltipContent>
@@ -682,6 +727,17 @@ export default function ConceptDetailClient({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Share Dialog */}
+            <ShareDialog
+                open={shareOpen}
+                onOpenChange={setShareOpen}
+                url={shareUrl}
+                title={concept.title}
+                description={concept.description || undefined}
+                type="concept"
+                entityId={concept.id}
+            />
         </div>
     );
 }

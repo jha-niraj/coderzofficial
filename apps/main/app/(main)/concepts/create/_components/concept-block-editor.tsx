@@ -40,19 +40,16 @@ import {
 } from "@repo/prisma/client";
 import {
     createConcept, addConceptStep, updateConceptStep, deleteConceptStep,
-    updateConcept, publishConcept, addCodeBlock,
-    searchConcepts, addPrerequisiteConcept, removePrerequisiteConcept,
-    getUserDraftConcepts, getConceptForEditing,
+    updateConcept, publishConcept, addCodeBlock, searchConcepts, 
+    addPrerequisiteConcept, removePrerequisiteConcept, getUserDraftConcepts, 
+    getConceptForEditing,
 } from "@/actions/(main)/concepts/concept.action";
 import {
     generateStepContent, generateQuizQuestion, generateChallenge,
-    generateResources, generateComparison,
+    generateResources, generateComparison
 } from "@/actions/(main)/concepts/concept-ai.action";
 import CodeEditor from "@/components/main/code-editor";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { formatDistanceToNow } from "date-fns";
 
 // ==================== TYPES ====================
@@ -1011,58 +1008,6 @@ export default function ConceptBlockEditor() {
 }
 
 // ==================== SUB-COMPONENTS ====================
-
-// Markdown renderer with syntax highlighting
-function MarkdownRenderer({ content }: { content: string }) {
-    return (
-        <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-                code({ className, children, ...props }) {
-                    const match = /language-(\w+)/.exec(className || "");
-                    const inline = !match;
-                    return inline ? (
-                        <code
-                            className="bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded text-sm font-mono"
-                            {...props}
-                        >
-                            {children}
-                        </code>
-                    ) : (
-                        <SyntaxHighlighter
-                            style={oneDark}
-                            language={match[1]}
-                            PreTag="div"
-                            className="rounded-lg !mt-3 !mb-3 text-sm"
-                        >
-                            {String(children).replace(/\n$/, "")}
-                        </SyntaxHighlighter>
-                    );
-                },
-                h1: ({ children }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-neutral-900 dark:text-white">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-xl font-semibold mt-5 mb-3 text-neutral-900 dark:text-white">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-lg font-semibold mt-4 mb-2 text-neutral-900 dark:text-white">{children}</h3>,
-                p: ({ children }) => <p className="mb-4 text-neutral-700 dark:text-neutral-300 leading-relaxed">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-2 text-neutral-700 dark:text-neutral-300">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-2 text-neutral-700 dark:text-neutral-300">{children}</ol>,
-                li: ({ children }) => <li className="ml-2">{children}</li>,
-                blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-950/30 rounded-r-lg text-neutral-700 dark:text-neutral-300 italic">
-                        {children}
-                    </blockquote>
-                ),
-                strong: ({ children }) => <strong className="font-semibold text-neutral-900 dark:text-white">{children}</strong>,
-                a: ({ href, children }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 underline">
-                        {children}
-                    </a>
-                ),
-            }}
-        >
-            {content}
-        </ReactMarkdown>
-    );
-}
 
 function ContentEditor({ block, updateBlock, previewMode }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void; previewMode: boolean }) {
     return (
