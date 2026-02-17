@@ -4,7 +4,7 @@
 The logical next step for the CoderzProject module is to shift from a "Task Tracker" to an "Interactive Learning Environment". Currently, tasks are presented as static To-Do items with basic descriptions. The goal is to transform each task into a mini-lesson that verifies the user's understanding through quizzes, code validation, and simulated interviews, rather than just asking them to "mark as complete".
 
 ## 2. Core Philosophy
-*   **Teach, Don't Tell**: Instead of providing code snippets, provide *concepts* and *references*.
+*   **Teach, Don't Tell**: Instead of providing code snippets, provide *Learns* and *references*.
 *   **Trust, but Verify**: Users cannot simply click "Completed". They must prove they did the work.
 *   **Holistic Growth**: Assessments shouldn't just check if code runs, but if the user *understands* why it runs (Mock Interviews).
 
@@ -14,17 +14,17 @@ The logical next step for the CoderzProject module is to shift from a "Task Trac
 graph TD
     A[Start Sprint] --> B{Task Type?}
     
-    B -->|Development| C[Concept Phase]
+    B -->|Development| C[Learn Phase]
     B -->|Quiz Only| D[Knowledge Check]
     B -->|Milestone| E[Major Review]
 
-    C --> C1[Read Concepts / Docs]
+    C --> C1[Read Learns / Docs]
     C1 --> C2[View Implementation Steps (No Code)]
     C2 --> C3[User Implements Locally]
     C3 --> F{Validation Method}
 
     F -->|Code Check| G[Paste Logic / Regex Check]
-    F -->|Quiz| H[Concept Quiz]
+    F -->|Quiz| H[Learn Quiz]
     F -->|Mock Interview| I[AI Voice/Text Interview]
 
     G -->|Fail| C1
@@ -42,7 +42,7 @@ graph TD
 We need to treat tasks as "Modules". A task is no longer just a title and description. It is a container for:
 
 ### A. The "Learn" Section (Pre-work)
-Before showing *what* to build, we show *concepts*.
+Before showing *what* to build, we show *Learns*.
 *   **Example**: For "Register API", do not show `app.post('/register')`.
 *   **Show**: "HTTP Methods: POST vs GET", "Status Codes: 201 Created", "Password Hashing (bcrypt)".
 *   **Goal**: Ensure the user has the mental model before coding.
@@ -74,7 +74,7 @@ This is the biggest change. A task is not complete until it passes one of these 
 #### type: `MOCK_INTERVIEW` (Premium/Milestone)
 *   **Description**: A chat interface (text or voice) where the AI acts as a Senior Dev.
 *   **Mechanism**: The AI asks: "Walk me through how you handled error cases in your registration API."
-*   **Criteria**: The user must explain *conceptually*, not just read code.
+*   **Criteria**: The user must explain *Learnually*, not just read code.
 
 ## 5. Implementation Strategy
 
@@ -91,7 +91,7 @@ model TaskAssessment {
 ```
 
 ### Phase 2: UI Overhaul (Task Details)
-*   **Left Column**: The "Guide". Tabs for "Concepts" and "Instructions".
+*   **Left Column**: The "Guide". Tabs for "Learns" and "Instructions".
 *   **Right Column/Overlay**: The "Workstation". 
     *   When user clicks "Submit", a drawer opens with the specific assessment (Quiz form, Code pastebox, or Chat window).
 *   **Gamification**: 
@@ -101,11 +101,11 @@ model TaskAssessment {
 ### Phase 3: Content Generation (AI)
 We need to prompt the AI generator differently.
 *   **Old Prompt**: "Generate tasks for a blog app."
-*   **New Prompt**: "Generate a learning module for a blog app. For the 'Create Post' task, provide 3 key concepts (e.g., Foreign Keys), 5 algorithmic steps, 3 quiz questions, and 1 interview question."
+*   **New Prompt**: "Generate a learning module for a blog app. For the 'Create Post' task, provide 3 key Learns (e.g., Foreign Keys), 5 algorithmic steps, 3 quiz questions, and 1 interview question."
 
 ## 6. Detailed Example: "Implement User Registration"
 
-**1. Concepts Tab:**
+**1. Learns Tab:**
 *   Brief explanation of REST APIs.
 *   Link to internal docs on Prisma/Mongoose.
 *   Diagram of Client -> Server -> DB flow.
@@ -125,9 +125,9 @@ We need to prompt the AI generator differently.
 
 **5. Completion:**
 *   User passes -> Task turns Green -> Next task unlocks.
-*   User fails -> AI suggests reading specific "Concepts" again.
+*   User fails -> AI suggests reading specific "Learns" again.
 
 ## 7. Next Steps for Development
-1.  **Backend**: Update `actions` to support creating extensive task metadata (Quiz/Concepts).
+1.  **Backend**: Update `actions` to support creating extensive task metadata (Quiz/Learns).
 2.  **Frontend**: Redesign `TaskDetailSheet` to support the "Learn -> Build -> Verify" flow.
 3.  **AI**: Tune the generation prompt to produce educational content, not just task titles.

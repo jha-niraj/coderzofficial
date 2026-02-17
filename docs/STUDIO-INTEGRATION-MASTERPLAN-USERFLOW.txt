@@ -304,7 +304,7 @@ PAGE MAP:
   │ Category: FRONTEND       │
   │ Level: BEGINNER          │
   │ Duration: ONE_MONTH      │
-  │ Focus: concepts, practice│
+  │ Focus: Learns, practice│
   │ Public: Yes (free)       │
   └────────────┬─────────────┘
                │

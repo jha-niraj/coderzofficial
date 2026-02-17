@@ -26,20 +26,24 @@ export async function getBookmarksSummary() {
 
         // Fetch all bookmark counts and recent items in parallel
         const [
-            conceptBookmarks,
+            LearnBookmarks,
             projectV2Bookmarks,
             communityPostBookmarks,
             mockInterviewBookmarks,
         ] = await Promise.all([
-            prisma.conceptBookmark.findMany({
+            prisma.learnBookmark.findMany({
                 where: { userId: user.id },
                 include: {
-                    concept: {
+                    learn: {
                         select: {
                             id: true,
                             title: true,
                             slug: true,
-                            category: true,
+                            mainCategory: {
+                                select: {
+                                    name: true
+                                }
+                            },
                             difficulty: true,
                             thumbnail: true,
                             estimatedTime: true,
@@ -116,7 +120,7 @@ export async function getBookmarksSummary() {
         ]);
 
         // Build combined recent saves
-        type BookmarkType = 'concept' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
+        type BookmarkType = 'Learn' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
         const recentSaves: Array<{
             type: BookmarkType;
             id: string;
@@ -129,14 +133,14 @@ export async function getBookmarksSummary() {
             savedAt: Date;
         }> = [];
 
-        conceptBookmarks.forEach(b => {
+        LearnBookmarks.forEach(b => {
             recentSaves.push({
-                type: "concept" as const,
-                id: b.concept.id,
-                title: b.concept.title,
-                slug: b.concept.slug,
-                category: b.concept.category,
-                thumbnail: b.concept.thumbnail,
+                type: "Learn" as const,
+                id: b.learn.id,
+                title: b.learn.title,
+                slug: b.learn.slug,
+                category: b.learn.mainCategory?.name || "General",
+                thumbnail: b.learn.thumbnail,
                 savedAt: b.createdAt,
             });
         });
@@ -180,23 +184,23 @@ export async function getBookmarksSummary() {
         return {
             success: true,
             data: {
-                total: conceptBookmarks.length + totalProjects + communityPostBookmarks.length + mockInterviewBookmarks.length,
-                totalBookmarks: conceptBookmarks.length + totalProjects + communityPostBookmarks.length + mockInterviewBookmarks.length,
-                concepts: conceptBookmarks.length,
+                total: LearnBookmarks.length + totalProjects + communityPostBookmarks.length + mockInterviewBookmarks.length,
+                totalBookmarks: LearnBookmarks.length + totalProjects + communityPostBookmarks.length + mockInterviewBookmarks.length,
+                Learns: LearnBookmarks.length,
                 projects: totalProjects,
                 community: communityPostBookmarks.length,
                 mock: mockInterviewBookmarks.length,
                 studio: 0, // Coming soon
                 byModule: {
-                    concepts: {
-                        count: conceptBookmarks.length,
-                        recent: conceptBookmarks.slice(0, 5).map(b => ({
-                            id: b.concept.id,
-                            title: b.concept.title,
-                            slug: b.concept.slug,
-                            category: b.concept.category,
-                            difficulty: b.concept.difficulty,
-                            thumbnail: b.concept.thumbnail,
+                    Learns: {
+                        count: LearnBookmarks.length,
+                        recent: LearnBookmarks.slice(0, 5).map(b => ({
+                            id: b.learn.id,
+                            title: b.learn.title,
+                            slug: b.learn.slug,
+                            category: b.learn.mainCategory?.name || "General",
+                            difficulty: b.learn.difficulty,
+                            thumbnail: b.learn.thumbnail,
                             savedAt: b.createdAt,
                         })),
                     },
@@ -244,21 +248,26 @@ export async function getBookmarksSummary() {
 }
 
 // ==========================================
-// CONCEPT BOOKMARKS
+// Learn BOOKMARKS
 // ==========================================
 
-export async function getConceptBookmarks() {
+export async function getLearnBookmarks() {
     try {
         const user = await getCurrentUser();
         if (!user) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const bookmarks = await prisma.conceptBookmark.findMany({
+        const bookmarks = await prisma.learnBookmark.findMany({
             where: { userId: user.id },
             include: {
-                concept: {
+                learn: {
                     include: {
+                        mainCategory: {
+                            select: {
+                                name: true
+                            }
+                        },
                         _count: {
                             select: {
                                 steps: true,
@@ -274,59 +283,59 @@ export async function getConceptBookmarks() {
         return {
             success: true,
             data: bookmarks.map(b => ({
-                id: b.concept.id,
-                title: b.concept.title,
-                slug: b.concept.slug,
-                description: b.concept.description,
-                category: b.concept.category,
-                difficulty: b.concept.difficulty,
-                thumbnail: b.concept.thumbnail,
-                estimatedTime: b.concept.estimatedTime,
-                stepCount: b.concept._count.steps,
-                likeCount: b.concept._count.likes,
+                id: b.learn.id,
+                title: b.learn.title,
+                slug: b.learn.slug,
+                description: b.learn.description,
+                category: b.learn.mainCategory?.name || "General",
+                difficulty: b.learn.difficulty,
+                thumbnail: b.learn.thumbnail,
+                estimatedTime: b.learn.estimatedTime,
+                stepCount: b.learn._count.steps,
+                likeCount: b.learn._count.likes,
                 savedAt: b.createdAt,
                 folder: b.folder,
                 notes: b.notes,
             })),
         };
     } catch (error) {
-        console.error("Error fetching concept bookmarks:", error);
+        console.error("Error fetching Learn bookmarks:", error);
         return { success: false, error: "Failed to fetch bookmarks" };
     }
 }
 
-export async function toggleConceptBookmark(conceptId: string) {
+export async function toggleLearnBookmark(learnId: string) {
     try {
         const user = await getCurrentUser();
         if (!user) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const existing = await prisma.conceptBookmark.findUnique({
+        const existing = await prisma.learnBookmark.findUnique({
             where: {
-                conceptId_userId: {
-                    conceptId,
+                learnId_userId: {
+                    learnId,
                     userId: user.id,
                 },
             },
         });
 
         if (existing) {
-            await prisma.conceptBookmark.delete({
+            await prisma.learnBookmark.delete({
                 where: { id: existing.id },
             });
             return { success: true, bookmarked: false };
         } else {
-            await prisma.conceptBookmark.create({
+            await prisma.learnBookmark.create({
                 data: {
-                    conceptId,
+                    learnId,
                     userId: user.id,
                 },
             });
             return { success: true, bookmarked: true };
         }
     } catch (error) {
-        console.error("Error toggling concept bookmark:", error);
+        console.error("Error toggling Learn bookmark:", error);
         return { success: false, error: "Failed to toggle bookmark" };
     }
 }
@@ -620,17 +629,17 @@ export async function toggleMockBookmark(sessionId: string) {
 // CHECK BOOKMARK STATUS
 // ==========================================
 
-export async function isConceptBookmarked(conceptId: string) {
+export async function isLearnBookmarked(learnId: string) {
     try {
         const user = await getCurrentUser();
         if (!user) {
             return { success: true, bookmarked: false };
         }
 
-        const bookmark = await prisma.conceptBookmark.findUnique({
+        const bookmark = await prisma.learnBookmark.findUnique({
             where: {
-                conceptId_userId: {
-                    conceptId,
+                learnId_userId: {
+                    learnId,
                     userId: user.id,
                 },
             },
@@ -638,7 +647,7 @@ export async function isConceptBookmarked(conceptId: string) {
 
         return { success: true, bookmarked: !!bookmark };
     } catch (error) {
-        console.error("Error checking concept bookmark:", error);
+        console.error("Error checking Learn bookmark:", error);
         return { success: false, bookmarked: false };
     }
 }
@@ -701,8 +710,8 @@ export async function getBookmarkStats() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const [conceptCount, projectV2Count, communityCount, mockCount] = await Promise.all([
-            prisma.conceptBookmark.count({ where: { userId: user.id } }),
+        const [LearnCount, projectV2Count, communityCount, mockCount] = await Promise.all([
+            prisma.learnBookmark.count({ where: { userId: user.id } }),
             prisma.projectV2Bookmark.count({ where: { userId: user.id } }),
             prisma.communityPostBookmark.count({ where: { userId: user.id } }),
             prisma.mockInterviewBookmark.count({ where: { userId: user.id } }),
@@ -711,11 +720,11 @@ export async function getBookmarkStats() {
         return {
             success: true,
             data: {
-                concepts: conceptCount,
+                Learns: LearnCount,
                 projects: projectV2Count,
                 community: communityCount,
                 mock: mockCount,
-                total: conceptCount + projectV2Count + communityCount + mockCount,
+                total: LearnCount + projectV2Count + communityCount + mockCount,
             },
         };
     } catch (error) {

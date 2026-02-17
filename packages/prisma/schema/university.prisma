@@ -409,7 +409,7 @@ model StudentUniversityLink {
 // Assignments are the HEART of the university platform.
 // Teachers create assignments that link to MAIN platform features:
 // - QUIZ → /assessments (auto-graded)
-// - CODING → /concepts or /studio (auto-graded)
+// - CODING → /Learns or /studio (auto-graded)
 // - MOCK_INTERVIEW → /mock (AI-graded)
 // - PROJECT → /projects (manual review)
 // - CUSTOM → Teacher uploads, student submits (manual review)
@@ -427,15 +427,15 @@ model UniversityAssignment {
 
     // Assignment Type & Reference to MAIN PLATFORM
     type          UniversityAssignmentType
-    referenceId   String? // ID from main platform (assessmentId, conceptSlug, mockId, projectId)
+    referenceId   String? // ID from main platform (assessmentId, LearnSlug, mockId, projectId)
     referenceUrl  String? // Direct URL to the content on main platform
     referenceData Json? // Additional config (selected questions, difficulty, etc.)
 
     // Deadline & Attempts
-    deadline      DateTime?
-    maxAttempts   Int       @default(1)
-    lateSubmission Boolean  @default(false) // Allow late submissions?
-    latePenalty    Int      @default(0) // Percentage penalty for late submission
+    deadline       DateTime?
+    maxAttempts    Int       @default(1)
+    lateSubmission Boolean   @default(false) // Allow late submissions?
+    latePenalty    Int       @default(0) // Percentage penalty for late submission
 
     // Credit Requirements (deducted from student's allocated credits)
     creditsRequired Int @default(0)
@@ -500,7 +500,7 @@ model UniversitySubmission {
     passed     Boolean? // score >= passingScore
 
     // Feedback
-    feedback   String?                 @db.Text
+    feedback   String?   @db.Text
     gradedById String? // UniversityMember who graded (for manual grading)
     gradedAt   DateTime?
 
@@ -731,14 +731,14 @@ model UniversitySubscription {
     maxCreditsPerMonth   Int @default(100000)
 
     // Features
-    hasAnalytics        Boolean @default(false)
-    hasAdvancedReports  Boolean @default(false)
-    hasPlacementModule  Boolean @default(false)
-    hasCompanyPortal    Boolean @default(false)
-    hasAPIAccess        Boolean @default(false)
-    hasPrioritySupport  Boolean @default(false)
-    hasWhiteLabel       Boolean @default(false)
-    hasCustomBranding   Boolean @default(false)
+    hasAnalytics       Boolean @default(false)
+    hasAdvancedReports Boolean @default(false)
+    hasPlacementModule Boolean @default(false)
+    hasCompanyPortal   Boolean @default(false)
+    hasAPIAccess       Boolean @default(false)
+    hasPrioritySupport Boolean @default(false)
+    hasWhiteLabel      Boolean @default(false)
+    hasCustomBranding  Boolean @default(false)
 
     // Billing cycle
     billingCycle       String    @default("monthly") // "monthly", "yearly"
@@ -773,8 +773,8 @@ model UniversityPayment {
     description String?
 
     // External reference
-    dodoPaymentId          String?
-    dodoCheckoutSessionId  String?
+    dodoPaymentId         String?
+    dodoCheckoutSessionId String?
 
     // Invoice reference
     invoiceId String?
@@ -811,9 +811,9 @@ model UniversityInvoice {
 
     // Amounts
     subtotal    Int
-    taxAmount   Int    @default(0)
-    taxRate     Float  @default(18.0) // GST
-    discount    Int    @default(0)
+    taxAmount   Int   @default(0)
+    taxRate     Float @default(18.0) // GST
+    discount    Int   @default(0)
     totalAmount Int
 
     currency String @default("INR")

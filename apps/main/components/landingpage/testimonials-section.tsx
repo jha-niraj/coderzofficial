@@ -41,7 +41,7 @@ const testimonials = [
         role: "2nd Year Engineering",
     },
     {
-        text: "The system design agent helped me understand concepts that YouTube tutorials never could. Worth every credit spent!",
+        text: "The system design agent helped me understand Learns that YouTube tutorials never could. Worth every credit spent!",
         image: "https://randomuser.me/api/portraits/men/7.jpg",
         name: "Karthik Menon",
         role: "Software Engineer",

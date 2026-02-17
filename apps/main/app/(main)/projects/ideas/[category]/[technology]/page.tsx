@@ -173,7 +173,7 @@ export default function TechnologyProjectsPage() {
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                                 <Input
-                                    placeholder="Search specific concepts..."
+                                    placeholder="Search specific Learns..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="pl-10 h-12 rounded-lg bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:ring-neutral-900 dark:focus:ring-white"
@@ -206,7 +206,7 @@ export default function TechnologyProjectsPage() {
                                         <span className="text-sm text-neutral-600 dark:text-neutral-400">{outcome}</span>
                                     </div>
                                 )) || (
-                                    <p className="text-sm text-neutral-500">Master core concepts and advanced patterns.</p>
+                                    <p className="text-sm text-neutral-500">Master core Learns and advanced patterns.</p>
                                 )
                             }
                         </div>

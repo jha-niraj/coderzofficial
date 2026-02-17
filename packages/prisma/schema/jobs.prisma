@@ -83,12 +83,12 @@ model Job {
     updatedAt   DateTime  @updatedAt
 
     // Relations
-    company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-    postedBy           CompanyMember       @relation("PostedBy", fields: [postedById], references: [id])
-    applications       JobApplication[]
-    recommendations    JobRecommendation[]
-    interviewProcess   InterviewProcess?   @relation("JobInterviewProcess", fields: [interviewProcessId], references: [id])
-    mockSessions       JobMockSession[]    @relation("JobMockSessions")
+    company          Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    postedBy         CompanyMember       @relation("PostedBy", fields: [postedById], references: [id])
+    applications     JobApplication[]
+    recommendations  JobRecommendation[]
+    interviewProcess InterviewProcess?   @relation("JobInterviewProcess", fields: [interviewProcessId], references: [id])
+    mockSessions     JobMockSession[]    @relation("JobMockSessions")
 
     @@index([companyId])
     @@index([slug])
@@ -132,11 +132,11 @@ model JobApplication {
     userId String // References User.id from main schema
 
     // Application Status
-    status ApplicationStatus @default(INTERESTED)
+    status       ApplicationStatus @default(INTERESTED)
     currentStage Int? // Current interview round number (1, 2, 3...)
 
     // Preparation Tracking
-    preparationStatus Json    @default("{\"profile_complete\": false, \"resume_reviewed\": false, \"mock_interview_done\": false, \"concepts_reviewed\": false, \"assignment_started\": false, \"assignment_completed\": false}")
+    preparationStatus Json    @default("{\"profile_complete\": false, \"resume_reviewed\": false, \"mock_interview_done\": false, \"Learns_reviewed\": false, \"assignment_started\": false, \"assignment_completed\": false}")
     preparationScore  Int     @default(0)
     isReadyToApply    Boolean @default(false)
 
@@ -181,11 +181,11 @@ model JobApplication {
     updatedAt DateTime  @updatedAt
 
     // Relations
-    user         User                    @relation("UserJobApplications", fields: [userId], references: [id], onDelete: Cascade)
-    job          Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
-    reviewedBy   CompanyMember?          @relation("ReviewedBy", fields: [reviewedById], references: [id])
+    user         User                   @relation("UserJobApplications", fields: [userId], references: [id], onDelete: Cascade)
+    job          Job                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+    reviewedBy   CompanyMember?         @relation("ReviewedBy", fields: [reviewedById], references: [id])
     activities   ApplicationActivity[]
-    prepProgress InterviewPrepProgress?  // Preparation progress for this application
+    prepProgress InterviewPrepProgress? // Preparation progress for this application
 
     @@unique([jobId, userId])
     @@index([jobId])
@@ -234,7 +234,7 @@ model ApplicationActivity {
 enum ApplicationActivityType {
     MOCK_INTERVIEW
     AI_RESUME_REVIEW
-    CONCEPT_REVIEW
+    Learn_REVIEW
     PROJECT_PROGRESS
     STUDIO_NOTE
     SKILL_ASSESSMENT

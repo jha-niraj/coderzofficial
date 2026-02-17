@@ -29,7 +29,7 @@ interface ShareDialogProps {
     title: string;
     description?: string;
     image?: string;
-    type?: "space" | "concept" | "project" | "studio" | "general";
+    type?: "space" | "Learn" | "project" | "studio" | "general";
     entityId?: string;
     visibility?: "PUBLIC" | "PRIVATE";
 }
@@ -152,7 +152,7 @@ export function ShareDialog({
     const getTypeLabel = () => {
         switch (type) {
             case "space": return "Space";
-            case "concept": return "Concept";
+            case "Learn": return "Learn";
             case "project": return "Project";
             case "studio": return "Studio";
             default: return "Content";

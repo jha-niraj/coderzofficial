@@ -9,9 +9,9 @@ export async function showInterest(jobId: string) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
-            return { 
+            return {
                 success: false,
-                error: "Please sign in to show interest" 
+                error: "Please sign in to show interest"
             }
         }
 
@@ -207,7 +207,7 @@ export async function performCommitmentCheck(applicationId: string) {
 
 // Submit application (move from PREPARING to APPLIED)
 export async function submitApplication(
-    applicationId: string, 
+    applicationId: string,
     data?: {
         coverLetter?: string
         customQuestionResponses?: CustomQuestionResponse[]
@@ -225,13 +225,13 @@ export async function submitApplication(
                 id: applicationId,
                 userId: session.user.id
             },
-            include: { 
+            include: {
                 job: {
                     select: {
                         id: true,
                         customQuestions: true
                     }
-                } 
+                }
             }
         })
 
@@ -253,15 +253,15 @@ export async function submitApplication(
         if (customQuestions && customQuestions.length > 0) {
             const requiredQuestions = customQuestions.filter(q => q.required)
             const responses = data?.customQuestionResponses || []
-            
+
             for (const rq of requiredQuestions) {
                 const response = responses.find(r => r.questionId === rq.id)
-                if (!response || !response.answer || 
+                if (!response || !response.answer ||
                     (Array.isArray(response.answer) && response.answer.length === 0) ||
                     (typeof response.answer === 'string' && response.answer.trim() === '')) {
-                    return { 
-                        success: false, 
-                        error: `Please answer the required question: "${rq.question}"` 
+                    return {
+                        success: false,
+                        error: `Please answer the required question: "${rq.question}"`
                     }
                 }
             }
@@ -379,10 +379,10 @@ export async function getMyApplications(status?: string) {
             interested: applications.filter(a => a.status === "INTERESTED"),
             preparing: applications.filter(a => a.status === "PREPARING"),
             applied: applications.filter(a => a.status === "APPLIED"),
-            inProgress: applications.filter(a => 
+            inProgress: applications.filter(a =>
                 ["UNDER_REVIEW", "SHORTLISTED", "ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "INTERVIEW_SCHEDULED", "INTERVIEWED"].includes(a.status)
             ),
-            completed: applications.filter(a => 
+            completed: applications.filter(a =>
                 ["OFFER_EXTENDED", "HIRED", "REJECTED", "WITHDRAWN"].includes(a.status)
             )
         }
@@ -440,12 +440,12 @@ export async function getApplicationDetails(applicationId: string) {
 
 // Update preparation status
 export async function updatePreparationStatus(
-    applicationId: string, 
+    applicationId: string,
     updates: {
         profile_complete?: boolean
         resume_reviewed?: boolean
         mock_interview_done?: boolean
-        concepts_reviewed?: boolean
+        Learns_reviewed?: boolean
         assignment_started?: boolean
         assignment_completed?: boolean
     }

@@ -39,14 +39,14 @@ beginners into confident Git users through a combination of:
 GOAL:
 -----
 Users should be able to understand, practice, and master Git commands
-in a progressive manner, moving from basic to advanced concepts while
+in a progressive manner, moving from basic to advanced Learns while
 actively practicing each command they learn.
 
 KEY DIFFERENTIATORS:
 -------------------
 ✓ Learn by DOING, not just reading
 ✓ Interactive terminal simulations
-✓ Visual representations of Git concepts
+✓ Visual representations of Git Learns
 ✓ AI-powered mock interviews for final assessment
 ✓ Real-world scenario-based learning
 ✓ Progress tracking with certificates
@@ -76,7 +76,7 @@ CORE PRINCIPLES:
 
 APPROACH FOR EACH LESSON:
 -------------------------
-1. EXPLAIN → Brief concept explanation (2-3 minutes read)
+1. EXPLAIN → Brief Learn explanation (2-3 minutes read)
 2. VISUALIZE → Show what happens under the hood
 3. DEMONSTRATE → Show the command in action
 4. PRACTICE → Let user try the command themselves
@@ -248,7 +248,7 @@ Each lesson will have the following components:
 │                                    │                                         │
 │                                    ▼                                         │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  5. KEY CONCEPTS & TIPS                                              │   │
+│  │  5. KEY LearnS & TIPS                                              │   │
 │  │     ├── Best practices                                               │   │
 │  │     ├── Pro tips                                                     │   │
 │  │     └── Common mistakes to avoid                                     │   │
@@ -614,7 +614,7 @@ QUESTION TYPE DISTRIBUTION:
 │                         QUESTION TYPES                                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  1. CONCEPTUAL (30%)                                                         │
+│  1. LearnUAL (30%)                                                         │
 │     ├── What is the purpose of [command]?                                   │
 │     ├── When would you use [command]?                                       │
 │     └── What happens when [command] is executed?                            │

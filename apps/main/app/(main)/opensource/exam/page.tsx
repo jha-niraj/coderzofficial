@@ -338,7 +338,7 @@ export default function ExamLandingPage() {
                                                 <span className="font-medium text-white">Quiz Phase</span>
                                             </div>
                                             <p className="text-sm text-white/60 mb-2">
-                                                18 multiple choice questions on Git concepts
+                                                18 multiple choice questions on Git Learns
                                             </p>
                                             <Badge className="bg-blue-500/20 text-blue-300">30% Weight</Badge>
                                         </div>

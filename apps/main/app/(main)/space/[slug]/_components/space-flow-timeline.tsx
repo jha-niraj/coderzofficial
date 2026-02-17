@@ -72,7 +72,7 @@ const contentTypeIcons: Record<string, typeof Rocket> = {
     FLASHCARD: Layers,
     VIDEO: Video,
     LINK: LinkIcon,
-    CONCEPT: BookOpen,
+    learn: BookOpen,
 };
 
 const contentTypeColors: Record<string, string> = {
@@ -82,7 +82,7 @@ const contentTypeColors: Record<string, string> = {
     FLASHCARD: 'from-amber-500 to-orange-500',
     VIDEO: 'from-red-500 to-rose-500',
     LINK: 'from-slate-500 to-gray-500',
-    CONCEPT: 'from-rose-500 to-red-500',
+    learn: 'from-rose-500 to-red-500',
 };
 
 // ============================================================================
@@ -101,7 +101,7 @@ function StepNode({ data }: { data: StepNodeData }) {
     const { openSidebar } = useSpaceStore();
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
-    
+
     const Icon = contentTypeIcons[step.contentType] || BookOpen;
     const color = contentTypeColors[step.contentType] || 'from-gray-500 to-slate-500';
 
@@ -149,7 +149,7 @@ function StepNode({ data }: { data: StepNodeData }) {
         e.stopPropagation();
         setIsLiked(!isLiked);
         setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
-        
+
         try {
             await toggleStepLike(spaceId, step.id);
         } catch {
@@ -178,13 +178,13 @@ function StepNode({ data }: { data: StepNodeData }) {
 
     return (
         <div className="relative">
-            <Handle 
-                type="target" 
-                position={Position.Top} 
-                className="!bg-neutral-400 !w-2.5 !h-2.5 !border-2 !border-white dark:!border-neutral-900" 
+            <Handle
+                type="target"
+                position={Position.Top}
+                className="!bg-neutral-400 !w-2.5 !h-2.5 !border-2 !border-white dark:!border-neutral-900"
             />
-            
-            <div 
+
+            <div
                 className={cn(
                     "w-[190px] p-2.5 rounded-xl border-2 bg-white dark:bg-neutral-900 transition-all cursor-pointer",
                     getStatusStyle()
@@ -248,10 +248,10 @@ function StepNode({ data }: { data: StepNodeData }) {
                 </div>
             </div>
 
-            <Handle 
-                type="source" 
-                position={Position.Bottom} 
-                className="!bg-neutral-400 !w-2.5 !h-2.5 !border-2 !border-white dark:!border-neutral-900" 
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                className="!bg-neutral-400 !w-2.5 !h-2.5 !border-2 !border-white dark:!border-neutral-900"
             />
         </div>
     );
@@ -273,17 +273,17 @@ function StartNode({ data }: { data: { progress: number; totalSteps: number } })
                     </div>
                 </div>
                 <div className="bg-white/20 rounded-full h-1 overflow-hidden">
-                    <div 
+                    <div
                         className="bg-white rounded-full h-full transition-all"
                         style={{ width: `${data.progress}%` }}
                     />
                 </div>
                 <p className="text-[9px] text-center mt-1 opacity-80">{Math.round(data.progress)}%</p>
             </div>
-            <Handle 
-                type="source" 
-                position={Position.Bottom} 
-                className="!bg-white !w-2.5 !h-2.5 !border-2 !border-green-500" 
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                className="!bg-white !w-2.5 !h-2.5 !border-2 !border-green-500"
             />
         </div>
     );
@@ -296,10 +296,10 @@ function StartNode({ data }: { data: { progress: number; totalSteps: number } })
 function EndNode() {
     return (
         <div className="relative">
-            <Handle 
-                type="target" 
-                position={Position.Top} 
-                className="!bg-white !w-2.5 !h-2.5 !border-2 !border-amber-500" 
+            <Handle
+                type="target"
+                position={Position.Top}
+                className="!bg-white !w-2.5 !h-2.5 !border-2 !border-amber-500"
             />
             <div className="w-[140px] p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg">
                 <div className="flex items-center gap-2">
@@ -470,7 +470,7 @@ function FlowContent({
     const canvasHeight = Math.max(500, 130 + steps.length * 160 + 80);
 
     return (
-        <div 
+        <div
             className="w-full rounded-xl overflow-hidden bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-950 dark:to-neutral-900"
             style={{ height: canvasHeight }}
         >

@@ -104,7 +104,7 @@ Phase 1 established the foundation—university onboarding, basic assignments, a
 │  │  ⚠️ ATTENTION REQUIRED                                               ││
 │  │  ┌──────────────────────────────────────────────────────────────┐   ││
 │  │  │  23 students in CS301 are at risk of failing               │   ││
-│  │  │  • Common issue: Graph algorithms concepts                  │   ││
+│  │  │  • Common issue: Graph algorithms Learns                  │   ││
 │  │  │  • Recommendation: Schedule remedial session                │   ││
 │  │  │  [View Students] [Create Remedial Assignment] [Notify TA]   │   ││
 │  │  └──────────────────────────────────────────────────────────────┘   ││

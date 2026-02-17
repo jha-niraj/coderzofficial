@@ -93,7 +93,7 @@ enum IdeaType {
 
 // Type of assessment for a task
 enum TaskAssessmentType {
-    QUIZ // Multiple choice questions about concepts
+    QUIZ // Multiple choice questions about Learns
     CODE // User writes code that is validated
     NONE // No assessment required (optional tasks)
 }
@@ -193,18 +193,18 @@ model ProjectV2 {
     invitations       ProjectV2Invitation[]       @relation("ProjectInvitations")
 
     // University Integration - for teacher-assigned projects
-    isUniversityProject Boolean @default(false) // If created by a university teacher
+    isUniversityProject Boolean  @default(false) // If created by a university teacher
     universityId        String? // Link to University model
     teacherMemberId     String? // Link to UniversityMember (teacher who created)
     classIds            String[] // Array of class IDs this project is assigned to
-    
-    // University Assignment Config
-    assignmentDeadline    DateTime? // Optional deadline for university assignments
-    assignmentCredits     Int?      // Credits required for this assignment
-    assignmentInstructions String?  @db.Text // Additional instructions from teacher
 
-    // Concept Step back-relation (for PROJECT step type - major projects)
-    conceptStep ConceptStep? @relation("ConceptStepProject")
+    // University Assignment Config
+    assignmentDeadline     DateTime? // Optional deadline for university assignments
+    assignmentCredits      Int? // Credits required for this assignment
+    assignmentInstructions String?   @db.Text // Additional instructions from teacher
+
+    // Learn Step back-relation (for PROJECT step type - major projects)
+    LearnStep LearnStep? @relation("LearnStepProject")
 
     @@index([createdBy])
     @@index([visibility])
@@ -255,7 +255,7 @@ model ProjectV2Task {
     criteria        String[] // completion criteria (3-5 items)
     hints           String[] // helpful tips (2-4 items)
     badges          String[] // page/component context badges
-    tags            String[] // concept tags
+    tags            String[] // Learn tags
     difficulty      ProjectV2Difficulty
     orderIndex      Int                 @default(0)
     terminalCommand String?
@@ -267,7 +267,7 @@ model ProjectV2Task {
     relatedPages  String[] // Related page names
     dependencies  String[] // Task dependencies (task titles)
 
-    // ========== NEW: Learning Concepts & Assessment ==========
+    // ========== NEW: Learning Learns & Assessment ==========
     // Learning objectives - what skills/knowledge user gains (3-5 items)
     learningObjectives String[]
     // Prerequisites - prior knowledge needed before this task
@@ -276,8 +276,8 @@ model ProjectV2Task {
     resources          Json?
     // Testing guidelines - what to test/verify for this task (3-5 items)
     testingGuidelines  String[]
-    // Detailed concepts with keyPoints, bestPractices, commonMistakes, etc.
-    concepts           Json? // Array of TaskConcept objects
+    // Detailed Learns with keyPoints, bestPractices, commonMistakes, etc.
+    Learns             Json? // Array of TaskLearn objects
     // What kind of assessment is best for this task
     assessmentType     TaskAssessmentType @default(QUIZ)
 
@@ -503,7 +503,7 @@ model ProjectV2MockSession {
     score              Int? // Overall score out of 100
     technicalScore     Int? // Technical depth score
     communicationScore Int? // Communication score
-    conceptualScore    Int? // Conceptual understanding score
+    LearnualScore      Int? // Learnual understanding score
 
     // Feedback
     transcript   String?  @db.Text

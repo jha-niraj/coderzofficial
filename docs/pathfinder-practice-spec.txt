@@ -27,7 +27,7 @@ Purpose: Specify improvements for Pathfinder Practice experience, Studio vs Prac
 ------------------
 User creates goal (e.g. "Learn React in 30 days")
   -> AI generates plan with subgoals, quiz questions, coding challenges
-  -> User adds custom subgoals (e.g. "Beginner React concepts")
+  -> User adds custom subgoals (e.g. "Beginner React Learns")
   -> Practice page shows: Quiz + Coding only
   -> Missing: Resources to study before attempting quiz/coding
 
@@ -66,7 +66,7 @@ User creates goal (e.g. "Learn React in 30 days")
          |         - Do's and Don'ts
          |
          +---> Tab 2: QUIZ
-         |         - Multiple choice / concept questions
+         |         - Multiple choice / Learn questions
          |         - (current behavior)
          |
          +---> Tab 3: CODING
@@ -81,7 +81,7 @@ User creates goal (e.g. "Learn React in 30 days")
 --------------------------------------------
 When user adds a subgoal (e.g. "Learn beginner React"):
 - Generate or fetch learning content:
-  * Overview: What is React? Key concepts
+  * Overview: What is React? Key Learns
   * Resources: Curated YouTube videos, docs links
   * Code examples: Snippets in read-only code editor
   * Best practices: Do's and Don'ts for the topic
@@ -124,7 +124,7 @@ Step 5: NEW - User sees Resources tab first
         - Watches recommended videos
         - Studies code examples
 Step 6: User switches to Quiz tab
-        - Attempts concept questions
+        - Attempts Learn questions
         - Gets feedback
 Step 7: User switches to Coding tab
         - Solves coding challenges
@@ -186,7 +186,7 @@ Resources | Quiz | Coding
          |                +--------+---------+
          |                         |
          |                         +--[Resources]--> Learn content
-         |                         +--[Quiz]--------> Concept questions
+         |                         +--[Quiz]--------> Learn questions
          |                         +--[Coding]------> Coding challenges
          |
          +--[Verify]-----> +------------------+

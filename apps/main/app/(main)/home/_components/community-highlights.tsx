@@ -46,8 +46,8 @@ export default function CommunityHighlights({ posts }: CommunityHighlightsProps)
     };
 
     return (
-        <Card className="border-primary/10">
-            <CardHeader className="pb-3">
+        <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
+            <div className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="p-2 rounded-lg bg-pink-500/10">
@@ -56,13 +56,13 @@ export default function CommunityHighlights({ posts }: CommunityHighlightsProps)
                         <CardTitle className="text-lg">Community Highlights</CardTitle>
                     </div>
                     <Button variant="ghost" size="sm" asChild>
-                        <Link href="/community">
+                        <Link href="/communities">
                             View all <ArrowRight className="ml-1 h-3 w-3" />
                         </Link>
                     </Button>
                 </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div>
                 {
                     posts.length === 0 ? (
                         <motion.div
@@ -140,7 +140,7 @@ export default function CommunityHighlights({ posts }: CommunityHighlightsProps)
                         </div>
                     )
                 }
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

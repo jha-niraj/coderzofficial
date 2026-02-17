@@ -323,8 +323,8 @@ Return JSON in this exact format:
 }
 
 Rules:
-- Quiz questions should be varied (concepts, code output, best practices)
-- For topics like "Learn about X API" or "Understand Y concept", codingProblem can be null
+- Quiz questions should be varied (Learns, code output, best practices)
+- For topics like "Learn about X API" or "Understand Y Learn", codingProblem can be null
 - For topics like "Practice X", "Implement Y", "Build Z", include a coding problem
 - Coding problem should be MEDIUM difficulty and practical/interview-style
 - All content should match the ${level} level

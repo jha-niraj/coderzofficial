@@ -1,0 +1,1659 @@
+================================================================================
+                    STUDIO MODULE REVAMP - ARCHITECTURE PLAN
+                         Complete Restructuring Document
+================================================================================
+
+DOCUMENT VERSION: 1.0
+CREATED: February 17, 2026
+AUTHOR: Senior Engineering Team
+STATUS: Planning Phase
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. EXECUTIVE SUMMARY & PROBLEM STATEMENT
+2. CURRENT IMPLEMENTATION ANALYSIS
+3. PROPOSED ARCHITECTURE & FUNDAMENTAL CHANGES
+4. CONTENT BLOCK SYSTEM DESIGN
+5. AI INTEGRATION STRATEGY
+6. AUTO-SAVE MECHANISM
+7. CONTENT TYPE SPECIFICATIONS
+8. USER FLOWS & INTERACTION PATTERNS
+9. PROJECT INTEGRATION
+10. TECHNICAL IMPLEMENTATION ROADMAP
+11. DATABASE SCHEMA CHANGES
+12. API ENDPOINTS SPECIFICATION
+13. COMPONENT ARCHITECTURE
+14. CONCERNS & SOLUTIONS
+
+================================================================================
+                    1. EXECUTIVE SUMMARY & PROBLEM STATEMENT
+================================================================================
+
+CURRENT SITUATION:
+------------------
+The existing Studio implementation is fundamentally flawed. It attempts to be
+a Notion-like block editor with complex user interactions, but this approach
+creates confusion and doesn't align with the platform's AI-first philosophy.
+
+KEY PROBLEMS IDENTIFIED:
+
+1. Users are given too much freedom without clear guidance
+2. Block-based editing is complex and doesn't serve the learning purpose
+3. No clear separation between AI-generated and user-written content
+4. Auto-save every 30 seconds is inefficient and wasteful
+5. Studio is not properly integrated with other modules (Pathfinder, Spaces)
+6. Content structure doesn't support proper ordering and persistence
+
+PROPOSED SOLUTION:
+------------------
+Transform Studio into an AI-FIRST learning workspace where:
+- AI generates structured, markdown-based content
+- Users interact primarily through AI prompts
+- Content is automatically organized and saved based on user actions
+- Clear separation between different content types (explanation, quiz, code, etc.)
+- Seamless integration with Pathfinder goals and Space topics
+
+CORE PHILOSOPHY:
+----------------
+"Studio is not a text editor. It's an AI-powered learning companion that
+generates, organizes, and presents educational content in the most effective
+format for each content type."
+
+================================================================================
+                    2. CURRENT IMPLEMENTATION ANALYSIS
+================================================================================
+
+CURRENT FILE STRUCTURE:
+-----------------------
+apps/main/app/(main)/studio/
+├── [slug]/page.tsx                    # Studio editor page
+├── _components/
+│   ├── create-studio-sheet.tsx        # Creation dialog
+│   ├── studio-card.tsx                # List view card
+│   └── studios-list.tsx               # List component
+└── page.tsx                           # Main studio listing
+
+apps/main/components/studio/
+├── studio-editor.tsx                  # Main editor component
+├── studio-ai-panel.tsx                # AI chat sidebar
+├── studio-block-editor.tsx            # Block management
+└── blocks/
+    ├── quiz-block.tsx                 # Quiz renderer
+    ├── code-block.tsx                 # Code editor
+    ├── flashcard-block.tsx            # Flashcard deck
+    ├── image-block.tsx                # Image display
+    ├── video-block.tsx                # Video embed (coming soon)
+    └── mock-block.tsx                 # Mock interview (coming soon)
+
+CURRENT DATA MODEL:
+-------------------
+Studio {
+  id, slug, title, description
+  content: BlockContent { blocks: EditorBlock[] }
+  quizzes: StudioQuiz[]
+  flashcardDecks: StudioFlashcardDeck[]
+  codeBlocks: StudioCodeBlock[]
+  mediaBlocks: StudioMediaBlock[]
+  chatHistory: StudioChatMessage[]
+}
+
+WHAT WORKS:
+-----------
+✓ AI chat integration with GPT-4o
+✓ Individual block types (quiz, code, flashcard) are well-designed
+✓ Auto-save mechanism exists
+✓ Markdown rendering capability
+✓ Voice component for mock interviews is ready
+
+WHAT DOESN'T WORK:
+------------------
+✗ Block editor is too complex and confusing
+✗ No clear content ordering/sequencing
+✗ User-written content vs AI content not distinguished
+✗ Auto-save triggers too frequently (every 30s regardless of activity)
+✗ No integration with Pathfinder or Spaces
+✗ Project generation not connected
+✗ Video/document generation not implemented
+✗ Mock interview not integrated
+
+================================================================================
+                    3. PROPOSED ARCHITECTURE & FUNDAMENTAL CHANGES
+================================================================================
+
+NEW CORE CONCEPT:
+-----------------
+Studio becomes a SEQUENTIAL CONTENT VIEWER with AI-DRIVEN GENERATION
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         STUDIO ARCHITECTURE                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                    CONTENT DISPLAY AREA                        │    │
+│  │                    (Scrollable)                                │    │
+│  │                                                                │    │
+│  │  ┌──────────────────────────────────────────────────────┐     │    │
+│  │  │  STEP 1: AI-Generated Explanation (Markdown)         │     │    │
+│  │  │  ─────────────────────────────────────────────       │     │    │
+│  │  │  # JavaScript Closures                               │     │    │
+│  │  │  A closure is a function that has access to...       │     │    │
+│  │  └──────────────────────────────────────────────────────┘     │    │
+│  │                                                                │    │
+│  │  ┌──────────────────────────────────────────────────────┐     │    │
+│  │  │  STEP 2: User Note (Rich Text Editor)                │     │    │
+│  │  │  ─────────────────────────────────────────────       │     │    │
+│  │  │  My personal notes about closures...                 │     │    │
+│  │  └──────────────────────────────────────────────────────┘     │    │
+│  │                                                                │    │
+│  │  ┌──────────────────────────────────────────────────────┐     │    │
+│  │  │  STEP 3: Interactive Quiz                            │     │    │
+│  │  │  ─────────────────────────────────────────────       │     │    │
+│  │  │  [Quiz Component Rendered Here]                      │     │    │
+│  │  └──────────────────────────────────────────────────────┘     │    │
+│  │                                                                │    │
+│  │  ┌──────────────────────────────────────────────────────┐     │    │
+│  │  │  STEP 4: Code Practice                               │     │    │
+│  │  │  ─────────────────────────────────────────────       │     │    │
+│  │  │  [Code Editor Component]                             │     │    │
+│  │  └──────────────────────────────────────────────────────┘     │    │
+│  │                                                                │    │
+│  │  ┌──────────────────────────────────────────────────────┐     │    │
+│  │  │  STEP 5: AI-Generated Image                          │     │    │
+│  │  │  ─────────────────────────────────────────────       │     │    │
+│  │  │  [Image Display]                                     │     │    │
+│  │  └──────────────────────────────────────────────────────┘     │    │
+│  │                                                                │    │
+│  │  ┌──────────────────────────────────────────────────────┐     │    │
+│  │  │  STEP 6: Project Suggestions                         │     │    │
+│  │  │  ─────────────────────────────────────────────       │     │    │
+│  │  │  [Project Cards]                                     │     │    │
+│  │  └──────────────────────────────────────────────────────┘     │    │
+│  │                                                                │    │
+│  └────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                    AI INPUT PANEL (Bottom)                     │    │
+│  │  ┌──────────────────────────────────────────────────────┐     │    │
+│  │  │ [Content Type Selector]  [Text Input]  [Send Button] │     │    │
+│  │  │                                                       │     │    │
+│  │  │ Options: Explanation | Quiz | Code | Image | Video   │     │    │
+│  │  │          Document | Project | Mock Interview         │     │    │
+│  │  └──────────────────────────────────────────────────────┘     │    │
+│  └────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+KEY ARCHITECTURAL CHANGES:
+--------------------------
+
+1. REMOVE: Complex block editor with slash commands
+   ADD: Simple content type selector at bottom
+
+2. REMOVE: Inline editing of all content
+   ADD: Dedicated editors for user content only
+
+3. REMOVE: Auto-save every 30 seconds
+   ADD: Event-driven auto-save (on user action completion)
+
+4. REMOVE: Unstructured block array
+   ADD: Ordered step system with explicit sequencing
+
+5. ADD: Content type detection and appropriate rendering
+6. ADD: Integration points for Pathfinder and Spaces
+7. ADD: Project generation workflow
+8. ADD: Video/document resource generation
+
+================================================================================
+                    4. CONTENT BLOCK SYSTEM DESIGN
+================================================================================
+
+NEW CONTENT STEP MODEL:
+-----------------------
+Each piece of content is a "Step" with:
+- Unique ID
+- Order number (for sequencing)
+- Type (explanation, quiz, code, etc.)
+- Content data (varies by type)
+- Metadata (created_at, updated_at, source)
+- Status (draft, completed, archived)
+
+STEP TYPES & THEIR STRUCTURE:
+------------------------------
+
+1. EXPLANATION (AI-Generated Markdown)
+   ────────────────────────────────────
+   {
+     id: string
+     order: number
+     type: "explanation"
+     content: string (markdown)
+     source: "ai" | "user"
+     metadata: {
+       prompt: string
+       model: string
+       tokens_used: number
+     }
+   }
+
+   RENDERING: React Markdown with syntax highlighting
+   USER INTERACTION: Read-only, can regenerate with new prompt
+
+2. USER NOTE (Rich Text)
+   ──────────────────────
+   {
+     id: string
+     order: number
+     type: "note"
+     content: string (HTML or Markdown)
+     source: "user"
+     metadata: {
+       editor_type: "rich" | "markdown"
+     }
+   }
+
+   RENDERING: Rich text editor (TipTap or similar)
+   USER INTERACTION: Full editing capability
+   SAVE TRIGGER: On blur or explicit save button
+
+3. QUIZ (Interactive Assessment)
+   ───────────────────────────────
+   {
+     id: string
+     order: number
+     type: "quiz"
+     quiz_id: string (references StudioQuiz table)
+     metadata: {
+       topic: string
+       difficulty: "easy" | "medium" | "hard"
+       question_count: number
+       generated_from: string (content context)
+     }
+   }
+
+   RENDERING: Existing Quiz component
+   USER INTERACTION: Take quiz, view results, retry
+   SAVE TRIGGER: On quiz completion (results saved)
+
+4. CODE PRACTICE (Coding Challenge)
+   ──────────────────────────────────
+   {
+     id: string
+     order: number
+     type: "code"
+     code_block_id: string (references StudioCodeBlock table)
+     metadata: {
+       language: string
+       is_practice: boolean
+       problem_title?: string
+     }
+   }
+
+   RENDERING: Existing Code Block component (code-editor.tsx)
+   USER INTERACTION: Write code, run, test
+   SAVE TRIGGER: Debounced on code change (2 seconds)
+
+5. IMAGE (AI-Generated or Uploaded)
+   ──────────────────────────────────
+   {
+     id: string
+     order: number
+     type: "image"
+     media_id: string (references StudioMediaBlock table)
+     metadata: {
+       source: "ai" | "upload"
+       prompt?: string
+       url: string
+       width?: number
+       height?: number
+     }
+   }
+
+   RENDERING: Image with caption
+   USER INTERACTION: View, download, regenerate (using falai api)
+   SAVE TRIGGER: Immediate on generation/upload
+
+6. VIDEO (YouTube Embed)
+   ───────────────────────
+   {
+     id: string
+     order: number
+     type: "video"
+     media_id: string
+     metadata: {
+       source: "youtube" | "vimeo"
+       url: string
+       title: string
+       duration?: number
+       generated_by: "xai" | "user"
+     }
+   }
+
+   RENDERING: iframe embed
+   USER INTERACTION: Watch video
+   SAVE TRIGGER: Immediate on add
+
+7. DOCUMENT (External Resource Link)
+   ───────────────────────────────────
+   {
+     id: string
+     order: number
+     type: "document"
+     metadata: {
+       title: string
+       url: string
+       description?: string
+       source: "xai" | "user"
+       doc_type: "article" | "documentation" | "tutorial"
+     }
+   }
+
+   RENDERING: Card with link preview
+   USER INTERACTION: Click to open in new tab
+   SAVE TRIGGER: Immediate on add
+
+8. PROJECT (Minor/Major Project Suggestion)
+   ──────────────────────────────────────────
+   {
+     id: string
+     order: number
+     type: "project"
+     metadata: {
+       project_type: "minor" | "major"
+       title: string
+       description: string
+       difficulty: string
+       estimated_time: string
+       skills: string[]
+       generated_from: string (content context)
+     }
+   }
+
+   RENDERING: Project card with action buttons
+   USER INTERACTION:
+     - Minor: Add to portfolio
+     - Major: Create full project
+   SAVE TRIGGER: Immediate on generation
+
+9. MOCK INTERVIEW (Voice Interview Session)
+   ──────────────────────────────────────────
+   {
+     id: string
+     order: number
+     type: "mock_interview"
+     metadata: {
+       topic: string
+       difficulty: string
+       duration_minutes: number
+       agent_id: string (ElevenLabs)
+       session_id?: string (after completion)
+     }
+   }
+
+   RENDERING: Voice component with orb
+   USER INTERACTION: Start interview, conduct session
+   SAVE TRIGGER: On session completion
+
+10. FLASHCARD (Spaced Repetition)
+    ─────────────────────────────
+    {
+      id: string
+      order: number
+      type: "flashcard"
+      deck_id: string (references StudioFlashcardDeck table)
+      metadata: {
+        topic: string
+        card_count: number
+      }
+    }
+
+    RENDERING: Existing Flashcard component
+    USER INTERACTION: Study cards, mark known/unknown
+    SAVE TRIGGER: On study session completion
+
+================================================================================
+                    5. AI INTEGRATION STRATEGY
+================================================================================
+
+AI CONTENT GENERATION FLOW:
+---------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     AI GENERATION WORKFLOW                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  USER ACTION                                                             │
+│  ───────────                                                             │
+│  1. User selects content type (e.g., "Explanation")                     │
+│  2. User enters prompt: "Explain JavaScript closures"                   │
+│  3. User clicks "Generate"                                              │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  SYSTEM PROCESSING                                                       │
+│  ─────────────────                                                       │
+│  1. Determine AI model based on content type:                           │
+│     - Explanation/Quiz/Code → OpenAI GPT-4o                             │
+│     - Image → Fal.ai (Flux model)                                       │
+│     - Video/Document → XAI (Grok)                                       │
+│     - Mock Interview → ElevenLabs Agent                                 │
+│                                                                          │
+│  2. Build context from previous steps:                                  │
+│     - Gather all previous content in studio                             │
+│     - Create summary for context                                        │
+│     - Include in AI prompt                                              │
+│                                                                          │
+│  3. Call appropriate AI service                                         │
+│                                                                          │
+│  4. Process response:                                                   │
+│     - Parse and validate                                                │
+│     - Create database records                                           │
+│     - Generate step with proper order                                   │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  CONTENT INSERTION                                                       │
+│  ─────────────────                                                       │
+│  1. Insert new step at end of content                                   │
+│  2. Update studio's last_edited_at                                      │
+│  3. Trigger auto-save                                                   │
+│  4. Scroll to new content                                               │
+│  5. Show success notification                                           │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+CONTEXT BUILDING FOR AI:
+------------------------
+When generating new content, include context from previous steps:
+
+Example prompt structure:
+```
+SYSTEM: You are an educational content generator for a learning platform.
+
+CONTEXT: The user is studying the following topic:
+[Previous step 1: Explanation of JavaScript basics]
+[Previous step 2: Quiz on variables and data types]
+[Previous step 3: Code practice on functions]
+
+USER REQUEST: {user_prompt}
+
+TASK: Generate {content_type} that builds upon the previous content
+and helps the user progress in their learning journey.
+```
+
+AI SERVICE CONFIGURATION:
+-------------------------
+
+1. OpenAI GPT-4o (Explanation, Quiz, Code)
+   - Endpoint: use server actions for this one please
+   - Model: gpt-4o
+   - Max tokens: 4000
+   - Temperature: 0.7
+
+2. Fal.ai (Image Generation)
+   - Endpoint: /api/ai/generate-image
+   - Model: fal-ai/flux-pro
+   - Already configured in codebase
+
+3. XAI Grok (Video/Document Resources)
+   - Endpoint: /api/ai/xai-resources
+   - Purpose: Search and recommend learning resources
+   - Returns: Array of {title, url, type, description}
+
+4. ElevenLabs (Mock Interview)
+   - Component: Voice.tsx (already exists)
+   - Agent ID: Configured per interview type
+   - Integration: Direct component usage
+
+================================================================================
+                    6. AUTO-SAVE MECHANISM
+================================================================================
+
+PROBLEM WITH CURRENT APPROACH:
+------------------------------
+Current: Auto-save every 30 seconds regardless of activity
+Issues:
+  - Wastes API calls when no changes made
+  - Doesn't capture user intent properly
+  - Can interrupt user during typing
+  - No feedback on what was saved
+
+NEW EVENT-DRIVEN AUTO-SAVE:
+---------------------------
+
+SAVE TRIGGERS:
+--------------
+1. User completes an action (not during typing)
+2. User navigates away from studio
+3. User explicitly clicks save
+4. After AI content generation
+5. After quiz completion
+6. After code execution
+
+IMPLEMENTATION STRATEGY:
+------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     AUTO-SAVE STATE MACHINE                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  STATE: IDLE                                                             │
+│  ──────────                                                              │
+│  - No pending changes                                                    │
+│  - Last save timestamp displayed                                        │
+│  - No save indicator shown                                              │
+│                                                                          │
+│  ▼ (User makes change)                                                  │
+│                                                                          │
+│  STATE: DIRTY                                                            │
+│  ────────────                                                            │
+│  - Changes pending                                                       │
+│  - Show "Unsaved changes" indicator                                     │
+│  - Start debounce timer (2 seconds)                                     │
+│                                                                          │
+│  ▼ (Timer expires OR explicit save)                                     │
+│                                                                          │
+│  STATE: SAVING                                                           │
+│  ─────────────                                                           │
+│  - Show "Saving..." indicator                                           │
+│  - Disable further edits temporarily                                    │
+│  - Send save request to API                                             │
+│                                                                          │
+│  ▼ (Save completes)                                                     │
+│                                                                          │
+│  STATE: SAVED                                                            │
+│  ────────────                                                            │
+│  - Show "Saved" checkmark (2 seconds)                                   │
+│  - Update last save timestamp                                           │
+│  - Return to IDLE state                                                 │
+│                                                                          │
+│  ▼ (Save fails)                                                         │
+│                                                                          │
+│  STATE: ERROR                                                            │
+│  ────────────                                                            │
+│  - Show error message                                                    │
+│  - Keep changes in memory                                               │
+│  - Offer retry button                                                   │
+│  - Return to DIRTY state                                                │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+SAVE GRANULARITY:
+-----------------
+Instead of saving entire studio content, save individual steps:
+
+1. Step-level saves:
+   - Only save the step that changed
+   - Reduces payload size
+   - Faster save operations
+   - Better conflict resolution
+
+2. Batch saves for related changes:
+   - When AI generates content (step + metadata)
+   - When user completes quiz (step + results)
+   - When user finishes code (step + execution results)
+
+SAVE API DESIGN:
+----------------
+POST /api/studios/:studioId/steps/:stepId/save - use the server actions please for the saving
+Body: {
+  content: {...},
+  metadata: {...},
+  order: number
+}
+
+Response: {
+  success: boolean,
+  step: {...},
+  timestamp: string
+}
+
+OFFLINE SUPPORT (Future Enhancement):
+--------------------------------------
+- Store changes in IndexedDB
+- Sync when connection restored
+- Show offline indicator
+- Queue saves for later
+
+================================================================================
+                    7. CONTENT TYPE SPECIFICATIONS
+================================================================================
+
+DETAILED SPECIFICATIONS FOR EACH CONTENT TYPE:
+
+1. EXPLANATION (AI-Generated Markdown)
+   ────────────────────────────────────
+
+   USER FLOW:
+   1. User selects "Explanation" from content type selector
+   2. User enters prompt: "Explain React hooks in detail"
+   3. System shows loading state
+   4. AI generates comprehensive markdown content
+   5. Content rendered with React Markdown
+   6. User can regenerate with different prompt
+
+   RENDERING REQUIREMENTS:
+   - Syntax highlighting for code blocks (Prism.js)
+   - Proper heading hierarchy
+   - Lists, tables, blockquotes support
+   - Math equations (KaTeX) if needed
+   - Mermaid diagrams support
+
+   AI PROMPT TEMPLATE:
+   ```
+   You are an expert educator. Create a comprehensive explanation
+   of the following topic for a student learning programming.
+   
+   Topic: {user_prompt}
+   
+   Context from previous lessons:
+   {previous_content_summary}
+   
+   Requirements:
+   - Use clear, simple language
+   - Include code examples where relevant
+   - Use markdown formatting
+   - Break down complex concepts
+   - Length: 500-1000 words
+   
+   Format your response in markdown.
+   ```
+
+   SAVE BEHAVIOR:
+   - Immediate save after generation
+   - No user editing allowed (read-only)
+   - Can regenerate to replace
+
+2. USER NOTE (Rich Text Editor)
+   ──────────────────────────────
+
+   USER FLOW:
+   1. User selects "Note" from content type selector
+   2. Rich text editor appears
+   3. User writes personal notes
+   4. Auto-save on blur or after 2 seconds of inactivity
+   5. User can format text (bold, italic, lists, etc.)
+
+   EDITOR CHOICE: TipTap (React)
+   - Lightweight and extensible
+   - Markdown shortcuts support
+   - Collaborative editing ready (future)
+   - Good mobile support
+
+   FORMATTING OPTIONS:
+   - Headings (H1, H2, H3)
+   - Bold, Italic, Underline
+   - Bullet lists, Numbered lists
+   - Code inline and blocks
+   - Links
+   - Blockquotes
+
+   SAVE BEHAVIOR:
+   - Debounced save (2 seconds after last keystroke)
+   - Save on blur (when user clicks away)
+   - Show save indicator
+
+3. QUIZ (Interactive Assessment)
+   ───────────────────────────────
+
+   USER FLOW:
+   1. User selects "Quiz" from content type selector
+   2. User enters topic: "Test my knowledge on JavaScript closures"
+   3. System analyzes previous content for context
+   4. AI generates 5-10 questions
+   5. Quiz rendered with existing Quiz component
+   6. User takes quiz
+   7. Results saved and displayed
+
+   AI GENERATION:
+   - Use previous content as context
+   - Generate multiple choice questions
+   - Include explanations for answers
+   - Vary difficulty based on content
+
+   QUIZ COMPONENT INTEGRATION:
+   - Use existing Quiz component from components/main/quiz.tsx
+   - Mode: "practice" (immediate feedback)
+   - Show progress bar
+   - Allow retry
+
+   SAVE BEHAVIOR:
+   - Save quiz structure on generation
+   - Save user attempt on completion
+   - Store score and time taken
+
+4. CODE PRACTICE (Coding Challenge)
+   ──────────────────────────────────
+
+   USER FLOW:
+   1. User selects "Code" from content type selector
+   2. User enters prompt: "Create a coding challenge on array methods"
+   3. AI generates:
+      - Problem description
+      - Starter code
+      - Test cases
+      - Solution (hidden)
+   4. User writes code in editor
+   5. User runs code to test
+   6. Results displayed
+
+   CODE EDITOR:
+   - Use existing CodeEditor component
+   - Monaco editor (VS Code engine)
+   - Syntax highlighting
+   - Auto-completion
+   - Multiple language support
+
+   EXECUTION:
+   - JavaScript: We will send the code to the ai for the testing for now and later we will add the compiler for this one as well.
+   - Other languages: Same as above for now using ai
+   - Display console output
+   - Show test case results
+
+   SAVE BEHAVIOR:
+   - Debounced save on code change (2 seconds)
+   - Save execution results
+   - Track attempts and solutions
+
+5. IMAGE (AI-Generated Visual)
+   ──────────────────────────────
+
+   USER FLOW:
+   1. User selects "Image" from content type selector
+   2. User enters prompt: "A diagram showing React component lifecycle"
+   3. System calls Fal.ai API
+   4. Image generated and uploaded to Cloudinary
+   5. Image displayed with caption
+
+   IMAGE GENERATION:
+   - Service: Fal.ai (Flux Pro model)
+   - Already configured in codebase
+   - Endpoint: /api/ai/generate-image
+
+   CLOUDINARY UPLOAD:
+   - Upload generated image
+   - Get permanent URL
+   - Store in StudioMediaBlock table
+
+   DISPLAY:
+   - Responsive image
+   - Caption with prompt
+   - Download button
+   - Regenerate option
+
+   SAVE BEHAVIOR:
+   - Immediate save after generation
+   - Store image URL and metadata
+
+6. VIDEO (YouTube Resource)
+   ───────────────────────────
+
+   USER FLOW:
+   1. User selects "Video" from content type selector
+   2. Two options:
+      a) AI-suggested: "Find videos about React hooks"
+      b) Manual: Paste YouTube URL
+   3. If AI: XAI searches and returns video suggestions
+   4. User selects video
+   5. Video embedded as iframe
+
+   XAI INTEGRATION:
+   - Endpoint: /api/ai/xai-resources
+   - Request: { topic: string, type: "video" }
+   - Response: Array of video suggestions with URLs
+
+   VIDEO EMBED:
+   - YouTube iframe
+   - Responsive sizing
+   - Title and description
+   - Duration if available
+
+   SAVE BEHAVIOR:
+   - Immediate save on selection
+   - Store video URL and metadata
+
+7. DOCUMENT (External Resource)
+   ───────────────────────────────
+
+   USER FLOW:
+   1. User selects "Document" from content type selector
+   2. Two options:
+      a) AI-suggested: "Find documentation on React hooks"
+      b) Manual: Paste URL
+   3. If AI: ExaAI searches and returns document suggestions
+   4. User selects document
+   5. Link card displayed
+
+   ExaAI INTEGRATION:
+   - Same endpoint as video
+   - Request: { topic: string, type: "document" }
+   - Response: Array of document suggestions
+
+   DISPLAY:
+   - Card with title, description, URL
+   - Favicon/thumbnail if available
+   - "Open in new tab" button
+   - Source indicator (official docs, tutorial, etc.)
+
+   SAVE BEHAVIOR:
+   - Immediate save on selection
+   - Store URL and metadata
+
+8. PROJECT (Learning Project)
+   ──────────────────────────────
+
+   USER FLOW:
+   1. User selects "Project" from content type selector
+   2. User enters: "Suggest projects based on what I've learned"
+   3. AI analyzes all previous content
+   4. Generates 2-3 project ideas:
+      - 1-2 Minor projects (quick, portfolio-worthy)
+      - 1 Major project (comprehensive, uses main project system)
+   5. Projects displayed as cards
+
+   PROJECT TYPES:
+
+   MINOR PROJECT:
+   - Quick implementation (1-3 hours)
+   - Focused on specific skill
+   - Can be added to portfolio directly
+   - Example: "Build a todo app with React hooks"
+   
+   Actions:
+   - "Add to Portfolio" → Creates portfolio project entry
+   - "Start Building" → Show the data for this one on the studio only below that
+
+   MAJOR PROJECT:
+   - Comprehensive project (1-2 weeks)
+   - Uses multiple skills
+   - Integrated with main project system
+   - Example: "Build a full-stack e-commerce platform"
+   
+   Actions:
+   - "Create Project" → Opens Up the projectgeneratesheet from there only
+   - Pre-fills project details from AI suggestion
+
+   AI GENERATION:
+   - Analyze all previous steps
+   - Identify learned skills
+   - Suggest relevant projects
+   - Include tech stack, features, difficulty
+
+   SAVE BEHAVIOR:
+   - Save project suggestions immediately
+   - Track which projects user started
+   - Link to actual project if created
+
+9. MOCK INTERVIEW (Voice Practice)
+   ──────────────────────────────────
+
+   USER FLOW:
+   1. User selects "Mock Interview" from content type selector
+   2. User enters topic: "Practice JavaScript interview questions"
+   3. System configures ElevenLabs agent with topic
+   4. Voice component rendered
+   5. User starts interview session
+   6. Conversation happens via voice
+   7. Session ends, results saved
+
+   VOICE INTEGRATION:
+   - Use existing Voice component (components/main/voice.tsx)
+   - ElevenLabs Conversational AI
+   - Real-time voice interaction
+
+   AGENT CONFIGURATION:
+   ```typescript
+   const config: VoiceConfig = {
+     agentId: process.env.ELEVENLABS_INTERVIEW_AGENT_ID,
+     userId: user.id,
+     knowledgeBase: `
+       You are a technical interviewer conducting a mock interview
+       on the topic: ${topic}
+       
+       Context: The candidate has been studying:
+       ${previous_content_summary}
+       
+       Conduct a professional interview with 3-5 questions.
+       Provide constructive feedback after each answer.
+     `,
+     title: `Mock Interview: ${topic}`,
+     orbColors: ["#3b82f6", "#8b5cf6"]
+   }
+   ```
+
+   DISPLAY:
+   - Orb visualization (existing component)
+   - Start/Stop buttons
+   - Mic mute toggle
+   - Volume control
+
+   POST-INTERVIEW:
+   - Save conversation transcript
+   - AI generates feedback summary
+   - Display score/assessment
+   - Suggest areas for improvement
+
+   SAVE BEHAVIOR:
+   - Save session metadata on start
+   - Save full transcript on completion
+   - Save AI feedback and assessment
+
+10. FLASHCARD (Spaced Repetition)
+    ─────────────────────────────
+
+    USER FLOW:
+    1. User selects "Flashcard" from content type selector
+    2. User enters topic: "Create flashcards for JavaScript concepts"
+    3. AI generates 10-15 flashcards
+    4. Flashcard deck rendered
+    5. User studies cards
+    6. Progress tracked
+
+    AI GENERATION:
+    - Generate question/answer pairs
+    - Use previous content for context
+    - Create clear, concise cards
+
+    FLASHCARD COMPONENT:
+    - Use existing FlashcardBlock component
+    - Flip animation
+    - "Know it" / "Review again" buttons
+    - Progress tracking
+
+    SPACED REPETITION:
+    - Track which cards user knows
+    - Schedule review based on performance
+    - Show due cards first
+
+    SAVE BEHAVIOR:
+    - Save deck on generation
+    - Save study session progress
+    - Update card statistics
+
+================================================================================
+                    8. USER FLOWS & INTERACTION PATTERNS
+================================================================================
+
+MAIN USER JOURNEY:
+------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     STUDIO USER JOURNEY                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ENTRY POINTS:                                                           │
+│  ─────────────                                                           │
+│  1. From Pathfinder: User creates learning goal                         │
+│     → System creates Studio automatically                               │
+│     → Pre-populated with goal title and description                     │
+│                                                                          │
+│  2. From Spaces: User joins a learning space                            │
+│     → System creates Studio for that space topic                        │
+│     → Linked to space for collaborative learning                        │
+│                                                                          │
+│  3. Direct: User manually creates Studio                                │
+│     → Empty studio with title input                                     │
+│     → User starts from scratch                                          │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  CONTENT CREATION LOOP:                                                  │
+│  ──────────────────────                                                  │
+│  1. User views current content (scrollable)                             │
+│  2. User scrolls to bottom                                              │
+│  3. AI input panel visible                                              │
+│  4. User selects content type                                           │
+│  5. User enters prompt/request                                          │
+│  6. User clicks generate/add                                            │
+│  7. System processes request                                            │
+│  8. New content appears at bottom                                       │
+│  9. Auto-scroll to new content                                          │
+│  10. Repeat from step 1                                                 │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  CONTENT INTERACTION:                                                    │
+│  ────────────────────                                                    │
+│  - Read explanations                                                     │
+│  - Take quizzes                                                          │
+│  - Write code                                                            │
+│  - Study flashcards                                                      │
+│  - Practice interviews                                                   │
+│  - Add personal notes                                                    │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  PROJECT GENERATION:                                                     │
+│  ───────────────────                                                     │
+│  1. After sufficient content, user requests projects                    │
+│  2. AI analyzes all previous steps                                      │
+│  3. Suggests minor and major projects                                   │
+│  4. User selects project to start                                       │
+│  5. System creates project entry                                        │
+│  6. User redirected to project workspace                                │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+CONTENT TYPE SELECTOR UI:
+-------------------------
+
+┌────────────────────────────────────────────────────────────────────────┐
+│                    AI INPUT PANEL (Bottom of Screen)                    │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  What would you like to add?                                     │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  [📝 Explanation] [❓ Quiz] [💻 Code] [🖼️ Image] [▶️ More...]   │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  ┌────────────────────────────────────────────────────┐  [Send]  │  │
+│  │  │ Type your request here...                          │          │  │
+│  │  │                                                    │          │  │
+│  │  └────────────────────────────────────────────────────┘          │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+│  💡 Tip: Be specific! Example: "Explain closures with examples"        │
+│                                                                         │
+└────────────────────────────────────────────────────────────────────────┘
+
+"More..." expands to show:
+- 📹 Video
+- 📄 Document  
+- 🚀 Project
+- 🎤 Mock Interview
+- 🗒️ Note
+- 🃏 Flashcard
+
+CONTENT DISPLAY PATTERNS:
+-------------------------
+
+Each content type has a distinct visual style:
+
+EXPLANATION: Clean markdown with purple accent
+QUIZ: Interactive card with blue accent
+CODE: Dark editor with green accent
+IMAGE: Full-width with caption
+VIDEO: Embedded player with title
+DOCUMENT: Link card with favicon
+PROJECT: Action card with gradient
+MOCK: Voice interface with orb
+NOTE: User-written with yellow accent
+FLASHCARD: Flip cards with orange accent
+
+NAVIGATION & ORGANIZATION:
+--------------------------
+- Linear scroll (no sidebar navigation)
+- Table of contents auto-generated from headings
+- Jump to section via TOC
+- Search within studio content
+- Filter by content type
+
+================================================================================
+                    9. PROJECT INTEGRATION
+================================================================================
+
+PROJECT GENERATION WORKFLOW:
+----------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     PROJECT GENERATION FLOW                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  TRIGGER:                                                                │
+│  ───────                                                                 │
+│  User selects "Project" and enters:                                     │
+│  "Suggest projects based on what I've learned"                          │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  CONTEXT ANALYSIS:                                                       │
+│  ─────────────────                                                       │
+│  System analyzes all previous steps in studio:                          │
+│  - Extract topics covered                                               │
+│  - Identify skills demonstrated                                         │
+│  - Determine proficiency level                                          │
+│  - Note technologies mentioned                                          │
+│                                                                          │
+│  Example context:                                                        │
+│  "User has learned: React hooks, state management, API calls,           │
+│   component composition. Completed 3 quizzes, 5 coding challenges."     │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  AI PROJECT GENERATION:                                                  │
+│  ──────────────────────                                                  │
+│  Call OpenAI with prompt:                                               │
+│  ```                                                                     │
+│  Based on the following learning progress, suggest 3 projects:          │
+│  - 2 minor projects (1-3 hours, portfolio-worthy)                       │
+│  - 1 major project (1-2 weeks, comprehensive)                           │
+│                                                                          │
+│  Context: {learning_summary}                                            │
+│                                                                          │
+│  For each project, provide:                                             │
+│  - Title                                                                 │
+│  - Description (2-3 sentences)                                          │
+│  - Difficulty (beginner/intermediate/advanced)                          │
+│  - Estimated time                                                        │
+│  - Skills practiced                                                      │
+│  - Tech stack                                                            │
+│  - Key features (3-5 bullet points)                                     │
+│  ```                                                                     │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  PROJECT DISPLAY:                                                        │
+│  ────────────────                                                        │
+│  Render project cards:                                                   │
+│                                                                          │
+│  ┌──────────────────────────────────────────────────────────────┐       │
+│  │  🚀 MINOR PROJECT                                            │       │
+│  │  ─────────────────                                           │       │
+│  │  Todo App with React Hooks                                   │       │
+│  │                                                              │       │
+│  │  Build a todo application using useState and useEffect       │       │
+│  │  hooks. Practice state management and local storage.         │       │
+│  │                                                              │       │
+│  │  ⏱️ 2 hours  |  📊 Intermediate  |  ⭐ React, Hooks         │       │
+│  │                                                              │       │
+│  │  Features:                                                   │       │
+│  │  • Add, edit, delete todos                                   │       │
+│  │  • Mark as complete                                          │       │
+│  │  • Filter by status                                          │       │
+│  │  • Persist to localStorage                                   │       │
+│  │                                                              │       │
+│  │  [Add to Portfolio]  [Get Starter Code]                     │       │
+│  └──────────────────────────────────────────────────────────────┘       │
+│                                                                          │
+│  ┌──────────────────────────────────────────────────────────────┐       │
+│  │  🎯 MAJOR PROJECT                                            │       │
+│  │  ──────────────────                                          │       │
+│  │  Full-Stack Task Management Platform                         │       │
+│  │                                                              │       │
+│  │  Build a comprehensive task management system with           │       │
+│  │  authentication, real-time updates, and team collaboration.  │       │
+│  │                                                              │       │
+│  │  ⏱️ 2 weeks  |  📊 Advanced  |  ⭐ React, Node, MongoDB     │       │
+│  │                                                              │       │
+│  │  Features:                                                   │       │
+│  │  • User authentication                                       │       │
+│  │  • Project and task management                               │       │
+│  │  • Real-time collaboration                                   │       │
+│  │  • File attachments                                          │       │
+│  │  • Analytics dashboard                                       │       │
+│  │                                                              │       │
+│  │  [Create Full Project]                                       │       │
+│  └──────────────────────────────────────────────────────────────┘       │
+│                                                                          │
+│  ▼                                                                       │
+│                                                                          │
+│  USER ACTIONS:                                                           │
+│  ─────────────                                                           │
+│                                                                          │
+│  MINOR PROJECT - "Add to Portfolio":                                    │
+│  1. Create entry in Portfolio table                                     │
+│  2. Link to studio for context                                          │
+│  3. User can add screenshots, live link later                           │
+│  4. Show success: "Added to your portfolio!"                            │
+│                                                                          │
+│  MINOR PROJECT - "Get Starter Code":                                    │
+│  1. Generate basic project structure                                    │
+│  2. Create GitHub repo (optional)                                       │
+│  3. Provide setup instructions                                          │
+│  4. Open in new tab or download                                         │
+│                                                                          │
+│  MAJOR PROJECT - "Create Full Project":                                 │
+│  1. Redirect to /projects/create                                        │
+│  2. Pre-fill form with AI-generated details                             │
+│  3. User can customize before creating                                  │
+│  4. Full project system takes over                                      │
+│  5. Link back to studio for reference                                   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+PORTFOLIO INTEGRATION:
+----------------------
+Minor projects added to portfolio create a PortfolioProject entry:
+
+```typescript
+interface PortfolioProject {
+  id: string
+  userId: string
+  title: string
+  description: string
+  techStack: string[]
+  sourceStudioId: string  // Link back to studio
+  liveUrl?: string
+  githubUrl?: string
+  images: string[]
+  featured: boolean
+  createdAt: Date
+}
+```
+
+MAIN PROJECT SYSTEM INTEGRATION:
+--------------------------------
+Major projects use existing project system:
+
+1. User clicks "Create Full Project"
+2. Opens the ProjectGenerateSheet with query params:
+   ?source=studio&studioId={id}&projectData={encoded_json}
+3. Project creation form pre-filled
+4. User can modify before creating
+5. Project created with studio reference
+6. User can return to studio for notes
+
+================================================================================
+                    10. TECHNICAL IMPLEMENTATION ROADMAP
+================================================================================
+
+PHASE 1: CORE RESTRUCTURING (Week 1-2)
+---------------------------------------
+Priority: HIGH
+Goal: Replace block editor with step-based system
+
+Tasks:
+1. Create new StudioStep model in database
+2. Migrate existing content to step format
+3. Build new StudioContentViewer component
+4. Implement content type selector UI
+5. Remove old block editor code
+6. Update save mechanism to step-based
+
+Deliverables:
+- New database schema
+- Migration script
+- Basic content viewer
+- Content type selector
+
+PHASE 2: AI INTEGRATION (Week 3-4)
+-----------------------------------
+Priority: HIGH
+Goal: Implement AI generation for all content types
+
+Tasks:
+1. Explanation generation (OpenAI)
+2. Quiz generation (OpenAI)
+3. Code challenge generation (OpenAI)
+4. Image generation (Fal.ai) - already exists
+5. Video/document search (XAI) - new
+6. Flashcard generation (OpenAI)
+7. Context building system
+
+Deliverables:
+- AI generation endpoints
+- Context analysis system
+- Generation UI flows
+
+PHASE 3: INTERACTIVE COMPONENTS (Week 5-6)
+-------------------------------------------
+Priority: MEDIUM
+Goal: Implement user interaction for each content type
+
+Tasks:
+1. Quiz taking and results
+2. Code editor and execution
+3. Flashcard study interface
+4. Mock interview integration
+5. User note editor (TipTap)
+6. Project card actions
+
+Deliverables:
+- Interactive components
+- Progress tracking
+- Results storage
+
+PHASE 4: AUTO-SAVE & OPTIMIZATION (Week 7)
+-------------------------------------------
+Priority: MEDIUM
+Goal: Implement efficient auto-save system
+
+Tasks:
+1. Event-driven save triggers
+2. Step-level save API
+3. Save state management
+4. Conflict resolution
+5. Offline support (basic)
+
+Deliverables:
+- New save system
+- Save indicators
+- Error handling
+
+PHASE 5: INTEGRATION (Week 8-9)
+--------------------------------
+Priority: HIGH
+Goal: Connect with Pathfinder, Spaces, Projects
+
+Tasks:
+1. Pathfinder → Studio creation
+2. Spaces → Studio creation
+3. Studio → Project generation
+4. Studio → Portfolio integration
+5. Cross-module navigation
+
+Deliverables:
+- Integration points
+- Data flow between modules
+- Navigation updates
+
+PHASE 6: POLISH & TESTING (Week 10)
+------------------------------------
+Priority: MEDIUM
+Goal: Refine UX and fix bugs
+
+Tasks:
+1. UI/UX improvements
+2. Performance optimization
+3. Mobile responsiveness
+4. Accessibility
+5. User testing
+6. Bug fixes
+
+Deliverables:
+- Polished UI
+- Performance metrics
+- Test coverage
+- Documentation
+
+================================================================================
+                    11. DATABASE SCHEMA CHANGES
+================================================================================
+
+NEW TABLES:
+-----------
+
+1. StudioStep
+   ───────────
+   Replaces the unstructured "content" JSON field
+
+   CREATE TABLE studio_step (
+     id VARCHAR(36) PRIMARY KEY,
+     studio_id VARCHAR(36) NOT NULL,
+     order_number INT NOT NULL,
+     type ENUM(
+       'explanation', 'note', 'quiz', 'code', 'image',
+       'video', 'document', 'project', 'mock_interview', 'flashcard'
+     ) NOT NULL,
+     content TEXT,  -- For explanation, note
+     metadata JSON,  -- Type-specific data
+     source ENUM('ai', 'user') NOT NULL,
+     status ENUM('draft', 'completed', 'archived') DEFAULT 'completed',
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     
+     FOREIGN KEY (studio_id) REFERENCES studio(id) ON DELETE CASCADE,
+     INDEX idx_studio_order (studio_id, order_number),
+     INDEX idx_type (type)
+   );
+
+2. StudioStepReference
+   ────────────────────
+   Links steps to their related entities (quiz, code block, etc.)
+
+   CREATE TABLE studio_step_reference (
+     id VARCHAR(36) PRIMARY KEY,
+     step_id VARCHAR(36) NOT NULL,
+     reference_type ENUM(
+       'quiz', 'code_block', 'flashcard_deck', 'media_block',
+       'project', 'mock_session'
+     ) NOT NULL,
+     reference_id VARCHAR(36) NOT NULL,
+     
+     FOREIGN KEY (step_id) REFERENCES studio_step(id) ON DELETE CASCADE,
+     INDEX idx_step (step_id),
+     INDEX idx_reference (reference_type, reference_id)
+   );
+
+3. StudioProjectSuggestion
+   ────────────────────────
+   Stores AI-generated project suggestions
+
+   CREATE TABLE studio_project_suggestion (
+     id VARCHAR(36) PRIMARY KEY,
+     step_id VARCHAR(36) NOT NULL,
+     project_type ENUM('minor', 'major') NOT NULL,
+     title VARCHAR(255) NOT NULL,
+     description TEXT NOT NULL,
+     difficulty ENUM('beginner', 'intermediate', 'advanced') NOT NULL,
+     estimated_hours INT,
+     tech_stack JSON,  -- Array of technologies
+     features JSON,  -- Array of feature descriptions
+     created_project_id VARCHAR(36),  -- If user created the project
+     added_to_portfolio BOOLEAN DEFAULT FALSE,
+     
+     FOREIGN KEY (step_id) REFERENCES studio_step(id) ON DELETE CASCADE,
+     INDEX idx_step (step_id)
+   );
+
+4. StudioMockSession
+   ──────────────────
+   Stores mock interview session data
+
+   CREATE TABLE studio_mock_session (
+     id VARCHAR(36) PRIMARY KEY,
+     step_id VARCHAR(36) NOT NULL,
+     topic VARCHAR(255) NOT NULL,
+     elevenlabs_conversation_id VARCHAR(255),
+     transcript JSON,  -- Array of {role, content, timestamp}
+     duration_seconds INT,
+     ai_feedback TEXT,
+     score INT,  -- 0-100
+     status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+     started_at TIMESTAMP,
+     completed_at TIMESTAMP,
+     
+     FOREIGN KEY (step_id) REFERENCES studio_step(id) ON DELETE CASCADE,
+     INDEX idx_step (step_id)
+   );
+
+MODIFIED TABLES:
+----------------
+
+1. Studio
+   ───────
+   Remove "content" JSON field, add integration fields
+
+   ALTER TABLE studio
+   DROP COLUMN content,
+   ADD COLUMN source ENUM('manual', 'pathfinder', 'space') DEFAULT 'manual',
+   ADD COLUMN source_id VARCHAR(36),  -- pathfinder_goal_id or space_id
+   ADD COLUMN step_count INT DEFAULT 0,
+   ADD INDEX idx_source (source, source_id);
+
+2. StudioQuiz
+   ───────────
+   Already exists, no changes needed
+
+3. StudioCodeBlock
+   ────────────────
+   Add execution tracking
+
+   ALTER TABLE studio_code_block
+   ADD COLUMN execution_count INT DEFAULT 0,
+   ADD COLUMN last_executed_at TIMESTAMP,
+   ADD COLUMN last_output TEXT;
+
+4. StudioMediaBlock
+   ─────────────────
+   Add source tracking
+
+   ALTER TABLE studio_media_block
+   ADD COLUMN source ENUM('ai', 'upload', 'url') DEFAULT 'ai',
+   ADD COLUMN cloudinary_public_id VARCHAR(255);
+
+MIGRATION STRATEGY:
+-------------------
+
+
+1. Create migration script to add new tables
+2. Update existing Studio model to add new fields
+3. Migrate existing studio data to new format (if needed)
+
+================================================================================
+                    IMPLEMENTATION STATUS - PHASE 1 COMPLETE
+================================================================================
+
+COMPLETED COMPONENTS:
+---------------------
+
+✅ Type Definitions (types/studios.ts)
+   - Complete type system for new architecture
+   - All step types defined
+   - Metadata interfaces for each content type
+
+✅ Server Actions (actions/studios/)
+   - studio.actions.ts: CRUD operations for studios and steps
+   - ai-generation.actions.ts: AI content generation (explanation, quiz)
+   - All using server actions (no API routes)
+
+✅ Step Components (components/studios/steps/)
+   - ExplanationStep: Markdown rendering with syntax highlighting
+   - QuizStep: Interactive quiz with results
+   - NoteStep: User-written content with auto-save
+   - Clean, professional design without borders
+
+✅ Viewer Component (components/studios/viewer/)
+   - StudioViewer: Renders all steps in sequence
+   - Handles different step types
+   - Empty state and loading states
+
+✅ UI Components (components/studios/ui/)
+   - AIInputPanel: Content type selector and prompt input
+   - Professional, intuitive interface
+   - Shows available and coming soon features
+
+✅ Container Component (components/studios/)
+   - StudioContainer: Main wrapper component
+   - Header with back navigation
+   - Combines viewer and input panel
+   - Can be embedded in other modules
+
+✅ Studios Overview Page (app/(main)/studios/)
+   - Lists all user studios
+   - Grouped by source (Pathfinder, Space, Manual)
+   - Links back to source module
+   - Empty states and loading states
+
+ARCHITECTURE HIGHLIGHTS:
+------------------------
+
+1. COMPONENT-BASED: All components are reusable and can be embedded
+2. NO STANDALONE ACCESS: Studios open within Pathfinder or Spaces
+3. SERVER ACTIONS: All data operations use server actions
+4. CLEAN DESIGN: No unnecessary borders, professional appearance
+5. AI-FIRST: Content generation is the primary interaction
+6. STEP-BASED: Sequential content with proper ordering
+7. AUTO-SAVE: Event-driven saves, not time-based
+
+NEXT STEPS (PHASE 2):
+---------------------
+
+1. DATABASE MIGRATION:
+   - Add StudioStep table
+   - Add StudioStepReference table
+   - Add StudioProjectSuggestion table
+   - Add StudioMockSession table
+   - Update Studio table with new fields
+
+2. REMAINING STEP COMPONENTS:
+   - CodeStep (with Monaco editor)
+   - ImageStep (AI-generated and uploaded)
+   - VideoStep (YouTube embed)
+   - DocumentStep (resource links)
+   - ProjectStep (project suggestions)
+   - MockInterviewStep (voice integration)
+   - FlashcardStep (spaced repetition)
+
+3. ADDITIONAL AI GENERATION:
+   - generateCode()
+   - generateFlashcards()
+   - generateImage() (already exists in old studio)
+   - generateVideoResources() (XAI integration)
+   - generateDocumentResources() (XAI integration)
+   - generateProjectSuggestions()
+
+4. PATHFINDER INTEGRATION:
+   - Create studio when goal is created
+   - Link studio to goal
+   - Open studio within Pathfinder UI
+   - Sync progress
+
+5. SPACE INTEGRATION:
+   - Create studio when joining space
+   - Link studio to space
+   - Open studio within Space UI
+   - Collaborative features (future)
+
+6. PROJECT INTEGRATION:
+   - Project suggestion generation
+   - Minor project → Portfolio
+   - Major project → Full project system
+   - Link back to studio
+
+7. TESTING & POLISH:
+   - Test all step types
+   - Test AI generation
+   - Test auto-save
+   - Mobile responsiveness
+   - Accessibility
+   - Performance optimization
+
+USAGE EXAMPLE:
+--------------
+
+// In Pathfinder component
+import { StudioContainer } from "@/components/studios/studio-container";
+import { getStudioWithSteps } from "@/actions/studios/studio.actions";
+
+// When user clicks on a goal with studio
+const studio = await getStudioWithSteps(goal.studioId);
+
+return (
+  <StudioContainer
+    studio={studio}
+    backUrl="/pathfinder"
+    backLabel="Back to Pathfinder"
+  />
+);
+
+// In Space component
+const studio = await getStudioWithSteps(space.studioId);
+
+return (
+  <StudioContainer
+    studio={studio}
+    backUrl={`/space/${space.id}`}
+    backLabel="Back to Space"
+  />
+);
+
+KEY DIFFERENCES FROM OLD STUDIO:
+---------------------------------
+
+OLD STUDIO:
+- Complex block editor with slash commands
+- Notion-like editing experience
+- Confusing user interactions
+- Auto-save every 30 seconds
+- Standalone access
+- Unstructured content
+
+NEW STUDIOS:
+- Simple content type selector
+- AI-first generation
+- Clear, guided interactions
+- Event-driven auto-save
+- Embedded in other modules
+- Structured step-based content
+- Professional, clean design
+- Reusable components
+
+================================================================================
+                            END OF DOCUMENT
+================================================================================

@@ -609,7 +609,7 @@ function SidebarContent() {
                             <button
                                 onClick={() => router.push('/signin')}
                                 className={cn(
-                                    "flex items-center w-full rounded-lg p-2 text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                                    "cursor-pointer flex items-center w-full rounded-lg p-2 text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800",
                                     isCollapsed && "justify-center"
                                 )}
                             >

@@ -56,7 +56,7 @@ const levels: { value: PathfinderLevel; label: string; desc: string }[] = [
 ]
 
 const focusOptions: { id: string; label: string }[] = [
-    { id: 'concepts', label: 'Core Concepts' },
+    { id: 'Learns', label: 'Core Learns' },
     { id: 'practice', label: 'Practice Problems' },
     { id: 'interview', label: 'Interview Prep' },
     { id: 'projects', label: 'Build Projects' },
@@ -109,11 +109,10 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
     // Generate slug preview
     const slugPreview = useMemo(() => generateSlug(formData.title), [formData.title])
 
-    // Steps: Title -> Category + Level -> Focus -> Group
+    // Steps: Title -> Category + Level -> Group
     const steps = [
         { id: 'title', title: 'What do you want to learn?' },
         { id: 'category-level', title: 'Category & Level' },
-        { id: 'focus', title: 'Focus areas' },
         { id: 'group', title: 'Organize (optional)' },
     ]
 
@@ -141,8 +140,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
         switch (step) {
             case 0: return formData.title.trim().length >= 3
             case 1: return formData.category !== '' && Boolean(formData.level)
-            case 2: return formData.focusAreas.length > 0
-            case 3: return true // Group is optional
+            case 2: return true
             default: return false
         }
     }
@@ -263,7 +261,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
             onOpenChange(isOpen)
             if (!isOpen) resetForm()
         }}>
-            <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+            <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
                 <div className="max-w-lg mx-auto">
                     <SheetHeader className="mb-6">
                         <SheetTitle className="text-xl flex items-center gap-2">
@@ -393,18 +391,6 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                                                 ))
                                                             }
                                                         </div>
-                                                    </div>
-                                                )
-                                            }
-
-                                            {
-                                                step === 1 && (
-                                                    <div className="space-y-6">
-                                                        <div className="text-center mb-4">
-                                                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                                                                {steps[1]?.title}
-                                                            </h3>
-                                                        </div>
                                                         <div>
                                                             <Label className="text-xs text-neutral-500 mb-2 block">Category</Label>
                                                             <div className="grid grid-cols-5 gap-2">
@@ -429,122 +415,129 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                                                 }
                                                             </div>
                                                         </div>
-                                                        <div>
-                                                            <Label className="text-xs text-neutral-500 mb-2 block">Experience Level</Label>
-                                                            <div className="grid grid-cols-4 gap-2">
-                                                                {
-                                                                    levels.map((level) => (
-                                                                        <button
-                                                                            key={level.value}
-                                                                            onClick={() => setFormData({ ...formData, level: level.value })}
-                                                                            className={cn(
-                                                                                "p-2.5 rounded-lg border text-center transition-all",
-                                                                                formData.level === level.value
-                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                            )}
-                                                                        >
-                                                                            <p className="text-xs font-medium text-neutral-900 dark:text-white">
-                                                                                {level.label}
-                                                                            </p>
-                                                                            <p className="text-[10px] text-neutral-500 mt-0.5">
-                                                                                {level.desc}
-                                                                            </p>
-                                                                        </button>
-                                                                    ))
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <Label className="text-xs text-neutral-500 mb-2 block">Expected duration</Label>
-                                                            <div className="grid grid-cols-4 gap-2">
-                                                                {
-                                                                    GOAL_DURATION_OPTIONS.filter((o) => o.value !== 'CUSTOM').map((opt) => (
-                                                                        <button
-                                                                            key={opt.value}
-                                                                            type="button"
-                                                                            onClick={() => setFormData({ ...formData, duration: opt.value })}
-                                                                            className={cn(
-                                                                                "p-2 rounded-lg border text-center transition-all",
-                                                                                formData.duration === opt.value
-                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                            )}
-                                                                        >
-                                                                            <p className="text-xs font-medium text-neutral-900 dark:text-white">{opt.label}</p>
-                                                                        </button>
-                                                                    ))
-                                                                }
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setFormData({ ...formData, duration: 'CUSTOM' })}
-                                                                    className={cn(
-                                                                        "p-2 rounded-lg border text-center transition-all",
-                                                                        formData.duration === 'CUSTOM'
-                                                                            ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
-                                                                            : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
-                                                                    )}
-                                                                >
-                                                                    <p className="text-xs font-medium text-neutral-900 dark:text-white">Custom</p>
-                                                                </button>
-                                                            </div>
-                                                            {
-                                                                formData.duration === 'CUSTOM' && (
-                                                                    <div className="mt-2">
-                                                                        <Input
-                                                                            type="number"
-                                                                            min={1}
-                                                                            max={365}
-                                                                            placeholder="Days"
-                                                                            value={formData.customDays ?? ''}
-                                                                            onChange={(e) => setFormData({ ...formData, customDays: e.target.value ? parseInt(e.target.value, 10) : null })}
-                                                                        />
-                                                                    </div>
-                                                                )
-                                                            }
-                                                        </div>
                                                     </div>
                                                 )
                                             }
-
                                             {
-                                                step === 2 && (
-                                                    <div className="space-y-4">
-                                                        <div className="text-center mb-4">
-                                                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                                                                {steps[2]?.title}
-                                                            </h3>
-                                                            <p className="text-sm text-neutral-500">Select at least one</p>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            {
-                                                                focusOptions.map((focus) => (
+                                                step === 1 && (
+                                                    <div>
+                                                        <div className="space-y-6">
+                                                            <div className="text-center mb-4">
+                                                                <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
+                                                                    {steps[1]?.title}
+                                                                </h3>
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs text-neutral-500 mb-2 block">Experience Level</Label>
+                                                                <div className="grid grid-cols-4 gap-2">
+                                                                    {
+                                                                        levels.map((level) => (
+                                                                            <button
+                                                                                key={level.value}
+                                                                                onClick={() => setFormData({ ...formData, level: level.value })}
+                                                                                className={cn(
+                                                                                    "p-2.5 rounded-lg border text-center transition-all",
+                                                                                    formData.level === level.value
+                                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                                )}
+                                                                            >
+                                                                                <p className="text-xs font-medium text-neutral-900 dark:text-white">
+                                                                                    {level.label}
+                                                                                </p>
+                                                                                <p className="text-[10px] text-neutral-500 mt-0.5">
+                                                                                    {level.desc}
+                                                                                </p>
+                                                                            </button>
+                                                                        ))
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <Label className="text-xs text-neutral-500 mb-2 block">Expected duration</Label>
+                                                                <div className="grid grid-cols-4 gap-2">
+                                                                    {
+                                                                        GOAL_DURATION_OPTIONS.filter((o) => o.value !== 'CUSTOM').map((opt) => (
+                                                                            <button
+                                                                                key={opt.value}
+                                                                                type="button"
+                                                                                onClick={() => setFormData({ ...formData, duration: opt.value })}
+                                                                                className={cn(
+                                                                                    "p-2 rounded-lg border text-center transition-all",
+                                                                                    formData.duration === opt.value
+                                                                                        ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                                )}
+                                                                            >
+                                                                                <p className="text-xs font-medium text-neutral-900 dark:text-white">{opt.label}</p>
+                                                                            </button>
+                                                                        ))
+                                                                    }
                                                                     <button
-                                                                        key={focus.id}
-                                                                        onClick={() => toggleFocus(focus.id)}
+                                                                        type="button"
+                                                                        onClick={() => setFormData({ ...formData, duration: 'CUSTOM' })}
                                                                         className={cn(
-                                                                            "p-3 rounded-lg border text-left transition-all flex items-center justify-between",
-                                                                            formData.focusAreas.includes(focus.id)
+                                                                            "p-2 rounded-lg border text-center transition-all",
+                                                                            formData.duration === 'CUSTOM'
                                                                                 ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
                                                                                 : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
                                                                         )}
                                                                     >
-                                                                        <span className="text-sm text-neutral-900 dark:text-white">{focus.label}</span>
-                                                                        {
-                                                                            formData.focusAreas.includes(focus.id) && (
-                                                                                <Check className="w-4 h-4 text-emerald-500" />
-                                                                            )
-                                                                        }
+                                                                        <p className="text-xs font-medium text-neutral-900 dark:text-white">Custom</p>
                                                                     </button>
-                                                                ))
-                                                            }
+                                                                </div>
+                                                                {
+                                                                    formData.duration === 'CUSTOM' && (
+                                                                        <div className="mt-2">
+                                                                            <Input
+                                                                                type="number"
+                                                                                min={1}
+                                                                                max={365}
+                                                                                placeholder="Days"
+                                                                                value={formData.customDays ?? ''}
+                                                                                onChange={(e) => setFormData({ ...formData, customDays: e.target.value ? parseInt(e.target.value, 10) : null })}
+                                                                            />
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            <div className="text-center mb-4">
+                                                                <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
+                                                                    {steps[2]?.title}
+                                                                </h3>
+                                                                <p className="text-sm text-neutral-500">Select at least one</p>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                {
+                                                                    focusOptions.map((focus) => (
+                                                                        <button
+                                                                            key={focus.id}
+                                                                            onClick={() => toggleFocus(focus.id)}
+                                                                            className={cn(
+                                                                                "p-3 rounded-lg border text-left transition-all flex items-center justify-between",
+                                                                                formData.focusAreas.includes(focus.id)
+                                                                                    ? "border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800"
+                                                                                    : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                                                                            )}
+                                                                        >
+                                                                            <span className="text-sm text-neutral-900 dark:text-white">{focus.label}</span>
+                                                                            {
+                                                                                formData.focusAreas.includes(focus.id) && (
+                                                                                    <Check className="w-4 h-4 text-emerald-500" />
+                                                                                )
+                                                                            }
+                                                                        </button>
+                                                                    ))
+                                                                }
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )
                                             }
-
                                             {
-                                                step === 3 && (
+                                                step === 2 && (
                                                     <div className="space-y-4">
                                                         <div className="text-center mb-4">
                                                             <h3 className="text-lg font-medium text-neutral-900 dark:text-white">

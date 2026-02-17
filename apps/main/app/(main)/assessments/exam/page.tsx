@@ -56,7 +56,7 @@ const DIFFICULTIES: Record<QuestionDifficulty, {
         timeLimit: 20 * 60,
         passingScore: 60,
         questions: 15,
-        description: 'Basic concepts and fundamentals'
+        description: 'Basic Learns and fundamentals'
     },
     INTERMEDIATE: {
         label: 'Intermediate',

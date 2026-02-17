@@ -21,10 +21,10 @@ const moduleConfig = {
         gradient: "from-orange-500 to-red-500",
         bg: "bg-orange-500/10",
     },
-    concepts: {
+    Learns: {
         icon: Lightbulb,
-        label: "Concepts",
-        href: "/learnings/concepts",
+        label: "Learns",
+        href: "/learnings/Learns",
         gradient: "from-blue-500 to-cyan-500",
         bg: "bg-blue-500/10",
     },
@@ -52,7 +52,7 @@ const moduleConfig = {
 };
 
 interface ActivityItem {
-    type: 'concept' | 'project' | 'mock';
+    type: 'Learn' | 'project' | 'mock';
     title: string;
     action: 'completed' | 'learning' | 'working';
     progress?: number;
@@ -66,7 +66,7 @@ interface LearningsSummary {
     totalLearningTime: number;
     modules: {
         projects?: { inProgress: number; completed: number; recent?: { title: string }[] };
-        concepts?: { learning: number; completed: number; recent?: { title: string; progress: number }[] };
+        Learns?: { learning: number; completed: number; recent?: { title: string; progress: number }[] };
         mock?: { sessions: number; avgScore: number };
         collectives?: { memberships: number };
     };
@@ -75,13 +75,13 @@ interface LearningsSummary {
 
 // Type definitions for module data
 type ProjectsModuleData = { inProgress: number; completed: number; recent?: { title: string }[] };
-type ConceptsModuleData = { learning: number; completed: number; recent?: { title: string; progress: number }[] };
+type LearnsModuleData = { learning: number; completed: number; recent?: { title: string; progress: number }[] };
 type MockModuleData = { sessions: number; avgScore: number };
 type CollectivesModuleData = { memberships: number };
 
 function renderModuleContent(
     key: string,
-    moduleData: ProjectsModuleData | ConceptsModuleData | MockModuleData | CollectivesModuleData | undefined
+    moduleData: ProjectsModuleData | LearnsModuleData | MockModuleData | CollectivesModuleData | undefined
 ): React.ReactNode {
     if (!moduleData) return null;
 
@@ -102,8 +102,8 @@ function renderModuleContent(
         );
     }
 
-    if (key === "concepts" && 'learning' in moduleData) {
-        const data = moduleData as ConceptsModuleData;
+    if (key === "Learns" && 'learning' in moduleData) {
+        const data = moduleData as LearnsModuleData;
         return (
             <div className="space-y-2">
                 <div className="flex items-center gap-4 text-sm text-neutral-500">
@@ -341,11 +341,11 @@ export default function LearningsPage() {
                                         >
                                             <div className={cn(
                                                 "h-10 w-10 rounded-xl flex items-center justify-center",
-                                                activity.type === "concept" && "bg-blue-500/10",
+                                                activity.type === "Learn" && "bg-blue-500/10",
                                                 activity.type === "project" && "bg-orange-500/10",
                                                 activity.type === "mock" && "bg-green-500/10",
                                             )}>
-                                                {activity.type === "concept" && <Lightbulb className="h-5 w-5 text-blue-500" />}
+                                                {activity.type === "Learn" && <Lightbulb className="h-5 w-5 text-blue-500" />}
                                                 {activity.type === "project" && <FolderKanban className="h-5 w-5 text-orange-500" />}
                                                 {activity.type === "mock" && <Mic2 className="h-5 w-5 text-green-500" />}
                                             </div>
@@ -376,7 +376,7 @@ export default function LearningsPage() {
                                     Start learning to see your progress here
                                 </p>
                                 <Button asChild>
-                                    <Link href="/concepts">
+                                    <Link href="/Learns">
                                         Start Learning
                                         <ChevronRight className="ml-2 h-4 w-4" />
                                     </Link>

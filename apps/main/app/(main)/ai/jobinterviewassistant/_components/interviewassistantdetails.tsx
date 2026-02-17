@@ -1049,7 +1049,7 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
                                                 ? 'text-white/80'
                                                 : 'text-slate-500 dark:text-slate-400'
                                                 }`}>
-                                                {tab.value === 'technical' && 'Deep-dive into role-specific technical concepts'}
+                                                {tab.value === 'technical' && 'Deep-dive into role-specific technical Learns'}
                                                 {tab.value === 'behavioral' && 'Master soft skills and behavioral scenarios'}
                                             </div>
                                         </TabsTrigger>
@@ -1068,7 +1068,7 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
                                                     Technical Questions
                                                 </div>
                                                 <div className="text-slate-600 dark:text-slate-400 font-medium">
-                                                    Deep-dive into role-specific technical concepts and system design
+                                                    Deep-dive into role-specific technical Learns and system design
                                                 </div>
                                             </div>
                                             <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200 dark:border-teal-800 px-4 py-2 text-sm">
@@ -1083,7 +1083,7 @@ export default function InterviewAssistantDetails({ slug }: { slug: string }) {
                                                 <div className="text-left">
                                                     <h5 className="font-medium text-emerald-800 dark:text-emerald-300 mb-2">Think Through This</h5>
                                                     <p className="text-emerald-700 dark:text-emerald-200 text-sm leading-relaxed">
-                                                        Consider the technical concepts, implementation details, architecture patterns, and potential edge cases. Think about scalability, performance, and best practices.
+                                                        Consider the technical Learns, implementation details, architecture patterns, and potential edge cases. Think about scalability, performance, and best practices.
                                                     </p>
                                                 </div>
                                             </div>

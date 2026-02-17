@@ -1,5 +1,5 @@
 ═══════════════════════════════════════════════════════════════════
-                CONCEPTS MODULE — FULL VALIDATION REPORT
+                LearnS MODULE — FULL VALIDATION REPORT
 ═══════════════════════════════════════════════════════════════════
 Document Version: 1.0
 Date: January 2026
@@ -25,7 +25,7 @@ TABLE OF CONTENTS
 1. EXECUTIVE SUMMARY
 ═══════════════════════════════════════════════════════════════════
 
-The Concepts module is a **well-architected, feature-rich learning
+The Learns module is a **well-architected, feature-rich learning
 system** with a solid data model and comprehensive UI. It provides
 interactive, step-based learning with quizzes, coding challenges,
 comparisons, and AI assistance — closely aligning with the user's
@@ -48,8 +48,8 @@ KEY FINDINGS:
 • Challenge code validation is trivially mocked (length > 10)
 • AI Assistant panel uses mock responses (no real AI call)
 • NOT linked in main navigation — essentially hidden from users
-• Well-integrated with Spaces (CONCEPT is a SpaceContentType)
-• Referenced in Projects schema (concept tags, conceptual scores)
+• Well-integrated with Spaces (Learn is a SpaceContentType)
+• Referenced in Projects schema (Learn tags, Learnual scores)
 • Bookmarks, Progress, Requests systems all fully built
 
 ═══════════════════════════════════════════════════════════════════
@@ -58,46 +58,46 @@ KEY FINDINGS:
 
 2.1 ROUTES & PAGES
 ──────────────────
-/concepts                → Landing page (hero, categories, trending, recent)
-/concepts/browse         → Browse/search with filters (category, difficulty, sort)
-/concepts/[slug]         → Concept detail view (step-by-step learning)
-/concepts/create         → Admin concept creation form
-/concepts/my-progress    → User's learning progress dashboard
-/concepts/bookmarks      → User's bookmarked concepts
+/Learns                → Landing page (hero, categories, trending, recent)
+/Learns/browse         → Browse/search with filters (category, difficulty, sort)
+/Learns/[slug]         → Learn detail view (step-by-step learning)
+/Learns/create         → Admin Learn creation form
+/Learns/my-progress    → User's learning progress dashboard
+/Learns/bookmarks      → User's bookmarked Learns
 
 2.2 COMPONENTS (30 files)
 ─────────────────────────
-Landing:     concepts-hero, categories-grid, trending-concepts,
-             recent-concepts, continue-learning-section, skeletons
+Landing:     Learns-hero, categories-grid, trending-Learns,
+             recent-Learns, continue-learning-section, skeletons
 Browse:      browse-page-client, browse-filters, browse-header,
-             concepts-grid, browse-skeletons
-Detail:      concept-detail-client, step-card, ai-assistant-panel,
-             concept-detail-skeleton
-Create:      concept-create-form (878 lines, very comprehensive)
+             Learns-grid, browse-skeletons
+Detail:      Learn-detail-client, step-card, ai-assistant-panel,
+             Learn-detail-skeleton
+Create:      Learn-create-form (878 lines, very comprehensive)
 Progress:    progress-header, progress-stats, learning-journey,
              progress-skeleton
 Bookmarks:   bookmarks-grid, bookmarks-header, bookmarks-skeleton
 
-2.3 SERVER ACTIONS (concept.action.ts — 1449 lines)
+2.3 SERVER ACTIONS (Learn.action.ts — 1449 lines)
 ────────────────────────────────────────────────────
-CRUD:        getConcepts, getConceptBySlug, createConcept,
-             updateConcept, publishConcept, unpublishConcept,
-             archiveConcept, deleteConcept
-Steps:       addConceptStep, updateConceptStep, deleteConceptStep,
-             reorderConceptSteps
+CRUD:        getLearns, getLearnBySlug, createLearn,
+             updateLearn, publishLearn, unpublishLearn,
+             archiveLearn, deleteLearn
+Steps:       addLearnStep, updateLearnStep, deleteLearnStep,
+             reorderLearnSteps
 Code Blocks: addCodeBlock, updateCodeBlock, deleteCodeBlock
-Interactions: toggleConceptLike, toggleConceptBookmark,
-              recordConceptView
-Progress:    updateConceptProgress, submitQuizAnswer,
+Interactions: toggleLearnLike, toggleLearnBookmark,
+              recordLearnView
+Progress:    updateLearnProgress, submitQuizAnswer,
              submitChallengeCode, getUserProgress
 Bookmarks:   getUserBookmarks, updateBookmark
-Comments:    getConceptComments, addComment, editComment,
+Comments:    getLearnComments, addComment, editComment,
              deleteComment, pinComment
-Requests:    submitConceptRequest, getConceptRequests,
-             updateConceptRequestStatus
-Analytics:   getConceptStats, getTrendingConcepts, getCategories
+Requests:    submitLearnRequest, getLearnRequests,
+             updateLearnRequestStatus
+Analytics:   getLearnStats, getTrendingLearns, getCategories
 
-2.4 AI ACTIONS (concept-ai.action.ts — 480 lines)
+2.4 AI ACTIONS (Learn-ai.action.ts — 480 lines)
 ──────────────────────────────────────────────────
 generateQuizQuestion      → Uses OpenAI (real implementation)
 generateChallenge         → Uses OpenAI (real implementation)
@@ -114,28 +114,28 @@ data) instead of these actual AI actions. This is a disconnect.
 3. ARCHITECTURE & DATA MODEL AUDIT
 ═══════════════════════════════════════════════════════════════════
 
-3.1 PRISMA MODELS (concepts.prisma — 312 lines)
+3.1 PRISMA MODELS (Learns.prisma — 312 lines)
 ────────────────────────────────────────────────
 ┌─────────────────────┬────────────────────────────────────────┐
 │ Model               │ Purpose                                │
 ├─────────────────────┼────────────────────────────────────────┤
-│ Concept             │ Core entity: title, description, SEO,  │
+│ Learn             │ Core entity: title, description, SEO,  │
 │                     │ engagement counters, Space relation     │
-│ ConceptStep         │ Ordered steps within a concept          │
+│ LearnStep         │ Ordered steps within a Learn          │
 │                     │ (8 types, rich content fields)          │
-│ ConceptCodeBlock    │ Code snippets per step (highlight,      │
+│ LearnCodeBlock    │ Code snippets per step (highlight,      │
 │                     │ line numbers, runnable flag)             │
-│ ConceptLike         │ User likes (unique per user+concept)    │
-│ ConceptBookmark     │ Bookmarks with folders & notes          │
-│ ConceptComment      │ Threaded comments with moderation       │
-│ ConceptView         │ View analytics (source, duration)       │
-│ ConceptProgress     │ Per-user progress, quiz/challenge data  │
-│ ConceptRequest      │ Community requests with admin workflow  │
+│ LearnLike         │ User likes (unique per user+Learn)    │
+│ LearnBookmark     │ Bookmarks with folders & notes          │
+│ LearnComment      │ Threaded comments with moderation       │
+│ LearnView         │ View analytics (source, duration)       │
+│ LearnProgress     │ Per-user progress, quiz/challenge data  │
+│ LearnRequest      │ Community requests with admin workflow  │
 └─────────────────────┴────────────────────────────────────────┘
 
 3.2 ENUMS
 ─────────
-ConceptCategory (22 values):
+LearnCategory (22 values):
   WEB_DEVELOPMENT, MOBILE_DEVELOPMENT, DATA_STRUCTURES,
   ALGORITHMS, SYSTEM_DESIGN, DATABASE, DEVOPS, CLOUD_COMPUTING,
   MACHINE_LEARNING, ARTIFICIAL_INTELLIGENCE, CYBERSECURITY,
@@ -143,24 +143,24 @@ ConceptCategory (22 values):
   API_DESIGN, TESTING, VERSION_CONTROL, UI_UX_DESIGN,
   GAME_DEVELOPMENT, NETWORKING, OPERATING_SYSTEMS, CUSTOM
 
-ConceptDifficulty: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
-ConceptStatus: DRAFT, PUBLISHED, ARCHIVED
-ConceptStepType: EXPLANATION, CODE, VISUALIZATION, COMPARISON,
+LearnDifficulty: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+LearnStatus: DRAFT, PUBLISHED, ARCHIVED
+LearnStepType: EXPLANATION, CODE, VISUALIZATION, COMPARISON,
                  QUIZ, CHALLENGE, INTERACTIVE, SUMMARY
-ConceptRequestStatus: PENDING, IN_PROGRESS, COMPLETED, REJECTED
+LearnRequestStatus: PENDING, IN_PROGRESS, COMPLETED, REJECTED
 
 3.3 DATA MODEL ASSESSMENT: ✅ EXCELLENT
 
 The schema is well-designed with:
 • Proper indexing on all frequently queried fields
-• Unique constraints where appropriate (slug, user+concept pairs)
+• Unique constraints where appropriate (slug, user+Learn pairs)
 • Cascade deletes for data integrity
 • Flexible JSON fields for quiz options, test cases, etc.
-• SEO fields (metaTitle, metaDescription) on Concept
+• SEO fields (metaTitle, metaDescription) on Learn
 • Engagement counters (viewCount, likeCount, etc.) for performance
 • Space relation (spaceId) for cross-module integration
 
-ISSUE: ConceptStep has both `tips` as String[] and embedded quiz/
+ISSUE: LearnStep has both `tips` as String[] and embedded quiz/
 challenge fields. This is a pragmatic "fat model" approach — works
 but could become unwieldy if more step types are added.
 
@@ -168,19 +168,19 @@ but could become unwieldy if more step types are added.
 4. FEATURE-BY-FEATURE ASSESSMENT
 ═══════════════════════════════════════════════════════════════════
 
-4.1 LANDING PAGE (/concepts)
+4.1 LANDING PAGE (/Learns)
 ────────────────────────────
 Status: ✅ FUNCTIONAL
 • Hero with search, animated floating icons
-• Continue Learning section (shows in-progress concepts)
+• Continue Learning section (shows in-progress Learns)
 • Categories grid (fetched from DB)
-• Trending concepts (sorted by view+like count)
-• Recent concepts (latest published)
+• Trending Learns (sorted by view+like count)
+• Recent Learns (latest published)
 Issues:
-  ⚠️ Stats are hardcoded ("50+ Concepts", "200+ Steps", "20+ Categories")
-  ⚠️ totalConcepts prop defaults to 50, not fetched from DB
+  ⚠️ Stats are hardcoded ("50+ Learns", "200+ Steps", "20+ Categories")
+  ⚠️ totalLearns prop defaults to 50, not fetched from DB
 
-4.2 BROWSE PAGE (/concepts/browse)
+4.2 BROWSE PAGE (/Learns/browse)
 ──────────────────────────────────
 Status: ✅ FUNCTIONAL
 • Server-side filtered search (category, difficulty, sort)
@@ -189,7 +189,7 @@ Status: ✅ FUNCTIONAL
 • Empty state with create CTA
 Issues: None significant
 
-4.3 CONCEPT DETAIL (/concepts/[slug])
+4.3 Learn DETAIL (/Learns/[slug])
 ─────────────────────────────────────
 Status: ✅ MOSTLY FUNCTIONAL
 • Step-by-step navigation (sidebar + bottom dots + keyboard arrows)
@@ -207,7 +207,7 @@ Issues:
      content is user-generated — mitigated if admin-only creation)
   ⚠️ INTERACTIVE step type exists in enum but has no renderer
 
-4.4 CREATE FORM (/concepts/create)
+4.4 CREATE FORM (/Learns/create)
 ──────────────────────────────────
 Status: ⚠️ INCOMPLETE (CRITICAL)
 • Beautiful, professional UI (878 lines)
@@ -217,28 +217,28 @@ Status: ⚠️ INCOMPLETE (CRITICAL)
 • Tag management, category/difficulty selectors
 Issues:
   🔴 AI generation is MOCKED (setTimeout with hardcoded data)
-     Real AI actions exist in concept-ai.action.ts but are
+     Real AI actions exist in Learn-ai.action.ts but are
      NOT wired up to this form
   🔴 NO SUBMIT/SAVE FUNCTIONALITY — "Save Draft" and "Publish System"
      buttons are disabled stubs. The form cannot actually create
-     a concept in the database.
+     a Learn in the database.
   🔴 Admin check is commented out (lines 22-29 in create/page.tsx)
      Anyone with a login can access the form (though it can't save)
   ⚠️ Missing category "DATABASE" in the create form categories
      array vs. the full enum (22 categories in enum, 9 in form)
-  ⚠️ ConceptStepType mismatch: Form has 7 types but enum has 8
+  ⚠️ LearnStepType mismatch: Form has 7 types but enum has 8
      (missing INTERACTIVE)
 
-4.5 PROGRESS TRACKING (/concepts/my-progress)
+4.5 PROGRESS TRACKING (/Learns/my-progress)
 ──────────────────────────────────────────────
 Status: ✅ FUNCTIONAL
-• Per-concept progress with completion percentage
+• Per-Learn progress with completion percentage
 • Streak tracking (7-day window)
 • Stats dashboard (completed, in-progress, total, streak)
 • Learning journey timeline sorted by recent activity
 Issues: None significant
 
-4.6 BOOKMARKS (/concepts/bookmarks)
+4.6 BOOKMARKS (/Learns/bookmarks)
 ───────────────────────────────────
 Status: ✅ FUNCTIONAL
 • Folder-based organization
@@ -246,10 +246,10 @@ Status: ✅ FUNCTIONAL
 • Remove bookmark functionality
 Issues: None significant
 
-4.7 CONCEPT REQUESTS
+4.7 Learn REQUESTS
 ────────────────────
 Status: ✅ FUNCTIONAL (Backend only)
-• Users can submit requests for new concepts
+• Users can submit requests for new Learns
 • Admin workflow: PENDING → IN_PROGRESS → COMPLETED/REJECTED
 • Upvote system for community prioritization
 Issues:
@@ -260,35 +260,35 @@ Issues:
 ═══════════════════════════════════════════════════════════════════
 
 5.1 SPACES MODULE ✅ INTEGRATED
-• SpaceContentType includes "CONCEPT"
-• space-step-card.tsx navigates to /concepts/[slug]
-• Concept model has spaceId field linking to Space
-• Concepts can be embedded as steps in Space timelines
+• SpaceContentType includes "Learn"
+• space-step-card.tsx navigates to /Learns/[slug]
+• Learn model has spaceId field linking to Space
+• Learns can be embedded as steps in Space timelines
 
 5.2 PROJECTS MODULE ✅ REFERENCED
-• Projects schema has "concept tags" and "conceptualScore"
-• TaskContent has QUIZ type "about concepts"
-• Projects track concept-related scoring
+• Projects schema has "Learn tags" and "LearnualScore"
+• TaskContent has QUIZ type "about Learns"
+• Projects track Learn-related scoring
 
 5.3 LEARNINGS MODULE ✅ LINKED
-• /learnings layout has a "Concepts" tab (/learnings/concepts)
-• /learnings/concepts page shows concept cards
-• Learnings page links to /concepts for "See All"
+• /learnings layout has a "Learns" tab (/learnings/Learns)
+• /learnings/Learns page shows Learn cards
+• Learnings page links to /Learns for "See All"
 
 5.4 BOOKMARKS MODULE ✅ LINKED
-• /bookmarks layout has "Concepts" tab (/bookmarks/concepts)
-• /bookmarks/concepts page shows bookmarked concept cards
+• /bookmarks layout has "Learns" tab (/bookmarks/Learns)
+• /bookmarks/Learns page shows bookmarked Learn cards
 
 5.5 ACHIEVEMENTS MODULE ✅ REFERENCED
-• BadgeCategory includes "CONCEPTS"
-• Concept mastery can earn achievements
+• BadgeCategory includes "LearnS"
+• Learn mastery can earn achievements
 
 5.6 JOBS MODULE ✅ REFERENCED
-• Job.preparationStatus includes "concepts_reviewed" flag
-• Concept review is tracked in job prep workflow
+• Job.preparationStatus includes "Learns_reviewed" flag
+• Learn review is tracked in job prep workflow
 
 5.7 NAVIGATION ❌ NOT LINKED
-• Concepts is NOT in main sidebar navigation (navigation.ts)
+• Learns is NOT in main sidebar navigation (navigation.ts)
 • Only accessible via /learnings tab or direct URL
 • This severely limits discoverability
 
@@ -299,13 +299,13 @@ Issues:
 SEVERITY: 🔴 CRITICAL  ⚠️ IMPORTANT  💡 NICE-TO-HAVE
 
 🔴 G1: CREATE FORM CANNOT SAVE
-   The concept-create-form.tsx has no submit handler that calls
-   the createConcept server action. "Save Draft" and "Publish"
-   are disabled stubs. No concept can be created through the UI.
+   The Learn-create-form.tsx has no submit handler that calls
+   the createLearn server action. "Save Draft" and "Publish"
+   are disabled stubs. No Learn can be created through the UI.
 
 🔴 G2: AI GENERATION IS MOCKED IN CREATE FORM
    handleGenerate() uses setTimeout with hardcoded mock data.
-   Meanwhile, concept-ai.action.ts has REAL OpenAI integration
+   Meanwhile, Learn-ai.action.ts has REAL OpenAI integration
    that is never called from the UI.
 
 🔴 G3: CHALLENGE CODE EXECUTION IS TRIVIALLY MOCKED
@@ -318,7 +318,7 @@ SEVERITY: 🔴 CRITICAL  ⚠️ IMPORTANT  💡 NICE-TO-HAVE
    hardcoded template strings. Should call OpenAI.
 
 ⚠️ G5: NOT IN MAIN NAVIGATION
-   Concepts has NO entry in navigation.ts. Users can only find
+   Learns has NO entry in navigation.ts. Users can only find
    it via /learnings or direct URL. This makes the entire module
    essentially hidden.
 
@@ -326,13 +326,13 @@ SEVERITY: 🔴 CRITICAL  ⚠️ IMPORTANT  💡 NICE-TO-HAVE
    create/page.tsx has the admin role check commented out (lines
    22-29). Any authenticated user can access the create form.
 
-⚠️ G7: NO CONCEPT REQUEST UI
-   Backend supports concept requests with full admin workflow,
+⚠️ G7: NO Learn REQUEST UI
+   Backend supports Learn requests with full admin workflow,
    but there is no frontend UI to submit or manage requests.
 
 ⚠️ G8: HARDCODED STATS IN HERO
-   concepts-hero.tsx shows "50+", "200+", "20+" as hardcoded text
-   instead of fetching real counts from getConceptStats().
+   Learns-hero.tsx shows "50+", "200+", "20+" as hardcoded text
+   instead of fetching real counts from getLearnStats().
 
 ⚠️ G9: CREATE FORM CATEGORY MISMATCH
    The create form only shows 9 of 22 available categories.
@@ -347,7 +347,7 @@ SEVERITY: 🔴 CRITICAL  ⚠️ IMPORTANT  💡 NICE-TO-HAVE
    the create form, not in the viewer.
 
 💡 G11: INTERACTIVE STEP TYPE NOT IMPLEMENTED
-   ConceptStepType includes INTERACTIVE but there's no renderer
+   LearnStepType includes INTERACTIVE but there's no renderer
    for it in step-card.tsx.
 
 💡 G12: VISUALIZATION UPLOAD NOT FUNCTIONAL
@@ -356,7 +356,7 @@ SEVERITY: 🔴 CRITICAL  ⚠️ IMPORTANT  💡 NICE-TO-HAVE
 
 💡 G13: NO SPACED REPETITION / REVIEW SYSTEM
    Progress tracking exists but there's no mechanism to prompt
-   users to review concepts at optimal intervals.
+   users to review Learns at optimal intervals.
 
 ═══════════════════════════════════════════════════════════════════
 7. COMPETITIVE BENCHMARKING
@@ -388,7 +388,7 @@ Compared against: Brilliant, Scrimba, NeetCode, Codecademy
 └────────────────────────┴───────┴──────┴───────┴─────┴─────────┘
   ⚠️* = Feature exists but is mocked/incomplete
 
-COMPETITIVE ADVANTAGE: Our Concepts module has unique features
+COMPETITIVE ADVANTAGE: Our Learns module has unique features
 that competitors lack — Comparisons, Community Requests, Space
 embedding, and AI content generation (once completed). The
 combination of these makes for a differentiated learning product.
@@ -437,9 +437,9 @@ PHASE 1: CRITICAL FIXES (1-2 days) — Make it Functional
 Priority: 🔴 MUST DO
 
 P1.1  Wire up Create Form submission
-      • Connect "Save Draft" button to createConcept() action
-      • Connect "Publish System" to createConcept() + publishConcept()
-      • Add step-by-step saving using addConceptStep() + addCodeBlock()
+      • Connect "Save Draft" button to createLearn() action
+      • Connect "Publish System" to createLearn() + publishLearn()
+      • Add step-by-step saving using addLearnStep() + addCodeBlock()
       • Re-enable admin role check in create/page.tsx
 
 P1.2  Replace mock AI generation with real AI actions
@@ -448,7 +448,7 @@ P1.2  Replace mock AI generation with real AI actions
       • Import and call generateComparison() instead of mock
       • Import and call generateStepContent() instead of mock
 
-P1.3  Add Concepts to main navigation
+P1.3  Add Learns to main navigation
       • Add entry to navigation.ts under a Learning section
       • Consider placing under existing "Learnings" group or as
         standalone primary nav item
@@ -459,7 +459,7 @@ Priority: ⚠️ SHOULD DO
 
 P2.1  Fix AI Assistant panel
       • Replace generateMockResponse() with real OpenAI call
-      • Use concept context (title + current step content) as prompt
+      • Use Learn context (title + current step content) as prompt
 
 P2.2  Add syntax highlighting to code blocks
       • Use Prism.js or Shiki in step-card.tsx code block rendering
@@ -471,18 +471,18 @@ P2.3  Fix challenge code validation
       • Option C: At minimum, run regex/AST checks for key patterns
 
 P2.4  Fix hero stats
-      • Call getConceptStats() and pass real data to ConceptsHero
+      • Call getLearnStats() and pass real data to LearnsHero
       • Remove hardcoded "50+", "200+", "20+"
 
 P2.5  Sync create form categories with full enum
-      • Add all 22 ConceptCategory values to the categories array
+      • Add all 22 LearnCategory values to the categories array
 
 PHASE 3: FEATURE COMPLETION (3-5 days)
 ──────────────────────────────────────
 Priority: 💡 NICE TO HAVE
 
-P3.1  Build Concept Request UI
-      • Add "Request a Concept" button on browse page
+P3.1  Build Learn Request UI
+      • Add "Request a Learn" button on browse page
       • Create request submission modal/form
       • Admin page to manage requests (in /admin)
 
@@ -495,39 +495,39 @@ P3.3  Implement visualization upload
       • Wire up fal.ai image generation for AI-generated visuals
 
 P3.4  Add spaced repetition / review system
-      • Track last completed date per concept
+      • Track last completed date per Learn
       • Suggest reviews at increasing intervals
       • Add "Review Due" badge to continue-learning section
 
 P3.5  Enhance Pathfinder integration
-      • When a Pathfinder sub-goal has related concepts, show them
-      • "Learn the concept" → opens concept detail inline or linked
+      • When a Pathfinder sub-goal has related Learns, show them
+      • "Learn the Learn" → opens Learn detail inline or linked
 
 ═══════════════════════════════════════════════════════════════════
 10. TECHNICAL DEBT & QUICK WINS
 ═══════════════════════════════════════════════════════════════════
 
 QUICK WINS (< 1 hour each):
-• Fix hardcoded stats in hero → fetch from getConceptStats()
+• Fix hardcoded stats in hero → fetch from getLearnStats()
 • Re-enable admin check in create/page.tsx
-• Add Concepts to navigation.ts
+• Add Learns to navigation.ts
 • Add missing categories to create form
 • Fix dangerouslySetInnerHTML → use DOMPurify or ReactMarkdown
 
 TECH DEBT:
 • Create form uses local component types instead of importing
-  from Prisma client (ConceptCategory, ConceptDifficulty, etc.)
+  from Prisma client (LearnCategory, LearnDifficulty, etc.)
   which has led to enum mismatches
 • challenge validation is a known intentional stub
 • AI panel mock responses should be clearly marked as TODO
-• concept-create-form.tsx at 878 lines should be split into
+• Learn-create-form.tsx at 878 lines should be split into
   sub-components (QuizStepEditor, ChallengeStepEditor, etc.)
 
 ═══════════════════════════════════════════════════════════════════
 CONCLUSION
 ═══════════════════════════════════════════════════════════════════
 
-The Concepts module is a well-designed, well-architected feature
+The Learns module is a well-designed, well-architected feature
 that aligns perfectly with your vision of interactive topic-based
 learning. It has comprehensive data models, rich UI, and strong
 integration with other platform modules.

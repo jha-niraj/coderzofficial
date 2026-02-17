@@ -456,3 +456,71 @@ export function CommunityHighlightsSkeleton() {
         </Card>
     );
 }
+
+export function ProjectsPreviewSkeleton() {
+    return (
+        <Card>
+            <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <Skeleton className="h-5 w-32" />
+                    </div>
+                    <Skeleton className="h-8 w-24" />
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    {
+                        [...Array(3)].map((_, i) => (
+                            <div key={i} className="p-3 rounded-lg border bg-muted/30 flex items-start gap-3">
+                                <Skeleton className="h-5 w-5 rounded-full mt-0.5" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Skeleton className="h-6 w-6" />
+                                        <Skeleton className="h-4 w-40" />
+                                    </div>
+                                    <Skeleton className="h-1.5 w-full rounded-full" />
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+export function MockVoicePreviewSkeleton() {
+    return (
+        <Card>
+            <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <Skeleton className="h-5 w-32" />
+                    </div>
+                    <Skeleton className="h-8 w-24" />
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    {
+                        [...Array(3)].map((_, i) => (
+                            <div key={i} className="p-3 rounded-lg border bg-muted/30 flex items-start gap-3">
+                                <Skeleton className="h-5 w-5 rounded-full mt-0.5" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Skeleton className="h-6 w-6" />
+                                        <Skeleton className="h-4 w-40" />
+                                    </div>
+                                    <Skeleton className="h-1.5 w-full rounded-full" />
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+            </CardContent>
+        </Card>
+    );
+}

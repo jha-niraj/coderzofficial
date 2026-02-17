@@ -53,7 +53,7 @@ function getOpenAIClient() {
 
 /**
  * Generate quiz questions for a task using AI
- * Questions are based on the task's concepts and description
+ * Questions are based on the task's Learns and description
  */
 export async function generateTaskQuizQuestions(
     taskId: string
@@ -61,7 +61,7 @@ export async function generateTaskQuizQuestions(
     try {
         const user = await getCurrentUser();
 
-        // Get task with its concepts
+        // Get task with its Learns
         const task = await prisma.projectV2Task.findUnique({
             where: { id: taskId },
             include: {
@@ -99,10 +99,10 @@ export async function generateTaskQuizQuestions(
         // Generate new questions using AI
         const openai = getOpenAIClient();
 
-        const concepts = task.concepts as Array<{ title: string; description: string }> | null;
-        const conceptsText = concepts
-            ? concepts.map(c => `- ${c.title}: ${c.description}`).join("\n")
-            : "No specific concepts defined";
+        const Learns = task.Learns as Array<{ title: string; description: string }> | null;
+        const LearnsText = Learns
+            ? Learns.map(c => `- ${c.title}: ${c.description}`).join("\n")
+            : "No specific Learns defined";
 
         const prompt = `You are an expert coding instructor. Generate 3-5 multiple choice quiz questions to test a developer's understanding after completing this task.
 
@@ -111,11 +111,11 @@ Task Description: ${task.description.join("\n")}
 Success Criteria: ${task.criteria.join("\n")}
 Technologies: ${task.sprint.project.technologies.join(", ")}
 
-Key Concepts to Test:
-${conceptsText}
+Key Learns to Test:
+${LearnsText}
 
 Generate questions that:
-1. Test conceptual understanding, not just memorization
+1. Test Learnual understanding, not just memorization
 2. Have 4 options each (one correct)
 3. Include clear explanations for why the correct answer is right
 4. Cover different aspects of the task
@@ -531,7 +531,7 @@ export async function prepareSprintMockKnowledge(
                         description: true,
                         criteria: true,
                         hints: true,
-                        concepts: true,
+                        Learns: true,
                         category: true,
                         tags: true,
                     },
@@ -566,10 +566,10 @@ export async function prepareSprintMockKnowledge(
                 knowledgeBase += `- Description: ${task.description.join(" ")}\n`;
                 knowledgeBase += `- Success Criteria: ${task.criteria.join("; ")}\n`;
 
-                if (task.concepts) {
-                    const concepts = task.concepts as Array<{ title: string; description: string }>;
-                    concepts.forEach(c => {
-                        knowledgeBase += `- Concept: ${c.title} - ${c.description}\n`;
+                if (task.Learns) {
+                    const Learns = task.Learns as Array<{ title: string; description: string }>;
+                    Learns.forEach(c => {
+                        knowledgeBase += `- learn: ${c.title} - ${c.description}\n`;
                         if (!topics.includes(c.title)) {
                             topics.push(c.title);
                         }
@@ -591,7 +591,7 @@ export async function prepareSprintMockKnowledge(
         knowledgeBase += `\n## Interview Guidelines\n`;
         knowledgeBase += `Ask questions about:\n`;
         knowledgeBase += `1. Implementation decisions made during these sprints\n`;
-        knowledgeBase += `2. Technical concepts that were applied\n`;
+        knowledgeBase += `2. Technical Learns that were applied\n`;
         knowledgeBase += `3. Challenges faced and how they were solved\n`;
         knowledgeBase += `4. Alternative approaches that could have been taken\n`;
 

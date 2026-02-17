@@ -24,7 +24,7 @@ Full-stack learning platform with monorepo structure (Turborepo + pnpm workspace
 │   │   │   │   ├── chat/
 │   │   │   │   ├── collective/
 │   │   │   │   ├── communities/
-│   │   │   │   ├── concepts/
+│   │   │   │   ├── Learns/
 │   │   │   │   ├── feedback/
 │   │   │   │   ├── home/
 │   │   │   │   ├── interview/
@@ -87,7 +87,7 @@ Full-stack learning platform with monorepo structure (Turborepo + pnpm workspace
 │   │   │   ├── chat.prisma
 │   │   │   ├── collective.prisma
 │   │   │   ├── communities.prisma
-│   │   │   ├── concepts.prisma
+│   │   │   ├── Learns.prisma
 │   │   │   ├── credits.prisma
 │   │   │   ├── mock.prisma
 │   │   │   ├── opensource.prisma
@@ -137,7 +137,7 @@ Full-stack learning platform with monorepo structure (Turborepo + pnpm workspace
 - **Community** (communities.prisma): Community platform
 - **Feedback** (schema.prisma): User feedback system
 - **CreditTransaction** (credits.prisma): Credit system
-- **Concept** (concepts.prisma): Concepts hub
+- **Learn** (Learns.prisma): Learns hub
 - **Challenges** (challanges.prisma): Forge & Crucible challenges
 
 ---

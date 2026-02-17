@@ -52,7 +52,7 @@ import {
 } from '@/actions/(main)/projects/projectassessments.action'
 import { Suggestion } from '@/types/project'
 
-interface TaskConcept {
+interface TaskLearn {
     title: string
     summary: string
     keyPoints: string[]
@@ -60,7 +60,7 @@ interface TaskConcept {
     bestPractices: string[]
     realWorldUsage: string
     securityConsiderations: string[]
-    relatedConcepts: string[]
+    relatedLearns: string[]
 }
 
 interface TaskResource {
@@ -91,7 +91,7 @@ interface TaskData {
     prerequisites?: string[]
     resources?: TaskResource[]
     testingGuidelines?: string[]
-    concepts?: TaskConcept[] | null
+    Learns?: TaskLearn[] | null
     assessmentType?: 'QUIZ' | 'CODE' | 'NONE'
 }
 
@@ -624,18 +624,18 @@ export default function SprintsPageClient({
                                                             <div className="absolute top-2 right-2 group/tooltip">
                                                                 <Lock className="w-4 h-4 text-neutral-400" />
                                                                 {
-                                                                requirements.length > 0 && (
-                                                                    <div className="absolute right-0 top-6 w-48 p-2 bg-neutral-900 dark:bg-neutral-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-50 pointer-events-none">
-                                                                        <p className="font-semibold mb-1">To unlock:</p>
-                                                                        <ul className="list-disc list-inside space-y-0.5">
-                                                                            {
-                                                                            requirements.map((req, idx) => (
-                                                                                <li key={idx}>{req}</li>
-                                                                            ))
-                                                                            }
-                                                                        </ul>
-                                                                    </div>
-                                                                )
+                                                                    requirements.length > 0 && (
+                                                                        <div className="absolute right-0 top-6 w-48 p-2 bg-neutral-900 dark:bg-neutral-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-50 pointer-events-none">
+                                                                            <p className="font-semibold mb-1">To unlock:</p>
+                                                                            <ul className="list-disc list-inside space-y-0.5">
+                                                                                {
+                                                                                    requirements.map((req, idx) => (
+                                                                                        <li key={idx}>{req}</li>
+                                                                                    ))
+                                                                                }
+                                                                            </ul>
+                                                                        </div>
+                                                                    )
                                                                 }
                                                             </div>
                                                         )
@@ -1083,34 +1083,34 @@ export default function SprintsPageClient({
                                                         </div>
 
                                                         {
-                                                            selectedTask.concepts && selectedTask.concepts.length > 0 && (
+                                                            selectedTask.Learns && selectedTask.Learns.length > 0 && (
                                                                 <div>
                                                                     <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
                                                                         <Lightbulb className="w-4 h-4 text-amber-500" />
-                                                                        Key Concepts
+                                                                        Key Learns
                                                                     </h4>
                                                                     <div className="space-y-3">
                                                                         {
-                                                                            selectedTask.concepts.map((concept, idx) => (
+                                                                            selectedTask.Learns.map((learn, idx) => (
                                                                                 <Collapsible key={idx}>
                                                                                     <CollapsibleTrigger asChild>
                                                                                         <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-950/30 transition-colors">
                                                                                             <div className="flex items-center justify-between">
-                                                                                                <p className="font-medium text-sm text-amber-800 dark:text-amber-300">{concept.title}</p>
+                                                                                                <p className="font-medium text-sm text-amber-800 dark:text-amber-300">{learn.title}</p>
                                                                                                 <ChevronDown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                                                                                             </div>
-                                                                                            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{concept.summary}</p>
+                                                                                            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{learn.summary}</p>
                                                                                         </div>
                                                                                     </CollapsibleTrigger>
                                                                                     <CollapsibleContent>
                                                                                         <div className="mt-2 p-3 bg-amber-50/50 dark:bg-amber-950/10 rounded-lg space-y-3 text-sm">
                                                                                             {
-                                                                                                concept.keyPoints && concept.keyPoints.length > 0 && (
+                                                                                                learn.keyPoints && learn.keyPoints.length > 0 && (
                                                                                                     <div>
                                                                                                         <p className="font-medium text-amber-800 dark:text-amber-300 text-xs mb-1">Key Points:</p>
                                                                                                         <ul className="list-disc list-inside text-xs text-amber-700 dark:text-amber-400 space-y-1">
                                                                                                             {
-                                                                                                                concept.keyPoints.slice(0, 5).map((point, pidx) => (
+                                                                                                                learn.keyPoints.slice(0, 5).map((point, pidx) => (
                                                                                                                     <li key={pidx}>{point}</li>
                                                                                                                 ))
                                                                                                             }
@@ -1119,12 +1119,12 @@ export default function SprintsPageClient({
                                                                                                 )
                                                                                             }
                                                                                             {
-                                                                                                concept.bestPractices && concept.bestPractices.length > 0 && (
+                                                                                                learn.bestPractices && learn.bestPractices.length > 0 && (
                                                                                                     <div>
                                                                                                         <p className="font-medium text-green-800 dark:text-green-300 text-xs mb-1">Best Practices:</p>
                                                                                                         <ul className="list-disc list-inside text-xs text-green-700 dark:text-green-400 space-y-1">
                                                                                                             {
-                                                                                                                concept.bestPractices.slice(0, 3).map((practice, pidx) => (
+                                                                                                                learn.bestPractices.slice(0, 3).map((practice, pidx) => (
                                                                                                                     <li key={pidx}>{practice}</li>
                                                                                                                 ))
                                                                                                             }
@@ -1133,12 +1133,12 @@ export default function SprintsPageClient({
                                                                                                 )
                                                                                             }
                                                                                             {
-                                                                                                concept.commonMistakes && concept.commonMistakes.length > 0 && (
+                                                                                                learn.commonMistakes && learn.commonMistakes.length > 0 && (
                                                                                                     <div>
                                                                                                         <p className="font-medium text-red-800 dark:text-red-300 text-xs mb-1">Common Mistakes:</p>
                                                                                                         <ul className="list-disc list-inside text-xs text-red-700 dark:text-red-400 space-y-1">
                                                                                                             {
-                                                                                                                concept.commonMistakes.slice(0, 3).map((mistake, midx) => (
+                                                                                                                learn.commonMistakes.slice(0, 3).map((mistake, midx) => (
                                                                                                                     <li key={midx}>{mistake}</li>
                                                                                                                 ))
                                                                                                             }

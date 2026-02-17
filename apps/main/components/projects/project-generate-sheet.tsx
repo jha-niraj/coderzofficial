@@ -17,8 +17,8 @@ import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Label } from '@repo/ui/components/ui/label'
 import { Progress } from '@repo/ui/components/ui/progress'
-import { 
-    Alert, AlertDescription, AlertTitle 
+import {
+    Alert, AlertDescription, AlertTitle
 } from '@repo/ui/components/ui/alert'
 import toast from '@repo/ui/components/ui/sonner'
 import { ProjectEchoSchema } from '@/actions/(main)/schemas/projects.schema'
@@ -106,7 +106,7 @@ export default function ProjectGenerateSheet({
         generationType: defaultValues?.type as FormData['generationType'] || undefined,
         difficulty: defaultValues?.difficulty as FormData['difficulty'] || undefined,
         technologies: [],
-        conceptsFocus: [],
+        LearnsFocus: [],
         stacks: {
             frontend: '',
             backend: '',
@@ -332,7 +332,7 @@ export default function ProjectGenerateSheet({
             generationType: undefined,
             difficulty: undefined,
             technologies: [],
-            conceptsFocus: [],
+            LearnsFocus: [],
             stacks: {
                 frontend: '',
                 backend: '',
@@ -402,7 +402,7 @@ export default function ProjectGenerateSheet({
                             Generate AI Project
                         </SheetTitle>
                         <SheetDescription>
-                            Create a complete project with tasks, concepts, and assessments
+                            Create a complete project with tasks, Learns, and assessments
                         </SheetDescription>
                     </SheetHeader>
 
@@ -459,7 +459,7 @@ export default function ProjectGenerateSheet({
                                         { label: 'Analyzing requirements', threshold: 10 },
                                         { label: 'Generating project structure', threshold: 25 },
                                         { label: 'Creating sprints and tasks', threshold: 45 },
-                                        { label: 'Generating learning concepts', threshold: 65 },
+                                        { label: 'Generating learning Learns', threshold: 65 },
                                         { label: 'Adding resources and guidelines', threshold: 80 },
                                         { label: 'Finalizing project', threshold: 95 },
                                     ].map((step, idx) => (

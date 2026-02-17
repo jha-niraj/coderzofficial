@@ -1455,7 +1455,7 @@ Learning Module Completion
 ```
 
 **Quiz Types:**
-- **Multiple Choice**: Git concepts, best practices
+- **Multiple Choice**: Git Learns, best practices
 - **Code Review**: Identify issues in code samples
 - **Scenario-Based**: "What would you do in this situation?"
 - **Practical**: Execute git commands correctly

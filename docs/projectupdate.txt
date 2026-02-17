@@ -76,7 +76,7 @@ Current Models:
 │
 ├── ProjectV2KnowledgeBase
 │   ├── points[], mockKnowledgeBase, mockQuestionsData
-│   └── [NEEDS: Better structured concepts with relations]
+│   └── [NEEDS: Better structured Learns with relations]
 │
 ├── Supporting Features:
 │   ├── ProjectV2TaskDetail (Sub-task generation ✅)
@@ -328,14 +328,14 @@ ADD FIELDS:
 ------------------------------------------
 
 RESTRUCTURE TO:
-concepts: Json                     // Array of:
+Learns: Json                     // Array of:
 // {
 //   name: string,
 //   category: string,             // "Frontend", "Backend", "Database"
 //   difficulty: string,
 //   explanation: string,
 //   importance: "critical" | "important" | "good-to-know",
-//   relatedTasks: string[]        // Which tasks use this concept
+//   relatedTasks: string[]        // Which tasks use this Learn
 // }
 
 mockQuestions: Json                // Array of:
@@ -615,7 +615,7 @@ Provide roadmap object with:
     - relatedPages: Array of page names this task relates to
     - dependencies: Array of tasks that must be done first
     
-    - tags: Array of concept tags (e.g., ["authentication", "jwt", "middleware"])
+    - tags: Array of Learn tags (e.g., ["authentication", "jwt", "middleware"])
     - badges: Array of context badges (e.g., ["Backend", "Security"])
     - terminalCommand: Terminal command if applicable, or null
 
@@ -632,16 +632,16 @@ quiz:
     - correctAnswer: Index of correct answer (0-3)
     - difficulty: "EASY" | "MEDIUM" | "HARD"
     - explanation: Why the answer is correct
-    - relatedConcept: Which concept this tests
+    - relatedLearn: Which Learn this tests
 
 knowledgeBase:
-  - concepts: Array of key concepts, each with:
-    - name: Concept name
+  - Learns: Array of key Learns, each with:
+    - name: Learn name
     - category: "Frontend" | "Backend" | "Database" | "DevOps" | "General"
     - difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
     - explanation: Clear explanation (2-4 sentences, NO CODE)
     - importance: "critical" | "important" | "good-to-know"
-    - relatedTasks: Array of task titles that use this concept
+    - relatedTasks: Array of task titles that use this Learn
     
   - mockQuestions: Array of mock interview questions, each with:
     - question: Interview question
@@ -709,7 +709,7 @@ Return ONLY valid JSON with this structure:
 4. For tasks: provide clear checkpoints that can be verified
 5. For data models: include all necessary fields and relationships for a working app
 6. Estimate times realistically based on difficulty level
-7. Link related concepts across sections (tasks → pages → concepts)
+7. Link related Learns across sections (tasks → pages → Learns)
 8. NO CODE in any field - this is a blueprint, not implementation
 9. Focus on WHAT to build, not HOW to code it
 `;
@@ -883,7 +883,7 @@ ENHANCED Tab Structure:
 │   ├── Quiz Tab
 │   ├── Knowledge Base (Enhanced)
 │   ├── Mock Interview
-│   └── Concept Explorer (NEW)
+│   └── Learn Explorer (NEW)
 │
 ├── Resources (Keep)
 ├── Suggestions (Keep)
@@ -955,13 +955,13 @@ Features:
                     7. PHASE 4: NEW FEATURES
 ================================================================================
 
-7.1 CONCEPT EXPLORER (Enhancement to Knowledge Base)
+7.1 Learn EXPLORER (Enhancement to Knowledge Base)
 -----------------------------------------------------
 
-Purpose: Interactive way to explore project concepts
+Purpose: Interactive way to explore project Learns
 
 Features:
-- Visual concept map
+- Visual Learn map
 - Category grouping (Frontend, Backend, Database)
 - Importance indicators (Critical, Important, Nice-to-know)
 - Link to related tasks
@@ -972,7 +972,7 @@ UI:
 - Card-based layout
 - Expandable explanations
 - Related tasks clickable
-- Progress tracking (which concepts reviewed)
+- Progress tracking (which Learns reviewed)
 
 
 7.2 DEPENDENCY VISUALIZATION
@@ -1001,7 +1001,7 @@ Enhanced:
 - Sprint-by-sprint progress
 - Time tracking (optional)
 - Comparison to estimated times
-- Concept coverage (from knowledge base)
+- Learn coverage (from knowledge base)
 - Mock interview scores over time
 - Standup completion rate
 - Streak tracking
@@ -1015,7 +1015,7 @@ Purpose: Context-aware help while building
 Features:
 - Chat interface within project page
 - Knows current task user is working on
-- Can explain concepts from knowledge base
+- Can explain Learns from knowledge base
 - Can suggest next steps
 - Can help debug errors (reference error tab)
 - Can generate sub-tasks on demand
@@ -1087,7 +1087,7 @@ PHASE 2: UI Enhancements (Week 3-4)
   - Create DataArchitectureViewer component
   - Create SetupGuideChecklist component
   - Create ProjectStructureTree component
-  - Create ConceptExplorer component
+  - Create LearnExplorer component
 
 □ Week 4:
   - Redesign project-details-client.tsx tabs
@@ -1156,7 +1156,7 @@ Cache frequently accessed data:
 - Project overview (5 min TTL)
 - Sprint list (5 min TTL)
 - Data architecture (30 min TTL, rarely changes)
-- Knowledge base concepts (30 min TTL)
+- Knowledge base Learns (30 min TTL)
 
 
 9.5 BACKWARD COMPATIBILITY
@@ -1191,7 +1191,7 @@ Track these metrics to measure improvement:
    - Portfolio submissions
    - GitHub repository quality
    - Time to complete projects
-   - Concept mastery (quiz scores)
+   - Learn mastery (quiz scores)
 
 4. Platform Growth:
    - Public project creation rate
@@ -1225,7 +1225,7 @@ Current: Basic quiz with score tracking
 Improvements:
 - Adaptive difficulty (start easy, adjust based on answers)
 - Retry with different questions
-- Concept-linked questions
+- Learn-linked questions
 - Spaced repetition for review
 - Mini-quizzes after each sprint
 
@@ -1297,7 +1297,7 @@ basic AI-generated task list into an industry-grade project-based learning
 platform. The key improvements are:
 
 1. **Better AI Generation**: PRD, data architecture, setup guides, sprint-based tasks
-2. **Enhanced UI**: Sprint roadmap, architecture viewer, concept explorer
+2. **Enhanced UI**: Sprint roadmap, architecture viewer, Learn explorer
 3. **Better UX**: Clearer progress tracking, dependency visualization
 4. **Industry Alignment**: Matches real software development workflows
 

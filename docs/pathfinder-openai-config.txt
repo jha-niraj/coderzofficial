@@ -65,8 +65,8 @@ IMPORTANT RULES:
    - Set appropriate duration based on level (10-20 minutes)
 
 5. LEVEL CALIBRATION:
-   - Beginner: Fundamentals, basic concepts, simple examples
-   - Intermediate: Applied concepts, patterns, best practices
+   - Beginner: Fundamentals, basic Learns, simple examples
+   - Intermediate: Applied Learns, patterns, best practices
    - Advanced: Deep dive, optimization, edge cases, system design
    - Expert: Research-level, bleeding edge, architecture decisions
 
@@ -253,7 +253,7 @@ markdown formatting or code blocks - return raw JSON only.
           },
           "knowledgeBase": {
             "type": "string",
-            "description": "Comprehensive knowledge base/prompt for the AI interviewer. Include: topic focus areas, question types to ask, expected answer depth, key concepts to probe, interview style guidance."
+            "description": "Comprehensive knowledge base/prompt for the AI interviewer. Include: topic focus areas, question types to ask, expected answer depth, key Learns to probe, interview style guidance."
           },
           "sampleQuestions": {
             "type": "array",

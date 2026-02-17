@@ -145,7 +145,7 @@ Full-featured coding interview environment with AI pair programming.
 │  └───────────────────────┘  │  ┌─ AI ASSISTANT ─────────────────────┐ │ │
 │                             │  │ 💡 "Consider using a deque for O(1) │ │ │
 │  ┌─ AI INTERVIEWER ───────┐ │  │     operations. Want a hint?"       │ │ │
-│  │                         │ │  │ [Show Hint] [Explain Concept]      │ │ │
+│  │                         │ │  │ [Show Hint] [Explain Learn]      │ │ │
 │  │  [Avatar]               │ │  └─────────────────────────────────────┘ │ │
 │  │                         │ │                                          │ │
 │  │  "Walk me through      │ │  ┌─ EXECUTION ───────────────────────┐  │ │

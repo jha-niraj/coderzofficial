@@ -197,7 +197,7 @@ export function SkillGapModal({ job, open, onClose }: SkillGapModalProps) {
                                                             {rec.projectTitle}
                                                         </div>
                                                         <div className="text-xs text-neutral-500">
-                                                            Learn: <span className="text-blue-600">{rec.skill}</span> • ~{rec.estimatedHours}h
+                                                            learn: <span className="text-blue-600">{rec.skill}</span> • ~{rec.estimatedHours}h
                                                         </div>
                                                     </div>
                                                     <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-blue-600 transition-colors" />

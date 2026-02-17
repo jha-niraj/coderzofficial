@@ -69,7 +69,7 @@ const features = [
     {
         icon: Brain,
         title: "Technical Deep Dives",
-        description: "Role-specific architecture & concept questions.",
+        description: "Role-specific architecture & Learn questions.",
         color: "text-blue-500",
         bg: "bg-blue-500/10"
     },

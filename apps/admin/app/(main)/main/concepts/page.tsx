@@ -1,24 +1,24 @@
 import { Suspense } from "react";
-import { getPendingVerificationConcepts } from "@/actions/main/concept.action";
-import ConceptsVerificationClient from "./_components/concepts-verification-client";
+import { getPendingVerificationLearns } from "@/actions/main/Learn.action";
+import LearnsVerificationClient from "./_components/Learns-verification-client";
 
-export default async function ConceptsAdminPage() {
-    const result = await getPendingVerificationConcepts();
-    
+export default async function LearnsAdminPage() {
+    const result = await getPendingVerificationLearns();
+
     return (
         <div className="p-6 space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                    Concept Verification
+                    Learn Verification
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                    Review and verify concepts submitted by creators
+                    Review and verify Learns submitted by creators
                 </p>
             </div>
-            
+
             <Suspense fallback={<div className="animate-pulse h-96 bg-neutral-100 dark:bg-neutral-800 rounded-xl" />}>
-                <ConceptsVerificationClient 
-                    concepts={result.concepts || []}
+                <LearnsVerificationClient
+                    Learns={result.Learns || []}
                 />
             </Suspense>
         </div>

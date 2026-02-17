@@ -186,7 +186,7 @@ Rules:
 - content: Clear, educational, use markdown for formatting
 - codeExamples: 2-4 examples, properly indented, different languages if relevant
 - dosDonts: 4-6 items each, practical and specific
-- flashcards: 5-8 cards covering key concepts
+- flashcards: 5-8 cards covering key Learns
 - Return ONLY valid JSON, no markdown blocks`
 
     try {

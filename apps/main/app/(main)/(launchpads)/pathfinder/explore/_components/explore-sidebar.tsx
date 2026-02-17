@@ -1,17 +1,20 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { motion } from 'framer-motion'
-import { 
-    Coins, CheckCircle2 
+import {
+    Coins, CheckCircle2
 } from 'lucide-react'
-import { 
-    PATHFINDER_CATEGORIES, type CategoryConfig 
+import {
+    PATHFINDER_CATEGORIES, type CategoryConfig
 } from '@/types/pathfinder'
 import type { PathfinderCategory } from '@repo/prisma/client'
 import { cn } from '@repo/ui/lib/utils'
+import { EmptyState } from '../../_components/pathfinder-dashboard'
+import { usePathfinderStore, type PathfinderGoal, type PathfinderGroup } from '@/app/store/pathfinderStore'
+import { CreateGoalSheet } from '../../_components/create-goal-sheet'
 
 interface GoalUser {
     id: string
@@ -40,8 +43,26 @@ interface ExploreSidebarProps {
 
 export function ExploreSidebar({ goals }: ExploreSidebarProps) {
     const pathname = usePathname()
+    const router = useRouter()
     const segments = pathname.split('/explore/')[1]
     const selectedSlug = segments ? segments.split('/')[0] : null
+
+    const {
+        groups: userGroups,
+        setCreateSheetOpen,
+        createSheetOpen,
+        addGroup
+    } = usePathfinderStore()
+
+    const handleGoalCreated = (goalId: string, newGoal?: Partial<PathfinderGoal>) => {
+        setCreateSheetOpen(false)
+        const slug = newGoal?.slug ?? goalId
+        router.push(`/pathfinder/${slug}`)
+    }
+
+    const handleGroupCreated = (newGroup: PathfinderGroup) => {
+        addGroup(newGroup)
+    }
 
     return (
         <div className="w-[320px] lg:w-[360px] border-r border-neutral-200 dark:border-neutral-800 flex flex-col bg-white dark:bg-neutral-950">
@@ -65,11 +86,20 @@ export function ExploreSidebar({ goals }: ExploreSidebarProps) {
                         goals.length === 0 && (
                             <div className="py-12 text-center text-sm text-neutral-500">
                                 No public goals yet. Be the first to share!
+                                <EmptyState onCreateGoal={() => setCreateSheetOpen(true)} />
                             </div>
                         )
                     }
                 </div>
             </ScrollArea>
+
+            <CreateGoalSheet
+                open={createSheetOpen}
+                onOpenChange={setCreateSheetOpen}
+                onSuccess={handleGoalCreated}
+                groups={userGroups}
+                onGroupCreated={handleGroupCreated}
+            />
         </div>
     )
 }

@@ -179,7 +179,7 @@ When user clicks [+ Add Goal], a SHEET slides up from the bottom:
 │                                                                                  │
 │  Focus Areas (Click all that apply - Optional)                                  │
 │  ┌────────────────────────────────────────────────────────────────────────────┐ │
-│  │ □ Concepts    □ Practice Problems    □ Projects    □ Interview Prep        │ │
+│  │ □ Learns    □ Practice Problems    □ Projects    □ Interview Prep        │ │
 │  └────────────────────────────────────────────────────────────────────────────┘ │
 │                                                                                  │
 │  ┌───────────────────────────────────────────────────────────────────────────┐  │
@@ -326,13 +326,13 @@ LEFT SIDE (2/3 width) - StudioBlockEditor:
   - /image       → AI-generated image
   - /mock        → Mock interview placeholder
 • Auto-save functionality
-• Supports writing notes, code practice, concept summaries
+• Supports writing notes, code practice, Learn summaries
 
 RIGHT SIDE (1/3 width) - StudioAIPanel:
 • Context-aware AI chat
 • Knows the learning goal context
 • Can answer questions about the topic
-• Can explain concepts
+• Can explain Learns
 • Can suggest practice problems
 • Uses existing StudioChatMessage model
 
@@ -358,7 +358,7 @@ When user clicks "📋 Assignments" button:
 │  │     Estimated time: 45 minutes                              [Pending]    │   │
 │  │                                                                           │   │
 │  │  🎤 MOCK INTERVIEW                                                       │   │
-│  │  └─ 10-minute voice interview on array concepts                          │   │
+│  │  └─ 10-minute voice interview on array Learns                          │   │
 │  │     Focus: Time complexity, problem-solving approach        [Pending]    │   │
 │  │                                                                           │   │
 │  └───────────────────────────────────────────────────────────────────────────┘   │
@@ -392,7 +392,7 @@ goal.
 
 Based on the goal title, category, level, and focus areas, generate assignments
 in the following types:
-- QUIZ: Multiple choice questions testing conceptual understanding
+- QUIZ: Multiple choice questions testing Learnual understanding
 - CODING: Programming problems to test practical skills
 - MOCK: Interview questions for voice-based assessment
 - PROJECT: Only for applicable topics (web dev, etc.) - NOT for pure DSA
@@ -417,7 +417,7 @@ INPUT TO ASSISTANT:
         "title": "Learn Arrays and Strings in DSA",
         "category": "DSA",
         "level": "INTERMEDIATE",
-        "focusAreas": ["Concepts", "Practice Problems", "Interview Prep"]
+        "focusAreas": ["Learns", "Practice Problems", "Interview Prep"]
     },
     "userContext": {
         "previousGoals": ["JavaScript Fundamentals", "Basic Algorithms"],
@@ -433,7 +433,7 @@ OUTPUT SCHEMA (Required Response Format):
     
     "quiz": {
         "title": "Arrays & Strings Mastery Quiz",
-        "description": "Test your understanding of array and string concepts",
+        "description": "Test your understanding of array and string Learns",
         "estimatedMinutes": 20,
         "questions": [
             {
@@ -565,7 +565,7 @@ Step 2: Confirmation Dialog appears:
 │                                                                                  │
 │  You'll be tested on:                                                           │
 │  ┌───────────────────────────────────────────────────────────────────────────┐  │
-│  │  📝 Quiz        - 15 questions on concepts          (~20 min)             │  │
+│  │  📝 Quiz        - 15 questions on Learns          (~20 min)             │  │
 │  │  💻 Coding      - 5 programming problems            (~45 min)             │  │
 │  │  🎤 Mock        - Voice interview with AI           (~10 min)             │  │
 │  └───────────────────────────────────────────────────────────────────────────┘  │

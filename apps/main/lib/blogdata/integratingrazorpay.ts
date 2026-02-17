@@ -432,7 +432,7 @@ model Transaction {
     @@index([paymentId])
     @@index([createdAt])
 }`,
-        webhook: `// app/api/webhook/route.ts (conceptual - coming soon)
+        webhook: `// app/api/webhook/route.ts (Learnual - coming soon)
 // This is a placeholder for the webhook implementation
 
 export async function POST(req: NextRequest) {

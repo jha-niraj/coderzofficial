@@ -2,7 +2,8 @@ import {
     Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Trophy, Video, Brain, Cable, LayoutDashboard,
     Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles,
-    GraduationCap, Rocket, Activity, Share2, Target, FileText, BookOpen
+    GraduationCap, Rocket, Activity, Share2, Target, FileText, BookOpen,
+    StickyNote
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -48,24 +49,7 @@ export const mainNavigation: NavigationConfig = {
                 },
             ]
         },
-        {
-            name: "Studio",
-            path: "studio",
-            icon: Notebook,
-            status: "active",
-            children: [
-                {
-                    name: 'My Studios',
-                    path: 'studio/mystudios',
-                    icon: User
-                },
-                {
-                    name: 'All Studios',
-                    path: 'studio/allstudios',
-                    icon: Globe
-                }
-            ]
-        },
+
         {
             name: "Pathfinder",
             path: "pathfinder",
@@ -73,8 +57,14 @@ export const mainNavigation: NavigationConfig = {
             status: "active"
         },
         {
-            name: "Concepts",
-            path: "concepts",
+            name: "My Notes",
+            path: "studio",
+            icon: StickyNote,
+            status: "active"
+        },
+        {
+            name: "Learn",
+            path: "learn",
             icon: BookOpen,
             status: "active"
         },
@@ -191,15 +181,7 @@ export const mainNavigation: NavigationConfig = {
             name: "Interview Prep",
             path: "interview",
             icon: BookAIcon,
-            status: "active",
-            children: [
-                {
-                    name: 'Company Wise',
-                    path: 'companywise',
-                    icon: Trophy,
-                    comingSoon: true
-                }
-            ]
+            status: "active"
         },
         {
             name: "University",

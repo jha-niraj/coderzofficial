@@ -10,7 +10,7 @@ export const learningModulesData = [
     {
         slug: 'git-fundamentals',
         title: 'Git Fundamentals',
-        description: 'Master the core concepts of Git version control. Learn how to track changes, create commits, and understand the Git workflow from scratch.',
+        description: 'Master the core Learns of Git version control. Learn how to track changes, create commits, and understand the Git workflow from scratch.',
         icon: '📚',
         coverImage: '/images/opensource/git-fundamentals.png',
         orderIndex: 0,
@@ -46,7 +46,7 @@ Sound familiar? Version control solves this chaos.
 - **Branch**: Experiment safely without affecting the main codebase
 - **Revert**: Go back to any previous version instantly
 
-## Key Concepts
+## Key Learns
 
 ### Repository (Repo)
 A repository is a folder that Git is tracking. It contains all your project files and the entire history of changes.
@@ -2383,13 +2383,13 @@ export const examQuestionTemplates = {
         {
             category: 'branching',
             difficulty: 'medium',
-            template: 'Explain the difference between {concept1} and {concept2}.',
+            template: 'Explain the difference between {Learn1} and {Learn2}.',
             topics: ['merge vs rebase', 'fast-forward vs three-way merge', 'reset vs revert']
         },
         {
             category: 'github',
             difficulty: 'medium',
-            template: 'What is the purpose of {concept} in GitHub workflow?',
+            template: 'What is the purpose of {Learn} in GitHub workflow?',
             topics: ['fork', 'pull request', 'code review', 'branch protection']
         }
     ],

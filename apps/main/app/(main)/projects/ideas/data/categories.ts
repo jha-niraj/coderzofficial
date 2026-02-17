@@ -703,7 +703,7 @@ export const categories: Category[] = [
                     'Proxy and inspect HTTP(S) traffic for vulnerability discovery',
                     'Use scanner, intruder and repeater for testing',
                     'Identify and exploit common web vulnerabilities',
-                    'Report security issues with proof-of-concept steps'
+                    'Report security issues with proof-of-Learn steps'
                 ]
             },
             {

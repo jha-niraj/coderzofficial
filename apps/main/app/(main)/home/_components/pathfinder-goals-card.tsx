@@ -33,7 +33,7 @@ export default function PathfinderGoalsCard({ goals }: PathfinderGoalsCardProps)
 
     return (
         <>
-            <div className="border-primary/10">
+            <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
                 <div className="pb-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">

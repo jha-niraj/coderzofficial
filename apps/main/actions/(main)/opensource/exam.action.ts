@@ -118,7 +118,7 @@ export async function generateExamQuestions(count: number = 10): Promise<Generat
         const systemPrompt = `You are an expert Git and GitHub instructor creating exam questions for an open-source contribution certification.
 
 Generate a mix of question types:
-- Quiz questions (multiple choice about Git/GitHub concepts)
+- Quiz questions (multiple choice about Git/GitHub Learns)
 - Code questions (write specific git commands)
 - Scenario questions (real-world collaboration situations)
 
@@ -204,9 +204,9 @@ Ensure questions cover: git init, staging, commits, branches, merging, rebasing,
         return { success: true, questions: validatedQuestions }
     } catch (error) {
         console.error('Error generating exam questions:', error)
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Failed to generate questions' 
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to generate questions'
         }
     }
 }
@@ -482,7 +482,7 @@ export async function checkExamEligibility(): Promise<{
         // We still track their progress but don't block them
         const recommendedModules = Math.ceil(totalModules * 0.8)
         let message = 'You are eligible to take the certification exam!'
-        
+
         if (completedModules < recommendedModules) {
             message = `You can take the exam now! We recommend completing at least ${recommendedModules} modules first for better preparation.`
         }
@@ -593,7 +593,7 @@ Each question must have:
 
         // Create exam in database
         const examId = `exam-${Date.now()}-${Math.random().toString(36).substring(7)}`
-        
+
         await prisma.oSCertificationExam.create({
             data: {
                 userId: session.user.id,
@@ -682,13 +682,13 @@ export async function validateQuizPhase(
         const userAnswer = answers[question.id]
         const isCorrect = userAnswer === question.correctAnswer
         const pointsEarned = isCorrect ? question.points : 0
-        
+
         results.push({
             questionId: question.id,
             correct: isCorrect,
             points: pointsEarned
         })
-        
+
         totalScore += pointsEarned
         maxScore += question.points
     }
@@ -998,9 +998,9 @@ export async function saveExamResult(data: {
         return { success: true }
     } catch (error) {
         console.error('Error saving exam result:', error)
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Failed to save result' 
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to save result'
         }
     }
 }
@@ -1039,7 +1039,7 @@ export async function getUserExamHistory(): Promise<{
         })
 
         const certification = await prisma.oSCertification.findFirst({
-            where: { 
+            where: {
                 userId: session.user.id,
                 isActive: true
             },
@@ -1128,7 +1128,7 @@ export async function getExamLeaderboard(): Promise<{
             } else {
                 // Check if user has a certification but not in top 50
                 const userCert = await prisma.oSCertification.findFirst({
-                    where: { 
+                    where: {
                         userId: session.user.id,
                         isActive: true
                     }

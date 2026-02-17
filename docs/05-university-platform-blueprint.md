@@ -34,7 +34,7 @@
 #### Type A: Independent Student (No University)
 - **Who**: Self-learners, bootcamp students, career switchers
 - **Journey**: Sign up → Purchase credits → Use all features freely
-- **Access**: `/studio`, `/assessments`, `/mock`, `/spaces`, `/concepts`, `/jobs`
+- **Access**: `/studio`, `/assessments`, `/mock`, `/spaces`, `/Learns`, `/jobs`
 
 #### Type B: University-Linked Student
 - **Who**: College students whose university is onboarded
@@ -313,7 +313,7 @@
 | `/assessments` | Quizzes, tests | All students |
 | `/mock` | Mock interviews | All students |
 | `/spaces` | Learning spaces | All students |
-| `/concepts` | Theory/concepts | All students |
+| `/Learns` | Theory/Learns | All students |
 | `/jobs` | Job listings (public) | All students |
 
 ### University Module Routes (Student)

@@ -15,7 +15,7 @@ export type JobStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "CLOSED" | "FILLED"
 
 export type JobVisibility = "PUBLIC" | "INVITE_ONLY"
 
-export type ApplicationStatus = 
+export type ApplicationStatus =
     | "INTERESTED"
     | "PREPARING"
     | "APPLIED"
@@ -30,10 +30,10 @@ export type ApplicationStatus =
     | "REJECTED"
     | "WITHDRAWN"
 
-export type ApplicationActivityType = 
+export type ApplicationActivityType =
     | "MOCK_INTERVIEW"
     | "AI_RESUME_REVIEW"
-    | "CONCEPT_REVIEW"
+    | "Learn_REVIEW"
     | "PROJECT_PROGRESS"
     | "STUDIO_NOTE"
     | "SKILL_ASSESSMENT"
@@ -44,7 +44,7 @@ export type ApplicationActivityType =
 // CUSTOM QUESTION TYPES
 // ============================================
 
-export type CustomQuestionType = 
+export type CustomQuestionType =
     | "text"        // Single line text input
     | "textarea"    // Multi-line text area
     | "select"      // Single select dropdown

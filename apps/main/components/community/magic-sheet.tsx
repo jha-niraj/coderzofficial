@@ -22,13 +22,13 @@ import ProjectGenerateSheet from '@/components/projects/project-generate-sheet'
 // Actions
 import { getUserProjects } from '@/actions/(main)/projects/project.action'
 import { getUserSpaces } from '@/actions/(main)/space/space.action'
-import { getMyStudios } from '@/actions/(main)/studios/studio.action'
+import { getUserStudios } from '@/actions/(main)/studios/studio.actions'
 import { getUserCreatedMocks } from '@/actions/(main)/mockvoice/voice.action'
 
 // ==================== TYPES ====================
 interface ShareableItem {
     id: string
-    type: 'interview' | 'project' | 'space' | 'studio' | 'concept' | 'quiz' | 'challenge'
+    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'quiz' | 'challenge'
     title: string
     description?: string
     thumbnail?: string
@@ -257,7 +257,7 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                     }))
                 }
             } else if (type === 'STUDIO') {
-                const res = await getMyStudios()
+                const res = await getUserStudios()
                 if (res.studios) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     data = res.studios.map((s: any) => ({

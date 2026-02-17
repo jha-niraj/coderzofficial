@@ -11,7 +11,7 @@ import {
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Progress } from "@repo/ui/components/ui/progress";
-import { getConceptLearnings } from "@/actions/(main)/learnings/learnings.action";
+import { getLearnLearnings } from "@/actions/(main)/learnings/learnings.action";
 import { cn } from "@repo/ui/lib/utils";
 
 const difficultyColors = {
@@ -30,7 +30,7 @@ const categoryColors: Record<string, string> = {
     DSA: "from-teal-500 to-cyan-500",
 };
 
-interface ConceptProgress {
+interface LearnProgress {
     id: string;
     slug: string;
     title: string;
@@ -44,8 +44,8 @@ interface ConceptProgress {
     estimatedTime: number | null;
 }
 
-export default function ConceptLearningsPage() {
-    const [concepts, setConcepts] = useState<ConceptProgress[]>([]);
+export default function LearnLearningsPage() {
+    const [Learns, setLearns] = useState<LearnProgress[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState("all");
 
@@ -53,12 +53,12 @@ export default function ConceptLearningsPage() {
         async function loadData() {
             setIsLoading(true);
             try {
-                const result = await getConceptLearnings();
+                const result = await getLearnLearnings();
                 if (result.success && result.data) {
-                    setConcepts(result.data);
+                    setLearns(result.data);
                 }
             } catch (error) {
-                console.error("Error loading concepts:", error);
+                console.error("Error loading Learns:", error);
             } finally {
                 setIsLoading(false);
             }
@@ -66,15 +66,15 @@ export default function ConceptLearningsPage() {
         loadData();
     }, []);
 
-    const filteredConcepts = concepts.filter(c => {
+    const filteredLearns = Learns.filter(c => {
         if (filter === "all") return true;
         if (filter === "completed") return c.isCompleted;
         if (filter === "in-progress") return !c.isCompleted && c.currentStep > 0;
         return true;
     });
 
-    const completedCount = concepts.filter(c => c.isCompleted).length;
-    const inProgressCount = concepts.filter(c => !c.isCompleted && c.currentStep > 0).length;
+    const completedCount = Learns.filter(c => c.isCompleted).length;
+    const inProgressCount = Learns.filter(c => !c.isCompleted && c.currentStep > 0).length;
 
     return (
         <div className="min-h-screen">
@@ -90,7 +90,7 @@ export default function ConceptLearningsPage() {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-                                    My Concepts
+                                    My Learns
                                 </h1>
                                 <p className="text-neutral-600 dark:text-neutral-400">
                                     {completedCount} completed · {inProgressCount} in progress
@@ -124,7 +124,7 @@ export default function ConceptLearningsPage() {
                             }
                         </div>
                         <p className="text-sm text-neutral-500">
-                            {filteredConcepts.length} concepts
+                            {filteredLearns.length} Learns
                         </p>
                     </div>
                 </div>
@@ -135,7 +135,7 @@ export default function ConceptLearningsPage() {
                         <div className="flex items-center justify-center py-20">
                             <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
                         </div>
-                    ) : filteredConcepts.length === 0 ? (
+                    ) : filteredLearns.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -143,14 +143,14 @@ export default function ConceptLearningsPage() {
                         >
                             <Lightbulb className="h-16 w-16 mx-auto text-neutral-300 dark:text-neutral-700 mb-4" />
                             <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                                No concepts yet
+                                No Learns yet
                             </h3>
                             <p className="text-neutral-500 mb-6">
-                                Start learning concepts to track your progress
+                                Start learning Learns to track your progress
                             </p>
                             <Button asChild>
-                                <Link href="/concepts">
-                                    Explore Concepts
+                                <Link href="/Learns">
+                                    Explore Learns
                                     <ChevronRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
@@ -159,24 +159,24 @@ export default function ConceptLearningsPage() {
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <AnimatePresence>
                                 {
-                                    filteredConcepts.map((concept, index) => (
+                                    filteredLearns.map((learn, index) => (
                                         <motion.div
-                                            key={concept.id}
+                                            key={learn.id}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                         >
-                                            <Link href={`/concepts/${concept.slug}`}>
+                                            <Link href={`/learn/${learn.slug}`}>
                                                 <div className="group rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:shadow-lg">
                                                     <div className={cn(
                                                         "relative h-36 bg-gradient-to-br",
-                                                        categoryColors[concept.category] || "from-blue-500/20 to-purple-500/20"
+                                                        categoryColors[learn.category] || "from-blue-500/20 to-purple-500/20"
                                                     )}>
                                                         {
-                                                            concept.thumbnail && (
+                                                            learn.thumbnail && (
                                                                 <Image
-                                                                    src={concept.thumbnail}
-                                                                    alt={concept.title}
+                                                                    src={learn.thumbnail}
+                                                                    alt={learn.title}
                                                                     fill
                                                                     className="object-cover opacity-50"
                                                                 />
@@ -186,7 +186,7 @@ export default function ConceptLearningsPage() {
                                                             <Lightbulb className="h-12 w-12 text-white/80" />
                                                         </div>
                                                         {
-                                                            concept.isCompleted && (
+                                                            learn.isCompleted && (
                                                                 <div className="absolute top-3 right-3">
                                                                     <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
                                                                         <CheckCircle2 className="h-5 w-5 text-white" />
@@ -201,44 +201,44 @@ export default function ConceptLearningsPage() {
                                                                 variant="secondary"
                                                                 className={cn(
                                                                     "text-xs rounded-full",
-                                                                    difficultyColors[concept.difficulty as keyof typeof difficultyColors]
+                                                                    difficultyColors[learn.difficulty as keyof typeof difficultyColors]
                                                                 )}
                                                             >
-                                                                {concept.difficulty}
+                                                                {learn.difficulty}
                                                             </Badge>
                                                             <Badge variant="secondary" className="text-xs rounded-full">
-                                                                {concept.category?.replace(/_/g, " ")}
+                                                                {learn.category}
                                                             </Badge>
                                                         </div>
 
                                                         <h3 className="font-semibold text-neutral-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
-                                                            {concept.title}
+                                                            {learn.title}
                                                         </h3>
                                                         <div className="space-y-2 mb-3">
                                                             <div className="flex items-center justify-between text-xs">
                                                                 <span className="text-neutral-500">
-                                                                    Step {concept.currentStep} of {concept.totalSteps}
+                                                                    Step {learn.currentStep} of {learn.totalSteps}
                                                                 </span>
                                                                 <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                                                                    {concept.progressPercent}%
+                                                                    {learn.progressPercent}%
                                                                 </span>
                                                             </div>
-                                                            <Progress value={concept.progressPercent} className="h-1.5" />
+                                                            <Progress value={learn.progressPercent} className="h-1.5" />
                                                         </div>
                                                         <div className="flex items-center gap-3 text-xs text-neutral-500">
                                                             <span className="flex items-center gap-1">
                                                                 <Clock className="h-3.5 w-3.5" />
-                                                                {concept.estimatedTime} min
+                                                                {learn.estimatedTime} min
                                                             </span>
                                                             <span className="flex items-center gap-1">
                                                                 <BookOpen className="h-3.5 w-3.5" />
-                                                                {concept.totalSteps} steps
+                                                                {learn.totalSteps} steps
                                                             </span>
                                                         </div>
                                                         <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
                                                             <Button size="sm" className="w-full gap-2 rounded-xl" variant="secondary">
                                                                 <Play className="h-4 w-4" />
-                                                                {concept.isCompleted ? "Review" : "Continue"}
+                                                                {learn.isCompleted ? "Review" : "Continue"}
                                                             </Button>
                                                         </div>
                                                     </div>

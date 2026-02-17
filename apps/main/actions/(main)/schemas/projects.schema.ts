@@ -16,7 +16,7 @@ export const ProjectEchoSchema = z.object({
     difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
     visibility: z.enum(['PRIVATE', 'PUBLIC']),
     includeAssessment: z.boolean(),
-    conceptsFocus: z.array(z.string()).optional().default([]), // Optional learning focus
+    LearnsFocus: z.array(z.string()).optional().default([]), // Optional learning focus
     similarProjectsHint: z.string().optional(),
     preferences: z.object({
         generateNow: z.boolean(),

@@ -62,7 +62,7 @@ interface PostAuthor {
 
 interface ShareableItem {
     id: string
-    type: 'interview' | 'project' | 'space' | 'studio' | 'concept' | 'quiz' | 'challenge'
+    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'quiz' | 'challenge'
     title: string
     description?: string
     thumbnail?: string

@@ -103,14 +103,14 @@ export interface ChallengeProgressData {
     completedAt?: Date;
 }
 
-// ==================== CONCEPT TYPES ====================
+// ==================== Learn TYPES ====================
 
 /**
- * Concept step for learning modules
+ * Learn step for learning modules
  */
-export interface ConceptStepData {
+export interface LearnStepData {
     id: string;
-    conceptId: string;
+    LearnId: string;
     title: string;
     content: string;
     stepType: string;
@@ -121,9 +121,9 @@ export interface ConceptStepData {
 }
 
 /**
- * Concept with steps
+ * Learn with steps
  */
-export interface ConceptWithSteps {
+export interface LearnWithSteps {
     id: string;
     slug: string;
     title: string;
@@ -131,7 +131,7 @@ export interface ConceptWithSteps {
     category: string;
     difficulty: string;
     estimatedTime: number;
-    steps: ConceptStepData[];
+    steps: LearnStepData[];
     creator?: BasicUserInfo;
 }
 

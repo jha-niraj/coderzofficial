@@ -52,12 +52,12 @@ export default function VoicePhase({
             // The longer the conversation, the better (up to 7 minutes)
             const durationMinutes = interviewDuration / 60
             const durationScore = Math.min(100, Math.round((durationMinutes / 7) * 100))
-            
+
             // For a real implementation, you would:
             // 1. Get the transcript from ElevenLabs
             // 2. Send it to OpenAI for evaluation
             // 3. Calculate score based on technical accuracy, communication, etc.
-            
+
             // For now, we'll use a simulated score based on duration
             const simulatedScore = Math.max(60, Math.min(95, durationScore + Math.random() * 20))
             const finalScore = Math.round(simulatedScore)
@@ -249,7 +249,7 @@ export default function VoicePhase({
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">Ready for Voice Interview?</h3>
                             <p className="text-neutral-400 mb-6 max-w-md mx-auto">
-                                You&apos;ll have a 5-7 minute conversation with an AI interviewer about Git and GitHub concepts.
+                                You&apos;ll have a 5-7 minute conversation with an AI interviewer about Git and GitHub Learns.
                                 Speak clearly and explain your answers thoroughly.
                             </p>
                             <Button

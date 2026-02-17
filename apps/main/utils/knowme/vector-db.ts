@@ -4,7 +4,7 @@
  * Handles all interactions with Upstash Vector database.
  * Upstash Vector is a serverless vector database optimized for AI applications.
  * 
- * Key Concepts:
+ * Key Learns:
  * - Vectors: Numerical arrays representing text embeddings
  * - Namespace: Isolated space for each user's data (uses profileId)
  * - Metadata: Additional info stored with each vector for filtering

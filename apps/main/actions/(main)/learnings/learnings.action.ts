@@ -19,7 +19,7 @@ export interface LearningsSummary {
             total: number;
             recent: any[];
         };
-        concepts: {
+        Learns: {
             learning: number;
             completed: number;
             total: number;
@@ -71,7 +71,7 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
         // Fetch all learning data in parallel
         const [
             projectProgress,
-            conceptProgress,
+            LearnProgress,
             mockSessions,
             communityMemberships,
         ] = await Promise.all([
@@ -93,16 +93,20 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
                 orderBy: { startedAt: "desc" },
                 take: 10,
             }),
-            // Concepts user is learning
-            prisma.conceptProgress.findMany({
+            // Learns user is learning
+            prisma.learnProgress.findMany({
                 where: { userId: user.id },
                 include: {
-                    concept: {
+                    learn: {
                         select: {
                             id: true,
                             title: true,
                             slug: true,
-                            category: true,
+                            mainCategory: {
+                                select: {
+                                    name: true
+                                }
+                            },
                             difficulty: true,
                             thumbnail: true,
                             estimatedTime: true,
@@ -147,14 +151,14 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
         ]);
 
         // Calculate stats
-        const conceptsCompleted = conceptProgress.filter(p => p.isCompleted).length;
-        const conceptsInProgress = conceptProgress.filter(p => !p.isCompleted && p.currentStep > 0).length;
+        const LearnsCompleted = LearnProgress.filter(p => p.isCompleted).length;
+        const LearnsInProgress = LearnProgress.filter(p => !p.isCompleted && p.currentStep > 0).length;
 
         // Calculate streak (days with activity in last 7 days)
-        const recentConceptDates = conceptProgress
+        const recentLearnDates = LearnProgress
             .filter(p => p.updatedAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
             .map(p => p.updatedAt.toISOString().split("T")[0]);
-        const uniqueDays = new Set(recentConceptDates);
+        const uniqueDays = new Set(recentLearnDates);
         const currentStreak = uniqueDays.size;
 
         // Calculate average mock score from userRating
@@ -165,11 +169,11 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
         // Build recent activity
         const recentActivity: any[] = [];
 
-        conceptProgress.slice(0, 3).forEach(p => {
+        LearnProgress.slice(0, 3).forEach(p => {
             recentActivity.push({
-                type: "concept",
-                title: p.concept.title,
-                slug: p.concept.slug,
+                type: "Learn",
+                title: p.learn.title,
+                slug: p.learn.slug,
                 action: p.isCompleted ? "completed" : "learning",
                 progress: p.progressPercent,
                 date: p.updatedAt,
@@ -202,10 +206,10 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
         return {
             success: true,
             data: {
-                totalItemsInProgress: conceptsInProgress + projectProgress.filter(p => p.status !== "COMPLETED").length,
-                totalCompleted: conceptsCompleted + projectProgress.filter(p => p.status === "COMPLETED").length,
+                totalItemsInProgress: LearnsInProgress + projectProgress.filter(p => p.status !== "COMPLETED").length,
+                totalCompleted: LearnsCompleted + projectProgress.filter(p => p.status === "COMPLETED").length,
                 currentStreak,
-                totalLearningTime: conceptProgress.reduce((acc, p) => acc + (p.totalTimeSpent || 0), 0),
+                totalLearningTime: LearnProgress.reduce((acc, p) => acc + (p.totalTimeSpent || 0), 0),
                 modules: {
                     projects: {
                         inProgress: projectProgress.filter(p => p.status !== "COMPLETED").length,
@@ -220,17 +224,17 @@ export async function getLearningsSummary(): Promise<{ success: boolean; data?: 
                             status: p.status,
                         })),
                     },
-                    concepts: {
-                        learning: conceptsInProgress,
-                        completed: conceptsCompleted,
-                        total: conceptProgress.length,
-                        recent: conceptProgress.slice(0, 5).map(p => ({
-                            id: p.concept.id,
-                            title: p.concept.title,
-                            slug: p.concept.slug,
-                            category: p.concept.category,
-                            difficulty: p.concept.difficulty,
-                            thumbnail: p.concept.thumbnail,
+                    Learns: {
+                        learning: LearnsInProgress,
+                        completed: LearnsCompleted,
+                        total: LearnProgress.length,
+                        recent: LearnProgress.slice(0, 5).map(p => ({
+                            id: p.learn.id,
+                            title: p.learn.title,
+                            slug: p.learn.slug,
+                            category: p.learn.mainCategory?.name || "General",
+                            difficulty: p.learn.difficulty,
+                            thumbnail: p.learn.thumbnail,
                             progress: p.progressPercent,
                             isCompleted: p.isCompleted,
                         })),
@@ -316,18 +320,23 @@ export async function getProjectLearnings() {
     }
 }
 
-export async function getConceptLearnings() {
+export async function getLearnLearnings() {
     try {
         const user = await getCurrentUser();
         if (!user) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const progress = await prisma.conceptProgress.findMany({
+        const progress = await prisma.learnProgress.findMany({
             where: { userId: user.id },
             include: {
-                concept: {
+                learn: {
                     include: {
+                        mainCategory: {
+                            select: {
+                                name: true
+                            }
+                        },
                         _count: {
                             select: {
                                 steps: true,
@@ -342,16 +351,16 @@ export async function getConceptLearnings() {
         return {
             success: true,
             data: progress.map(p => ({
-                id: p.concept.id,
-                title: p.concept.title,
-                slug: p.concept.slug,
-                description: p.concept.description,
-                category: p.concept.category,
-                difficulty: p.concept.difficulty,
-                thumbnail: p.concept.thumbnail,
-                estimatedTime: p.concept.estimatedTime,
+                id: p.learn.id,
+                title: p.learn.title,
+                slug: p.learn.slug,
+                description: p.learn.description,
+                category: p.learn.mainCategory?.name || "General",
+                difficulty: p.learn.difficulty,
+                thumbnail: p.learn.thumbnail,
+                estimatedTime: p.learn.estimatedTime,
                 currentStep: p.currentStep,
-                totalSteps: p.concept._count.steps,
+                totalSteps: p.learn._count.steps,
                 progressPercent: p.progressPercent,
                 isCompleted: p.isCompleted,
                 completedAt: p.completedAt,
@@ -359,8 +368,8 @@ export async function getConceptLearnings() {
             })),
         };
     } catch (error) {
-        console.error("Error fetching concept learnings:", error);
-        return { success: false, error: "Failed to fetch concepts" };
+        console.error("Error fetching Learn learnings:", error);
+        return { success: false, error: "Failed to fetch Learns" };
     }
 }
 
@@ -469,12 +478,12 @@ export async function getLearningStats() {
 
         const [
             projectCount,
-            conceptProgress,
+            LearnProgress,
             mockCount,
             communityCount,
         ] = await Promise.all([
             prisma.userProjectV2Progress.count({ where: { userId: user.id } }),
-            prisma.conceptProgress.findMany({
+            prisma.learnProgress.findMany({
                 where: { userId: user.id },
                 select: {
                     isCompleted: true,
@@ -486,16 +495,16 @@ export async function getLearningStats() {
             prisma.communityMember.count({ where: { userId: user.id } }),
         ]);
 
-        const conceptsCompleted = conceptProgress.filter((p: { isCompleted: boolean }) => p.isCompleted).length;
-        const conceptsInProgress = conceptProgress.filter((p: { isCompleted: boolean; currentStep: number }) => !p.isCompleted && p.currentStep > 0).length;
-        const totalTimeSpent = conceptProgress.reduce((acc: number, p: { totalTimeSpent: number | null }) => acc + (p.totalTimeSpent || 0), 0);
+        const LearnsCompleted = LearnProgress.filter((p: { isCompleted: boolean }) => p.isCompleted).length;
+        const LearnsInProgress = LearnProgress.filter((p: { isCompleted: boolean; currentStep: number }) => !p.isCompleted && p.currentStep > 0).length;
+        const totalTimeSpent = LearnProgress.reduce((acc: number, p: { totalTimeSpent: number | null }) => acc + (p.totalTimeSpent || 0), 0);
 
         return {
             success: true,
             data: {
                 projects: projectCount,
-                conceptsLearning: conceptsInProgress,
-                conceptsCompleted,
+                LearnsLearning: LearnsInProgress,
+                LearnsCompleted,
                 mockSessions: mockCount,
                 communities: communityCount,
                 totalLearningTime: Math.round(totalTimeSpent / 60), // in minutes

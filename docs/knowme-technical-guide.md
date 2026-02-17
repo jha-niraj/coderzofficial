@@ -45,11 +45,11 @@ KnowMe uses **Upstash Vector** for several reasons:
 | **REST API** | Easy integration with Next.js |
 | **Namespaces** | Isolate data per user |
 
-### Key Concepts
+### Key Learns
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    VECTOR DATABASE CONCEPTS                  │
+│                    VECTOR DATABASE LearnS                  │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  Vector          = [0.1, 0.5, 0.3, ..., 0.8]               │
@@ -117,7 +117,7 @@ OpenAI's `text-embedding-3-small` model outputs 1536-dimensional vectors. Each d
 
 - Dimension 1 might correlate with "technical content"
 - Dimension 234 might correlate with "experience level"
-- Dimension 891 might correlate with "programming concepts"
+- Dimension 891 might correlate with "programming Learns"
 
 The model learns these features automatically during training.
 

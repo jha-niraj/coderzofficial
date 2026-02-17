@@ -45,28 +45,28 @@ model MockInterviewVoice {
     predefinedId String? @unique // matches ID from predefined-mocks.ts
 
     // University Integration - for teacher-assigned mock interviews
-    isUniversityMock Boolean @default(false) // If created by a university teacher
+    isUniversityMock Boolean  @default(false) // If created by a university teacher
     universityId     String? // Link to University model
     teacherMemberId  String? // Link to UniversityMember (teacher who created)
     classIds         String[] // Array of class IDs this mock is assigned to
-    
+
     // University Assignment Config
-    assignmentDeadline    DateTime? // Optional deadline for university assignments
-    assignmentCredits     Int?      // Credits required for this assignment
-    assignmentInstructions String?  @db.Text // Additional instructions from teacher
+    assignmentDeadline     DateTime? // Optional deadline for university assignments
+    assignmentCredits      Int? // Credits required for this assignment
+    assignmentInstructions String?   @db.Text // Additional instructions from teacher
 
     // Relations
     sessions MockVoiceSession[]
     ratings  MockVoiceRating[]
 
     // Pathfinder (Learning Goals) back-relation
-    pathfinderGoal       PathfinderGoal?    @relation("PathfinderMockInterview")
-    
-    pathfinderSubGoalId  String?    @unique // Link to subgoal for practice mock
-    pathfinderSubGoal    PathfinderSubGoal? @relation("PathfinderSubGoalMock", fields: [pathfinderSubGoalId], references: [id], onDelete: SetNull)
+    pathfinderGoal PathfinderGoal? @relation("PathfinderMockInterview")
 
-    // Concept Step back-relation (for MOCK_INTERVIEW step type)
-    conceptStep ConceptStep? @relation("ConceptStepMockInterview")
+    pathfinderSubGoalId String?            @unique // Link to subgoal for practice mock
+    pathfinderSubGoal   PathfinderSubGoal? @relation("PathfinderSubGoalMock", fields: [pathfinderSubGoalId], references: [id], onDelete: SetNull)
+
+    // Learn Step back-relation (for MOCK_INTERVIEW step type)
+    LearnStep LearnStep? @relation("LearnStepMockInterview")
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

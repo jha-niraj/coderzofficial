@@ -334,7 +334,7 @@ GENERIC USER JOURNEY PER SUB-GOAL:
 
 SUB-GOAL 1: "React Fundamentals - JSX and Components"
 -----------------------------------------------------
-(Concept-heavy, may not have coding)
+(Learn-heavy, may not have coding)
 
   Tab Order          │ User Action                    │ System Response
   -------------------|--------------------------------|---------------------------
@@ -354,7 +354,7 @@ SUB-GOAL 1: "React Fundamentals - JSX and Components"
 
 SUB-GOAL 2: "React Hooks - useState and useEffect"
 ---------------------------------------------------
-(Concept + coding)
+(Learn + coding)
 
   Tab Order          │ User Action                    │ System Response
   -------------------|--------------------------------|---------------------------
@@ -379,7 +379,7 @@ SUB-GOAL 3: "React State Management - Context API"
   Notes              │ Read docs, videos, examples   │ All in one scroll
                      │ Add note: "When to use Context │ User block added
                      │ vs Redux"                      │
-  Quiz               │ Context API concepts           │ Score recorded
+  Quiz               │ Context API Learns           │ Score recorded
   Coding             │ Build a theme context          │ Pass/fail
   Mock               │ —                              │ —
 
@@ -392,12 +392,12 @@ SUB-GOAL 3: "React State Management - Context API"
 
 SUB-GOAL 4: "React Performance - useMemo and useCallback"
 ---------------------------------------------------------
-(Concept-heavy, optimization focus)
+(Learn-heavy, optimization focus)
 
   Tab Order          │ User Action                    │ System Response
   -------------------|--------------------------------|---------------------------
   Notes              │ Read, "When to use useMemo?"   │ AI block
-  Quiz               │ Performance concepts            │ Score
+  Quiz               │ Performance Learns            │ Score
   Coding             │ Optimize re-renders            │ Pass/fail
   Mock               │ —                              │ —
 
@@ -431,8 +431,8 @@ SUMMARY: TAB USAGE BY SUB-GOAL TYPE
 
 Sub-Goal Type          │ Notes │ Quiz │ Coding │ Mock
 -----------------------|-------|------|--------|------
-Concept-only           │  ✓    │  ✓   │   —    │ opt
-Concept + coding       │  ✓    │  ✓   │   ✓    │ opt
+Learn-only           │  ✓    │  ✓   │   —    │ opt
+Learn + coding       │  ✓    │  ✓   │   ✓    │ opt
 Coding-heavy           │  ✓    │ opt  │   ✓    │ opt
 
 Notes = always used (unified learning content)

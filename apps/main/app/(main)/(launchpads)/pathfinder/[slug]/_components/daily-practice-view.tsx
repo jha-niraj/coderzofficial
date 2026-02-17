@@ -7,7 +7,8 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2,
-    Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles, Coins
+    Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles, Coins,
+    NotebookPen
 } from 'lucide-react'
 import Link from 'next/link'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
@@ -15,6 +16,7 @@ import { cn } from '@repo/ui/lib/utils'
 import {
     updateSubGoalStatus, deleteSubGoal, getSubGoalWithContent
 } from '@/actions/(main)/pathfinder/subgoals.action'
+import { createOrGetStudioForGoal } from '@/actions/(main)/pathfinder/studio-link.action'
 import { useRouter } from 'next/navigation'
 import {
     usePathfinderStore, type SubGoalResources
@@ -25,6 +27,7 @@ import { CreateSubGoalSheet } from './create-subgoal-sheet'
 import { SubGoalContentTabs } from './subgoal-content-tabs'
 import { PathfinderUsageWidget } from './pathfinder-usage-widget'
 import { CreatorEarningsSheet } from './creator-earnings-sheet'
+import toast from '@repo/ui/components/ui/sonner'
 
 interface SubGoal {
     id: string
@@ -74,7 +77,7 @@ interface DailyPracticeViewProps {
 // HEADER COMPONENT
 // ================================================================================
 
-function PracticeHeader({ goal, onOpenEarnings }: { goal: Goal; onOpenEarnings?: () => void }) {
+function PracticeHeader({ goal, onOpenEarnings, onOpenNotes }: { goal: Goal; onOpenEarnings?: () => void; onOpenNotes?: () => void }) {
     return (
         <div className="flex-shrink-0 p-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
             <div className="flex items-center justify-between">
@@ -96,6 +99,19 @@ function PracticeHeader({ goal, onOpenEarnings }: { goal: Goal; onOpenEarnings?:
                 </div>
                 <div className="flex items-center gap-2">
                     <PathfinderUsageWidget goalId={goal.id} />
+                    {
+                        onOpenNotes && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1.5 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                                onClick={onOpenNotes}
+                            >
+                                <NotebookPen className="w-3 h-3" />
+                                Open Full Notes
+                            </Button>
+                        )
+                    }
                     {
                         goal.isPublic && onOpenEarnings && (
                             <Button
@@ -379,6 +395,18 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
             <PracticeHeader
                 goal={goal}
                 onOpenEarnings={goal.isPublic ? () => setEarningsSheetOpen(true) : undefined}
+                onOpenNotes={async () => {
+                    try {
+                        const result = await createOrGetStudioForGoal(goal.id)
+                        if (result.error) {
+                            toast.error(result.error)
+                        } else if (result.studioSlug) {
+                            router.push(`/studio/${result.studioSlug}`)
+                        }
+                    } catch {
+                        toast.error('Failed to open notes')
+                    }
+                }}
             />
             <CreatorEarningsSheet
                 open={earningsSheetOpen}
@@ -454,6 +482,7 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
                                         <SubGoalContentTabs
                                             subGoalId={selectedSubGoal.id}
                                             subGoalTitle={selectedSubGoal.title}
+                                            goalId={goal.id}
                                             aiResources={selectedSubGoal.aiResources as SubGoalResources | undefined}
                                             aiQuizQuestions={selectedSubGoal.aiQuizQuestions}
                                             hasCoding={selectedSubGoal.hasCoding}

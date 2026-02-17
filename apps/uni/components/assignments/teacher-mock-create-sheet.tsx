@@ -17,7 +17,7 @@ import { Label } from '@repo/ui/components/ui/label'
 import { Checkbox } from '@repo/ui/components/ui/checkbox'
 import toast from '@repo/ui/components/ui/sonner'
 import {
-    createMockAssignment, 
+    createMockAssignment,
 } from '@/actions/assignments/mock-assignments.action'
 import { getTeacherClasses } from '@/actions/assignments/project-assignments.action'
 import { cn } from '@repo/ui/lib/utils'
@@ -445,7 +445,7 @@ export default function TeacherMockCreateSheet({
 
 - Data Structures: Arrays, Linked Lists, Trees, Graphs
 - Algorithms: Sorting, Searching, Dynamic Programming
-- React.js concepts and hooks
+- React.js Learns and hooks
 - Database design principles
 - Any specific technologies or frameworks to focus on..."
                                         value={formData.knowledgeBase}

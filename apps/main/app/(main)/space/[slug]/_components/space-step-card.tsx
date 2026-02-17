@@ -22,11 +22,10 @@ interface SpaceStepCardProps {
     spaceId: string;
 }
 
-const contentTypeIcons = {
+const contentTypeIcons: Record<string, typeof BookOpen> = {
     LINK: ExternalLink,
     VIDEO: Video,
-    PROJECT: Code,
-    CONCEPT: BookOpen,
+    LEARN: BookOpen,
     STUDIO: FileText,
     QUIZ: Zap,
     FLASHCARD: FileText,
@@ -66,8 +65,8 @@ export default function SpaceStepCard({
                 case SpaceStepContentType.PROJECT:
                     router.push(`/projects/${step.contentId}?returnTo=space&spaceId=${spaceId}&stepId=${step.id}`);
                     break;
-                case SpaceStepContentType.CONCEPT:
-                    router.push(`/concepts/${step.contentId}?returnTo=space&spaceId=${spaceId}&stepId=${step.id}`);
+                case SpaceStepContentType.LEARN:
+                    router.push(`/learn/${step.contentId}?returnTo=space&spaceId=${spaceId}&stepId=${step.id}`);
                     break;
                 case SpaceStepContentType.STUDIO:
                     router.push(`/studio/${step.contentId}?returnTo=space&spaceId=${spaceId}&stepId=${step.id}`);
@@ -88,10 +87,10 @@ export default function SpaceStepCard({
                 <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
                         <div className={`flex items-center justify-center w-12 h-12 rounded-full ${isCompleted
-                                ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400'
-                                : isCurrent
-                                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-                                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                            ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400'
+                            : isCurrent
+                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
+                                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
                             }`}>
                             {
                                 isCompleted ? (

@@ -29,7 +29,7 @@ export default function BookmarksLayout({
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [counts, setCounts] = useState({
         total: 0,
-        concepts: 0,
+        Learns: 0,
         projects: 0,
         community: 0,
         studio: 0,
@@ -42,7 +42,7 @@ export default function BookmarksLayout({
                 if (result.success && result.data) {
                     setCounts({
                         total: result.data.total,
-                        concepts: result.data.concepts,
+                        Learns: result.data.Learns,
                         projects: result.data.projects,
                         community: result.data.community,
                         studio: result.data.studio,
@@ -64,10 +64,10 @@ export default function BookmarksLayout({
             color: "from-amber-500 to-orange-500",
         },
         {
-            href: "/bookmarks/concepts",
-            label: "Concepts",
+            href: "/bookmarks/Learns",
+            label: "Learns",
             icon: Lightbulb,
-            count: counts.concepts,
+            count: counts.Learns,
             color: "from-blue-500 to-purple-500",
         },
         {

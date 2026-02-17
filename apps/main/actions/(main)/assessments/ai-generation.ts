@@ -16,7 +16,7 @@ const openai = new OpenAI({
 // ==================== SYSTEM PROMPTS ====================
 
 const QUIZ_SYSTEM_PROMPT = `You are an expert programming instructor creating quiz questions.
-Generate high-quality multiple-choice questions that test understanding of programming concepts.
+Generate high-quality multiple-choice questions that test understanding of programming Learns.
 Each question should have 4 options with exactly one correct answer.
 Include clear explanations for why the correct answer is right.
 Questions should be practical and test real-world understanding.`
@@ -31,7 +31,7 @@ const MOCK_INTERVIEW_SYSTEM_PROMPT = `You are an expert technical interviewer at
 Generate realistic interview questions that assess both technical knowledge and problem-solving ability.
 Questions should simulate real interview scenarios including:
 - Technical deep-dives
-- System design concepts (for appropriate levels)
+- System design Learns (for appropriate levels)
 - Behavioral aspects of technical decisions
 - Code review and debugging scenarios
 Include model answers that would impress interviewers.`
@@ -79,13 +79,13 @@ function getSystemPromptForMode(mode: AssessmentMode): string {
 function getDifficultyDescription(difficulty: QuestionDifficulty): string {
     switch (difficulty) {
         case 'EASY':
-            return 'beginner-friendly concepts, basic syntax, and fundamental principles'
+            return 'beginner-friendly Learns, basic syntax, and fundamental principles'
         case 'INTERMEDIATE':
-            return 'intermediate concepts, common patterns, and practical applications'
+            return 'intermediate Learns, common patterns, and practical applications'
         case 'HARD':
-            return 'advanced concepts, edge cases, optimization, and complex problem-solving'
+            return 'advanced Learns, edge cases, optimization, and complex problem-solving'
         default:
-            return 'intermediate concepts'
+            return 'intermediate Learns'
     }
 }
 
@@ -343,7 +343,7 @@ function formatInterviewExplanation(q: any): string {
         })
     }
 
-    return explanation || q.answerExplanation || 'Discuss the key concepts thoroughly.'
+    return explanation || q.answerExplanation || 'Discuss the key Learns thoroughly.'
 }
 
 /**
@@ -368,7 +368,7 @@ function generatePlaceholderQuestions(config: AIGenerationConfig): GeneratedQues
                     { id: 'a', text: 'Option A - Correct approach', isCorrect: true },
                     { id: 'b', text: 'Option B - Incorrect approach', isCorrect: false },
                     { id: 'c', text: 'Option C - Partially correct', isCorrect: false },
-                    { id: 'd', text: 'Option D - Common misconception', isCorrect: false },
+                    { id: 'd', text: 'Option D - Common misLearnion', isCorrect: false },
                 ],
                 correctAnswer: 'a',
                 answerExplanation: `This is the explanation for question ${i + 1}. Option A is correct because it follows best practices.`,

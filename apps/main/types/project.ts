@@ -214,8 +214,8 @@ export interface ProjectV2TaskProgress {
     completedAt: Date | null
 }
 
-// Concept structure for detailed learning content
-export interface TaskConcept {
+// Learn structure for detailed learning content
+export interface TaskLearn {
     title: string
     summary: string // 50-100 words
     keyPoints: string[] // 10-15 detailed bullet points
@@ -223,7 +223,7 @@ export interface TaskConcept {
     bestPractices: string[] // 5-8 industry standards
     realWorldUsage: string // How major companies use this
     securityConsiderations: string[] // 2-4 security implications
-    relatedConcepts: string[] // 3-5 related concepts
+    relatedLearns: string[] // 3-5 related Learns
 }
 
 // Resource for external learning materials
@@ -260,7 +260,7 @@ export interface ProjectV2Task {
     prerequisites?: string[] // Prior knowledge needed
     resources?: TaskResource[] // Verified external resources
     testingGuidelines?: string[] // 3-5 things to test
-    concepts?: TaskConcept[] // Detailed learning concepts
+    Learns?: TaskLearn[] // Detailed learning Learns
     assessmentType?: TaskAssessmentType
 }
 
@@ -367,7 +367,7 @@ export interface ProjectGenerationFormData {
     projectDescription?: string
     generationType?: string
     technologies?: string[]
-    conceptsFocus?: string[]
+    LearnsFocus?: string[]
     stacks?: {
         frontend?: string
         backend?: string

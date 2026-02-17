@@ -46,7 +46,7 @@ TheCoderz is a comprehensive learning platform for aspiring developers featuring
    - Events and challenges
    - Resource sharing
 
-5. **Concepts Hub** - Learn programming concepts through interactive guides
+5. **Learns Hub** - Learn programming Learns through interactive guides
 
 6. **Open Source** - Contribute to real open-source projects
 

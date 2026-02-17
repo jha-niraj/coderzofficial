@@ -26,7 +26,7 @@ interface BookmarkItem {
     category?: string;
     difficulty?: string;
     thumbnail?: string | null;
-    type?: 'concept' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
+    type?: 'Learn' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
     savedAt: string | Date;
 }
 
@@ -38,13 +38,13 @@ interface BookmarkModuleData {
 interface BookmarksSummaryData {
     total: number;
     totalBookmarks: number;
-    concepts: number;
+    Learns: number;
     projects: number;
     community: number;
     mock: number;
     studio: number;
     byModule: {
-        concepts: BookmarkModuleData;
+        Learns: BookmarkModuleData;
         projects: BookmarkModuleData;
         community: BookmarkModuleData;
         mock: BookmarkModuleData;
@@ -87,14 +87,14 @@ export default function BookmarksPage() {
 
     const modules: ModuleCard[] = data ? [
         {
-            id: "concepts",
-            label: "Concepts",
+            id: "Learns",
+            label: "Learns",
             icon: Lightbulb,
-            href: "/bookmarks/concepts",
+            href: "/bookmarks/Learns",
             color: "text-blue-500",
             bgColor: "from-blue-500 to-purple-500",
-            count: data.byModule.concepts.count,
-            recent: data.byModule.concepts.recent,
+            count: data.byModule.Learns.count,
+            recent: data.byModule.Learns.recent,
         },
         {
             id: "projects",
@@ -184,9 +184,9 @@ export default function BookmarksPage() {
                                     </div>
                                     <div>
                                         <div className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                            {data?.byModule.concepts.count || 0}
+                                            {data?.byModule.Learns.count || 0}
                                         </div>
-                                        <div className="text-xs text-neutral-500">Concepts</div>
+                                        <div className="text-xs text-neutral-500">Learns</div>
                                     </div>
                                 </div>
                             </CardContent>
@@ -314,8 +314,8 @@ export default function BookmarksPage() {
                                         >
                                             <Link
                                                 href={
-                                                    item.type === "concept"
-                                                        ? `/concepts/${item.slug}`
+                                                    item.type === "Learn"
+                                                        ? `/Learns/${item.slug}`
                                                         : item.type === "project"
                                                             ? `/projects/${item.slug}`
                                                             : `/communities/${item.communitySlug}/post/${item.id}`
@@ -324,11 +324,11 @@ export default function BookmarksPage() {
                                                 <div className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-200 group">
                                                     <div className={cn(
                                                         "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br",
-                                                        item.type === "concept" && "from-blue-500 to-purple-500",
+                                                        item.type === "Learn" && "from-blue-500 to-purple-500",
                                                         item.type === "project" && "from-orange-500 to-red-500",
                                                         item.type === "community" && "from-green-500 to-emerald-500"
                                                     )}>
-                                                        {item.type === "concept" && <Lightbulb className="h-6 w-6 text-white" />}
+                                                        {item.type === "Learn" && <Lightbulb className="h-6 w-6 text-white" />}
                                                         {item.type === "project" && <FolderKanban className="h-6 w-6 text-white" />}
                                                         {item.type === "community" && <MessageSquare className="h-6 w-6 text-white" />}
                                                     </div>
@@ -378,12 +378,12 @@ export default function BookmarksPage() {
                                 No bookmarks yet
                             </h2>
                             <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-                                Save concepts, projects, and posts to access them later. Start exploring to find content worth saving!
+                                Save Learns, projects, and posts to access them later. Start exploring to find content worth saving!
                             </p>
                             <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                 <Button asChild variant="default" className="rounded-full">
-                                    <Link href="/concepts">
-                                        Explore Concepts
+                                    <Link href="/Learns">
+                                        Explore Learns
                                         <ChevronRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>

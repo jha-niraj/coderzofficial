@@ -1,0 +1,454 @@
+model Learn {
+    id          String @id @default(cuid())
+    slug        String @unique
+    title       String
+    description String @db.Text
+
+    difficulty LearnDifficulty @default(BEGINNER)
+    tags       String[]
+
+    // New Hierarchical Category System
+    mainCategoryId String?
+    mainCategory   LearnMainCategory? @relation("LearnMainCategory", fields: [mainCategoryId], references: [id], onDelete: SetNull)
+
+    subCategoryId String?
+    subCategory   LearnSubCategory? @relation("LearnSubCategory", fields: [subCategoryId], references: [id], onDelete: SetNull)
+
+    topicId String?
+    topic   LearnTopic? @relation("LearnTopic", fields: [topicId], references: [id], onDelete: SetNull)
+
+    // Media
+    thumbnail   String?
+    coverImage  String?
+    iconEmoji   String? @default("📚")
+    accentColor String? @default("#3B82F6")
+
+    // Status & Publishing
+    status      LearnStatus @default(DRAFT)
+    publishedAt DateTime?
+
+    // Metadata
+    estimatedTime Int?     @default(10) // in minutes
+    prerequisites String[]
+
+    // Engagement
+    viewCount     Int @default(0)
+    likeCount     Int @default(0)
+    bookmarkCount Int @default(0)
+    commentCount  Int @default(0)
+
+    // SEO
+    metaTitle       String?
+    metaDescription String?
+
+    // Creator - Now any user can create Learns
+    creatorId String
+    creator   User   @relation("LearnCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+    // Relations
+    steps     LearnStep[]     @relation("LearnSteps")
+    likes     LearnLike[]     @relation("LearnLikes")
+    bookmarks LearnBookmark[] @relation("LearnBookmarks")
+    comments  LearnComment[]  @relation("LearnComments")
+    views     LearnView[]     @relation("LearnViews")
+    progress  LearnProgress[] @relation("LearnProgress")
+
+    // Related & Prerequisite Learns (self-relations)
+    relatedTo       LearnRelation[]     @relation("RelatedFrom")
+    relatedFrom     LearnRelation[]     @relation("RelatedTo")
+    prerequisiteFor LearnPrerequisite[] @relation("PrerequisiteOf")
+    prerequisiteOf  LearnPrerequisite[] @relation("PrerequisiteFor")
+
+    // Space relation
+    spaceId String?
+    space   Space?  @relation("SpaceLearns", fields: [spaceId], references: [id], onDelete: SetNull)
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([difficulty])
+    @@index([status])
+    @@index([creatorId])
+    @@index([createdAt])
+    @@index([likeCount])
+    @@index([viewCount])
+    @@index([spaceId])
+    @@index([mainCategoryId])
+    @@index([subCategoryId])
+    @@index([topicId])
+    @@map("Learn")
+}
+
+// Self-relation for related Learns
+model LearnRelation {
+    id String @id @default(cuid())
+
+    fromLearnId String @map("fromLearnId")
+    fromLearn   Learn  @relation("RelatedFrom", fields: [fromLearnId], references: [id], onDelete: Cascade)
+
+    toLearnId String @map("toLearnId")
+    toLearn   Learn  @relation("RelatedTo", fields: [toLearnId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([fromLearnId, toLearnId])
+    @@index([fromLearnId])
+    @@index([toLearnId])
+    @@map("LearnRelation")
+}
+
+// Self-relation for prerequisite Learns
+model LearnPrerequisite {
+    id String @id @default(cuid())
+
+    learnId String @map("learnId")
+    learn   Learn  @relation("PrerequisiteFor", fields: [learnId], references: [id], onDelete: Cascade)
+
+    prerequisiteId String
+    prerequisite   Learn  @relation("PrerequisiteOf", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([learnId, prerequisiteId])
+    @@index([learnId])
+    @@index([prerequisiteId])
+    @@map("LearnPrerequisite")
+}
+
+model LearnStep {
+    id String @id @default(cuid())
+
+    learnId String @map("learnId")
+    learn   Learn  @relation("LearnSteps", fields: [learnId], references: [id], onDelete: Cascade)
+
+    // Step Content
+    order Int
+    title String
+    type  LearnStepType @default(EXPLANATION)
+
+    // Main content in markdown format
+    content String @db.Text
+
+    stepData Json?
+
+    // For CODE type - keep code blocks as separate model for complex code
+    codeBlocks LearnCodeBlock[] @relation("StepCodeBlocks")
+
+    // Tips/Notes for the step (markdown)
+    tips String[]
+
+    // Linked Mock Interview (for MOCK_INTERVIEW step type)
+    mockInterviewId String?             @unique
+    mockInterview   MockInterviewVoice? @relation("LearnStepMockInterview", fields: [mockInterviewId], references: [id], onDelete: SetNull)
+
+    // Linked Project (for PROJECT step type - major projects)
+    linkedProjectId String?    @unique
+    linkedProject   ProjectV2? @relation("LearnStepProject", fields: [linkedProjectId], references: [id], onDelete: SetNull)
+
+    // Linked Portfolio Projects (for PROJECT step type - minor projects)
+    // Users submit their portfolio projects linked to this step
+    portfolioProjects PortfolioProject[] @relation("LearnStepPortfolioProjects")
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([learnId, order])
+    @@index([learnId])
+    @@index([type])
+    @@index([mockInterviewId])
+    @@index([linkedProjectId])
+    @@map("LearnStep")
+}
+
+model LearnCodeBlock {
+    id String @id @default(cuid())
+
+    stepId String
+    step   LearnStep @relation("StepCodeBlocks", fields: [stepId], references: [id], onDelete: Cascade)
+
+    // Code Content
+    order       Int     @default(0)
+    title       String?
+    language    String  @default("javascript")
+    code        String  @db.Text
+    explanation String? @db.Text
+
+    // Settings
+    highlightLines  Int[] // Lines to highlight
+    showLineNumbers Boolean @default(true)
+    isRunnable      Boolean @default(false)
+
+    createdAt DateTime @default(now())
+
+    @@index([stepId])
+    @@map("LearnCodeBlock")
+}
+
+model LearnLike {
+    id String @id @default(cuid())
+
+    learnId String @map("learnId")
+    learn   Learn  @relation("LearnLikes", fields: [learnId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation("LearnLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([learnId, userId])
+    @@index([learnId])
+    @@index([userId])
+    @@map("LearnLike")
+}
+
+model LearnBookmark {
+    id String @id @default(cuid())
+
+    learnId String @map("learnId")
+    learn   Learn  @relation("LearnBookmarks", fields: [learnId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation("LearnBookmarks", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Optional folder/collection
+    folder String? @default("Saved")
+    notes  String? @db.Text
+
+    createdAt DateTime @default(now())
+
+    @@unique([learnId, userId])
+    @@index([learnId])
+    @@index([userId])
+    @@index([folder])
+    @@map("LearnBookmark")
+}
+
+model LearnComment {
+    id String @id @default(cuid())
+
+    learnId String @map("learnId")
+    learn   Learn  @relation("LearnComments", fields: [learnId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation("LearnCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Comment Content
+    content String @db.Text
+
+    // Reply System
+    parentId String?
+    parent   LearnComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+    replies  LearnComment[] @relation("CommentReplies")
+
+    // Engagement
+    likeCount Int @default(0)
+
+    // Moderation
+    isEdited Boolean @default(false)
+    isPinned Boolean @default(false)
+    isHidden Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([learnId])
+    @@index([userId])
+    @@index([parentId])
+    @@index([createdAt])
+    @@map("LearnComment")
+}
+
+model LearnView {
+    id String @id @default(cuid())
+
+    learnId String @map("learnId")
+    learn   Learn  @relation("LearnViews", fields: [learnId], references: [id], onDelete: Cascade)
+
+    userId String?
+    user   User?   @relation("LearnViews", fields: [userId], references: [id], onDelete: SetNull)
+
+    // Analytics
+    source         String? // "browse", "search", "direct", "recommendation"
+    duration       Int? // Time spent in seconds
+    stepsViewed    Int     @default(0)
+    completedSteps Int     @default(0)
+
+    viewedAt DateTime @default(now())
+
+    @@index([learnId])
+    @@index([userId])
+    @@index([viewedAt])
+    @@map("LearnView")
+}
+
+model LearnProgress {
+    id String @id @default(cuid())
+
+    learnId String @map("learnId")
+    learn   Learn  @relation("LearnProgress", fields: [learnId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation("LearnProgress", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Progress Tracking
+    currentStep     Int   @default(0)
+    completedSteps  Int[] // Array of completed step orders
+    totalSteps      Int   @default(0)
+    progressPercent Float @default(0)
+
+    // Quiz Answers (for quiz steps)
+    quizAnswers Json? // {stepId: {selectedOption, isCorrect}}
+
+    // Challenge Submissions
+    challengeSubmissions Json? // {stepId: {code, passed}}
+
+    // Status
+    isCompleted Boolean   @default(false)
+    completedAt DateTime?
+
+    // Time Tracking
+    totalTimeSpent Int      @default(0) // in seconds
+    lastAccessedAt DateTime @default(now())
+
+    // Timestamps
+    startedAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([learnId, userId])
+    @@index([learnId])
+    @@index([userId])
+    @@index([isCompleted])
+    @@index([lastAccessedAt])
+    @@map("LearnProgress")
+}
+
+model LearnRequest {
+    id String @id @default(cuid())
+
+    // Requester
+    userId String
+    user   User   @relation("LearnRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Request Details
+    title       String
+    description String @db.Text
+
+    difficulty LearnDifficulty?
+
+    // Status
+    status LearnRequestStatus @default(PENDING)
+
+    // Admin Response
+    adminNotes String? @db.Text
+    assignedTo String? // Admin who took the request
+
+    // Upvotes (for community requests)
+    upvotes Int @default(0)
+
+    // Result
+    resultLearnId String? @map("resultLearnId") // Link to created Learn if fulfilled
+
+    // Timestamps
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    resolvedAt DateTime?
+
+    @@index([userId])
+    @@index([status])
+    @@index([upvotes])
+    @@index([createdAt])
+    @@map("LearnRequest")
+}
+
+// ===============================================
+// HIERARCHICAL CATEGORY SYSTEM
+// ===============================================
+
+// Main Category (e.g., Frontend, Backend, DevOps)
+model LearnMainCategory {
+    id          String  @id @default(cuid())
+    slug        String  @unique
+    name        String
+    description String?
+    icon        String? // emoji or icon name
+    color       String? // accent color
+    order       Int     @default(0) // for sorting
+
+    // Hierarchical relation
+    subCategories LearnSubCategory[]
+    learns        Learn[]            @relation("LearnMainCategory")
+
+    // Stats
+    learnCount Int @default(0) @map("learnCount")
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([order])
+    @@map("LearnMainCategory")
+}
+
+// Sub Category (e.g., React, Next.js, Vue under Frontend)
+model LearnSubCategory {
+    id          String  @id @default(cuid())
+    slug        String  @unique
+    name        String
+    description String?
+    icon        String?
+    color       String?
+    order       Int     @default(0)
+
+    // Parent relation
+    mainCategoryId String
+    mainCategory   LearnMainCategory @relation(fields: [mainCategoryId], references: [id], onDelete: Cascade)
+
+    // Topics under this subcategory
+    topics LearnTopic[]
+    learns Learn[]      @relation("LearnSubCategory")
+
+    // Stats
+    learnCount Int @default(0) @map("learnCount")
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([mainCategoryId])
+    @@index([order])
+    @@map("LearnSubCategory")
+}
+
+// Topic (e.g., React Basics, React Hooks under React)
+model LearnTopic {
+    id          String  @id @default(cuid())
+    slug        String  @unique
+    name        String
+    description String?
+    icon        String?
+    order       Int     @default(0)
+
+    // Parent relation
+    subCategoryId String
+    subCategory   LearnSubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+    // Related Learns
+    learns Learn[] @relation("LearnTopic")
+
+    // Stats
+    learnCount Int @default(0) @map("learnCount")
+
+    // Timestamps
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([subCategoryId])
+    @@index([order])
+    @@map("LearnTopic")
+}

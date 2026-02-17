@@ -54,12 +54,11 @@ export {
     BadgeType,
     BadgeCategory,
 
-    // Concepts Enums and Types
-    ConceptCategory,
-    ConceptDifficulty,
-    ConceptStatus,
-    ConceptStepType,
-    ConceptRequestStatus,
+    // Learns Enums and Types
+    LearnDifficulty,
+    LearnStatus,
+    LearnStepType,
+    LearnRequestStatus,
 
     // Admin Enums and Types
     AdminRole,
@@ -73,23 +72,10 @@ export {
     AssessmentLanguage,
     AssessmentQuestionType,
 
-    // Challange Enums and Types
-    UserContentStatus,
-    ChallengeTrackLevel,
-    ChallengeTrackStatus,
-    CrucibleEventStatus,
-    StepSubmissionStatus,
-
     // Chat Enums and Types
     FollowRequestStatus,
     ChatMessageType,
     ChatMessageStatus,
-
-    // Collective Enums and Types
-    ProposalStatus,
-    CollectiveChallengeStatus,
-    ChallengeStepType,
-    SubmissionStatus,
 
     // Communities Enums and Types
     CommunityType,
@@ -191,5 +177,5 @@ export {
     UniversitySubscriptionPlan,
     UniversitySubscriptionStatus,
 
-    
+
 } from "@prisma/client";

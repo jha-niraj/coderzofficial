@@ -1,0 +1,831 @@
+
+================================================================================
+  LearnS MODULE — STRUCTURE PLAN FOR PYTHON PROGRAMMING SYLLABUS
+================================================================================
+
+Created: 2026-02-16
+Purpose: Define how to map a university-level Python syllabus into the Learns
+         module so students can learn, practice, and be assessed step by step.
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 1: CURRENT ARCHITECTURE SUMMARY                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+CURRENT DATA MODEL:
+-------------------
+
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                         Learn (one record)                        │
+  │                                                                     │
+  │  • title, description, category, difficulty                        │
+  │  • slug (unique URL)                                                │
+  │  • tags[], prerequisites[]                                          │
+  │  • mainCategoryId → LearnMainCategory                            │
+  │  • subCategoryId  → LearnSubCategory                             │
+  │  • topicId        → LearnTopic                                   │
+  │  • status: DRAFT | PENDING_VERIFICATION | PUBLISHED | ARCHIVED     │
+  │  • pricingType: FREE | PAID                                         │
+  └──────────────────────────────────────────────────────────────────────┘
+                              │
+                              │  has many
+                              ▼
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                   LearnStep (ordered list)                        │
+  │                                                                     │
+  │  • order (int, unique per Learn)                                  │
+  │  • title, type, content (markdown)                                  │
+  │  • stepData (JSON, polymorphic per type)                            │
+  │  • tips[] (string array)                                            │
+  │  • codeBlocks → LearnCodeBlock[]                                  │
+  │  • linkedProjectId → ProjectV2                                     │
+  │  • mockInterviewId → MockInterviewVoice                            │
+  └──────────────────────────────────────────────────────────────────────┘
+
+AVAILABLE STEP TYPES (LearnStepType enum):
+---------------------------------------------
+  1. EXPLANATION    – Markdown content explaining a Learn
+  2. CODE           – Code examples with syntax highlighting + explanations
+  3. QUIZ           – MCQ questions (single or batch) with auto-grading
+  4. CHALLENGE      – Coding challenge with starter code, solution, AI eval
+  5. COMPARISON     – Side-by-side comparison of approaches
+  6. SUMMARY        – Key takeaways and tips
+  7. RESOURCE       – YouTube videos + documentation links
+  8. VISUAL         – Images, diagrams, flowcharts
+  9. MOCK_INTERVIEW – AI voice-based mock interview
+ 10. PROJECT        – Mini or major project with AI generation
+ 11. VISUALIZATION  – Data visualizations
+ 12. INTERACTIVE    – Interactive elements
+
+HIERARCHY (category system):
+-------------------------------
+  LearnMainCategory → LearnSubCategory → LearnTopic → Learn
+
+  Example:
+    Programming Fundamentals → Python → Variables & Types → "Python Variables"
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 2: KEY INSIGHT — ONE Learn = ONE TOPIC (NOT ONE UNIT)           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+THE CORRECT MAPPING:
+---------------------
+
+  ❌ WRONG: 1 Learn = 1 Unit (too many steps, unfocused, overwhelming)
+  ✅ RIGHT: 1 Learn = 1 Topic within a Unit (focused, 5-12 steps each)
+
+  Why?
+  - Each Learn has Steps that are shown one at a time (like a lesson flow)
+  - Steps can be EXPLANATION, CODE, QUIZ, CHALLENGE, MOCK_INTERVIEW, PROJECT
+  - A Learn with 50+ steps is unusable; 5-12 steps per Learn is ideal
+  - The hierarchical category system supports organizing topics under units
+
+  THE HIERARCHY FOR PYTHON SYLLABUS:
+  ────────────────────────────────────
+
+  LearnMainCategory:  "Programming Fundamentals"
+       │
+       └── LearnSubCategory:  "Python"
+              │
+              ├── LearnTopic:  "Unit I — Python Basics"
+              │       │
+              │       ├── Learn: "Setting Up Your Python Environment"
+              │       └── Learn: "Variables, Expressions & Statements"
+              │
+              ├── LearnTopic:  "Unit II — Control Flow"
+              │       │
+              │       ├── Learn: "Conditional Statements"
+              │       └── Learn: "Iterative Statements (Loops)"
+              │
+              ├── LearnTopic:  "Unit III — Functions"
+              │       │
+              │       └── Learn: "Functions and Recursion"
+              │
+              └── ... (more topics)
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 3: COMPLETE TOPIC-TO-Learn MAPPING FOR PYTHON SYLLABUS          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+MAIN CATEGORY:  Programming Fundamentals
+SUB CATEGORY:   Python
+TOTAL LearnS: 12 (one per topic in syllabus)
+
+  ┌────────┬──────────────────────────────────────────┬────────────┐
+  │ Topic  │              Learn Title               │ Difficulty │
+  ├────────┼──────────────────────────────────────────┼────────────┤
+  │ Unit I │                                          │            │
+  │   1.1  │ Setting Up Your Python Environment       │ BEGINNER   │
+  │   1.2  │ Variables, Expressions & Statements      │ BEGINNER   │
+  ├────────┼──────────────────────────────────────────┼────────────┤
+  │ Unit II│                                          │            │
+  │   2.1  │ Conditional Statements in Python         │ BEGINNER   │
+  │   2.2  │ Iterative Statements (Loops) in Python   │ BEGINNER   │
+  ├────────┼──────────────────────────────────────────┼────────────┤
+  │Unit III│                                          │            │
+  │   3.1  │ Functions and Recursion in Python         │ INTERMED.  │
+  ├────────┼──────────────────────────────────────────┼────────────┤
+  │ Unit IV│                                          │            │
+  │   4.1  │ Python Strings — The Complete Guide       │ INTERMED.  │
+  │   4.2  │ Python Lists — Mastering List Operations  │ INTERMED.  │
+  │   4.3  │ Tuples and Dictionaries in Python         │ INTERMED.  │
+  ├────────┼──────────────────────────────────────────┼────────────┤
+  │ Unit V │                                          │            │
+  │   5.1  │ Classes and Objects in Python             │ INTERMED.  │
+  │   5.2  │ OOP: Inheritance, Overriding & Hiding     │ ADVANCED   │
+  ├────────┼──────────────────────────────────────────┼────────────┤
+  │ Unit VI│                                          │            │
+  │   6.1  │ Files and Exceptions in Python            │ ADVANCED   │
+  │   6.2  │ Regular Expressions in Python             │ ADVANCED   │
+  └────────┴──────────────────────────────────────────┴────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 4: STEP STRUCTURE FOR FIRST 3 UNITS (DETAILED EXAMPLES)           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+===============================================
+  Learn 1.1: Setting Up Your Python Environment
+  Difficulty: BEGINNER | Est. Time: 15 min
+  Prerequisites: None
+===============================================
+
+  Step 1  │ EXPLANATION  │ "What is Python?"
+          │              │ Python versions, history, why Python,
+          │              │ where Python is used (web, data, AI, automation)
+
+  Step 2  │ VISUAL       │ "Python Ecosystem Overview"
+          │              │ Diagram showing Python interpreter, IDE, packages
+
+  Step 3  │ EXPLANATION  │ "Installing Python on Your Machine"
+          │              │ Windows/Mac/Linux installation guide,
+          │              │ checking `python --version`
+
+  Step 4  │ CODE         │ "Your First Program — Hello World"
+          │              │ print("Hello, World!")
+          │              │ Running from terminal, running from IDE
+
+  Step 5  │ CHALLENGE    │ "Print Your Name"
+          │              │ Starter code with TODO comment
+          │              │ Student must modify print statement
+          │              │ AI evaluates output
+
+  Step 6  │ QUIZ         │ "Python Setup Quiz"
+          │              │ 3-5 MCQ questions:
+          │              │  - Which command checks Python version?
+          │              │  - What is IDLE?
+          │              │  - What file extension do Python files use?
+
+  Step 7  │ RESOURCE     │ "Learn More"
+          │              │ YouTube: Python Install Tutorial
+          │              │ Docs: python.org Getting Started
+
+  Step 8  │ SUMMARY      │ "Key Takeaways"
+          │              │ Python is interpreted, cross-platform
+          │              │ .py files, IDLE, pip for packages
+
+  TOTAL: 8 Steps
+  ─────────────────────────────────────────────────
+
+===============================================
+  Learn 1.2: Variables, Expressions & Statements
+  Difficulty: BEGINNER | Est. Time: 25 min
+  Prerequisites: ["setting-up-your-python-environment"]
+===============================================
+
+  Step 1  │ EXPLANATION  │ "What Are Variables?"
+          │              │ Naming variables, assignment operator (=),
+          │              │ naming conventions (snake_case)
+
+  Step 2  │ CODE         │ "Variable Declaration and Usage"
+          │              │ x = 10
+          │              │ name = "Alice"
+          │              │ pi = 3.14
+          │              │ is_student = True
+
+  Step 3  │ EXPLANATION  │ "Values and Types"
+          │              │ int, float, str, bool
+          │              │ type() function, dynamic typing
+
+  Step 4  │ CODE         │ "Avoiding Common Errors"
+          │              │ NameError when using variables not defined
+          │              │ Case sensitivity: Name ≠ name
+
+  Step 5  │ EXPLANATION  │ "Operators and Operands"
+          │              │ Arithmetic: +, -, *, /, //, %, **
+          │              │ Order of operations (PEMDAS)
+          │              │ String concatenation
+
+  Step 6  │ CODE         │ "Expressions in Action"
+          │              │ area = length * width
+          │              │ celsius = (fahrenheit - 32) * 5/9
+          │              │ greeting = "Hello" + " " + name
+
+  Step 7  │ COMPARISON   │ "Statements vs Expressions"
+          │              │ Statement: x = 5 (does something)
+          │              │ Expression: x + 5 (produces a value)
+          │              │ Comments: # single, """ multi """
+
+  Step 8  │ CHALLENGE    │ "Temperature Converter"
+          │              │ Given fahrenheit variable, compute celsius
+          │              │ Starter code provided, AI evaluates
+
+  Step 9  │ QUIZ         │ "Variables & Types Quiz"
+          │              │ 5 MCQ questions on naming rules,
+          │              │ type identification, operator precedence
+
+  Step 10 │ PROJECT      │ "Build a Simple Calculator"
+          │              │ Mini project: take two numbers, print
+          │              │ sum, diff, product, quotient
+          │              │ Type: minor (practice)
+
+  Step 11 │ SUMMARY      │ "Key Takeaways"
+          │              │ Variables are labels, dynamic typing,
+          │              │ operators, expressions vs statements
+
+  TOTAL: 11 Steps
+  ─────────────────────────────────────────────────
+
+===============================================
+  Learn 2.1: Conditional Statements in Python
+  Difficulty: BEGINNER | Est. Time: 25 min
+  Prerequisites: ["variables-expressions-and-statements"]
+===============================================
+
+  Step 1  │ EXPLANATION  │ "Boolean Expressions"
+          │              │ True/False, comparison operators
+          │              │ ==, !=, >, <, >=, <=
+          │              │ Logic: and, or, not
+
+  Step 2  │ CODE         │ "Boolean Expressions in Practice"
+          │              │ age >= 18
+          │              │ name == "Alice" and age > 20
+          │              │ not is_student
+
+  Step 3  │ EXPLANATION  │ "The if Statement"
+          │              │ Syntax, indentation, colon
+          │              │ if-else, if-elif-else
+          │              │ Nested conditionals
+
+  Step 4  │ CODE         │ "Conditional Examples"
+          │              │ Grade checker (A/B/C/D/F)
+          │              │ Even/odd checker
+          │              │ Nested: age + student discount logic
+
+  Step 5  │ VISUAL       │ "Decision Tree Flowchart"
+          │              │ Flowchart showing if-elif-else branching
+
+  Step 6  │ COMPARISON   │ "if-elif-else vs Match-Case"
+          │              │ Traditional conditional vs Python 3.10 match
+          │              │ When to use which approach
+
+  Step 7  │ EXPLANATION  │ "The Modulus Operator & Random Numbers"
+          │              │ x % 2 for even/odd
+          │              │ import random, random.randint()
+          │              │ Using randomness in conditionals
+
+  Step 8  │ CHALLENGE    │ "Number Guessing Logic"
+          │              │ Given a random number and user guess,
+          │              │ print "too high", "too low", or "correct"
+          │              │ AI evaluates the logic
+
+  Step 9  │ QUIZ         │ "Conditionals Quiz"
+          │              │ 5 MCQ questions on boolean logic,
+          │              │ if-else behavior, nested conditions
+
+  Step 10 │ MOCK_INTERVIEW│ "Conditional Logic Interview"
+          │              │ AI asks verbal questions about conditionals
+          │              │ How would you design a login flow?
+          │              │ Explain short-circuit evaluation
+
+  Step 11 │ SUMMARY      │ "Key Takeaways"
+          │              │ Booleans, branching, nesting, modulus
+
+  TOTAL: 11 Steps
+  ─────────────────────────────────────────────────
+
+===============================================
+  Learn 2.2: Iterative Statements (Loops) in Python
+  Difficulty: BEGINNER | Est. Time: 30 min
+  Prerequisites: ["conditional-statements-in-python"]
+===============================================
+
+  Step 1  │ EXPLANATION  │ "The while Loop"
+          │              │ Syntax, condition, infinite loops
+          │              │ break, continue, loop variables
+
+  Step 2  │ CODE         │ "while Loop Examples"
+          │              │ Countdown, input validation loop,
+          │              │ sum of numbers until sentinel
+
+  Step 3  │ EXPLANATION  │ "The for Loop"
+          │              │ for x in range(), for x in list
+          │              │ range(start, stop, step)
+
+  Step 4  │ CODE         │ "for Loop Examples"
+          │              │ Print 1 to 10, iterate over string,
+          │              │ sum of first N numbers
+
+  Step 5  │ EXPLANATION  │ "Nested Loops"
+          │              │ Nested for, nested while, mixed nesting
+          │              │ Pattern printing (stars)
+
+  Step 6  │ CODE         │ "Nested Loop Patterns"
+          │              │ Right triangle pattern
+          │              │ Multiplication table
+
+  Step 7  │ VISUAL       │ "Loop Execution Flowchart"
+          │              │ Flowchart: while vs for loop execution
+
+  Step 8  │ COMPARISON   │ "while vs for: When to Use Which"
+          │              │ Known iterations → for
+          │              │ Condition-based → while
+
+  Step 9  │ CHALLENGE    │ "FizzBuzz"
+          │              │ Classic FizzBuzz challenge
+          │              │ Print Fizz/Buzz/FizzBuzz for 1-100
+          │              │ AI evaluates
+
+  Step 10 │ QUIZ         │ "Loops Quiz"
+          │              │ 5 MCQ questions on loop behavior,
+          │              │ range() output, break vs continue
+
+  Step 11 │ PROJECT      │ "Number Guessing Game"
+          │              │ Mini project: Loop + random + conditionals
+          │              │ Full guessing game with retry logic
+          │              │ Type: minor (practice)
+
+  Step 12 │ MOCK_INTERVIEW│ "Loops & Iteration Interview"
+          │              │ Explain loop optimization
+          │              │ When would you prefer recursion over loops?
+
+  Step 13 │ SUMMARY      │ "Key Takeaways"
+          │              │ while, for, nested, break/continue
+
+  TOTAL: 13 Steps
+  ─────────────────────────────────────────────────
+
+===============================================
+  Learn 3.1: Functions and Recursion in Python
+  Difficulty: INTERMEDIATE | Est. Time: 35 min
+  Prerequisites: ["iterative-statements-loops-in-python"]
+===============================================
+
+  Step 1  │ EXPLANATION  │ "What Are Functions?"
+          │              │ def keyword, calling functions,
+          │              │ DRY principle, abstraction
+
+  Step 2  │ CODE         │ "Defining and Calling Functions"
+          │              │ def greet(name): ..., def add(a, b): ...
+          │              │ Return values, None return
+
+  Step 3  │ EXPLANATION  │ "Parameters and Arguments"
+          │              │ Positional args, keyword args, default values
+          │              │ *args, **kwargs
+
+  Step 4  │ CODE         │ "Parameters in Practice"
+          │              │ def calculate_area(length, width=10): ...
+          │              │ def print_info(*args, **kwargs): ...
+
+  Step 5  │ EXPLANATION  │ "Type Conversion and Coercion"
+          │              │ int(), float(), str(), bool()
+          │              │ Implicit vs explicit conversion
+
+  Step 6  │ EXPLANATION  │ "Built-in Math Functions"
+          │              │ abs(), round(), min(), max(), pow()
+          │              │ import math — math.sqrt(), math.pi
+
+  Step 7  │ EXPLANATION  │ "Recursion"
+          │              │ Base case, recursive case, call stack
+          │              │ When to use recursion
+
+  Step 8  │ CODE         │ "Recursion Examples"
+          │              │ Factorial, Fibonacci, sum of digits
+          │              │ Visualizing the call stack
+
+  Step 9  │ VISUAL       │ "Recursion Call Stack"
+          │              │ Diagram showing factorial(4) call stack
+
+  Step 10 │ CHALLENGE    │ "Recursive Power Function"
+          │              │ Write power(base, exp) recursively
+          │              │ AI evaluates
+
+  Step 11 │ QUIZ         │ "Functions & Recursion Quiz"
+          │              │ 5 MCQ questions on parameters,
+          │              │ return values, recursion tracing
+
+  Step 12 │ PROJECT      │ "Build a Math Toolkit Library"
+          │              │ Major project: Create a module with
+          │              │ functions for various math operations
+          │              │ Type: major (portfolio-worthy)
+
+  Step 13 │ MOCK_INTERVIEW│ "Functions Deep Dive Interview"
+          │              │ Explain scope, closures, recursion limits
+          │              │ How would you optimize recursive fibonacci?
+
+  Step 14 │ RESOURCE     │ "Further Reading"
+          │              │ Python docs on functions
+          │              │ Videos on recursion visualization
+
+  Step 15 │ SUMMARY      │ "Key Takeaways"
+          │              │ Functions, params, return, recursion,
+          │              │ base case importance
+
+  TOTAL: 15 Steps
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 5: RECOMMENDED STEP ORDER TEMPLATE (REUSABLE PER Learn)         ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+This is the recommended order of step types for each Learn.
+Not all steps are mandatory. Adapt based on the topic's complexity.
+
+  ┌─────┬──────────────────┬──────────────────────────────────────────────┐
+  │  #  │ Step Type         │ Purpose                                     │
+  ├─────┼──────────────────┼──────────────────────────────────────────────┤
+  │  1  │ EXPLANATION       │ Introduce the topic Learnually             │
+  │  2  │ CODE              │ Show basic examples (learn by reading)       │
+  │  3  │ EXPLANATION       │ Go deeper — edge cases, nuances             │
+  │  4  │ CODE              │ More complex examples (learn by reading)     │
+  │  5  │ VISUAL            │ Diagram/flowchart (visual learners)          │
+  │  6  │ COMPARISON        │ Compare approaches (optional, if applicable) │
+  │  7  │ CHALLENGE         │ Hands-on coding (learn by doing)             │
+  │  8  │ QUIZ              │ Test understanding (5+ MCQs)                 │
+  │  9  │ PROJECT           │ Build something real (mini or major)         │
+  │ 10  │ MOCK_INTERVIEW    │ Verbal practice (prepare for interviews)     │
+  │ 11  │ RESOURCE          │ Videos + docs for further learning           │
+  │ 12  │ SUMMARY           │ Key takeaways, tips, what's next             │
+  └─────┴──────────────────┴──────────────────────────────────────────────┘
+
+  LEARNING PHILOSOPHY:
+    Learn (EXPLANATION + CODE) → See (VISUAL) → Compare (COMPARISON)
+    → Do (CHALLENGE) → Test (QUIZ) → Build (PROJECT)
+    → Speak (MOCK_INTERVIEW) → Explore (RESOURCE) → Review (SUMMARY)
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 6: USER FLOW — COMPLETE JOURNEY (START TO FINISH)                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │                      USER JOURNEY FLOWCHART                             │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────┐
+  │  Student     │
+  │  opens /     │
+  │  Learns    │
+  └──────┬──────┘
+         │
+         ▼
+  ┌─────────────────────────────────────────────────┐
+  │  LearnS HUB (Browse Page)                      │
+  │                                                   │
+  │  Sidebar filters:                                 │
+  │  ├── Category: Programming Fundamentals ✓        │
+  │  ├── SubCategory: Python ✓                       │
+  │  └── Difficulty: All                              │
+  │                                                   │
+  │  Shows Learns grid:                             │
+  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐│
+  │  │ 🐍 Setup    │ │ 📝 Variables│ │ 🔀 Condition││
+  │  │  Env        │ │  & Express. │ │  Statements ││
+  │  │ BEGINNER    │ │ BEGINNER    │ │ BEGINNER    ││
+  │  │ 8 steps     │ │ 11 steps    │ │ 11 steps    ││
+  │  │ ██░░░░ 25%  │ │ ░░░░░░ 0%  │ │ 🔒 locked   ││
+  │  └─────────────┘ └─────────────┘ └─────────────┘│
+  │                                                   │
+  │  Continue Learning: "Variables" → Resume          │
+  └──────────────────────┬────────────────────────────┘
+                         │ clicks on "Variables" Learn
+                         ▼
+  ┌─────────────────────────────────────────────────────┐
+  │  Learn DETAIL PAGE (/Learns/variables-python)   │
+  │                                                     │
+  │  ┌─────────────┐  ┌───────────────────────────────┐│
+  │  │  SIDEBAR     │  │  MAIN CONTENT                ││
+  │  │             │  │                               ││
+  │  │  STEPS:     │  │  ╔═══════════════════════╗   ││
+  │  │ ✅ 1. What  │  │  ║ Step 3: Values & Types║   ││
+  │  │    Are Vars │  │  ╚═══════════════════════╝   ││
+  │  │ ✅ 2. Decl. │  │                               ││
+  │  │ ● 3. Values │  │  [Markdown explanation...]    ││
+  │  │ ○ 4. Errors │  │  int, float, str, bool        ││
+  │  │ ○ 5. Oper.  │  │  type() function              ││
+  │  │ ○ 6. Expr.  │  │                               ││
+  │  │ ○ 7. Comp.  │  │  [◀ Previous]  Step 3/11     ││
+  │  │ ○ 8. Chall. │  │        [Next ▶]              ││
+  │  │ ○ 9. Quiz   │  │                               ││
+  │  │ ○ 10. Proj. │  │  [Mark as Complete ✓]         ││
+  │  │ ○ 11. Sum.  │  │                               ││
+  │  │             │  └───────────────────────────────┘│
+  │  │  ABOUT      │  ┌───────────────────────────────┐│
+  │  │  Creator    │  │  AI ASSISTANT PANEL           ││
+  │  │  Tags       │  │  "Ask me anything about       ││
+  │  │  Stats      │  │   variables and types..."     ││
+  │  └─────────────┘  └───────────────────────────────┘│
+  └─────────────────────────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────────┐
+         │               │                   │
+         ▼               ▼                   ▼
+  ┌──────────────┐ ┌──────────────┐  ┌──────────────────┐
+  │ QUIZ Step    │ │ CHALLENGE    │  │ MOCK INTERVIEW    │
+  │              │ │ Step         │  │ Step              │
+  │ 5 MCQs with  │ │              │  │                   │
+  │ auto-grading │ │ Code editor  │  │ AI voice asks     │
+  │              │ │ + AI eval    │  │ questions from     │
+  │ Need 60% to │ │              │  │ all steps         │
+  │ pass & mark  │ │ Score/100    │  │                   │
+  │ complete     │ │ feedback     │  │ Tests verbal      │
+  │              │ │ suggestions  │  │ understanding     │
+  └──────────────┘ └──────────────┘  └──────────────────┘
+         │               │                   │
+         └───────────────┼───────────────────┘
+                         │
+                         ▼
+  ┌──────────────────────────────────────────┐
+  │ PROJECT Step                              │
+  │                                           │
+  │ MINOR project → Add to Portfolio          │
+  │            OR                              │
+  │ MAJOR project → Generate Full AI Project  │
+  │   (Creates ProjectV2 with sprints, tasks) │
+  │                                           │
+  └──────────────┬───────────────────────────┘
+                 │
+                 ▼
+  ┌──────────────────────────────────────────┐
+  │ Learn COMPLETE! 🎉                      │
+  │                                           │
+  │ All steps marked done → 100% progress     │
+  │                                           │
+  │ Next Learn unlocked (via prerequisites) │
+  │                                           │
+  │ [→ Go to "Conditional Statements"]        │
+  └──────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 7: Learn LINKING & PREREQUISITES (LEARNING PATH)                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  The Learns should be LINKED via prerequisites to create a learning path:
+
+  ┌──────────────────────┐
+  │ 1.1 Setup Python     │
+  │ (no prerequisites)   │
+  └──────────┬───────────┘
+             │ prerequisite of
+             ▼
+  ┌──────────────────────┐
+  │ 1.2 Variables        │
+  │ prereq: [1.1]        │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌──────────────────────┐
+  │ 2.1 Conditionals     │
+  │ prereq: [1.2]        │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌──────────────────────┐
+  │ 2.2 Loops            │
+  │ prereq: [2.1]        │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌──────────────────────┐
+  │ 3.1 Functions        │
+  │ prereq: [2.2]        │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌───────┐ ┌───────┐ ┌───────┐
+  │ 4.1   │ │ 4.2   │ │  4.3  │  (parallel — all require 3.1)
+  │Strings│ │ Lists │ │ T & D │
+  └───────┘ └───────┘ └───────┘
+       │         │         │
+       └─────────┼─────────┘
+                 │
+                 ▼
+  ┌──────────────────────┐
+  │ 5.1 Classes & Objects│
+  │ prereq: [4.1, 4.2]   │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌──────────────────────┐
+  │ 5.2 OOP Learns     │
+  │ prereq: [5.1]        │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌───────────────┐  ┌───────────────────────┐
+  │ 6.1 Files &   │  │ 6.2 Regular           │  (parallel)
+  │ Exceptions    │  │ Expressions           │
+  │ prereq: [5.2] │  │ prereq: [4.1, 5.2]   │
+  └───────────────┘  └───────────────────────┘
+
+  ✅ The system already supports this via LearnPrerequisite model and
+     getLearnChain() which returns previous and next Learns.
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 8: CHANGES NEEDED IN THE LearnS MODULE                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+The existing codebase is already 90% ready. Here's what needs to change:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE 1: ADD PREREQUISITE LOCKING ON THE BROWSE PAGE (UI only)
+  ──────────────────────────────────────────────────────────────────
+  File: apps/main/app/(main)/Learns/_components/Learns-content.tsx
+  
+  Currently: All Learns are shown without lock status.
+  Needed:    If a Learn has prerequisites, and those are NOT completed
+             by the current user (from userProgress), show a 🔒 lock icon
+             and disable clicking. Show tooltip: "Complete X first".
+             
+  Implementation:
+  - Use the `prerequisites` field from each Learn
+  - Cross-reference with `completedLearns` array  
+  - If all prerequisites are in `completedLearns`, unlock; else lock
+  
+  Database support: ✅ Already exists (LearnPrerequisite model,
+                       getLearnChain function)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE 2: ADD HIERARCHICAL CATEGORY BROWSING
+  ──────────────────────────────────────────────
+  File: apps/main/app/(main)/Learns/_components/Learns-sidebar.tsx
+  
+  Currently: Uses flat LearnCategory enum for filtering.
+  Needed:    Add support for filtering by:
+             LearnMainCategory → LearnSubCategory → LearnTopic
+             Show a tree view in the sidebar:
+             
+               📂 Programming Fundamentals
+                 └── 🐍 Python
+                       ├── Unit I: Python Basics (2 Learns)
+                       ├── Unit II: Control Flow (2 Learns)
+                       └── Unit III: Functions (1 Learn)
+  
+  Database support: ✅ Already exists (LearnMainCategory,
+                       LearnSubCategory, LearnTopic models)
+  Server action needed: Fetch the hierarchy tree with Learn counts.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE 3: ADD "LEARNING PATH" VIEW (OPTIONAL BUT RECOMMENDED)
+  ──────────────────────────────────────────────────────────────
+  File: NEW — apps/main/app/(main)/Learns/_components/learning-path.tsx
+  
+  Currently: No sequential path view exists.
+  Needed:    A visual "roadmap" showing all Learns in order
+             with completion status (like a skill tree or timeline).
+             
+             Unit I ──── Unit II ──── Unit III ──── Unit IV
+              ✅           ██░░         🔒            🔒
+  
+  This gives students a clear sense of progress and what's next.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE 4: ADD PREREQUISITE FIELD TO Learn CREATE EDITOR
+  ──────────────────────────────────────────────────────────
+  File: apps/main/app/(main)/Learns/create/_components/Learn-block-editor.tsx
+  
+  Currently: No UI to set prerequisites when creating a Learn.
+  Needed:    Add a multi-select field where creator can pick
+             prerequisite Learns. When creating
+             "Conditional Statements", creator selects
+             "Variables & Expressions" as prerequisite.
+  
+  Server action: createLearn already accepts prerequisites[] as strings.
+                 Need to also save them to LearnPrerequisite model.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE 5: ADD TOPIC HIERARCHY SELECTION ON CREATE PAGE
+  ──────────────────────────────────────────────────────
+  File: apps/main/app/(main)/Learns/create/_components/Learn-block-editor.tsx
+  
+  Currently: Only the flat LearnCategory enum is used.
+  Needed:    Instead of just "Category: PROGRAMMING_FUNDAMENTALS",
+             allow selecting:
+             Main Category → Sub Category → Topic
+             
+             Programming Fundamentals → Python → Unit I: Basics
+  
+  Database support: ✅ Already exists (mainCategoryId, subCategoryId,
+                       topicId fields on Learn model)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE 6: SEED THE CATEGORY HIERARCHY
+  ────────────────────────────────────────
+  New seed script or admin action needed to populate:
+  
+  LearnMainCategory:
+    { name: "Programming Fundamentals", slug: "programming-fundamentals" }
+  
+  LearnSubCategory:
+    { name: "Python", slug: "python", mainCategoryId: above }
+  
+  LearnTopic:
+    { name: "Unit I — Python Basics", slug: "unit-1-python-basics", ... }
+    { name: "Unit II — Control Flow", slug: "unit-2-control-flow", ... }
+    { name: "Unit III — Functions", slug: "unit-3-functions", ... }
+    ... etc.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE 7: NO STEP TYPE CHANGES NEEDED
+  ────────────────────────────────────────
+  The existing step types perfectly cover everything needed:
+  
+  ✅ EXPLANATION → Teaches theory
+  ✅ CODE        → Shows code examples
+  ✅ QUIZ        → Tests knowledge (auto-graded)
+  ✅ CHALLENGE   → Coding practice (AI-evaluated)
+  ✅ COMPARISON  → Compare approaches
+  ✅ VISUAL      → Diagrams and flowcharts
+  ✅ RESOURCE    → YouTube + docs links
+  ✅ SUMMARY     → Key takeaways
+  ✅ MOCK_INTERVIEW → Voice-based interview practice
+  ✅ PROJECT     → Mini (portfolio) or Major (full AI project)
+  
+  No schema migration needed. Just create content using existing types.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 9: SUMMARY OF WHAT EXISTS vs WHAT'S NEEDED                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  ┌──────────────────────────────────────────┬──────────────────────────┐
+  │ Feature                                  │ Status                   │
+  ├──────────────────────────────────────────┼──────────────────────────┤
+  │ Learn CRUD (create, edit, publish)     │ ✅ Done                  │
+  │ Step types (all 12)                      │ ✅ Done                  │
+  │ AI-generated content (all step types)    │ ✅ Done                  │
+  │ Quiz with auto-grading                   │ ✅ Done                  │
+  │ Challenge with AI evaluation             │ ✅ Done                  │
+  │ Mock Interview with voice AI             │ ✅ Done                  │
+  │ Project generation (mini & major)        │ ✅ Done                  │
+  │ Resource discovery (YouTube + docs)      │ ✅ Done                  │
+  │ Progress tracking per user               │ ✅ Done                  │
+  │ Step navigation (prev/next, sidebar)     │ ✅ Done                  │
+  │ AI Assistant panel (ask questions)       │ ✅ Done                  │
+  │ Like, bookmark, share, comments          │ ✅ Done                  │
+  │ Learn browse page with filters         │ ✅ Done                  │
+  │ Learn verification (admin approval)    │ ✅ Done                  │
+  │ Paid/free Learn support                │ ✅ Done                  │
+  ├──────────────────────────────────────────┼──────────────────────────┤
+  │ Prerequisite locking on browse page      │ ⚠️ Need UI              │
+  │ Hierarchical category browsing (tree)    │ ⚠️ Need UI              │
+  │ Learning path / roadmap view             │ ❌ Need new component   │
+  │ Prerequisite selection on create page    │ ⚠️ Need UI              │
+  │ Hierarchy selection on create page       │ ⚠️ Need UI              │
+  │ Seed category hierarchy data             │ ❌ Need seed script     │
+  └──────────────────────────────────────────┴──────────────────────────┘
+
+  Verdict: The DATA MODEL is complete. We only need UI enhancements and
+  seed data. No schema migrations or new models required.
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  SECTION 10: IMPLEMENTATION PRIORITY ORDER                                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Priority 1 (Must Have — Core Learning Flow):
+  ─────────────────────────────────────────────
+  1. Seed the category hierarchy for Python
+  2. Create the first 3 Learns (1.1, 1.2, 2.1) with all steps
+  3. Set prerequisites between them
+  4. Test end-to-end learning flow
+  
+  Priority 2 (Should Have — Better UX):
+  ─────────────────────────────────────────────
+  5. Add prerequisite locking on browse page
+  6. Add hierarchical category tree in sidebar
+  7. Add prerequisite selection in Learn editor
+  
+  Priority 3 (Nice to Have — Premium UX):
+  ─────────────────────────────────────────────
+  8. Build learning path / roadmap visualization
+  9. Add hierarchy selection in Learn editor
+  10. Add "continue where I left off" prominently
+
+
+================================================================================
+  END OF PLAN
+================================================================================

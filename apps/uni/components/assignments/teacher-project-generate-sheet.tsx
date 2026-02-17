@@ -418,7 +418,7 @@ export default function TeacherProjectGenerateSheet({
                                             [
                                                 { label: 'Analyzing requirements', threshold: 10 },
                                                 { label: 'Generating project structure', threshold: 30 },
-                                                { label: 'Creating tasks & concepts', threshold: 55 },
+                                                { label: 'Creating tasks & Learns', threshold: 55 },
                                                 { label: 'Adding resources', threshold: 80 },
                                                 { label: 'Assigning to classes', threshold: 95 },
                                             ].map((step, idx) => (

@@ -7,68 +7,68 @@
 
 // Types for prompt parameters
 export interface InterviewGenerationParams {
-	position: string;
-	jobDescription: string;
-	resumeText?: string | null;
-	companyTitle?: string | null;
-	includeAnswers: boolean;
-	counts: {
-		technical: number;
-		behavioral: number;
-		coding: number;
-	};
+  position: string;
+  jobDescription: string;
+  resumeText?: string | null;
+  companyTitle?: string | null;
+  includeAnswers: boolean;
+  counts: {
+    technical: number;
+    behavioral: number;
+    coding: number;
+  };
 }
 
 export interface CodeEvaluationParams {
-	questionText: string;
-	userCode: string;
-	language: string;
+  questionText: string;
+  userCode: string;
+  language: string;
 }
 
 export interface AnswerGenerationParams {
-	questionText: string;
-	questionType: 'technical' | 'behavioral' | 'coding';
+  questionText: string;
+  questionType: 'technical' | 'behavioral' | 'coding';
 }
 
 export interface UserResponseEvaluationParams {
-	questionText: string;
-	userAnswer: string;
-	questionType: 'technical' | 'behavioral';
-	expertAnswer: string;
+  questionText: string;
+  userAnswer: string;
+  questionType: 'technical' | 'behavioral';
+  expertAnswer: string;
 }
 
 /**
  * Generate the main interview questions prompt with balanced DSA/Development distribution
  */
 export function getInterviewGenerationPrompt(params: InterviewGenerationParams): string {
-	const { position, jobDescription, resumeText, companyTitle, includeAnswers, counts } = params;
+  const { position, jobDescription, resumeText, companyTitle, includeAnswers, counts } = params;
 
-	// Calculate coding questions distribution
-	const getCodingDistribution = (totalCoding: number) => {
-		if (totalCoding === 1) {
-			return `- 1 Development question (practical coding scenario)`;
-		} else if (totalCoding === 2) {
-			return `- 1 Development question (practical coding scenario)
+  // Calculate coding questions distribution
+  const getCodingDistribution = (totalCoding: number) => {
+    if (totalCoding === 1) {
+      return `- 1 Development question (practical coding scenario)`;
+    } else if (totalCoding === 2) {
+      return `- 1 Development question (practical coding scenario)
 - 1 DSA question (data structures & algorithms)`;
-		} else if (totalCoding === 3) {
-			return `- 2 Development questions (practical coding scenarios)
+    } else if (totalCoding === 3) {
+      return `- 2 Development questions (practical coding scenarios)
 - 1 DSA question (data structures & algorithms)`;
-		} else if (totalCoding === 4) {
-			return `- 2 Development questions (practical coding scenarios)
+    } else if (totalCoding === 4) {
+      return `- 2 Development questions (practical coding scenarios)
 - 2 DSA questions (data structures & algorithms)`;
-		} else if (totalCoding === 5) {
-			return `- 3 Development questions (practical coding scenarios)
+    } else if (totalCoding === 5) {
+      return `- 3 Development questions (practical coding scenarios)
 - 2 DSA questions (data structures & algorithms)`;
-		} else if (totalCoding === 6) {
-			return `- 3 Development questions (practical coding scenarios)
+    } else if (totalCoding === 6) {
+      return `- 3 Development questions (practical coding scenarios)
 - 3 DSA questions (data structures & algorithms)`;
-		} else {
-			return `- ${Math.ceil(totalCoding / 2)} Development questions (practical coding scenarios)
+    } else {
+      return `- ${Math.ceil(totalCoding / 2)} Development questions (practical coding scenarios)
 - ${Math.floor(totalCoding / 2)} DSA questions (data structures & algorithms)`;
-		}
-	};
+    }
+  };
 
-	return `Generate interview questions in valid JSON format. Response must be a complete JSON object.
+  return `Generate interview questions in valid JSON format. Response must be a complete JSON object.
 
 Position: ${position}
 Job Description: ${jobDescription}
@@ -126,7 +126,7 @@ Development Questions should focus on:
 - Building real-world features and components
 - API design and implementation
 - Database queries and optimizations
-- System design concepts
+- System design Learns
 - Framework-specific implementations
 - Code architecture and patterns
 - Debugging and troubleshooting scenarios
@@ -161,9 +161,9 @@ For Coding Questions:
  * Generate code evaluation prompt
  */
 export function getCodeEvaluationPrompt(params: CodeEvaluationParams): string {
-	const { questionText, userCode, language } = params;
+  const { questionText, userCode, language } = params;
 
-	return `You are a senior software engineer conducting a technical interview. Evaluate the following code submission:
+  return `You are a senior software engineer conducting a technical interview. Evaluate the following code submission:
 
 **Question:** ${questionText}
 
@@ -196,9 +196,9 @@ Provide constructive feedback that helps the candidate improve.`;
  * Generate coding solution prompt for coding questions
  */
 export function getCodingAnswerPrompt(params: AnswerGenerationParams): string {
-	const { questionText } = params;
+  const { questionText } = params;
 
-	return `You are a senior software engineer. Generate a complete coding solution for this problem.
+  return `You are a senior software engineer. Generate a complete coding solution for this problem.
 
 PROBLEM:
 ${questionText}
@@ -224,9 +224,9 @@ Requirements:
  * Generate general answer prompt for technical/behavioral questions
  */
 export function getGeneralAnswerPrompt(params: AnswerGenerationParams): string {
-	const { questionText, questionType } = params;
+  const { questionText, questionType } = params;
 
-	return `You are an experienced interview coach. Generate a comprehensive answer for this ${questionType} question.
+  return `You are an experienced interview coach. Generate a comprehensive answer for this ${questionType} question.
 
 QUESTION:
 ${questionText}
@@ -251,10 +251,10 @@ Requirements:
  * Generate detailed individual answer prompt for technical/behavioral questions
  */
 export function getDetailedAnswerPrompt(params: AnswerGenerationParams): string {
-	const { questionText, questionType } = params;
+  const { questionText, questionType } = params;
 
-	if (questionType === 'technical') {
-		return `You are a senior technical expert. Provide a comprehensive answer to this technical question:
+  if (questionType === 'technical') {
+    return `You are a senior technical expert. Provide a comprehensive answer to this technical question:
 
 **Question:** ${questionText}
 
@@ -274,8 +274,8 @@ Requirements:
 - Mention best practices and common pitfalls
 - Use proper technical terminology
 - Structure the answer logically`;
-	} else {
-		return `You are an experienced HR professional and behavioral interview expert. Provide a comprehensive answer to this behavioral question:
+  } else {
+    return `You are an experienced HR professional and behavioral interview expert. Provide a comprehensive answer to this behavioral question:
 
 **Question:** ${questionText}
 
@@ -299,16 +299,16 @@ Requirements:
 - Include quantifiable results when possible
 - Demonstrate key competencies and soft skills
 - Offer practical interview tips`;
-	}
+  }
 }
 
 /**
  * Generate technical user response evaluation prompt
  */
 export function getTechnicalResponseEvaluationPrompt(params: UserResponseEvaluationParams): string {
-	const { questionText, userAnswer, expertAnswer } = params;
+  const { questionText, userAnswer, expertAnswer } = params;
 
-	return `You are a strict technical interviewer evaluating a candidate's response. Your evaluation must be thorough, honest, and critical. Do not give credit for vague or generic answers.
+  return `You are a strict technical interviewer evaluating a candidate's response. Your evaluation must be thorough, honest, and critical. Do not give credit for vague or generic answers.
 
 QUESTION:
 ${questionText}
@@ -321,8 +321,8 @@ ${expertAnswer}
 
 STRICT EVALUATION CRITERIA:
 1. Technical Accuracy (40%)
-- Completely correct technical concepts and terminology
-- No misunderstandings or misconceptions
+- Completely correct technical Learns and terminology
+- No misunderstandings or misLearnions
 - Accurate explanation of underlying principles
 - Proper use of technical terms
 
@@ -348,7 +348,7 @@ SCORING GUIDELINES:
 90-100: Exceptional - Near perfect answer with deep technical insight
 80-89: Strong - Very good understanding with minor gaps
 70-79: Acceptable - Good basic understanding but some weaknesses
-60-69: Borderline - Several gaps or misconceptions
+60-69: Borderline - Several gaps or misLearnions
 Below 60: Insufficient - Major gaps or incorrect understanding
 
 IMPORTANT RULES:
@@ -358,7 +358,7 @@ IMPORTANT RULES:
 - Incorrect technical terms
 - Superficial explanations
 - Wrong implementation approaches
-- Misunderstood concepts
+- Misunderstood Learns
 
 2. STRICTLY compare with expert answer for:
 - Technical accuracy
@@ -369,7 +369,7 @@ IMPORTANT RULES:
 
 3. DEDUCT points for:
 - Each technical inaccuracy (-5 points)
-- Missing key concepts (-5 points per concept)
+- Missing key Learns (-5 points per Learn)
 - Incorrect implementations (-10 points)
 - Poor structure (-5 points)
 - Vague explanations (-5 points)
@@ -389,8 +389,8 @@ IMPORTANT: Your response must be a VALID JSON object with NO MARKDOWN formatting
   ],
   "comparedToExpert": {
     "similarities": [
-      "<exact technical concept that matches>",
-      "<exact technical concept that matches>"
+      "<exact technical Learn that matches>",
+      "<exact technical Learn that matches>"
     ],
     "missingPoints": [
       "<specific technical point from expert answer that was missing>",
@@ -420,9 +420,9 @@ IMPORTANT: Your response must be a VALID JSON object with NO MARKDOWN formatting
  * Generate behavioral user response evaluation prompt
  */
 export function getBehavioralResponseEvaluationPrompt(params: UserResponseEvaluationParams): string {
-	const { questionText, userAnswer, expertAnswer } = params;
+  const { questionText, userAnswer, expertAnswer } = params;
 
-	return `You are a strict behavioral interviewer evaluating a candidate's response. Your evaluation must be thorough, honest, and critical. Do not give credit for vague or generic answers.
+  return `You are a strict behavioral interviewer evaluating a candidate's response. Your evaluation must be thorough, honest, and critical. Do not give credit for vague or generic answers.
 
 QUESTION:
 ${questionText}

@@ -27,6 +27,8 @@ import {
 	LeaderboardPositionSkeleton,
 	ShareCreditsSkeleton,
 	ReferralsSkeleton, CommunityHighlightsSkeleton,
+	ProjectsPreviewSkeleton,
+	MockVoicePreviewSkeleton,
 } from "./_components/skeletons";
 
 export const metadata = {
@@ -71,7 +73,7 @@ export default async function HomePage() {
 
 	return (
 		<KnowmeSheetProvider>
-			<main className="w-full min-h-screen pb-12">
+			<main className="w-full min-h-screen">
 				<div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
 					<Suspense fallback={<GreetingHeaderSkeleton />}>
@@ -94,48 +96,53 @@ export default async function HomePage() {
 					<div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
 						<div className="md:col-span-7 lg:col-span-8 space-y-6 flex flex-col h-full">
 
-						<Suspense fallback={<PathfinderGoalsSkeleton />}>
-							<PathfinderGoalsCard goals={pathfinderGoals} />
-						</Suspense>
+							<Suspense fallback={<PathfinderGoalsSkeleton />}>
+								<PathfinderGoalsCard goals={pathfinderGoals} />
+							</Suspense>
 
-						<ProjectsPreview projects={inProgressProjects} />
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<Suspense fallback={<ProjectsPreviewSkeleton />}>
+									<ProjectsPreview projects={inProgressProjects} />
+								</Suspense>
+								<Suspense fallback={<MockVoicePreviewSkeleton />}>
+									<MockVoicePreview sessions={recentMockSessions} />
+								</Suspense>
+							</div>
 
-						<MockVoicePreview sessions={recentMockSessions} />
-						<Suspense fallback={<ActivityCalendarSkeleton />}>
+							<Suspense fallback={<ActivityCalendarSkeleton />}>
 								<ActivityCalendar data={activityCalendar} />
+							</Suspense>
+
+							<Suspense fallback={<CommunityHighlightsSkeleton />}>
+								<CommunityHighlights posts={communityPosts} />
 							</Suspense>
 						</div>
 
 						<div className="md:col-span-5 lg:col-span-4 space-y-6 flex flex-col h-full sticky top-6">
-						<Suspense fallback={<QuickActionsSkeleton />}>
-							<QuickActions />
-						</Suspense>
+							{/* <Suspense fallback={<QuickActionsSkeleton />}>
+								<QuickActions />
+							</Suspense> */}
 
-						<Suspense fallback={<LeaderboardPositionSkeleton />}>
-							<LeaderboardPosition rank={leaderboardRank} />
-						</Suspense>
-
-						<Suspense fallback={<AchievementsCardSkeleton />}>
-							<AchievementsCard achievements={achievements} />
-						</Suspense>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
-							<Suspense fallback={<ShareCreditsSkeleton />}>
-								<ShareCredits
-									transfers={recentTransfers}
-									currentCredits={user?.credits || 0}
-								/>
+							<Suspense fallback={<LeaderboardPositionSkeleton />}>
+								<LeaderboardPosition rank={leaderboardRank} />
 							</Suspense>
-							<Suspense fallback={<ReferralsSkeleton />}>
-								<Referrals stats={referralStats} />
+
+							<Suspense fallback={<AchievementsCardSkeleton />}>
+								<AchievementsCard achievements={achievements} />
 							</Suspense>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
+								<Suspense fallback={<ShareCreditsSkeleton />}>
+									<ShareCredits
+										transfers={recentTransfers}
+										currentCredits={user?.credits || 0}
+									/>
+								</Suspense>
+								<Suspense fallback={<ReferralsSkeleton />}>
+									<Referrals stats={referralStats} />
+								</Suspense>
+							</div>
 						</div>
-						</div>
-					</div>
-					<div className="pt-4 border-t border-border">
-						<Suspense fallback={<CommunityHighlightsSkeleton />}>
-							<CommunityHighlights posts={communityPosts} />
-						</Suspense>
 					</div>
 				</div>
 			</main>

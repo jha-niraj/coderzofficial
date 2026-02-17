@@ -24,7 +24,7 @@ const features = [
     },
     {
         icon: Brain,
-        title: "Concept Spaces",
+        title: "Learn Spaces",
         description: "Self-paced interactive modules. Visual learning paths for complex technical topics.",
     },
     {

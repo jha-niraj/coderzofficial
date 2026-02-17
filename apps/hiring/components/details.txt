@@ -147,7 +147,7 @@ CREATE TABLE applications (
         "profile_complete": false,
         "resume_reviewed": false,
         "mock_interview_done": false,
-        "concepts_reviewed": false,
+        "Learns_reviewed": false,
         "assignment_started": false,
         "assignment_completed": false
     }',
@@ -193,7 +193,7 @@ CREATE TABLE application_activities (
     application_id UUID REFERENCES applications(id) NOT NULL,
     user_id UUID REFERENCES users(id) NOT NULL,
     activity_type VARCHAR(50) NOT NULL,
-    -- Types: mock_interview, ai_resume_review, concept_review, 
+    -- Types: mock_interview, ai_resume_review, Learn_review, 
     --        project_progress, studio_note, skill_assessment
     activity_id UUID,  -- Reference to the actual activity
     metadata JSONB,
@@ -296,7 +296,7 @@ Complete User Journey Flowchart
                                     │            ┌────────────┼────────────┐
                                     │            ▼            ▼            ▼
                                     │     ┌─────────┐  ┌─────────┐  ┌─────────┐
-                                    │     │  Mock   │  │   AI    │  │Concepts │
+                                    │     │  Mock   │  │   AI    │  │Learns │
                                     │     │Interview│  │  Resume │  │ Review  │
                                     │     └────┬────┘  └────┬────┘  └────┬────┘
                                     │          │            │            │
@@ -455,8 +455,8 @@ Page-by-Page Breakdown for Main Platform
 │  │     └─ [Take Mock Interview →]                                        │   │
 │  │  ⬜ AI Resume Review (0/15 points)                                    │   │
 │  │     └─ [Review Your Resume →]                                         │   │
-│  │  ⬜ React Concepts Review (0/15 points)                               │   │
-│  │     └─ [Review Concepts →]                                            │   │
+│  │  ⬜ React Learns Review (0/15 points)                               │   │
+│  │     └─ [Review Learns →]                                            │   │
 │  │  ⬜ Similar Project Experience (0/15 points)                          │   │
 │  │     └─ [Browse Related Projects →]                                    │   │
 │  │                                                                       │   │
@@ -489,7 +489,7 @@ Page-by-Page Breakdown for Main Platform
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  ┌───────────────────────┐ ┌───────────────────────┐ ┌──────────────────┐  │
-│  │ 🎤 MOCK INTERVIEW      │ │ 📄 RESUME REVIEW      │ │ 📚 CONCEPTS      │  │
+│  │ 🎤 MOCK INTERVIEW      │ │ 📄 RESUME REVIEW      │ │ 📚 LearnS      │  │
 │  │                        │ │                        │ │                  │  │
 │  │ Practice for this role │ │ AI-powered feedback    │ │ Review topics    │  │
 │  │                        │ │                        │ │ for this job     │  │
@@ -588,7 +588,7 @@ Page-by-Page Breakdown for Main Platform
 │  │                                                                       │   │
 │  │ Next steps:                                                          │   │
 │  │ ⬜ Complete Mock Interview                                           │   │
-│  │ ⬜ Review Node.js Concepts                                           │   │
+│  │ ⬜ Review Node.js Learns                                           │   │
 │  │                                                                       │   │
 │  │ [Continue Preparing →]                                                │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │

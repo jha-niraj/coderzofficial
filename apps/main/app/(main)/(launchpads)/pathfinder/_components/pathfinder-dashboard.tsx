@@ -272,7 +272,7 @@ function RecentActivity({ goals }: { goals: Goal[] }) {
     )
 }
 
-function EmptyState({ onCreateGoal }: { onCreateGoal: () => void }) {
+export function EmptyState({ onCreateGoal }: { onCreateGoal: () => void }) {
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -437,7 +437,6 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
                                                         />
                                                     ))
                                                 }
-
                                                 {
                                                     groupedGoals.filter(g => g.goals.length === 0).length > 0 && (
                                                         <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/50">
@@ -455,7 +454,6 @@ export function PathfinderDashboard({ initialGoals, initialGroups }: PathfinderD
                                                         </div>
                                                     )
                                                 }
-
                                                 {
                                                     ungroupedGoals.length > 0 && (
                                                         <div className={cn(displayGroups.length > 0 && "mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/50")}>

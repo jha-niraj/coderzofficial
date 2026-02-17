@@ -43,7 +43,7 @@
 │   2. Creates "Class" (just a group of students, NOT a lecture)               │
 │   3. Creates Assignments linked to MAIN PLATFORM features:                   │
 │      • Assessment Quiz → Links to /assessments                               │
-│      • Coding Challenge → Links to /studio or /concepts                      │
+│      • Coding Challenge → Links to /studio or /Learns                      │
 │      • Mock Interview → Links to /mock                                       │
 │      • Project → Links to /projects                                          │
 │   4. Sets deadline, credit cost, grading criteria                            │
@@ -69,7 +69,7 @@
 | Type | Description | Main Platform Link | Auto-Graded |
 |------|-------------|-------------------|-------------|
 | **QUIZ** | MCQ, True/False, Code Output questions | `/assessments` | ✅ Yes |
-| **CODING** | Write code to solve problems | `/concepts/{problem}` | ✅ Yes |
+| **CODING** | Write code to solve problems | `/Learns/{problem}` | ✅ Yes |
 | **MOCK_INTERVIEW** | AI voice interview practice | `/mock` | ✅ Yes (AI) |
 | **PROJECT** | Build a complete project | `/projects` | ❌ Manual |
 | **CUSTOM** | Teacher uploads resources, students submit | N/A | ❌ Manual |
@@ -166,7 +166,7 @@ Create Assignment
 ├── Title & Description
 ├── Type Selection:
 │   ├── Quiz → Select from /assessments or create new
-│   ├── Coding → Select problems from /concepts
+│   ├── Coding → Select problems from /Learns
 │   ├── Mock Interview → Select mock template
 │   ├── Project → Select from /projects or custom
 │   └── Custom → Upload files/links
@@ -234,7 +234,7 @@ POST /api/uni/submissions/sync
 ```typescript
 // When teacher creates assignment from existing content
 GET /api/assessments/{id}/summary
-GET /api/concepts/{slug}/problem-info
+GET /api/Learns/{slug}/problem-info
 GET /api/mock/{id}/template
 GET /api/projects/{id}/details
 ```
@@ -252,7 +252,7 @@ GET /api/projects/{id}/details
 
 ### Phase 2: Platform Integration
 1. 📋 Link assessments from /assessments
-2. 📋 Link problems from /concepts
+2. 📋 Link problems from /Learns
 3. 📋 Link mocks from /mock
 4. 📋 Auto-sync submission results
 

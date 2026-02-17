@@ -29,7 +29,7 @@ You are an expert technical interviewer evaluating a mock interview for a ${proj
 
 Project Context:
 - Title: ${project.title}
-- Core Concept: ${project.coreConcept}
+- Core learn: ${project.coreLearn}
 - Technologies: ${project.technologies?.join(', ')}
 - Essential Components: ${project.essentialComponents?.join(', ')}
 
@@ -39,7 +39,7 @@ ${transcript}
 Please evaluate this interview and provide:
 1. A score from 0-100 based on:
    - Technical accuracy (40%)
-   - Understanding of core concepts (30%)
+   - Understanding of core Learns (30%)
    - Problem-solving approach (20%)
    - Communication clarity (10%)
 
@@ -54,7 +54,7 @@ Format your response as JSON:
   "feedback": "<detailed feedback string>",
   "breakdown": {
     "technical_accuracy": <score>,
-    "concept_understanding": <score>,
+    "Learn_understanding": <score>,
     "problem_solving": <score>,
     "communication": <score>
   }
@@ -97,7 +97,7 @@ Format your response as JSON:
 				feedback: responseContent.replace(/```json|```/g, '').trim(),
 				breakdown: {
 					technical_accuracy: Math.round(score * 0.4),
-					concept_understanding: Math.round(score * 0.3),
+					Learn_understanding: Math.round(score * 0.3),
 					problem_solving: Math.round(score * 0.2),
 					communication: Math.round(score * 0.1)
 				}

@@ -45,20 +45,20 @@ interface CreateMockSheetProps {
     }
     /** If true, just save the mock and don't redirect to session */
     saveOnly?: boolean
-    /** Concept step ID to link this mock to */
-    conceptStepId?: string
+    /** Learn step ID to link this mock to */
+    learnStepId?: string
 }
 
-export function CreateMockSheet({ 
-    trigger: _trigger, 
-    userCredits = 0, 
-    onSuccess, 
-    spaceId, 
-    open: controlledOpen, 
+export function CreateMockSheet({
+    trigger: _trigger,
+    userCredits = 0,
+    onSuccess,
+    spaceId,
+    open: controlledOpen,
     onOpenChange,
     defaultValues,
     saveOnly = false,
-    conceptStepId
+    learnStepId
 }: CreateMockSheetProps) {
     const router = useRouter()
     const [internalOpen, setInternalOpen] = useState(false)
@@ -180,7 +180,7 @@ export function CreateMockSheet({
                 includeResume: formData.includeResume,
                 isPublic: formData.isPublic,
                 knowledgeBase: formData.knowledgeBase || undefined,
-                conceptStepId: conceptStepId
+                learnStepId: learnStepId
             })
 
             clearInterval(progressInterval)
@@ -192,7 +192,7 @@ export function CreateMockSheet({
             setProgressPercent(90)
             const mockId = result.mockId!
 
-            // If saveOnly mode (from concepts), just save and close without creating session
+            // If saveOnly mode (from Learns), just save and close without creating session
             if (saveOnly) {
                 setProgressPercent(100)
                 setCreatedMockId(mockId)

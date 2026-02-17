@@ -10,7 +10,7 @@ export type BadgeCategory =
     | 'CHALLENGES'
     | 'MOCK_INTERVIEWS'
     | 'COMMUNITY'
-    | 'CONCEPTS'
+    | 'LearnS'
     | 'SPACES'
     | 'STUDIO'
     | 'OPENSOURCE'
@@ -418,7 +418,7 @@ export const BADGE_CATEGORIES: Record<BadgeCategory, { label: string; icon: stri
     CHALLENGES: { label: 'Challenges', icon: '🔥' },
     MOCK_INTERVIEWS: { label: 'Mock Interviews', icon: '🎙️' },
     COMMUNITY: { label: 'Community', icon: '👥' },
-    CONCEPTS: { label: 'Concepts', icon: '💡' },
+    LearnS: { label: 'Learns', icon: '💡' },
     SPACES: { label: 'Spaces', icon: '🚀' },
     STUDIO: { label: 'Studio', icon: '🎬' },
     OPENSOURCE: { label: 'Open Source', icon: '🌐' },

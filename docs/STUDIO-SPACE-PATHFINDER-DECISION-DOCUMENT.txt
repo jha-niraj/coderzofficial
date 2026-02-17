@@ -173,7 +173,7 @@ CONTENT TYPES (Space Steps):
 ----------------------------
 • PROJECT (links to /projects)
 • STUDIO (links to /studio)
-• CONCEPT (links to /concepts)
+• Learn (links to /Learns)
 • QUIZ (AI-generated)
 • FLASHCARD (AI-generated)
 • LINK (external)
@@ -205,7 +205,7 @@ Three tabs: AI Chat | Quiz | Cards (Flashcards)
 STEP COMPLETION:
 ----------------
 • completeStep() marks step done
-• Steps can link to Projects, Studio, Concepts — user is redirected there
+• Steps can link to Projects, Studio, Learns — user is redirected there
 • Return URL: ?returnTo=space&spaceId=...&stepId=...
 
 WHAT SPACE LACKS:
@@ -260,7 +260,7 @@ GOAL CREATION:
 • Category: DSA, WEB_DEVELOPMENT, FRONTEND, BACKEND, DEVOPS, AI_ML, etc.
 • Level: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
 • Duration: ONE_WEEK to SIX_MONTHS, CUSTOM
-• Focus areas: concepts, practice, interview, projects, optimization, patterns
+• Focus areas: Learns, practice, interview, projects, optimization, patterns
 • Group (optional)
 • Public/Private (private costs credits)
 
@@ -389,7 +389,7 @@ SPACE JOURNEY (Learner):
 1. User goes to /space or discovers space
 2. Joins a space (e.g. "Learn React from Scratch")
 3. Sees timeline of steps
-4. Completes steps (click → go to Project/Studio/Concept or take Quiz inline)
+4. Completes steps (click → go to Project/Studio/Learn or take Quiz inline)
 5. Marks steps complete
 6. Uses AI sidebar for questions
 7. Sees progress, other members

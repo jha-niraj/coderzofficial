@@ -11,7 +11,7 @@ Purpose: Analyze feature overlap, clarify purpose of each feature, and provide
                             EXECUTIVE SUMMARY
 ================================================================================
 
-After deep-diving into the codebase, I've identified significant conceptual 
+After deep-diving into the codebase, I've identified significant Learnual 
 overlap between these three features that WILL confuse users. Here's the core
 problem:
 
@@ -49,7 +49,7 @@ CORE FEATURES:
 2. AI Chat Panel
    - Right-side panel for AI assistance
    - Context-aware chat about studio content
-   - Can generate content, explain concepts, etc.
+   - Can generate content, explain Learns, etc.
 
 3. Content Organization
    - Categories (Programming, Web Dev, Data Science, etc.)
@@ -115,7 +115,7 @@ CORE FEATURES:
    - Category (DSA, Web Dev, Frontend, Backend, etc.)
    - Level (Beginner, Intermediate, Advanced, Expert)
    - Duration (1 week to 6 months)
-   - Focus areas (Core Concepts, Practice Problems, Interview Prep, etc.)
+   - Focus areas (Core Learns, Practice Problems, Interview Prep, etc.)
    - Public/Private visibility
 
 2. Daily Practice System
@@ -208,7 +208,7 @@ CORE FEATURES:
      • Studios (note workspaces)
      • Quizzes (AI-generated)
      • Flashcards (AI-generated)
-     • Concepts (from concept library)
+     • Learns (from Learn library)
      • Mock Interviews
      • External Links
      • Videos (YouTube embeds)

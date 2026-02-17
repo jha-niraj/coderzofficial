@@ -64,7 +64,7 @@ const contentTypeIcons: Record<string, typeof Rocket> = {
     FLASHCARD: Layers,
     VIDEO: Video,
     LINK: LinkIcon,
-    CONCEPT: BookOpen,
+    learn: BookOpen,
 };
 
 const contentTypeColors: Record<string, string> = {
@@ -74,7 +74,7 @@ const contentTypeColors: Record<string, string> = {
     FLASHCARD: 'from-amber-500 to-orange-500',
     VIDEO: 'from-red-500 to-rose-500',
     LINK: 'from-slate-500 to-gray-500',
-    CONCEPT: 'from-rose-500 to-red-500',
+    learn: 'from-rose-500 to-red-500',
 };
 
 export default function SpaceRoadmapTimeline({

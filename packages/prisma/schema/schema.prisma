@@ -295,53 +295,24 @@ enum BadgeType {
 // BadgeCategory enum moved to achievements.prisma
 
 // ===============================================
-// CONCEPTS HUB ENUMS
+// LEARN HUB ENUMS
 // ===============================================
-enum ConceptCategory {
-    WEB_DEVELOPMENT
-    MOBILE_DEVELOPMENT
-    DATA_STRUCTURES
-    ALGORITHMS
-    SYSTEM_DESIGN
-    DATABASE
-    DEVOPS
-    CLOUD_COMPUTING
-    MACHINE_LEARNING
-    ARTIFICIAL_INTELLIGENCE
-    CYBERSECURITY
-    BLOCKCHAIN
-    PROGRAMMING_FUNDAMENTALS
-    SOFTWARE_ARCHITECTURE
-    API_DESIGN
-    TESTING
-    VERSION_CONTROL
-    UI_UX_DESIGN
-    GAME_DEVELOPMENT
-    NETWORKING
-    OPERATING_SYSTEMS
-    CUSTOM
-}
 
-enum ConceptDifficulty {
+enum LearnDifficulty {
     BEGINNER
     INTERMEDIATE
     ADVANCED
     EXPERT
 }
 
-enum ConceptStatus {
+enum LearnStatus {
     DRAFT
-    PENDING_VERIFICATION
+
     PUBLISHED
     ARCHIVED
 }
 
-enum ConceptPricingType {
-    FREE
-    PAID
-}
-
-enum ConceptStepType {
+enum LearnStepType {
     EXPLANATION
     CODE
     VISUALIZATION
@@ -356,7 +327,7 @@ enum ConceptStepType {
     PROJECT
 }
 
-enum ConceptRequestStatus {
+enum LearnRequestStatus {
     PENDING
     IN_PROGRESS
     COMPLETED
@@ -451,14 +422,6 @@ model User {
     // Level System Relations
     levelProgressHistory UserLevelProgress[] @relation("UserLevelProgress")
 
-    // Collective Module Relations
-    proposalsCreated        CollectiveProposal[]     @relation("ProposalCreator")
-    proposalVotes           ProposalVote[]           @relation("ProposalVotes")
-    proposalComments        ProposalComment[]        @relation("ProposalComments")
-    challengeParticipations ChallengeParticipation[] @relation("ChallengeParticipations")
-    challengeLeaderboards   ChallengeLeaderboard[]   @relation("ChallengeLeaderboards")
-    stepEvaluations         StepSubmission[]         @relation("StepEvaluations")
-
     // Profile Enhancement Relations
     experiences       WorkExperience[]   @relation("UserExperiences")
     portfolioProjects PortfolioProject[] @relation("UserPortfolioProjects")
@@ -531,20 +494,6 @@ model User {
     followers UserFollow[] @relation("UserFollowers")
 
     // ===============================================
-    // THE CODERZ CHALLENGES RELATIONS
-    // ===============================================
-    // Forge (Technology Mastery)
-    forgeEnrollments     ForgeEnrollment[]     @relation("ForgeEnrollments")
-    forgeStepSubmissions ForgeStepSubmission[] @relation("ForgeStepSubmissions")
-    forgeCompletions     ForgeCompletion[]     @relation("ForgeCompletions")
-
-    // Crucible (Logic & Problem Solving)
-    crucibleParticipations CrucibleParticipation[] @relation("CrucibleParticipations")
-    crucibleUserInputs     CrucibleUserInput[]     @relation("CrucibleUserInputs")
-    crucibleSubmissions    CrucibleSubmission[]    @relation("CrucibleSubmissions")
-    crucibleLeaderboard    CrucibleLeaderboard[]   @relation("CrucibleLeaderboard")
-
-    // ===============================================
     // STUDIO RELATIONS
     // ===============================================
     studios                 Studio[]                 @relation("UserStudios")
@@ -583,15 +532,15 @@ model User {
     userProfile UserProfile? @relation("UserProfile")
 
     // ===============================================
-    // CONCEPTS HUB RELATIONS
+    // LEARN HUB RELATIONS
     // ===============================================
-    createdConcepts           Concept[]              @relation("ConceptCreator")
-    conceptLikes              ConceptLike[]          @relation("ConceptLikes")
-    conceptBookmarks          ConceptBookmark[]      @relation("ConceptBookmarks")
-    conceptComments           ConceptComment[]       @relation("ConceptCommentAuthor")
-    conceptViews              ConceptView[]          @relation("ConceptViews")
-    conceptProgress           ConceptProgress[]      @relation("ConceptProgress")
-    conceptRequests           ConceptRequest[]       @relation("ConceptRequests")
+    createdLearns  Learn[]         @relation("LearnCreator")
+    learnLikes     LearnLike[]     @relation("LearnLikes")
+    learnBookmarks LearnBookmark[] @relation("LearnBookmarks")
+    learnComments  LearnComment[]  @relation("LearnCommentAuthor")
+    learnViews     LearnView[]     @relation("LearnViews")
+    learnProgress  LearnProgress[] @relation("LearnProgress")
+    learnRequests  LearnRequest[]  @relation("LearnRequests")
 
     // ===============================================
     // SPACES MODULE RELATIONS
@@ -703,7 +652,6 @@ model User {
     achievementNotifications AchievementNotification[] @relation("UserAchievementNotifications")
     achievementStats         UserAchievementStats?     @relation("UserAchievementStats")
     featureNotifyInterests   FeatureNotifyInterest[]
-    conceptPurchases         ConceptPurchase[]         @relation("UserConceptPurchases")
 
     @@index([username])
     @@index([email])
@@ -805,8 +753,8 @@ model WorkExperience {
 
 // Portfolio Project Source - where the project was added from
 enum PortfolioProjectSource {
-    PROFILE       // Added from profile page
-    CONCEPTS      // Added from concept step (minor project)
+    PROFILE // Added from profile page
+    LEARN         @map("CONCEPTS") // Added from Learn step (minor project)
     RESUMECREATOR // Added from resume creator
 }
 
@@ -833,12 +781,12 @@ model PortfolioProject {
     // Source tracking - where this project was added from
     source PortfolioProjectSource @default(PROFILE)
 
-    // Concept Step reference (for projects added from CONCEPTS step type)
-    conceptStepId String?
-    conceptStep   ConceptStep? @relation("ConceptStepPortfolioProjects", fields: [conceptStepId], references: [id], onDelete: SetNull)
+    // Learn Step reference (for projects added from LEARN step type)
+    learnStepId String?
+    learnStep   LearnStep? @relation("LearnStepPortfolioProjects", fields: [learnStepId], references: [id], onDelete: SetNull)
 
     @@index([userId])
-    @@index([conceptStepId])
+    @@index([learnStepId])
     @@index([source])
 }
 

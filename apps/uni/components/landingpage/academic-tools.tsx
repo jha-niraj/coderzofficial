@@ -9,7 +9,7 @@ import { cn } from "@repo/ui/lib/utils"
 const tools = [
     {
         title: "Quiz Assessments",
-        desc: "MCQs & conceptual validation. Auto-graded instantly.",
+        desc: "MCQs & Learnual validation. Auto-graded instantly.",
         icon: FileQuestion,
         tags: ["Auto-Grading", "Analytics"],
         colSpan: "lg:col-span-1"

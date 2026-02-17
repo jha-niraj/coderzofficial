@@ -35,14 +35,14 @@ interface AddContentSheetProps {
     onContentAdded?: () => void;
 }
 
-type ContentType = 'project' | 'studio' | 'quiz' | 'flashcard' | 'concept' | 'mock' | 'link' | 'video';
+type ContentType = 'project' | 'studio' | 'quiz' | 'flashcard' | 'Learn' | 'mock' | 'link' | 'video';
 
 const contentOptions: { type: ContentType; icon: typeof Rocket; label: string; description: string; color: string }[] = [
     {
         type: 'project',
         icon: Rocket,
         label: 'Project',
-        description: 'Generate an AI-powered project with tasks and concepts',
+        description: 'Generate an AI-powered project with tasks and Learns',
         color: 'from-blue-500 to-cyan-500'
     },
     {
@@ -67,10 +67,10 @@ const contentOptions: { type: ContentType; icon: typeof Rocket; label: string; d
         color: 'from-amber-500 to-orange-500'
     },
     {
-        type: 'concept',
+        type: 'Learn',
         icon: BookOpen,
-        label: 'Concept',
-        description: 'Add a concept card from the concepts library',
+        label: 'Learn',
+        description: 'Add a Learn card from the Learns library',
         color: 'from-rose-500 to-red-500'
     },
     {
@@ -237,7 +237,7 @@ export default function AddContentSheet({
                                                         </div>
                                                         <h3 className="text-2xl font-bold mb-2">Generate Project</h3>
                                                         <p className="text-neutral-500 mb-6 max-w-md mx-auto">
-                                                            Create a complete project with tasks and concepts. The project will be added to your timeline.
+                                                            Create a complete project with tasks and Learns. The project will be added to your timeline.
                                                         </p>
                                                         <Button size="lg" className="gap-2">
                                                             <Sparkles className="w-5 h-5" />
@@ -304,10 +304,10 @@ export default function AddContentSheet({
                                         )
                                     }
                                     {
-                                        (selectedType === 'concept' || selectedType === 'mock') && (
+                                        (selectedType === 'Learn' || selectedType === 'mock') && (
                                             <div className="text-center py-12">
                                                 <div className="w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
-                                                    {selectedType === 'concept' ? <BookOpen className="w-10 h-10 text-neutral-400" /> : <Mic className="w-10 h-10 text-neutral-400" />}
+                                                    {selectedType === 'Learn' ? <BookOpen className="w-10 h-10 text-neutral-400" /> : <Mic className="w-10 h-10 text-neutral-400" />}
                                                 </div>
                                                 <h3 className="text-2xl font-bold mb-2">Coming Soon</h3>
                                                 <p className="text-neutral-500">

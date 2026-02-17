@@ -93,7 +93,7 @@ In the next lesson, we'll install Git and set up our environment. Let's turn the
     },
     {
         title: "Introduction to Git - Video Overview",
-        description: "Visual introduction to Git concepts and workflow",
+        description: "Visual introduction to Git Learns and workflow",
         type: "VIDEO" as const,
         orderIndex: 1,
         estimatedMinutes: 15,
@@ -105,7 +105,7 @@ Watch this comprehensive video introduction to understand Git fundamentals visua
 ## What You'll Learn
 
 - What is Git and why developers use it
-- Basic Git concepts: repositories, commits, branches
+- Basic Git Learns: repositories, commits, branches
 - The Git workflow visualization
 - How Git enables collaboration
 
@@ -125,7 +125,7 @@ As you watch, try to identify:
 - How commits form a timeline of your project
 - Why branching is a core feature of Git
 
-> 💡 **Note**: Take notes on any concepts that are unclear - we'll cover each topic in detail in subsequent lessons.`
+> 💡 **Note**: Take notes on any Learns that are unclear - we'll cover each topic in detail in subsequent lessons.`
     },
     {
         title: "Installing Git",
@@ -1788,7 +1788,7 @@ Watch this comprehensive video on Git branching strategies and workflows.
 - When to branch and when to merge
 - Real-world branching scenarios
 
-## Key Concepts
+## Key Learns
 
 ### Git Flow
 - **main**: Production-ready code
@@ -1975,11 +1975,8 @@ Conflicts occur when both branches modified the same lines.
 
 ### Conflict Markers
 \`\`\`
-<<<<<<< HEAD
 Current branch changes
-=======
 Incoming branch changes
->>>>>>> feature-branch
 \`\`\`
 
 ### Resolving Conflicts
@@ -2108,7 +2105,7 @@ git branch -d feature-branch
                 text: "What is a Git branch?",
                 type: "single",
                 difficulty: "EASY",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "A copy of the entire repository", isCorrect: false },
@@ -2140,7 +2137,7 @@ git branch -d feature-branch
                 text: "What is HEAD in Git?",
                 type: "single",
                 difficulty: "MEDIUM",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "The first commit in a repository", isCorrect: false },
@@ -2156,7 +2153,7 @@ git branch -d feature-branch
                 text: "What is a fast-forward merge?",
                 type: "single",
                 difficulty: "MEDIUM",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "A merge that is performed very quickly", isCorrect: false },
@@ -2172,7 +2169,7 @@ git branch -d feature-branch
                 text: "What do the conflict markers <<<<<<< and >>>>>>> indicate?",
                 type: "single",
                 difficulty: "MEDIUM",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "Syntax errors in the code", isCorrect: false },
@@ -2236,7 +2233,7 @@ git branch -d feature-branch
                 text: "What is a 'squash merge'?",
                 type: "single",
                 difficulty: "HARD",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "A merge that combines all branch commits into a single commit", isCorrect: true },
@@ -2630,7 +2627,7 @@ git branch -u origin/main
                 text: "What is 'origin' in Git?",
                 type: "single",
                 difficulty: "EASY",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "The first commit in a repository", isCorrect: false },
@@ -2646,7 +2643,7 @@ git branch -u origin/main
                 text: "What is the difference between `git pull` and `git fetch`?",
                 type: "single",
                 difficulty: "MEDIUM",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "pull is faster than fetch", isCorrect: false },
@@ -2742,7 +2739,7 @@ git branch -u origin/main
                 text: "What is 'upstream' typically used for in Git?",
                 type: "single",
                 difficulty: "MEDIUM",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "The default name for your personal remote", isCorrect: false },
@@ -2985,7 +2982,7 @@ Creates a new commit that undoes the changes. **Safe for shared branches!**
                 text: "What is the difference between `git reset` and `git revert`?",
                 type: "single",
                 difficulty: "MEDIUM",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "reset creates a new commit, revert moves HEAD", isCorrect: false },
@@ -3065,7 +3062,7 @@ Creates a new commit that undoes the changes. **Safe for shared branches!**
                 text: "What does `HEAD~1` represent?",
                 type: "single",
                 difficulty: "MEDIUM",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "The next commit", isCorrect: false },
@@ -3113,7 +3110,7 @@ Creates a new commit that undoes the changes. **Safe for shared branches!**
                 text: "After a hard reset, can you recover the lost commits?",
                 type: "single",
                 difficulty: "HARD",
-                category: "Concepts",
+                category: "Learns",
                 points: 10,
                 options: [
                     { id: "a", text: "No, they are permanently deleted", isCorrect: false },

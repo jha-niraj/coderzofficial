@@ -24,7 +24,7 @@ interface CreateCustomMockInput {
     includeResume: boolean
     isPublic: boolean
     knowledgeBase?: string
-    conceptStepId?: string // Link to concept step
+    learnStepId?: string // Link to Learn step
 }
 
 // ==========================================
@@ -357,7 +357,7 @@ Interview Parameters:
 ${input.includeResume ? '- The candidate will provide their resume for personalized questions' : ''}
 
 Create a detailed knowledge base that includes:
-1. Key technical skills and concepts to assess
+1. Key technical skills and Learns to assess
 2. Specific question types (technical, behavioral, scenario-based)
 3. Expected depth of answers for ${input.level} level
 4. Red flags to watch for
@@ -423,14 +423,14 @@ Be professional, supportive, and constructive in your approach.`
                 }
             })
 
-            // If concept step ID provided, link the mock to the step
-            if (input.conceptStepId) {
-                await tx.conceptStep.update({
-                    where: { 
-                        id: input.conceptStepId 
+            // If Learn step ID provided, link the mock to the step
+            if (input.learnStepId) {
+                await tx.learnStep.update({
+                    where: {
+                        id: input.learnStepId
                     },
-                    data: { 
-                        mockInterviewId: mock.id 
+                    data: {
+                        mockInterviewId: mock.id
                     }
                 })
             }

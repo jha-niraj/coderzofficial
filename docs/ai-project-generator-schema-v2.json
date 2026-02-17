@@ -410,19 +410,19 @@
                                         },
                                         "description": "2-4 helpful tips (NOT solutions)"
                                     },
-                                    "concepts": {
+                                    "Learns": {
                                         "type": "array",
-                                        "description": "Detailed learning concepts for this task - theory, best practices, industry standards",
+                                        "description": "Detailed learning Learns for this task - theory, best practices, industry standards",
                                         "items": {
                                             "type": "object",
                                             "properties": {
                                                 "title": {
                                                     "type": "string",
-                                                    "description": "Concept name (e.g., 'Password Hashing with bcrypt')"
+                                                    "description": "Learn name (e.g., 'Password Hashing with bcrypt')"
                                                 },
                                                 "summary": {
                                                     "type": "string",
-                                                    "description": "Brief 50-100 word explanation of what this concept is and why it matters"
+                                                    "description": "Brief 50-100 word explanation of what this Learn is and why it matters"
                                                 },
                                                 "keyPoints": {
                                                     "type": "array",
@@ -456,12 +456,12 @@
                                                     },
                                                     "description": "2-4 security implications and safeguards"
                                                 },
-                                                "relatedConcepts": {
+                                                "relatedLearns": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
                                                     },
-                                                    "description": "3-5 related concepts the user should also understand"
+                                                    "description": "3-5 related Learns the user should also understand"
                                                 }
                                             },
                                             "required": [
@@ -472,7 +472,7 @@
                                                 "bestPractices",
                                                 "realWorldUsage",
                                                 "securityConsiderations",
-                                                "relatedConcepts"
+                                                "relatedLearns"
                                             ],
                                             "additionalProperties": false
                                         }
@@ -594,7 +594,7 @@
                                     "learningObjectives",
                                     "criteria",
                                     "hints",
-                                    "concepts",
+                                    "Learns",
                                     "prerequisites",
                                     "resources",
                                     "testingGuidelines",

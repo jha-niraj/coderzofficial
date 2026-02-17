@@ -22,8 +22,8 @@ const sidebarLinks = [
         icon: FolderKanban,
     },
     {
-        href: "/learnings/concepts",
-        label: "Concepts",
+        href: "/learnings/Learns",
+        label: "Learns",
         icon: Lightbulb,
     },
     {

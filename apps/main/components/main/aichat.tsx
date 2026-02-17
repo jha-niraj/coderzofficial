@@ -17,7 +17,7 @@ import { useSidebar } from "@/components/common/sidebarprovider"
 const HIDDEN_PATHS = [
     '/studio/', // Studio detail pages
     '/space/',  // Space detail pages
-    '/concepts/', // Concept detail pages (has built-in AI assistant)
+    '/Learns/', // Learn detail pages (has built-in AI assistant)
 ]
 
 export function AIChat() {
@@ -39,7 +39,7 @@ export function AIChat() {
             // Check if current path starts with this prefix and has more segments
             const baseSegments = path.split('/').filter(Boolean)
             const currentSegments = pathname.split('/').filter(Boolean)
-            
+
             if (currentSegments.length > baseSegments.length) {
                 return currentSegments.slice(0, baseSegments.length).join('/') === baseSegments.join('/')
             }

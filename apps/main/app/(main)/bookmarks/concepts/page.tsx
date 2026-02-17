@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { getConceptBookmarks } from "@/actions/(main)/bookmarks/bookmarks.action";
+import { getLearnBookmarks } from "@/actions/(main)/bookmarks/bookmarks.action";
 import { cn } from "@repo/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -19,7 +19,7 @@ const difficultyColors = {
     ADVANCED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
-interface BookmarkConcept {
+interface BookmarkLearn {
     id: string;
     slug: string;
     title: string;
@@ -33,20 +33,20 @@ interface BookmarkConcept {
     savedAt: string | Date;
 }
 
-export default function ConceptBookmarksPage() {
-    const [concepts, setConcepts] = useState<BookmarkConcept[]>([]);
+export default function LearnBookmarksPage() {
+    const [learns, setLearns] = useState<BookmarkLearn[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         async function loadData() {
             setIsLoading(true);
             try {
-                const result = await getConceptBookmarks();
+                const result = await getLearnBookmarks();
                 if (result.success && result.data) {
-                    setConcepts(result.data as unknown as BookmarkConcept[]);
+                    setLearns(result.data as unknown as BookmarkLearn[]);
                 }
             } catch (error) {
-                console.error("Error loading concept bookmarks:", error);
+                console.error("Error loading learn bookmarks:", error);
             } finally {
                 setIsLoading(false);
             }
@@ -68,10 +68,10 @@ export default function ConceptBookmarksPage() {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-                                    Saved Concepts
+                                    Saved Learns
                                 </h1>
                                 <p className="text-neutral-600 dark:text-neutral-400">
-                                    {concepts.length} concepts bookmarked
+                                    {learns.length} learns bookmarked
                                 </p>
                             </div>
                         </div>
@@ -84,7 +84,7 @@ export default function ConceptBookmarksPage() {
                         <div className="flex items-center justify-center py-20">
                             <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
                         </div>
-                    ) : concepts.length === 0 ? (
+                    ) : learns.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -92,14 +92,14 @@ export default function ConceptBookmarksPage() {
                         >
                             <Lightbulb className="h-16 w-16 mx-auto text-neutral-300 dark:text-neutral-700 mb-4" />
                             <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-                                No concept bookmarks
+                                No learn bookmarks
                             </h3>
                             <p className="text-neutral-500 mb-6">
-                                Save concepts to revisit them later
+                                Save learns to revisit them later
                             </p>
                             <Button asChild>
-                                <Link href="/concepts">
-                                    Explore Concepts
+                                <Link href="/learn">
+                                    Explore Learns
                                     <ChevronRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
@@ -108,21 +108,21 @@ export default function ConceptBookmarksPage() {
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <AnimatePresence>
                                 {
-                                    concepts.map((concept, index) => (
+                                    learns.map((item, index) => (
                                         <motion.div
-                                            key={concept.id}
+                                            key={item.id}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                         >
-                                            <Link href={`/concepts/${concept.slug}`}>
+                                            <Link href={`/learn/${item.slug}`}>
                                                 <div className="group rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:shadow-lg">
                                                     <div className="relative h-36 bg-gradient-to-br from-blue-500/20 to-purple-500/20">
                                                         {
-                                                            concept.thumbnail && (
+                                                            item.thumbnail && (
                                                                 <Image
-                                                                    src={concept.thumbnail}
-                                                                    alt={concept.title}
+                                                                    src={item.thumbnail}
+                                                                    alt={item.title}
                                                                     fill
                                                                     className="object-cover"
                                                                 />
@@ -134,30 +134,30 @@ export default function ConceptBookmarksPage() {
                                                                 variant="secondary"
                                                                 className={cn(
                                                                     "text-xs rounded-full",
-                                                                    difficultyColors[concept.difficulty as keyof typeof difficultyColors]
+                                                                    difficultyColors[item.difficulty as keyof typeof difficultyColors]
                                                                 )}
                                                             >
-                                                                {concept.difficulty}
+                                                                {item.difficulty}
                                                             </Badge>
                                                             <div className="text-xs text-white/80 flex items-center gap-1">
                                                                 <Clock className="h-3.5 w-3.5" />
-                                                                {formatDistanceToNow(new Date(concept.savedAt), { addSuffix: true })}
+                                                                {formatDistanceToNow(new Date(item.savedAt), { addSuffix: true })}
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div className="p-5">
                                                         <Badge variant="outline" className="text-xs rounded-full mb-2">
-                                                            {concept.category?.replace(/_/g, " ")}
+                                                            {item.category?.replace(/_/g, " ")}
                                                         </Badge>
 
                                                         <h3 className="font-semibold text-neutral-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
-                                                            {concept.title}
+                                                            {item.title}
                                                         </h3>
 
                                                         {
-                                                            concept.description && (
+                                                            item.description && (
                                                                 <p className="text-sm text-neutral-500 line-clamp-2 mb-3">
-                                                                    {concept.description}
+                                                                    {item.description}
                                                                 </p>
                                                             )
                                                         }
@@ -165,15 +165,15 @@ export default function ConceptBookmarksPage() {
                                                         <div className="flex items-center gap-4 text-xs text-neutral-500">
                                                             <span className="flex items-center gap-1">
                                                                 <BookOpen className="h-3.5 w-3.5" />
-                                                                {concept.stepCount} steps
+                                                                {item.stepCount} steps
                                                             </span>
                                                             <span className="flex items-center gap-1">
                                                                 <Clock className="h-3.5 w-3.5" />
-                                                                {concept.estimatedTime} min
+                                                                {item.estimatedTime} min
                                                             </span>
                                                             <span className="flex items-center gap-1">
                                                                 <Heart className="h-3.5 w-3.5" />
-                                                                {concept.likeCount}
+                                                                {item.likeCount}
                                                             </span>
                                                         </div>
                                                     </div>

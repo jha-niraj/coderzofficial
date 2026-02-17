@@ -2,8 +2,8 @@
 
 import { prisma } from '@repo/prisma'
 import { Prisma } from '@repo/prisma/client'
-import type { 
-    BadgeRequirements, BadgeProgress 
+import type {
+    BadgeRequirements, BadgeProgress
 } from '@/types/achievements'
 
 // ================================================================================
@@ -11,12 +11,12 @@ import type {
 // These functions check and update badge progress based on user actions
 // ================================================================================
 
-type BadgeTarget = 
+type BadgeTarget =
     // Projects
-    | 'projects_completed' | 'sprints_completed' | 'tasks_completed' 
+    | 'projects_completed' | 'sprints_completed' | 'tasks_completed'
     | 'project_quiz_high_scores' | 'perfect_quiz_scores'
     // Assessments
-    | 'practice_sessions' | 'exams_taken' | 'certifications_earned' 
+    | 'practice_sessions' | 'exams_taken' | 'certifications_earned'
     | 'correct_answers' | 'high_score_exams' | 'elite_exam_scores'
     // Challenges
     | 'forge_enrollments' | 'forge_steps_completed' | 'forge_tracks_completed'
@@ -25,12 +25,12 @@ type BadgeTarget =
     | 'mock_interviews_completed' | 'mock_score' | 'mock_communication_high'
     | 'mock_technical_high' | 'mock_excellent_scores' | 'custom_mocks_created' | 'mock_perfect_score'
     // Community
-    | 'communities_joined' | 'posts_created' | 'likes_received' 
+    | 'communities_joined' | 'posts_created' | 'likes_received'
     | 'questions_helped' | 'events_organized' | 'resources_shared'
-    // Concepts
-    | 'concepts_completed' | 'concept_quiz_high' | 'concept_categories_completed'
+    // Learns
+    | 'Learns_completed' | 'Learn_quiz_high' | 'Learn_categories_completed'
     // Spaces
-    | 'spaces_joined' | 'space_steps_completed' | 'spaces_completed' 
+    | 'spaces_joined' | 'space_steps_completed' | 'spaces_completed'
     | 'spaces_created' | 'space_completions_by_others'
     // Studio
     | 'studios_created' | 'flashcards_studied' | 'studio_quiz_high'
@@ -39,11 +39,11 @@ type BadgeTarget =
     | 'os_contributions' | 'os_modules_completed' | 'os_prs_merged'
     | 'os_issues_solved' | 'os_certifications' | 'os_code_reviews' | 'os_bounty_earnings'
     // Pathfinder
-    | 'pathfinder_goals_created' | 'pathfinder_subgoals_completed' 
-    | 'pathfinder_goals_completed' | 'pathfinder_streak' 
+    | 'pathfinder_goals_created' | 'pathfinder_subgoals_completed'
+    | 'pathfinder_goals_completed' | 'pathfinder_streak'
     | 'pathfinder_verifications_passed' | 'pathfinder_quizzes_completed'
     // Launchpads
-    | 'products_submitted' | 'products_approved' | 'product_views' 
+    | 'products_submitted' | 'products_approved' | 'product_views'
     | 'products_featured' | 'total_product_views'
     // Collective
     | 'proposals_submitted' | 'votes_cast' | 'proposals_approved'
@@ -180,7 +180,7 @@ export async function updateBadgeProgress({ userId, target, increment = 1, value
 export async function checkXpMilestones(userId: string, totalXp: number) {
     try {
         const xpMilestones = [500, 5000, 25000, 100000, 500000]
-        
+
         for (const milestone of xpMilestones) {
             if (totalXp >= milestone) {
                 await updateBadgeProgress({
@@ -357,9 +357,9 @@ export async function onActivityStreakUpdated(userId: string, streakDays: number
     return updateBadgeProgress({ userId, target: 'activity_streak', value: streakDays })
 }
 
-// Concepts
-export async function onConceptCompleted(userId: string, conceptId: string) {
-    return updateBadgeProgress({ userId, target: 'concepts_completed', itemId: conceptId })
+// Learns
+export async function onLearnCompleted(userId: string, LearnId: string) {
+    return updateBadgeProgress({ userId, target: 'Learns_completed', itemId: LearnId })
 }
 
 // Spaces

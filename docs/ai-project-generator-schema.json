@@ -632,19 +632,19 @@
                                             "null"
                                         ]
                                     },
-                                    "concepts": {
+                                    "Learns": {
                                         "type": "array",
-                                        "description": "Key concepts the user should understand for this task (2-4 concepts)",
+                                        "description": "Key Learns the user should understand for this task (2-4 Learns)",
                                         "items": {
                                             "type": "object",
                                             "properties": {
                                                 "title": {
                                                     "type": "string",
-                                                    "description": "Concept name e.g., 'REST API Design', 'JWT Authentication'"
+                                                    "description": "Learn name e.g., 'REST API Design', 'JWT Authentication'"
                                                 },
                                                 "description": {
                                                     "type": "string",
-                                                    "description": "Brief explanation of the concept (1-2 sentences)"
+                                                    "description": "Brief explanation of the Learn (1-2 sentences)"
                                                 },
                                                 "links": {
                                                     "type": "array",
@@ -668,7 +668,7 @@
                                             "CODE",
                                             "NONE"
                                         ],
-                                        "description": "QUIZ for concept-heavy tasks, CODE for implementation-heavy tasks, NONE for simple setup tasks"
+                                        "description": "QUIZ for Learn-heavy tasks, CODE for implementation-heavy tasks, NONE for simple setup tasks"
                                     }
                                 },
                                 "required": [
@@ -685,7 +685,7 @@
                                     "relatedPages",
                                     "dependencies",
                                     "terminalCommand",
-                                    "concepts",
+                                    "Learns",
                                     "assessmentType"
                                 ],
                                 "additionalProperties": false

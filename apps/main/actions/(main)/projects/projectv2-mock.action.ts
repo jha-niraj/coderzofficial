@@ -14,7 +14,7 @@ const MOCK_CREDIT_COST = 30
 interface MockKnowledgeBase {
     overview: string
     keyTopics: string[]
-    technicalConcepts: string[]
+    technicalLearns: string[]
     interviewQuestions: {
         question: string
         expectedPoints: string[]
@@ -118,7 +118,7 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
                 },
                 {
                     role: "user",
-                    content: `Generate a mock interview knowledge base for this project. Include 8-10 technical questions, key concepts, and practical scenarios. Keep it concise.
+                    content: `Generate a mock interview knowledge base for this project. Include 8-10 technical questions, key Learns, and practical scenarios. Keep it concise.
 
 ${projectContext}
 
@@ -126,7 +126,7 @@ Return JSON with structure:
 {
     "overview": "Brief project overview for interviewer context",
     "keyTopics": ["topic1", "topic2", ...max 6],
-    "technicalConcepts": ["concept1", "concept2", ...max 8],
+    "technicalLearns": ["Learn1", "Learn2", ...max 8],
     "interviewQuestions": [
         {"question": "...", "expectedPoints": ["point1", "point2"], "difficulty": "easy|medium|hard"}
     ],
@@ -159,8 +159,8 @@ PROJECT OVERVIEW: ${knowledgeBase.overview}
 KEY TOPICS TO ASSESS:
 ${knowledgeBase.keyTopics.map(t => `- ${t}`).join('\n')}
 
-TECHNICAL CONCEPTS:
-${knowledgeBase.technicalConcepts.map(c => `- ${c}`).join('\n')}
+TECHNICAL LearnS:
+${knowledgeBase.technicalLearns.map(c => `- ${c}`).join('\n')}
 
 INTERVIEW QUESTIONS:
 ${knowledgeBase.interviewQuestions.map((q, i) => `
@@ -442,7 +442,7 @@ Return JSON: {"overallScore": 0-100, "communication": {"score": 0-100, "feedback
                             score: feedback.overallScore,
                             technicalScore: feedback.technical?.score,
                             communicationScore: feedback.communication?.score,
-                            conceptualScore: feedback.problemSolving?.score,
+                            LearnualScore: feedback.problemSolving?.score,
                             feedback: feedback.detailedFeedback,
                             strengths: feedback.strengths || [],
                             improvements: feedback.improvements || []

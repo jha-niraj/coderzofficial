@@ -24,7 +24,7 @@ interface SpaceSidebarProps {
 export default function SpaceSidebar({ spaceTitle }: SpaceSidebarProps) {
     const { sidebarMode, sidebarContent, openSidebar } = useSpaceStore();
     const [activeTab, setActiveTab] = useState<string>('ai');
-    
+
     // Sync activeTab with sidebarMode from store
     useEffect(() => {
         if (sidebarMode === 'quiz') {
@@ -53,21 +53,21 @@ export default function SpaceSidebar({ spaceTitle }: SpaceSidebarProps) {
                 {/* Tabs Header */}
                 <div className="p-2 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
                     <TabsList className="w-full grid grid-cols-3 bg-neutral-100 dark:bg-neutral-900 rounded-lg h-auto p-1">
-                        <TabsTrigger 
-                            value="ai" 
+                        <TabsTrigger
+                            value="ai"
                             className="flex items-center gap-2 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 rounded-md transition-all"
                         >
                             <Bot className="w-4 h-4" />
                             <span className="text-xs font-medium">AI Chat</span>
                         </TabsTrigger>
-                        <TabsTrigger 
+                        <TabsTrigger
                             value="quiz"
                             className="flex items-center gap-2 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 rounded-md transition-all"
                         >
                             <Brain className="w-4 h-4" />
                             <span className="text-xs font-medium">Quiz</span>
                         </TabsTrigger>
-                        <TabsTrigger 
+                        <TabsTrigger
                             value="flashcard"
                             className="flex items-center gap-2 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 rounded-md transition-all"
                         >
@@ -153,7 +153,7 @@ function AIChat({
     const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([
         {
             role: 'assistant',
-            content: `👋 Hey! I'm your AI assistant for "${spaceTitle}". Ask me anything about this learning space, the content, or any concepts you're learning!`
+            content: `👋 Hey! I'm your AI assistant for "${spaceTitle}". Ask me anything about this learning space, the content, or any Learns you're learning!`
         }
     ]);
     const [input, setInput] = useState('');
@@ -176,7 +176,7 @@ function AIChat({
 
         try {
             const contextMessage = `The user is in a learning space called "${spaceTitle}". Help them with their question about this space or related topics.`;
-            
+
             const result = await chatWithAI([
                 { role: 'assistant', content: contextMessage },
                 ...messages,
@@ -198,7 +198,7 @@ function AIChat({
 
     const sampleQuestions = [
         "What should I learn first?",
-        "Explain the key concepts",
+        "Explain the key Learns",
         "How long will this take?",
         "What are the prerequisites?",
     ];
@@ -366,7 +366,7 @@ function QuizView({
                     </h3>
                     <span className="text-xs text-neutral-500">Quiz Complete</span>
                 </div>
-                
+
                 {/* Results */}
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                     <motion.div
@@ -422,7 +422,7 @@ function QuizView({
                     </div>
                 </div>
             </div>
-            
+
             {/* Quiz Content */}
             <ScrollArea className="flex-1">
                 <div className="p-4">
@@ -508,7 +508,7 @@ function FlashcardView({
                     </div>
                 </div>
             </div>
-            
+
             {/* Flashcard Content */}
             <ScrollArea className="flex-1">
                 <div className="p-4">

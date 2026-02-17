@@ -44,21 +44,21 @@ export const studyPlanGenerationPrompt = `
     }
 
     Day-specific guidance:
-    - Day 1: Focus on introducing fundamental concepts with simple tasks
+    - Day 1: Focus on introducing fundamental Learns with simple tasks
         • Include basic terminology and core principles
         • Provide beginner-friendly resources
         • Create entry-level quiz questions
         • Design a simple coding question for practice
 
     - Day 2: Build upon basics with slightly more complex materials
-        • Connect concepts from Day 1 to new information
+        • Connect Learns from Day 1 to new information
         • Include practical applications of the fundamentals
-        • Quiz should test understanding of relationships between concepts
+        • Quiz should test understanding of relationships between Learns
         • Coding question should require applying Day 1 knowledge
 
-    - Day 3-4: Introduce intermediate concepts
+    - Day 3-4: Introduce intermediate Learns
         • Present more detailed technical information
-        • Include hands-on activities that apply multiple concepts
+        • Include hands-on activities that apply multiple Learns
         • Quiz questions should require deeper understanding
         • Coding questions should involve problem-solving with multiple steps
 
@@ -69,7 +69,7 @@ export const studyPlanGenerationPrompt = `
         • Coding questions should require integration of multiple skills
 
     - Final day: Focus on synthesis and practical application
-        • Tasks should involve bringing together concepts from previous days
+        • Tasks should involve bringing together Learns from previous days
         • Include a comprehensive review activity
         • Quiz should cover the entire learning journey
         • Final coding challenge should demonstrate mastery of the subject

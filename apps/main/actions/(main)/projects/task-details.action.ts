@@ -205,7 +205,7 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
 Your goal is to provide detailed, actionable guidance WITHOUT giving away the actual code solution. Focus on:
 - Clear step-by-step approach
 - Terminal commands needed
-- Concepts to understand
+- Learns to understand
 - Common pitfalls and errors
 - How to debug and validate
 
@@ -245,11 +245,11 @@ Please generate a detailed breakdown with:
    Specific error messages or issues they might encounter and how to identify them (NOT how to fix them)
 
 4. **RELATED PRACTICE TASKS** (2-4 tasks):
-   Suggest additional main tasks (not sub-tasks) that would help practice similar concepts:
+   Suggest additional main tasks (not sub-tasks) that would help practice similar Learns:
    - title: Task title
    - description: Brief description (1-2 sentences)
    - difficulty: BEGINNER | INTERMEDIATE | ADVANCED
-   - why_related: Why this helps reinforce the concepts (1 sentence)
+   - why_related: Why this helps reinforce the Learns (1 sentence)
 
 Format your response as valid JSON with this exact structure:
 {

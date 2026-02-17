@@ -234,7 +234,7 @@ Teachers can create custom mock interviews for their students using the same Ele
 └─────────┘    └─────────────┘    └─────────────┘
      │                │                   │
      │  - Title       │  - Topic          │  - Assign Classes
-     │  - Description │  - Key Concepts   │  - Credits
+     │  - Description │  - Key Learns   │  - Credits
      │  - Category    │  - Study Material │  - Deadline
      │  - Level       │                   │  - Instructions
      └────────────────┴───────────────────┘

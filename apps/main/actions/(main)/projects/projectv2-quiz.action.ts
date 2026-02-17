@@ -94,13 +94,13 @@ Tech Stack:
 - Database: ${stacks?.database || 'N/A'}
 
 Create questions that test understanding of:
-1. Core concepts and best practices
+1. Core Learns and best practices
 2. Technology-specific knowledge
 3. Implementation patterns
 4. Problem-solving approaches
 
 Distribute the questions as follows:
-- 7 EASY questions (fundamental concepts)
+- 7 EASY questions (fundamental Learns)
 - 8 MEDIUM questions (practical application)
 - 5 HARD questions (advanced topics and edge cases)
 

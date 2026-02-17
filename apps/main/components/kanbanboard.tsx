@@ -20,7 +20,7 @@ export interface TaskCard {
         name: string;
         avatar: string;
     };
-    tags?: string[]; // concept tags
+    tags?: string[]; // Learn tags
     dueDate?: string;
     attachments?: number;
     comments?: number;
