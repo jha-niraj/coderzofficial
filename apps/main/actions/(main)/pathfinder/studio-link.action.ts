@@ -30,7 +30,7 @@ export async function createOrGetStudioForGoal(goalId: string) {
                         id: true,
                         slug: true,
                         title: true,
-                        content: true,
+                        // content: true, // removed
                     }
                 }
             }
@@ -74,7 +74,6 @@ export async function createOrGetStudioForGoal(goalId: string) {
                 category: (categoryMap[goal.category] || "GENERAL") as any,
                 tags: ["pathfinder", "notes"],
                 visibility: StudioVisibility.PRIVATE,
-                content: { blocks: [] },
                 userId: session.user.id,
             },
         });
@@ -118,7 +117,6 @@ export async function getGoalStudioContent(goalId: string) {
                         id: true,
                         slug: true,
                         title: true,
-                        content: true,
                         quizzes: {
                             select: {
                                 id: true,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { useConversation } from '@elevenlabs/react'
+import { useConversation } from '@/lib/elevenlabs/use-conversation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Loader2, CheckCircle2,
@@ -26,6 +26,7 @@ import {
     updateProjectMockSessionStatus, processProjectMockCompletion,
     getProjectMockAttempts
 } from '@/actions/(main)/projects/projectv2-mock.action'
+import { getElevenLabsToken } from '@/actions/(main)/mockvoice/session.action'
 
 interface AIMockInterviewClientProps {
     project: {
@@ -148,11 +149,11 @@ export default function AIMockInterviewClient({
                 handleConversationEnd()
             }
         },
-        onModeChange: (mode) => {
+        onModeChange: (mode: { mode: string }) => {
             console.log('[AIMock] Mode changed:', mode.mode)
             setAgentState(mode.mode === 'speaking' ? 'talking' : 'listening')
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
             console.error('[AIMock] Conversation error:', error)
             toast.error('Connection error. Please try again.')
             setAgentState(null)
@@ -213,10 +214,19 @@ export default function AIMockInterviewClient({
             setHasStarted(true)
             setAgentState('thinking')
 
+            // Fetch Token
+            const tokenResult = await getElevenLabsToken(agentId)
+            if (!tokenResult.success || !tokenResult.token) {
+                toast.error('Failed to authenticate with voice agent')
+                setAgentState(null)
+                setHasStarted(false)
+                return
+            }
+
             await updateProjectMockSessionStatus(sessionId!, 'IN_PROGRESS')
 
             const conversationId = await conversation.startSession({
-                agentId,
+                conversationToken: tokenResult.token,
                 connectionType: 'webrtc',
                 overrides: {
                     agent: {

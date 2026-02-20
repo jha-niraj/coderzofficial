@@ -3,7 +3,7 @@
 import { auth } from '@repo/auth';
 import { prisma } from '@repo/prisma';
 import { revalidatePath } from 'next/cache';
-import { 
+import {
     SpaceStepContentType, SpaceStepStatus, SpaceActivityType
 } from '@repo/prisma/client';
 import type { Prisma } from '@repo/prisma/client';
@@ -125,13 +125,13 @@ export async function generateSpaceQuiz(
 
         // Update space step count
         await prisma.space.update({
-            where: { 
-                id: spaceId 
+            where: {
+                id: spaceId
             },
-            data: { 
-                totalSteps: { 
-                    increment: 1 
-                } 
+            data: {
+                totalSteps: {
+                    increment: 1
+                }
             }
         });
 
@@ -573,6 +573,94 @@ export async function addStudioToSpace(
     } catch (error) {
         console.error('Error adding studio to space:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to add studio' };
+    }
+}
+
+// ==========================================
+// CREATE STUDIO IN SPACE
+// ==========================================
+// Need to import StudioSource, StudioVisibility or rely on enum values if not imported
+import { StudioSource, StudioVisibility } from '@repo/prisma/client';
+
+export async function createStudio(
+    spaceId: string,
+    title: string
+) {
+    try {
+        const userId = await checkAuth();
+
+        const space = await prisma.space.findUnique({
+            where: { id: spaceId },
+            select: { id: true, slug: true, creatorId: true, allowMemberContent: true }
+        });
+
+        if (!space) {
+            return { success: false, error: 'Space not found' };
+        }
+
+        const member = await prisma.spaceMember.findUnique({
+            where: { spaceId_userId: { spaceId, userId } }
+        });
+
+        if (space.creatorId !== userId && (!space.allowMemberContent || !member)) {
+            return { success: false, error: 'You do not have permission to add content' };
+        }
+
+        // 1. Create Studio
+        const studioSlug = `${space.slug}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`;
+
+        const studio = await prisma.studio.create({
+            data: {
+                title,
+                slug: studioSlug,
+                description: `Studio created in space ${space.slug}`,
+                source: StudioSource.SPACE,
+                sourceId: spaceId,
+                spaceId: spaceId,
+                userId: userId,
+                visibility: StudioVisibility.PRIVATE,
+            }
+        });
+
+        // 2. Add as Space Step
+        const maxStep = await prisma.spaceStep.findFirst({
+            where: { spaceId },
+            orderBy: { order: 'desc' }
+        });
+        const order = maxStep ? maxStep.order + 1 : 1;
+
+        const step = await prisma.spaceStep.create({
+            data: {
+                spaceId,
+                order,
+                title,
+                contentType: SpaceStepContentType.STUDIO,
+                contentId: studio.id,
+                contentData: { studioSlug: studio.slug, type: 'studio' },
+                isRequired: false,
+                status: SpaceStepStatus.ACTIVE
+            }
+        });
+
+        await prisma.space.update({
+            where: { id: spaceId },
+            data: { totalSteps: { increment: 1 } }
+        });
+
+        await prisma.spaceActivity.create({
+            data: {
+                spaceId,
+                userId,
+                type: SpaceActivityType.CONTENT_ADDED,
+                stepId: step.id
+            }
+        });
+
+        revalidatePath(`/space/${space.slug}`);
+        return { success: true, studio, stepId: step.id };
+    } catch (error) {
+        console.error('Error creating studio in space:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Failed to create studio' };
     }
 }
 

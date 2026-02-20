@@ -24,7 +24,18 @@ async function getProgressData(userId: string) {
 						title: true,
 						slug: true,
 						description: true,
-						category: true,
+						mainCategory: {
+							select: {
+								id: true,
+								name: true,
+							}
+						},
+						subCategory: {
+							select: {
+								id: true,
+								name: true,
+							}
+						},
 						difficulty: true,
 						estimatedTime: true,
 						_count: {

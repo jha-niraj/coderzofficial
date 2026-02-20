@@ -292,24 +292,24 @@ export async function createCustomMockVoice(input: CreateCustomMockInput) {
                             role: "user",
                             content: `Create an interview knowledge base for: "${input.title}" (${input.level} level)
 
-The user has provided their syllabus/study materials:
----
-${input.knowledgeBase}
----
+                                The user has provided their syllabus/study materials:
+                                ---
+                                ${input.knowledgeBase}
+                                ---
 
-Interview Parameters:
-- Questions: ${input.questionsCount}
-- Duration: ${input.duration} minutes
-- Level: ${input.level}
-${input.includeResume ? '- Include resume-based questions' : ''}
+                                Interview Parameters:
+                                - Questions: ${input.questionsCount}
+                                - Duration: ${input.duration} minutes
+                                - Level: ${input.level}
+                                ${input.includeResume ? '- Include resume-based questions' : ''}
 
-Create a structured knowledge base that:
-1. Covers ALL topics from the provided syllabus
-2. Includes question suggestions for each topic
-3. Defines expected answer depth for ${input.level} level
-4. Adds follow-up question strategies
+                                Create a structured knowledge base that:
+                                1. Covers ALL topics from the provided syllabus
+                                2. Includes question suggestions for each topic
+                                3. Defines expected answer depth for ${input.level} level
+                                4. Adds follow-up question strategies
 
-Preserve the user's content structure and priorities.`
+                                Preserve the user's content structure and priorities.`
                         }
                     ],
                     temperature: 0.5,
@@ -322,16 +322,16 @@ Preserve the user's content structure and priorities.`
                 // Use the user's content directly as fallback
                 knowledgeBase = `You are conducting a ${input.level.toLowerCase()} level interview for: ${input.title}
 
-STUDY MATERIALS/SYLLABUS PROVIDED BY USER:
-${input.knowledgeBase}
+                    STUDY MATERIALS/SYLLABUS PROVIDED BY USER:
+                    ${input.knowledgeBase}
 
-Interview Parameters:
-- Questions: ${input.questionsCount}
-- Duration: ${input.duration} minutes
-- Level: ${input.level}
+                    Interview Parameters:
+                    - Questions: ${input.questionsCount}
+                    - Duration: ${input.duration} minutes
+                    - Level: ${input.level}
 
-Ask questions directly from the topics above. Focus on the user's provided content.
-${input.includeResume ? 'Also personalize questions based on their resume.' : ''}`
+                    Ask questions directly from the topics above. Focus on the user's provided content.
+                    ${input.includeResume ? 'Also personalize questions based on their resume.' : ''}`
             }
         } else {
             // Generate knowledge base from scratch using AI
@@ -347,25 +347,25 @@ ${input.includeResume ? 'Also personalize questions based on their resume.' : ''
                             role: "user",
                             content: `Generate a comprehensive knowledge base for conducting a ${input.level.toLowerCase()} level interview for the position: "${input.title}".
 
-Job Description/Focus Areas:
-${input.description}
+                            Job Description/Focus Areas:
+                            ${input.description}
 
-Interview Parameters:
-- Number of Questions: ${input.questionsCount}
-- Duration: ${input.duration} minutes
-- Experience Level: ${input.level}
-${input.includeResume ? '- The candidate will provide their resume for personalized questions' : ''}
+                            Interview Parameters:
+                            - Number of Questions: ${input.questionsCount}
+                            - Duration: ${input.duration} minutes
+                            - Experience Level: ${input.level}
+                            ${input.includeResume ? '- The candidate will provide their resume for personalized questions' : ''}
 
-Create a detailed knowledge base that includes:
-1. Key technical skills and Learns to assess
-2. Specific question types (technical, behavioral, scenario-based)
-3. Expected depth of answers for ${input.level} level
-4. Red flags to watch for
-5. Positive indicators of strong candidates
-6. Follow-up question strategies
-7. Industry-specific best practices
+                            Create a detailed knowledge base that includes:
+                            1. Key technical skills and Learns to assess
+                            2. Specific question types (technical, behavioral, scenario-based)
+                            3. Expected depth of answers for ${input.level} level
+                            4. Red flags to watch for
+                            5. Positive indicators of strong candidates
+                            6. Follow-up question strategies
+                            7. Industry-specific best practices
 
-Make it specific, actionable, and comprehensive enough for an AI to conduct a professional interview.`
+                            Make it specific, actionable, and comprehensive enough for an AI to conduct a professional interview.`
                         }
                     ],
                     temperature: 0.7,
@@ -378,28 +378,27 @@ Make it specific, actionable, and comprehensive enough for an AI to conduct a pr
                 // Fallback to basic knowledge base if OpenAI fails
                 knowledgeBase = `You are conducting a ${input.level.toLowerCase()} level interview for the position of ${input.title}.
 
-Description: ${input.description}
+                    Description: ${input.description}
 
-Interview Structure:
-- Total Questions: ${input.questionsCount}
-- Duration: ${input.duration} minutes
-- Level: ${input.level}
+                    Interview Structure:
+                    - Total Questions: ${input.questionsCount}
+                    - Duration: ${input.duration} minutes
+                    - Level: ${input.level}
 
-Ask relevant questions based on the description and level. Focus on assessing the candidate's:
-- Technical knowledge and skills
-- Problem-solving abilities
-- Communication clarity
-- Experience and understanding
+                    Ask relevant questions based on the description and level. Focus on assessing the candidate's:
+                    - Technical knowledge and skills
+                    - Problem-solving abilities
+                    - Communication clarity
+                    - Experience and understanding
 
-${input.includeResume ? 'The candidate has provided their resume. Use this context to ask personalized questions about their experience.' : ''}
+                    ${input.includeResume ? 'The candidate has provided their resume. Use this context to ask personalized questions about their experience.' : ''}
 
-Be professional, supportive, and constructive in your approach.`
+                    Be professional, supportive, and constructive in your approach.`
             }
         }
 
         // Create mock in transaction (AFTER successful knowledge base generation)
         const result = await prisma.$transaction(async (tx) => {
-            // Create mock first
             const mock = await tx.mockInterviewVoice.create({
                 data: {
                     title: input.title.trim(),
@@ -437,7 +436,9 @@ Be professional, supportive, and constructive in your approach.`
 
             // Deduct credits ONLY AFTER successful mock creation
             await tx.user.update({
-                where: { id: session.user.id },
+                where: { 
+                    id: session.user.id 
+                },
                 data: {
                     credits: {
                         decrement: creditsRequired

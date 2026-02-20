@@ -89,6 +89,7 @@ export async function getCreatorLearnStats(userId?: string) {
                 commentCount: true,
                 createdAt: true,
                 updatedAt: true,
+                publishedAt: true,
                 _count: {
                     select: {
                         steps: true,
@@ -122,8 +123,8 @@ export async function getCreatorLearnStats(userId?: string) {
         // Count by status
         const statusCounts = {
             draft: learns.filter(c => c.status === LearnStatus.DRAFT).length,
-            // pending: removed
-            published: learns.filter(c => c.status === LearnStatus.PUBLISHED).length, // verifiedAt removed
+            pending: 0,
+            published: learns.filter(c => c.status === LearnStatus.PUBLISHED).length,
             archived: learns.filter(c => c.status === LearnStatus.ARCHIVED).length,
         };
 

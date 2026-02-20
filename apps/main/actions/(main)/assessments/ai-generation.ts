@@ -8,6 +8,29 @@ import type {
     GeneratedQuestion, AIGenerationConfig, MockInterviewConfig
 } from '@/types/assessment'
 
+// Interface for raw AI response
+interface RawQuestionData {
+    question?: string
+    mainQuestion?: string
+    type?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    options?: any[]
+    correctAnswer?: string
+    modelAnswer?: string
+    answerExplanation?: string
+    codeSnippet?: string
+    starterCode?: string
+    solutionCode?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    testCases?: any[]
+    hints?: string[]
+    keyPoints?: string[]
+    commonMistakes?: string[]
+    followUpQuestions?: string[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any
+}
+
 // Initialize OpenAI client
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -188,18 +211,18 @@ Return as a JSON array with the following structure:
 
         const parsed = JSON.parse(content)
         const questions: GeneratedQuestion[] = (parsed.questions || parsed).map(
-            (q: any, index: number) => ({
-                question: q.question,
-                type: validateQuestionType(q.type, questionTypes),
+            (q: RawQuestionData) => ({
+                question: q.question || '',
+                type: validateQuestionType(q.type || '', questionTypes),
                 difficulty,
                 options: q.options || undefined,
-                correctAnswer: q.correctAnswer,
+                correctAnswer: q.correctAnswer || '',
                 answerExplanation: q.answerExplanation || null,
                 codeSnippet: q.codeSnippet || null,
                 starterCode: q.starterCode || null,
                 solutionCode: q.solutionCode || null,
                 testCases: q.testCases || undefined,
-                points: getPointsForDifficulty(difficulty, q.type as AssessmentQuestionType),
+                points: getPointsForDifficulty(difficulty, (q.type || 'MCQ') as AssessmentQuestionType),
                 hints: q.hints || [],
             })
         )
@@ -279,11 +302,11 @@ Return as a JSON array.`
 
         const parsed = JSON.parse(content)
         const questions: GeneratedQuestion[] = (parsed.questions || parsed).map(
-            (q: any) => ({
+            (q: RawQuestionData) => ({
                 question: formatMockQuestion(q),
                 type: 'SCENARIO' as AssessmentQuestionType,
                 difficulty,
-                correctAnswer: q.modelAnswer || q.correctAnswer,
+                correctAnswer: q.modelAnswer || q.correctAnswer || '',
                 answerExplanation: formatInterviewExplanation(q),
                 codeSnippet: q.codeSnippet || null,
                 starterCode: q.starterCode || null,
@@ -312,8 +335,8 @@ function validateQuestionType(
     return allowedTypes[0] as AssessmentQuestionType
 }
 
-function formatMockQuestion(q: any): string {
-    let question = q.question || q.mainQuestion
+function formatMockQuestion(q: RawQuestionData): string {
+    let question = q.question || q.mainQuestion || ''
 
     if (q.followUpQuestions && Array.isArray(q.followUpQuestions)) {
         question += '\n\nFollow-up questions the interviewer might ask:\n'
@@ -325,12 +348,12 @@ function formatMockQuestion(q: any): string {
     return question
 }
 
-function formatInterviewExplanation(q: any): string {
+function formatInterviewExplanation(q: RawQuestionData): string {
     let explanation = ''
 
     if (q.keyPoints && Array.isArray(q.keyPoints)) {
         explanation += 'Key Points to Cover:\n'
-        q.keyPoints.forEach((point: string, i: number) => {
+        q.keyPoints.forEach((point: string) => {
             explanation += `• ${point}\n`
         })
         explanation += '\n'
@@ -338,12 +361,12 @@ function formatInterviewExplanation(q: any): string {
 
     if (q.commonMistakes && Array.isArray(q.commonMistakes)) {
         explanation += 'Common Mistakes to Avoid:\n'
-        q.commonMistakes.forEach((mistake: string, i: number) => {
+        q.commonMistakes.forEach((mistake: string) => {
             explanation += `• ${mistake}\n`
         })
     }
 
-    return explanation || q.answerExplanation || 'Discuss the key Learns thoroughly.'
+    return explanation || q.answerExplanation || 'Discuss the key concepts thoroughly.'
 }
 
 /**

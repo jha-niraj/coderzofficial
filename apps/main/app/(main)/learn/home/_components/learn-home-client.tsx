@@ -45,7 +45,7 @@ interface Learn {
     likeCount: number;
     bookmarkCount: number;
     commentCount: number;
-    verifiedAt: Date | null;
+    publishedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
     _count: {
@@ -98,7 +98,7 @@ export default function LearnsHomeClient({
         if (activeTab === "all") return true;
         if (activeTab === "draft") return c.status === "DRAFT";
         if (activeTab === "pending") return c.status === "PENDING_VERIFICATION";
-        if (activeTab === "published") return c.status === "PUBLISHED" && c.verifiedAt;
+        if (activeTab === "published") return c.status === "PUBLISHED" && c.publishedAt;
         return true;
     });
 
@@ -287,7 +287,7 @@ export default function LearnsHomeClient({
                                                                     <Edit className="w-4 h-4 mr-2" />
                                                                     Edit
                                                                 </DropdownMenuItem>
-                                                                {learn.status === "PUBLISHED" && learn.verifiedAt && (
+                                                                {learn.status === "PUBLISHED" && learn.publishedAt && (
                                                                     <DropdownMenuItem onClick={() => handleShare(learn)}>
                                                                         <Share2 className="w-4 h-4 mr-2" />
                                                                         Share

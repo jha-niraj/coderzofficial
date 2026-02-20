@@ -23,6 +23,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { cn } from "@repo/ui/lib/utils";
 import { generateExplanation, generateQuiz } from "@/actions/(main)/studios/ai-generation.actions";
+import { saveStep } from "@/actions/(main)/studios/studio.actions";
 import toast from "@repo/ui/components/ui/sonner";
 import type { StudioStepType } from "@/types/studios";
 
@@ -151,11 +152,17 @@ export function AIInputPanel({ studioId, onContentAdded }: AIInputPanelProps) {
 					result = await generateQuiz(studioId, prompt, 5, "medium");
 					break;
 
-				case "NOTE":
-					// Note is created directly by the user, not generated
-					toast.info("Use the note editor to write your personal notes");
-					setIsGenerating(false);
-					return;
+				case "NOTE": {
+					// Create a note step directly
+					result = await saveStep({
+						studioId,
+						type: "NOTE",
+						content: prompt.trim(),
+						metadata: { editorType: "rich" },
+						source: "USER",
+					});
+					break;
+				}
 
 				default:
 					toast.info("This content type is not yet implemented");

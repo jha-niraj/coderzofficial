@@ -1,17 +1,20 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useConversation } from '@elevenlabs/react'
+import { useConversation } from '@/lib/elevenlabs/use-conversation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff,
     Loader2, CheckCircle2, AlertCircle
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@repo/ui/components/ui/card'
+import {
+    Card, CardContent, CardHeader, CardTitle, CardDescription
+} from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Orb, AgentState } from '@/components/main/orb'
 import toast from '@repo/ui/components/ui/sonner'
+import { getElevenLabsToken } from '@/actions/(main)/mockvoice/session.action'
 
 interface VoicePhaseProps {
     voicePrompt: string
@@ -99,10 +102,10 @@ export default function VoicePhase({
                 handleConversationEnd()
             }
         },
-        onModeChange: (mode) => {
+        onModeChange: (mode: { mode: string }) => {
             setAgentState(mode.mode === 'speaking' ? 'talking' : 'listening')
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
             console.error('[VoicePhase] Error:', error)
             toast.error('Connection error. Please try again.')
             setAgentState(null)
@@ -129,8 +132,16 @@ export default function VoicePhase({
             setHasStarted(true)
             setAgentState('thinking')
 
+            const tokenResult = await getElevenLabsToken(agentId)
+            if (!tokenResult.success || !tokenResult.token) {
+                toast.error('Failed to authenticate with voice agent')
+                setAgentState(null)
+                setHasStarted(false)
+                return
+            }
+
             const conversationId = await conversation.startSession({
-                agentId,
+                conversationToken: tokenResult.token,
                 connectionType: 'webrtc',
                 overrides: {
                     agent: {

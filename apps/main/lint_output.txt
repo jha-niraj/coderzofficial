@@ -1,0 +1,632 @@
+
+> main@0.1.0 lint /home/niraj/Documents/buildrhq/buildrhqofficial/apps/main
+> eslint --max-warnings 0
+
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/ai/jobinterview.action.ts
+    46:46  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+    79:60  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+    95:11  warning  'EvaluateUserQuestionResponseResult' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    97:9   warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   132:49  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   136:11  warning  'error' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   154:12  warning  'cleanError' is defined but never used                                                                @typescript-eslint/no-unused-vars
+   183:13  warning  'structureError' is defined but never used                                                            @typescript-eslint/no-unused-vars
+   227:55  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   231:11  warning  'error' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   246:12  warning  'cleanError' is defined but never used                                                                @typescript-eslint/no-unused-vars
+   257:14  warning  'extractError' is defined but never used                                                              @typescript-eslint/no-unused-vars
+   278:15  warning  'finalError' is defined but never used                                                                @typescript-eslint/no-unused-vars
+   300:51  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   335:14  warning  'error' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   489:13  warning  'e' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   776:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   916:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1015:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1204:16  warning  'transcribeWithBatchAPI' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+  1209:14  warning  A `require()` style import is forbidden                                                               @typescript-eslint/no-require-imports
+  1210:16  warning  A `require()` style import is forbidden                                                               @typescript-eslint/no-require-imports
+  1211:20  warning  A `require()` style import is forbidden                                                               @typescript-eslint/no-require-imports
+  1212:25  warning  A `require()` style import is forbidden                                                               @typescript-eslint/no-require-imports
+  1478:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1497:59  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1632:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1666:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1702:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1845:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  1861:9   warning  'questionKey' is assigned a value but never used. Allowed unused vars must match /^_/u                @typescript-eslint/no-unused-vars
+  1890:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  2010:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  2151:39  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  2242:33  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  2290:22  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  2353:29  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  2472:10  warning  'purchase' is assigned a value but never used. Allowed unused vars must match /^_/u                   @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/assessments/ai-generation.ts
+  191:17  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  191:22  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  282:17  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  315:32  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  328:40  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  333:45  warning  'i' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
+  341:52  warning  'i' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/assessments/exam.action.ts
+  385:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  545:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  681:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/assessments/index.ts
+  130:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  169:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  248:64  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  283:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/assessments/practice.action.ts
+  112:78  warning  'topicIdx' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  234:32  warning  Unexpected any. Specify a different type                                    @typescript-eslint/no-explicit-any
+  567:32  warning  Unexpected any. Specify a different type                                    @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/assessments/user-sets.action.ts
+  165:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  327:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/bookmarks/bookmarks.action.ts
+  655:62  warning  'version' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/community/community.action.ts
+  234:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/community/follow.action.ts
+  310:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/community/post.action.ts
+     7:29  warning  'CommunityRole' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+  1254:35  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+  1549:23  warning  'specificVote' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/home/home.action.ts
+  5:10  warning  'revalidatePath' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/knowme/analytics.action.ts
+  146:9  warning  'prevAvgPerSession' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/knowme/chat.action.ts
+  242:9  warning  'aiMessage' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/knowme/embeddings.action.ts
+  11:2  warning  'generateEmbedding' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+  14:2  warning  'deleteVectorsBatch' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  20:2  warning  'createResumeChunks' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/launchpads/launchpads.action.ts
+  30:11  warning  'UpdateProductInput' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  74:22  warning  Unexpected any. Specify a different type                                              @typescript-eslint/no-explicit-any
+  91:22  warning  Unexpected any. Specify a different type                                              @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learn/analytics.ts
+    7:22  warning  'Module' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  376:22  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learn/categories.ts
+  6:10  warning  'LearnStatus' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learn/interactions.ts
+  110:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learn/leaderboard.ts
+  25:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learn/learn-ai.action.ts
+  4:10  warning  'prisma' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learn/progress.ts
+  135:70  warning  Unexpected any. Specify a different type                                               @typescript-eslint/no-explicit-any
+  177:88  warning  Unexpected any. Specify a different type                                               @typescript-eslint/no-explicit-any
+  210:42  warning  'streakData' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  271:54  warning  Unexpected any. Specify a different type                                               @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learn/read.ts
+  30:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  70:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/learnings/learnings.action.ts
+   20:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   26:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   32:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   37:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   42:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   45:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  170:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/mockvoice/conversation.action.ts
+   23:54  warning  Unexpected any. Specify a different type                        @typescript-eslint/no-explicit-any
+   34:35  warning  ELEVENLABS_API_KEY is not listed as a dependency in turbo.json  turbo/no-undeclared-env-vars
+  114:56  warning  Unexpected any. Specify a different type                        @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/mockvoice/session.action.ts
+  106:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/mockvoice/voice.action.ts
+   31:10  warning  'MOCK_CATEGORIES' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   31:27  warning  'MOCK_LEVELS' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+   39:22  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  539:22  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  600:22  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  677:22  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/notifications/notification.action.ts
+    6:10  warning  'z' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+    9:6   warning  'NotificationType' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+   10:6   warning  'Platform' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+   12:11  warning  'NotificationResponse' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   14:12  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+   57:21  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+   82:21  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  103:21  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/opensource/certification.action.ts
+  240:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  319:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/opensource/exam.action.ts
+  960:15  warning  'result' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/opensource/issues.action.ts
+   27:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/opensource/learn.action.ts
+   44:42  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   53:41  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   79:9   warning  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+   94:47  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  116:37  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  185:19  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/opensource/opensource.action.ts
+     8:66  warning  'OSCertificationStatus' is defined but never used. Allowed unused vars must match /^_/u                  @typescript-eslint/no-unused-vars
+    34:22  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   191:22  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   449:42  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   457:37  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   482:9   warning  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+   497:47  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   519:37  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   543:19  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   794:18  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   795:18  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   796:22  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   817:66  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   818:66  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+   819:78  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  1123:38  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  1133:38  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+  1147:42  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/opensource/projects.action.ts
+  28:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/pathfinder/goals.action.ts
+  388:10  warning  'getCategoryEmoji' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+  404:10  warning  'mapToMockCategory' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  420:10  warning  'mapToMockLevel' is defined but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/pathfinder/studio-link.action.ts
+  74:72  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/pathfinder/verification.action.ts
+  193:15  warning  'quizTotal' is assigned a value but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+  194:15  warning  'codingTotal' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/feature-suggestions.action.ts
+  283:39  warning  Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+  418:75  warning  'projectSlug' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  600:66  warning  'projectSlug' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  788:35  warning  Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/leaderboard.action.ts
+    5:5   warning  'calculateTaskScoring' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    5:27  warning  'calculateQuizScore' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+    5:47  warning  'calculateMockScore' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+   75:26  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+   76:23  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  111:59  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  231:64  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  233:58  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  251:73  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  341:82  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  399:88  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  483:66  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  484:67  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  485:61  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  509:56  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  513:58  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  514:46  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/project-errors.action.ts
+   10:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  179:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  248:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  350:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  394:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  413:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  460:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  567:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  618:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  670:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  732:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/project-ideas.action.ts
+   31:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+   76:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  118:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  143:14  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  196:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  242:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  327:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  339:53  warning  'reason' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  373:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  401:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  486:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  532:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  561:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  585:22  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  625:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  644:23  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  684:21  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/project.action.ts
+     9:12  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+    22:16  warning  'deductCredits' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    51:16  warning  'refundCredits' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   138:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   467:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   524:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   575:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   595:59  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   610:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   666:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   725:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   753:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   797:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   822:22  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   844:22  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   906:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   948:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+   990:55  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1038:31  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1039:23  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1039:31  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1041:28  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1143:61  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1216:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1415:47  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  1457:21  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/projectv2-mock.action.ts
+   70:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   92:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  176:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  200:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  204:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  244:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  387:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  411:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  539:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/projectv2-quiz.action.ts
+   61:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  231:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  348:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/resources.action.ts
+   87:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  185:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/sprint-generation.action.ts
+  71:15  warning  'user' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/standup-voice.action.ts
+  230:39  warning  ELEVENLABS_API_KEY is not listed as a dependency in turbo.json  turbo/no-undeclared-env-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/standup.action.ts
+    9:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  201:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  291:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  331:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  398:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  442:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/task-details.action.ts
+   10:12  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+   93:21  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  142:34  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  226:33  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  229:30  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  330:21  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  378:21  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/projects/tasks.action.ts
+   11:12  warning  Unexpected any. Specify a different type                                         @typescript-eslint/no-explicit-any
+  109:15  warning  'task' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/space/social.action.ts
+   48:15  warning  'userId' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  432:53  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/space/space.action.ts
+   9:5  warning  'SpaceStepContentType' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  18:5  warning  'PaginationInfo' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/space/step.action.ts
+  6:27  warning  'SpaceStepContentType' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/studios/ai-generation.actions.ts
+   22:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   27:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   31:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  214:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  240:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/studios/studio.actions.ts
+  111:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  157:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  174:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  176:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  177:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/user/activity.action.ts
+   14:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   33:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  178:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  225:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  277:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  438:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  438:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/user/college.action.ts
+  19:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/user/feedback.action.ts
+   11:11  warning  'FormData' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+   16:11  warning  'RewardData' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  154:68  warning  Unexpected any. Specify a different type                                      @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/user/level.action.ts
+   86:53  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  106:19  warning  'updatedUser' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  296:61  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/user/referral.action.ts
+  90:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/user/user.action.ts
+   55:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  435:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/(main)/workers/projectsworker.action.ts
+    9:11  warning  'ActionResponse' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   11:12  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  148:42  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  158:21  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  175:12  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  184:41  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  194:21  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  203:75  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  219:40  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  253:19  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/companies/mock.ts
+  93:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/jobs/applications.ts
+  345:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/jobs/feed.ts
+  173:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/actions/tools/ai.action.ts
+  123:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/(launchpads)/pathfinder/[slug]/_components/pathfinder-notes-tab.tsx
+  8:29  warning  'Plus' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/(launchpads)/pathfinder/[slug]/_components/pathfinder-studio-tab.tsx
+  31:6  warning  React Hook useEffect has a missing dependency: 'loadStudio'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/(launchpads)/pathfinder/[slug]/_components/subgoal-content-tabs.tsx
+  13:5  warning  'usePathfinderStore' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/home/_components/community-highlights.tsx
+  5:5   warning  'Card' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  5:11  warning  'CardContent' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  5:24  warning  'CardHeader' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/home/page.tsx
+  12:8   warning  'QuickActions' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+  25:27  warning  'QuickActionsSkeleton' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/[slug]/_components/learn-detail-client.tsx
+    8:45  warning  'Shield' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+    8:53  warning  'XCircle' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+    8:62  warning  'AlertCircle' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+   21:5   warning  'Dialog' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+   21:13  warning  'DialogContent' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+   21:28  warning  'DialogHeader' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+   21:42  warning  'DialogTitle' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+   21:55  warning  'DialogDescription' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   22:5   warning  'DialogFooter' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+   24:10  warning  'Textarea' is defined but never used. Allowed unused vars must match /^_/u           @typescript-eslint/no-unused-vars
+   25:10  warning  'Alert' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+   25:17  warning  'AlertDescription' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+  121:5   warning  'isAdmin' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/[slug]/_components/step-card.tsx
+  139:12  warning  'createMockOpen' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+  139:28  warning  'setCreateMockOpen' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/[slug]/page.tsx
+  44:11  warning  'learn' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/_components/learn-content.tsx
+   10:16  warning  'Coins' is defined but never used. Allowed unused vars must match /^_/u                   @typescript-eslint/no-unused-vars
+  141:11  warning  'pathname' is assigned a value but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+  149:11  warning  'updateFilters' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/_components/learn-main-content.tsx
+  10:25  warning  'Coins' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/_components/learn-sidebar.tsx
+   19:32   warning  Unexpected any. Specify a different type                                              @typescript-eslint/no-explicit-any
+   44:17   warning  Unexpected any. Specify a different type                                              @typescript-eslint/no-explicit-any
+   62:5    warning  'selectedDifficulty' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   63:5    warning  'onDifficultyChange' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  213:102  warning  Unexpected any. Specify a different type                                              @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/create/_components/comparison-data-viewer.tsx
+  5:10  warning  'MarkdownRenderer' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/create/_components/learn-block-editor.tsx
+   11:42  warning  'ChevronDown' is defined but never used. Allowed unused vars must match /^_/u                      @typescript-eslint/no-unused-vars
+   11:55  warning  'ExternalLink' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+   30:10  warning  'Switch' is defined but never used. Allowed unused vars must match /^_/u                           @typescript-eslint/no-unused-vars
+   34:5   warning  'Alert' is defined but never used. Allowed unused vars must match /^_/u                            @typescript-eslint/no-unused-vars
+   34:12  warning  'AlertDescription' is defined but never used. Allowed unused vars must match /^_/u                 @typescript-eslint/no-unused-vars
+   49:44  warning  'generateLearnProjects' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+   49:67  warning  'generateQuizQuestions' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+   51:15  warning  'GeneratedProject' is defined but never used. Allowed unused vars must match /^_/u                 @typescript-eslint/no-unused-vars
+   51:33  warning  'GeneratedQuiz' is defined but never used. Allowed unused vars must match /^_/u                    @typescript-eslint/no-unused-vars
+   53:8   warning  'Image' is defined but never used. Allowed unused vars must match /^_/u                            @typescript-eslint/no-unused-vars
+   69:18  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  116:5   warning  'initialLearnId' is assigned a value but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  162:12  warning  'prereqSearchResults' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+  162:33  warning  'setPrereqSearchResults' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  167:36  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  172:42  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  174:44  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  272:60  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  276:58  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/create/_components/learn-category-selector.tsx
+   27:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:83  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  225:70  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/create/_components/mock-interview-editor.tsx
+  271:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/create/_components/project-editor.tsx
+  359:83  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/home/_components/learn-home-client.tsx
+   8:23  warning  'Coins' is defined but never used. Allowed unused vars must match /^_/u                @typescript-eslint/no-unused-vars
+   9:5   warning  'TrendingUp' is defined but never used. Allowed unused vars must match /^_/u           @typescript-eslint/no-unused-vars
+  19:5   warning  'Avatar' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+  19:13  warning  'AvatarFallback' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+  19:29  warning  'AvatarImage' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+  36:10  warning  'formatDistanceToNow' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/leaderboard/_components/leaderboard-list.tsx
+  4:10  warning  'Badge' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+  5:10  warning  'Card' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  5:16  warning  'CardContent' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  7:25  warning  'Star' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/leaderboard/_components/leaderboard-sidebar.tsx
+   13:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:82  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:79  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/leaderboard/page.tsx
+  3:10  warning  'Loader2' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/learn/page.tsx
+   39:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   41:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   42:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   43:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/space/[slug]/_components/add-content-sheet.tsx
+   27:24  warning  'addStudioToSpace' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  132:40  warning  'studio' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/space/[slug]/_components/space-step-card.tsx
+  10:64  warning  'Code' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/app/(main)/studio/page.tsx
+    6:32  warning  'Loader2' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  184:43  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/_components/create-studio-sheet.tsx
+  68:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/blocks/flashcard-block.tsx
+  21:54  warning  'skipSave' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/steps/code-step.tsx
+  22:8  warning  The 'metadata' logical expression could make the dependencies of useCallback Hook (at line 79) change on every render. To fix this, wrap the initialization of 'metadata' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  46:6  warning  Unused eslint-disable directive (no problems were reported from 'no-eval')
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/steps/explanation-step.tsx
+  101:23  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  101:41  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/steps/image-step.tsx
+  37:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  98:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/steps/note-step.tsx
+   86:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  110:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/studio-container.tsx
+  29:3  warning  'backLabel' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/components/studio/viewer/studio-viewer.tsx
+  27:58  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  39:38  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  42:39  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  56:28  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  56:33  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  62:39  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/hooks/useLastSection.ts
+  51:8  warning  React Hook useEffect has missing dependencies: 'getCurrentSection' and 'lastSection'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/hooks/usePdfExtractor.ts
+  36:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/lib/navigation.ts
+  2:5   warning  'Notebook' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  3:16  warning  'Trophy' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/middleware.ts
+  89:9  warning  'isPublicRoute' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/utils/knowme/vector-db.ts
+  249:41  warning  'namespace' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/niraj/Documents/buildrhq/buildrhqofficial/apps/main/utils/truefolio/github.ts
+  99:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 416 problems (0 errors, 416 warnings)
+  0 errors and 3 warnings potentially fixable with the `--fix` option.
+
+ESLint found too many warnings (maximum: 0).
+ ELIFECYCLE  Command failed with exit code 1.

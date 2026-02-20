@@ -22,7 +22,11 @@ async function getBookmarks(userId: string) {
                     title: true,
                     slug: true,
                     description: true,
-                    category: true,
+                    mainCategory: {
+                        select: {
+                            name: true,
+                        }
+                    },
                     difficulty: true,
                     estimatedTime: true,
                     viewCount: true,

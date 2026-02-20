@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useConversation } from '@elevenlabs/react'
+import { useConversation } from '@/lib/elevenlabs/use-conversation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@repo/ui/components/ui/button'
 import { Orb, AgentState } from '@/components/main/orb'
@@ -15,6 +15,7 @@ import {
 } from '@repo/ui/components/ui/dialog'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
+import { getElevenLabsToken } from '@/actions/(main)/mockvoice/session.action'
 
 export type VoiceSessionStatus = 'idle' | 'connecting' | 'active' | 'processing' | 'completed' | 'error'
 
@@ -134,20 +135,20 @@ export function Voice({
                 handleSessionEnd()
             }
         },
-        onModeChange: (mode) => {
+        onModeChange: (mode: { mode: string }) => {
             console.log('[Voice] Mode changed:', mode)
             const newState: AgentState = mode.mode === 'speaking' ? 'talking' : 'listening'
             setAgentState(newState)
             callbacks?.onStateChange?.(newState)
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
             console.error('[Voice] Error:', error)
             toast.error('Connection error. Please try again.')
             setAgentState(null)
             setSessionStatus('error')
             callbacks?.onError?.(new Error(String(error)))
         },
-        onMessage: (message) => {
+        onMessage: (message: unknown) => {
             console.log('[Voice] Message:', message)
         },
     })
@@ -181,8 +182,17 @@ export function Voice({
             setSessionStatus('connecting')
             setAgentState('thinking')
 
+            const tokenResult = await getElevenLabsToken(config.agentId)
+            if (!tokenResult.success || !tokenResult.token) {
+                toast.error('Failed to authenticate with voice agent')
+                setAgentState(null)
+                setSessionStatus('error')
+                hasStartedRef.current = false
+                return
+            }
+
             const conversationId = await conversation.startSession({
-                agentId: config.agentId,
+                conversationToken: tokenResult.token,
                 connectionType: 'webrtc',
                 userId: config.userId,
                 overrides: config.knowledgeBase || config.firstMessage ? {

@@ -85,8 +85,8 @@ interface LearnsContentProps {
     currentFilter?: string;
     title?: string;
     categorySlug?: string;
-    selectedDifficulty?: LearnDifficultyEnum | null;
-    onDifficultyChange?: (difficulty: LearnDifficultyEnum | null) => void;
+    selectedDifficulty?: LearnDifficulty | null;
+    onDifficultyChange?: (difficulty: LearnDifficulty | null) => void;
 }
 
 const difficultyConfig: Record<LearnDifficulty, { label: string; color: string }> = {
@@ -224,7 +224,7 @@ export function LearnsContent({
                                             <button
                                                 key={diff.key}
                                                 onClick={() => onDifficultyChange(
-                                                    isActive ? null : diff.key as LearnDifficultyEnum
+                                                    isActive ? null : diff.key as LearnDifficulty
                                                 )}
                                                 className={cn(
                                                     "px-2 py-1.5 rounded-md text-xs font-medium transition-all",

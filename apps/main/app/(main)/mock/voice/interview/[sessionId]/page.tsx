@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useConversation } from '@elevenlabs/react'
+import { useConversation } from '@/lib/elevenlabs/use-conversation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -16,7 +16,8 @@ import {
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import {
-    saveConversationData, updateSessionStatus, getSessionDetails
+    saveConversationData, updateSessionStatus, getSessionDetails,
+    getElevenLabsToken
 } from '@/actions/(main)/mockvoice/session.action'
 import { processConversationCompletion } from '@/actions/(main)/mockvoice/conversation.action'
 
@@ -109,16 +110,22 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                 handleConversationEnd()
             }
         },
-        onModeChange: (mode) => {
+        onModeChange: (mode: { mode: string }) => {
             console.log('[MockInterview] Mode changed:', mode.mode)
             setAgentState(mode.mode === 'speaking' ? 'talking' : 'listening')
         },
-        onError: (error) => {
+        onError: (error: unknown) => {
             console.error('[MockInterview] Conversation error:', error)
-            toast.error('Connection error. Please try again.')
+            const message = error instanceof Error
+                ? error.message
+                : typeof error === 'string'
+                    ? error
+                    : 'Connection error. Please try again.'
+            toast.error(message)
             setAgentState(null)
+            setHasStarted(false)
         },
-        onMessage: (message) => {
+        onMessage: (message: unknown) => {
             console.log('[MockInterview] Message:', message)
         },
     })
@@ -155,7 +162,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             } catch (error) {
                 console.error('Error loading session:', error)
                 toast.error('Failed to load session')
-                    router.push('/mock/voice')
+                router.push('/mock/voice')
             } finally {
                 setIsLoading(false)
             }
@@ -188,6 +195,15 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             setHasStarted(true)
             setAgentState('thinking')
 
+            // Fetch Token
+            const tokenResult = await getElevenLabsToken(sessionData.agentId)
+            if (!tokenResult.success || !tokenResult.token) {
+                toast.error('Failed to authenticate with voice agent')
+                setAgentState(null)
+                setHasStarted(false)
+                return
+            }
+
             // Update session status
             await updateSessionStatus(resolvedParams.sessionId, 'IN_PROGRESS')
 
@@ -195,7 +211,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             const variables = sessionData.variables
 
             const conversationId = await conversation.startSession({
-                agentId: sessionData.agentId,
+                conversationToken: tokenResult.token,
                 connectionType: 'webrtc',
                 userId: sessionData.userId,
                 overrides: {
@@ -273,30 +289,36 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                     className="w-full max-w-2xl"
                 >
                     <div className="relative w-full aspect-square max-w-md mx-auto mb-8">
-                        {!hasStarted ? (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-900/30">
-                                <div className="text-6xl mb-4">🎙️</div>
-                                <h3 className="font-semibold text-lg mb-2">Interview Details</h3>
-                                <div className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 text-center">
-                                    {sessionData?.mock?.duration && (
-                                        <p>Duration: {sessionData.mock.duration} minutes</p>
-                                    )}
-                                    {sessionData?.mock?.category && (
-                                        <p>Category: {sessionData.mock.category}</p>
-                                    )}
-                                    <p className="mt-2">Voice-based AI interview with real-time feedback</p>
-                                    <p>Ensure your microphone is ready before starting</p>
+                        {
+                            !hasStarted ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-900/30">
+                                    <div className="text-6xl mb-4">🎙️</div>
+                                    <h3 className="font-semibold text-lg mb-2">Interview Details</h3>
+                                    <div className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 text-center">
+                                        {
+                                            sessionData?.mock?.duration && (
+                                                <p>Duration: {sessionData.mock.duration} minutes</p>
+                                            )
+                                        }
+                                        {
+                                            sessionData?.mock?.category && (
+                                                <p>Category: {sessionData.mock.category}</p>
+                                            )
+                                        }
+                                        <p className="mt-2">Voice-based AI interview with real-time feedback</p>
+                                        <p>Ensure your microphone is ready before starting</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <Orb
-                                agentState={agentState}
-                                volumeMode="auto"
-                                getInputVolume={conversation.getInputVolume}
-                                getOutputVolume={conversation.getOutputVolume}
-                                colors={['#6366f1', '#8b5cf6']}
-                            />
-                        )}
+                            ) : (
+                                <Orb
+                                    agentState={agentState}
+                                    volumeMode="auto"
+                                    getInputVolume={conversation.getInputVolume}
+                                    getOutputVolume={conversation.getOutputVolume}
+                                    colors={['#6366f1', '#8b5cf6']}
+                                />
+                            )
+                        }
                     </div>
                     <div className="text-center mb-8">
                         <AnimatePresence mode="wait">

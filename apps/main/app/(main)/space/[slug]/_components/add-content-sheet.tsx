@@ -1,5 +1,7 @@
 "use client";
 
+import { Studio } from "@repo/prisma/client";
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,11 +23,12 @@ import {
 import { cn } from '@repo/ui/lib/utils';
 import toast from '@repo/ui/components/ui/sonner';
 import ProjectGenerateSheet from '@/components/projects/project-generate-sheet';
-import CreateStudioSheet from '../../../studio/_components/create-studio-sheet';
+import CreateStudioSheet from '@/components/studio/_components/create-studio-sheet';
 import {
     generateSpaceQuiz, generateSpaceFlashcards, addSpaceLink, addSpaceVideo,
-    addProjectToSpace, addStudioToSpace
+    addProjectToSpace
 } from '@/actions/(main)/space/content.action';
+
 import { useSpaceStore, type OptimisticStep } from '@/app/store/spaceStore';
 
 interface AddContentSheetProps {
@@ -129,12 +132,9 @@ export default function AddContentSheet({
         }
     };
 
-    const handleStudioSuccess = async (studioSlug: string) => {
-        // Add the studio to space timeline
-        const result = await addStudioToSpace(spaceId, '', studioSlug, `Studio: ${studioSlug}`);
-        if (result.success) {
-            handleSuccess();
-        }
+    const handleStudioSuccess = async (_studio: Studio) => {
+        // Studio is already added to space by the createStudio action
+        handleSuccess();
     };
 
     return (

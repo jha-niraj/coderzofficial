@@ -78,6 +78,11 @@ export async function processConversationCompletion(sessionId: string, conversat
                 if (conversationData.status === 'done') {
                     break
                 } else if (conversationData.status === 'failed') {
+                    console.error('ElevenLabs conversation failed', {
+                        conversationId,
+                        metadata: conversationData.metadata,
+                        analysis: conversationData.analysis
+                    })
                     throw new Error('Conversation processing failed')
                 }
             }

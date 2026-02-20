@@ -4,7 +4,8 @@ import { auth } from '@repo/auth';
 import { prisma } from "@repo/prisma";
 import { revalidatePath } from "next/cache";
 import {
-    AssessmentLanguage, AssessmentMode, QuestionDifficulty, AssessmentQuestionType
+    AssessmentLanguage, AssessmentMode, QuestionDifficulty, 
+    AssessmentQuestionType, Prisma
 } from "@repo/prisma/client";
 
 // ==================== TYPES ====================
@@ -382,7 +383,7 @@ export async function submitExamAnswers(params: {
 
         // Save all answers
         await prisma.examAnswer.createMany({
-            data: answersToCreate as any
+            data: answersToCreate as Prisma.ExamAnswerCreateManyInput[]
         });
 
         // Calculate total points based on questions
@@ -542,12 +543,12 @@ export async function getExamHistory(params?: {
 
         const { language, limit = 20 } = params || {};
 
-        const whereConditions: any = {
+        const whereConditions: Prisma.ExamAttemptWhereInput = {
             userId: session.user.id,
             completedAt: { not: null }
         };
 
-        if (language) whereConditions.language = language;
+        if (language) whereConditions.topic = { language };
 
         const attempts = await prisma.examAttempt.findMany({
             where: whereConditions,
@@ -678,7 +679,7 @@ export async function getExamLeaderboard(params?: {
     try {
         const { language, difficulty, limit = 50 } = params || {};
 
-        const whereConditions: any = {
+        const whereConditions: Prisma.ExamAttemptWhereInput = {
             passed: true,
             completedAt: { not: null }
         };

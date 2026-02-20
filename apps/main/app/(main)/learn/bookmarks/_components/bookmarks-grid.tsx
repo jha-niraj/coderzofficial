@@ -23,7 +23,7 @@ interface BookmarkItem {
 		title: string;
 		slug: string;
 		description: string;
-		category: string;
+		mainCategory: { name: string } | null;
 		difficulty: LearnDifficulty;
 		estimatedTime: number | null;
 		viewCount: number;
@@ -128,7 +128,8 @@ export function BookmarksGrid({ bookmarks: initialBookmarks }: BookmarksGridProp
 				{
 					bookmarks.map((bookmark, index) => {
 						const learn = bookmark.learn;
-						const categoryClass = getCategoryColor(learn.category);
+						const categoryName = learn.mainCategory?.name || "General";
+						const categoryClass = getCategoryColor(categoryName);
 						const difficultyStyle = difficultyStyles[learn.difficulty as keyof typeof difficultyStyles] || { label: learn.difficulty, color: "text-gray-500 bg-gray-500/10" };
 						const isRemoving = removingId === learn.id;
 
@@ -145,7 +146,7 @@ export function BookmarksGrid({ bookmarks: initialBookmarks }: BookmarksGridProp
 									<CardContent className="p-6 flex flex-col h-full">
 										<div className="flex items-center gap-2 flex-wrap mb-4">
 											<Badge className={`${categoryClass} border-0`}>
-												{learn.category}
+												{categoryName}
 											</Badge>
 											<Badge className={difficultyStyle.color}>
 												{difficultyStyle.label}

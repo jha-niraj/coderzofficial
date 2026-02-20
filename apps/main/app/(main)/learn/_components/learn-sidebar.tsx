@@ -46,6 +46,8 @@ interface LearnsSidebarProps {
     selectedSubCategoryId: string | null;
     onMainCategoryChange: (id: string | null) => void;
     onSubCategoryChange: (id: string | null) => void;
+    selectedDifficulty?: LearnDifficulty | null;
+    onDifficultyChange?: (difficulty: LearnDifficulty | null) => void;
     searchQuery: string;
     onSearchChange: (query: string) => void;
     totalLearns?: number;
@@ -57,6 +59,8 @@ export function LearnsSidebar({
     selectedSubCategoryId,
     onMainCategoryChange,
     onSubCategoryChange,
+    selectedDifficulty,
+    onDifficultyChange,
     searchQuery,
     onSearchChange,
     totalLearns = 0,

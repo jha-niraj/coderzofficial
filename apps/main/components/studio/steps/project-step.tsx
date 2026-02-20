@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Rocket, Clock, Star } from "lucide-react";
+import { Rocket, Clock, Star, Briefcase, ArrowRight, Plus, CheckCircle } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
+import { useState } from "react";
+import toast from "@repo/ui/components/ui/sonner";
 import type { StudioStep, ProjectMetadata } from "@/types/studios";
 
 interface ProjectStepProps {
@@ -11,6 +13,32 @@ interface ProjectStepProps {
 
 export function ProjectStep({ step }: ProjectStepProps) {
   const metadata = (step.metadata || {}) as Partial<ProjectMetadata>;
+  const [addedToPortfolio, setAddedToPortfolio] = useState<Record<string, boolean>>({});
+
+  const handleAddToPortfolio = (projectId: string) => {
+    setAddedToPortfolio(prev => ({ ...prev, [projectId]: true }));
+    toast.success("Added to your portfolio!");
+  };
+
+  const handleCreateProject = (project: { title: string; description: string }) => {
+    // Navigate to project creation with pre-filled data
+    const params = new URLSearchParams({
+      source: "studio",
+      title: project.title,
+      description: project.description,
+    });
+    window.open(`/projects?${params.toString()}`, "_self");
+  };
+
+  if (!metadata.suggestions || metadata.suggestions.length === 0) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="py-8">
+        <div className="text-center py-12 text-neutral-500">
+          No project suggestions available
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -19,61 +47,114 @@ export function ProjectStep({ step }: ProjectStepProps) {
       className="py-8"
     >
       <div className="space-y-4">
-        {metadata.suggestions?.map((project) => (
-          <div
+        {metadata.suggestions.map((project) => (
+          <motion.div
             key={project.id}
-            className="rounded-2xl overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 p-6"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="rounded-2xl overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-start gap-4">
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                <Rocket className="h-6 w-6 text-white" />
+                {project.projectType === "major" ? (
+                  <Briefcase className="h-6 w-6 text-white" />
+                ) : (
+                  <Rocket className="h-6 w-6 text-white" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <h3 className="font-semibold text-neutral-900 dark:text-white">
                     {project.title}
                   </h3>
-                  <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300">
-                    {project.projectType}
+                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${project.projectType === "major"
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                      : "bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300"
+                    }`}>
+                    {project.projectType === "major" ? "🎯 Major" : "🚀 Minor"}
                   </span>
                 </div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
                   {project.description}
                 </p>
+
+                {/* Meta info */}
                 <div className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {project.estimatedHours}h
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4" />
-                    {project.difficulty}
-                  </div>
+                  {project.estimatedHours && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {project.estimatedHours}h
+                    </div>
+                  )}
+                  {project.difficulty && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4" />
+                      <span className="capitalize">{project.difficulty}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {project.techStack.map((tech) => (
-                    <span
-                      key={tech}
-                      className="px-2 py-1 text-xs rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-2">
+
+                {/* Tech stack */}
+                {project.techStack && project.techStack.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {project.techStack.map((tech) => (
+                      <span
+                        key={tech}
+                        className="px-2 py-1 text-xs rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Features */}
+                {project.features && project.features.length > 0 && (
+                  <div className="mb-4 space-y-1">
+                    {project.features.slice(0, 5).map((feature, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                        <span className="text-purple-500 mt-0.5">•</span>
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2 flex-wrap">
                   {project.projectType === "minor" ? (
-                    <Button size="sm" variant="outline">
-                      Add to Portfolio
-                    </Button>
+                    <>
+                      {addedToPortfolio[project.id] ? (
+                        <Button size="sm" variant="outline" disabled className="gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          Added to Portfolio
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => handleAddToPortfolio(project.id)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add to Portfolio
+                        </Button>
+                      )}
+                    </>
                   ) : (
-                    <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600">
-                      Create Project
+                    <Button
+                      size="sm"
+                      className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                      onClick={() => handleCreateProject(project)}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      Create Full Project
                     </Button>
                   )}
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </motion.div>

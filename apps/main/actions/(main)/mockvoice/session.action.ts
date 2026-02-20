@@ -83,8 +83,8 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
         const result = await prisma.$transaction(async (tx) => {
             // Prepare variables for ElevenLabs
             // Resume text is already formatted when stored in database
-            const resumeContent = (input.includesResume && user.hasResume && user.resumeText) 
-                ? user.resumeText 
+            const resumeContent = (input.includesResume && user.hasResume && user.resumeText)
+                ? user.resumeText
                 : null
 
             const variables: SessionVariables = {
@@ -139,7 +139,7 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
         })
 
         revalidatePath('/mockinterview')
-        
+
         return {
             success: true,
             sessionId: result.id,
@@ -251,4 +251,33 @@ export async function getSessionDetails(sessionId: string) {
     }
 }
 
+export async function getElevenLabsToken(agentId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: 'Unauthorized' }
+        }
 
+        const response = await fetch(
+            `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}`,
+            {
+                method: 'GET',
+                headers: {
+                    "xi-api-key": process.env.ELEVENLABS_API_KEY as string,
+                },
+                cache: 'no-store'
+            }
+        )
+
+        if (!response.ok) {
+            console.error('Failed to get conversation token:', response.statusText)
+            return { success: false, error: 'Failed to get conversation token' }
+        }
+
+        const data = await response.json()
+        return { success: true, token: data.token }
+    } catch (error) {
+        console.error('Error getting elevenlabs token:', error)
+        return { success: false, error: 'Failed to get elevenlabs token' }
+    }
+}
