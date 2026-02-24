@@ -83,7 +83,6 @@ export function NoteStep({ step, studioId }: NoteStepProps) {
 				clearTimeout(saveTimeout);
 			}
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [saveTimeout]);
 
 	const handleSave = useCallback(async (content: string) => {
@@ -107,7 +106,6 @@ export function NoteStep({ step, studioId }: NoteStepProps) {
 		} else {
 			toast.error(result.error || "Failed to save note");
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [step.content, step.id, studioId]);
 
 	const handleSetLink = useCallback(() => {

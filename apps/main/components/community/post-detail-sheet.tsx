@@ -4,8 +4,7 @@ import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, Heart, MessageSquare, Share2, Bookmark, MoreHorizontal, Flag,
-    Send, Loader2, Code2, ExternalLink, ChevronDown, CheckCircle, Reply,
-    GraduationCap, Award, Play
+    Send, Loader2, Code2, ExternalLink, ChevronDown, CheckCircle, Reply
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Textarea } from '@repo/ui/components/ui/textarea'
@@ -24,16 +23,15 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { cn } from '@repo/ui/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import {
-    togglePostLike, createComment, getPost, submitQuizAttempt, getQuizAttempt, voteOnPoll
+    togglePostLike, createComment, getPost, voteOnPoll
 } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 
-// Dynamically import CodeEditor and Quiz
+// Dynamically import CodeEditor
 const CodeEditor = dynamic(() => import('@/components/main/code-editor'), { ssr: false })
-const Quiz = dynamic(() => import('@/components/main/quiz'), { ssr: false })
 
 interface PostAuthor {
     id: string
@@ -50,31 +48,13 @@ interface PostCommunity {
 }
 
 interface PostAttachment {
-    type: 'image' | 'link' | 'code' | 'quiz'
+    type: 'image' | 'link' | 'code' | string
     url?: string
     name?: string
     title?: string
     description?: string
     code?: string
     language?: string
-    questions?: {
-        id: string
-        text: string
-        type: 'single' | 'multiple'
-        options: { id: string; text: string; isCorrect?: boolean }[]
-        explanation?: string
-    }[]
-    quiz?: {
-        title: string
-        description?: string
-        questions: {
-            id: string
-            text: string
-            type: 'single' | 'multiple'
-            options: { id: string; text: string; isCorrect?: boolean }[]
-            explanation?: string
-        }[]
-    }
 }
 
 interface PostCodeBlock {
@@ -110,12 +90,6 @@ interface Post {
     updatedAt: Date
     author: PostAuthor
     community: PostCommunity | null
-    channel: {
-        id: string
-        name: string
-        slug: string
-        icon?: string | null
-    } | null
     _count?: {
         likes: number
         comments: number
@@ -168,17 +142,6 @@ export function PostDetailSheet({
 
     const [showAllAttachments, setShowAllAttachments] = useState(false)
 
-    // Quiz states
-    const [showQuiz, setShowQuiz] = useState(false)
-    const [quizCompleted, setQuizCompleted] = useState(false)
-    const [quizResult, setQuizResult] = useState<{
-        correctAnswers: number
-        totalQuestions: number
-        scorePercentage: number
-        pointsEarned: number
-    } | null>(null)
-    const [isCheckingQuizAttempt, setIsCheckingQuizAttempt] = useState(false)
-
     // Load comments when sheet opens
     const loadComments = useCallback(async () => {
         if (!post?.id) return
@@ -209,38 +172,13 @@ export function PostDetailSheet({
         }
     }, [post?.id])
 
-    // Check for existing quiz attempt
-    const checkQuizAttempt = useCallback(async () => {
-        if (!post?.id || !currentUserId) return
-
-        setIsCheckingQuizAttempt(true)
-        try {
-            const result = await getQuizAttempt(post.id)
-            if (result.success && result.data) {
-                setQuizCompleted(true)
-                setQuizResult({
-                    correctAnswers: result.data.correctAnswers,
-                    totalQuestions: result.data.totalQuestions,
-                    scorePercentage: result.data.scorePercentage,
-                    pointsEarned: result.data.pointsEarned
-                })
-            }
-        } catch (error) {
-            console.error('Failed to check quiz attempt:', error)
-        } finally {
-            setIsCheckingQuizAttempt(false)
-        }
-    }, [post?.id, currentUserId])
-
     // Load comments when post changes
     useState(() => {
         if (isOpen && post?.id) {
             loadComments()
-            checkQuizAttempt()
             setIsLiked(post.isLiked || false)
             setLikeCount(post.likeCount || 0)
             setIsBookmarked(post.isBookmarked || false)
-            setShowQuiz(false)
         }
     })
 
@@ -596,144 +534,6 @@ export function PostDetailSheet({
                                         }
                                     </div>
                                 )
-                            }
-
-                            {
-                                allAttachments.filter(a => a.type === 'quiz' && (a.quiz || a.questions)).map((quizAttachment, idx) => {
-                                    const quizTitle = quizAttachment.quiz?.title || quizAttachment.name || quizAttachment.title || 'Quiz'
-                                    const quizDescription = quizAttachment.quiz?.description || quizAttachment.description
-                                    const quizQuestions = quizAttachment.quiz?.questions || quizAttachment.questions || []
-                                    const questionCount = quizQuestions.length
-
-                                    return (
-                                        <div key={idx} className="space-y-4">
-                                            {
-                                                !showQuiz && !quizCompleted && (
-                                                    <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800">
-                                                        <div className="flex items-start gap-4">
-                                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
-                                                                <GraduationCap className="w-6 h-6 text-white" />
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <h4 className="font-semibold text-neutral-900 dark:text-white">
-                                                                    {quizTitle}
-                                                                </h4>
-                                                                {
-                                                                    quizDescription && (
-                                                                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                                                                            {quizDescription}
-                                                                        </p>
-                                                                    )
-                                                                }
-                                                                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
-                                                                    {questionCount} questions • Earn points for correct answers
-                                                                </p>
-                                                                <Button
-                                                                    onClick={() => setShowQuiz(true)}
-                                                                    className="mt-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
-                                                                    disabled={isCheckingQuizAttempt}
-                                                                >
-                                                                    {
-                                                                        isCheckingQuizAttempt ? (
-                                                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                                                        ) : (
-                                                                            <Play className="w-4 h-4 mr-2" />
-                                                                        )
-                                                                    }
-                                                                    Take Quiz
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }
-
-                                            {
-                                                !showQuiz && quizCompleted && quizResult && (
-                                                    <div className="p-6 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0">
-                                                                <Award className="w-6 h-6 text-white" />
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <h4 className="font-semibold text-neutral-900 dark:text-white">
-                                                                    Quiz Completed!
-                                                                </h4>
-                                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                                                                    You previously scored {quizResult.correctAnswers}/{quizResult.totalQuestions} ({quizResult.scorePercentage}%)
-                                                                </p>
-                                                                <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mt-1">
-                                                                    {quizResult.pointsEarned} points earned
-                                                                </p>
-                                                                <div className="mt-4 flex flex-col gap-2">
-                                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                                                        You can retake this quiz to improve your score.
-                                                                    </p>
-                                                                    <Button
-                                                                        onClick={() => {
-                                                                            setQuizCompleted(false)
-                                                                            setShowQuiz(true)
-                                                                        }}
-                                                                        variant="outline"
-                                                                        className="w-full bg-white/50 border-amber-200 hover:bg-white/80 dark:bg-black/20 dark:border-amber-800 dark:hover:bg-black/40 text-amber-700 dark:text-amber-300"
-                                                                    >
-                                                                        <Play className="w-4 h-4 mr-2" />
-                                                                        Retake Quiz
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }
-
-                                            {
-                                                showQuiz && quizQuestions.length > 0 && (
-                                                    <div className="py-4">
-                                                        <Quiz
-                                                            quizId={`post-${post.id}-quiz-${idx}`}
-                                                            questions={quizQuestions.map(q => ({
-                                                                ...q,
-                                                                difficulty: 'MEDIUM' as const
-                                                            }))}
-                                                            title={quizTitle}
-                                                            mode="practice"
-                                                            immediateResults={true}
-                                                            onComplete={async (results) => {
-                                                                // Submit quiz attempt
-                                                                const answers = results.answers.map(a => ({
-                                                                    questionId: a.questionId,
-                                                                    answer: a.selectedAnswer,
-                                                                    isCorrect: a.isCorrect || false
-                                                                }))
-
-                                                                const submitResult = await submitQuizAttempt(
-                                                                    post.id,
-                                                                    answers,
-                                                                    results.totalTimeTaken
-                                                                )
-
-                                                                if (submitResult.success && submitResult.data) {
-                                                                    setQuizCompleted(true)
-                                                                    setQuizResult({
-                                                                        correctAnswers: submitResult.data.correctAnswers,
-                                                                        totalQuestions: submitResult.data.totalQuestions,
-                                                                        scorePercentage: submitResult.data.scorePercentage,
-                                                                        pointsEarned: submitResult.data.pointsEarned
-                                                                    })
-                                                                    setShowQuiz(false)
-                                                                    toast.success(`Quiz completed! +${submitResult.data.pointsEarned} points earned`)
-                                                                } else {
-                                                                    toast.error(submitResult.error || 'Failed to submit quiz')
-                                                                }
-                                                            }}
-                                                        />
-                                                    </div>
-                                                )
-                                            }
-                                        </div>
-                                    )
-                                })
                             }
 
                             {

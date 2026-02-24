@@ -65,7 +65,7 @@ export default function CreateStudioSheet({
                 setTitle("");
                 onSuccess?.(result.studio);
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to create studio");
         } finally {
             setIsLoading(false);

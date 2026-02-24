@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
     ChevronLeft, ChevronRight, Heart, Bookmark, Share2, MessageSquare,
-    ArrowLeft, CheckCircle2, Sparkles, Eye, Shield, XCircle, AlertCircle,
+    ArrowLeft, CheckCircle2, Sparkles, Eye,
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -17,12 +17,6 @@ import {
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
-import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-    DialogFooter
-} from "@repo/ui/components/ui/dialog";
-import { Textarea } from "@repo/ui/components/ui/textarea";
-import { Alert, AlertDescription } from "@repo/ui/components/ui/alert";
 import toast from "@repo/ui/components/ui/sonner";
 import {
     LearnDifficulty, LearnStepType
@@ -118,7 +112,7 @@ export default function LearnDetailClient({
     isBookmarked: initialIsBookmarked,
     progress: initialProgress,
     isLoggedIn,
-    isAdmin,
+    isAdmin: _isAdmin,
     isCreator: _isCreator,
 }: LearnDetailClientProps) {
     const router = useRouter();

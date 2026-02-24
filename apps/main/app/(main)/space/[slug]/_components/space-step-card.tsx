@@ -7,7 +7,7 @@ import {
 import { Button } from '@repo/ui/components/ui/button';
 import { Badge } from '@repo/ui/components/ui/badge';
 import {
-    CheckCircle2, Clock, Users, ExternalLink, FileText, Video, Code,
+    CheckCircle2, Clock, Users, ExternalLink, FileText, Video,
     BookOpen, Zap
 } from 'lucide-react';
 import type { SpaceStepFromDB } from '@/types/space';

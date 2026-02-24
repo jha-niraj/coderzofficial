@@ -70,16 +70,16 @@ export function ensureElevenLabsErrorPatch() {
         return
     }
 
-    const originalHandleErrorEvent = prototype.handleErrorEvent.bind(prototype)
+    const originalHandleErrorEvent = prototype.handleErrorEvent
 
-    prototype.handleErrorEvent = function patchedHandleErrorEvent(event: MaybeErrorEvent) {
+    prototype.handleErrorEvent = function patchedHandleErrorEvent(this: unknown, event: MaybeErrorEvent) {
         const safeEvent = normalizeErrorEvent(event ?? {})
 
         try {
-            return originalHandleErrorEvent(safeEvent)
+            return originalHandleErrorEvent.call(this, safeEvent)
         } catch (error) {
             console.error('[MockInterview] ElevenLabs error handler failed', safeEvent, error)
-            return originalHandleErrorEvent(normalizeErrorEvent({}))
+            return originalHandleErrorEvent.call(this, normalizeErrorEvent({}))
         }
     }
 }

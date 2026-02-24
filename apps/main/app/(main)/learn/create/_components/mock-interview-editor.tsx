@@ -15,6 +15,7 @@ import { toast } from "@repo/ui/components/ui/sonner";
 import { formatDistanceToNow } from "date-fns";
 import { StepBlock } from "./types";
 import { CreateMockSheet } from "@/app/(main)/mock/_components/create-mock-sheet";
+import { MockCategory } from "@repo/prisma/client";
 
 export function MockInterviewEditor({ block, updateBlock, LearnTitle, LearnDescription }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void; LearnTitle: string; LearnDescription: string }) {
     const data = (block.stepData || {}) as {
@@ -268,7 +269,7 @@ export function MockInterviewEditor({ block, updateBlock, LearnTitle, LearnDescr
                     title: `${LearnTitle || block.title} - Mock Interview ${createdMocks.length + 1}`,
                     description: data.description || LearnDescription || block.content || "Practice interview based on Learn content",
                     knowledgeBase: buildKnowledgeBase(),
-                    category: (data.interviewCategory as any) || "TECHNICAL",
+                    category: (data.interviewCategory as MockCategory) || "TECHNICAL",
                     level: data.difficulty || "INTERMEDIATE",
                 }}
                 onSuccess={(mockId) => {

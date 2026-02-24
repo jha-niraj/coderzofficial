@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-    Plus, Eye, Heart, Coins, Users, FileText,
-    TrendingUp, Clock, CheckCircle2, Archive,
+    Plus, Eye, Heart, Users, FileText,
+    Clock, CheckCircle2, Archive,
     Share2, MoreVertical, Edit, Trash2, Copy, Twitter, Linkedin,
     BarChart3
 } from "lucide-react";
@@ -15,9 +15,6 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import {
     Card, CardContent, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card";
-import {
-    Avatar, AvatarFallback, AvatarImage
-} from "@repo/ui/components/ui/avatar";
 import {
     Tabs, TabsList, TabsTrigger
 } from "@repo/ui/components/ui/tabs";
@@ -33,7 +30,6 @@ import { Input } from "@repo/ui/components/ui/input";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import toast from "@repo/ui/components/ui/sonner";
 import { cn } from "@repo/ui/lib/utils";
-import { formatDistanceToNow } from "date-fns";
 
 interface Learn {
     id: string;

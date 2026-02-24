@@ -1,6 +1,5 @@
 import { getGlobalLeaderboard } from "@/actions/(main)/learn/leaderboard";
 import { LeaderboardList } from "./_components/leaderboard-list";
-import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic"; // Ensure fresh data
 

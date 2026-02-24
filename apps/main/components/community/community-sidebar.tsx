@@ -27,22 +27,8 @@ interface CommunitySidebarProps {
         themeColor: string
         userRole?: string
     }>
-    officialChannels?: Array<{
-        id: string
-        name: string
-        slug: string
-        icon: string
-    }>
     currentCommunitySlug?: string
 }
-
-const OFFICIAL_CHANNELS = [
-    { id: 'general', name: 'General', slug: 'general', icon: '📢' },
-    { id: 'showcase', name: 'Showcase', slug: 'showcase', icon: '🎨' },
-    { id: 'help', name: 'Help & Support', slug: 'help', icon: '🆘' },
-    { id: 'career', name: 'Career', slug: 'career', icon: '💼' },
-    { id: 'wins', name: 'Wins & Milestones', slug: 'wins', icon: '🏆' },
-]
 
 const NAV_ITEMS = [
     { icon: Home, label: 'Feed', href: '/communities' },
@@ -52,12 +38,10 @@ const NAV_ITEMS = [
 
 export function CommunitySidebar({
     userCommunities = [],
-    officialChannels = OFFICIAL_CHANNELS,
     currentCommunitySlug
 }: CommunitySidebarProps) {
     const pathname = usePathname()
     const [myCommunitiesOpen, setMyCommunitiesOpen] = useState(true)
-    const [channelsOpen, setChannelsOpen] = useState(true)
 
     return (
         <aside className="w-64 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 h-screen sticky">
@@ -87,35 +71,6 @@ export function CommunitySidebar({
                             })
                         }
                     </nav>
-                    <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
-                    <Collapsible open={channelsOpen} onOpenChange={setChannelsOpen}>
-                        <CollapsibleTrigger asChild>
-                            <button className="cursor-pointer flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                <span>Official Channels</span>
-                                <ChevronDown className={cn(
-                                    "w-4 h-4 transition-transform",
-                                    channelsOpen && "rotate-180"
-                                )} />
-                            </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-1 mt-1">
-                            {
-                                officialChannels.map((channel) => (
-                                    <Link key={channel.id} href={`/communities/channel/${channel.slug}`}>
-                                        <motion.div
-                                            className={cn(
-                                                "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                                            )}
-                                            whileHover={{ x: 2 }}
-                                        >
-                                            <span className="text-base">{channel.icon}</span>
-                                            <span className="text-sm">{channel.name}</span>
-                                        </motion.div>
-                                    </Link>
-                                ))
-                            }
-                        </CollapsibleContent>
-                    </Collapsible>
                     <div className="h-px bg-neutral-200 dark:bg-neutral-800" />
                     <Collapsible open={myCommunitiesOpen} onOpenChange={setMyCommunitiesOpen}>
                         <CollapsibleTrigger asChild>

@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
     Grid, List, Clock, Eye, Heart, ChevronLeft, ChevronRight,
-    Lightbulb, Coins, BookOpen, CheckCircle2, BarChart3,
+    Lightbulb, BookOpen, CheckCircle2, BarChart3,
     TrendingUp, Flame, Filter
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
@@ -138,7 +138,7 @@ export function LearnsContent({
     onDifficultyChange,
 }: LearnsContentProps) {
     const router = useRouter();
-    const pathname = usePathname();
+    const _pathname = usePathname();
     const searchParams = useSearchParams();
 
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -146,7 +146,7 @@ export function LearnsContent({
 
     const basePath = categorySlug ? `/learn/${categorySlug}` : "/learn"; // Fixed route to /learn
 
-    const updateFilters = useCallback((updates: Record<string, string | undefined>) => {
+    const _updateFilters = useCallback((updates: Record<string, string | undefined>) => {
         const params = new URLSearchParams(searchParams.toString());
         Object.entries(updates).forEach(([key, value]) => {
             if (value) params.set(key, value);

@@ -1,6 +1,6 @@
 import {
-    Notebook, Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
-    Briefcase, Trophy, Video, Brain, Cable, LayoutDashboard,
+    Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
+    Briefcase, Video, Brain, Cable, LayoutDashboard,
     Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles,
     GraduationCap, Rocket, Activity, Share2, Target, FileText, BookOpen,
     StickyNote

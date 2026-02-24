@@ -98,7 +98,7 @@ export function ExplanationStep({ step }: ExplanationStepProps) {
 			{step.source === "AI" && metadata.prompt && (
 				<div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
 					<p className="text-xs text-neutral-500 dark:text-neutral-400">
-						Generated from: "{metadata.prompt}"
+						Generated from: &quot;{metadata.prompt}&quot;
 					</p>
 				</div>
 			)}

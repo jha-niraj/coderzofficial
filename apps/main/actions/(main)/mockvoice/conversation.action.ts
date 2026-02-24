@@ -78,12 +78,23 @@ export async function processConversationCompletion(sessionId: string, conversat
                 if (conversationData.status === 'done') {
                     break
                 } else if (conversationData.status === 'failed') {
+                    const meta = conversationData.metadata as any
+                    const reason = meta?.termination_reason ?? meta?.error?.reason ?? 'Unknown reason'
                     console.error('ElevenLabs conversation failed', {
                         conversationId,
+                        reason,
                         metadata: conversationData.metadata,
                         analysis: conversationData.analysis
                     })
-                    throw new Error('Conversation processing failed')
+                    // Mark the session as FAILED in the DB so it doesn't stay stuck
+                    await prisma.mockVoiceSession.update({
+                        where: { id: sessionId },
+                        data: { status: 'FAILED' as any }
+                    }).catch(() => { /* best-effort */ })
+                    return {
+                        success: false,
+                        error: `Interview session ended unexpectedly: ${reason}`
+                    }
                 }
             }
 

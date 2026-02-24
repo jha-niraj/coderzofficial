@@ -8,9 +8,10 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Layers, Globe, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { LearnCategory, LearnSubCategory } from "@/types/learn";
 
 interface LeaderboardSidebarProps {
-    categories: any[];
+    categories: LearnCategory[];
 }
 
 export function LeaderboardSidebar({ categories }: LeaderboardSidebarProps) {
@@ -60,7 +61,7 @@ export function LeaderboardSidebar({ categories }: LeaderboardSidebarProps) {
                         const isExpanded = expandedCategories.has(category.id);
 
                         // Check if any subcategory is active to auto-expand
-                        const isActiveParent = category.subCategories.some((sub: any) =>
+                        const isActiveParent = category.subCategories.some((sub: LearnSubCategory) =>
                             pathname === `/Learns/leaderboard/${sub.slug}`
                         );
 
@@ -98,7 +99,7 @@ export function LeaderboardSidebar({ categories }: LeaderboardSidebarProps) {
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden ml-4 border-l pl-2 space-y-1"
                                         >
-                                            {category.subCategories.map((sub: any) => {
+                                            {category.subCategories.map((sub: LearnSubCategory) => {
                                                 const isActive = pathname === `/Learns/leaderboard/${sub.slug}`;
                                                 return (
                                                     <Link key={sub.id} href={`/Learns/leaderboard/${sub.slug}`}>

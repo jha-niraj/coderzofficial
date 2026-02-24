@@ -62,7 +62,7 @@ interface PostAuthor {
 
 interface ShareableItem {
     id: string
-    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'quiz' | 'challenge'
+    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'challenge'
     title: string
     description?: string
     thumbnail?: string
@@ -99,12 +99,6 @@ interface CommunityPost {
         name: string
         slug: string
         logo?: string | null
-    } | null
-    channel: {
-        id: string
-        name: string
-        slug: string
-        icon?: string | null
     } | null
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     poll?: any
@@ -183,14 +177,6 @@ interface CommunityPageClientProps {
             username: string | null
             image: string | null
         }
-        channels: Array<{
-            id: string
-            name: string
-            slug: string
-            description?: string | null
-            icon?: string | null
-            type: string
-        }>
         isMember?: boolean
         userRole?: string
     }
@@ -496,7 +482,6 @@ export function CommunityPageClient({
                                 <PostComposer
                                     communityId={community.id}
                                     communitySlug={community.slug}
-                                    channels={community.channels}
                                     user={user}
                                     onPostCreated={refreshPosts}
                                     sectionType={sectionId}

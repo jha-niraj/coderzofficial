@@ -22,9 +22,10 @@ import { toast } from "@repo/ui/components/ui/sonner";
 import {
     createMainCategory, createSubCategory
 } from "@/actions/(main)/learn/categories";
+import type { LearnCategory, LearnSubCategory } from "@/types/learn";
 
 interface LearnCategorySelectorProps {
-    categories: any[];
+    categories: LearnCategory[];
 }
 
 export function LearnCategorySelector({ categories }: LearnCategorySelectorProps) {
@@ -46,7 +47,7 @@ export function LearnCategorySelector({ categories }: LearnCategorySelectorProps
         c.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredSubCategories = selectedMainCategory?.subCategories.filter((sc: any) =>
+    const filteredSubCategories = selectedMainCategory?.subCategories.filter((sc: LearnSubCategory) =>
         sc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         sc.description?.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
@@ -98,7 +99,7 @@ export function LearnCategorySelector({ categories }: LearnCategorySelectorProps
                     router.refresh();
                 }
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to create category");
         } finally {
             setIsSubmitting(false);
@@ -167,7 +168,7 @@ export function LearnCategorySelector({ categories }: LearnCategorySelectorProps
                                             )}
                                         </div>
                                         <div className="px-2.5 py-0.5 rounded-full bg-secondary text-xs font-medium text-muted-foreground">
-                                            {category._count?.Learns || 0} Learns
+                                            {category._count?.learns || 0} Learns
                                         </div>
                                     </div>
                                     <div>
@@ -222,7 +223,7 @@ export function LearnCategorySelector({ categories }: LearnCategorySelectorProps
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredSubCategories.map((subCategory: any) => (
+                            {filteredSubCategories.map((subCategory: LearnSubCategory) => (
                                 <Card
                                     key={subCategory.id}
                                     className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group border-2 border-transparent bg-card/50"
@@ -237,7 +238,7 @@ export function LearnCategorySelector({ categories }: LearnCategorySelectorProps
                                                 {subCategory.name}
                                             </h3>
                                             <p className="text-xs text-muted-foreground line-clamp-1">
-                                                {subCategory._count?.Learns || 0} Learns
+                                                {subCategory._count?.learns || 0} Learns
                                             </p>
                                         </div>
                                         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />

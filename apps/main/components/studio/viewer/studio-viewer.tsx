@@ -16,7 +16,7 @@ import { FlashcardStep } from "../steps/flashcard-step";
 import { 
 	Loader2 
 } from "lucide-react";
-import type { StudioWithSteps } from "@/types/studios";
+import type { StudioWithSteps, StudioStep, QuizMetadata } from "@/types/studios";
 
 interface StudioViewerProps {
 	studio: StudioWithSteps;
@@ -24,7 +24,7 @@ interface StudioViewerProps {
 }
 
 export function StudioViewer({ studio, className }: StudioViewerProps) {
-	const [quizData, setQuizData] = useState<Record<string, any>>({});
+	const [quizData, setQuizData] = useState<Record<string, unknown>>({});
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -36,10 +36,10 @@ export function StudioViewer({ studio, className }: StudioViewerProps) {
 				return;
 			}
 
-			const quizDataMap: Record<string, any> = {};
+			const quizDataMap: Record<string, unknown> = {};
 
 			for (const step of quizSteps) {
-				const metadata = step.metadata as any;
+				const metadata = step.metadata as QuizMetadata;
 				if (metadata.quizId) {
 					// Fetch quiz data
 					// quizDataMap[metadata.quizId] = await fetchQuizData(metadata.quizId);
@@ -53,13 +53,13 @@ export function StudioViewer({ studio, className }: StudioViewerProps) {
 		loadQuizData();
 	}, [studio.steps]);
 
-	const renderStep = (step: any, index: number) => {
+	const renderStep = (step: StudioStep, _index: number) => {
 		switch (step.type) {
 			case "EXPLANATION":
 				return <ExplanationStep key={step.id} step={step} />;
 
 			case "QUIZ": {
-				const metadata = step.metadata as any;
+				const metadata = step.metadata as QuizMetadata;
 				return (
 					<QuizStep
 						key={step.id}

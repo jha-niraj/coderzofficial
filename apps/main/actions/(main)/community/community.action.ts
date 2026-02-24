@@ -98,39 +98,6 @@ export async function createCommunity(input: CreateCommunityInput) {
             }
         })
 
-        // Create default channels based on enabled sections
-        const defaultChannels = []
-        if (input.enabledSections.includes('FEED')) {
-            defaultChannels.push({
-                communityId: community.id,
-                name: 'General',
-                slug: 'general',
-                description: 'General discussions',
-                icon: '💬',
-                type: 'DISCUSSION' as const,
-                isDefault: true,
-                orderIndex: 0
-            })
-        }
-        if (input.enabledSections.includes('ANNOUNCEMENTS')) {
-            defaultChannels.push({
-                communityId: community.id,
-                name: 'Announcements',
-                slug: 'announcements',
-                description: 'Important announcements',
-                icon: '📢',
-                type: 'ANNOUNCEMENTS' as const,
-                allowedRoles: [CommunityRole.OWNER, CommunityRole.ADMIN],
-                orderIndex: 1
-            })
-        }
-
-        if (defaultChannels.length > 0) {
-            await prisma.communityChannel.createMany({
-                data: defaultChannels
-            })
-        }
-
         revalidatePath('/community')
         return { success: true, data: community }
     } catch (error) {
@@ -154,9 +121,6 @@ export async function getCommunityBySlug(slug: string) {
                         username: true,
                         image: true
                     }
-                },
-                channels: {
-                    orderBy: { orderIndex: 'asc' }
                 },
                 _count: {
                     select: {
@@ -405,7 +369,7 @@ export async function getUserCommunities() {
 // ==================== MEMBERSHIP ====================
 
 // Join a community
-export async function joinCommunity(communityId: string) {
+export async function joinCommunity(communityId: string, joinAnswers?: Record<string, string>) {
     try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.id) {
@@ -434,6 +398,13 @@ export async function joinCommunity(communityId: string) {
             return { success: false, error: "You're already a member" }
         }
 
+        // Validate join questions for restricted communities
+        if (community.visibility === 'RESTRICTED' && community.joinQuestions.length > 0) {
+            if (!joinAnswers || Object.keys(joinAnswers).length < community.joinQuestions.length) {
+                return { success: false, error: "Please answer all questions to join" }
+            }
+        }
+
         // For restricted communities, set isApproved to false
         const isApproved = community.visibility !== 'RESTRICTED'
 
@@ -442,7 +413,8 @@ export async function joinCommunity(communityId: string) {
                 communityId,
                 userId: session.user.id,
                 role: CommunityRole.MEMBER,
-                isApproved
+                isApproved,
+                joinAnswers: joinAnswers ? (joinAnswers as any) : undefined
             }
         })
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
 	Code, Play, Loader2, RotateCcw, CheckCircle, XCircle
@@ -19,7 +19,7 @@ interface CodeStepProps {
 }
 
 export function CodeStep({ step, studioId }: CodeStepProps) {
-	const metadata = (step.metadata || {}) as Partial<CodeMetadata>;
+	const metadata = useMemo(() => (step.metadata || {}) as Partial<CodeMetadata>, [step.metadata]);
 	const [isRunning, setIsRunning] = useState(false);
 	const [currentCode, setCurrentCode] = useState(step.content || "// Start coding here...");
 	const [output, setOutput] = useState<string | null>(null);
@@ -43,7 +43,6 @@ export function CodeStep({ step, studioId }: CodeStepProps) {
 						logs.push(args.map(a => typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)).join(" "));
 					};
 
-					// eslint-disable-next-line no-eval
 					const result = eval(currentCode);
 					console.log = originalLog;
 

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     FileText, Video, ExternalLink, Layers, Code2, ThumbsUp, ThumbsDown,
     Sparkles, Send, Loader2, BookOpen, ListVideo, FileCode, StickyNote,
-    ChevronDown, ChevronUp, Plus, Wand2
+    ChevronDown, ChevronUp, Wand2
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Textarea } from '@repo/ui/components/ui/textarea'

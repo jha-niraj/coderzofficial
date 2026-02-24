@@ -2,7 +2,6 @@
 import { Label } from "@repo/ui/components/ui/label";
 import { BarChart3 } from "lucide-react";
 import { StepBlock } from "./types";
-import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 
 export function ComparisonDataViewer({ block, updateBlock: _updateBlock, previewMode: _previewMode }: { block: StepBlock; updateBlock: (id: string, u: Partial<StepBlock>) => void; previewMode: boolean }) {
     const data = (block.stepData || {}) as { items?: { title: string; description: string; pros: string[]; cons: string[] }[]; conclusion?: string };

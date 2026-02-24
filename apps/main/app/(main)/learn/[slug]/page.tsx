@@ -41,7 +41,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
         notFound();
     }
 
-    const learn = result.learn;
+    const _learn = result.learn;
 
     // Record view (non-blocking)
     recordLearnView(result.learn.id, "direct").catch(() => { });

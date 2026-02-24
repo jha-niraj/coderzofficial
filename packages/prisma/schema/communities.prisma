@@ -21,15 +21,6 @@ enum CommunityRole {
     MEMBER
 }
 
-enum CommunityChannelType {
-    DISCUSSION // General discussion
-    ANNOUNCEMENTS // Admin-only announcements
-    RESOURCES // File/resource sharing
-    QA // Q&A format
-    SHOWCASE // Project showcase
-    HELP // Help requests
-}
-
 enum CommunityPostType {
     DISCUSSION
     QUESTION
@@ -62,21 +53,6 @@ enum AttendeeStatus {
     GOING
     INTERESTED
     NOT_GOING
-}
-
-enum PeerSessionType {
-    MOCK_INTERVIEW
-    PAIR_PROGRAMMING
-    CODE_REVIEW
-    STUDY_SESSION
-    HELP_SESSION
-}
-
-enum PeerSessionStatus {
-    WAITING
-    IN_PROGRESS
-    COMPLETED
-    CANCELLED
 }
 
 // Main Community Model
@@ -133,7 +109,6 @@ model Community {
 
     // Relations
     members     CommunityMember[]       @relation("CommunityMembers")
-    channels    CommunityChannel[]      @relation("CommunityChannels")
     posts       CommunityPost[]         @relation("CommunityPosts")
     resources   CommunityResource[]     @relation("CommunityResources")
     events      CommunityEvent[]        @relation("CommunityEvents")
@@ -176,41 +151,15 @@ model CommunityMember {
     helpfulCount Int @default(0)
 
     // For restricted communities
-    isApproved Boolean   @default(true)
-    approvedAt DateTime?
-    approvedBy String?
+    isApproved  Boolean   @default(true)
+    approvedAt  DateTime?
+    approvedBy  String?
+    joinAnswers Json? // Answers to join questions (for restricted communities)
 
     @@unique([communityId, userId])
     @@index([communityId])
     @@index([userId])
     @@index([role])
-}
-
-// Community Channels (sub-sections within a community)
-model CommunityChannel {
-    id String @id @default(cuid())
-
-    communityId String
-    community   Community @relation("CommunityChannels", fields: [communityId], references: [id], onDelete: Cascade)
-
-    name        String
-    slug        String
-    description String?
-    icon        String? // Emoji or icon name
-    type        CommunityChannelType @default(DISCUSSION)
-
-    // Permissions
-    allowedRoles CommunityRole[] @default([OWNER, ADMIN, MODERATOR, MEMBER])
-    isDefault    Boolean         @default(false) // Show by default
-
-    posts CommunityPost[] @relation("ChannelPosts")
-
-    orderIndex Int      @default(0)
-    createdAt  DateTime @default(now())
-
-    @@unique([communityId, slug])
-    @@index([communityId])
-    @@index([type])
 }
 
 // Community Posts
@@ -219,9 +168,6 @@ model CommunityPost {
 
     communityId String?
     community   Community? @relation("CommunityPosts", fields: [communityId], references: [id], onDelete: Cascade)
-
-    channelId String?
-    channel   CommunityChannel? @relation("ChannelPosts", fields: [channelId], references: [id], onDelete: SetNull)
 
     authorId String
     author   User   @relation("CommunityPostAuthor", fields: [authorId], references: [id])
@@ -280,7 +226,6 @@ model CommunityPost {
     updatedAt DateTime @updatedAt
 
     @@index([communityId])
-    @@index([channelId])
     @@index([authorId])
     @@index([type])
     @@index([isPinned])
@@ -603,32 +548,6 @@ model CommunityLeaderboard {
     @@index([userId])
     @@index([totalPoints])
     @@index([rank])
-}
-
-// Quiz Attempt - tracks quiz attempts in community posts
-model CommunityQuizAttempt {
-    id String @id @default(cuid())
-
-    postId String // The post containing the quiz
-    userId String
-    user   User   @relation("CommunityQuizAttempts", fields: [userId], references: [id], onDelete: Cascade)
-
-    // Quiz results
-    totalQuestions   Int
-    correctAnswers   Int
-    scorePercentage  Int
-    pointsEarned     Int
-    timeTakenSeconds Int?
-
-    // Answers given (for review)
-    answers Json?
-
-    completedAt DateTime @default(now())
-
-    @@unique([postId, userId])
-    @@index([postId])
-    @@index([userId])
-    @@index([completedAt])
 }
 
 // Community Polls

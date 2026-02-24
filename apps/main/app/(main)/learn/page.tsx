@@ -9,6 +9,7 @@ import {
 } from "@/actions/(main)/learn/learn.action";
 import { LearnsContent } from "./_components/learn-content";
 import { LearnsSidebar } from "./_components/learn-sidebar";
+import type { LearnCategory, LearnSubCategory, LearnListItem, LearnProgressItem } from "@/types/learn";
 
 function ContentSkeleton() {
     return (
@@ -36,11 +37,11 @@ export default function LearnsPage() {
     const searchParams = useSearchParams();
 
     const [isLoading, setIsLoading] = useState(true);
-    const [learns, setLearns] = useState<any[]>([]); // Renamed to learns
+    const [learns, setLearns] = useState<LearnListItem[]>([]);
     const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, totalPages: 0 });
-    const [userProgress, setUserProgress] = useState<any[]>([]);
-    const [completedLearns, setCompletedLearns] = useState<any[]>([]);
-    const [categories, setCategories] = useState<any[]>([]);
+    const [userProgress, setUserProgress] = useState<LearnProgressItem[]>([]);
+    const [completedLearns, setCompletedLearns] = useState<LearnProgressItem[]>([]);
+    const [categories, setCategories] = useState<LearnCategory[]>([]);
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
@@ -105,7 +106,7 @@ export default function LearnsPage() {
         if (selectedSubCategoryId && categories.length > 0) {
             // Find subcategory name
             for (const cat of categories) {
-                const sub = cat.subCategories.find((s: any) => s.id === selectedSubCategoryId);
+                const sub = cat.subCategories.find((s: LearnSubCategory) => s.id === selectedSubCategoryId);
                 if (sub) return sub.name;
             }
         }

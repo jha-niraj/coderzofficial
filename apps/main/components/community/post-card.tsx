@@ -30,7 +30,7 @@ import { SharedInterviewCard, SharedProjectCard } from '@/components/community/s
 import { useUserStore } from '@/app/store/useUserStore'
 
 export interface PostEmbed {
-    itemType: 'interview' | 'project' | 'space' | 'studio' | 'quiz' | string
+    itemType: 'interview' | 'project' | 'space' | 'studio' | string
     type?: string
     title: string
     description?: string
@@ -75,12 +75,6 @@ interface PostCardProps {
             name: string
             slug: string
             logo?: string | null
-        } | null
-        channel?: {
-            id: string
-            name: string
-            slug: string
-            icon?: string | null
         } | null
         _count?: {
             likes: number
@@ -183,7 +177,6 @@ export function PostCard({
     const attachments = Array.isArray(post.attachments) ? (post.attachments as PostAttachment[]) : []
     const codeBlocks = Array.isArray(post.codeBlocks) ? (post.codeBlocks as { code: string; language: string }[]) : []
 
-    const hasQuiz = embeds.some(e => e.itemType === 'quiz' || e.type === 'quiz')
     const hasCode = codeBlocks.length > 0
     const hasLink = attachments.some(a => a.type === 'link')
 
@@ -251,16 +244,6 @@ export function PostCard({
                                     </div>
                                     <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
                                         <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
-                                        {
-                                            post.channel && (
-                                                <>
-                                                    <span>•</span>
-                                                    <span className="flex items-center gap-1">
-                                                        {post.channel.icon} {post.channel.name}
-                                                    </span>
-                                                </>
-                                            )
-                                        }
                                     </div>
                                 </div>
                             </div>
@@ -308,13 +291,6 @@ export function PostCard({
                                 <TypeIcon className="w-3 h-3 mr-1" />
                                 {typeConfig?.label ?? 'Discussion'}
                             </Badge>
-                            {
-                                hasQuiz && (
-                                    <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
-                                        <HelpCircle className="w-3 h-3 mr-1" /> Quiz
-                                    </Badge>
-                                )
-                            }
                             {
                                 hasCode && (
                                     <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400">

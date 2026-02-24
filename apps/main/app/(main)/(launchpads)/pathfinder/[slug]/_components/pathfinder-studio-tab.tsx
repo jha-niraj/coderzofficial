@@ -28,6 +28,7 @@ export function PathfinderStudioTab({
 
   useEffect(() => {
     loadStudio();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studioId]);
 
   const loadStudio = async () => {

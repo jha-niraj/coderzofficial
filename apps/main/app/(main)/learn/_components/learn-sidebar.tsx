@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import {
     Search, ChevronRight, Plus, Code, Server, Database, Cpu, Cloud,
     Brain, Shield, Box, Palette, Gamepad2, Network, HardDrive, Layers,
@@ -14,9 +15,10 @@ import { Button } from "@repo/ui/components/ui/button";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import { cn } from "@repo/ui/lib/utils";
 import { LearnDifficulty } from "@repo/prisma/client";
+import type { LearnCategory, LearnSubCategory } from "@/types/learn";
 
 // Map slugs or names to icons
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
     "web-development": Code,
     "mobile-development": Blocks,
     "data-structures": Layers,
@@ -41,7 +43,7 @@ const ICON_MAP: Record<string, any> = {
 };
 
 interface LearnsSidebarProps {
-    categories: any[];
+    categories: LearnCategory[];
     selectedMainCategoryId: string | null;
     selectedSubCategoryId: string | null;
     onMainCategoryChange: (id: string | null) => void;
@@ -59,8 +61,8 @@ export function LearnsSidebar({
     selectedSubCategoryId,
     onMainCategoryChange,
     onSubCategoryChange,
-    selectedDifficulty,
-    onDifficultyChange,
+    selectedDifficulty: _selectedDifficulty,
+    onDifficultyChange: _onDifficultyChange,
     searchQuery,
     onSearchChange,
     totalLearns = 0,
@@ -210,7 +212,7 @@ export function LearnsSidebar({
                                                         >
                                                             <div className="ml-4 pl-3 border-l border-neutral-200 dark:border-neutral-700 py-1 space-y-0.5">
                                                                 {
-                                                                    category.subCategories.map((sub: any) => (
+                                                                    category.subCategories.map((sub: LearnSubCategory) => (
                                                                         <button
                                                                             key={sub.id}
                                                                             onClick={() => handleSubCategoryClick(category.id, sub.id)}

@@ -26,7 +26,6 @@ interface StudioContainerProps {
 export function StudioContainer({
   studio,
   backUrl = "/studio",
-  backLabel = "Back to Studios",
 }: StudioContainerProps) {
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);

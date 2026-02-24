@@ -3,10 +3,11 @@ import { Metadata } from "next";
 import { auth } from "@repo/auth";
 import { getUserStudios } from "@/actions/(main)/studios/studio.actions";
 import { 
-    StickyNote, Target, Orbit, Loader2 
+    StickyNote, Target, Orbit
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import type { StudioListItem } from "@/types/studios";
 
 export const metadata: Metadata = {
     title: "My Studios | The Coderz",
@@ -181,7 +182,7 @@ async function StudiosContent() {
     );
 }
 
-function StudioCard({ studio }: { studio: any }) {
+function StudioCard({ studio }: { studio: StudioListItem }) {
     const getSourceUrl = () => {
         if (studio.source === "PATHFINDER" && studio.sourceId) {
             return `/pathfinder?goalId=${studio.sourceId}`;

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useConversation } from '@/lib/elevenlabs/use-conversation'
+import { useConversation } from '@elevenlabs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -19,7 +19,9 @@ import {
     saveConversationData, updateSessionStatus, getSessionDetails,
     getElevenLabsToken
 } from '@/actions/(main)/mockvoice/session.action'
-import { processConversationCompletion } from '@/actions/(main)/mockvoice/conversation.action'
+import { 
+    processConversationCompletion 
+} from '@/actions/(main)/mockvoice/conversation.action'
 
 interface SessionVariables {
     username: string
@@ -77,7 +79,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             )
 
             if (!result.success) {
-                throw new Error(result.error)
+                throw new Error(result.error ?? 'Failed to process interview')
             }
 
             setProcessingStatus('success')
@@ -90,7 +92,8 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
         } catch (error) {
             console.error('Error processing conversation:', error)
             setProcessingStatus('error')
-            toast.error('Failed to process interview. Please contact support.')
+            const message = error instanceof Error ? error.message : 'Failed to process interview'
+            toast.error(message)
         }
     }, [resolvedParams.sessionId, router])
 
@@ -214,12 +217,23 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                 conversationToken: tokenResult.token,
                 connectionType: 'webrtc',
                 userId: sessionData.userId,
+                // Pass user context as dynamic variables so the agent template
+                // can reference {{username}}, {{position}}, etc.
+                dynamicVariables: {
+                    username: variables.username,
+                    position: variables.position,
+                    level: variables.level,
+                    description: variables.description,
+                },
                 overrides: {
                     agent: {
                         prompt: {
                             prompt: variables.knowledge_base
-                        },
-                        firstMessage: `Hello ${variables.username}! Thank you for joining this mock interview session. I'm excited to work with you today on preparing for your ${variables.position} interview.\n\nWe'll be spending the next few minutes going through questions that you might encounter in a real interview. Feel free to take your time with your responses, and don't hesitate to think aloud - that's actually what most interviewers want to see!\n\nAre you ready to begin?`
+                        }
+                        // firstMessage override removed — the ElevenLabs agent
+                        // config does not allow overriding this field (error 1008).
+                        // Configure the greeting in the ElevenLabs dashboard and use
+                        // {{username}} / {{position}} template variables there instead.
                     }
                 }
             })
@@ -427,94 +441,117 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                     </div>
                 </motion.div>
             </div>
-            <Dialog open={showProcessingDialog} onOpenChange={() => { }}>
-                <DialogContent className="sm:max-w-md">
+            <Dialog
+                open={showProcessingDialog}
+                onOpenChange={(open) => {
+                    // Only allow closing on error state
+                    if (!open && processingStatus === 'error') {
+                        setShowProcessingDialog(false)
+                    }
+                }}
+            >
+                <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
+                    // Prevent closing during processing/success
+                    if (processingStatus !== 'error') e.preventDefault()
+                }}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            {
-                                processingStatus === 'processing' && (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                                        Processing Your Interview
-                                    </>
-                                )
-                            }
-                            {
-                                processingStatus === 'success' && (
-                                    <>
-                                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                        Interview Completed!
-                                    </>
-                                )
-                            }
-                            {
-                                processingStatus === 'error' && (
-                                    <>
-                                        <AlertCircle className="w-5 h-5 text-red-600" />
-                                        Processing Error
-                                    </>
-                                )
-                            }
+                            {processingStatus === 'processing' && (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                                    Processing Your Interview
+                                </>
+                            )}
+                            {processingStatus === 'success' && (
+                                <>
+                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                    Interview Completed!
+                                </>
+                            )}
+                            {processingStatus === 'error' && (
+                                <>
+                                    <AlertCircle className="w-5 h-5 text-red-600" />
+                                    Processing Error
+                                </>
+                            )}
                         </DialogTitle>
                         <DialogDescription>
-                            {
-                                processingStatus === 'processing' && (
-                                    'Please wait while we analyze your interview performance...'
-                                )
-                            }
-                            {
-                                processingStatus === 'success' && (
-                                    'Redirecting to your results...'
-                                )
-                            }
-                            {
-                                processingStatus === 'error' && (
-                                    'Something went wrong. Please contact support.'
-                                )
-                            }
+                            {processingStatus === 'processing' && 'Please wait while we analyze your interview performance...'}
+                            {processingStatus === 'success' && 'Redirecting to your results...'}
+                            {processingStatus === 'error' && 'There was an issue processing your interview. You can still view your results.'}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-6">
                         <AnimatePresence mode="wait">
-                            {
-                                processingStatus === 'processing' && (
-                                    <motion.div
-                                        key="processing"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        className="space-y-3"
-                                    >
-                                        <div className="flex items-center gap-3 text-sm">
-                                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                                            <span>Retrieving conversation details...</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-sm">
-                                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
-                                            <span>Generating transcript...</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-sm">
-                                            <Loader2 className="w-4 h-4 animate-spin text-green-600" />
-                                            <span>Preparing your feedback...</span>
-                                        </div>
-                                    </motion.div>
-                                )
-                            }
-                            {
-                                processingStatus === 'success' && (
-                                    <motion.div
-                                        key="success"
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        className="flex flex-col items-center justify-center py-8"
-                                    >
-                                        <CheckCircle2 className="w-20 h-20 text-green-600 mb-4" />
-                                        <p className="text-center text-neutral-600 dark:text-neutral-400">
-                                            Your interview has been successfully processed!
-                                        </p>
-                                    </motion.div>
-                                )
-                            }
+                            {processingStatus === 'processing' && (
+                                <motion.div
+                                    key="processing"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="space-y-3"
+                                >
+                                    <div className="flex items-center gap-3 text-sm">
+                                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                        <span>Retrieving conversation details...</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm">
+                                        <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                                        <span>Generating transcript...</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm">
+                                        <Loader2 className="w-4 h-4 animate-spin text-green-600" />
+                                        <span>Preparing your feedback...</span>
+                                    </div>
+                                </motion.div>
+                            )}
+                            {processingStatus === 'success' && (
+                                <motion.div
+                                    key="success"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="flex flex-col items-center justify-center py-8"
+                                >
+                                    <CheckCircle2 className="w-20 h-20 text-green-600 mb-4" />
+                                    <p className="text-center text-neutral-600 dark:text-neutral-400">
+                                        Your interview has been successfully processed!
+                                    </p>
+                                </motion.div>
+                            )}
+                            {processingStatus === 'error' && (
+                                <motion.div
+                                    key="error"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex flex-col items-center gap-4 py-4"
+                                >
+                                    <AlertCircle className="w-16 h-16 text-red-400" />
+                                    <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
+                                        Don&apos;t worry — your session data has been saved. You can still view partial results or try again.
+                                    </p>
+                                    <div className="flex gap-3 w-full">
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                            onClick={() => {
+                                                setShowProcessingDialog(false)
+                                                router.push('/mock/voice')
+                                            }}
+                                        >
+                                            Back to Mocks
+                                        </Button>
+                                        <Button
+                                            className="flex-1"
+                                            onClick={() => {
+                                                setShowProcessingDialog(false)
+                                                router.push(`/mock/voice/results/${resolvedParams.sessionId}`)
+                                            }}
+                                        >
+                                            View Results
+                                        </Button>
+                                    </div>
+                                </motion.div>
+                            )}
                         </AnimatePresence>
                     </div>
                 </DialogContent>

@@ -65,12 +65,6 @@ interface Post {
         slug: string
         logo?: string | null
     } | null
-    channel?: {
-        id: string
-        name: string
-        slug: string
-        icon?: string | null
-    } | null
     _count?: {
         likes: number
         comments: number

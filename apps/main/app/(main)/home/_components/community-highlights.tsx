@@ -1,9 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-    Card, CardContent, CardHeader, CardTitle
-} from "@repo/ui/components/ui/card";
+import { CardTitle } from "@repo/ui/components/ui/card";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     Avatar, AvatarFallback, AvatarImage

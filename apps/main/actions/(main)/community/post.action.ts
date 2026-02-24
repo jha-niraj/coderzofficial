@@ -9,7 +9,6 @@ import { CommunityPostType, CommunityRole } from "@repo/prisma/client"
 // ==================== TYPES ====================
 export interface CreatePostInput {
     communityId: string
-    channelId?: string
     officialChannel?: string
     title?: string
     content: string
@@ -57,7 +56,6 @@ export async function createPost(input: CreatePostInput) {
             const post = await prisma.communityPost.create({
                 data: {
                     communityId: null,
-                    channelId: null,
                     authorId: session.user.id,
                     title: input.title,
                     content: input.content,
@@ -115,23 +113,9 @@ export async function createPost(input: CreatePostInput) {
             return { success: false, error: "You must be a member to post" }
         }
 
-        // If posting to announcements channel, check role
-        if (input.channelId) {
-            const channel = await prisma.communityChannel.findUnique({
-                where: { id: input.channelId }
-            })
-
-            if (channel?.type === 'ANNOUNCEMENTS') {
-                if (!['OWNER', 'ADMIN'].includes(membership.role)) {
-                    return { success: false, error: "Only admins can post announcements" }
-                }
-            }
-        }
-
         const post = await prisma.communityPost.create({
             data: {
                 communityId: input.communityId,
-                channelId: input.channelId,
                 authorId: session.user.id,
                 title: input.title,
                 content: input.content,
@@ -194,7 +178,6 @@ export async function createPost(input: CreatePostInput) {
 
 // Get posts for a community
 export async function getCommunityPosts(communityId: string, options?: {
-    channelId?: string
     type?: CommunityPostType
     isPinned?: boolean
     limit?: number
@@ -202,11 +185,10 @@ export async function getCommunityPosts(communityId: string, options?: {
     sortBy?: 'latest' | 'popular' | 'trending'
 }) {
     try {
-        const { channelId, type, isPinned, limit = 20, cursor, sortBy = 'latest' } = options || {}
+        const { type, isPinned, limit = 20, cursor, sortBy = 'latest' } = options || {}
 
         const where = {
             communityId,
-            ...(channelId && { channelId }),
             ...(type && { type }),
             ...(isPinned !== undefined && { isPinned })
         }
@@ -234,14 +216,6 @@ export async function getCommunityPosts(communityId: string, options?: {
                         name: true,
                         slug: true,
                         logo: true
-                    }
-                },
-                channel: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                        icon: true
                     }
                 },
                 poll: {
@@ -307,14 +281,6 @@ export async function getPost(postId: string, shouldIncrementView: boolean = tru
                         username: true,
                         image: true,
                         bio: true
-                    }
-                },
-                channel: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                        icon: true
                     }
                 },
                 community: {
@@ -815,14 +781,6 @@ export async function getTrendingPosts(options?: {
                         logo: true
                     }
                 },
-                channel: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                        icon: true
-                    }
-                },
                 _count: {
                     select: { likes: true, comments: true }
                 }
@@ -915,14 +873,6 @@ export async function getFollowingFeed(options?: {
                         logo: true
                     }
                 },
-                channel: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                        icon: true
-                    }
-                },
                 _count: {
                     select: { likes: true, comments: true }
                 }
@@ -1010,14 +960,6 @@ export async function getGlobalFeed(options?: {
                         logo: true
                     }
                 },
-                channel: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                        icon: true
-                    }
-                },
                 _count: {
                     select: { likes: true, comments: true }
                 }
@@ -1056,127 +998,12 @@ export async function getGlobalFeed(options?: {
     }
 }
 
-// ==================== QUIZ GENERATION ====================
-interface GenerateQuizInput {
-    title: string
-    description?: string
-    questionCount: number
-    level: 'EASY' | 'MEDIUM' | 'HARD'
-}
-
-interface QuizQuestion {
-    id: string
-    text: string
-    type: 'single' | 'multiple'
-    options: Array<{
-        id: string
-        text: string
-        isCorrect: boolean
-    }>
-    explanation?: string
-    difficulty: string
-}
-
-export async function generateQuiz(input: GenerateQuizInput) {
-    try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" }
-        }
-
-        const { title, description, questionCount, level } = input
-
-        if (!title) {
-            return { success: false, error: "Title is required" }
-        }
-
-        // Import OpenAI dynamically
-        const OpenAI = (await import('openai')).default
-        const openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
-        })
-
-        const prompt = `Generate a quiz about "${title}"${description ? ` (${description})` : ''}.
-        
-Requirements:
-- Generate exactly ${questionCount || 5} multiple choice questions
-- Difficulty level: ${level || 'MEDIUM'}
-- Each question should have 4 options with exactly 1 correct answer
-- Include a brief explanation for each answer
-
-Return the response as a JSON array with the following structure for each question:
-{
-    "id": "q1",
-    "text": "Question text here?",
-    "type": "single",
-    "options": [
-        { "id": "a", "text": "Option A", "isCorrect": false },
-        { "id": "b", "text": "Option B", "isCorrect": true },
-        { "id": "c", "text": "Option C", "isCorrect": false },
-        { "id": "d", "text": "Option D", "isCorrect": false }
-    ],
-    "explanation": "Brief explanation of why the correct answer is correct",
-    "difficulty": "${level}"
-}
-
-Only return the JSON array, no additional text.`
-
-        const completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-                {
-                    role: 'system',
-                    content: 'You are a helpful assistant that generates quiz questions. Always return valid JSON arrays.'
-                },
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ],
-            temperature: 0.7,
-            max_tokens: 4000
-        })
-
-        const content = completion.choices[0]?.message?.content || '[]'
-
-        // Parse the response
-        let questions: QuizQuestion[]
-        try {
-            const cleanedContent = content
-                .replace(/```json\n?/g, '')
-                .replace(/```\n?/g, '')
-                .trim()
-            questions = JSON.parse(cleanedContent)
-        } catch {
-            return { success: false, error: "Failed to parse quiz questions" }
-        }
-
-        if (!Array.isArray(questions) || questions.length === 0) {
-            return { success: false, error: "No questions generated" }
-        }
-
-        // Add IDs if missing
-        questions = questions.map((q, index) => ({
-            ...q,
-            id: q.id || `q${index + 1}`,
-            difficulty: q.difficulty || level
-        }))
-
-        return { success: true, data: { questions } }
-    } catch (error) {
-        console.error('Quiz generation error:', error)
-        return { success: false, error: "Failed to generate quiz" }
-    }
-}
-
 // ==================== LEADERBOARD ====================
 
 // Point values for different activities
 const POINT_VALUES = {
     POST: 1,
     COMMENT: 1,
-    QUIZ_BASE: 0, // Quizzes give points based on correct answers
-    QUIZ_CORRECT_ANSWER: 1,
     PEER_MOCK: 2,
     HELP_RESOLVED: 2
 }
@@ -1347,156 +1174,6 @@ export async function getCommunityLeaderboard(
     }
 }
 
-// Submit quiz attempt and award points
-export async function submitQuizAttempt(
-    postId: string,
-    answers: { questionId: string, answer: string | string[], isCorrect: boolean }[],
-    totalTimeTaken: number
-) {
-    try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) {
-            console.log('Submit attempt failed: Unauthorized')
-            return { success: false, error: "Unauthorized" }
-        }
-
-        console.log(`Submitting quiz attempt for Post ${postId} by User ${session.user.id}`)
-
-        // Get the post to find community
-        const post = await prisma.communityPost.findUnique({
-            where: { id: postId },
-            select: { communityId: true }
-        })
-
-        if (!post) {
-            console.log('Submit attempt failed: Post not found')
-            return { success: false, error: "Post not found" }
-        }
-
-        // Check if already attempted
-        const existingAttempt = await prisma.communityQuizAttempt.findUnique({
-            where: {
-                postId_userId: {
-                    postId,
-                    userId: session.user.id
-                }
-            }
-        })
-
-        // Calculate results
-        const totalQuestions = answers.length
-        const correctAnswers = answers.filter(a => a.isCorrect).length
-        const scorePercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0
-        const pointsEarned = correctAnswers * POINT_VALUES.QUIZ_CORRECT_ANSWER
-
-        console.log(`Results: ${correctAnswers}/${totalQuestions} correct (${scorePercentage}%), ${pointsEarned} points`)
-
-        let attempt;
-
-        if (existingAttempt) {
-            console.log('Updating existing quiz attempt')
-            // Calculate differences for leaderboard
-            const pointsDiff = pointsEarned - existingAttempt.pointsEarned
-            const correctAnswersDiff = correctAnswers - existingAttempt.correctAnswers
-
-            // Update existing attempt
-            attempt = await prisma.communityQuizAttempt.update({
-                where: { id: existingAttempt.id },
-                data: {
-                    totalQuestions,
-                    correctAnswers,
-                    scorePercentage,
-                    pointsEarned,
-                    timeTakenSeconds: totalTimeTaken,
-                    answers: answers as unknown as object
-                }
-            })
-
-            // Update leaderboard if in a community
-            if (post.communityId) {
-                await updateLeaderboardPoints(
-                    post.communityId,
-                    session.user.id,
-                    'quiz',
-                    pointsDiff,
-                    { questionsCorrect: correctAnswersDiff, quizzesCompleted: 0 }
-                )
-            }
-        } else {
-            console.log('Creating new quiz attempt')
-            // Create quiz attempt
-            attempt = await prisma.communityQuizAttempt.create({
-                data: {
-                    postId,
-                    userId: session.user.id,
-                    totalQuestions,
-                    correctAnswers,
-                    scorePercentage,
-                    pointsEarned,
-                    timeTakenSeconds: totalTimeTaken,
-                    answers: answers as unknown as object
-                }
-            })
-
-            // Update leaderboard if in a community
-            if (post.communityId) {
-                await updateLeaderboardPoints(
-                    post.communityId,
-                    session.user.id,
-                    'quiz',
-                    pointsEarned,
-                    { questionsCorrect: correctAnswers, quizzesCompleted: 1 }
-                )
-            }
-        }
-
-        return {
-            success: true,
-            data: {
-                attempt,
-                pointsEarned,
-                correctAnswers,
-                totalQuestions,
-                scorePercentage
-            }
-        }
-
-    } catch (error) {
-        console.error('Error submitting quiz attempt:', error)
-        return { success: false, error: "Failed to submit quiz" }
-    }
-}
-
-// Get quiz attempt for a post
-export async function getQuizAttempt(postId: string) {
-    try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" }
-        }
-
-        const attempt = await prisma.communityQuizAttempt.findUnique({
-            where: {
-                postId_userId: {
-                    postId,
-                    userId: session.user.id
-                }
-            }
-        })
-
-        if (attempt) {
-            console.log(`Found quiz attempt for Post ${postId}, User ${session.user.id}`)
-        } else {
-            console.log(`No quiz attempt found for Post ${postId}, User ${session.user.id}`)
-        }
-
-        return { success: true, data: attempt }
-    } catch (error) {
-        console.error('Error getting quiz attempt:', error)
-        return { success: false, error: "Failed to get quiz attempt" }
-    }
-}
-
 // Vote on a poll
 export async function voteOnPoll(pollId: string, optionIndex: number) {
     try {
@@ -1612,40 +1289,6 @@ export async function voteOnPoll(pollId: string, optionIndex: number) {
     } catch (error) {
         console.error('Error voting on poll:', error)
         return { success: false, error: "Failed to vote" }
-    }
-}
-
-// Check recent quiz attempts (Admin/Debug utility)
-export async function checkRecentQuizAttempts() {
-    try {
-        console.log("Fetching recent quiz attempts...")
-        const attempts = await prisma.communityQuizAttempt.findMany({
-            orderBy: { completedAt: 'desc' },
-            take: 5,
-            include: {
-                user: {
-                    select: { name: true, email: true }
-                }
-            }
-        })
-
-        if (attempts.length === 0) {
-            console.log("No quiz attempts found.")
-        } else {
-            console.log("Recent Quiz Attempts:")
-            attempts.forEach(a => {
-                console.log(`User: ${a.user.name} (${a.user.email})`)
-                console.log(`Post ID: ${a.postId}`)
-                console.log(`Score: ${a.correctAnswers}/${a.totalQuestions} (${a.pointsEarned} pts)`)
-                console.log(`Completed At: ${a.completedAt}`)
-                console.log("-------------------")
-            })
-        }
-
-        return { success: true, data: attempts }
-    } catch (e) {
-        console.error("Error checking attempts:", e)
-        return { success: false, error: "Failed to check attempts" }
     }
 }
 

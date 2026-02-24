@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
     Grid, List, Clock, Eye, Heart, ChevronLeft, ChevronRight,
-    SortAsc, Lightbulb, Coins, BookOpen, CheckCircle2, BarChart3
+    SortAsc, Lightbulb, BookOpen, CheckCircle2, BarChart3
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";

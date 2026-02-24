@@ -8,7 +8,7 @@ import {
     Plus, Trash2, Save, Eye, ArrowLeft, Sparkles, Loader2, BookOpen,
     Code2, HelpCircle, Zap, BarChart3, CheckCircle2, FileText, Video,
     Send, FileEdit, X, Link2, Search, FileStack, ChevronRight,
-    Image as ImageIcon, Mic, FolderGit2, ChevronDown, ExternalLink
+    Image as ImageIcon, Mic, FolderGit2
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
@@ -27,12 +27,8 @@ import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@repo/ui/components/ui/sheet";
 import { Label } from "@repo/ui/components/ui/label";
-import { Switch } from "@repo/ui/components/ui/switch";
 import { Separator } from "@repo/ui/components/ui/separator";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
-import {
-    Alert, AlertDescription
-} from "@repo/ui/components/ui/alert";
 import toast from "@repo/ui/components/ui/sonner";
 import { cn } from "@repo/ui/lib/utils";
 import {
@@ -46,11 +42,9 @@ import {
 } from "@/actions/(main)/learn/learn.action";
 import {
     generateStepContent, generateQuizQuestion, generateChallenge,
-    generateResources, generateComparison, generateLearnProjects, generateQuizQuestions
+    generateResources, generateComparison
 } from "@/actions/(main)/learn/learn-ai.action";
-import type { GeneratedProject, GeneratedQuiz } from "@/actions/(main)/learn/learn-ai.action";
 import { formatDistanceToNow } from "date-fns";
-import Image from "next/image";
 import { StepBlock } from "./types";
 import { ContentEditor } from "./content-editor";
 import { CodeBlockEditor } from "./code-block-editor";
@@ -61,12 +55,13 @@ import { ResourceEditor } from "./resource-editor";
 import { VisualDataEditor } from "./visual-data-editor";
 import { MockInterviewEditor } from "./mock-interview-editor";
 import { ProjectEditor } from "./project-editor";
+import type { LearnCategory, LearnSubCategory, LearnSearchResult } from "@/types/learn";
 
 interface LearnBlockEditorProps {
     initialMainCategoryId?: string;
     initialSubCategoryId?: string;
     initialLearnId?: string;
-    categories?: any[];
+    categories?: LearnCategory[];
 }
 
 
@@ -113,7 +108,6 @@ function createEmptyBlock(order: number, type: LearnStepType = "EXPLANATION"): S
 export default function LearnBlockEditor({
     initialMainCategoryId,
     initialSubCategoryId,
-    initialLearnId,
     categories = []
 }: LearnBlockEditorProps = {}) {
 
@@ -158,20 +152,18 @@ export default function LearnBlockEditor({
     const [linkedPrereqs, setLinkedPrereqs] = useState<{ id: string; title: string; iconEmoji: string | null; slug: string }[]>([]);
     const [isSearchingPrereqs, setIsSearchingPrereqs] = useState(false);
 
-    // Filtered by search
-    const [prereqSearchResults, setPrereqSearchResults] = useState<{ id: string; title: string; iconEmoji: string | null; slug: string }[]>([]);
 
     // Determine current category names for breadcrumbs
     const mainCategoryName = useMemo(() => {
         if (!hMainId || !categories || categories.length === 0) return null;
-        return categories.find((c: any) => c.id === hMainId)?.name;
+        return categories.find((c: LearnCategory) => c.id === hMainId)?.name;
     }, [hMainId, categories]);
 
     const subCategoryName = useMemo(() => {
         if (!hMainId || !hSubId || !categories || categories.length === 0) return null;
-        const main = categories.find((c: any) => c.id === hMainId);
+        const main = categories.find((c: LearnCategory) => c.id === hMainId);
         if (!main) return null;
-        return main.subCategories.find((s: any) => s.id === hSubId)?.name;
+        return main.subCategories.find((s: LearnSubCategory) => s.id === hSubId)?.name;
     }, [hMainId, hSubId, categories]);
 
     // Load drafts on mount
@@ -269,11 +261,11 @@ export default function LearnBlockEditor({
         try {
             const result = await searchLearns(query, LearnId || undefined);
             if (result.learns) {
-                const mappedLearns = result.learns.map((l: any) => ({
+                const mappedLearns = result.learns.map((l: LearnSearchResult) => ({
                     ...l,
                     category: l.mainCategory?.name || "Uncategorized"
                 }));
-                setPrereqResults(mappedLearns.filter((c: any) => !linkedPrereqs.some(l => l.id === c.id)));
+                setPrereqResults(mappedLearns.filter((c) => !linkedPrereqs.some(l => l.id === c.id)));
             }
         } catch { setPrereqResults([]); }
         finally { setIsSearchingPrereqs(false); }

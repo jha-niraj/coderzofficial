@@ -10,7 +10,7 @@ import {
 import { Button } from '@repo/ui/components/ui/button'
 import { useRouter } from 'next/navigation'
 import {
-    usePathfinderStore, type SubGoalResources
+    type SubGoalResources
 } from '@/app/store/pathfinderStore'
 import {
     createPathfinderPracticeMockAndSession

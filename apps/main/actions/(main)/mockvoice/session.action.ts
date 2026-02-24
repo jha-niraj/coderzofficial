@@ -102,7 +102,7 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
                     mockId: input.mockId,
                     userId: userId,
                     status: 'SCHEDULED',
-                    agentId: process.env.NEXT_PUBLIC_ELEVENLABS_MOCKVOICE!,
+                    agentId: process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT!,
                     variables: variables as any,
                     creditsUsed: creditsToCharge,
                     scheduledFor: new Date()
@@ -248,6 +248,65 @@ export async function getSessionDetails(sessionId: string) {
     } catch (error) {
         console.error('Error getting session details:', error)
         return { success: false, error: 'Failed to get session details' }
+    }
+}
+
+/**
+ * Get session count for a user on a specific mock, plus whether they are the creator.
+ * Used by purchase-mock-sheet to determine pricing (free retakes vs half price vs full).
+ */
+export async function getMockSessionInfo(mockId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        const [sessionCount, mock] = await Promise.all([
+            prisma.mockVoiceSession.count({
+                where: {
+                    mockId,
+                    userId: session.user.id,
+                    status: { in: ['COMPLETED', 'IN_PROGRESS', 'SCHEDULED'] }
+                }
+            }),
+            prisma.mockInterviewVoice.findUnique({
+                where: { id: mockId },
+                select: {
+                    createdById: true,
+                    creditsRequired: true
+                }
+            })
+        ])
+
+        if (!mock) {
+            return { success: false, error: 'Mock not found' }
+        }
+
+        const isCreator = mock.createdById === session.user.id
+        // First 3 sessions are included (free) if the user created this mock
+        // After 3: creator pays half, non-creator pays full
+        const freeSessionsUsed = isCreator ? Math.min(sessionCount, 3) : 0
+        const freeSessionsRemaining = isCreator ? Math.max(0, 3 - sessionCount) : 0
+        const needsPayment = isCreator ? sessionCount >= 3 : true
+        const creditsToCharge = needsPayment
+            ? (isCreator ? Math.ceil(mock.creditsRequired / 2) : mock.creditsRequired)
+            : 0
+
+        return {
+            success: true,
+            data: {
+                sessionCount,
+                isCreator,
+                freeSessionsRemaining,
+                needsPayment,
+                creditsToCharge,
+                fullPrice: mock.creditsRequired
+            }
+        }
+    } catch (error) {
+        console.error('Error getting mock session info:', error)
+        return { success: false, error: 'Failed to get session info' }
     }
 }
 

@@ -18,7 +18,7 @@ interface StudioFlashcardBlockProps {
     skipSave?: boolean;
 }
 
-export default function StudioFlashcardBlock({ deck, skipSave }: StudioFlashcardBlockProps) {
+export default function StudioFlashcardBlock({ deck }: StudioFlashcardBlockProps) {
     // Convert deck to StudioStep format
     const step: StudioStep = {
         id: deck.id,

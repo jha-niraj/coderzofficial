@@ -136,8 +136,8 @@ export default function StepCard({
     const [generateProjectOpen, setGenerateProjectOpen] = useState(false);
 
     // Mock interview step state
-    const [createMockOpen, setCreateMockOpen] = useState(false);
-    const [showVoiceInterview, setShowVoiceInterview] = useState(false);
+    const [_createMockOpen, _setCreateMockOpen] = useState(false)
+    const [showVoiceInterview, setShowVoiceInterview] = useState(false)
     const [expandedGenProject, setExpandedGenProject] = useState<number | null>(null);
 
     const data = getStepData(step);

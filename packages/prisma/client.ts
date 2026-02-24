@@ -81,13 +81,10 @@ export {
     CommunityType,
     CommunityVisibility,
     CommunityRole,
-    CommunityChannelType,
     CommunityPostType,
     CommunityResourceType,
     CommunityEventStatus,
     AttendeeStatus,
-    PeerSessionType,
-    PeerSessionStatus,
 
     // Open Source Enums and Types
     OSProjectType,

@@ -28,7 +28,7 @@ import { getUserCreatedMocks } from '@/actions/(main)/mockvoice/voice.action'
 // ==================== TYPES ====================
 interface ShareableItem {
     id: string
-    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'quiz' | 'challenge'
+    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'challenge'
     title: string
     description?: string
     thumbnail?: string

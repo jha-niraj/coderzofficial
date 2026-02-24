@@ -5,6 +5,7 @@ import { Image as ImageIcon, Download, RefreshCw, ZoomIn } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { useState } from "react";
 import type { StudioStep, ImageMetadata } from "@/types/studios";
+import Image from "next/image";
 
 interface ImageStepProps {
   step: StudioStep;
@@ -34,11 +35,15 @@ export function ImageStep({ step }: ImageStepProps) {
       <div className="rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 shadow-sm">
         {metadata.url ? (
           <div className="relative group">
-            <img
+            <Image
               src={metadata.url}
               alt={metadata.prompt || "Generated image"}
+              width={0}
+              height={0}
+              sizes="100vw"
               className="w-full h-auto cursor-pointer transition-transform"
               onClick={() => setIsZoomed(!isZoomed)}
+              unoptimized
             />
             {/* Overlay actions */}
             <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -95,10 +100,14 @@ export function ImageStep({ step }: ImageStepProps) {
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-8 cursor-pointer"
           onClick={() => setIsZoomed(false)}
         >
-          <img
+          <Image
             src={metadata.url}
             alt={metadata.prompt || "Generated image"}
+            width={0}
+            height={0}
+            sizes="100vw"
             className="max-w-full max-h-full object-contain rounded-lg"
+            unoptimized
           />
         </motion.div>
       )}

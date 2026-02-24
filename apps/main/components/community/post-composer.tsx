@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     MessageCircle, HelpCircle, FileText, Image as ImageIcon, Code2, X,
     Loader2, Plus, Hash, Link as LinkIcon, Send, ExternalLink, ArrowLeft,
-    FileQuestion, Sparkles, Trash2, Clock, BarChart2
+    Trash2, Clock, BarChart2
 } from 'lucide-react'
 import { Card, CardContent } from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
@@ -34,7 +34,6 @@ import toast from '@repo/ui/components/ui/sonner'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { uploadCommunityImage } from '@/actions/(main)/community/upload.action'
-import { QuizQuestion } from '@/components/main/quiz'
 
 // Dynamically import CodeEditor
 const CodeEditor = dynamic(() => import('@/components/main/code-editor'), { ssr: false })
@@ -45,12 +44,6 @@ interface PostComposerProps {
     communitySlug?: string
     channelSlug?: string
     sectionType?: string
-    channels?: Array<{
-        id: string
-        name: string
-        slug: string
-        icon?: string | null
-    }>
     user: {
         id: string | null
         name: string | null
@@ -80,14 +73,7 @@ interface CodeAttachment {
     type: 'code'
 }
 
-interface QuizAttachment {
-    title: string
-    description?: string
-    questions: QuizQuestion[]
-    type: 'quiz'
-}
-
-type Attachment = ImageAttachment | LinkAttachment | CodeAttachment | QuizAttachment
+type Attachment = ImageAttachment | LinkAttachment | CodeAttachment
 
 interface PostDraft {
     id: string
@@ -109,7 +95,7 @@ const POST_TYPES = [
     { value: 'HELP_REQUEST', label: 'Need Help', icon: Code2, description: 'Request assistance' },
 ] as const
 
-type ComposerStep = 'main' | 'link' | 'code' | 'quiz'
+type ComposerStep = 'main' | 'link' | 'code'
 
 // ==================== DRAFT MANAGEMENT ====================
 function getDraftsKey(communityId: string) {
@@ -172,7 +158,6 @@ export function PostComposer({
     communityId,
     channelSlug,
     sectionType,
-    channels = [],
     user,
     onPostCreated,
     defaultType = 'DISCUSSION',
@@ -181,7 +166,6 @@ export function PostComposer({
     const [isExpanded, setIsExpanded] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [postType, setPostType] = useState<CommunityPostType>(defaultType)
-    const [selectedChannel, setSelectedChannel] = useState<string>('')
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [tags, setTags] = useState<string[]>([])
@@ -204,14 +188,6 @@ export function PostComposer({
     // Code form
     const [codeContent, setCodeContent] = useState('')
     const [codeLanguage, setCodeLanguage] = useState('javascript')
-
-    // Quiz form
-    const [quizTitle, setQuizTitle] = useState('')
-    const [quizDescription, setQuizDescription] = useState('')
-    const [quizQuestionCount, setQuizQuestionCount] = useState('5')
-    const [quizLevel, setQuizLevel] = useState('MEDIUM')
-    const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false)
-    const [generatedQuiz, setGeneratedQuiz] = useState<QuizQuestion[] | null>(null)
 
     // Poll form
     const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
@@ -323,7 +299,6 @@ export function PostComposer({
         try {
             const result = await createPost({
                 communityId: communityId || '',
-                channelId: selectedChannel || undefined,
                 officialChannel: channelSlug || undefined,
                 title: title.trim() || undefined,
                 content: content.trim(),
@@ -335,7 +310,6 @@ export function PostComposer({
                     name: 'name' in a ? a.name : ('title' in a ? a.title : 'Attachment'),
                     ...(a.type === 'code' && { code: a.code, language: a.language }),
                     ...(a.type === 'link' && { description: a.description }),
-                    ...(a.type === 'quiz' && { questions: a.questions }),
                 })) : undefined,
                 codeBlocks: attachments
                     .filter((a): a is CodeAttachment => a.type === 'code')
@@ -505,58 +479,6 @@ export function PostComposer({
         toast.success('Code snippet added!')
     }
 
-    const handleGenerateQuiz = async () => {
-        if (!quizTitle.trim()) {
-            toast.error('Please enter a quiz title')
-            return
-        }
-
-        setIsGeneratingQuiz(true)
-        try {
-            const { generateQuiz } = await import('@/actions/(main)/community/post.action')
-            const result = await generateQuiz({
-                title: quizTitle,
-                description: quizDescription,
-                questionCount: parseInt(quizQuestionCount),
-                level: quizLevel as 'EASY' | 'MEDIUM' | 'HARD'
-            })
-
-            if (!result.success || !result?.data?.questions) {
-                throw new Error(result.error || 'Failed to generate quiz')
-            }
-
-            setGeneratedQuiz(result.data.questions as QuizQuestion[])
-            toast.success('Quiz generated!')
-        } catch (error) {
-            console.error(error)
-            toast.error('Failed to generate quiz')
-        } finally {
-            setIsGeneratingQuiz(false)
-        }
-    }
-
-    // handleGenerateQuiz removed as it was unused and replaced by inline handler
-
-    const handleAddQuiz = () => {
-        if (!generatedQuiz || generatedQuiz.length === 0) {
-            toast.error('Please generate a quiz first')
-            return
-        }
-
-        setAttachments(prev => [...prev, {
-            title: quizTitle,
-            description: quizDescription,
-            questions: generatedQuiz,
-            type: 'quiz'
-        }])
-
-        setQuizTitle('')
-        setQuizDescription('')
-        setGeneratedQuiz(null)
-        setCurrentStep('main')
-        toast.success('Quiz added to post!')
-    }
-
     const removeAttachment = (index: number) => {
         setAttachments(prev => prev.filter((_, i) => i !== index))
     }
@@ -679,146 +601,6 @@ export function PostComposer({
                     </div>
                 )
 
-            case 'quiz':
-                return (
-                    <div className="space-y-4 p-4">
-                        <div className="flex items-center gap-3">
-                            <Button variant="ghost" size="icon" onClick={() => setCurrentStep('main')}>
-                                <ArrowLeft className="w-5 h-5" />
-                            </Button>
-                            <div>
-                                <h3 className="text-lg font-bold">Generate Quiz</h3>
-                                <p className="text-sm text-neutral-500">Create an AI-powered quiz</p>
-                            </div>
-                        </div>
-
-                        {
-                            !generatedQuiz ? (
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="quizTitle">Quiz Title</Label>
-                                        <Input
-                                            id="quizTitle"
-                                            placeholder="e.g., JavaScript Fundamentals"
-                                            value={quizTitle}
-                                            onChange={(e) => setQuizTitle(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="quizDescription">Description (optional)</Label>
-                                        <Textarea
-                                            id="quizDescription"
-                                            placeholder="Brief description of the quiz"
-                                            value={quizDescription}
-                                            onChange={(e) => setQuizDescription(e.target.value)}
-                                            rows={2}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Number of Questions</Label>
-                                            <Select value={quizQuestionCount} onValueChange={setQuizQuestionCount}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="5">5 Questions</SelectItem>
-                                                    <SelectItem value="10">10 Questions</SelectItem>
-                                                    <SelectItem value="15">15 Questions</SelectItem>
-                                                    <SelectItem value="20">20 Questions</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Difficulty</Label>
-                                            <Select value={quizLevel} onValueChange={setQuizLevel}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="EASY">Easy</SelectItem>
-                                                    <SelectItem value="MEDIUM">Medium</SelectItem>
-                                                    <SelectItem value="HARD">Hard</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        className="w-full gap-2"
-                                        onClick={handleGenerateQuiz}
-                                        disabled={isGeneratingQuiz || !quizTitle.trim()}
-                                    >
-                                        {
-                                            isGeneratingQuiz ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <Sparkles className="w-4 h-4" />
-                                            )
-                                        }
-                                        Generate Quiz with AI
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                                                <FileQuestion className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-green-800 dark:text-green-200">
-                                                    {quizTitle}
-                                                </p>
-                                                <p className="text-sm text-green-600 dark:text-green-400">
-                                                    {generatedQuiz.length} questions generated
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="max-h-60 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                                            {
-                                                generatedQuiz.map((q, i) => (
-                                                    <div key={i} className="bg-white dark:bg-neutral-900 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 text-sm">
-                                                        <p className="font-medium mb-2">{i + 1}. {q.text}</p>
-                                                        <div className="grid grid-cols-1 gap-1 pl-2 border-l-2 border-neutral-100 dark:border-neutral-800">
-                                                            {
-                                                                q.options.map((opt, optI) => (
-                                                                    <div key={optI} className={cn(
-                                                                        "px-2 py-1 rounded text-xs",
-                                                                        opt.isCorrect && "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium"
-                                                                    )}>
-                                                                        {opt.text}
-                                                                        {opt.isCorrect && " ✓"}
-                                                                    </div>
-                                                                ))
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            }
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <Button
-                                            variant="outline"
-                                            className="flex-1"
-                                            onClick={() => setGeneratedQuiz(null)}
-                                        >
-                                            Regenerate
-                                        </Button>
-                                        <Button className="flex-1" onClick={handleAddQuiz}>
-                                            Add to Post
-                                        </Button>
-                                    </div>
-                                </div>
-                            )
-                        }
-
-                        <Button variant="ghost" className="w-full" onClick={() => setCurrentStep('main')}>
-                            Back
-                        </Button>
-                    </div >
-                )
-
             default:
                 return null
         }
@@ -919,26 +701,6 @@ export function PostComposer({
                                             })
                                         }
                                     </div>
-
-                                    {
-                                        channels.length > 0 && !channelSlug && (
-                                            <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-                                                <SelectTrigger className="w-full bg-neutral-50 dark:bg-neutral-800">
-                                                    <SelectValue placeholder="Select a channel (optional)" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="general_channel">General</SelectItem>
-                                                    {
-                                                        channels.map((channel) => (
-                                                            <SelectItem key={channel.id} value={channel.id}>
-                                                                {channel.icon} {channel.name}
-                                                            </SelectItem>
-                                                        ))
-                                                    }
-                                                </SelectContent>
-                                            </Select>
-                                        )
-                                    }
 
                                     {
                                         (postType === 'QUESTION' || postType === 'RESOURCE' || postType === 'SHOWCASE' || postType === 'POLL') && (
@@ -1095,19 +857,6 @@ export function PostComposer({
                                                                     </>
                                                                 )
                                                             }
-                                                            {
-                                                                attachment.type === 'quiz' && (
-                                                                    <>
-                                                                        <div className="w-10 h-10 rounded bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                                                                            <FileQuestion className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <p className="text-sm font-medium">{attachment.title}</p>
-                                                                            <p className="text-xs text-neutral-500">{attachment.questions.length} questions</p>
-                                                                        </div>
-                                                                    </>
-                                                                )
-                                                            }
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
@@ -1201,14 +950,6 @@ export function PostComposer({
                                                 onClick={() => openStep('code')}
                                             >
                                                 <Code2 className="w-5 h-5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="w-9 h-9 text-neutral-500"
-                                                onClick={() => openStep('quiz')}
-                                            >
-                                                <FileQuestion className="w-5 h-5" />
                                             </Button>
                                         </div>
                                         <Button

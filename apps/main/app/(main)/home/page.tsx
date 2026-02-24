@@ -9,7 +9,6 @@ import {
 import GreetingHeader from "./_components/greeting-header";
 import ContinueLearning from "./_components/continue-learning";
 import PathfinderGoalsCard from "./_components/pathfinder-goals-card";
-import QuickActions from "./_components/quick-actions";
 import ActivityCalendar from "./_components/activity-calendar";
 import AchievementsCard from "./_components/achievements-card";
 import LeaderboardPosition from "./_components/leaderboard-position";
@@ -22,7 +21,7 @@ import CommunityHighlights from "./_components/community-highlights";
 
 import {
 	GreetingHeaderSkeleton, ContinueLearningSkeleton,
-	PathfinderGoalsSkeleton, QuickActionsSkeleton,
+	PathfinderGoalsSkeleton,
 	ActivityCalendarSkeleton, AchievementsCardSkeleton,
 	LeaderboardPositionSkeleton,
 	ShareCreditsSkeleton,

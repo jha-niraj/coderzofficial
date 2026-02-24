@@ -1,10 +1,8 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
-import { Badge } from "@repo/ui/components/ui/badge";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { cn } from "@repo/ui/lib/utils";
-import { Trophy, Medal, Star } from "lucide-react";
+import { Trophy, Medal } from "lucide-react";
 import type { LeaderboardUser } from "@/actions/(main)/learn/leaderboard";
 
 interface LeaderboardListProps {

@@ -356,7 +356,7 @@ export function ProjectEditor({ block, updateBlock, LearnTitle, LearnDescription
                 defaultValues={expandedProject !== null ? {
                     title: generatedProjects[expandedProject]?.title,
                     description: generatedProjects[expandedProject]?.description,
-                    difficulty: generatedProjects[expandedProject]?.difficulty as any
+                    difficulty: generatedProjects[expandedProject]?.difficulty as string
                 } : undefined}
             />
 
