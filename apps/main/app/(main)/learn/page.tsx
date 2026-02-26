@@ -139,7 +139,7 @@ export default function LearnsPage() {
                     ) : (
                         <Suspense fallback={<ContentSkeleton />}>
                             <LearnsContent
-                                Learns={learns} // Use renamed state
+                                learns={learns} // Use renamed state
                                 pagination={pagination}
                                 userProgress={userProgress}
                                 completedLearns={completedLearns}

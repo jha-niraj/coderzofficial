@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FolderKanban, ChevronRight } from "lucide-react";
+import {
+    FolderKanban, ChevronRight
+} from "lucide-react";
 import Link from "next/link";
 
 interface Project {
@@ -39,42 +41,46 @@ export default function ProjectsPreview({ projects }: ProjectsPreviewProps) {
                     <ChevronRight className="h-3 w-3" />
                 </Link>
             </div>
-            {displayProjects.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                    {displayProjects.map((progress) => (
-                        <Link
-                            key={progress.id}
-                            href={`/projects/${progress.project.slug}`}
-                        >
-                            <motion.div
+            {
+                displayProjects.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {
+                            displayProjects.map((progress) => (
+                                <Link
+                                    key={progress.id}
+                                    href={`/projects/${progress.project.slug}`}
+                                >
+                                    <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium transition-colors"
+                                    >
+                                        <span className="truncate max-w-[160px]">
+                                            {progress.project.title}
+                                        </span>
+                                        <ChevronRight className="h-3 w-3 shrink-0 opacity-70" />
+                                    </motion.div>
+                                </Link>
+                            ))
+                        }
+                    </div>
+                ) : (
+                    <div className="py-4 text-center">
+                        <p className="text-sm text-muted-foreground mb-3">
+                            No projects in progress
+                        </p>
+                        <Link href="/projects">
+                            <motion.span
                                 whileHover={{ scale: 1.02 }}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium transition-colors"
+                                whileTap={{ scale: 0.98 }}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium cursor-pointer"
                             >
-                                <span className="truncate max-w-[160px]">
-                                    {progress.project.title}
-                                </span>
-                                <ChevronRight className="h-3 w-3 shrink-0 opacity-70" />
-                            </motion.div>
+                                Show My Projects
+                                <ChevronRight className="h-3 w-3" />
+                            </motion.span>
                         </Link>
-                    ))}
-                </div>
-            ) : (
-                <div className="py-4 text-center">
-                    <p className="text-sm text-muted-foreground mb-3">
-                        No projects in progress
-                    </p>
-                    <Link href="/projects">
-                        <motion.span
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium cursor-pointer"
-                        >
-                            Show My Projects
-                            <ChevronRight className="h-3 w-3" />
-                        </motion.span>
-                    </Link>
-                </div>
-            )}
+                    </div>
+                )
+            }
         </div>
     );
 }

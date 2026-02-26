@@ -34,7 +34,7 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
                     isCollapsed ? "lg:ml-[70px]" : "lg:ml-[240px]",
                     isAISidebarOpen ? "lg:mr-[400px]" : "lg:mr-0"
                 )}>
-                    <div className="h-full w-full bg-white dark:bg-neutral-950 lg:rounded-l-3xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl relative">
+                    <div className="h-full w-full bg-white dark:bg-neutral-950 lg:rounded-l-4xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl relative">
                         <ScrollArea className="h-full w-full">
                             {children}
                         </ScrollArea>

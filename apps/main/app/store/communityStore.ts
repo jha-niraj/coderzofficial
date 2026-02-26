@@ -10,8 +10,6 @@ import {
 } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
 
-// ==================== TYPES ====================
-
 export interface CommunityBasic {
     id: string
     name: string
@@ -140,7 +138,6 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         try {
             const result = await joinCommunityAction(communityId, answers)
             if (result.success) {
-                // Optimistic: refetch user communities to get updated list
                 await get().fetchUserCommunities()
                 toast.success(result.message || 'Joined community!')
                 return true

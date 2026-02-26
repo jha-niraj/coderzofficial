@@ -1,9 +1,8 @@
 import {
     Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
-    Briefcase, Video, Brain, Cable, LayoutDashboard,
-    Heading, BookAIcon, Home, Orbit, Globe, LucideWandSparkles,
-    GraduationCap, Rocket, Activity, Share2, Target, FileText, BookOpen,
-    StickyNote
+    Briefcase, Video, Brain, Cable, LayoutDashboard, Heading, 
+    Home, Orbit, Globe, LucideWandSparkles,GraduationCap, Rocket, 
+    Activity, Share2, Target, FileText, BookOpen, StickyNote
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -32,30 +31,29 @@ export const mainNavigation: NavigationConfig = {
             status: "active"
         },
         {
-            name: "Spaces",
-            path: "space",
-            icon: Orbit,
-            status: "active",
-            children: [
-                {
-                    name: 'My Spaces',
-                    path: 'space/myspaces',
-                    icon: User
-                },
-                {
-                    name: 'All Spaces',
-                    path: 'space/allspaces',
-                    icon: Globe
-                },
-            ]
-        },
-
-        {
-            name: "Pathfinder",
-            path: "pathfinder",
-            icon: Target,
+            name: "Inbox",
+            path: "inbox",
+            icon: MessageSquare,
             status: "active"
         },
+        // {
+        //     name: "Spaces",
+        //     path: "space",
+        //     icon: Orbit,
+        //     status: "active",
+        //     children: [
+        //         {
+        //             name: 'My Spaces',
+        //             path: 'space/myspaces',
+        //             icon: User
+        //         },
+        //         {
+        //             name: 'All Spaces',
+        //             path: 'space/allspaces',
+        //             icon: Globe
+        //         },
+        //     ]
+        // },
         {
             name: "My Notes",
             path: "studio",
@@ -69,15 +67,15 @@ export const mainNavigation: NavigationConfig = {
             status: "active"
         },
         {
-            name: "Communities",
-            path: "communities",
-            icon: Users2,
+            name: "Pathfinder",
+            path: "pathfinder",
+            icon: Target,
             status: "active"
         },
         {
-            name: "Chat",
-            path: "chat",
-            icon: MessageSquare,
+            name: "Communities",
+            path: "communities",
+            icon: Users2,
             status: "active"
         },
         {
@@ -100,6 +98,37 @@ export const mainNavigation: NavigationConfig = {
                     name: 'All Projects',
                     path: 'projects/allprojects',
                     icon: User2
+                }
+            ]
+        },
+        {
+            name: "Mock Interview",
+            path: "mock",
+            icon: Video,
+            status: "active",
+            children: [
+                {
+                    name: 'Voice Mock',
+                    path: 'mock/voice',
+                    icon: Brain
+                },
+                {
+                    name: 'Video Mock',
+                    path: 'mock/video',
+                    icon: Video,
+                    comingSoon: true
+                },
+                {
+                    name: 'Peer to Peer',
+                    path: 'mock/peertopeer',
+                    icon: MessageSquare,
+                    comingSoon: true
+                },
+                {
+                    name: 'Connect',
+                    path: 'mock/connect',
+                    icon: Cable,
+                    comingSoon: true
                 }
             ]
         },
@@ -147,40 +176,9 @@ export const mainNavigation: NavigationConfig = {
             ]
         },
         {
-            name: "Mock Interview",
-            path: "mock",
-            icon: Video,
-            status: "active",
-            children: [
-                {
-                    name: 'Voice Mock',
-                    path: 'mock/voice',
-                    icon: Brain
-                },
-                {
-                    name: 'Video Mock',
-                    path: 'mock/video',
-                    icon: Video,
-                    comingSoon: true
-                },
-                {
-                    name: 'Peer to Peer',
-                    path: 'mock/peertopeer',
-                    icon: MessageSquare,
-                    comingSoon: true
-                },
-                {
-                    name: 'Connect',
-                    path: 'mock/connect',
-                    icon: Cable,
-                    comingSoon: true
-                }
-            ]
-        },
-        {
-            name: "Interview Prep",
-            path: "interview",
-            icon: BookAIcon,
+            name: "Jobs",
+            path: "jobs",
+            icon: Briefcase,
             status: "active"
         },
         {
@@ -188,13 +186,7 @@ export const mainNavigation: NavigationConfig = {
             path: "uni",
             icon: GraduationCap,
             status: "active"
-        },
-        {
-            name: "Jobs",
-            path: "jobs",
-            icon: Briefcase,
-            status: "active"
-        },
+        }
     ],
     secondary: []
 }

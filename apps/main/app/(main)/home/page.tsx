@@ -115,12 +115,7 @@ export default async function HomePage() {
 								<CommunityHighlights posts={communityPosts} />
 							</Suspense>
 						</div>
-
 						<div className="md:col-span-5 lg:col-span-4 space-y-6 flex flex-col h-full sticky top-6">
-							{/* <Suspense fallback={<QuickActionsSkeleton />}>
-								<QuickActions />
-							</Suspense> */}
-
 							<Suspense fallback={<LeaderboardPositionSkeleton />}>
 								<LeaderboardPosition rank={leaderboardRank} />
 							</Suspense>

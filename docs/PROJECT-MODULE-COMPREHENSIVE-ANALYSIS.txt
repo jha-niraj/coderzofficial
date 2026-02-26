@@ -1,0 +1,1270 @@
+================================================================================
+   BUILDR HQ — PROJECT MODULE: COMPREHENSIVE ANALYSIS & IMPROVEMENT BLUEPRINT
+================================================================================
+   Date    : 2026-02-26
+   Author  : AI Architecture Review
+   Scope   : End-to-end Project module — Client, Server Actions, Worker, Schema
+================================================================================
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  TABLE OF CONTENTS                                                        ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  1.  EXECUTIVE SUMMARY                                                    ║
+║  2.  CURRENT ARCHITECTURE OVERVIEW                                        ║
+║  3.  FILE & DIRECTORY MAP                                                 ║
+║  4.  SCHEMA ANALYSIS (ProjectV2 & Related Models)                         ║
+║  5.  CURRENT USER FLOW — STEP-BY-STEP WALKTHROUGH                         ║
+║  6.  FLOW CHART: CURRENT USER JOURNEY (AS-IS)                             ║
+║  7.  IDENTIFIED PROBLEMS & FRICTION POINTS                                ║
+║  8.  FORK vs COPY vs ENROLL — DECISION & RECOMMENDATION                   ║
+║  9.  SEEDED / PLATFORM PROJECTS — NEW FLOW PROPOSAL                       ║
+║ 10.  SCHEMA CHANGES REQUIRED                                              ║
+║ 11.  IDEAS PAGE RESTRUCTURE — PROPOSED UX                                 ║
+║ 12.  FLOW CHART: PROPOSED USER JOURNEY (TO-BE)                            ║
+║ 13.  AI STEP-BY-STEP ASSISTANT — DESIGN SPECIFICATION                     ║
+║ 14.  INDUSTRY-STANDARD PROJECT EXPERIENCE DESIGN                          ║
+║ 15.  PROJECT IDEA QUALITY: CURATED, JOB-MARKET-READY IDEAS               ║
+║ 16.  PRIORITIZED IMPLEMENTATION ROADMAP                                   ║
+║ 17.  APPENDIX: DETAILED CODE REFERENCES                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+The Project module is the core learning engine of BuildR HQ. It currently has a
+rich internal flow (sprints, tasks, daily standups, quizzes, mock interviews,
+leaderboards) but suffers from:
+
+  • Too many page hops before a user can START building
+  • Confusing overlap between "Browse Ideas" (seeded) and "Generate Project"
+  • Redundant Fork AND Copy mechanics that serve the same purpose
+  • No differentiation between platform-curated projects and user-generated ones
+  • Missing AI-guided step-by-step building mode
+  • Ideas page data is hardcoded in categories.ts, not in the database
+
+This document provides a comprehensive analysis with concrete improvements.
+
+
+================================================================================
+2. CURRENT ARCHITECTURE OVERVIEW
+================================================================================
+
+LAYER BREAKDOWN:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CLIENT (Next.js App Router)                     │
+│                                                                           │
+│  /projects                → Landing page (hero, stats, public grid)       │
+│  /projects/ideas          → Browse ideas (Technology + Problem tabs)      │
+│  /projects/ideas/[cat]    → Category page (select technology)             │
+│  /projects/ideas/[c]/[t]  → Technology projects list                      │
+│  /projects/myprojects     → User's projects dashboard                     │
+│  /projects/allprojects    → All public projects (explore)                 │
+│  /projects/leaderboard    → Global leaderboard                            │
+│  /projects/[slug]         → Project detail page (overview, pages, setup)  │
+│  /projects/[slug]/sprints → Sprint board (tasks, daily standup)           │
+│  /projects/[slug]/quiz    → Project quiz                                  │
+│  /projects/[slug]/aimock  → AI mock interview                             │
+│                                                                           │
+│  COMPONENTS:                                                              │
+│  project-generate-sheet   → Multi-step AI generation wizard (Sheet)       │
+│  project-details-client   → 1150-line mega component (detail page)        │
+│  submit-project-idea-sheet→ User idea submission form                     │
+│  blueprintflowchart       → Visual task flow diagram                      │
+│  task-list-progress       → Task items with status tracking               │
+│  project-card             → Reusable project card                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                         SERVER ACTIONS                                    │
+│                                                                           │
+│  project.action.ts        → Core CRUD, start, submit, fork, enroll       │
+│  project-ideas.action.ts  → Ideas CRUD, upvotes, problem statements      │
+│  sprint-generation.action → AI sprint generation via OpenAI               │
+│  tasks.action.ts          → Task status updates, add tasks                │
+│  team-collaboration.action→ Members, invitations, visibility              │
+│  standup.action.ts        → Daily standup entries                         │
+│  leaderboard.action.ts    → Leaderboard rankings                         │
+│  projectassessments.action→ Task-level quiz/code assessments              │
+│  projectv2-quiz.action.ts → Project-level quiz                           │
+│  projectv2-mock.action.ts → Mock interview sessions                      │
+│  resources.action.ts      → Resource library                             │
+│  feature-suggestions.action → Feature suggestions                        │
+│  project-errors.action.ts → Common errors library                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                            SCHEMA (Prisma)                                │
+│                                                                           │
+│  ProjectV2              → Main project model (107 → 219)                 │
+│  ProjectV2Page          → Application pages (221 → 242)                  │
+│  ProjectV2Task          → Tasks within sprints (244 → 307)               │
+│  ProjectV2Sprint        → Sprint containers (988 → 1017)                 │
+│  UserProjectV2Progress  → Per-user progress tracking (309 → 341)         │
+│  UserTaskV2Status       → Per-user task status (343 → 367)               │
+│  ProjectV2Quiz          → Project quizzes (369 → 378)                    │
+│  ProjectV2MockSession   → AI mock interviews (484 → 529)                 │
+│  ProjectIdea            → Ideas library (831 → 891)                      │
+│  ProjectV2Member        → Team collaboration (1042 → 1056)               │
+│  ProjectV2Invitation    → Team invitations (1097 → 1129)                 │
+│  + 10 more supporting models                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+3. FILE & DIRECTORY MAP
+================================================================================
+
+apps/main/app/(main)/projects/
+├── page.tsx                          # Landing page (472 lines)
+├── _components/
+│   ├── public-projects-grid.tsx      # Featured public projects
+│   └── recent-submissions-grid.tsx   # Recent submissions
+├── ideas/
+│   ├── page.tsx                      # Ideas hub (610 lines) — Tech/Problem tabs
+│   ├── data/
+│   │   └── categories.ts            # HARDCODED categories (1015 lines, 12 categories)
+│   └── [category]/
+│       ├── page.tsx                  # Category detail (127 lines)
+│       └── [technology]/
+│           └── page.tsx              # Technology projects (455 lines)
+├── [slug]/
+│   ├── page.tsx                      # Project detail server page (37 lines)
+│   ├── _components/
+│   │   ├── project-details-client.tsx  # MAIN detail component (1150 lines)
+│   │   ├── enrollment-dialog.tsx       # Credit-based enrollment
+│   │   ├── daily-standup-sheet.tsx      # Daily standup
+│   │   ├── daily-standup-tab.tsx        # Standup tab
+│   │   ├── sprint-generation-sheet.tsx  # AI sprint generation
+│   │   ├── sprint-mock-interview.tsx    # Sprint-level mock
+│   │   ├── project-assistant-buttons.tsx # AI assistant buttons
+│   │   ├── project-settings-tab.tsx    # Settings (visibility, team)
+│   │   ├── setup-guide-tab.tsx         # Setup instructions
+│   │   ├── page-overview-card.tsx      # Page info cards
+│   │   ├── progress-gate.tsx           # Progress gating
+│   │   ├── team-members-display.tsx    # Team display
+│   │   └── index.ts                    # Re-exports
+│   ├── sprints/
+│   │   ├── page.tsx                    # Sprints server page
+│   │   └── _components/
+│   │       └── sprints-page-client.tsx # Sprints client
+│   ├── quiz/                           # Quiz page
+│   ├── aimock/                         # AI Mock page
+│   ├── tasks/                          # Tasks page
+│   └── leaderboard/                    # Project leaderboard
+├── myprojects/
+│   └── page.tsx                        # User's projects (418 lines)
+├── allprojects/
+│   └── page.tsx                        # All public projects (329 lines)
+└── leaderboard/
+    └── page.tsx                        # Global leaderboard
+
+apps/main/actions/(main)/projects/
+├── project.action.ts                   # 1464 lines — core actions
+├── project-ideas.action.ts             # 691 lines — ideas CRUD
+├── sprint-generation.action.ts         # 456 lines — AI sprint gen
+├── tasks.action.ts                     # 146 lines — task management
+├── team-collaboration.action.ts        # Team features
+├── standup.action.ts                   # Standup entries
+├── standup-voice.action.ts             # Voice standup
+├── leaderboard.action.ts              # Leaderboard
+├── projectassessments.action.ts       # Task assessments
+├── projectv2-quiz.action.ts           # Quiz
+├── projectv2-mock.action.ts           # Mock interview
+├── resources.action.ts                # Resources
+├── feature-suggestions.action.ts      # Feature suggestions
+├── project-errors.action.ts           # Error library
+└── task-details.action.ts             # Task sub-details
+
+apps/main/components/projects/
+├── project-generate-sheet.tsx          # 984 lines — generation wizard
+├── project-card.tsx                    # Reusable card
+├── blueprintflowchart.tsx              # Visual task graph
+├── task-list-progress.tsx              # Task list with progress
+├── submit-project-idea-sheet.tsx       # Idea submission form
+├── errors-tab.tsx                      # Errors panel
+├── resources-list.tsx                  # Resources list
+├── feature-suggestion-sheet.tsx        # Feature suggestion
+├── feature-suggestions-list.tsx        # Suggestions list
+├── add-resource-sheet.tsx              # Add resource
+├── social-features.tsx                 # Social features
+├── generation-progress-dialog.tsx      # Generation progress
+├── project-analytics.tsx               # Analytics
+└── user-progress-sheet.tsx             # User progress
+
+
+================================================================================
+4. SCHEMA ANALYSIS (ProjectV2 & Related Models)
+================================================================================
+
+4.1 ProjectV2 — The Core Model
+─────────────────────────────────
+
+  KEY FIELDS:
+  • id, slug, title, shortDescription, description
+  • technologies[], generationType, primaryLanguageOrFramework
+  • difficulty (BEGINNER | INTERMEDIATE | ADVANCED)
+  • visibility (PRIVATE | PUBLIC)
+  • estimatedHours, includeAssessment
+  • blueprintOverview, vision, targetAudience, problemSolution
+  • keyOutcomes[], features (JSON), estimatedDuration
+  • technicalRequirements, dataArchitecture, projectStructure, setupGuide
+  • stacks (JSON), assistantEcho, assistantRaw
+  • Stats: totalStarted, totalCompleted, totalSubmissions, totalViews
+  • Fork tracking: isFork, forkedFromId, forkCount
+  • Space: spaceId
+  • University: isUniversityProject, universityId, teacherMemberId, classIds[]
+
+  RELATIONS:
+  • pages[] → ProjectV2Page
+  • sprints[] → ProjectV2Sprint (which contain tasks)
+  • quiz → ProjectV2Quiz
+  • knowledge → ProjectV2KnowledgeBase
+  • progress[] → UserProjectV2Progress
+  • submissions[] → ProjectV2Submission
+  • taskStatuses[] → UserTaskV2Status
+  • quizAttempts[], mockSessions[], featureSuggestions[]
+  • leaderboard[], resources[], errors[]
+  • members[] → ProjectV2Member
+  • invitations[] → ProjectV2Invitation
+  • sourceIdea → ProjectIdea (linked idea)
+
+  ⚠️ MISSING FIELDS (NEEDED):
+  • isPlatformSeeded (Boolean) — Flag for platform-added projects
+  • projectSource (enum: AI_GENERATED, PLATFORM_SEEDED, USER_SUBMITTED)
+  • learningMode (enum: SELF_PACED, AI_GUIDED) — For step-by-step assistant
+
+4.2 ProjectIdea — Ideas Library
+────────────────────────────────
+
+  KEY FIELDS:
+  • projectTitle, projectDescription, generationType, difficulty
+  • technologies[], categories[], technology
+  • ideaType (PROBLEM_STATEMENT | TECHNOLOGY_SPECIFIC)
+  • overview, coreRequirements[], engineeringConstraints[]
+  • suggestedStacks (JSON), recruiterSignal
+  • buildCount, images[], figmaLinks[], resourceLinks[]
+  • stacks (JSON)
+  • Blueprint linking: blueprintProjectId, hasBlueprintGenerated
+  • status (PENDING | APPROVED | REJECTED)
+  • isUserSubmitted, submittedById
+  • upvotes, views
+
+  ✅ GOOD: Already has blueprintProjectId for linking to pre-generated projects
+  ⚠️ ISSUE: The category data in categories.ts is HARDCODED (not in DB)
+  ⚠️ ISSUE: No isPlatformCurated flag on ideas
+
+4.3 ProjectV2Sprint — Sprint Organization
+──────────────────────────────────────────
+
+  KEY FIELDS:
+  • sprintNumber, name, goal, duration, orderIndex
+  • createdBy, isApproved, isPersonal
+  • tasks[] → ProjectV2Task
+
+4.4 ProjectV2Task — Individual Tasks
+─────────────────────────────────────
+
+  KEY FIELDS:
+  • title, description[], criteria[], hints[], badges[], tags[]
+  • difficulty, orderIndex, terminalCommand
+  • category, estimatedTime, checkpoints[], relatedPages[], dependencies[]
+  • learningObjectives[], prerequisites[], resources (JSON)
+  • testingGuidelines[], Learns (JSON), assessmentType
+  • taskDetail → ProjectV2TaskDetail (sub-tasks, common errors)
+
+
+================================================================================
+5. CURRENT USER FLOW — STEP-BY-STEP WALKTHROUGH
+================================================================================
+
+FLOW A: AI-Generated Project (User Knows What to Build)
+─────────────────────────────────────────────────────────
+  Page 1: /projects (Landing)
+    → User clicks "Generate with AI" button
+    → ProjectGenerateSheet opens (multi-step wizard)
+      Step 1: Choose Type (Full Stack, Frontend, etc.)
+      Step 2: Title & Description
+      Step 3: Difficulty Level
+      Step 4: Tech Stack Selection
+      Step 5: Generation (calls OpenAI Assistant)
+    → On success, redirects to /projects/[slug] (detail page)
+
+FLOW B: Browse Ideas – Technology Based
+───────────────────────────────────────
+  Page 1: /projects (Landing)
+    → User clicks "Browse Ideas"
+  Page 2: /projects/ideas (Ideas Hub)
+    → User sees "Technology Based" tab (default)
+    → User clicks a category card (e.g., "Web Development")
+    → BOTTOM SHEET opens showing technologies
+    → User clicks a technology (e.g., "React")
+  Page 3: /projects/ideas/web-development/react
+    → User sees list of project ideas for React
+    → User clicks "Build Now" on a project idea
+    → ProjectGenerateSheet opens with pre-filled title/description
+    → AI generates sprints/tasks
+    → Redirect to /projects/[slug]
+
+FLOW C: Browse Ideas – Problem First
+─────────────────────────────────────
+  Page 2: /projects/ideas
+    → User switches to "Problem First" tab
+    → User sees problem statements from database
+    → User clicks "Start Building" on a problem
+    → ProjectGenerateSheet opens with pre-filled data
+    → AI generates , redirects to /projects/[slug]
+
+FLOW D: Project Detail & Execution
+───────────────────────────────────
+  Page: /projects/[slug] (Project Details)
+    → Overview tab: blueprint, tech stack, key outcomes, vision, features
+    → Pages tab: application pages breakdown
+    → Setup Guide tab: prerequisites, env vars, installation
+    → Settings tab (creator only): visibility, team, invitations
+    → Creator sees "Start Building" button → starts progress tracking
+    → Non-creator sees "Enroll Now" (credits) or "Fork This Project" (free)
+    → After starting: milestone tracker, quick actions appear
+    → "Continue Building" → redirects to /projects/[slug]/sprints
+
+  Page: /projects/[slug]/sprints (Sprint Board)
+    → Left column: task list by sprint
+    → Middle/Right: task details, resources, suggestions, errors
+    → Header: Daily Standup, Quiz (50% unlock), Mock Interview (75% unlock)
+    → Task status: TO_DO → IN_PROGRESS → COMPLETED
+    → Sprint locking: must complete previous sprint to unlock next
+    → Sprint-level mock reviews
+
+FLOW E: Fork/Enroll (Viewing Others' Projects)
+──────────────────────────────────────────────
+  → User finds a public project
+  → Option 1: Enroll (costs 13 credits) → creates progress tracking on SAME project
+  → Option 2: Fork (free) → creates a COMPLETE COPY of the project for the user
+  → Both give access to sprints page
+
+
+================================================================================
+6. FLOW CHART: CURRENT USER JOURNEY (AS-IS)
+================================================================================
+
+                    ┌──────────────────────┐
+                    │   /projects (Home)   │
+                    │   Landing Page       │
+                    └─────┬──────┬─────────┘
+                          │      │
+              ┌───────────┘      └───────────────┐
+              ▼                                  ▼
+     ┌────────────────┐                ┌──────────────────┐
+     │ "Generate with │                │  "Browse Ideas"  │
+     │     AI" btn    │                │     button       │
+     └───────┬────────┘                └────────┬─────────┘
+             │                                  │
+             ▼                                  ▼
+     ┌────────────────┐                ┌──────────────────┐
+     │ ProjectGenerate│                │  /projects/ideas │  ← PAGE 2
+     │    Sheet       │                │  Ideas Hub       │
+     │ (5-step wizard)│                └────┬────────┬────┘
+     └───────┬────────┘                     │        │
+             │                    ┌─────────┘        └──────────┐
+             │                    ▼                             ▼
+             │           ┌───────────────┐            ┌─────────────────┐
+             │           │ Technology Tab│            │  Problem Tab    │
+             │           │ Click category│            │  Click problem  │
+             │           └───────┬───────┘            └────────┬────────┘
+             │                   │                             │
+             │                   ▼                             │
+             │           ┌───────────────┐                     │
+             │           │ Bottom Sheet  │ ← SHEET             │
+             │           │ Select Tech   │                     │
+             │           └───────┬───────┘                     │
+             │                   │                             │
+             │                   ▼                             │
+             │           ┌───────────────┐                     │
+             │           │ /ideas/[c]/[t]│ ← PAGE 3            │
+             │           │ Project List  │                     │
+             │           └───────┬───────┘                     │
+             │                   │                             │
+             │                   ▼                             ▼
+             │           ┌────────────────────────────────────────────┐
+             │           │          ProjectGenerateSheet              │
+             │           │  (opens with pre-filled title/desc)       │
+             │           │  → AI generates sprints & tasks           │
+             │           └───────────────────┬────────────────────────┘
+             │                               │
+             └───────────────────┬───────────┘
+                                 │
+                                 ▼
+                    ┌──────────────────────┐
+                    │  /projects/[slug]    │ ← PAGE 4 (or 3)
+                    │  Project Details     │
+                    │  (Overview, Pages,   │
+                    │   Setup, Settings)   │
+                    └─────────┬────────────┘
+                              │
+                              ▼ (Start Building)
+                    ┌──────────────────────┐
+                    │  /projects/[slug]/   │ ← PAGE 5 (or 4)
+                    │  sprints             │
+                    │  Sprint Board        │
+                    └─────────┬────────────┘
+                              │ (50% complete)
+                              ├──────────────────────────┐
+                              │                          ▼
+                              │           ┌──────────────────────┐
+                              │           │  /projects/[slug]/   │
+                              │           │  quiz                │
+                              │           └──────────────────────┘
+                              │ (75% complete)
+                              ├──────────────────────────┐
+                              │                          ▼
+                              │           ┌──────────────────────┐
+                              │           │  /projects/[slug]/   │
+                              │           │  aimock              │
+                              │           └──────────────────────┘
+                              │ (90% complete)
+                              ▼
+                    ┌──────────────────────┐
+                    │  Submit Project      │
+                    │  (GitHub URL, Notes) │
+                    └──────────────────────┘
+
+
+  TOTAL PAGE NAVIGATIONS for Ideas flow: 5+ pages
+  TOTAL SHEET/DIALOG openings: 3-4 (tech sheet, generate sheet, etc.)
+
+  ⚠️ THIS IS TOO MANY STEPS. User gets lost.
+
+
+================================================================================
+7. IDENTIFIED PROBLEMS & FRICTION POINTS
+================================================================================
+
+7.1  TOO MANY PAGE HOPS (Critical)
+─────────────────────────────────────
+  Current Ideas flow:
+    /projects → /projects/ideas → [sheet] → /projects/ideas/[c]/[t]
+    → [sheet: generate] → /projects/[slug] → Start → /sprints
+
+  That's 4-5 page navigations + 2-3 sheet openings before actual building.
+
+  RECOMMENDATION: Reduce to maximum 2-3 steps total.
+
+7.2  SEEDED IDEAS OPEN GENERATE SHEET (Bad UX)
+────────────────────────────────────────────────
+  When a user clicks "Build Now" on a technology-based idea (hardcoded in
+  categories.ts), it opens the ProjectGenerateSheet with pre-filled data.
+  The user then has to go through the AI generation flow again.
+
+  This makes no sense for platform-curated projects where we ALREADY KNOW
+  what the project should look like. These should be PRE-GENERATED.
+
+  RECOMMENDATION: Platform-curated projects should be pre-seeded with
+  sprints & tasks in the database. Clicking "Start Project" should
+  immediately take the user to /projects/[slug] (or directly start).
+
+7.3  CATEGORIES DATA IS HARDCODED (Technical Debt)
+──────────────────────────────────────────────────
+  File: apps/main/app/(main)/projects/ideas/data/categories.ts (1015 lines)
+  Contains 12 hardcoded categories with ~60+ technologies.
+  This should eventually be moved to the database for admin management.
+
+7.4  NO DISTINCTION: PLATFORM vs USER-GENERATED PROJECTS
+────────────────────────────────────────────────────────
+  All projects look the same. Users can't tell if a project is:
+  • Curated by BuildR HQ (high quality, verified)
+  • AI-generated by another user
+  • Submitted as an idea by a community member
+
+  RECOMMENDATION: Add isPlatformSeeded flag + visual badge.
+
+7.5  FORK AND COPY — REDUNDANT (Confusing)
+─────────────────────────────────────────
+  Current state:
+  • "Enroll" → Costs credits, tracks progress on SAME project
+  • "Fork" → Free, creates a COMPLETE COPY (new project with all tasks)
+
+  Both achieve the same goal: letting the user work on the project.
+  Having both confuses users about which to choose.
+
+7.6  1150-LINE MEGA COMPONENT
+──────────────────────────────
+  project-details-client.tsx is 1150 lines. While it has some extracted
+  sub-components, the main file still has:
+  • MilestoneTracker component
+  • QuickActions component
+  • All dialog/sheet state management
+  • Fork, enroll, share, submit handlers
+  • Team settings handlers
+  • All tab rendering
+
+7.7  IDEAS PAGE: PROJECTS NOT ACTUALLY IN DATABASE
+──────────────────────────────────────────────────
+  The technology-based projects on /projects/ideas are fetched from the
+  ProjectIdea table, but those records often don't have pre-generated
+  blueprints (hasBlueprintGenerated is false). The user has to go through
+  AI generation every time.
+
+7.8  NO AI-GUIDED BUILDING MODE
+────────────────────────────────
+  The platform's philosophy is "don't give solutions until asked," but
+  there's no structured AI-guided mode for users who want step-by-step
+  hand-holding. The AI assistant buttons exist but don't offer an
+  integrated chat-based building experience.
+
+
+================================================================================
+8. FORK vs COPY vs ENROLL — DECISION & RECOMMENDATION
+================================================================================
+
+8.1  Analysis
+─────────────
+
+  ┌──────────────┬──────────────────────────┬────────────────────────────┐
+  │   Feature    │        ENROLL            │          FORK              │
+  ├──────────────┼──────────────────────────┼────────────────────────────┤
+  │ Cost         │ 13 credits               │ Free                       │
+  │ Data Model   │ Creates UserProgress on  │ Creates FULL COPY:         │
+  │              │ SAME project             │ new ProjectV2, new tasks,  │
+  │              │                          │ new pages, new sprints     │
+  │ Leaderboard  │ Yes (shared)             │ No (separate project)      │
+  │ Updates      │ Gets creator's updates   │ Snapshot — no sync         │
+  │ Collaboration│ Can be invited to team   │ Independent                │
+  │ Use Case     │ "Join this project"      │ "I want my own copy"       │
+  └──────────────┴──────────────────────────┴────────────────────────────┘
+
+8.2  Recommendation: KEEP ENROLL (rename to "Join"), REMOVE FORK
+────────────────────────────────────────────────────────────────
+
+  REASONING:
+  • For PLATFORM-SEEDED projects: Enroll makes sense. The user "joins" a
+    well-structured project and tracks their progress on it. They appear
+    on the leaderboard. They get updates if the platform improves the project.
+
+  • Fork creates data bloat: Every fork duplicates the entire project
+    (all sprints, all tasks, all pages). With 100 seeded projects and
+    10,000 users, that's potentially millions of duplicated records.
+
+  • Fork is conceptually confusing for learners. They don't need to "own"
+    the project — they need to LEARN from it.
+
+  • The Invite feature (for teams) already covers the collaboration case.
+
+  ALTERNATIVE: If you want a "free" option, make enrollment free for
+  platform-seeded projects (since they cost nothing to generate).
+
+  RESULT:
+  • Platform-seeded projects → "Start Project" (free, creates progress)
+  • User-generated public projects → "Enroll" (credits, shared leaderboard)
+  • Team projects → "Invite" (existing flow)
+  • REMOVE: Fork button entirely
+
+
+================================================================================
+9. SEEDED / PLATFORM PROJECTS — NEW FLOW PROPOSAL
+================================================================================
+
+9.1  Concept: Pre-Generated Project Blueprints
+──────────────────────────────────────────────
+
+  Instead of the user clicking "Build Now" → AI generates → redirect,
+  platform-curated projects should ALREADY EXIST in the database as
+  full ProjectV2 records with:
+  • Pre-generated sprints and tasks
+  • Blueprint overview, features, setup guide
+  • Proper difficulty distribution (33 basic, 33 medium, 34 advanced)
+  • curated by the BuildR HQ team
+
+  The ProjectIdea already has blueprintProjectId to link to a ProjectV2.
+
+9.2  Seeding Strategy
+─────────────────────
+
+  Target: 100 projects across categories
+
+  ┌────────────────┬──────────┬─────────┬──────────┬──────────┐
+  │   Category     │ Beginner │ Medium  │ Advanced │   Total  │
+  ├────────────────┼──────────┼─────────┼──────────┼──────────┤
+  │ Web Dev        │    5     │    5    │    5     │    15    │
+  │ Backend        │    4     │    4    │    4     │    12    │
+  │ App Dev        │    3     │    4    │    3     │    10    │
+  │ AI/ML          │    4     │    4    │    4     │    12    │
+  │ Data Science   │    3     │    3    │    3     │     9    │
+  │ DevOps         │    3     │    3    │    3     │     9    │
+  │ Blockchain     │    2     │    3    │    3     │     8    │
+  │ Cybersecurity  │    2     │    3    │    3     │     8    │
+  │ Game Dev       │    2     │    2    │    2     │     6    │
+  │ Cloud          │    2     │    2    │    2     │     6    │
+  │ Other          │    2     │    1    │    2     │     5    │
+  ├────────────────┼──────────┼─────────┼──────────┼──────────┤
+  │ TOTAL          │   32     │   34    │   34     │   100    │
+  └────────────────┴──────────┴─────────┴──────────┴──────────┘
+
+9.3  New Flow for Platform Projects
+────────────────────────────────────
+
+  Step 1: User browses /projects/ideas → sees technology categories
+  Step 2: User clicks category → sees projects INLINE (no separate page needed)
+  Step 3: User clicks a project → goes directly to /projects/[slug]
+          (the pre-generated project detail page)
+  Step 4: User clicks "Start Project" → progress tracking begins
+          → redirected to /projects/[slug]/sprints
+
+  THAT'S IT. 3 steps total vs 5+ currently.
+
+9.4  User-Submitted Ideas (Different Flow)
+──────────────────────────────────────────
+
+  When a user submits an idea via "Submit an Idea" and another user
+  finds that user-submitted idea:
+  • Show the ProjectGenerateSheet (since no blueprint exists)
+  • The idea data pre-fills the generation form
+  • AI generates the project as before
+
+  Visual indicator: Badge showing "Community Submitted" vs "BuildR Curated"
+
+
+================================================================================
+10. SCHEMA CHANGES REQUIRED
+================================================================================
+
+10.1  Add to ProjectV2 model:
+──────────────────────────────
+
+  // In packages/prisma/schema/projects.prisma
+
+  model ProjectV2 {
+    // ... existing fields ...
+
+    // NEW: Platform project flag
+    isPlatformSeeded   Boolean @default(false)  // If seeded by platform
+    projectSource      String  @default("AI_GENERATED")
+                       // AI_GENERATED | PLATFORM_SEEDED | USER_SUBMITTED | FORKED
+
+    // NEW: AI-guided mode support
+    guidedModeEnabled  Boolean @default(false)  // If AI step-by-step is available
+    guidedSteps        Json?                    // Pre-seeded AI conversation steps
+
+    // ... rest of fields ...
+  }
+
+10.2  Add to ProjectIdea model:
+──────────────────────────────
+
+  model ProjectIdea {
+    // ... existing fields ...
+
+    // NEW: Platform curation
+    isPlatformCurated  Boolean @default(false)  // Curated by BuildR team
+    curatedQuality     String? // "FEATURED" | "STANDARD" | "COMMUNITY"
+
+    // ... rest of fields ...
+  }
+
+10.3  New Model: AI Guided Session
+──────────────────────────────────
+
+  model ProjectV2GuidedSession {
+    id          String    @id @default(cuid())
+    userId      String
+    user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    projectId   String
+    project     ProjectV2 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    // Current step tracking
+    currentSprintIndex  Int @default(0)
+    currentTaskIndex    Int @default(0)
+    currentStepIndex    Int @default(0)  // Within a task
+
+    // Conversation history (for continuity)
+    conversationHistory Json?  // Array of {role, content, timestamp}
+
+    // Session state
+    isActive    Boolean   @default(true)
+    mode        String    @default("GUIDED") // GUIDED | SELF_PACED
+
+    startedAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    @@unique([userId, projectId])
+    @@index([userId])
+    @@index([projectId])
+  }
+
+
+================================================================================
+11. IDEAS PAGE RESTRUCTURE — PROPOSED UX
+================================================================================
+
+11.1  Current Problem
+─────────────────────
+  /projects/ideas → Click category → Sheet opens → Click tech → New page opens
+  → See projects → Click "Build Now" → Sheet opens → AI generates → Redirect
+
+  TOO MANY INTERACTIONS.
+
+11.2  Proposed Redesign: Single-Page Ideas Hub
+──────────────────────────────────────────────
+
+  /projects/ideas should be a SINGLE PAGE with everything accessible:
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                    🚀 Project Ideas Hub                            │
+  │                                                                     │
+  │  [Technology ▼]  [Difficulty ▼]  [Search...              ] [Submit]│
+  │                                                                     │
+  │  ┌──── Sidebar ─────┐  ┌──── Main Content ────────────────────┐   │
+  │  │                   │  │                                      │   │
+  │  │ 📁 Categories     │  │  React Projects (15 projects)        │   │
+  │  │                   │  │                                      │   │
+  │  │ ▸ UI/UX           │  │  ┌───────────┐ ┌───────────┐        │   │
+  │  │ ▾ Web Dev         │  │  │  Advanced  │ │  Beginner │        │   │
+  │  │   ● React    (15) │  │  │ Real-Time  │ │ Portfolio │        │   │
+  │  │   ● Next.js  (12) │  │  │ Collab     │ │ Website   │        │   │
+  │  │   ● Vue      (8)  │  │  │ Editor     │ │ Builder   │        │   │
+  │  │   ● Angular  (6)  │  │  │            │ │           │        │   │
+  │  │ ▸ Backend         │  │  │ ⭐ BuildR  │ │ ⭐ BuildR │        │   │
+  │  │ ▸ App Dev         │  │  │ [Start →]  │ │ [Start →] │        │   │
+  │  │ ▸ AI/ML           │  │  └───────────┘ └───────────┘        │   │
+  │  │ ▸ DevOps          │  │                                      │   │
+  │  │ ▸ Blockchain      │  │  ┌───────────┐ ┌───────────┐        │   │
+  │  │                   │  │  │  Medium    │ │  Community│        │   │
+  │  │ ─────────────     │  │  │ E-Commerce │ │ Submitted │        │   │
+  │  │ 💡 Problem First  │  │  │ Dashboard  │ │ Chat App  │        │   │
+  │  │                   │  │  │            │ │           │        │   │
+  │  │                   │  │  │ ⭐ BuildR  │ │ 👤 User   │        │   │
+  │  │                   │  │  │ [Start →]  │ │ [Build →] │        │   │
+  │  │                   │  │  └───────────┘ └───────────┘        │   │
+  │  └───────────────────┘  └──────────────────────────────────────┘   │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  KEY DIFFERENCES:
+  • Left sidebar with expandable categories (no separate pages)
+  • Projects shown inline in the main area
+  • "⭐ BuildR" badge for platform-curated projects
+  • "👤 User" badge for community-submitted projects
+  • Platform projects: "Start →" links directly to /projects/[slug]
+  • Community projects: "Build →" opens ProjectGenerateSheet
+  • Problem First is a section in the sidebar, not a separate tab
+
+11.3  Alternative: Keep Current Layout but Remove Intermediate Steps
+─────────────────────────────────────────────────────────────────────
+
+  If the redesign is too much:
+  • Remove the bottom sheet for technology selection
+  • When user clicks a category, navigate directly to /projects/ideas/[category]
+  • Show technologies as TABS or filters on that page (not a separate page)
+  • Technology projects load inline with filters
+  • Platform-curated projects link directly to /projects/[slug]
+  • Community projects open generate sheet
+
+  This reduces the flow from 5+ steps to 3 steps.
+
+
+================================================================================
+12. FLOW CHART: PROPOSED USER JOURNEY (TO-BE)
+================================================================================
+
+FOR PLATFORM-SEEDED PROJECTS:
+──────────────────────────────
+
+    ┌──────────────────────┐
+    │   /projects (Home)   │
+    └─────┬──────┬─────────┘
+          │      │
+    ┌─────┘      └───────────┐
+    ▼                        ▼
+┌──────────┐         ┌─────────────────┐
+│ Generate │         │  Browse Ideas   │
+│ with AI  │         │     button      │
+└────┬─────┘         └───────┬─────────┘
+     │                       │
+     ▼                       ▼
+┌──────────┐         ┌─────────────────┐
+│ Generate │         │ /projects/ideas │  ← SINGLE PAGE
+│  Sheet   │         │ Left sidebar:   │
+│ (wizard) │         │  categories     │
+└────┬─────┘         │ Main: projects  │
+     │               │ Filters, search │
+     │               └───────┬─────────┘
+     │                       │
+     │            ┌──────────┴──────────┐
+     │            ▼                     ▼
+     │    ┌────────────┐        ┌────────────┐
+     │    │  Platform   │        │  Community  │
+     │    │  Curated    │        │  Submitted  │
+     │    │  ⭐ BuildR  │        │  👤 User    │
+     │    └─────┬──────┘        └────┬───────┘
+     │          │                    │
+     │          ▼                    ▼
+     │    ┌────────────┐     ┌────────────────┐
+     │    │ DIRECT LINK│     │ Generate Sheet │
+     │    │ to [slug]  │     │ (pre-filled)   │
+     │    └─────┬──────┘     └────┬───────────┘
+     │          │                 │
+     └──────────┼─────────────────┘
+                │
+                ▼
+    ┌──────────────────────┐
+    │  /projects/[slug]    │  ← PROJECT DETAIL
+    │  See overview,       │
+    │  tech stack, sprints │
+    │  [Start Project] btn │
+    └─────────┬────────────┘
+              │
+              ▼ Choose mode:
+    ┌─────────┴─────────────────┐
+    │                           │
+    ▼                           ▼
+┌──────────┐           ┌──────────────┐
+│ Self-    │           │ AI-Guided    │
+│ Paced   │           │ Step-by-Step │
+└────┬─────┘           └──────┬───────┘
+     │                        │
+     ▼                        ▼
+┌──────────────────┐  ┌──────────────────┐
+│ /[slug]/sprints  │  │ /[slug]/sprints  │
+│ Regular sprint   │  │ + AI Chat Panel  │
+│ board            │  │ Interactive guide│
+└─────────┬────────┘  └─────────┬────────┘
+          │                     │
+          └─────────┬───────────┘
+                    │
+          (50%) ────┤──→ Quiz
+          (75%) ────┤──→ Mock Interview
+          (90%) ────┤──→ Submit Project
+          (100%) ───┤──→ 🎉 Completion
+                    │
+                    ▼
+          ┌─────────────────┐
+          │   Leaderboard   │
+          │   Certificate   │
+          └─────────────────┘
+
+TOTAL STEPS for Platform Projects: 3 (Ideas → Detail → Sprints)
+vs CURRENT: 5+ steps
+
+
+================================================================================
+13. AI STEP-BY-STEP ASSISTANT — DESIGN SPECIFICATION
+================================================================================
+
+13.1  Overview
+──────────────
+
+  When a user starts a project and chooses "AI-Guided" mode, they get an
+  integrated AI chat panel alongside the sprint board. The AI acts as a
+  mentor, guiding them task-by-task through the project.
+
+13.2  Core Principles
+───────────────────────
+
+  1. NO CODE DUMPING: AI does not give full solutions upfront
+  2. INCREMENTAL: One step at a time, wait for user confirmation
+  3. SOCRATIC: Ask questions, give hints before answers
+  4. CONTEXTUAL: AI knows the current task, sprint, and project context
+  5. ON-DEMAND: User can ask for code, commands, or explanations when needed
+
+13.3  Conversation Flow Design
+───────────────────────────────
+
+  STEP 1 — Project Introduction
+  ─────────────────────────────
+  AI: "👋 Welcome to {projectTitle}! This is a {difficulty} level
+       {generationType} project. You'll be building it using
+       {technologies.join(', ')}.
+
+       Here's what you'll create:
+       {blueprintOverview}
+
+       We'll work through {N} sprints with {M} total tasks.
+
+       Sprint 1: {sprint1.name}
+       Goal: {sprint1.goal}
+
+       Should we get started with the first task? 🚀"
+
+  User: "Yes, let's go!"
+
+  STEP 2 — Task Introduction (for each task)
+  ──────────────────────────────────────────
+  AI: "📋 Task {N}: {task.title}
+
+       Here's what you need to do:
+       {task.description.map(step => `• ${step}`).join('\n')}
+
+       ✅ Success Criteria:
+       {task.criteria.map(c => `• ${c}`).join('\n')}
+
+       This should take about {task.estimatedTime}.
+
+       Would you like to:
+       1. Start on your own (I'll wait for questions)
+       2. Get a step-by-step walkthrough
+       3. See what tools/commands you'll need"
+
+  STEP 3 — If user asks for walkthrough
+  ─────────────────────────────────────
+  AI breaks down each description step into sub-steps:
+  - Explains the concept behind each step
+  - Suggests terminal commands (without running them)
+  - Shows code structure (skeleton, not implementation)
+  - Waits for user to confirm they've done each sub-step
+
+  STEP 4 — User can ask questions anytime
+  ──────────────────────────────────────
+  • "What does X mean?" → Concept explanation
+  • "Show me the code for Y" → Code snippet (only when asked)
+  • "I'm stuck on Z" → Debugging hints, then solution if needed
+  • "Quiz me on this topic" → Quick quiz generation
+  • "Give me the terminal command" → Command suggestion
+
+  STEP 5 — Task Completion
+  ────────────────────────
+  User: "I've completed this task"
+  AI: "Great! Let me verify:
+       ✅ {criteria[0]} — Done?
+       ✅ {criteria[1]} — Done?
+       ✅ {criteria[2]} — Done?
+
+       All good! Marking task as complete. ✨
+       You're now at {progress}% completion.
+
+       Ready for the next task? Or would you like a quick quiz
+       on what you just learned?"
+
+13.4  UI Layout for AI-Guided Mode
+──────────────────────────────────
+
+  ┌────────────────────────────────────────────────────────────────────┐
+  │  Sprint Board Header: Sprint 1 — Foundation & Setup               │
+  │  [Daily Standup] [Quiz 🔒 50%] [Mock Interview 🔒 75%]            │
+  ├──────────┬────────────────────────┬───────────────────────────────┤
+  │  Tasks   │   Task Detail          │   AI Assistant Panel          │
+  │          │                        │                               │
+  │ ✅ T-1   │  📋 Setup Database     │  🤖 AI Mentor                 │
+  │ ✅ T-2   │  Description:          │                               │
+  │ ▶️ T-3   │  • Install PostgreSQL  │  "You're working on Task 3:  │
+  │ ⬜ T-4   │  • Create schema       │   Setting up the database.   │
+  │ ⬜ T-5   │  • Add migrations      │                               │
+  │          │                        │   Would you like me to walk  │
+  │          │  Criteria:             │   you through each step?"    │
+  │          │  • DB connected         │                               │
+  │          │  • Tables created       │  ┌──────────────────────┐    │
+  │          │  • Seeds working        │  │ Type your message... │    │
+  │          │                        │  └──────────────────────┘    │
+  ├──────────┴────────────────────────┴───────────────────────────────┤
+  │  Progress: ████████░░░░░░░░░░░░  40% | Sprint 1/4 | Task 3/12   │
+  └────────────────────────────────────────────────────────────────────┘
+
+13.5  Implementation Approach
+─────────────────────────────
+
+  OPTION A: OpenAI Chat Completions (Recommended for V1)
+  • Use GPT-4 with system prompt containing project context
+  • Store conversation history in ProjectV2GuidedSession
+  • System prompt includes: project data, current task, sprint info
+  • Each message sent with context of task progress
+  • Costs: ~$0.01-0.05 per message exchange
+
+  OPTION B: OpenAI Assistants API (For V2)
+  • Create per-project assistant with knowledge base
+  • Thread-based conversation with file attachments
+  • Better long-term memory and tool usage
+  • Higher cost but more sophisticated
+
+  OPTION C: Pre-Seeded Messages + AI (Hybrid)
+  • For each task, pre-define the intro message and key steps
+  • Use AI only for user questions and debugging
+  • Cheapest option, most predictable behavior
+  • Store pre-defined steps in task.guidedSteps (JSON)
+
+  RECOMMENDATION: Start with Option C for platform-seeded projects
+  (pre-seeded guided steps) and Option A for AI-generated projects.
+
+13.6  Data Model for Guided Steps
+─────────────────────────────────
+
+  Each task can have an optional `guidedSteps` JSON field:
+
+  {
+    "introduction": "Welcome to this task! You'll be setting up...",
+    "steps": [
+      {
+        "instruction": "First, install the required dependencies",
+        "command": "npm install prisma @prisma/client",
+        "explanation": "Prisma is an ORM that...",
+        "verification": "Run 'npx prisma --version' to verify"
+      },
+      {
+        "instruction": "Create the Prisma schema file",
+        "codeSnippet": "// prisma/schema.prisma\ngenerator client {...}",
+        "explanation": "The schema file defines your database models...",
+        "verification": "Check that prisma/schema.prisma exists"
+      }
+    ],
+    "completion": "Great! You've successfully set up the database layer.",
+    "quiz": [
+      {
+        "question": "What is an ORM?",
+        "options": ["A database", "An Object-Relational Mapper", ...],
+        "correct": 1
+      }
+    ]
+  }
+
+
+================================================================================
+14. INDUSTRY-STANDARD PROJECT EXPERIENCE DESIGN
+================================================================================
+
+The goal is to simulate real industry project workflows:
+
+14.1  Sprint-Based Development (Already Implemented ✅)
+───────────────────────────────────────────────────────
+  • Sprints with goals, duration, and task breakdowns
+  • Sprint locking (complete previous to unlock next)
+  • Sprint-level reviews (mock interviews)
+
+14.2  Daily Standups (Already Implemented ✅)
+────────────────────────────────────────────
+  • Daily standup questions (yesterday, today, blockers)
+  • AI summary and suggestions
+  • Voice recording option
+
+14.3  Code Review Simulation (Enhancement Needed)
+────────────────────────────────────────────────
+  PROPOSAL: After each sprint completion, add an AI code review step:
+  • User shares their GitHub repo
+  • AI reviews code quality, structure, naming conventions
+  • Provides feedback like a real code reviewer
+  • Scores: code quality, architecture, testing
+
+14.4  Task Assessment (Already Implemented ✅)
+──────────────────────────────────────────────
+  • Task-level quizzes
+  • Code challenges
+  • Knowledge validation
+
+14.5  Project Retrospective (Enhancement Needed)
+───────────────────────────────────────────────
+  PROPOSAL: At project completion (100%), add a retrospective:
+  • What went well?
+  • What was challenging?
+  • What would you do differently?
+  • AI generates a "Project Journey Report"
+
+14.6  Portfolio Generation (Enhancement Needed)
+──────────────────────────────────────────────
+  PROPOSAL: On submission, auto-generate:
+  • A portfolio-ready project description
+  • Key technical highlights for resume
+  • Demo screenshots guidance
+  • README.md template
+
+
+================================================================================
+15. PROJECT IDEA QUALITY: CURATED, JOB-MARKET-READY IDEAS
+================================================================================
+
+15.1  Current Problem
+─────────────────────
+  The current ideas might include generic projects like "To-Do App" or
+  "Calculator." In today's job market, these won't impress recruiters.
+
+15.2  Project Types That Actually Get Developers Hired
+─────────────────────────────────────────────────────
+
+  ✅ GOOD PROJECT IDEAS (by category):
+
+  REACT / NEXT.JS:
+  • Real-Time Collaborative Code Editor (like CodeSandbox)
+  • AI-Powered Resume Builder with ATS Score Checker
+  • Multi-Tenant SaaS Dashboard with Role-Based Access
+  • Live Streaming Platform with Chat & Donations
+  • Notion-Like Block Editor with Drag & Drop
+  • Real-Time Analytics Dashboard with WebSocket Updates
+  • Design System Component Library with Storybook
+  • Progressive Web App for Project Management (like Linear)
+
+  NODE.JS / BACKEND:
+  • Event-Driven Microservice Architecture (Order Processing System)
+  • Rate-Limited API Gateway with JWT & OAuth2
+  • Real-Time Notification System with WebSockets + Redis Pub/Sub
+  • Background Job Processing System (like Sidekiq/Bull)
+  • GraphQL Federation API with Multiple Data Sources
+  • Webhook Delivery System with Retry Logic & Dead Letter Queue
+
+  PYTHON / AI:
+  • RAG-Powered Customer Support Bot with Knowledge Base
+  • Automated Data Pipeline with Apache Airflow
+  • Computer Vision Quality Inspection System
+  • Multi-Modal AI Search Engine (Text + Image)
+  • AI-Powered Code Review Bot for GitHub PRs
+  • Fraud Detection System with Real-Time Streaming
+
+  DEVOPS:
+  • Kubernetes Cluster Monitoring Dashboard
+  • CI/CD Pipeline Generator with Template System
+  • Infrastructure Cost Optimizer with AWS/GCP APIs
+  • Automated Security Scanning Pipeline
+
+  FULL STACK:
+  • Marketplace Platform with Payment Processing (Stripe)
+  • Real-Time Bidding/Auction System
+  • Video Conferencing App with Screen Sharing
+  • Developer Portfolio Platform with CMS
+  • Open-Source Alternative to [Popular SaaS] Builder
+
+15.3  Recruiter Signal Integration
+──────────────────────────────────
+  Each project idea should have a "recruiterSignal" that explains WHY
+  this project matters to employers:
+
+  Example:
+  Project: "Real-Time Collaborative Editor"
+  Recruiter Signal: "Demonstrates proficiency in WebSocket communication,
+  operational transformation (OT/CRDT), state synchronization across
+  distributed clients — key skills for companies building collaborative
+  tools (Figma, Notion, Google Docs)."
+
+
+================================================================================
+16. PRIORITIZED IMPLEMENTATION ROADMAP
+================================================================================
+
+PHASE 1: QUICK WINS (1-2 weeks)
+─────────────────────────────────
+  Priority | Task                                              | Impact
+  ─────────┼──────────────────────────────────────────────────┼────────
+  P0       │ Add `isPlatformSeeded` field to ProjectV2 schema │ High
+  P0       │ Add `projectSource` enum field to ProjectV2      │ High
+  P0       │ Remove Fork button from project-details-client   │ Medium
+  P0       │ Make platform-seeded projects free to start      │ High
+  P1       │ Add "⭐ BuildR Curated" badge to project cards   │ Medium
+  P1       │ Link ideas directly to /projects/[slug]          │ High
+           │ (for blueprinted ideas)                          │
+  P1       │ Remove bottom sheet on ideas page → direct nav   │ Medium
+
+PHASE 2: IDEAS PAGE RESTRUCTURE (2-3 weeks)
+─────────────────────────────────────────────
+  Priority | Task                                              | Impact
+  ─────────┼──────────────────────────────────────────────────┼────────
+  P1       │ Redesign ideas page with sidebar categories      │ High
+  P1       │ Inline project cards (no intermediate pages)     │ High
+  P1       │ Differentiate BuildR vs Community projects       │ High
+  P2       │ Move categories.ts data to database (optional)   │ Medium
+
+PHASE 3: SEED 100 PROJECTS (3-4 weeks)
+──────────────────────────────────────
+  Priority | Task                                              | Impact
+  ─────────┼──────────────────────────────────────────────────┼────────
+  P1       │ Create seed script for platform projects         │ Critical
+  P1       │ Curate 100 job-market-ready project descriptions │ Critical
+  P1       │ AI-generate sprints/tasks for each project       │ Critical
+  P2       │ Add recruiterSignal to each project              │ High
+
+PHASE 4: AI GUIDED MODE (4-6 weeks)
+──────────────────────────────────────
+  Priority | Task                                              | Impact
+  ─────────┼──────────────────────────────────────────────────┼────────
+  P2       │ Create ProjectV2GuidedSession schema             │ High
+  P2       │ Build AI chat panel component                    │ High
+  P2       │ Implement guided steps data model                │ High
+  P2       │ Integrate with sprint board layout               │ High
+  P3       │ Pre-seed guided steps for platform projects      │ Critical
+  P3       │ Add code review simulation                       │ Medium
+  P3       │ Add project retrospective feature                │ Medium
+
+PHASE 5: POLISH & SCALE
+─────────────────────────
+  • Portfolio generation on project completion
+  • Code review simulation with AI
+  • Project retrospective
+  • Performance optimization
+  • Analytics dashboard for project completion rates
+
+
+================================================================================
+17. APPENDIX: DETAILED CODE REFERENCES
+================================================================================
+
+A.1  Key Files That Need Changes
+─────────────────────────────────
+
+  SCHEMA:
+  • packages/prisma/schema/projects.prisma
+    - Add isPlatformSeeded, projectSource to ProjectV2 (line ~107)
+    - Add isPlatformCurated to ProjectIdea (line ~831)
+    - Create ProjectV2GuidedSession model (new)
+
+  CLIENT PAGES:
+  • apps/main/app/(main)/projects/ideas/page.tsx
+    - Restructure to sidebar + main content layout
+    - Remove tech bottom sheet, add inline navigation
+    - Add BuildR vs Community badge differentiation
+    
+  • apps/main/app/(main)/projects/ideas/[category]/page.tsx
+    - May become unnecessary with sidebar redesign
+    
+  • apps/main/app/(main)/projects/ideas/[category]/[technology]/page.tsx
+    - Update "Build Now" to link directly for blueprinted projects
+    - Keep generate sheet only for community projects
+
+  • apps/main/app/(main)/projects/[slug]/_components/project-details-client.tsx
+    - Remove forkProject handler and fork button (line ~488-505, ~733-756)
+    - Add "⭐ Platform Project" badge for seeded projects
+    - Add mode selection (Self-Paced vs AI-Guided) on start
+    - Consider splitting 1150-line file into smaller components
+
+  • apps/main/app/(main)/projects/[slug]/sprints/_components/sprints-page-client.tsx
+    - Add AI chat panel for guided mode
+    - Three-column layout: tasks | details | AI assistant
+
+  SERVER ACTIONS:
+  • apps/main/actions/(main)/projects/project.action.ts
+    - Remove forkProject function (line ~1229-1464) OR simplify
+    - Update startProject to handle guided mode
+    - Add getGuidedSessionState action
+
+  COMPONENTS:
+  • apps/main/components/projects/project-card.tsx
+    - Add isPlatformSeeded badge rendering
+    - Add projectSource indicator
+
+A.2  Type Files
+────────────────
+  • apps/main/types/project.ts
+    - Add isPlatformSeeded, projectSource to ProjectV2Basic
+    - Add guided mode types (GuidedSession, GuidedStep)
+
+A.3  Seed Script (New)
+───────────────────────
+  Create: apps/main/scripts/seed-platform-projects.ts
+  - Read project definitions from a JSON file
+  - For each project: create ProjectV2 + ProjectIdea linked via blueprint
+  - Set isPlatformSeeded = true, isPlatformCurated = true
+  - Generate sprints and tasks via AI or from pre-defined JSON
+
+
+================================================================================
+                            END OF DOCUMENT
+================================================================================
+
+SUMMARY OF KEY DECISIONS:
+
+  1. ✅ KEEP Enroll (rename to "Join/Start") — REMOVE Fork
+  2. ✅ Add isPlatformSeeded flag to distinguish platform vs user projects
+  3. ✅ Platform projects: direct link (no AI generation needed)
+  4. ✅ Community-submitted projects: keep generate sheet flow
+  5. ✅ Restructure Ideas page to reduce page hops (3 steps max)
+  6. ✅ Add AI-Guided step-by-step mode as an optional building mode
+  7. ✅ Curate 100 job-market-ready project ideas
+  8. ✅ Add recruiterSignal to show WHY each project matters
+  9. ✅ Industry-standard experience: sprints, standups, reviews, retro
+
+  NEXT STEPS:
+  → Review this document
+  → Prioritize phases
+  → Begin with Phase 1 (schema changes + quick UI wins)
+  → Iterate based on user feedback
+
+================================================================================

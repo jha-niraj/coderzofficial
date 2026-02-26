@@ -217,24 +217,11 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                 conversationToken: tokenResult.token,
                 connectionType: 'webrtc',
                 userId: sessionData.userId,
-                // Pass user context as dynamic variables so the agent template
-                // can reference {{username}}, {{position}}, etc.
                 dynamicVariables: {
                     username: variables.username,
                     position: variables.position,
                     level: variables.level,
                     description: variables.description,
-                },
-                overrides: {
-                    agent: {
-                        prompt: {
-                            prompt: variables.knowledge_base
-                        }
-                        // firstMessage override removed — the ElevenLabs agent
-                        // config does not allow overriding this field (error 1008).
-                        // Configure the greeting in the ElevenLabs dashboard and use
-                        // {{username}} / {{position}} template variables there instead.
-                    }
                 }
             })
 

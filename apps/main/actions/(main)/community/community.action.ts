@@ -314,10 +314,15 @@ export async function getFeaturedCommunities(limit = 6) {
                     }
                 },
                 _count: {
-                    select: { members: true, posts: true }
+                    select: { 
+                        members: true, 
+                        posts: true 
+                    }
                 }
             },
-            orderBy: { featuredAt: 'desc' },
+            orderBy: { 
+                featuredAt: 'desc' 
+            },
             take: limit
         })
 

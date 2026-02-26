@@ -256,6 +256,68 @@ export default function ProjectsHomePage() {
 						</motion.div>
 					</div>
 				</section>
+				<section id="public-projects-section" className="py-24 bg-neutral-50 dark:bg-neutral-900/50">
+					<div className="max-w-7xl mx-auto px-6">
+						<motion.div
+							className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4"
+							initial={{ opacity: 0, y: 30 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6 }}
+						>
+							<div>
+								<div className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-full backdrop-blur-sm mb-4">
+									<Users className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
+									<span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Community Showcase</span>
+								</div>
+								<h2 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-neutral-50 dark:to-neutral-400 mb-2">
+									Featured Public Projects
+								</h2>
+								<p className="text-lg text-neutral-600 dark:text-neutral-400">
+									Discover projects built by our community
+								</p>
+							</div>
+							<Link href="/projects/allprojects">
+								<Button variant="outline" className="border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 rounded-xl">
+									View All Projects <ArrowRight className="ml-2 h-4 w-4" />
+								</Button>
+							</Link>
+						</motion.div>
+
+						<PublicProjectsGrid />
+					</div>
+				</section>
+				<section className="py-24 bg-white dark:bg-neutral-950">
+					<div className="max-w-7xl mx-auto px-6">
+						<motion.div
+							className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4"
+							initial={{ opacity: 0, y: 30 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.6 }}
+						>
+							<div>
+								<div className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-full backdrop-blur-sm mb-4">
+									<Trophy className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
+									<span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Recent Submissions</span>
+								</div>
+								<h2 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-neutral-50 dark:to-neutral-400 mb-2">
+									Latest Project Submissions
+								</h2>
+								<p className="text-lg text-neutral-600 dark:text-neutral-400">
+									See what our community has been building
+								</p>
+							</div>
+							<Link href="/projects/submissions">
+								<Button variant="outline" className="border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 rounded-xl">
+									View All Submissions <ArrowRight className="ml-2 h-4 w-4" />
+								</Button>
+							</Link>
+						</motion.div>
+
+						<RecentSubmissionsGrid />
+					</div>
+				</section>
 				<section className="py-24 bg-white dark:bg-neutral-950">
 					<div className="max-w-7xl mx-auto px-6">
 						<motion.div
@@ -318,68 +380,6 @@ export default function ProjectsHomePage() {
 								})
 							}
 						</div>
-					</div>
-				</section>
-				<section id="public-projects-section" className="py-24 bg-neutral-50 dark:bg-neutral-900/50">
-					<div className="max-w-7xl mx-auto px-6">
-						<motion.div
-							className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4"
-							initial={{ opacity: 0, y: 30 }}
-							whileInView={{ opacity: 1, y: 0 }}
-							viewport={{ once: true }}
-							transition={{ duration: 0.6 }}
-						>
-							<div>
-								<div className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-full backdrop-blur-sm mb-4">
-									<Users className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
-									<span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Community Showcase</span>
-								</div>
-								<h2 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-neutral-50 dark:to-neutral-400 mb-2">
-									Featured Public Projects
-								</h2>
-								<p className="text-lg text-neutral-600 dark:text-neutral-400">
-									Discover projects built by our community
-								</p>
-							</div>
-							<Link href="/projects/allprojects">
-								<Button variant="outline" className="border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 rounded-xl">
-									View All Projects <ArrowRight className="ml-2 h-4 w-4" />
-								</Button>
-							</Link>
-						</motion.div>
-
-						<PublicProjectsGrid />
-					</div>
-				</section>
-				<section className="py-24 bg-white dark:bg-neutral-950">
-					<div className="max-w-7xl mx-auto px-6">
-						<motion.div
-							className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4"
-							initial={{ opacity: 0, y: 30 }}
-							whileInView={{ opacity: 1, y: 0 }}
-							viewport={{ once: true }}
-							transition={{ duration: 0.6 }}
-						>
-							<div>
-								<div className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-full backdrop-blur-sm mb-4">
-									<Trophy className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
-									<span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Recent Submissions</span>
-								</div>
-								<h2 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-500 dark:from-neutral-50 dark:to-neutral-400 mb-2">
-									Latest Project Submissions
-								</h2>
-								<p className="text-lg text-neutral-600 dark:text-neutral-400">
-									See what our community has been building
-								</p>
-							</div>
-							<Link href="/projects/submissions">
-								<Button variant="outline" className="border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 rounded-xl">
-									View All Submissions <ArrowRight className="ml-2 h-4 w-4" />
-								</Button>
-							</Link>
-						</motion.div>
-
-						<RecentSubmissionsGrid />
 					</div>
 				</section>
 				<section className="py-24 bg-neutral-50 dark:bg-neutral-900/50">

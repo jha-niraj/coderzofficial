@@ -292,7 +292,6 @@ export default function TechnologyProjectsPage() {
                 }
             </div>
 
-            {/* Project Generate Sheet - controlled mode */}
             <ProjectGenerateSheet
                 trigger={<></>}
                 defaultValues={generateDefaults}

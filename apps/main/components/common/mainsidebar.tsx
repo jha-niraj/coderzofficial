@@ -392,12 +392,12 @@ function SidebarContent() {
 
     return (
         <>
-            <div className={cn("p-6 flex items-center relative border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "justify-center" : "gap-3")}>
+            <div className={cn("p-3 flex items-center relative border-b border-neutral-200 dark:border-neutral-800", isCollapsed ? "justify-center" : "gap-3")}>
                 <Link href={session ? "/home" : "/"} className="flex items-center gap-3">
                     <div className="relative h-10 w-10 flex-shrink-0">
                         <Image
                             src="/mainlogo.png"
-                            alt="CoderzLab"
+                            alt="BuildrHQ"
                             fill
                             className="object-contain"
                             priority
@@ -406,10 +406,7 @@ function SidebarContent() {
                     {
                         !isCollapsed && (
                             <div className="flex-1 text-left min-w-0">
-                                <h1 className="font-bold text-neutral-900 dark:text-white truncate tracking-tight">CoderzLab</h1>
-                                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate uppercase tracking-widest font-mono">
-                                    Main Platform
-                                </p>
+                                <h1 className="font-bold text-neutral-900 dark:text-white truncate tracking-tight">BuildrHQ</h1>
                             </div>
                         )
                     }
@@ -426,7 +423,7 @@ function SidebarContent() {
                 }
             </div>
             <ScrollArea className="flex-1">
-                <nav className="px-3 py-4 space-y-1">
+                <nav className="px-3 space-y-1">
                     {allRoutes.map((route) => renderNavItem(route))}
                 </nav>
             </ScrollArea>

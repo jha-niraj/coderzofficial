@@ -195,18 +195,7 @@ export function Voice({
                 conversationToken: tokenResult.token,
                 connectionType: 'webrtc',
                 userId: config.userId,
-                overrides: config.knowledgeBase || config.firstMessage ? {
-                    agent: {
-                        ...(config.knowledgeBase && {
-                            prompt: {
-                                prompt: config.knowledgeBase
-                            }
-                        }),
-                        ...(config.firstMessage && {
-                            firstMessage: config.firstMessage
-                        })
-                    }
-                } : undefined
+                dynamicVariables: config.variables
             })
 
             conversationIdRef.current = conversationId

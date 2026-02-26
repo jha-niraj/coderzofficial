@@ -23,7 +23,7 @@ export default async function CommunityPage() {
         globalFeedResult
     ] = await Promise.all([
         getUserCommunities(),
-        getFeaturedCommunities(4),
+        getFeaturedCommunities(6),
         getGlobalFeed({ limit: 20 })
     ])
 

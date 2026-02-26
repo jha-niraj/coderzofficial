@@ -6,9 +6,9 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import {
     Users, MessageSquare, FileText, Calendar, Trophy, Settings, Bell,
-    Share2, CheckCircle2, Lock, Globe, UserPlus, LogOut, Loader2, ChevronDown,
-    HelpCircle, Briefcase, Code2, CircleHelp, Mail, RefreshCw, Plus,
-    Trash, LayoutGrid, Compass
+    Share2, CheckCircle2, Lock, Globe, UserPlus, LogOut, Loader2,
+    ChevronDown, HelpCircle, Briefcase, Code2, CircleHelp, Mail,
+    RefreshCw, Plus, Trash, LayoutGrid, Compass
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
@@ -35,7 +35,6 @@ import { PostCard } from '@/components/community/post-card'
 import { PostComposer } from '@/components/community/post-composer'
 import { PostDetailSheet } from '@/components/community/post-detail-sheet'
 import { CommunityInfoSidebar } from '@/components/community/community-sidebar'
-import { MagicSheet } from '@/components/community/magic-sheet'
 import { CommunityLeaderboard } from '@/components/community/community-leaderboard'
 import {
     getCommunityPosts, createPost
@@ -477,47 +476,55 @@ export function CommunityPageClient({
             case 'HELP':
                 return (
                     <>
-                        {isMember && user && (
-                            <div className="mb-6">
-                                <PostComposer
-                                    communityId={community.id}
-                                    communitySlug={community.slug}
-                                    user={user}
-                                    onPostCreated={refreshPosts}
-                                    sectionType={sectionId}
-                                    defaultType={config.postType as 'DISCUSSION' | 'QUESTION' | 'HELP_REQUEST' | 'SHOWCASE' | 'RESOURCE' | undefined}
-                                />
-                            </div>
-                        )}
-                        <div className="space-y-4">
-                            {sectionPosts.length === 0 ? (
-                                <EmptyState
-                                    icon={config.icon}
-                                    title={`No ${config.label.toLowerCase()} yet`}
-                                    description={`Be the first to post in ${config.label.toLowerCase()}!`}
-                                />
-                            ) : (
-                                <AnimatePresence>
-                                    {sectionPosts.map((post, index) => (
-                                        <motion.div
-                                            key={post.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.03 }}
-                                        >
-                                            <PostCard
-                                                post={post}
-                                                onClick={() => handlePostClick(post)}
-                                            />
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                            )}
-                            {nextCursor && (
-                                <div ref={loadMoreRef} className="py-8 flex justify-center">
-                                    {isLoading && <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />}
+                        {
+                            isMember && user && (
+                                <div className="mb-6">
+                                    <PostComposer
+                                        communityId={community.id}
+                                        communitySlug={community.slug}
+                                        user={user}
+                                        onPostCreated={refreshPosts}
+                                        sectionType={sectionId}
+                                        defaultType={config.postType as 'DISCUSSION' | 'QUESTION' | 'HELP_REQUEST' | 'SHOWCASE' | 'RESOURCE' | undefined}
+                                    />
                                 </div>
-                            )}
+                            )
+                        }
+                        <div className="space-y-4">
+                            {
+                                sectionPosts.length === 0 ? (
+                                    <EmptyState
+                                        icon={config.icon}
+                                        title={`No ${config.label.toLowerCase()} yet`}
+                                        description={`Be the first to post in ${config.label.toLowerCase()}!`}
+                                    />
+                                ) : (
+                                    <AnimatePresence>
+                                        {
+                                            sectionPosts.map((post, index) => (
+                                                <motion.div
+                                                    key={post.id}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.03 }}
+                                                >
+                                                    <PostCard
+                                                        post={post}
+                                                        onClick={() => handlePostClick(post)}
+                                                    />
+                                                </motion.div>
+                                            ))
+                                        }
+                                    </AnimatePresence>
+                                )
+                            }
+                            {
+                                nextCursor && (
+                                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                                        {isLoading && <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />}
+                                    </div>
+                                )
+                            }
                         </div>
                     </>
                 )
@@ -531,9 +538,11 @@ export function CommunityPageClient({
                     />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {initialResources.map((resource) => (
-                            <ResourceCard key={resource.id} resource={resource} />
-                        ))}
+                        {
+                            initialResources.map((resource) => (
+                                <ResourceCard key={resource.id} resource={resource} />
+                            ))
+                        }
                     </div>
                 )
 
@@ -588,34 +597,32 @@ export function CommunityPageClient({
 
     return (
         <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 pb-20">
-            {/* Cover Image Banner */}
             <div className="relative w-full h-[280px] bg-neutral-900">
-                {community.coverImage ? (
-                    <Image
-                        src={community.coverImage}
-                        alt="Community cover"
-                        fill
-                        className="object-cover opacity-80"
-                        priority
-                    />
-                ) : (
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            background: `linear-gradient(135deg, ${community.themeColor} 40%, ${community.themeColor}80 100%)`,
-                        }}
-                    >
-                        <div className="absolute inset-0 bg-black/20" />
-                    </div>
-                )}
+                {
+                    community.coverImage ? (
+                        <Image
+                            src={community.coverImage}
+                            alt="Community cover"
+                            fill
+                            className="object-cover opacity-80"
+                            priority
+                        />
+                    ) : (
+                        <div
+                            className="absolute inset-0"
+                            style={{
+                                background: `linear-gradient(135deg, ${community.themeColor} 40%, ${community.themeColor}80 100%)`,
+                            }}
+                        >
+                            <div className="absolute inset-0 bg-black/20" />
+                        </div>
+                    )
+                }
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             </div>
-
             <div className="w-full px-4 sm:px-6 lg:px-8 relative z-10 -mt-20">
-                {/* Header Card */}
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 mb-8 backdrop-blur-sm bg-white/95 dark:bg-neutral-900/95">
                     <div className="flex flex-col md:flex-row gap-6 items-start">
-                        {/* Logo */}
                         <div className="relative -mt-16 md:-mt-20 flex-shrink-0">
                             <div
                                 className="w-32 h-32 md:w-36 md:h-36 rounded-2xl border-4 border-white dark:border-neutral-900 shadow-2xl flex items-center justify-center text-5xl font-bold text-white overflow-hidden bg-white dark:bg-neutral-800"
@@ -625,26 +632,28 @@ export function CommunityPageClient({
                                         : community.themeColor
                                 }}
                             >
-                                {community.logo ? (
-                                    <Image
-                                        src={community.logo}
-                                        alt={community.name}
-                                        width={144}
-                                        height={144}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <span>{community.name.charAt(0)}</span>
-                                )}
+                                {
+                                    community.logo ? (
+                                        <Image
+                                            src={community.logo}
+                                            alt={community.name}
+                                            width={144}
+                                            height={144}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <span>{community.name.charAt(0)}</span>
+                                    )
+                                }
                             </div>
-                            {community.isVerified && (
-                                <div className="absolute -bottom-2 -right-2 bg-white dark:bg-neutral-900 rounded-full p-1.5 shadow-sm">
-                                    <CheckCircle2 className="w-6 h-6 text-blue-500 fill-blue-500/10" />
-                                </div>
-                            )}
+                            {
+                                community.isVerified && (
+                                    <div className="absolute -bottom-2 -right-2 bg-white dark:bg-neutral-900 rounded-full p-1.5 shadow-sm">
+                                        <CheckCircle2 className="w-6 h-6 text-blue-500 fill-blue-500/10" />
+                                    </div>
+                                )
+                            }
                         </div>
-
-                        {/* Title & Stats */}
                         <div className="flex-1 min-w-0 pt-2">
                             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                 <div>
@@ -666,55 +675,52 @@ export function CommunityPageClient({
                                         {community.shortDescription || community.description}
                                     </p>
                                 </div>
-
-                                {/* Actions */}
                                 <div className="flex items-center gap-3 flex-shrink-0">
-                                    {isMember ? (
-                                        <>
-                                            <MagicSheet
-                                                communityId={community.id}
-                                                communitySlug={community.slug}
-                                                onShare={handleShare}
-                                            />
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="outline" className="gap-2 font-medium">
-                                                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                                        Joined
-                                                        <ChevronDown className="w-4 h-4 opacity-50" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-56">
-                                                    <DropdownMenuItem>
-                                                        <Bell className="w-4 h-4 mr-2" />
-                                                        Notification Settings
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                                                        onClick={handleLeave}
-                                                        disabled={isJoining || community.userRole === 'OWNER'}
-                                                    >
-                                                        <LogOut className="w-4 h-4 mr-2" />
-                                                        Leave Community
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </>
-                                    ) : (
-                                        <Button
-                                            onClick={handleJoin}
-                                            disabled={isJoining}
-                                            className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 gap-2 shadow-lg hover:shadow-xl transition-all font-medium px-6"
-                                        >
-                                            {isJoining ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <UserPlus className="w-4 h-4" />
-                                            )}
-                                            Join Community
-                                        </Button>
-                                    )}
+                                    {
+                                        isMember ? (
+                                            <>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" className="gap-2 font-medium">
+                                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                            Joined
+                                                            <ChevronDown className="w-4 h-4 opacity-50" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-56">
+                                                        <DropdownMenuItem>
+                                                            <Bell className="w-4 h-4 mr-2" />
+                                                            Notification Settings
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                                                            onClick={handleLeave}
+                                                            disabled={isJoining || community.userRole === 'OWNER'}
+                                                        >
+                                                            <LogOut className="w-4 h-4 mr-2" />
+                                                            Leave Community
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </>
+                                        ) : (
+                                            <Button
+                                                onClick={handleJoin}
+                                                disabled={isJoining}
+                                                className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 gap-2 shadow-lg hover:shadow-xl transition-all font-medium px-6"
+                                            >
+                                                {
+                                                    isJoining ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <UserPlus className="w-4 h-4" />
+                                                    )
+                                                }
+                                                Join Community
+                                            </Button>
+                                        )
+                                    }
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -731,11 +737,8 @@ export function CommunityPageClient({
                         </div>
                     </div>
                 </div>
-
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Left Sidebar: Navigation */}
                     <aside className="lg:col-span-3 space-y-6">
-                        {/* Quick Links */}
                         <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-2 shadow-sm">
                             <div className="space-y-1">
                                 <Link href="/communities">
@@ -752,33 +755,33 @@ export function CommunityPageClient({
                                 </Link>
                             </div>
                         </div>
-
-                        {/* Navigation Tabs */}
                         <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-2 shadow-sm sticky top-24">
                             <div className="px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">
                                 Menu
                             </div>
                             <TabsList className="flex flex-col h-auto w-full bg-transparent p-0 gap-1">
-                                {enabledSections.map(sectionId => {
-                                    const config = SECTION_CONFIG[sectionId]
-                                    if (!config) return null
-                                    const Icon = config.icon
-                                    return (
-                                        <TabsTrigger
-                                            key={sectionId}
-                                            value={sectionId.toLowerCase()}
-                                            className={cn(
-                                                "w-full justify-start gap-3 px-3 py-2.5 h-auto text-sm font-medium rounded-lg transition-all",
-                                                "data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800",
-                                                "data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white",
-                                                "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                                            )}
-                                        >
-                                            <Icon className="w-4 h-4" />
-                                            {config.label}
-                                        </TabsTrigger>
-                                    )
-                                })}
+                                {
+                                    enabledSections.map(sectionId => {
+                                        const config = SECTION_CONFIG[sectionId]
+                                        if (!config) return null
+                                        const Icon = config.icon
+                                        return (
+                                            <TabsTrigger
+                                                key={sectionId}
+                                                value={sectionId.toLowerCase()}
+                                                className={cn(
+                                                    "w-full justify-start gap-3 px-3 py-2.5 h-auto text-sm font-medium rounded-lg transition-all",
+                                                    "data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800",
+                                                    "data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white",
+                                                    "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                                                )}
+                                            >
+                                                <Icon className="w-4 h-4" />
+                                                {config.label}
+                                            </TabsTrigger>
+                                        )
+                                    })
+                                }
 
                                 <div className="h-px bg-neutral-100 dark:bg-neutral-800 my-2 mx-2" />
 
@@ -794,7 +797,6 @@ export function CommunityPageClient({
                                     <Trophy className="w-4 h-4" />
                                     Leaderboard
                                 </TabsTrigger>
-
                                 <TabsTrigger
                                     value="members"
                                     className={cn(
@@ -808,190 +810,195 @@ export function CommunityPageClient({
                                     Members
                                 </TabsTrigger>
 
-                                {isAdmin && (
-                                    <TabsTrigger
-                                        value="settings"
-                                        className={cn(
-                                            "w-full justify-start gap-3 px-3 py-2.5 h-auto text-sm font-medium rounded-lg transition-all",
-                                            "data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800",
-                                            "data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white",
-                                            "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                                        )}
-                                    >
-                                        <Settings className="w-4 h-4" />
-                                        Settings
-                                    </TabsTrigger>
-                                )}
+                                {
+                                    isAdmin && (
+                                        <TabsTrigger
+                                            value="settings"
+                                            className={cn(
+                                                "w-full justify-start gap-3 px-3 py-2.5 h-auto text-sm font-medium rounded-lg transition-all",
+                                                "data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800",
+                                                "data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white",
+                                                "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                                            )}
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            Settings
+                                        </TabsTrigger>
+                                    )
+                                }
                             </TabsList>
                         </div>
                     </aside>
-
-                    {/* Middle: Content */}
                     <main className="lg:col-span-6 min-w-0">
-                        {enabledSections.map(sectionId => (
-                            <TabsContent key={sectionId} value={sectionId.toLowerCase()} className="mt-0 focus-visible:outline-none">
-                                {renderSectionContent(sectionId)}
-                            </TabsContent>
-                        ))}
+                        {
+                            enabledSections.map(sectionId => (
+                                <TabsContent key={sectionId} value={sectionId.toLowerCase()} className="mt-0 focus-visible:outline-none">
+                                    {renderSectionContent(sectionId)}
+                                </TabsContent>
+                            ))
+                        }
 
                         <TabsContent value="members" className="mt-0 focus-visible:outline-none">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {members.map((member) => (
-                                    <Link
-                                        key={member.id}
-                                        href={`/profile/${member.user.username || member.user.id}`}
-                                    >
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors shadow-sm"
+                                {
+                                    members.map((member) => (
+                                        <Link
+                                            key={member.id}
+                                            href={`/profile/${member.user.username || member.user.id}`}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="w-12 h-12 border border-neutral-100 dark:border-neutral-800">
-                                                    <AvatarImage src={member.user.image ?? undefined} />
-                                                    <AvatarFallback className="bg-neutral-100 dark:bg-neutral-800">
-                                                        {member.user.name?.charAt(0) || 'U'}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-medium text-neutral-900 dark:text-white truncate">
-                                                            {member.user.name || member.user.username}
+                                            <motion.div
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors shadow-sm"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="w-12 h-12 border border-neutral-100 dark:border-neutral-800">
+                                                        <AvatarImage src={member.user.image ?? undefined} />
+                                                        <AvatarFallback className="bg-neutral-100 dark:bg-neutral-800">
+                                                            {member.user.name?.charAt(0) || 'U'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-medium text-neutral-900 dark:text-white truncate">
+                                                                {member.user.name || member.user.username}
+                                                            </span>
+                                                            {
+                                                                ['OWNER', 'ADMIN'].includes(member.role) && (
+                                                                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                                                                        {member.role}
+                                                                    </Badge>
+                                                                )
+                                                            }
+                                                        </div>
+                                                        <span className="text-xs text-neutral-500 dark:text-neutral-400 block mt-0.5">
+                                                            Joined {formatDistanceToNow(new Date(member.joinedAt), { addSuffix: true })}
                                                         </span>
-                                                        {['OWNER', 'ADMIN'].includes(member.role) && (
-                                                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                                                                {member.role}
-                                                            </Badge>
-                                                        )}
                                                     </div>
-                                                    <span className="text-xs text-neutral-500 dark:text-neutral-400 block mt-0.5">
-                                                        Joined {formatDistanceToNow(new Date(member.joinedAt), { addSuffix: true })}
-                                                    </span>
                                                 </div>
-                                            </div>
-                                        </motion.div>
-                                    </Link>
-                                ))}
+                                            </motion.div>
+                                        </Link>
+                                    ))
+                                }
                             </div>
                         </TabsContent>
 
-                        {/* Settings Tab Content - Admin Only */}
-                        {isAdmin && (
-                            <TabsContent value="settings" className="mt-0 focus-visible:outline-none">
-                                <div className="space-y-6">
-                                    {/* Invites Management */}
-                                    <Card>
-                                        <CardHeader>
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <CardTitle className="flex items-center gap-2">
-                                                        <Mail className="w-5 h-5" />
-                                                        Pending Invites
-                                                    </CardTitle>
-                                                    <CardDescription>
-                                                        Manage outstanding invitations
-                                                    </CardDescription>
+                        {
+                            isAdmin && (
+                                <TabsContent value="settings" className="mt-0 focus-visible:outline-none">
+                                    <div className="space-y-6">
+                                        <Card>
+                                            <CardHeader>
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <CardTitle className="flex items-center gap-2">
+                                                            <Mail className="w-5 h-5" />
+                                                            Pending Invites
+                                                        </CardTitle>
+                                                        <CardDescription>
+                                                            Manage outstanding invitations
+                                                        </CardDescription>
+                                                    </div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setShowInviteDialog(true)}
+                                                        className="gap-2"
+                                                    >
+                                                        <Plus className="w-4 h-4" />
+                                                        Invite Member
+                                                    </Button>
                                                 </div>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setShowInviteDialog(true)}
-                                                    className="gap-2"
-                                                >
-                                                    <Plus className="w-4 h-4" />
-                                                    Invite Member
-                                                </Button>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {isLoadingInvites ? (
-                                                <div className="flex justify-center py-8">
-                                                    <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
-                                                </div>
-                                            ) : invites.length > 0 ? (
-                                                <div className="space-y-3">
-                                                    {invites.map((invite) => (
-                                                        <div
-                                                            key={invite.id}
-                                                            className="flex items-center justify-between p-3 rounded-lg border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50"
-                                                        >
-                                                            <div>
-                                                                <p className="font-medium text-sm text-neutral-900 dark:text-white">
-                                                                    {invite.inviteeEmail || 'No email provided'}
-                                                                </p>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <Badge variant="outline" className="text-[10px]">
-                                                                        {invite.status || 'PENDING'}
-                                                                    </Badge>
-                                                                    <span className="text-xs text-neutral-500">
-                                                                        Expires in {formatDistanceToNow(new Date(invite.expiresAt!), { addSuffix: true })}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-neutral-500 hover:text-neutral-900"
-                                                                    onClick={() => handleResendInvite(invite.id)}
-                                                                    disabled={isSendingInvite}
-                                                                >
-                                                                    <RefreshCw className="w-4 h-4" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                                                    onClick={() => handleCancelInvite(invite.id)}
-                                                                >
-                                                                    <Trash className="w-4 h-4" />
-                                                                </Button>
-                                                            </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {
+                                                    isLoadingInvites ? (
+                                                        <div className="flex justify-center py-8">
+                                                            <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="text-center py-8 text-neutral-500 text-sm">
-                                                    No pending invites. Invite people to grow your community!
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="flex justify-end">
-                                        <Link href={`/communities/${community.slug}/settings`}>
-                                            <Button variant="outline" className="gap-2">
-                                                <Settings className="w-4 h-4" />
-                                                View All Settings
-                                            </Button>
-                                        </Link>
-                                    </Card>
-
-                                    {/* Community Settings */}
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="flex items-center gap-2">
-                                                <Settings className="w-5 h-5" />
-                                                Community Settings
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Manage your community settings
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Button variant="outline" asChild>
-                                                <Link href={`/communities/${community.slug}/settings`}>
-                                                    Open Full Settings
-                                                </Link>
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </TabsContent>
-                        )}
+                                                    ) : invites.length > 0 ? (
+                                                        <div className="space-y-3">
+                                                            {
+                                                                invites.map((invite) => (
+                                                                    <div
+                                                                        key={invite.id}
+                                                                        className="flex items-center justify-between p-3 rounded-lg border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50"
+                                                                    >
+                                                                        <div>
+                                                                            <p className="font-medium text-sm text-neutral-900 dark:text-white">
+                                                                                {invite.inviteeEmail || 'No email provided'}
+                                                                            </p>
+                                                                            <div className="flex items-center gap-2 mt-1">
+                                                                                <Badge variant="outline" className="text-[10px]">
+                                                                                    {invite.status || 'PENDING'}
+                                                                                </Badge>
+                                                                                <span className="text-xs text-neutral-500">
+                                                                                    Expires in {formatDistanceToNow(new Date(invite.expiresAt!), { addSuffix: true })}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8 text-neutral-500 hover:text-neutral-900"
+                                                                                onClick={() => handleResendInvite(invite.id)}
+                                                                                disabled={isSendingInvite}
+                                                                            >
+                                                                                <RefreshCw className="w-4 h-4" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                                                                onClick={() => handleCancelInvite(invite.id)}
+                                                                            >
+                                                                                <Trash className="w-4 h-4" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-8 text-neutral-500 text-sm">
+                                                            No pending invites. Invite people to grow your community!
+                                                        </div>
+                                                    )
+                                                }
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="flex justify-end">
+                                            <Link href={`/communities/${community.slug}/settings`}>
+                                                <Button variant="outline" className="gap-2">
+                                                    <Settings className="w-4 h-4" />
+                                                    View All Settings
+                                                </Button>
+                                            </Link>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle className="flex items-center gap-2">
+                                                    <Settings className="w-5 h-5" />
+                                                    Community Settings
+                                                </CardTitle>
+                                                <CardDescription>
+                                                    Manage your community settings
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Button variant="outline" asChild>
+                                                    <Link href={`/communities/${community.slug}/settings`}>
+                                                        Open Full Settings
+                                                    </Link>
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </TabsContent>
+                            )
+                        }
                     </main>
-
-                    {/* Right Sidebar Info */}
                     <div className="w-80 hidden xl:block shrink-0 space-y-6">
                         <CommunityInfoSidebar
                             community={{
