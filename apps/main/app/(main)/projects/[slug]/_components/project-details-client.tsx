@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import {
     ArrowLeft, Sparkles, Clock, Code2, Brain, Trophy, CheckCircle2, Lock,
     Unlock, Play, Users, Target, Lightbulb, Layers, ListChecks, Share2,
-    Coins, Copy, Check, Zap, GitFork, Settings
+    Coins, Copy, Check, Zap, Settings
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -33,16 +33,13 @@ import {
 } from '@repo/ui/components/ui/dialog'
 import toast from '@repo/ui/components/ui/sonner'
 import {
-    startProject, submitProject, forkProject
+    startProject, submitProject
 } from '@/actions/(main)/projects/project.action'
 import {
     ProjectDetailsClientProps, ProjectV2Page, ProjectV2Sprint
 } from '@/types/project'
-
 import { EnrollmentDialog } from './enrollment-dialog'
-
 import DailyStandupSheet from './daily-standup-sheet'
-
 import { cn } from '@repo/ui/lib/utils'
 import BlueprintFlowchart from '@/components/projects/blueprintflowchart'
 
@@ -247,7 +244,7 @@ export default function ProjectDetailsClient({
     const [copied, setCopied] = useState(false)
     const [standupSheetOpen, setStandupSheetOpen] = useState(false)
     const [activeTab, setActiveTab] = useState('overview')
-    const [forking, setForking] = useState(false)
+
 
 
     // Project Settings State & Handlers
@@ -485,24 +482,7 @@ export default function ProjectDetailsClient({
         }
     }
 
-    const handleForkProject = async () => {
-        try {
-            setForking(true)
-            const result = await forkProject(project.id)
 
-            if (result.success) {
-                toast.success(`Project forked successfully! Redirecting to your copy...`)
-                router.push(`/projects/${result.data.projectSlug}`)
-            } else {
-                toast.error(result.error || 'Failed to fork project')
-            }
-        } catch (error) {
-            console.log("Error occurred while forking project: " + error);
-            toast.error('Something went wrong while forking')
-        } finally {
-            setForking(false)
-        }
-    }
 
     const difficultyColors = {
         BEGINNER: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -720,39 +700,6 @@ export default function ProjectDetailsClient({
                                                 </Button>
                                                 <p className="text-xs text-center text-neutral-500">
                                                     50% discount for public projects!
-                                                </p>
-
-                                                <div className="relative my-4">
-                                                    <div className="absolute inset-0 flex items-center">
-                                                        <span className="w-full border-t border-neutral-200 dark:border-neutral-800" />
-                                                    </div>
-                                                    <div className="relative flex justify-center text-xs uppercase">
-                                                        <span className="bg-white dark:bg-neutral-900 px-2 text-neutral-500">or</span>
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    onClick={handleForkProject}
-                                                    disabled={forking}
-                                                    variant="outline"
-                                                    className="w-full border-neutral-200 dark:border-neutral-700"
-                                                    size="lg"
-                                                >
-                                                    {
-                                                        forking ? (
-                                                            <>
-                                                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                                                                Forking...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <GitFork className="w-4 h-4 mr-2" />
-                                                                Fork This Project (Free)
-                                                            </>
-                                                        )
-                                                    }
-                                                </Button>
-                                                <p className="text-xs text-center text-neutral-500">
-                                                    Get your own copy with all {totalTasks} tasks
                                                 </p>
                                             </>
                                         ) : null

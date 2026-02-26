@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -27,10 +27,22 @@ import {
     issueWorkerToken
 } from '@/actions/(main)/workers/projectsworker.action'
 import { searchSimilarProjects } from '@/actions/(main)/projects/project.action'
+import { getProjectCategories } from '@/actions/(main)/projects/categories.action'
 import { ProjectCard } from '@/components/projects/project-card'
 import { z } from 'zod'
 import { cn } from '@repo/ui/lib/utils'
 import { ProjectV2Basic } from '@/types/project'
+
+interface DBCategory {
+    id: string; slug: string; name: string; description: string;
+    icon: string; color: string; orderIndex: number;
+    technologies: DBTechnology[]
+}
+interface DBTechnology {
+    id: string; slug: string; name: string; description: string;
+    icon: string; color: string; learningOutcomes: string[];
+    projectCount: number; orderIndex: number; categoryId: string;
+}
 
 type FormData = z.infer<typeof ProjectEchoSchema>
 
@@ -100,6 +112,20 @@ export default function ProjectGenerateSheet({
     const [currentJobId, setCurrentJobId] = useState<string | null>(null)
     const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
+    // DB-driven categories
+    const [dbCategories, setDbCategories] = useState<DBCategory[]>([])
+    const [selectedCategory, setSelectedCategory] = useState<DBCategory | null>(null)
+
+    useEffect(() => {
+        async function loadCategories() {
+            const result = await getProjectCategories()
+            if (result.success && result.data) {
+                setDbCategories(result.data as DBCategory[])
+            }
+        }
+        loadCategories()
+    }, [])
+
     const [formData, setFormData] = useState<Partial<FormData>>({
         projectTitle: defaultValues?.title || '',
         projectDescription: defaultValues?.description || '',
@@ -124,8 +150,7 @@ export default function ProjectGenerateSheet({
 
     const steps = [
         { id: 'basics', title: 'Project Details', subtitle: 'Name and describe your project' },
-        { id: 'type', title: 'Project Type', subtitle: 'Choose the category' },
-        { id: 'stack', title: 'Tech Stack', subtitle: 'Select technologies' },
+        { id: 'type-stack', title: 'Type & Stack', subtitle: 'Category and technologies' },
         { id: 'difficulty', title: 'Difficulty', subtitle: 'Set experience level' },
         { id: 'settings', title: 'Settings', subtitle: 'Final configurations' },
     ]
@@ -146,9 +171,8 @@ export default function ProjectGenerateSheet({
             case 0: return formData.projectTitle && formData.projectTitle.length >= 3 &&
                 formData.projectDescription && formData.projectDescription.length >= 10
             case 1: return !!formData.generationType
-            case 2: return true
-            case 3: return !!formData.difficulty
-            case 4: return true
+            case 2: return !!formData.difficulty
+            case 3: return true
             default: return true
         }
     }
@@ -572,10 +596,10 @@ export default function ProjectGenerateSheet({
                                             </div>
                                         )}
 
-                                        {/* Step 1: Type */}
+                                        {/* Step 1: Type & Stack (merged) */}
                                         {currentStep === 1 && (
-                                            <div className="space-y-4">
-                                                <div className="text-center mb-6">
+                                            <div className="space-y-6">
+                                                <div className="text-center mb-4">
                                                     <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
                                                         What type of project is this?
                                                     </h3>
@@ -588,7 +612,23 @@ export default function ProjectGenerateSheet({
                                                         return (
                                                             <motion.button
                                                                 key={type.value}
-                                                                onClick={() => updateFormData('generationType', type.value)}
+                                                                onClick={() => {
+                                                                    updateFormData('generationType', type.value)
+                                                                    // Auto-select matching DB category
+                                                                    const matchMap: Record<string, string> = {
+                                                                        'FULL_STACK': 'web-development',
+                                                                        'FRONTEND': 'web-development',
+                                                                        'APP': 'app-development',
+                                                                        'AI/ML': 'ai-ml',
+                                                                        'AI_AGENT': 'ai-ml',
+                                                                        'PROGRAMS': 'backend',
+                                                                    }
+                                                                    const catSlug = matchMap[type.value]
+                                                                    if (catSlug) {
+                                                                        const cat = dbCategories.find(c => c.slug === catSlug)
+                                                                        if (cat) setSelectedCategory(cat)
+                                                                    }
+                                                                }}
                                                                 whileHover={{ scale: 1.02 }}
                                                                 whileTap={{ scale: 0.98 }}
                                                                 className={cn(
@@ -613,170 +653,189 @@ export default function ProjectGenerateSheet({
                                                         )
                                                     })}
                                                 </div>
-                                            </div>
-                                        )}
 
-                                        {/* Step 2: Stack */}
-                                        {currentStep === 2 && (
-                                            <div className="space-y-6">
-                                                <div className="text-center mb-6">
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
-                                                        Choose your tech stack
-                                                    </h3>
-                                                    <p className="text-neutral-500">Select the technologies you want to learn or use</p>
-                                                </div>
-                                                {(formData.generationType === 'FULL_STACK' ||
-                                                    formData.generationType === 'FRONTEND' ||
-                                                    formData.generationType === 'AI_AGENT') && (
-                                                        <div className="space-y-2">
-                                                            <Label>Frontend</Label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {FRONTEND_STACKS.map((stack) => (
-                                                                    <Button
-                                                                        key={stack}
-                                                                        variant={formData.stacks?.frontend === stack ? "default" : "outline"}
-                                                                        size="sm"
-                                                                        onClick={() => updateStacks('frontend', formData.stacks?.frontend === stack ? '' : stack)}
-                                                                        className="rounded-full"
-                                                                    >
-                                                                        {stack}
-                                                                    </Button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                {(formData.generationType === 'FULL_STACK' || formData.generationType === 'AI_AGENT') && (
-                                                    <>
-                                                        <div className="space-y-2">
-                                                            <Label>Backend</Label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {BACKEND_STACKS.map((stack) => (
-                                                                    <Button
-                                                                        key={stack}
-                                                                        variant={formData.stacks?.backend === stack ? "default" : "outline"}
-                                                                        size="sm"
-                                                                        onClick={() => updateStacks('backend', formData.stacks?.backend === stack ? '' : stack)}
-                                                                        className="rounded-full"
-                                                                    >
-                                                                        {stack}
-                                                                    </Button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Database</Label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {DATABASES.map((db) => (
-                                                                    <Button
-                                                                        key={db}
-                                                                        variant={formData.stacks?.database === db ? "default" : "outline"}
-                                                                        size="sm"
-                                                                        onClick={() => updateStacks('database', formData.stacks?.database === db ? '' : db)}
-                                                                        className="rounded-full"
-                                                                    >
-                                                                        {db}
-                                                                    </Button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                {formData.generationType === 'AI_AGENT' && (
-                                                    <div className="space-y-2">
-                                                        <Label>AI Provider</Label>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {AI_PROVIDERS.map((provider) => (
-                                                                <Button
-                                                                    key={provider}
-                                                                    variant={formData.stacks?.aiProvider === provider ? "default" : "outline"}
-                                                                    size="sm"
-                                                                    onClick={() => updateStacks('aiProvider', formData.stacks?.aiProvider === provider ? '' : provider)}
-                                                                    className="rounded-full"
-                                                                >
-                                                                    {provider}
-                                                                </Button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {formData.generationType === 'APP' && (
-                                                    <>
-                                                        <div className="space-y-2">
-                                                            <Label>Mobile Framework</Label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {APP_FRAMEWORKS.map((framework) => (
-                                                                    <Button
-                                                                        key={framework}
-                                                                        variant={formData.stacks?.frontend === framework ? "default" : "outline"}
-                                                                        size="sm"
-                                                                        onClick={() => updateStacks('frontend', formData.stacks?.frontend === framework ? '' : framework)}
-                                                                        className="rounded-full"
-                                                                    >
-                                                                        {framework}
-                                                                    </Button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Backend/BaaS</Label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {APP_BACKENDS.map((backend) => (
-                                                                    <Button
-                                                                        key={backend}
-                                                                        variant={formData.stacks?.backend === backend ? "default" : "outline"}
-                                                                        size="sm"
-                                                                        onClick={() => updateStacks('backend', formData.stacks?.backend === backend ? '' : backend)}
-                                                                        className="rounded-full"
-                                                                    >
-                                                                        {backend}
-                                                                    </Button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Database</Label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {DATABASES.map((db) => (
-                                                                    <Button
-                                                                        key={db}
-                                                                        variant={formData.stacks?.database === db ? "default" : "outline"}
-                                                                        size="sm"
-                                                                        onClick={() => updateStacks('database', formData.stacks?.database === db ? '' : db)}
-                                                                        className="rounded-full"
-                                                                    >
-                                                                        {db}
-                                                                    </Button>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                <div className="space-y-2">
-                                                    <Label>Deployment (Optional)</Label>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {DEPLOYMENTS.map((deploy) => (
-                                                            <Button
-                                                                key={deploy}
-                                                                variant={formData.stacks?.deployment === deploy ? "default" : "outline"}
-                                                                size="sm"
-                                                                onClick={() => updateStacks('deployment', formData.stacks?.deployment === deploy ? '' : deploy)}
-                                                                className="rounded-full"
+                                                {/* Tech stack from DB categories */}
+                                                {formData.generationType && selectedCategory && (
+                                                    <div className="mt-6 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <Label>Technologies from {selectedCategory.name}</Label>
+                                                            <select
+                                                                className="text-xs bg-transparent border border-neutral-200 dark:border-neutral-700 rounded-md px-2 py-1"
+                                                                value={selectedCategory.slug}
+                                                                onChange={(e) => {
+                                                                    const cat = dbCategories.find(c => c.slug === e.target.value)
+                                                                    if (cat) setSelectedCategory(cat)
+                                                                }}
                                                             >
-                                                                {deploy}
-                                                            </Button>
-                                                        ))}
+                                                                {dbCategories.map(c => (
+                                                                    <option key={c.slug} value={c.slug}>{c.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {selectedCategory.technologies.map((tech) => {
+                                                                const isSelected = formData.technologies?.includes(tech.name)
+                                                                return (
+                                                                    <Button
+                                                                        key={tech.id}
+                                                                        variant={isSelected ? 'default' : 'outline'}
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            const current = formData.technologies || []
+                                                                            if (isSelected) {
+                                                                                updateFormData('technologies', current.filter((t: string) => t !== tech.name))
+                                                                            } else {
+                                                                                updateFormData('technologies', [...current, tech.name])
+                                                                            }
+                                                                        }}
+                                                                        className="rounded-full"
+                                                                    >
+                                                                        <span className="mr-1">{tech.icon}</span>
+                                                                        {tech.name}
+                                                                    </Button>
+                                                                )
+                                                            })}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {!formData.generationType && (
-                                                    <p className="text-center text-neutral-500 py-8">
-                                                        Select a project type first to see relevant stack options
-                                                    </p>
+                                                )}
+
+                                                {/* Stack selections — keep existing hardcoded stacks as fallback */}
+                                                {formData.generationType && (
+                                                    <div className="border-t border-neutral-200 dark:border-neutral-800 pt-4 space-y-4">
+                                                        <Label className="text-neutral-500 text-xs">Stack Preferences (optional)</Label>
+                                                        {(formData.generationType === 'FULL_STACK' ||
+                                                            formData.generationType === 'FRONTEND' ||
+                                                            formData.generationType === 'AI_AGENT') && (
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs">Frontend</Label>
+                                                                    <div className="flex flex-wrap gap-1.5">
+                                                                        {FRONTEND_STACKS.map((stack) => (
+                                                                            <Button
+                                                                                key={stack}
+                                                                                variant={formData.stacks?.frontend === stack ? 'default' : 'outline'}
+                                                                                size="sm"
+                                                                                onClick={() => updateStacks('frontend', formData.stacks?.frontend === stack ? '' : stack)}
+                                                                                className="rounded-full h-7 text-xs"
+                                                                            >
+                                                                                {stack}
+                                                                            </Button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        {(formData.generationType === 'FULL_STACK' || formData.generationType === 'AI_AGENT') && (
+                                                            <>
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs">Backend</Label>
+                                                                    <div className="flex flex-wrap gap-1.5">
+                                                                        {BACKEND_STACKS.map((stack) => (
+                                                                            <Button
+                                                                                key={stack}
+                                                                                variant={formData.stacks?.backend === stack ? 'default' : 'outline'}
+                                                                                size="sm"
+                                                                                onClick={() => updateStacks('backend', formData.stacks?.backend === stack ? '' : stack)}
+                                                                                className="rounded-full h-7 text-xs"
+                                                                            >
+                                                                                {stack}
+                                                                            </Button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs">Database</Label>
+                                                                    <div className="flex flex-wrap gap-1.5">
+                                                                        {DATABASES.map((db) => (
+                                                                            <Button
+                                                                                key={db}
+                                                                                variant={formData.stacks?.database === db ? 'default' : 'outline'}
+                                                                                size="sm"
+                                                                                onClick={() => updateStacks('database', formData.stacks?.database === db ? '' : db)}
+                                                                                className="rounded-full h-7 text-xs"
+                                                                            >
+                                                                                {db}
+                                                                            </Button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        {formData.generationType === 'AI_AGENT' && (
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs">AI Provider</Label>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {AI_PROVIDERS.map((provider) => (
+                                                                        <Button
+                                                                            key={provider}
+                                                                            variant={formData.stacks?.aiProvider === provider ? 'default' : 'outline'}
+                                                                            size="sm"
+                                                                            onClick={() => updateStacks('aiProvider', formData.stacks?.aiProvider === provider ? '' : provider)}
+                                                                            className="rounded-full h-7 text-xs"
+                                                                        >
+                                                                            {provider}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {formData.generationType === 'APP' && (
+                                                            <>
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs">Mobile Framework</Label>
+                                                                    <div className="flex flex-wrap gap-1.5">
+                                                                        {APP_FRAMEWORKS.map((fw) => (
+                                                                            <Button
+                                                                                key={fw}
+                                                                                variant={formData.stacks?.frontend === fw ? 'default' : 'outline'}
+                                                                                size="sm"
+                                                                                onClick={() => updateStacks('frontend', formData.stacks?.frontend === fw ? '' : fw)}
+                                                                                className="rounded-full h-7 text-xs"
+                                                                            >
+                                                                                {fw}
+                                                                            </Button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-xs">Backend/BaaS</Label>
+                                                                    <div className="flex flex-wrap gap-1.5">
+                                                                        {APP_BACKENDS.map((b) => (
+                                                                            <Button
+                                                                                key={b}
+                                                                                variant={formData.stacks?.backend === b ? 'default' : 'outline'}
+                                                                                size="sm"
+                                                                                onClick={() => updateStacks('backend', formData.stacks?.backend === b ? '' : b)}
+                                                                                className="rounded-full h-7 text-xs"
+                                                                            >
+                                                                                {b}
+                                                                            </Button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs">Deployment (Optional)</Label>
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {DEPLOYMENTS.map((deploy) => (
+                                                                    <Button
+                                                                        key={deploy}
+                                                                        variant={formData.stacks?.deployment === deploy ? 'default' : 'outline'}
+                                                                        size="sm"
+                                                                        onClick={() => updateStacks('deployment', formData.stacks?.deployment === deploy ? '' : deploy)}
+                                                                        className="rounded-full h-7 text-xs"
+                                                                    >
+                                                                        {deploy}
+                                                                    </Button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
                                         )}
 
-                                        {/* Step 3: Difficulty */}
-                                        {currentStep === 3 && (
+                                        {/* Step 2: Difficulty */}
+                                        {currentStep === 2 && (
                                             <div className="space-y-4">
                                                 <div className="text-center mb-6">
                                                     <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
@@ -822,8 +881,8 @@ export default function ProjectGenerateSheet({
                                             </div>
                                         )}
 
-                                        {/* Step 4: Settings */}
-                                        {currentStep === 4 && (
+                                        {/* Step 3: Settings */}
+                                        {currentStep === 3 && (
                                             <div className="space-y-6">
                                                 <div className="text-center mb-6">
                                                     <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">

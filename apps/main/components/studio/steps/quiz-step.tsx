@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FileQuestion, RotateCcw, Trophy, Loader2 } from "lucide-react";
+import {
+	FileQuestion, RotateCcw, Trophy, Loader2
+} from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { cn } from "@repo/ui/lib/utils";
 import Quiz, { type QuizQuestion, type QuizResult } from "@/components/main/quiz";

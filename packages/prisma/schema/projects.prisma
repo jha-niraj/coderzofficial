@@ -1,6 +1,54 @@
 // ===============================================
 // PROJECTS V2 - MAIN PROJECT MODEL AND RELATED ENTITIES
 // ===============================================
+
+// ===============================================
+// PROJECT CATEGORIES & TECHNOLOGIES (DB-driven)
+// ===============================================
+model ProjectCategory {
+    id          String  @id @default(cuid())
+    slug        String  @unique // e.g., "web-development"
+    name        String // e.g., "Web Development"
+    description String  @db.Text
+    icon        String // Lucide icon name e.g., "Globe"
+    color       String // Gradient class e.g., "from-blue-500 to-cyan-500"
+    orderIndex  Int     @default(0)
+    isActive    Boolean @default(true)
+
+    technologies ProjectTechnology[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([slug])
+    @@index([orderIndex])
+    @@index([isActive])
+}
+
+model ProjectTechnology {
+    id               String   @id @default(cuid())
+    slug             String   @unique // e.g., "react"
+    name             String // e.g., "React"
+    description      String
+    icon             String // Emoji or icon string e.g., "⚛️"
+    color            String // Gradient e.g., "from-indigo-400 to-indigo-600"
+    learningOutcomes String[] // What you'll learn
+    projectCount     Int      @default(0) // Cached count of seeded projects
+    orderIndex       Int      @default(0)
+    isActive         Boolean  @default(true)
+
+    categoryId String
+    category   ProjectCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([categoryId])
+    @@index([slug])
+    @@index([orderIndex])
+    @@index([isActive])
+}
+
 enum ProjectV2Visibility {
     PRIVATE
     PUBLIC
@@ -118,6 +166,13 @@ model ProjectV2 {
     estimatedHours             Int                 @default(20)
     includeAssessment          Boolean             @default(false)
 
+    // Platform / Source tracking
+    isPlatformSeeded Boolean @default(false) // True for BuildrHQ curated projects
+    projectSource    String  @default("AI_GENERATED") // AI_GENERATED | PLATFORM_SEEDED | USER_SUBMITTED
+
+    // AI Guided Mode
+    guidedModeEnabled Boolean @default(true) // AI guidance available
+
     // Project Overview & Context
     blueprintOverview String   @db.Text // Detailed project summary
     vision            String?  @db.Text // Why this project exists
@@ -125,6 +180,7 @@ model ProjectV2 {
     problemSolution   String?  @db.Text // What problem it solves
     estimatedDuration String? // "2-3 weeks", "1 month"
     keyOutcomes       String[] // Specific things user will have built
+    recruiterSignal   String?  @db.Text // Why this project matters for hiring
 
     // Features with priority/complexity
     features Json? // Array of {name, description, priority, complexity}
@@ -169,13 +225,7 @@ model ProjectV2 {
     resources          ProjectV2Resource[]          @relation("ProjectV2Resources")
     errors             ProjectV2Error[]             @relation("ProjectV2Errors")
     sourceIdea         ProjectIdea?                 @relation("IdeaBlueprint")
-
-    // Fork tracking
-    isFork       Boolean     @default(false)
-    forkedFromId String?
-    forkedFrom   ProjectV2?  @relation("ProjectForks", fields: [forkedFromId], references: [id], onDelete: SetNull)
-    forks        ProjectV2[] @relation("ProjectForks")
-    forkCount    Int         @default(0)
+    guidedSessions     ProjectV2GuidedSession[]     @relation("ProjectGuidedSessions")
 
     // Standup Configuration
     standupConfigs ProjectV2StandupConfig[]
@@ -213,7 +263,8 @@ model ProjectV2 {
     @@index([createdAt])
     @@index([slug])
     @@index([spaceId])
-    @@index([forkedFromId])
+    @@index([isPlatformSeeded])
+    @@index([projectSource])
     @@index([universityId])
     @@index([isUniversityProject])
 }
@@ -297,6 +348,7 @@ model ProjectV2Task {
 
     // Task Assessment attempts by users
     taskAssessments UserTaskV2Assessment[]
+    createdBy       String? // User ID of the creator for private tasks
 
     @@index([sprintId])
     @@index([orderIndex])
@@ -846,6 +898,10 @@ model ProjectIdea {
     suggestedStacks        Json? // { languages: [], databases: [], queues: [] }
     recruiterSignal        String?  @db.Text
 
+    // Platform curation
+    isPlatformCurated Boolean @default(false) // Curated by BuildrHQ team
+    curatedQuality    String? // FEATURED | STANDARD | COMMUNITY
+
     // Build tracking
     buildCount Int @default(0) // How many users built this idea
 
@@ -888,6 +944,7 @@ model ProjectIdea {
     @@index([upvotes])
     @@index([hasBlueprintGenerated])
     @@index([ideaType])
+    @@index([isPlatformCurated])
 }
 
 // Track who upvoted which project idea
@@ -1126,4 +1183,38 @@ model ProjectV2Invitation {
     @@index([invitedEmail])
     @@index([inviteToken])
     @@index([status])
+}
+
+// ===============================================
+// AI GUIDED SESSIONS - Step-by-step building mode
+// ===============================================
+model ProjectV2GuidedSession {
+    id        String    @id @default(cuid())
+    userId    String
+    user      User      @relation("UserGuidedSessions", fields: [userId], references: [id], onDelete: Cascade)
+    projectId String
+    project   ProjectV2 @relation("ProjectGuidedSessions", fields: [projectId], references: [id], onDelete: Cascade)
+
+    // Current step tracking
+    currentSprintIndex Int @default(0)
+    currentTaskIndex   Int @default(0)
+    currentStepIndex   Int @default(0) // Within a task
+
+    // Conversation history (for continuity) - stored as JSON array of messages
+    conversationHistory Json? // Array of {role: 'user'|'assistant', content: string, timestamp: string}
+
+    // Session state
+    isActive Boolean @default(true)
+    mode     String  @default("GUIDED") // GUIDED | SELF_PACED
+
+    // Initial system context (pre-generated for platform projects)
+    systemContext String? @db.Text // System prompt with project context
+
+    startedAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, projectId])
+    @@index([userId])
+    @@index([projectId])
+    @@index([isActive])
 }

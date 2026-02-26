@@ -22,12 +22,14 @@ import {
     DropdownMenuTrigger
 } from '@repo/ui/components/ui/dropdown-menu'
 import { cn } from '@repo/ui/lib/utils'
-import { CommunityPostType } from '@repo/prisma/client'
 import { togglePostLike, voteOnPoll } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
-
-import { SharedInterviewCard, SharedProjectCard } from '@/components/community/shared-items'
+import { 
+    SharedInterviewCard, SharedProjectCard 
+} from '@/components/community/shared-items'
 import { useUserStore } from '@/app/store/useUserStore'
+
+import type { CommunityPost } from '@/types/community'
 
 export interface PostEmbed {
     itemType: 'interview' | 'project' | 'space' | 'studio' | string
@@ -51,52 +53,7 @@ export interface PostAttachment {
 }
 
 interface PostCardProps {
-    post: {
-        id: string
-        title?: string | null
-        content: string
-        type: CommunityPostType | string
-        tags: string[]
-        isPinned: boolean
-        isLocked: boolean
-        isAnswered?: boolean
-        likeCount: number
-        commentCount: number
-        viewCount: number
-        createdAt: Date
-        author: {
-            id: string
-            name: string | null
-            username: string | null
-            image: string | null
-        }
-        community?: {
-            id: string
-            name: string
-            slug: string
-            logo?: string | null
-        } | null
-        _count?: {
-            likes: number
-            comments: number
-        }
-        isLiked?: boolean
-        attachments?: PostAttachment[] | unknown
-        codeBlocks?: unknown
-        embeds?: PostEmbed[] | unknown
-        poll?: {
-            id: string
-            question: string
-            options: unknown // Json
-            allowMultiple: boolean
-            endDate: Date | null
-            votes?: {
-                id: string
-                userId: string
-                optionIndex: number
-            }[]
-        } | null
-    }
+    post: CommunityPost
     showCommunity?: boolean
     compact?: boolean
     onLikeChange?: (postId: string, liked: boolean, count: number) => void
@@ -330,24 +287,25 @@ export function PostCard({
                         </p>
 
                         {
-                            post.poll && (
+                            post.poll && (post.poll as any).question && (
                                 <div className="mt-4 space-y-3 border rounded-xl p-4 bg-neutral-50 dark:bg-neutral-900/50" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{post.poll.question}</h3>
+                                        <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{(post.poll as any).question}</h3>
                                         <div className="text-xs text-neutral-500">
-                                            {post.poll.endDate && new Date() > new Date(post.poll.endDate) ? 'Closed' : 'Open'} • {post.poll.votes?.length || 0} votes
+                                            {(post.poll as any).endDate && new Date() > new Date((post.poll as any).endDate) ? 'Closed' : 'Open'} • {(post.poll as any).votes?.length || 0} votes
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         {
-                                            ((post.poll.options as string[]) || []).map((option, idx) => {
-                                                const totalVotes = post.poll?.votes?.length || 0
-                                                const optionVotes = post.poll?.votes?.filter(v => v.optionIndex === idx).length || 0
+                                            (((post.poll as any).options as string[]) || []).map((option, idx) => {
+                                                const pollVotes = (post.poll as any).votes as Array<{ id: string, userId: string, optionIndex: number }> || []
+                                                const totalVotes = pollVotes.length
+                                                const optionVotes = pollVotes.filter(v => v.optionIndex === idx).length
                                                 const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
-                                                const userVote = post.poll?.votes?.find(v => v.userId === user?.id)
+                                                const userVote = pollVotes.find(v => v.userId === user?.id)
                                                 const isVoted = !!userVote
                                                 const isSelected = userVote?.optionIndex === idx
-                                                const isClosed = post.poll?.endDate && new Date() > new Date(post.poll.endDate)
+                                                const isClosed = (post.poll as any).endDate && new Date() > new Date((post.poll as any).endDate)
 
                                                 return (
                                                     <div key={idx} className="relative">
@@ -375,7 +333,7 @@ export function PostCard({
                                                                     onClick={(e) => {
                                                                         e.preventDefault()
                                                                         e.stopPropagation()
-                                                                        if (post.poll) voteOnPoll(post.poll.id, idx)
+                                                                        if (post.poll && (post.poll as any).id) voteOnPoll((post.poll as any).id, idx)
                                                                         if (!user) toast.error('Please login to vote')
                                                                         else toast.success('Vote submitted')
                                                                     }}

@@ -27,26 +27,42 @@ export interface LearnListItem {
     description: string;
     difficulty: string;
     iconEmoji?: string | null;
+    thumbnail?: string | null;
+    category?: string;
     estimatedTime?: number | null;
     tags: string[];
+    viewCount?: number;
+    likeCount?: number;
+    createdAt?: Date;
     mainCategory?: { id: string; name: string; slug: string } | null;
     subCategory?: { id: string; name: string; slug: string } | null;
     author?: { id: string; name: string | null; image: string | null } | null;
-    _count?: { steps?: number; completions?: number };
-    [key: string]: unknown;
+    creator?: {
+        id: string;
+        name?: string | null;
+        username?: string | null;
+        image?: string | null;
+    };
+    _count?: { steps?: number; completions?: number; likes?: number; comments?: number };
 }
 
 export interface LearnProgressItem {
     id: string;
+    learnId?: string;
+    progressPercent?: number;
+    isCompleted?: boolean;
+    lastAccessedAt?: Date;
     learn: {
         id: string;
         title: string;
         slug: string;
         iconEmoji?: string | null;
+        thumbnail?: string | null;
+        difficulty?: string;
+        estimatedTime?: number | null;
+        category?: string;
         _count?: { steps?: number };
-        [key: string]: unknown;
     };
-    [key: string]: unknown;
 }
 
 export interface LearnSearchResult {

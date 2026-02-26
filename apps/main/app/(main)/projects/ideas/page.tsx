@@ -1,246 +1,517 @@
 "use client"
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 import {
-    ArrowRight, Lightbulb, Sparkles, Layers, Target, CheckCircle2,
-    Heart, Eye, Code2, Search, Filter
+    Lightbulb, Sparkles, Layers, Target, CheckCircle2, Heart,
+    Eye, Code2, Search, Filter, Crown, Users, Clock, ChevronRight,
+    Zap, BookOpen, Play
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Input } from '@repo/ui/components/ui/input'
 import {
-    Tabs, TabsContent, TabsList, TabsTrigger
-} from '@repo/ui/components/ui/tabs'
-import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@repo/ui/components/ui/select'
 import {
-    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-    SheetFooter
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter
 } from '@repo/ui/components/ui/sheet'
-import { categories, type Category } from './data/categories'
 import {
     SubmitProjectIdeaSheet
 } from '@/components/projects/submit-project-idea-sheet'
 import {
     getProblemStatements
 } from '@/actions/(main)/projects/project-ideas.action'
+import {
+    getProjectCategories, getPlatformProjects
+} from '@/actions/(main)/projects/categories.action'
 import toast from '@repo/ui/components/ui/sonner'
 import ProjectGenerateSheet from '@/components/projects/project-generate-sheet'
+import { Skeleton } from '@repo/ui/components/ui/skeleton'
+import { cn } from '@repo/ui/lib/utils'
 
-// Type for suggested stacks in problem statements
-interface SuggestedStacks {
-    languages?: string[]
-    databases?: string[]
-    queues?: string[]
-    frameworks?: string[]
-    [key: string]: string[] | undefined
+// Dynamic Lucide icon map (for DB-driven icons)
+import * as LucideIcons from 'lucide-react'
+
+function DynamicIcon({ name, className }: { name: string; className?: string }) {
+    const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name]
+    if (!Icon) return <Layers className={className} />
+    return <Icon className={className} />
+}
+
+interface DBCategory {
+    id: string; slug: string; name: string; description: string;
+    icon: string; color: string; orderIndex: number;
+    technologies: DBTechnology[]
+}
+
+interface DBTechnology {
+    id: string; slug: string; name: string; description: string;
+    icon: string; color: string; learningOutcomes: string[];
+    projectCount: number; orderIndex: number; categoryId: string;
+}
+
+interface PlatformProject {
+    id: string; slug: string; title: string; shortDescription: string | null;
+    description: string; technologies: string[]; difficulty: string;
+    estimatedHours: number; totalViews: number; totalStarted: number;
+    includeAssessment: boolean; isPlatformSeeded: boolean; projectSource: string;
+    recruiterSignal: string | null; generationType: string; guidedModeEnabled: boolean;
+    creator: { name: string | null; username: string | null; image: string | null };
+    _count: { progress: number; submissions: number };
 }
 
 interface ProblemStatement {
-    id: string
-    projectTitle: string
-    projectDescription: string
-    difficulty: string
-    overview: string | null
-    coreRequirements: string[]
-    engineeringConstraints: string[]
-    suggestedStacks: SuggestedStacks | null
-    recruiterSignal: string | null
-    upvotes: number
-    views: number
-    buildCount: number
-    createdAt: Date
-    submittedBy?: {
-        id: string
-        name: string | null
-        username: string | null
-        image: string | null
-    } | null
+    id: string; projectTitle: string; projectDescription: string;
+    difficulty: string; overview: string | null; coreRequirements: string[];
+    engineeringConstraints: string[]; suggestedStacks: Record<string, string[]> | null;
+    recruiterSignal: string | null; upvotes: number; views: number; buildCount: number;
+    createdAt: Date; submittedBy?: { id: string; name: string | null; username: string | null; image: string | null } | null;
 }
 
 export default function ProjectIdeasPage() {
     const [submitSheetOpen, setSubmitSheetOpen] = useState(false)
-    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
-    const [techSheetOpen, setTechSheetOpen] = useState(false)
-    const [activeTab, setActiveTab] = useState('technology')
+    const [activeView, setActiveView] = useState<'categories' | 'problems'>('categories')
 
-    // Problem statements state
+    // DB-driven data
+    const [dbCategories, setDbCategories] = useState<DBCategory[]>([])
+    const [loadingCategories, setLoadingCategories] = useState(true)
+    const [selectedCategory, setSelectedCategory] = useState<DBCategory | null>(null)
+    const [selectedTech, setSelectedTech] = useState<DBTechnology | null>(null)
+
+    // Platform projects
+    const [platformProjects, setPlatformProjects] = useState<PlatformProject[]>([])
+    const [loadingProjects, setLoadingProjects] = useState(false)
+
+    // Problem statements
     const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>([])
     const [loadingProblems, setLoadingProblems] = useState(false)
     const [problemSearch, setProblemSearch] = useState('')
     const [problemDifficulty, setProblemDifficulty] = useState('all')
 
-    // Problem statement detail sheet
+    // Problem detail sheet
     const [selectedProblem, setSelectedProblem] = useState<ProblemStatement | null>(null)
     const [problemDetailOpen, setProblemDetailOpen] = useState(false)
 
-    // Project generate sheet
+    // Generate sheet
     const [generateSheetOpen, setGenerateSheetOpen] = useState(false)
-    const [generateDefaults, setGenerateDefaults] = useState<{ title?: string, description?: string }>({})
+    const [generateDefaults, setGenerateDefaults] = useState<{ title?: string; description?: string }>({})
 
-    const handleCategoryClick = (category: Category) => {
-        setSelectedCategory(category)
-        setTechSheetOpen(true)
-    }
+    // Fetch categories from DB
+    useEffect(() => {
+        async function load() {
+            setLoadingCategories(true)
+            const result = await getProjectCategories()
+            if (result.success && result.data) {
+                setDbCategories(result.data as DBCategory[])
+                if (result.data.length > 0) {
+                    setSelectedCategory(result.data[0] as DBCategory)
+                }
+            }
+            setLoadingCategories(false)
+        }
+        load()
+    }, [])
+
+    // Fetch platform projects when category/tech changes
+    useEffect(() => {
+        if (!selectedCategory) return
+        async function loadProjects() {
+            setLoadingProjects(true)
+            const techFilter = selectedTech?.name
+            const result = await getPlatformProjects({
+                technology: techFilter,
+                limit: 20,
+            })
+            if (result.success && result.data) {
+                setPlatformProjects(result.data as PlatformProject[])
+            }
+            setLoadingProjects(false)
+        }
+        loadProjects()
+    }, [selectedCategory, selectedTech])
 
     const fetchProblemStatements = useCallback(async () => {
         setLoadingProblems(true)
         try {
-            const result = await getProblemStatements({
-                difficulty: problemDifficulty,
-                search: problemSearch
-            })
+            const result = await getProblemStatements({ difficulty: problemDifficulty, search: problemSearch })
             if (result.success && result.data) {
                 setProblemStatements(result.data as ProblemStatement[])
             }
-        } catch (error) {
-            console.error('Error fetching problem statements:', error)
+        } catch {
             toast.error('Failed to load problem statements')
         } finally {
             setLoadingProblems(false)
         }
     }, [problemDifficulty, problemSearch])
 
-    // Fetch problem statements when tab changes
     useEffect(() => {
-        if (activeTab === 'problem') {
-            fetchProblemStatements()
-        }
-    }, [activeTab, fetchProblemStatements])
-
-    const handleViewProblem = (problem: ProblemStatement) => {
-        setSelectedProblem(problem)
-        setProblemDetailOpen(true)
-    }
+        if (activeView === 'problems') fetchProblemStatements()
+    }, [activeView, fetchProblemStatements])
 
     const handleStartBuilding = (problem: ProblemStatement) => {
-        // Close the detail sheet first
         setProblemDetailOpen(false)
-        setSelectedProblem(null)
-
-        // Set defaults and open generate sheet
-        setGenerateDefaults({
-            title: problem.projectTitle,
-            description: problem.overview || problem.projectDescription
-        })
-
-        // Small delay to allow sheet to close
-        setTimeout(() => {
-            setGenerateSheetOpen(true)
-        }, 200)
+        setGenerateDefaults({ title: problem.projectTitle, description: problem.overview || problem.projectDescription })
+        setTimeout(() => setGenerateSheetOpen(true), 200)
     }
 
-    const getDifficultyStyle = (difficulty: string) => {
-        switch (difficulty) {
-            case 'BEGINNER':
-                return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-            case 'INTERMEDIATE':
-                return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-            case 'ADVANCED':
-                return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
-            default:
-                return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-400'
+    const getDifficultyColor = (d: string) => {
+        switch (d) {
+            case 'BEGINNER': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+            case 'INTERMEDIATE': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+            case 'ADVANCED': return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+            default: return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-400'
         }
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
-            <div className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center mb-12 max-w-3xl mx-auto"
-                >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 text-xs font-medium mb-6">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Curated Development Paths</span>
-                    </div>
-                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-neutral-900 dark:text-white mb-6">
-                        Build your portfolio with <br />
-                        <span className="text-neutral-500 dark:text-neutral-500">real-world projects.</span>
-                    </h1>
-                    <p className="text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed mb-8">
-                        Stuck in tutorial hell? Browse curated project ideas ranging from beginner to advanced.
-                        Pick a category, choose a tech stack, and start coding.
-                    </p>
-                    <div className="flex items-center justify-center gap-4">
-                        <Button
-                            onClick={() => setSubmitSheetOpen(true)}
-                            className="rounded-lg h-12 px-6 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all font-medium"
-                        >
-                            <Lightbulb className="w-4 h-4 mr-2" />
-                            Submit an Idea
-                        </Button>
-                    </div>
-                </motion.div>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="w-full max-w-md mx-auto mb-12 bg-white dark:bg-neutral-900 rounded-xl p-1 border border-neutral-200 dark:border-neutral-800 shadow-sm">
-                        <TabsTrigger
-                            value="technology"
-                        >
-                            <div className="flex items-center justify-center gap-2">
-                                <Code2 className="w-4 h-4 mr-2" />
-                                Technology Based
+        <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans">
+            {/* Header */}
+            <div className="border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl sticky top-0 z-20">
+                <div className="max-w-[1400px] mx-auto px-4 md:px-6">
+                    <div className="flex items-center justify-between h-16">
+                        <div className="flex items-center gap-3">
+                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+                                <Sparkles className="w-4 h-4 text-white" />
                             </div>
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="problem"
-                        >
-                            <div className="flex items-center justify-center gap-2">
-                                <Target className="w-4 h-4 mr-2" />
-                                Problem First
+                            <div>
+                                <h1 className="text-lg font-bold text-neutral-900 dark:text-white">Project Ideas</h1>
                             </div>
-                        </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="technology">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {
-                                categories.map((category, index) => {
-                                    const Icon = category.icon
-                                    return (
-                                        <motion.div
-                                            key={category.id}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.05 }}
-                                        >
-                                            <div
-                                                onClick={() => handleCategoryClick(category)}
-                                                className="group h-full bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
-                                            >
-                                                <div>
-                                                    <div className="flex items-start justify-between mb-6">
-                                                        <div className={`p-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700 transition-colors duration-300`}>
-                                                            <Icon className="w-6 h-6" />
-                                                        </div>
-                                                        <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 border border-neutral-100 dark:border-neutral-800 px-2 py-1 rounded-md">
-                                                            {category.technologies.length} Stacks
-                                                        </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {/* View Toggle */}
+                            <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5">
+                                <button
+                                    onClick={() => setActiveView('categories')}
+                                    className={cn(
+                                        "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                                        activeView === 'categories'
+                                            ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
+                                            : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700"
+                                    )}
+                                >
+                                    <Code2 className="w-3.5 h-3.5 inline mr-1.5" />
+                                    By Technology
+                                </button>
+                                <button
+                                    onClick={() => setActiveView('problems')}
+                                    className={cn(
+                                        "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                                        activeView === 'problems'
+                                            ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
+                                            : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700"
+                                    )}
+                                >
+                                    <Target className="w-3.5 h-3.5 inline mr-1.5" />
+                                    Problem First
+                                </button>
+                            </div>
+                            <Button
+                                onClick={() => setSubmitSheetOpen(true)}
+                                variant="outline"
+                                size="sm"
+                                className="hidden sm:flex"
+                            >
+                                <Lightbulb className="w-3.5 h-3.5 mr-1.5" />
+                                Submit Idea
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+                {activeView === 'categories' ? (
+                    <motion.div
+                        key="categories"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="max-w-[1400px] mx-auto"
+                    >
+                        <div className="flex min-h-[calc(100vh-4rem)]">
+                            {/* LEFT SIDEBAR — Categories */}
+                            <aside className="w-64 lg:w-72 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex-shrink-0 hidden md:block overflow-y-auto sticky top-16 h-[calc(100vh-4rem)]">
+                                <div className="p-4">
+                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-3 px-2">
+                                        Categories
+                                    </p>
+                                    {loadingCategories ? (
+                                        <div className="space-y-2">
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <Skeleton key={i} className="h-12 rounded-lg" />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-0.5">
+                                            {dbCategories.map((cat) => (
+                                                <button
+                                                    key={cat.id}
+                                                    onClick={() => { setSelectedCategory(cat); setSelectedTech(null) }}
+                                                    className={cn(
+                                                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all group",
+                                                        selectedCategory?.id === cat.id
+                                                            ? "bg-white dark:bg-neutral-800 shadow-sm border border-neutral-200 dark:border-neutral-700"
+                                                            : "hover:bg-white/60 dark:hover:bg-neutral-800/50"
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "w-8 h-8 rounded-md flex items-center justify-center bg-gradient-to-br text-white flex-shrink-0 transition-transform group-hover:scale-105",
+                                                        cat.color
+                                                    )}>
+                                                        <DynamicIcon name={cat.icon} className="w-4 h-4" />
                                                     </div>
-                                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">
-                                                        {category.name}
-                                                    </h3>
-                                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed mb-6">
-                                                        {category.description}
-                                                    </p>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={cn(
+                                                            "text-sm font-medium truncate",
+                                                            selectedCategory?.id === cat.id
+                                                                ? "text-neutral-900 dark:text-white"
+                                                                : "text-neutral-600 dark:text-neutral-400"
+                                                        )}>
+                                                            {cat.name}
+                                                        </p>
+                                                        <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                                                            {cat.technologies.length} technologies
+                                                        </p>
+                                                    </div>
+                                                    <ChevronRight className={cn(
+                                                        "w-3.5 h-3.5 flex-shrink-0 transition-transform",
+                                                        selectedCategory?.id === cat.id
+                                                            ? "text-neutral-900 dark:text-white rotate-90"
+                                                            : "text-neutral-300 dark:text-neutral-600"
+                                                    )} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </aside>
+
+                            {/* MAIN CONTENT — Right side */}
+                            <main className="flex-1 overflow-y-auto">
+                                {/* Mobile category selector */}
+                                <div className="md:hidden p-4 border-b border-neutral-200 dark:border-neutral-800">
+                                    <Select
+                                        value={selectedCategory?.slug || ''}
+                                        onValueChange={(slug) => {
+                                            const cat = dbCategories.find(c => c.slug === slug)
+                                            if (cat) { setSelectedCategory(cat); setSelectedTech(null) }
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select Category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {dbCategories.map(cat => (
+                                                <SelectItem key={cat.slug} value={cat.slug}>{cat.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {selectedCategory && (
+                                    <div className="p-4 md:p-6">
+                                        {/* Category Header */}
+                                        <div className="mb-6">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br text-white", selectedCategory.color)}>
+                                                    <DynamicIcon name={selectedCategory.icon} className="w-5 h-5" />
                                                 </div>
-                                                <div className="flex items-center text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
-                                                    Explore Projects
-                                                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                                                <div>
+                                                    <h2 className="text-xl font-bold text-neutral-900 dark:text-white">{selectedCategory.name}</h2>
+                                                    <p className="text-sm text-neutral-500">{selectedCategory.description}</p>
                                                 </div>
                                             </div>
-                                        </motion.div>
-                                    )
-                                })
-                            }
+                                        </div>
+
+                                        {/* Technology Pills */}
+                                        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                                            <button
+                                                onClick={() => setSelectedTech(null)}
+                                                className={cn(
+                                                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border",
+                                                    !selectedTech
+                                                        ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                                                        : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-neutral-300"
+                                                )}
+                                            >
+                                                All
+                                            </button>
+                                            {selectedCategory.technologies.map(tech => (
+                                                <button
+                                                    key={tech.id}
+                                                    onClick={() => setSelectedTech(selectedTech?.id === tech.id ? null : tech)}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5",
+                                                        selectedTech?.id === tech.id
+                                                            ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                                                            : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-neutral-300"
+                                                    )}
+                                                >
+                                                    <span>{tech.icon}</span>
+                                                    {tech.name}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Selected Tech Learning Outcomes */}
+                                        {selectedTech && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="mb-6 p-4 rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20 border border-violet-100 dark:border-violet-900/30"
+                                            >
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <BookOpen className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                                                    <span className="text-sm font-semibold text-violet-900 dark:text-violet-300">What you&apos;ll learn with {selectedTech.name}</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {selectedTech.learningOutcomes.map((outcome, i) => (
+                                                        <span key={i} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-white/70 dark:bg-neutral-800/70 text-violet-700 dark:text-violet-300">
+                                                            <CheckCircle2 className="w-3 h-3" />
+                                                            {outcome}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {/* Platform Curated Projects Section */}
+                                        <div className="mb-8">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Crown className="w-4 h-4 text-amber-500" />
+                                                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">BuildrHQ Curated Projects</h3>
+                                                <Badge className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 text-amber-800 dark:text-amber-300 text-[10px] border-0">
+                                                    Ready to Start
+                                                </Badge>
+                                            </div>
+
+                                            {loadingProjects ? (
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                    {[1, 2, 3, 4].map(i => (
+                                                        <Skeleton key={i} className="h-48 rounded-xl" />
+                                                    ))}
+                                                </div>
+                                            ) : platformProjects.length === 0 ? (
+                                                <div className="text-center py-12 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
+                                                    <Zap className="w-8 h-8 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
+                                                    <p className="text-sm text-neutral-500">No curated projects for this selection yet.</p>
+                                                    <p className="text-xs text-neutral-400 mt-1">Try selecting a different technology or check back soon!</p>
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                    {platformProjects.map((project, index) => (
+                                                        <motion.div
+                                                            key={project.id}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: index * 0.05 }}
+                                                        >
+                                                            <Link href={`/projects/${project.slug}`}>
+                                                                <div className="group relative bg-white dark:bg-neutral-900 rounded-xl p-5 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-lg transition-all duration-300 cursor-pointer">
+                                                                    {/* BuildrHQ Badge */}
+                                                                    <div className="absolute top-3 right-3">
+                                                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/40 border border-amber-200 dark:border-amber-800">
+                                                                            <Crown className="w-3 h-3 text-amber-500" />
+                                                                            <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">BuildrHQ</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-start gap-2 mb-3">
+                                                                        <Badge className={cn(getDifficultyColor(project.difficulty), "text-[10px]")}>
+                                                                            {project.difficulty}
+                                                                        </Badge>
+                                                                        {project.guidedModeEnabled && (
+                                                                            <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 text-[10px] border-0">
+                                                                                <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+                                                                                AI Guided
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <h4 className="text-base font-bold text-neutral-900 dark:text-white mb-2 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-1 pr-20">
+                                                                        {project.title}
+                                                                    </h4>
+
+                                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3 line-clamp-2">
+                                                                        {project.shortDescription || project.description}
+                                                                    </p>
+
+                                                                    {/* Tech Tags */}
+                                                                    <div className="flex flex-wrap gap-1 mb-3">
+                                                                        {project.technologies.slice(0, 4).map(tech => (
+                                                                            <span key={tech} className="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                                                                                {tech}
+                                                                            </span>
+                                                                        ))}
+                                                                        {project.technologies.length > 4 && (
+                                                                            <span className="text-[10px] text-neutral-400">+{project.technologies.length - 4}</span>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Recruiter Signal */}
+                                                                    {project.recruiterSignal && (
+                                                                        <div className="mb-3 p-2 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30">
+                                                                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 line-clamp-1">
+                                                                                📡 {project.recruiterSignal}
+                                                                            </p>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Stats row */}
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center gap-3 text-[10px] text-neutral-400">
+                                                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{project.estimatedHours}h</span>
+                                                                            <span className="flex items-center gap-1"><Users className="w-3 h-3" />{project._count.progress} enrolled</span>
+                                                                            <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{project.totalViews}</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1 text-xs font-medium text-violet-600 dark:text-violet-400 group-hover:translate-x-0.5 transition-transform">
+                                                                            <Play className="w-3 h-3" />
+                                                                            Start
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </Link>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Community Ideas (from the technology) */}
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Users className="w-4 h-4 text-blue-500" />
+                                                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Community Ideas</h3>
+                                                <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] border-0">
+                                                    User Submitted
+                                                </Badge>
+                                            </div>
+                                            <div className="text-center py-8 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800">
+                                                <Target className="w-6 h-6 text-neutral-300 dark:text-neutral-700 mx-auto mb-2" />
+                                                <p className="text-sm text-neutral-500 mb-3">No community ideas for this technology yet.</p>
+                                                <Button size="sm" variant="outline" onClick={() => setSubmitSheetOpen(true)}>
+                                                    <Lightbulb className="w-3.5 h-3.5 mr-1.5" />
+                                                    Submit an Idea
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </main>
                         </div>
-                    </TabsContent>
-                    <TabsContent value="problem">
-                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                    </motion.div>
+                ) : (
+                    /* PROBLEM FIRST VIEW */
+                    <motion.div
+                        key="problems"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="max-w-[1400px] mx-auto p-4 md:p-6"
+                    >
+                        <div className="flex flex-col sm:flex-row gap-3 mb-6">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                                 <Input
@@ -248,12 +519,12 @@ export default function ProjectIdeasPage() {
                                     value={problemSearch}
                                     onChange={(e) => setProblemSearch(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && fetchProblemStatements()}
-                                    className="pl-10 h-12 rounded-lg bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800"
+                                    className="pl-10 h-10 rounded-lg"
                                 />
                             </div>
                             <Select value={problemDifficulty} onValueChange={setProblemDifficulty}>
-                                <SelectTrigger className="w-full sm:w-48 h-12 rounded-lg bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                                    <Filter className="w-4 h-4 mr-2 text-neutral-500" />
+                                <SelectTrigger className="w-full sm:w-44 h-10 rounded-lg">
+                                    <Filter className="w-3.5 h-3.5 mr-1.5 text-neutral-500" />
                                     <SelectValue placeholder="Difficulty" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -265,345 +536,150 @@ export default function ProjectIdeasPage() {
                             </Select>
                         </div>
 
-                        {
-                            loadingProblems ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    {
-                                        [1, 2, 3, 4, 5, 6].map((i) => (
-                                            <div key={i} className="bg-white dark:bg-neutral-900 rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 animate-pulse">
-                                                <div className="h-6 w-24 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
-                                                <div className="h-8 w-3/4 bg-neutral-100 dark:bg-neutral-800 rounded mb-4" />
-                                                <div className="space-y-2 mb-6">
-                                                    <div className="h-4 w-full bg-neutral-100 dark:bg-neutral-800 rounded" />
-                                                    <div className="h-4 w-5/6 bg-neutral-100 dark:bg-neutral-800 rounded" />
-                                                </div>
+                        {loadingProblems ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-52 rounded-xl" />)}
+                            </div>
+                        ) : problemStatements.length === 0 ? (
+                            <div className="text-center py-16 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50/50 dark:bg-neutral-900/50">
+                                <Target className="w-10 h-10 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
+                                <h3 className="text-base font-medium text-neutral-900 dark:text-white mb-1">No problem statements found</h3>
+                                <p className="text-sm text-neutral-500 mb-4">Be the first to submit a technology-agnostic challenge!</p>
+                                <Button onClick={() => setSubmitSheetOpen(true)} size="sm">
+                                    <Lightbulb className="w-3.5 h-3.5 mr-1.5" />
+                                    Submit a Problem
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {problemStatements.map((problem, index) => (
+                                    <motion.div
+                                        key={problem.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.03 }}
+                                        className="group bg-white dark:bg-neutral-900 rounded-xl p-5 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all hover:-translate-y-0.5 flex flex-col"
+                                    >
+                                        <div className="flex items-center justify-between mb-3">
+                                            <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
+                                            <div className="flex items-center gap-2 text-xs text-neutral-400">
+                                                <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" />{problem.views || 0}</span>
+                                                <span className="flex items-center gap-0.5"><Heart className="w-3 h-3" />{problem.upvotes || 0}</span>
                                             </div>
-                                        ))
-                                    }
-                                </div>
-                            ) : problemStatements.length === 0 ? (
-                                <div className="text-center py-20 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50/50 dark:bg-neutral-900/50">
-                                    <Target className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-4" />
-                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">No problem statements found</h3>
-                                    <p className="text-neutral-500 dark:text-neutral-400 mb-6">Be the first to submit a technology-agnostic challenge!</p>
-                                    <Button onClick={() => setSubmitSheetOpen(true)}>
-                                        <Lightbulb className="w-4 h-4 mr-2" />
-                                        Submit a Problem Statement
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    {
-                                        problemStatements.map((problem, index) => (
-                                            <motion.div
-                                                key={problem.id}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: index * 0.05 }}
-                                                className="group bg-white dark:bg-neutral-900 shadow-2xl rounded-xl p-8 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1 flex flex-col"
-                                            >
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <Badge className={getDifficultyStyle(problem.difficulty)}>
-                                                        {problem.difficulty}
-                                                    </Badge>
-                                                    <div className="flex items-center gap-3 text-sm text-neutral-400">
-                                                        <div className="flex items-center gap-1">
-                                                            <Eye className="w-3.5 h-3.5" />
-                                                            <span>{problem.views || 0}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <Heart className="w-3.5 h-3.5" />
-                                                            <span>{problem.upvotes || 0}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                    {problem.projectTitle}
-                                                </h3>
-
-                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-3 flex-grow">
-                                                    {problem.overview || problem.projectDescription}
-                                                </p>
-
-                                                {
-                                                    problem.coreRequirements && problem.coreRequirements.length > 0 && (
-                                                        <div className="mb-4">
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {
-                                                                    problem.coreRequirements.slice(0, 2).map((req, i) => (
-                                                                        <div key={i} className="flex items-center gap-1 text-xs text-neutral-500">
-                                                                            <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                                                            <span className="truncate max-w-[120px]">{req}</span>
-                                                                        </div>
-                                                                    ))
-                                                                }
-                                                                {
-                                                                    problem.coreRequirements.length > 2 && (
-                                                                        <span className="text-xs text-neutral-400">+{problem.coreRequirements.length - 2} more</span>
-                                                                    )
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                }
-
-                                                {
-                                                    problem.buildCount > 0 && (
-                                                        <p className="text-xs text-neutral-500 mb-4">
-                                                            👥 {problem.buildCount} devs built this
-                                                        </p>
-                                                    )
-                                                }
-
-                                                <div className="grid grid-cols-2 gap-3 mt-auto">
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => handleViewProblem(problem)}
-                                                        className="h-10 rounded-lg"
-                                                    >
-                                                        View Details
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => handleStartBuilding(problem)}
-                                                        className="h-10 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200"
-                                                    >
-                                                        Start Building
-                                                    </Button>
-                                                </div>
-                                            </motion.div>
-                                        ))
-                                    }
-                                </div>
-                            )
-                        }
-                    </TabsContent>
-                </Tabs>
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-24 text-center"
-                >
-                    <div className="max-w-2xl mx-auto p-8 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/50">
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                            Missing a category?
-                        </h3>
-                        <p className="text-neutral-500 dark:text-neutral-400 mb-6 text-sm">
-                            We are constantly adding new technologies and stacks. If you have a specific request, let us know.
-                        </p>
-                        <Button
-                            onClick={() => setSubmitSheetOpen(true)}
-                            variant="outline"
-                            className="h-10 border-neutral-200 dark:border-neutral-700 hover:bg-white dark:hover:bg-neutral-800"
-                        >
-                            Request Category
-                        </Button>
-                    </div>
-                </motion.div>
-            </div>
-            <Sheet open={techSheetOpen} onOpenChange={setTechSheetOpen}>
-                <SheetContent side="bottom" className="h-[80vh] w-full overflow-y-auto">
-                    {
-                        selectedCategory && (
-                            <section className="w-full max-w-5xl mx-auto">
-                                <SheetHeader className="mb-8">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-14 h-14 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center">
-                                            {selectedCategory.icon && <selectedCategory.icon className="w-7 h-7 text-neutral-900 dark:text-white" />}
                                         </div>
-                                    </div>
-                                    <SheetTitle className="text-left">{selectedCategory.name}</SheetTitle>
-                                    <SheetDescription className="text-left">
-                                        {selectedCategory.description}
-                                    </SheetDescription>
-                                </SheetHeader>
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-2 mb-6">
-                                        <Layers className="w-4 h-4 text-neutral-500" />
-                                        <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                                            Choose a Technology ({selectedCategory.technologies.length})
+                                        <h3 className="text-base font-bold text-neutral-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                            {problem.projectTitle}
                                         </h3>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {selectedCategory.technologies.map((tech, index) => (
-                                            <motion.div
-                                                key={tech.id}
-                                                initial={{ opacity: 0, x: 20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: index * 0.05 }}
-                                            >
-                                                <Link
-                                                    href={`/projects/ideas/${selectedCategory.id}/${tech.id}`}
-                                                    onClick={() => setTechSheetOpen(false)}
-                                                >
-                                                    <div className="group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-6 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-lg transition-all duration-200 cursor-pointer">
-                                                        <div className="flex items-start gap-4">
-                                                            <div className="text-3xl flex-shrink-0 p-2 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg group-hover:scale-105 transition-transform">
-                                                                {tech.icon || <Layers className="w-6 h-6 text-neutral-400" />}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex items-center justify-between mb-2">
-                                                                    <h4 className="text-lg font-bold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                                        {tech.name}
-                                                                    </h4>
-                                                                    <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white group-hover:translate-x-1 transition-all flex-shrink-0" />
-                                                                </div>
-                                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2">
-                                                                    {tech.description}
-                                                                </p>
-                                                                {
-                                                                    tech.projectCount && (
-                                                                        <div className="mt-3 text-xs text-neutral-500">
-                                                                            {tech.projectCount} projects available
-                                                                        </div>
-                                                                    )
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                            </motion.div>
-                                        ))
-                                        }
-                                    </div>
-                                </div>
-                            </section>
-                        )
-                    }
-                </SheetContent>
-            </Sheet>
+                                        <p className="text-xs text-neutral-500 mb-3 line-clamp-2 flex-grow">
+                                            {problem.overview || problem.projectDescription}
+                                        </p>
+                                        {problem.coreRequirements?.slice(0, 2).map((req, i) => (
+                                            <div key={i} className="flex items-center gap-1 text-[10px] text-neutral-500 mb-1">
+                                                <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                                <span className="truncate">{req}</span>
+                                            </div>
+                                        ))}
+                                        <div className="grid grid-cols-2 gap-2 mt-3">
+                                            <Button variant="outline" size="sm" onClick={() => { setSelectedProblem(problem); setProblemDetailOpen(true) }}>
+                                                Details
+                                            </Button>
+                                            <Button size="sm" onClick={() => handleStartBuilding(problem)} className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900">
+                                                <Sparkles className="w-3 h-3 mr-1" />
+                                                Build
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Problem Detail Sheet */}
             <Sheet open={problemDetailOpen} onOpenChange={setProblemDetailOpen}>
                 <SheetContent side="bottom" className="h-[80vh] w-full overflow-y-auto">
-                    {
-                        selectedProblem && (
-                            <section className="w-full max-w-5xl mx-auto">
-                                <SheetHeader className="mb-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <Badge className={getDifficultyStyle(selectedProblem.difficulty)}>
-                                            {selectedProblem.difficulty}
-                                        </Badge>
-                                        <div className="flex items-center gap-3 text-sm text-neutral-400">
-                                            <span className="flex items-center gap-1">
-                                                <Eye className="w-3.5 h-3.5" />
-                                                {selectedProblem.views || 0}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Heart className="w-3.5 h-3.5" />
-                                                {selectedProblem.upvotes || 0}
-                                            </span>
+                    {selectedProblem && (
+                        <section className="w-full max-w-5xl mx-auto">
+                            <SheetHeader className="mb-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Badge className={getDifficultyColor(selectedProblem.difficulty)}>{selectedProblem.difficulty}</Badge>
+                                    <div className="flex items-center gap-3 text-sm text-neutral-400">
+                                        <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />{selectedProblem.views || 0}</span>
+                                        <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" />{selectedProblem.upvotes || 0}</span>
+                                    </div>
+                                </div>
+                                <SheetTitle className="text-left text-2xl">{selectedProblem.projectTitle}</SheetTitle>
+                            </SheetHeader>
+                            <div className="space-y-6">
+                                <div>
+                                    <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2">Overview</h4>
+                                    <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">{selectedProblem.overview || selectedProblem.projectDescription}</p>
+                                </div>
+                                {selectedProblem.recruiterSignal && (
+                                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800">
+                                        <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">📡 Recruiter Signal</h4>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-400">{selectedProblem.recruiterSignal}</p>
+                                    </div>
+                                )}
+                                {selectedProblem.coreRequirements?.length > 0 && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">Core Requirements</h4>
+                                        <ul className="space-y-2">
+                                            {selectedProblem.coreRequirements.map((req, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                    <span className="text-sm text-neutral-600 dark:text-neutral-400">{req}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                                {selectedProblem.engineeringConstraints?.length > 0 && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">Engineering Constraints</h4>
+                                        <ul className="space-y-2">
+                                            {selectedProblem.engineeringConstraints.map((c, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <Target className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                                    <span className="text-sm text-neutral-600 dark:text-neutral-400">{c}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                                {selectedProblem.suggestedStacks && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">Suggested Stacks</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {Object.entries(selectedProblem.suggestedStacks).map(([key, values]) => (
+                                                Array.isArray(values) && values.map((v: string, i: number) => (
+                                                    <Badge key={`${key}-${i}`} variant="outline" className="text-xs">{v}</Badge>
+                                                ))
+                                            ))}
                                         </div>
                                     </div>
-                                    <SheetTitle className="text-left text-2xl">{selectedProblem.projectTitle}</SheetTitle>
-                                </SheetHeader>
-                                <div className="space-y-6">
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2">Overview</h4>
-                                        <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                            {selectedProblem.overview || selectedProblem.projectDescription}
-                                        </p>
-                                    </div>
-                                    {
-                                        selectedProblem.recruiterSignal && (
-                                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800">
-                                                <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
-                                                    📡 Recruiter Signal
-                                                </h4>
-                                                <p className="text-sm text-indigo-700 dark:text-indigo-400">
-                                                    {selectedProblem.recruiterSignal}
-                                                </p>
-                                            </div>
-                                        )
-                                    }
-                                    {
-                                        selectedProblem.coreRequirements && selectedProblem.coreRequirements.length > 0 && (
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">Core Requirements</h4>
-                                                <ul className="space-y-2">
-                                                    {
-                                                        selectedProblem.coreRequirements.map((req, i) => (
-                                                            <li key={i} className="flex items-start gap-2">
-                                                                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                                                <span className="text-sm text-neutral-600 dark:text-neutral-400">{req}</span>
-                                                            </li>
-                                                        ))
-                                                    }
-                                                </ul>
-                                            </div>
-                                        )
-                                    }
-                                    {
-                                        selectedProblem.engineeringConstraints && selectedProblem.engineeringConstraints.length > 0 && (
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">Engineering Constraints</h4>
-                                                <ul className="space-y-2">
-                                                    {
-                                                        selectedProblem.engineeringConstraints.map((constraint, i) => (
-                                                            <li key={i} className="flex items-start gap-2">
-                                                                <Target className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                                                                <span className="text-sm text-neutral-600 dark:text-neutral-400">{constraint}</span>
-                                                            </li>
-                                                        ))
-                                                    }
-                                                </ul>
-                                            </div>
-                                        )
-                                    }
-                                    {
-                                        selectedProblem.suggestedStacks && (
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">Suggested Stacks</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {
-                                                        Object.entries(selectedProblem.suggestedStacks).map(([key, values]) => (
-                                                            Array.isArray(values) && values.map((value: string, i: number) => (
-                                                                <Badge key={`${key}-${i}`} variant="outline" className="text-xs">
-                                                                    {value}
-                                                                </Badge>
-                                                            ))
-                                                        ))
-                                                    }
-                                                </div>
-                                            </div>
-                                        )
-                                    }
-                                    {
-                                        selectedProblem.buildCount > 0 && (
-                                            <div className="text-sm text-neutral-500 py-3 border-t border-neutral-200 dark:border-neutral-800">
-                                                👥 {selectedProblem.buildCount} developers have built this project
-                                            </div>
-                                        )
-                                    }
-                                </div>
-                                <SheetFooter className="mt-8">
-                                    <Button
-                                        onClick={() => handleStartBuilding(selectedProblem)}
-                                        className="w-full h-12 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200"
-                                    >
-                                        <Code2 className="w-4 h-4 mr-2" />
-                                        Start Building This Project
-                                    </Button>
-                                </SheetFooter>
-                            </section>
-                        )
-                    }
+                                )}
+                            </div>
+                            <SheetFooter className="mt-8">
+                                <Button onClick={() => handleStartBuilding(selectedProblem)} className="w-full h-12 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900">
+                                    <Code2 className="w-4 h-4 mr-2" />
+                                    Start Building This Project
+                                </Button>
+                            </SheetFooter>
+                        </section>
+                    )}
                 </SheetContent>
             </Sheet>
 
-            <SubmitProjectIdeaSheet
-                open={submitSheetOpen}
-                onOpenChange={setSubmitSheetOpen}
-            />
+            <SubmitProjectIdeaSheet open={submitSheetOpen} onOpenChange={setSubmitSheetOpen} />
 
             <ProjectGenerateSheet
                 trigger={<></>}
                 defaultValues={generateDefaults}
                 isOpen={generateSheetOpen}
                 onOpenChange={setGenerateSheetOpen}
-                onSuccess={() => {
-                    setGenerateSheetOpen(false)
-                    toast.success('Project created! Redirecting...')
-                }}
+                onSuccess={() => { setGenerateSheetOpen(false); toast.success('Project created! Redirecting...') }}
             />
         </div>
     )

@@ -1,11 +1,49 @@
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
-
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.badges = exports.levels = void 0;
+exports.seedAchievements = seedAchievements;
+var client_1 = require("@prisma/client");
+var prisma = new client_1.PrismaClient();
 // ================================================================================
 // LEVEL DEFINITIONS
 // ================================================================================
-const levels = [
+var levels = [
     { level: 1, title: "Code Seedling", xpRequired: 0, xpReward: 0, creditsReward: 0, icon: "🌱", color: "#4ade80", description: "Welcome to your coding journey! Every expert was once a beginner." },
     { level: 2, title: "Code Sprout", xpRequired: 500, xpReward: 50, creditsReward: 10, icon: "🌿", color: "#22c55e", description: "You're starting to grow! Keep nurturing your skills." },
     { level: 3, title: "Code Sapling", xpRequired: 1200, xpReward: 75, creditsReward: 15, icon: "🌳", color: "#16a34a", description: "Your roots are getting stronger. Keep coding!" },
@@ -36,12 +74,12 @@ const levels = [
     { level: 28, title: "Binary Overlord", xpRequired: 280000, xpReward: 1300, creditsReward: 260, icon: "🎭", color: "#2dd4bf", description: "0s and 1s bend to your will." },
     { level: 29, title: "Quantum Coder", xpRequired: 330000, xpReward: 1400, creditsReward: 280, icon: "🌌", color: "#818cf8", description: "Your code exists in multiple states simultaneously." },
     { level: 30, title: "Eternal Engineer", xpRequired: 400000, xpReward: 2000, creditsReward: 500, icon: "💎", color: "#f0abfc", description: "The pinnacle of engineering excellence. Your legacy is eternal." },
-]
-
+];
+exports.levels = levels;
 // ================================================================================
 // BADGE DEFINITIONS
 // ================================================================================
-const badges = [
+var badges = [
     // ================================================================================
     // PROJECTS BADGES
     // ================================================================================
@@ -61,7 +99,6 @@ const badges = [
     { slug: "perfectionist", name: "Perfectionist", description: "Get 100% on 5 project quizzes", category: "PROJECTS", rarity: "LEGENDARY", tier: 4, icon: "💯", color: "#ef4444", bgGradient: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", requirements: { type: "score", target: "perfect_quiz_scores", count: 5, minScore: 100 }, xpReward: 1200, creditsReward: 120, order: 10 },
     // Tier 5 - Mythic
     { slug: "project-deity", name: "Project Deity", description: "Complete 50 projects", category: "PROJECTS", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "count", target: "projects_completed", count: 50 }, xpReward: 3000, creditsReward: 300, order: 11 },
-
     // ================================================================================
     // ASSESSMENTS BADGES
     // ================================================================================
@@ -81,7 +118,6 @@ const badges = [
     { slug: "certification-collector", name: "Certification Collector", description: "Earn 10 certifications", category: "ASSESSMENTS", rarity: "LEGENDARY", tier: 4, icon: "💎", color: "#22d3ee", bgGradient: "linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)", requirements: { type: "count", target: "certifications_earned", count: 10 }, xpReward: 1200, creditsReward: 120, order: 10 },
     // Tier 5
     { slug: "assessment-deity", name: "Assessment Deity", description: "Answer 1000 questions correctly", category: "ASSESSMENTS", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "count", target: "correct_answers", count: 1000 }, xpReward: 3000, creditsReward: 300, order: 11 },
-
     // ================================================================================
     // CHALLENGES BADGES (Forge & Crucible)
     // ================================================================================
@@ -101,7 +137,6 @@ const badges = [
     { slug: "crucible-champion", name: "Crucible Champion", description: "Reach top 10 on Crucible leaderboard", category: "CHALLENGES", rarity: "LEGENDARY", tier: 4, icon: "🏆", color: "#fbbf24", bgGradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)", requirements: { type: "rank", target: "crucible_leaderboard", maxRank: 10 }, xpReward: 2000, creditsReward: 200, order: 10 },
     // Tier 5
     { slug: "challenge-deity", name: "Challenge Deity", description: "Solve 200 Crucible problems", category: "CHALLENGES", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "count", target: "crucible_problems_solved", count: 200 }, xpReward: 3000, creditsReward: 300, order: 11 },
-
     // ================================================================================
     // MOCK INTERVIEWS BADGES
     // ================================================================================
@@ -121,7 +156,6 @@ const badges = [
     { slug: "perfect-interview", name: "Perfect Interview", description: "Score 95%+ overall on a mock interview", category: "MOCK_INTERVIEWS", rarity: "LEGENDARY", tier: 4, icon: "💎", color: "#22d3ee", bgGradient: "linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)", requirements: { type: "score", target: "mock_perfect_score", minScore: 95 }, xpReward: 1000, creditsReward: 100, order: 10 },
     // Tier 5
     { slug: "interview-deity", name: "Interview Deity", description: "Complete 100 mock interviews with average 85%+ score", category: "MOCK_INTERVIEWS", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "combined", targets: ["mock_interviews_completed", "mock_average_score"], count: 100, minScore: 85 }, xpReward: 3000, creditsReward: 300, order: 11 },
-
     // ================================================================================
     // COMMUNITY BADGES
     // ================================================================================
@@ -142,7 +176,6 @@ const badges = [
     { slug: "viral-post", name: "Viral Post", description: "Get a post with 100+ likes", category: "COMMUNITY", rarity: "LEGENDARY", tier: 4, icon: "🔥", color: "#ef4444", bgGradient: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", requirements: { type: "single", target: "post_likes", count: 100 }, xpReward: 1000, creditsReward: 100, order: 11 },
     // Tier 5
     { slug: "community-deity", name: "Community Deity", description: "Become top contributor in 3 communities", category: "COMMUNITY", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "count", target: "top_contributor_communities", count: 3 }, xpReward: 3000, creditsReward: 300, order: 12 },
-
     // ================================================================================
     // LearnS BADGES
     // ================================================================================
@@ -159,7 +192,6 @@ const badges = [
     { slug: "Learn-legend", name: "Learn Legend", description: "Complete 100 Learns", category: "LearnS", rarity: "LEGENDARY", tier: 4, icon: "👑", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "count", target: "Learns_completed", count: 100 }, xpReward: 1500, creditsReward: 150, order: 7 },
     // Tier 5
     { slug: "Learn-deity", name: "Learn Deity", description: "Complete 200 Learns with 95%+ average quiz score", category: "LearnS", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "combined", targets: ["Learns_completed", "Learn_quiz_average"], count: 200, minScore: 95 }, xpReward: 3000, creditsReward: 300, order: 8 },
-
     // ================================================================================
     // SPACES BADGES
     // ================================================================================
@@ -176,7 +208,6 @@ const badges = [
     { slug: "space-legend", name: "Space Legend", description: "Complete 25 spaces", category: "SPACES", rarity: "LEGENDARY", tier: 4, icon: "👑", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "count", target: "spaces_completed", count: 25 }, xpReward: 1500, creditsReward: 150, order: 7 },
     // Tier 5
     { slug: "space-deity", name: "Space Deity", description: "Create 20 spaces with 500+ total completions", category: "SPACES", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "combined", targets: ["spaces_created", "space_completions_by_others"], counts: [20, 500] }, xpReward: 3000, creditsReward: 300, order: 8 },
-
     // ================================================================================
     // STUDIO BADGES
     // ================================================================================
@@ -194,7 +225,6 @@ const badges = [
     { slug: "studio-legend", name: "Studio Legend", description: "Create 100 studios with 200+ total clones", category: "STUDIO", rarity: "LEGENDARY", tier: 4, icon: "👑", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "combined", targets: ["studios_created", "studio_clones"], counts: [100, 200] }, xpReward: 1500, creditsReward: 150, order: 8 },
     // Tier 5
     { slug: "studio-deity", name: "Studio Deity", description: "Study 2000 flashcards and ace 100 quizzes", category: "STUDIO", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "combined", targets: ["flashcards_studied", "studio_quizzes_aced"], counts: [2000, 100] }, xpReward: 3000, creditsReward: 300, order: 9 },
-
     // ================================================================================
     // OPEN SOURCE BADGES
     // ================================================================================
@@ -215,7 +245,6 @@ const badges = [
     { slug: "bounty-hunter", name: "Bounty Hunter", description: "Earn $500+ in open source bounties", category: "OPENSOURCE", rarity: "LEGENDARY", tier: 4, icon: "💰", color: "#ef4444", bgGradient: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", requirements: { type: "amount", target: "os_bounty_earnings", amount: 500 }, xpReward: 2000, creditsReward: 200, order: 11 },
     // Tier 5
     { slug: "os-deity", name: "Open Source Deity", description: "Top contributor to 5 projects with 50 merged PRs", category: "OPENSOURCE", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "combined", targets: ["top_contributor_projects", "os_prs_merged"], counts: [5, 50] }, xpReward: 3000, creditsReward: 300, order: 12 },
-
     // ================================================================================
     // PATHFINDER BADGES
     // ================================================================================
@@ -234,7 +263,6 @@ const badges = [
     { slug: "pathfinder-legend", name: "Pathfinder Legend", description: "Complete 15 goals with 90%+ verification scores", category: "PATHFINDER", rarity: "LEGENDARY", tier: 4, icon: "👑", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "combined", targets: ["pathfinder_goals_completed", "pathfinder_high_verification"], counts: [15, 15] }, xpReward: 1500, creditsReward: 150, order: 9 },
     // Tier 5
     { slug: "pathfinder-deity", name: "Pathfinder Deity", description: "Complete 30 goals with 100-day streak", category: "PATHFINDER", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "combined", targets: ["pathfinder_goals_completed", "pathfinder_streak"], counts: [30, 100] }, xpReward: 3000, creditsReward: 300, order: 10 },
-
     // ================================================================================
     // LAUNCHPADS BADGES
     // ================================================================================
@@ -250,7 +278,6 @@ const badges = [
     { slug: "featured-product", name: "Featured Creator", description: "Have a product featured on Launchpads", category: "LAUNCHPADS", rarity: "LEGENDARY", tier: 4, icon: "⭐", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "count", target: "products_featured", count: 1 }, xpReward: 1500, creditsReward: 150, order: 6 },
     // Tier 5
     { slug: "launchpad-deity", name: "Launchpad Deity", description: "10 approved products with 2000+ total views", category: "LAUNCHPADS", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "combined", targets: ["products_approved", "total_product_views"], counts: [10, 2000] }, xpReward: 3000, creditsReward: 300, order: 7 },
-
     // ================================================================================
     // COLLECTIVE BADGES
     // ================================================================================
@@ -267,7 +294,6 @@ const badges = [
     { slug: "collective-legend", name: "Collective Legend", description: "10 approved proposals and 50 votes cast", category: "COLLECTIVE", rarity: "LEGENDARY", tier: 4, icon: "👑", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "combined", targets: ["proposals_approved", "votes_cast"], counts: [10, 50] }, xpReward: 1500, creditsReward: 150, order: 7 },
     // Tier 5
     { slug: "collective-deity", name: "Collective Deity", description: "Shape the platform with 25 approved proposals", category: "COLLECTIVE", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "count", target: "proposals_approved", count: 25 }, xpReward: 3000, creditsReward: 300, order: 8 },
-
     // ================================================================================
     // PORTFOLIO BADGES
     // ================================================================================
@@ -280,7 +306,6 @@ const badges = [
     { slug: "portfolio-master", name: "Portfolio Master", description: "Add 10 portfolio projects with full details", category: "PORTFOLIO", rarity: "EPIC", tier: 3, icon: "🎯", color: "#fbbf24", bgGradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)", requirements: { type: "count", target: "detailed_portfolio_projects", count: 10 }, xpReward: 600, creditsReward: 60, order: 4 },
     // Tier 4
     { slug: "portfolio-legend", name: "Portfolio Legend", description: "Build a portfolio with 20 impressive projects", category: "PORTFOLIO", rarity: "LEGENDARY", tier: 4, icon: "👑", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "count", target: "portfolio_projects_added", count: 20 }, xpReward: 1500, creditsReward: 150, order: 5 },
-
     // ================================================================================
     // CONSISTENCY BADGES (Streaks)
     // ================================================================================
@@ -296,7 +321,6 @@ const badges = [
     { slug: "half-year-streak", name: "Six Month Samurai", description: "Maintain a 180-day activity streak", category: "CONSISTENCY", rarity: "LEGENDARY", tier: 4, icon: "⚡", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "streak", target: "activity_streak", days: 180 }, xpReward: 1500, creditsReward: 150, order: 6 },
     // Tier 5
     { slug: "year-streak", name: "Yearly Legend", description: "Maintain a 365-day activity streak", category: "CONSISTENCY", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "streak", target: "activity_streak", days: 365 }, xpReward: 5000, creditsReward: 500, order: 7 },
-
     // ================================================================================
     // SOCIAL BADGES
     // ================================================================================
@@ -313,7 +337,6 @@ const badges = [
     { slug: "influencer", name: "Platform Influencer", description: "Reach 500 followers", category: "SOCIAL", rarity: "LEGENDARY", tier: 4, icon: "👑", color: "#f59e0b", bgGradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", requirements: { type: "count", target: "followers_gained", count: 500 }, xpReward: 1500, creditsReward: 150, order: 7 },
     // Tier 5
     { slug: "social-deity", name: "Social Deity", description: "Reach 1000 followers", category: "SOCIAL", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "count", target: "followers_gained", count: 1000 }, xpReward: 3000, creditsReward: 300, order: 8 },
-
     // ================================================================================
     // MILESTONE BADGES (XP & Level based)
     // ================================================================================
@@ -332,7 +355,6 @@ const badges = [
     // Tier 5
     { slug: "xp-deity", name: "XP Deity", description: "Earn 500,000 total XP", category: "MILESTONE", rarity: "MYTHIC", tier: 5, icon: "🌟", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "xp", amount: 500000 }, xpReward: 5000, creditsReward: 500, order: 9 },
     { slug: "level-30", name: "Eternal Engineer", description: "Reach level 30 - The pinnacle of achievement", category: "MILESTONE", rarity: "MYTHIC", tier: 5, icon: "💎", color: "#f0abfc", bgGradient: "linear-gradient(135deg, #f0abfc 0%, #d946ef 100%)", requirements: { type: "level", level: 30 }, xpReward: 2000, creditsReward: 200, order: 10 },
-
     // ================================================================================
     // SPECIAL BADGES (Limited, Events)
     // ================================================================================
@@ -342,83 +364,107 @@ const badges = [
     { slug: "referral-master", name: "Referral Master", description: "Refer 10 friends who become active users", category: "SPECIAL", rarity: "EPIC", tier: 3, icon: "👥", color: "#a855f7", bgGradient: "linear-gradient(135deg, #a855f7 0%, #9333ea 100%)", requirements: { type: "count", target: "active_referrals", count: 10 }, xpReward: 1000, creditsReward: 100, order: 4 },
     { slug: "completionist", name: "Completionist", description: "Earn at least one badge from every category", category: "SPECIAL", rarity: "LEGENDARY", tier: 4, icon: "🎖️", color: "#fbbf24", bgGradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)", requirements: { type: "category_completion", allCategories: true }, xpReward: 2000, creditsReward: 200, order: 5 },
     { slug: "platform-legend", name: "Platform Legend", description: "Earn 100 badges across all categories", category: "SPECIAL", rarity: "MYTHIC", tier: 5, icon: "🏆", color: "#c084fc", bgGradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)", requirements: { type: "count", target: "total_badges", count: 100 }, xpReward: 5000, creditsReward: 500, order: 6 },
-]
-
+];
+exports.badges = badges;
 // ================================================================================
 // SEED FUNCTION
 // ================================================================================
-export async function seedAchievements() {
-    console.log('🏆 Seeding achievements system...\n')
-
-    // Seed Levels
-    console.log('📊 Seeding levels...')
-    for (const level of levels) {
-        await prisma.level.upsert({
-            where: { level: level.level },
-            update: {
-                title: level.title,
-                xpRequired: level.xpRequired,
-                xpReward: level.xpReward,
-                creditsReward: level.creditsReward,
-                description: level.description,
-                icon: level.icon,
-                color: level.color,
-            },
-            create: {
-                level: level.level,
-                title: level.title,
-                xpRequired: level.xpRequired,
-                xpReward: level.xpReward,
-                creditsReward: level.creditsReward,
-                description: level.description,
-                icon: level.icon,
-                color: level.color,
-            },
-        })
-    }
-    console.log(`✅ Seeded ${levels.length} levels`)
-
-    // Seed Badges
-    console.log('🎖️ Seeding badges...')
-    for (const badge of badges) {
-        await prisma.badge.upsert({
-            where: { slug: badge.slug },
-            update: {
-                name: badge.name,
-                description: badge.description,
-                category: badge.category as any,
-                rarity: badge.rarity as any,
-                tier: badge.tier,
-                icon: badge.icon,
-                color: badge.color,
-                bgGradient: badge.bgGradient,
-                requirements: badge.requirements,
-                xpReward: badge.xpReward,
-                creditsReward: badge.creditsReward,
-                order: badge.order,
-                isLimited: badge.isLimited || false,
-            },
-            create: {
-                slug: badge.slug,
-                name: badge.name,
-                description: badge.description,
-                category: badge.category as any,
-                rarity: badge.rarity as any,
-                tier: badge.tier,
-                icon: badge.icon,
-                color: badge.color,
-                bgGradient: badge.bgGradient,
-                requirements: badge.requirements,
-                xpReward: badge.xpReward,
-                creditsReward: badge.creditsReward,
-                order: badge.order,
-                isLimited: badge.isLimited || false,
-            },
-        })
-    }
-    console.log(`✅ Seeded ${badges.length} badges`)
-
-    console.log('\n🎉 Achievements system seeded successfully!')
+function seedAchievements() {
+    return __awaiter(this, void 0, void 0, function () {
+        var _i, levels_1, level, _a, badges_1, badge;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    console.log('🏆 Seeding achievements system...\n');
+                    // Seed Levels
+                    console.log('📊 Seeding levels...');
+                    _i = 0, levels_1 = levels;
+                    _b.label = 1;
+                case 1:
+                    if (!(_i < levels_1.length)) return [3 /*break*/, 4];
+                    level = levels_1[_i];
+                    return [4 /*yield*/, prisma.level.upsert({
+                            where: { level: level.level },
+                            update: {
+                                title: level.title,
+                                xpRequired: level.xpRequired,
+                                xpReward: level.xpReward,
+                                creditsReward: level.creditsReward,
+                                description: level.description,
+                                icon: level.icon,
+                                color: level.color,
+                            },
+                            create: {
+                                level: level.level,
+                                title: level.title,
+                                xpRequired: level.xpRequired,
+                                xpReward: level.xpReward,
+                                creditsReward: level.creditsReward,
+                                description: level.description,
+                                icon: level.icon,
+                                color: level.color,
+                            },
+                        })];
+                case 2:
+                    _b.sent();
+                    _b.label = 3;
+                case 3:
+                    _i++;
+                    return [3 /*break*/, 1];
+                case 4:
+                    console.log("\u2705 Seeded ".concat(levels.length, " levels"));
+                    // Seed Badges
+                    console.log('🎖️ Seeding badges...');
+                    _a = 0, badges_1 = badges;
+                    _b.label = 5;
+                case 5:
+                    if (!(_a < badges_1.length)) return [3 /*break*/, 8];
+                    badge = badges_1[_a];
+                    return [4 /*yield*/, prisma.badge.upsert({
+                            where: { slug: badge.slug },
+                            update: {
+                                name: badge.name,
+                                description: badge.description,
+                                category: badge.category,
+                                rarity: badge.rarity,
+                                tier: badge.tier,
+                                icon: badge.icon,
+                                color: badge.color,
+                                bgGradient: badge.bgGradient,
+                                requirements: badge.requirements,
+                                xpReward: badge.xpReward,
+                                creditsReward: badge.creditsReward,
+                                order: badge.order,
+                                isLimited: badge.isLimited || false,
+                            },
+                            create: {
+                                slug: badge.slug,
+                                name: badge.name,
+                                description: badge.description,
+                                category: badge.category,
+                                rarity: badge.rarity,
+                                tier: badge.tier,
+                                icon: badge.icon,
+                                color: badge.color,
+                                bgGradient: badge.bgGradient,
+                                requirements: badge.requirements,
+                                xpReward: badge.xpReward,
+                                creditsReward: badge.creditsReward,
+                                order: badge.order,
+                                isLimited: badge.isLimited || false,
+                            },
+                        })];
+                case 6:
+                    _b.sent();
+                    _b.label = 7;
+                case 7:
+                    _a++;
+                    return [3 /*break*/, 5];
+                case 8:
+                    console.log("\u2705 Seeded ".concat(badges.length, " badges"));
+                    console.log('\n🎉 Achievements system seeded successfully!');
+                    return [2 /*return*/];
+            }
+        });
+    });
 }
-
-export { levels, badges }

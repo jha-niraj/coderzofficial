@@ -13,8 +13,8 @@ import { DocumentStep } from "../steps/document-step";
 import { ProjectStep } from "../steps/project-step";
 import { MockInterviewStep } from "../steps/mock-interview-step";
 import { FlashcardStep } from "../steps/flashcard-step";
-import { 
-	Loader2 
+import {
+	Loader2
 } from "lucide-react";
 import type { StudioWithSteps, StudioStep, QuizMetadata } from "@/types/studios";
 
@@ -39,7 +39,7 @@ export function StudioViewer({ studio, className }: StudioViewerProps) {
 			const quizDataMap: Record<string, unknown> = {};
 
 			for (const step of quizSteps) {
-				const metadata = step.metadata as QuizMetadata;
+				const metadata = step.metadata as unknown as QuizMetadata;
 				if (metadata.quizId) {
 					// Fetch quiz data
 					// quizDataMap[metadata.quizId] = await fetchQuizData(metadata.quizId);
@@ -59,12 +59,12 @@ export function StudioViewer({ studio, className }: StudioViewerProps) {
 				return <ExplanationStep key={step.id} step={step} />;
 
 			case "QUIZ": {
-				const metadata = step.metadata as QuizMetadata;
+				const metadata = step.metadata as unknown as QuizMetadata;
 				return (
 					<QuizStep
 						key={step.id}
 						step={step}
-						quizData={quizData[metadata.quizId]}
+						quizData={quizData[metadata.quizId] as { id: string; title: string; questions: Array<{ id: string; question: string; options: string[]; correctAnswer: number; explanation?: string }> } | undefined}
 					/>
 				);
 			}

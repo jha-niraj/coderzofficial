@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { Suspense } from "react";
-import QuickActions from "./quick-actions";
 import FeatureDiscovery from "./feature-discovery";
 import KnowmeChatSheet from "./knowme-chat-sheet";
 import {
-    QuickActionsSkeleton,
     FeatureDiscoverySkeleton,
 } from "./skeletons";
 
@@ -25,18 +23,6 @@ export default function HomeClientWrapper({ children }: HomeClientWrapperProps) 
                 onOpenChange={setKnowmeSheetOpen}
             />
         </>
-    );
-}
-
-export function QuickActionsWithKnowme({
-    onKnowmeClick,
-}: {
-    onKnowmeClick: () => void;
-}) {
-    return (
-        <Suspense fallback={<QuickActionsSkeleton />}>
-            <QuickActions onKnowmeClick={onKnowmeClick} />
-        </Suspense>
     );
 }
 

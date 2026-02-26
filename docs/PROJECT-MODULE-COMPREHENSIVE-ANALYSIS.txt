@@ -619,7 +619,7 @@ FLOW E: Fork/Enroll (Viewing Others' Projects)
   • The idea data pre-fills the generation form
   • AI generates the project as before
 
-  Visual indicator: Badge showing "Community Submitted" vs "BuildR Curated"
+  Visual indicator: Badge showing "Community Submitted" vs "BuildrHQ Curated"
 
 
 ================================================================================

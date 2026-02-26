@@ -113,37 +113,6 @@ export function PathfinderGoalsSkeleton() {
     );
 }
 
-// Quick Actions Skeleton
-export function QuickActionsSkeleton() {
-    return (
-        <Card>
-            <CardHeader className="pb-4">
-                <div className="flex items-center gap-2">
-                    <Skeleton className="h-8 w-8 rounded-lg" />
-                    <Skeleton className="h-5 w-28" />
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {
-                        [...Array(6)].map((_, i) => (
-                            <div key={i} className="p-4 rounded-xl bg-muted/30">
-                                <div className="flex flex-col gap-3">
-                                    <Skeleton className="h-10 w-10 rounded-lg" />
-                                    <div className="space-y-1">
-                                        <Skeleton className="h-4 w-20" />
-                                        <Skeleton className="h-3 w-24" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    }
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
 // Activity Calendar Skeleton
 export function ActivityCalendarSkeleton() {
     return (

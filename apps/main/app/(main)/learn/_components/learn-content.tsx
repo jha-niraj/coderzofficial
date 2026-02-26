@@ -22,51 +22,9 @@ import {
 import { Progress } from "@repo/ui/components/ui/progress";
 import { cn } from "@repo/ui/lib/utils";
 import { LearnDifficulty } from "@repo/prisma/client";
+import type { LearnListItem, LearnProgressItem } from "@/types/learn";
 
-interface Learn {
-    id: string;
-    slug: string;
-    title: string;
-    description: string;
-    thumbnail?: string | null;
-    iconEmoji?: string | null;
-    category: string;
-    difficulty: LearnDifficulty;
-    estimatedTime?: number | null;
-    viewCount: number;
-    likeCount: number;
-    createdAt: Date;
-    creator: {
-        id: string;
-        name?: string | null;
-        username?: string | null;
-        image?: string | null;
-    };
-    _count: {
-        steps: number;
-        likes: number;
-        comments: number;
-    };
-}
-
-interface LearnProgress {
-    id: string;
-    learnId: string;
-    progressPercent: number;
-    isCompleted: boolean;
-    lastAccessedAt: Date;
-    learn: {
-        id: string;
-        slug: string;
-        title: string;
-        iconEmoji?: string | null;
-        thumbnail?: string | null;
-        difficulty: LearnDifficulty;
-        estimatedTime?: number | null;
-        category?: string;
-        _count?: { steps: number };
-    };
-}
+// Types imported from @/types/learn: LearnListItem, LearnProgressItem
 
 interface Pagination {
     total: number;
@@ -77,10 +35,10 @@ interface Pagination {
 }
 
 interface LearnsContentProps {
-    learns: Learn[];
+    learns: LearnListItem[];
     pagination: Pagination;
-    userProgress: LearnProgress[];
-    completedLearns: LearnProgress[];
+    userProgress: LearnProgressItem[];
+    completedLearns: LearnProgressItem[];
     isLoggedIn: boolean;
     currentFilter?: string;
     title?: string;
@@ -323,7 +281,7 @@ export function LearnsContent({
                                                             {
                                                                 learn.thumbnail ? (
                                                                     <Image
-                                                                        src={learn.thumbnail}
+                                                                        src={learn.thumbnail || ""}
                                                                         alt={learn.title}
                                                                         fill
                                                                         className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -335,14 +293,14 @@ export function LearnsContent({
                                                                 )
                                                             }
                                                             <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end">
-                                                                <Badge className={difficultyConfig[learn.difficulty].color}>
-                                                                    {difficultyConfig[learn.difficulty].label}
+                                                                <Badge className={difficultyConfig[learn.difficulty as LearnDifficulty]?.color}>
+                                                                    {difficultyConfig[learn.difficulty as LearnDifficulty]?.label}
                                                                 </Badge>
                                                                 {
                                                                     currentFilter === "recent" && (
                                                                         <Badge className="absolute top-2 left-2 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0">
                                                                             <Clock className="w-3 h-3 mr-1" />
-                                                                            {getTimeAgo(learn.createdAt)}
+                                                                            {learn.createdAt ? getTimeAgo(learn.createdAt) : ''}
                                                                         </Badge>
                                                                     )
                                                                 }
@@ -369,21 +327,21 @@ export function LearnsContent({
                                                             <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
                                                                 <div className="flex items-center gap-1.5">
                                                                     <Avatar className="w-5 h-5">
-                                                                        <AvatarImage src={learn.creator.image || ""} />
+                                                                        <AvatarImage src={learn.creator?.image || ""} />
                                                                         <AvatarFallback className="text-[10px]">
-                                                                            {learn.creator.name?.charAt(0)}
+                                                                            {learn.creator?.name?.charAt(0)}
                                                                         </AvatarFallback>
                                                                     </Avatar>
                                                                     <span className="text-xs text-neutral-500">
-                                                                        {learn.creator.name}
+                                                                        {learn.creator?.name}
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-3 text-xs text-neutral-400">
                                                                     <div className="flex items-center gap-1">
-                                                                        <Eye className="w-3 h-3" /> {formatCount(learn.viewCount)}
+                                                                        <Eye className="w-3 h-3" /> {formatCount(learn.viewCount || 0)}
                                                                     </div>
                                                                     <div className="flex items-center gap-1">
-                                                                        <Heart className="w-3 h-3" /> {formatCount(learn.likeCount)}
+                                                                        <Heart className="w-3 h-3" /> {formatCount(learn.likeCount || 0)}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -467,10 +425,10 @@ export function LearnsContent({
                                                                 <div className="flex justify-between text-xs">
                                                                     <span className="text-neutral-500">Progress</span>
                                                                     <span className="font-medium">
-                                                                        {Math.round(progress.progressPercent)}%
+                                                                        {Math.round(progress.progressPercent || 0)}%
                                                                     </span>
                                                                 </div>
-                                                                <Progress value={progress.progressPercent} className="h-2" />
+                                                                <Progress value={progress.progressPercent || 0} className="h-2" />
                                                             </div>
                                                         </Card>
                                                     </Link>

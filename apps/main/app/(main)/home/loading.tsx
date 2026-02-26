@@ -1,7 +1,6 @@
 import {
     GreetingHeaderSkeleton, ContinueLearningSkeleton, PathfinderGoalsSkeleton,
-    QuickActionsSkeleton, ActivityCalendarSkeleton, AchievementsCardSkeleton,
-    LeaderboardPositionSkeleton,
+    ActivityCalendarSkeleton, AchievementsCardSkeleton, LeaderboardPositionSkeleton,
     ShareCreditsSkeleton, ReferralsSkeleton, CommunityHighlightsSkeleton
 } from "./_components/skeletons";
 
@@ -19,7 +18,6 @@ export default function HomeLoading() {
                         <ActivityCalendarSkeleton />
                     </div>
                     <div className="md:col-span-5 lg:col-span-4 space-y-6">
-                        <QuickActionsSkeleton />
                         <LeaderboardPositionSkeleton />
                         <AchievementsCardSkeleton />
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">

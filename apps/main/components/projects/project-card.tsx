@@ -6,7 +6,7 @@ import {
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Button } from '@repo/ui/components/ui/button'
 import {
-    Clock, Users, Eye, Trophy, Brain, CheckCircle2, Play
+    Clock, Users, Eye, Trophy, Brain, CheckCircle2, Play, Crown, Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 import { Progress } from '@repo/ui/components/ui/progress'
@@ -24,6 +24,9 @@ interface ProjectCardProps {
         estimatedHours: number
         totalViews?: number
         includeAssessment?: boolean
+        isPlatformSeeded?: boolean
+        projectSource?: string
+        guidedModeEnabled?: boolean
         creator?: {
             name?: string | null
             username?: string | null
@@ -73,9 +76,23 @@ export function ProjectCard({ project, showProgress = false }: ProjectCardProps)
         <Card className="h-full flex flex-col bg-white dark:bg-neutral-900 p-3 shadow-2xl rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300">
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2 mb-2">
-                    <Badge className={`${difficultyColors[project.difficulty as keyof typeof difficultyColors]} text-xs px-2 py-1`}>
-                        {project.difficulty}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge className={`${difficultyColors[project.difficulty as keyof typeof difficultyColors]} text-xs px-2 py-1`}>
+                            {project.difficulty}
+                        </Badge>
+                        {project.isPlatformSeeded && (
+                            <Badge className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/40 text-amber-700 dark:text-amber-300 text-[10px] border border-amber-200 dark:border-amber-800 gap-0.5">
+                                <Crown className="w-2.5 h-2.5" />
+                                BuildrHQ
+                            </Badge>
+                        )}
+                        {project.guidedModeEnabled && (
+                            <Badge className="bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-[10px] border-0 gap-0.5">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                AI Guided
+                            </Badge>
+                        )}
+                    </div>
                     <div className="flex flex-wrap gap-1 justify-end">
                         {
                             project.technologies.slice(0, 2).map((tech) => (

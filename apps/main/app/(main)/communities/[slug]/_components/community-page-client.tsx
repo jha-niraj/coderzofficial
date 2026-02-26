@@ -50,135 +50,14 @@ import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
 import { useInView } from 'react-intersection-observer'
 import Image from 'next/image'
-
-// ==================== TYPES ====================
-interface PostAuthor {
-    id: string
-    name: string | null
-    username: string | null
-    image: string | null
-}
-
-interface ShareableItem {
-    id: string
-    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'challenge'
-    title: string
-    description?: string
-    thumbnail?: string
-    url?: string
-    metadata?: Record<string, unknown>
-}
-
-interface CommunityPost {
-    id: string
-    title?: string | null
-    content: string
-    createdAt: Date
-    updatedAt: Date
-    author: PostAuthor
-    _count?: {
-        likes: number
-        comments: number
-    }
-    likesCount?: number
-    commentsCount?: number
-    type: string
-    tags: string[]
-    isPinned: boolean
-    isLocked: boolean
-    isAnswered?: boolean
-    isResolved?: boolean
-    likeCount: number
-    commentCount: number
-    viewCount: number
-    isLiked?: boolean
-    officialChannel?: string | null
-    community: {
-        id: string
-        name: string
-        slug: string
-        logo?: string | null
-    } | null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    poll?: any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    attachments?: any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    codeBlocks?: any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    embeds?: any
-}
-
-interface CommunityResource {
-    id: string
-    title: string
-    description?: string | null
-    url?: string | null
-    type: string
-    uploader?: { name: string | null } | null
-    downloadCount?: number
-}
-
-interface CommunityMember {
-    id: string
-    name?: string | null
-    username?: string | null
-    image?: string | null
-    role: string
-    joinedAt: Date
-    user: {
-        id: string
-        name: string | null
-        username: string | null
-        image: string | null
-        bio?: string | null
-    }
-}
-
-interface CommunityInvite {
-    id: string
-    code: string
-    inviteeEmail: string | null
-    isUsed: boolean
-    usedAt: Date | null
-    expiresAt: Date | null
-    createdAt: Date
-    status?: string
-    inviter: {
-        id: string
-        name: string | null
-        image: string | null
-    }
-}
+import type {
+    CommunityPost, CommunityResource, CommunityMember,
+    CommunityInvite, CommunityPageData, TopContributor,
+    ShareableItem, SectionConfig
+} from '@/types/community'
 
 interface CommunityPageClientProps {
-    community: {
-        id: string
-        name: string
-        slug: string
-        description: string
-        shortDescription?: string | null
-        coverImage?: string | null
-        logo?: string | null
-        themeColor: string
-        category: string
-        visibility: string
-        isVerified: boolean
-        memberCount: number
-        postCount: number
-        enabledSections: string[]
-        rules: string[]
-        tags: string[]
-        createdAt: Date
-        creator: {
-            id: string
-            name: string | null
-            username: string | null
-            image: string | null
-        }
-        isMember?: boolean
-        userRole?: string
-    }
+    community: CommunityPageData
     user: {
         id: string
         name: string | null
@@ -187,22 +66,8 @@ interface CommunityPageClientProps {
     initialPosts: CommunityPost[]
     initialResources: CommunityResource[]
     members: CommunityMember[]
-    topContributors: Array<{
-        id: string
-        name: string | null
-        username: string | null
-        image: string | null
-        helpfulCount: number
-    }>
+    topContributors: TopContributor[]
     nextCursor?: string
-}
-
-// Section configuration
-interface SectionConfig {
-    label: string
-    icon: React.ComponentType<{ className?: string }>
-    description: string
-    postType?: string
 }
 
 const SECTION_CONFIG: Record<string, SectionConfig> = {
@@ -414,7 +279,7 @@ export function CommunityPageClient({
         await refreshPosts()
     }
 
-    const handleShare = async (item: ShareableItem) => {
+    const _handleShare = async (item: ShareableItem) => {
         try {
             const result = await createPost({
                 communityId: community.id,
