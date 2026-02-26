@@ -16,6 +16,39 @@ export interface ShareableItem {
     metadata?: Record<string, unknown>
 }
 
+export interface PostAttachment {
+    type: string
+    url: string
+    name?: string
+    description?: string
+}
+
+export interface PostCodeBlock {
+    code: string
+    language: string
+}
+
+export interface PostEmbed {
+    itemType: string
+    type?: string
+    title: string
+    description?: string
+    url?: string
+    thumbnail?: string
+    metadata?: Record<string, unknown>
+}
+
+export interface CommunityComment {
+    id: string
+    content: string
+    createdAt: Date
+    likeCount: number
+    isLiked?: boolean
+    author: PostAuthor
+    replies?: CommunityComment[]
+    parentId?: string | null
+}
+
 export interface CommunityPost {
     id: string
     title?: string | null
@@ -38,6 +71,7 @@ export interface CommunityPost {
     likeCount: number
     commentCount: number
     viewCount: number
+    isBookmarked?: boolean
     isLiked?: boolean
     officialChannel?: string | null
     community: {
@@ -46,10 +80,21 @@ export interface CommunityPost {
         slug: string
         logo?: string | null
     } | null
-    poll?: unknown
-    attachments?: unknown
-    codeBlocks?: unknown
-    embeds?: unknown
+    poll?: {
+        id: string
+        question: string
+        options: unknown // Json from Prisma, but really string[]
+        allowMultiple: boolean
+        endDate: Date | null
+        votes?: {
+            id: string
+            userId: string
+            optionIndex: number
+        }[]
+    } | null
+    attachments?: PostAttachment[] | unknown
+    codeBlocks?: PostCodeBlock[] | unknown
+    embeds?: PostEmbed[] | unknown
 }
 
 export interface CommunityResource {

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Loader2, RefreshCw } from 'lucide-react'
+import { 
+    Loader2, RefreshCw 
+} from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { PostCard } from '@/components/community/post-card'
 import { PostComposer } from '@/components/community/post-composer'
@@ -10,7 +12,6 @@ import { CommunityCard } from '@/components/community/community-card'
 import { getGlobalFeed } from '@/actions/(main)/community/post.action'
 import { joinCommunity } from '@/actions/(main)/community/community.action'
 import toast from '@repo/ui/components/ui/sonner'
-import { CommunityPostType } from '@repo/prisma/client'
 
 interface CommunityFeedProps {
     user: {
@@ -40,39 +41,10 @@ interface CommunityFeedProps {
     communitySlug?: string
 }
 
-interface Post {
-    id: string
-    title?: string | null
-    content: string
-    type: CommunityPostType
-    tags: string[]
-    isPinned: boolean
-    isLocked: boolean
-    isAnswered?: boolean
-    likeCount: number
-    commentCount: number
-    viewCount: number
-    createdAt: Date
-    author: {
-        id: string
-        name: string | null
-        username: string | null
-        image: string | null
-    }
-    community?: {
-        id: string
-        name: string
-        slug: string
-        logo?: string | null
-    } | null
-    _count?: {
-        likes: number
-        comments: number
-    }
-}
+import type { CommunityPost } from '@/types/community'
 
 export function CommunityFeed({ user, featuredCommunities = [], communityId, communitySlug }: CommunityFeedProps) {
-    const [posts, setPosts] = useState<Post[]>([])
+    const [posts, setPosts] = useState<CommunityPost[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [hasMore, setHasMore] = useState(true)
@@ -91,9 +63,9 @@ export function CommunityFeed({ user, featuredCommunities = [], communityId, com
 
             if (result.success && result.data) {
                 if (loadMore) {
-                    setPosts(prev => [...prev, ...result.data])
+                    setPosts(prev => [...prev, ...(result.data as CommunityPost[])])
                 } else {
-                    setPosts(result.data)
+                    setPosts(result.data as CommunityPost[])
                 }
                 setCursor(result.nextCursor)
                 setHasMore(!!result.nextCursor)

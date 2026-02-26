@@ -33,88 +33,13 @@ import Link from 'next/link'
 // Dynamically import CodeEditor
 const CodeEditor = dynamic(() => import('@/components/main/code-editor'), { ssr: false })
 
-interface PostAuthor {
-    id: string
-    name: string | null
-    username: string | null
-    image: string | null
-}
-
-interface PostCommunity {
-    id: string
-    name: string
-    slug: string
-    logo?: string | null
-}
-
-interface PostAttachment {
-    type: 'image' | 'link' | 'code' | string
-    url?: string
-    name?: string
-    title?: string
-    description?: string
-    code?: string
-    language?: string
-}
-
-interface PostCodeBlock {
-    code: string
-    language: string
-}
-
-interface Comment {
-    id: string
-    content: string
-    createdAt: Date
-    likeCount: number
-    isLiked?: boolean
-    author: PostAuthor
-    replies?: Comment[]
-    parentId?: string | null
-}
-
-interface Post {
-    id: string
-    title?: string | null
-    content: string
-    type: string
-    tags: string[]
-    isPinned: boolean
-    isLocked: boolean
-    isAnswered?: boolean
-    isResolved?: boolean
-    likeCount: number
-    commentCount: number
-    viewCount: number
-    createdAt: Date
-    updatedAt: Date
-    author: PostAuthor
-    community: PostCommunity | null
-    _count?: {
-        likes: number
-        comments: number
-    }
-    isLiked?: boolean
-    isBookmarked?: boolean
-    attachments?: PostAttachment[]
-    codeBlocks?: PostCodeBlock[]
-    embeds?: unknown[]
-    poll?: {
-        id: string
-        question: string
-        options: unknown // Json
-        allowMultiple: boolean
-        endDate: Date | null
-        votes?: {
-            id: string
-            userId: string
-            optionIndex: number
-        }[]
-    }
-}
+import type {
+    CommunityPost, CommunityComment, PostAttachment, PostCodeBlock,
+    PostEmbed
+} from '@/types/community'
 
 interface PostDetailSheetProps {
-    post: Post | null
+    post: CommunityPost | null
     isOpen: boolean
     onClose: () => void
     currentUserId?: string | null
@@ -133,7 +58,7 @@ export function PostDetailSheet({
     const [isBookmarked, setIsBookmarked] = useState(post?.isBookmarked || false)
     const [isLiking, setIsLiking] = useState(false)
 
-    const [comments, setComments] = useState<Comment[]>([])
+    const [comments, setComments] = useState<CommunityComment[]>([])
     const [isLoadingComments, setIsLoadingComments] = useState(false)
     const [commentContent, setCommentContent] = useState('')
     const [isSubmittingComment, setIsSubmittingComment] = useState(false)
@@ -163,7 +88,7 @@ export function PostDetailSheet({
             }
 
             if (result.success && result.data?.comments) {
-                setComments(result.data.comments as Comment[])
+                setComments(result.data.comments as CommunityComment[])
             }
         } catch (error) {
             console.error('Failed to load comments:', error)
@@ -217,7 +142,7 @@ export function PostDetailSheet({
         try {
             const result = await createComment(post.id, commentContent.trim())
             if (result.success && result.data) {
-                setComments(prev => [result.data as Comment, ...prev])
+                setComments(prev => [result.data as CommunityComment, ...prev])
                 setCommentContent('')
                 onPostUpdated?.()
                 toast.success('Comment added!')
@@ -243,7 +168,7 @@ export function PostDetailSheet({
                     if (c.id === parentId) {
                         return {
                             ...c,
-                            replies: [...(c.replies || []), result.data as Comment]
+                            replies: [...(c.replies || []), result.data as CommunityComment]
                         }
                     }
                     return c
@@ -277,11 +202,10 @@ export function PostDetailSheet({
     if (!post) return null
 
     const attachments = (post.attachments as PostAttachment[]) || []
-    const embeds = (post.embeds as PostAttachment[]) || []
-    const allAttachments = [...attachments, ...embeds]
+    const embeds = (post.embeds as PostEmbed[]) || []
     const codeBlocks = (post.codeBlocks as PostCodeBlock[]) || []
-    const imageAttachments = allAttachments.filter(a => a.type === 'image')
-    const linkAttachments = allAttachments.filter(a => a.type === 'link')
+    const imageAttachments = attachments.filter(a => a.type === 'image')
+    const linkAttachments = [...attachments.filter(a => a.type === 'link'), ...embeds] as Array<PostAttachment | PostEmbed>
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -495,7 +419,7 @@ export function PostDetailSheet({
                                                         <ExternalLink className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-medium truncate">{link.title || link.url}</p>
+                                                        <p className="font-medium truncate">{'title' in link ? link.title : link.name || link.url}</p>
                                                         {
                                                             link.description && (
                                                                 <p className="text-sm text-neutral-500 truncate">{link.description}</p>

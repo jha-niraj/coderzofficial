@@ -24,33 +24,11 @@ import {
 import { cn } from '@repo/ui/lib/utils'
 import { togglePostLike, voteOnPoll } from '@/actions/(main)/community/post.action'
 import toast from '@repo/ui/components/ui/sonner'
-import { 
-    SharedInterviewCard, SharedProjectCard 
+import {
+    SharedInterviewCard, SharedProjectCard
 } from '@/components/community/shared-items'
 import { useUserStore } from '@/app/store/useUserStore'
-
-import type { CommunityPost } from '@/types/community'
-
-export interface PostEmbed {
-    itemType: 'interview' | 'project' | 'space' | 'studio' | string
-    type?: string
-    title: string
-    description?: string
-    url?: string
-    thumbnail?: string
-    metadata?: {
-        role?: string
-        level?: string
-        [key: string]: unknown
-    }
-}
-
-export interface PostAttachment {
-    type: 'link' | 'image' | 'file' | string
-    url: string
-    title?: string
-    description?: string
-}
+import type { CommunityPost, PostAttachment, PostEmbed } from '@/types/community'
 
 interface PostCardProps {
     post: CommunityPost
@@ -287,25 +265,25 @@ export function PostCard({
                         </p>
 
                         {
-                            post.poll && (post.poll as any).question && (
+                            post.poll && post.poll.question && (
                                 <div className="mt-4 space-y-3 border rounded-xl p-4 bg-neutral-50 dark:bg-neutral-900/50" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{(post.poll as any).question}</h3>
+                                        <h3 className="font-medium text-sm text-neutral-900 dark:text-neutral-100">{post.poll.question}</h3>
                                         <div className="text-xs text-neutral-500">
-                                            {(post.poll as any).endDate && new Date() > new Date((post.poll as any).endDate) ? 'Closed' : 'Open'} • {(post.poll as any).votes?.length || 0} votes
+                                            {post.poll.endDate && new Date() > new Date(post.poll.endDate) ? 'Closed' : 'Open'} • {post.poll.votes?.length || 0} votes
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         {
-                                            (((post.poll as any).options as string[]) || []).map((option, idx) => {
-                                                const pollVotes = (post.poll as any).votes as Array<{ id: string, userId: string, optionIndex: number }> || []
+                                            ((post.poll.options as string[]) || []).map((option, idx) => {
+                                                const pollVotes = post.poll?.votes || []
                                                 const totalVotes = pollVotes.length
                                                 const optionVotes = pollVotes.filter(v => v.optionIndex === idx).length
                                                 const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0
                                                 const userVote = pollVotes.find(v => v.userId === user?.id)
                                                 const isVoted = !!userVote
                                                 const isSelected = userVote?.optionIndex === idx
-                                                const isClosed = (post.poll as any).endDate && new Date() > new Date((post.poll as any).endDate)
+                                                const isClosed = post.poll?.endDate && new Date() > new Date(post.poll.endDate)
 
                                                 return (
                                                     <div key={idx} className="relative">
@@ -333,7 +311,7 @@ export function PostCard({
                                                                     onClick={(e) => {
                                                                         e.preventDefault()
                                                                         e.stopPropagation()
-                                                                        if (post.poll && (post.poll as any).id) voteOnPoll((post.poll as any).id, idx)
+                                                                        if (post.poll && post.poll.id) voteOnPoll(post.poll.id, idx)
                                                                         if (!user) toast.error('Please login to vote')
                                                                         else toast.success('Vote submitted')
                                                                     }}
@@ -350,7 +328,6 @@ export function PostCard({
                                 </div>
                             )
                         }
-
                         {
                             embeds.length > 0 && (
                                 <div className="mt-4">
@@ -362,8 +339,8 @@ export function PostCard({
                                                         key={index}
                                                         title={embed.title}
                                                         description={embed.description}
-                                                        role={embed.metadata?.role || 'Developer'}
-                                                        level={embed.metadata?.level || 'Mid'}
+                                                        role={(embed.metadata?.role as string) || 'Developer'}
+                                                        level={(embed.metadata?.level as string) || 'Mid'}
                                                         author={{ name: post.author.name || 'User', image: post.author.image || undefined }}
                                                         onAccept={() => toast.info('Feature coming soon!')}
                                                     />
@@ -387,7 +364,6 @@ export function PostCard({
                                 </div>
                             )
                         }
-
                         {
                             post.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-3">
@@ -414,7 +390,6 @@ export function PostCard({
                         }
                     </CardContent>
                 </CardContentWrapper>
-
                 <CardFooter className={cn(
                     "border-t border-neutral-100 dark:border-neutral-800 pt-3",
                     compact && "py-2"
