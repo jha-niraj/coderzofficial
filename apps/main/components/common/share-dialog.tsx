@@ -91,7 +91,7 @@ export function ShareDialog({
     };
 
     const handleShareTwitter = () => {
-        const text = `Check out "${title}" on The Coderz!`;
+        const text = `Check out "${title}" on BuildrHQ!`;
         const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
         window.open(shareUrl, "_blank", "noopener,noreferrer");
     };

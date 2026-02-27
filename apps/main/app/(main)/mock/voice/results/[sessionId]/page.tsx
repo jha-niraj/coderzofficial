@@ -260,7 +260,7 @@ export default function ResultsPage({
                                     <CardTitle>Performance Breakdown</CardTitle>
                                     <CardDescription>Your scores across key areas</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-6">
+                                <CardContent className="space-y-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="font-medium">Communication</span>
@@ -269,13 +269,10 @@ export default function ResultsPage({
                                             </span>
                                         </div>
                                         <Progress value={feedback.communication.score} className="mb-2" />
-                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        <p className="text-sm text-left text-neutral-600 dark:text-neutral-400">
                                             {feedback.communication.feedback}
                                         </p>
                                     </div>
-
-                                    <Separator />
-
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="font-medium">Technical Skills</span>
@@ -284,22 +281,19 @@ export default function ResultsPage({
                                             </span>
                                         </div>
                                         <Progress value={feedback.technical.score} className="mb-2" />
-                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        <p className="text-sm text-left text-neutral-600 dark:text-neutral-400">
                                             {feedback.technical.feedback}
                                         </p>
                                     </div>
-
-                                    <Separator />
-
                                     <div>
-                                        <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center justify-between mb-2 gap-4">
                                             <span className="font-medium">Problem Solving</span>
                                             <span className="text-sm text-neutral-600 dark:text-neutral-400">
                                                 {feedback.problemSolving.score}/100
                                             </span>
                                         </div>
                                         <Progress value={feedback.problemSolving.score} className="mb-2" />
-                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        <p className="text-sm text-left text-neutral-600 dark:text-neutral-400">
                                             {feedback.problemSolving.feedback}
                                         </p>
                                     </div>
@@ -339,7 +333,7 @@ export default function ResultsPage({
                                                 feedback.improvements.map((improvement: string, idx: number) => (
                                                     <li key={idx} className="flex items-start gap-2">
                                                         <AlertTriangle className="w-4 h-4 text-amber-600 mt-1 flex-shrink-0" />
-                                                        <span className="text-sm">{improvement}</span>
+                                                        <span className="text-sm text-left">{improvement}</span>
                                                     </li>
                                                 ))
                                             }
@@ -352,7 +346,7 @@ export default function ResultsPage({
                                     <CardTitle>Detailed Feedback</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                    <p className="text-neutral-700 text-left dark:text-neutral-300 leading-relaxed">
                                         {feedback.detailedFeedback}
                                     </p>
                                 </CardContent>
@@ -375,10 +369,6 @@ export default function ResultsPage({
                         <Link href="/mock/voice">
                             Try Another Mock
                         </Link>
-                    </Button>
-                    <Button variant="outline">
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Report
                     </Button>
                     <Button variant="outline">
                         <Share2 className="w-4 h-4 mr-2" />

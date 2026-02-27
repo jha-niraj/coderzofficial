@@ -1,0 +1,1050 @@
+================================================================================
+  LEARN MODULE — C++ MASTERPLAN & ARCHITECTURE DOCUMENT
+  Platform: TheCoderz (BuildRHQ)
+  Created: 2026-02-27
+  Author: System Architect
+================================================================================
+
+TABLE OF CONTENTS
+─────────────────
+1.  Executive Summary
+2.  Current Architecture Overview
+3.  Category Hierarchy for C++
+4.  C++ Syllabus → Learn Mapping (6 Units, All Topics)
+5.  Step Flow Per Learn (Topic)
+6.  Detailed Step-by-Step Content Blueprint for Each Topic
+7.  UI/UX Flow — Detail Page Redesign
+8.  Text Selection → Ask AI Feature
+9.  Studio Integration (Right Panel)
+10. Progress Tracking — Comprehensive Model
+11. Seed Script Strategy
+12. Schema Changes Required
+13. University Tie-Up — Future Flow
+14. Implementation Roadmap
+15. Flowcharts (Mermaid)
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+The Learn module will serve as a structured, curriculum-grade learning platform.
+Content is admin-curated (not user-generated) to ensure quality. The first
+module is C++ Programming, structured as:
+
+  MainCategory: Programming
+  SubCategory: C++ (cpp)
+  Topics: Individual Learns (30+ topics across 6 units)
+
+Each Learn (topic) follows an interactive step flow:
+  Explanation → Code → Quiz → Challenge → Resources → Summary
+
+The detail page will feature:
+  - Left: Step navigation sidebar
+  - Center: Step content (markdown) with text-selection AI features
+  - Right: Studio tab (notes + AI chat combined)
+
+All content is seeded via a Prisma seed script for consistency and cost control.
+
+================================================================================
+2. CURRENT ARCHITECTURE OVERVIEW
+================================================================================
+
+Database Models (learn.prisma):
+  Learn → LearnStep → LearnCodeBlock
+  LearnMainCategory → LearnSubCategory → LearnTopic
+  LearnProgress (per user per learn)
+  LearnLike, LearnBookmark, LearnComment, LearnView, LearnRequest
+
+Step Types (LearnStepType enum):
+  EXPLANATION, CODE, VISUALIZATION, COMPARISON, QUIZ, CHALLENGE,
+  INTERACTIVE, SUMMARY, RESOURCE, VISUAL, MOCK_INTERVIEW, PROJECT
+
+Server Actions (actions/(main)/learn/):
+  crud.ts, read.ts, steps.ts, categories.ts, progress.ts,
+  interactions.ts, analytics.ts, prerequisites.ts, learn-ai.action.ts
+
+Client Components:
+  learn-detail-client.tsx — 3-panel layout (sidebar, content, AI panel)
+  step-card.tsx — Renders step content based on type (1136 lines)
+  ai-assistant-panel.tsx — Right-side AI chat (currently mock responses)
+
+================================================================================
+3. CATEGORY HIERARCHY FOR C++
+================================================================================
+
+```
+LearnMainCategory: "Programming"
+  ├── slug: "programming"
+  ├── icon: "💻"
+  ├── color: "#3B82F6"
+  │
+  └── LearnSubCategory: "C++"
+        ├── slug: "cpp"
+        ├── icon: "🔷"
+        ├── color: "#00599C"
+        │
+        └── LearnTopics (30+ topics):
+              ├── Unit 1 Topics (5 learns)
+              ├── Unit 2 Topics (6 learns)
+              ├── Unit 3 Topics (5 learns)
+              ├── Unit 4 Topics (6 learns)
+              ├── Unit 5 Topics (5 learns)
+              └── Unit 6 Topics (5 learns)
+```
+
+================================================================================
+4. C++ SYLLABUS → LEARN MAPPING (ALL 6 UNITS)
+================================================================================
+
+Each topic below becomes one Learn record with multiple interactive steps.
+
+──────────────────────────────────────────────────────────────────────────────
+UNIT 1: Introduction to C++ & Basics
+──────────────────────────────────────────────────────────────────────────────
+
+Learn 1.1: History & Features of C++
+  Difficulty: BEGINNER | EstTime: 15 min | Tags: [history, features, cpp]
+  Steps: EXPLANATION → COMPARISON(C vs C++) → QUIZ(3) → SUMMARY
+  Description: Evolution from C, key features (OOP, portability, performance)
+
+Learn 1.2: Setting Up C++ Development Environment
+  Difficulty: BEGINNER | EstTime: 20 min | Tags: [setup, ide, compiler]
+  Steps: EXPLANATION → CODE(hello-world) → RESOURCE(videos) → QUIZ(3) → SUMMARY
+  Description: Installing g++/clang, IDE setup, first compilation
+
+Learn 1.3: Variables, Data Types & Constants
+  Difficulty: BEGINNER | EstTime: 25 min | Tags: [variables, datatypes, const]
+  Steps: EXPLANATION → CODE(3 blocks) → VISUALIZATION → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: int, float, double, char, bool, const, auto, sizeof
+
+Learn 1.4: Input/Output (cin/cout)
+  Difficulty: BEGINNER | EstTime: 20 min | Tags: [io, cin, cout, iostream]
+  Steps: EXPLANATION → CODE(4 blocks) → QUIZ(4) → CHALLENGE → SUMMARY
+  Description: iostream, cin, cout, getline, formatting with iomanip
+
+Learn 1.5: Operators & Expressions
+  Difficulty: BEGINNER | EstTime: 25 min | Tags: [operators, expressions]
+  Steps: EXPLANATION → CODE(3 blocks) → COMPARISON(operators table) → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: Arithmetic, relational, logical, bitwise, ternary, precedence
+
+──────────────────────────────────────────────────────────────────────────────
+UNIT 2: Control Structures & Functions
+──────────────────────────────────────────────────────────────────────────────
+
+Learn 2.1: Conditional Statements
+  Difficulty: BEGINNER | EstTime: 25 min | Tags: [if, else, switch]
+  Steps: EXPLANATION → CODE(4 blocks) → VISUALIZATION(flowchart) → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: if/else, nested if, switch-case, ternary operator patterns
+
+Learn 2.2: Loops (for, while, do-while)
+  Difficulty: BEGINNER | EstTime: 30 min | Tags: [loops, for, while]
+  Steps: EXPLANATION → CODE(5 blocks) → VISUALIZATION → QUIZ(5) → CHALLENGE(2) → SUMMARY
+  Description: for, while, do-while, range-based for, nested loops, break/continue
+
+Learn 2.3: Functions — Declaration & Definition
+  Difficulty: BEGINNER | EstTime: 30 min | Tags: [functions, parameters, return]
+  Steps: EXPLANATION → CODE(4 blocks) → QUIZ(4) → CHALLENGE → SUMMARY
+  Description: Declaration, definition, parameters (by value/reference), return types
+
+Learn 2.4: Function Overloading
+  Difficulty: INTERMEDIATE | EstTime: 20 min | Tags: [overloading, polymorphism]
+  Steps: EXPLANATION → CODE(3 blocks) → COMPARISON → QUIZ(4) → CHALLENGE → SUMMARY
+  Description: Same name different params, default arguments, ambiguity resolution
+
+Learn 2.5: Recursion
+  Difficulty: INTERMEDIATE | EstTime: 30 min | Tags: [recursion, stack]
+  Steps: EXPLANATION → VISUALIZATION(call stack) → CODE(4 blocks) → QUIZ(5) → CHALLENGE(2) → SUMMARY
+  Description: Base case, recursive case, stack frames, factorial, fibonacci, tower of hanoi
+
+Learn 2.6: Scope & Lifetime of Variables
+  Difficulty: INTERMEDIATE | EstTime: 20 min | Tags: [scope, lifetime, static]
+  Steps: EXPLANATION → CODE(3 blocks) → VISUALIZATION → QUIZ(3) → SUMMARY
+  Description: Local, global, static, block scope, namespace scope
+
+──────────────────────────────────────────────────────────────────────────────
+UNIT 3: Arrays, Strings & Pointers
+──────────────────────────────────────────────────────────────────────────────
+
+Learn 3.1: One-Dimensional & Multi-Dimensional Arrays
+  Difficulty: INTERMEDIATE | EstTime: 35 min | Tags: [arrays, 1d, 2d]
+  Steps: EXPLANATION → VISUALIZATION(memory layout) → CODE(5 blocks) → QUIZ(5) → CHALLENGE(2) → SUMMARY
+  Description: Declaration, initialization, traversal, 2D arrays, passing to functions
+
+Learn 3.2: Strings (C-Strings & std::string)
+  Difficulty: INTERMEDIATE | EstTime: 30 min | Tags: [strings, cstring, std-string]
+  Steps: EXPLANATION → CODE(4 blocks) → COMPARISON(C-string vs std::string) → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: char arrays, string class, methods, concatenation, comparison
+
+Learn 3.3: Pointers — Basics & Arithmetic
+  Difficulty: INTERMEDIATE | EstTime: 35 min | Tags: [pointers, memory, address]
+  Steps: EXPLANATION → VISUALIZATION(memory diagram) → CODE(5 blocks) → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: Address-of, dereference, pointer arithmetic, null pointer, void pointer
+
+Learn 3.4: Pointers & Arrays / Dynamic Memory
+  Difficulty: ADVANCED | EstTime: 35 min | Tags: [pointers, arrays, new, delete]
+  Steps: EXPLANATION → VISUALIZATION → CODE(4 blocks) → QUIZ(5) → CHALLENGE(2) → RESOURCE → SUMMARY
+  Description: Array-pointer relationship, new/delete, memory leaks, dangling pointers
+
+Learn 3.5: References
+  Difficulty: INTERMEDIATE | EstTime: 20 min | Tags: [references, alias]
+  Steps: EXPLANATION → CODE(3 blocks) → COMPARISON(pointer vs reference) → QUIZ(4) → CHALLENGE → SUMMARY
+  Description: Reference variables, pass by reference, const references, ref vs pointer
+
+──────────────────────────────────────────────────────────────────────────────
+UNIT 4: Object-Oriented Programming
+──────────────────────────────────────────────────────────────────────────────
+
+Learn 4.1: Classes & Objects
+  Difficulty: INTERMEDIATE | EstTime: 35 min | Tags: [class, object, oop]
+  Steps: EXPLANATION → VISUALIZATION(class diagram) → CODE(5 blocks) → QUIZ(5) → CHALLENGE → PROJECT(mini) → SUMMARY
+  Description: Class definition, objects, member functions, this pointer
+
+Learn 4.2: Constructors & Destructors
+  Difficulty: INTERMEDIATE | EstTime: 30 min | Tags: [constructor, destructor, raii]
+  Steps: EXPLANATION → CODE(5 blocks) → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: Default, parameterized, copy constructor, destructor, RAII
+
+Learn 4.3: Encapsulation & Access Specifiers
+  Difficulty: INTERMEDIATE | EstTime: 20 min | Tags: [encapsulation, access, getter, setter]
+  Steps: EXPLANATION → CODE(3 blocks) → QUIZ(4) → CHALLENGE → SUMMARY
+  Description: public, private, protected, getters/setters, friend functions
+
+Learn 4.4: Inheritance
+  Difficulty: INTERMEDIATE | EstTime: 35 min | Tags: [inheritance, single, multiple, multilevel]
+  Steps: EXPLANATION → VISUALIZATION(inheritance tree) → CODE(5 blocks) → COMPARISON → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: Single, multiple, multilevel, hierarchical, diamond problem, virtual base
+
+Learn 4.5: Polymorphism
+  Difficulty: ADVANCED | EstTime: 35 min | Tags: [polymorphism, overloading, overriding]
+  Steps: EXPLANATION → CODE(5 blocks) → COMPARISON(compile-time vs runtime) → QUIZ(5) → CHALLENGE(2) → SUMMARY
+  Description: Function/operator overloading, virtual functions, vtable, pure virtual
+
+Learn 4.6: Abstract Classes & Interfaces
+  Difficulty: ADVANCED | EstTime: 25 min | Tags: [abstract, interface, pure-virtual]
+  Steps: EXPLANATION → CODE(4 blocks) → QUIZ(4) → CHALLENGE → MOCK_INTERVIEW → SUMMARY
+  Description: Pure virtual functions, abstract classes, interface design patterns
+
+──────────────────────────────────────────────────────────────────────────────
+UNIT 5: Templates, STL & File Handling
+──────────────────────────────────────────────────────────────────────────────
+
+Learn 5.1: Function & Class Templates
+  Difficulty: ADVANCED | EstTime: 30 min | Tags: [templates, generic, function-template]
+  Steps: EXPLANATION → CODE(4 blocks) → QUIZ(4) → CHALLENGE → SUMMARY
+  Description: Function templates, class templates, template specialization
+
+Learn 5.2: STL — Vectors, Lists, Maps, Sets
+  Difficulty: INTERMEDIATE | EstTime: 40 min | Tags: [stl, vector, map, set]
+  Steps: EXPLANATION → CODE(6 blocks) → COMPARISON(containers table) → QUIZ(5) → CHALLENGE(2) → SUMMARY
+  Description: vector, list, deque, map, unordered_map, set, multiset, stack, queue
+
+Learn 5.3: STL — Iterators & Algorithms
+  Difficulty: ADVANCED | EstTime: 30 min | Tags: [iterators, algorithms, sort, find]
+  Steps: EXPLANATION → CODE(5 blocks) → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: Iterator types, sort, find, count, transform, for_each, lambda with algorithms
+
+Learn 5.4: File Handling
+  Difficulty: INTERMEDIATE | EstTime: 30 min | Tags: [file, ifstream, ofstream, fstream]
+  Steps: EXPLANATION → CODE(5 blocks) → QUIZ(4) → CHALLENGE → PROJECT(mini) → SUMMARY
+  Description: ifstream, ofstream, fstream, reading/writing, binary files, file modes
+
+Learn 5.5: String Streams & Utility
+  Difficulty: INTERMEDIATE | EstTime: 20 min | Tags: [stringstream, parsing]
+  Steps: EXPLANATION → CODE(3 blocks) → QUIZ(3) → CHALLENGE → SUMMARY
+  Description: stringstream, istringstream, ostringstream, type conversion, parsing
+
+──────────────────────────────────────────────────────────────────────────────
+UNIT 6: Advanced Topics
+──────────────────────────────────────────────────────────────────────────────
+
+Learn 6.1: Exception Handling
+  Difficulty: INTERMEDIATE | EstTime: 25 min | Tags: [exception, try, catch, throw]
+  Steps: EXPLANATION → CODE(4 blocks) → QUIZ(4) → CHALLENGE → SUMMARY
+  Description: try-catch-throw, custom exceptions, exception hierarchy, noexcept
+
+Learn 6.2: Namespaces & Preprocessor Directives
+  Difficulty: INTERMEDIATE | EstTime: 20 min | Tags: [namespace, preprocessor, macro]
+  Steps: EXPLANATION → CODE(3 blocks) → QUIZ(3) → SUMMARY
+  Description: namespace, using directive, #define, #include guards, #pragma once
+
+Learn 6.3: Smart Pointers & Memory Management
+  Difficulty: ADVANCED | EstTime: 35 min | Tags: [smart-pointer, unique_ptr, shared_ptr]
+  Steps: EXPLANATION → VISUALIZATION(ownership diagrams) → CODE(5 blocks) → COMPARISON → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: unique_ptr, shared_ptr, weak_ptr, RAII, ownership semantics, memory safety
+
+Learn 6.4: Lambda Expressions & Move Semantics
+  Difficulty: ADVANCED | EstTime: 30 min | Tags: [lambda, move, rvalue]
+  Steps: EXPLANATION → CODE(5 blocks) → QUIZ(5) → CHALLENGE → SUMMARY
+  Description: Lambda syntax, captures, std::move, rvalue references, move constructor
+
+Learn 6.5: Multithreading Basics
+  Difficulty: EXPERT | EstTime: 35 min | Tags: [thread, mutex, concurrency]
+  Steps: EXPLANATION → CODE(4 blocks) → VISUALIZATION → QUIZ(4) → CHALLENGE → MOCK_INTERVIEW → PROJECT(mini) → SUMMARY
+  Description: std::thread, mutex, lock_guard, race conditions, atomic operations
+
+──────────────────────────────────────────────────────────────────────────────
+UNIT END LEARNS (One Per Unit)
+──────────────────────────────────────────────────────────────────────────────
+
+Learn U1-END: Unit 1 Review & Mock Interview
+  Steps: SUMMARY(unit recap) → QUIZ(10 comprehensive) → MOCK_INTERVIEW → PROJECT(mini: Calculator)
+
+Learn U2-END: Unit 2 Review & Mock Interview
+  Steps: SUMMARY → QUIZ(10) → MOCK_INTERVIEW → PROJECT(mini: Number Guessing Game)
+
+Learn U3-END: Unit 3 Review & Mock Interview
+  Steps: SUMMARY → QUIZ(10) → MOCK_INTERVIEW → PROJECT(mini: Student Record System)
+
+Learn U4-END: Unit 4 Review & Mock Interview
+  Steps: SUMMARY → QUIZ(10) → MOCK_INTERVIEW → PROJECT(major: Library Management OOP)
+
+Learn U5-END: Unit 5 Review & Mock Interview
+  Steps: SUMMARY → QUIZ(10) → MOCK_INTERVIEW → PROJECT(major: CSV Data Processor)
+
+Learn U6-END: Unit 6 Review & Mock Interview
+  Steps: SUMMARY → QUIZ(10) → MOCK_INTERVIEW → PROJECT(major: Multithreaded File Downloader)
+
+================================================================================
+5. STEP FLOW PER LEARN (TOPIC) — STANDARD TEMPLATE
+================================================================================
+
+Each Learn follows this pedagogical step flow (adapted per topic):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    LEARN: [Topic Name]                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Step 1: EXPLANATION                                            │
+│  ├── Rich markdown content (800-2000 words)                     │
+│  ├── Real-world analogies                                       │
+│  ├── Key terminology highlighted                                │
+│  └── Tips array for pro-tips                                    │
+│                                                                 │
+│  Step 2: CODE                                                   │
+│  ├── 3-6 LearnCodeBlock entries                                 │
+│  ├── Each with: language="cpp", code, explanation               │
+│  ├── Progressive complexity (basic → advanced)                  │
+│  ├── highlightLines for key lines                               │
+│  └── isRunnable=true for executable examples                    │
+│                                                                 │
+│  Step 3: VISUALIZATION / VISUAL (optional, per topic)           │
+│  ├── Memory diagrams, flowcharts, class diagrams                │
+│  ├── stepData: { visualType, imageUrl, annotations[] }          │
+│  └── Markdown content explaining the visual                     │
+│                                                                 │
+│  Step 4: COMPARISON (optional, where applicable)                │
+│  ├── stepData: { items[], conclusion }                          │
+│  ├── Side-by-side comparison cards                              │
+│  └── Pros/cons/useCase for each item                            │
+│                                                                 │
+│  Step 5: QUIZ                                                   │
+│  ├── stepData: { questions: GeneratedQuiz[] }                   │
+│  ├── 3-5 MCQ questions per topic                                │
+│  ├── Immediate feedback with explanations                       │
+│  └── 60% pass threshold to mark complete                        │
+│                                                                 │
+│  Step 6: CHALLENGE                                              │
+│  ├── stepData: { starterCode, solution, hints[], language }     │
+│  ├── Code editor with starter code                              │
+│  ├── AI-powered evaluation (evaluateChallengeCode)              │
+│  └── Score out of 100, suggestions for improvement              │
+│                                                                 │
+│  Step 7: RESOURCE (optional)                                    │
+│  ├── stepData: { videos[], docs[] }                             │
+│  ├── YouTube embeds (iframe)                                    │
+│  └── Documentation links                                        │
+│                                                                 │
+│  Step 8: SUMMARY                                                │
+│  ├── Key takeaways (bullet points)                              │
+│  ├── Tips array                                                 │
+│  └── "Mark as Complete" button                                  │
+│                                                                 │
+│  Step 9: MOCK_INTERVIEW (unit-end learns only)                  │
+│  ├── Voice-based AI interview via ElevenLabs                    │
+│  ├── Knowledge base generated from all unit steps               │
+│  └── stepData: { interviewType, topics[], duration }            │
+│                                                                 │
+│  Step 10: PROJECT (unit-end learns only)                        │
+│  ├── Mini or Major project                                      │
+│  ├── stepData: { projectType, technologies[], requirements }    │
+│  └── Links to Portfolio or Project Generator                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+================================================================================
+6. UI/UX FLOW — DETAIL PAGE REDESIGN
+================================================================================
+
+Current Layout:
+  [Left Sidebar: Steps] [Center: Content] [Right: AI Chat Panel]
+
+New Layout:
+  [Left Sidebar: Steps] [Center: Content + Text Selection] [Right: Studio Panel]
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│ ◄ Back  │  📚 Arrays in C++  │  INTERMEDIATE  │ ◄ Step 3/8 ► │ ♡ 🔖 📤 │
+├──────────┬─────────────────────────────────────────────┬───────────────────┤
+│          │                                             │                   │
+│  STEPS   │         MAIN CONTENT AREA                   │   STUDIO PANEL    │
+│          │                                             │                   │
+│ ● Step1  │  ┌─ Step Card ──────────────────────┐       │  ┌─────────────┐  │
+│ ● Step2  │  │ 📖 Explanation  │  Step 3 / 8    │       │  │ 📝 My Notes │  │
+│ ▶ Step3  │  │                                  │       │  │             │  │
+│ ○ Step4  │  │ # Arrays in C++                  │       │  │ User types  │  │
+│ ○ Step5  │  │                                  │       │  │ notes here  │  │
+│ ○ Step6  │  │ An array is a collection of...   │       │  │ with AI     │  │
+│ ○ Step7  │  │                                  │       │  │ assistance  │  │
+│ ○ Step8  │  │ ███████ ← Text selected          │       │  │             │  │
+│          │  │ ┌──────────────┐                  │       │  ├─────────────┤  │
+│ ──────── │  │ │🤖 Ask AI│📋│                   │       │  │ 🤖 AI Chat  │  │
+│ ABOUT    │  │ └──────────────┘                  │       │  │             │  │
+│          │  │                                  │       │  │ Ask about   │  │
+│ 👤 Admin │  │ ```cpp                           │       │  │ this topic  │  │
+│ 📚 Desc  │  │ int arr[5] = {1,2,3,4,5};       │       │  │             │  │
+│ 🏷 Tags  │  │ ```                              │       │  │ [Send]      │  │
+│          │  │                                  │       │  └─────────────┘  │
+│          │  │ [◄ Previous]  ●●●●●●●  [Next ►]  │       │                   │
+│          │  └──────────────────────────────────┘       │  [Create Studio]  │
+│          │                                             │  (first visit)    │
+├──────────┴─────────────────────────────────────────────┴───────────────────┤
+│                              Footer                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+================================================================================
+7. TEXT SELECTION → ASK AI FEATURE
+================================================================================
+
+When user selects text in the main content area:
+
+```
+User selects text "pointer arithmetic"
+         │
+         ▼
+┌──────────────────────────────┐
+│ A floating toolbar appears   │
+│ above the selection:         │
+│                              │
+│  ┌────────┐ ┌────────┐      │
+│  │🤖 Ask  │ │📋 Copy │      │
+│  │   AI   │ │        │      │
+│  └────────┘ └────────┘      │
+└──────────────────────────────┘
+         │
+         ▼ (Click "Ask AI")
+┌──────────────────────────────┐
+│ The selected text is sent    │
+│ to the Studio Panel's AI     │
+│ chat on the right with       │
+│ pre-filled prompt:           │
+│                              │
+│ "Explain this: [selected]"   │
+│                              │
+│ User can also choose:         │
+│  • "Explain in simpler terms"│
+│  • "Give me an example"      │
+│  • "What are common mistakes"│
+└──────────────────────────────┘
+```
+
+Implementation:
+  - Add mouseup/touchend event listener on content area
+  - Check window.getSelection() for text
+  - Show floating popover positioned above selection
+  - On "Ask AI" click, send to Studio panel's AI chat tab
+  - Auto-switch to AI Chat tab in Studio panel
+
+Component: TextSelectionToolbar
+  Location: apps/main/app/(main)/learn/[slug]/_components/text-selection-toolbar.tsx
+  Props: { onAskAI: (text: string) => void, onCopy: (text: string) => void }
+
+================================================================================
+8. STUDIO INTEGRATION (RIGHT PANEL)
+================================================================================
+
+The right panel replaces the current AI Assistant Panel with a Studio panel
+that combines personal notes and AI chat — all linked to the specific Learn.
+
+FIRST VISIT FLOW:
+```
+User opens Learn detail page for the first time
+         │
+         ▼
+  Has existing Studio linked to this Learn + User?
+         │
+    No ──┤── Yes
+         │         │
+         ▼         ▼
+  Show "Create     Show Studio
+  Study Notes"     Panel with
+  button           existing notes
+         │
+         ▼
+  On click: Create Studio record
+  linked to this Learn via learnId
+         │
+         ▼
+  Studio Panel opens with:
+  ┌─────────────────────────┐
+  │  Tabs: [Notes] [AI]     │
+  │                         │
+  │  Notes Tab:             │
+  │  - Block editor          │
+  │  - Auto-save             │
+  │  - AI restructure btn    │
+  │                         │
+  │  AI Chat Tab:           │
+  │  - Context-aware chat    │
+  │  - Step content as ctx   │
+  │  - Selected text queries │
+  │  - Suggestion buttons    │
+  └─────────────────────────┘
+```
+
+Schema Addition (studio.prisma or learn.prisma):
+  Add to LearnProgress model:
+    studioId  String?  @unique
+    studio    Studio?  @relation(fields: [studioId], references: [id])
+
+  OR add to Studio model:
+    learnId   String?
+    learn     Learn?  @relation(fields: [learnId], references: [id])
+
+Server Action:
+  getOrCreateLearnStudio(learnId: string) → returns Studio
+  - Check if user has a Studio linked to this Learn
+  - If not, create one with title "[Learn Title] - Notes"
+  - Link it via learnId on Studio or studioId on LearnProgress
+
+================================================================================
+9. PROGRESS TRACKING — COMPREHENSIVE MODEL
+================================================================================
+
+Current tracking (LearnProgress):
+  ✅ currentStep, completedSteps[], progressPercent, isCompleted
+  ✅ quizAnswers (JSON), challengeSubmissions (JSON)
+  ✅ totalTimeSpent, lastAccessedAt
+
+Additional tracking needed:
+
+```
+LearnProgress (extended):
+  │
+  ├── studioId          → Link to personal Study Notes
+  ├── stepTimeSpent     → JSON { stepId: seconds }
+  ├── aiInteractions    → Int (count of AI questions asked)
+  ├── quizRetries       → JSON { stepId: retryCount }
+  ├── bookmarkedSteps   → Int[] (step orders bookmarked)
+  ├── notesPerStep      → JSON { stepId: noteContent } (quick notes)
+  ├── lastStepViewedAt  → DateTime
+  └── streakDays        → Int (consecutive days studied)
+```
+
+Progress tracking events to capture:
+  1. Step viewed (stepId, timestamp, duration)
+  2. Step completed (stepId, timestamp, method: quiz-pass/challenge-pass/manual)
+  3. Quiz answered (stepId, questionId, answer, isCorrect, retryNumber)
+  4. Challenge submitted (stepId, code, score, isCorrect)
+  5. AI question asked (stepId, question, timestamp)
+  6. Note saved (stepId, content)
+  7. Mock interview completed (stepId, duration)
+  8. Resource viewed (stepId, resourceUrl, duration)
+  9. Text selected → Ask AI (stepId, selectedText)
+
+Analytics aggregation for future teacher dashboard:
+  - Per student: % complete, time spent, quiz scores, weak topics
+  - Per class: average completion, common struggles, top performers
+  - Per topic: average quiz score, average challenge score, most asked questions
+
+================================================================================
+10. SEED SCRIPT STRATEGY
+================================================================================
+
+File Location: packages/prisma/seed/cpp-learn-seed.ts
+
+Structure:
+```typescript
+// packages/prisma/seed/cpp-learn-seed.ts
+
+import { prisma } from '@repo/prisma';
+
+export async function seedCppLearnContent(creatorId: string) {
+  // 1. Create/Upsert MainCategory: Programming
+  const programming = await prisma.learnMainCategory.upsert({
+    where: { slug: 'programming' },
+    update: {},
+    create: {
+      slug: 'programming',
+      name: 'Programming',
+      icon: '💻',
+      color: '#3B82F6',
+      order: 1,
+    }
+  });
+
+  // 2. Create/Upsert SubCategory: C++
+  const cpp = await prisma.learnSubCategory.upsert({
+    where: { slug: 'cpp' },
+    update: {},
+    create: {
+      slug: 'cpp',
+      name: 'C++',
+      mainCategoryId: programming.id,
+      icon: '🔷',
+      color: '#00599C',
+      order: 1,
+    }
+  });
+
+  // 3. Create Topics for each unit
+  const unit1Topic = await prisma.learnTopic.upsert({ ... });
+  // ... etc for all 6 units
+
+  // 4. Create Learns with steps and code blocks
+  // Each Learn follows the template pattern
+
+  // 5. Set prerequisites between Learns
+  // Learn 1.2 requires Learn 1.1, etc.
+}
+```
+
+Content format per Learn in seed:
+```typescript
+{
+  title: "Variables, Data Types & Constants",
+  slug: "cpp-variables-data-types-constants",
+  description: "Master C++ variables, fundamental data types...",
+  difficulty: "BEGINNER",
+  tags: ["variables", "datatypes", "const", "cpp"],
+  estimatedTime: 25,
+  iconEmoji: "📦",
+  accentColor: "#00599C",
+  steps: [
+    {
+      order: 0,
+      title: "Understanding Variables & Data Types",
+      type: "EXPLANATION",
+      content: `# Variables & Data Types in C++\n\n...`, // Full markdown
+      tips: ["Always initialize variables", "Use auto for complex types"]
+    },
+    {
+      order: 1,
+      title: "Code Examples: Variables in Action",
+      type: "CODE",
+      content: "## Let's see variables in practice\n\n...",
+      codeBlocks: [
+        {
+          order: 0,
+          title: "Basic Variable Declaration",
+          language: "cpp",
+          code: `#include <iostream>\nusing namespace std;\n\nint main() {\n    int age = 21;\n    ...`,
+          explanation: "Here we declare...",
+          highlightLines: [4, 5],
+          showLineNumbers: true,
+          isRunnable: true
+        }
+      ]
+    },
+    {
+      order: 2,
+      title: "Test Your Knowledge",
+      type: "QUIZ",
+      content: "## Quiz: Variables & Data Types",
+      stepData: {
+        questions: [
+          {
+            question: "What is the size of int in C++?",
+            options: [
+              { id: "a", text: "2 bytes", isCorrect: false },
+              { id: "b", text: "4 bytes (typically)", isCorrect: true },
+              { id: "c", text: "8 bytes", isCorrect: false },
+              { id: "d", text: "Depends on compiler", isCorrect: false }
+            ],
+            explanation: "In most modern systems..."
+          }
+        ]
+      }
+    },
+    // ... more steps
+  ]
+}
+```
+
+Seed execution: Add to prisma/seed/index.ts → call seedCppLearnContent(adminUserId)
+
+================================================================================
+11. SCHEMA CHANGES REQUIRED
+================================================================================
+
+1. LearnProgress — Add Studio link and extended tracking:
+   ```prisma
+   model LearnProgress {
+     // ... existing fields ...
+     studioId        String?   @unique
+     studio          Studio?   @relation("LearnProgressStudio",
+                                fields: [studioId], references: [id])
+     stepTimeSpent   Json?     // { stepId: seconds }
+     aiInteractions  Int       @default(0)
+     quizRetries     Json?     // { stepId: retryCount }
+     bookmarkedSteps Int[]     // step orders
+   }
+   ```
+
+2. Studio — Add Learn link (if not already):
+   ```prisma
+   model Studio {
+     // ... existing fields ...
+     learnProgressId  String?         @unique
+     learnProgress    LearnProgress?  @relation("LearnProgressStudio")
+   }
+   ```
+
+3. Learn — Add unit ordering:
+   ```prisma
+   model Learn {
+     // ... existing fields ...
+     unitNumber    Int?    @default(0)  // For ordering within syllabus
+     unitTitle     String? // "Unit 1: Introduction to C++ & Basics"
+   }
+   ```
+
+================================================================================
+12. UNIVERSITY TIE-UP — FUTURE FLOW
+================================================================================
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    UNIVERSITY INTEGRATION FLOW                │
+└──────────────────────────────────────────────────────────────┘
+
+Phase 1: Class Assignment
+  University admin creates a "Class"
+  Class has: students[], teacher, assignedLearns[]
+  Teacher assigns specific Learns (C++ topics) to the class
+
+Phase 2: Student Progress Dashboard
+  ┌─────────────────────────────────────────────────────┐
+  │ Teacher Dashboard: CS101 - C++ Programming          │
+  ├─────────────────────────────────────────────────────┤
+  │                                                     │
+  │  Class Progress: ██████████░░░ 67%                  │
+  │                                                     │
+  │  Student         │ Completed │ Quiz Avg │ Time      │
+  │  ─────────────────┼───────────┼──────────┼──────     │
+  │  Alice Johnson   │ 28/32     │ 89%      │ 45h       │
+  │  Bob Smith       │ 20/32     │ 72%      │ 30h       │
+  │  Charlie Brown   │ 15/32     │ 65%      │ 22h       │
+  │                                                     │
+  │  Weak Topics: Pointers (avg 58%), Templates (62%)   │
+  │  Strong Topics: Variables (92%), Loops (88%)        │
+  │                                                     │
+  │  [Export Report] [Send Reminder] [View Analytics]   │
+  └─────────────────────────────────────────────────────┘
+
+Phase 3: Schema additions (future):
+  model Class {
+    id          String @id @default(cuid())
+    name        String
+    code        String @unique  // e.g. "CS101-2026"
+    teacherId   String
+    teacher     User   @relation(...)
+    students    ClassStudent[]
+    assignedLearns ClassLearnAssignment[]
+  }
+
+  model ClassStudent {
+    classId   String
+    studentId String
+    // ... progress aggregation
+  }
+
+  model ClassLearnAssignment {
+    classId   String
+    learnId   String
+    dueDate   DateTime?
+    isRequired Boolean @default(true)
+  }
+```
+
+================================================================================
+13. IMPLEMENTATION ROADMAP
+================================================================================
+
+Phase 1: Schema & Seed (Week 1)
+  □ Add unitNumber, unitTitle to Learn model
+  □ Add studioId, extended tracking to LearnProgress
+  □ Add learnProgressId to Studio
+  □ Create LearnMainCategory "Programming"
+  □ Create LearnSubCategory "C++"
+  □ Create all LearnTopics (6 units)
+  □ Write seed script: Unit 1 Learns (5 learns, ~40 steps)
+  □ Write seed script: Unit 2-6 + Unit-End learns
+  □ Run seed against dev database
+  □ Verify data via admin panel
+
+Phase 2: Detail Page Redesign (Week 2)
+  □ Replace AI Assistant Panel with Studio Panel
+  □ Implement getOrCreateLearnStudio server action
+  □ Studio Panel: Notes tab with block editor
+  □ Studio Panel: AI Chat tab (real OpenAI, not mock)
+  □ Connect AI Chat to askLearnAssistant action
+  □ Auto-save notes
+
+Phase 3: Text Selection Feature (Week 2-3)
+  □ Build TextSelectionToolbar component
+  □ Integrate with Studio Panel AI Chat
+  □ Selection options: Ask AI, Copy, Explain, Example
+  □ Auto-scroll to AI response
+
+Phase 4: Enhanced Progress Tracking (Week 3)
+  □ Implement step time tracking (start/end per step)
+  □ Track AI interaction count
+  □ Track quiz retries
+  □ Step bookmarking
+  □ Quick notes per step
+  □ Update My Progress page with detailed analytics
+
+Phase 5: Content Polish & Testing (Week 4)
+  □ Review all seed content for accuracy
+  □ Test quiz/challenge flows end-to-end
+  □ Test Studio creation and linking
+  □ Test text selection on mobile
+  □ Performance testing with 32+ learns loaded
+  □ Add C++ specific code execution hints
+
+================================================================================
+14. FLOWCHARTS (MERMAID)
+================================================================================
+
+--- FLOWCHART 1: User Journey Through a C++ Learn ---
+
+```mermaid
+flowchart TD
+    A[User opens /learn] --> B[Browse C++ category]
+    B --> C[Click on a Topic e.g., Arrays]
+    C --> D{First visit?}
+    D -->|Yes| E[Create LearnProgress record]
+    D -->|No| F[Load existing progress]
+    E --> G[Show Detail Page]
+    F --> G
+    G --> H[Step 1: EXPLANATION]
+    H --> I[Read content, select text, ask AI]
+    I --> J[Mark step complete / Next]
+    J --> K[Step 2: CODE]
+    K --> L[Read code blocks, try running]
+    L --> M[Mark complete / Next]
+    M --> N[Step 3: VISUALIZATION]
+    N --> O[Study diagrams, annotations]
+    O --> P[Step 4: QUIZ]
+    P --> Q{Score >= 60%?}
+    Q -->|Yes| R[Auto-complete step, Next]
+    Q -->|No| S[Retry quiz]
+    S --> P
+    R --> T[Step 5: CHALLENGE]
+    T --> U[Write code in editor]
+    U --> V[Submit for AI evaluation]
+    V --> W{Score >= 70?}
+    W -->|Yes| X[Complete, suggestions shown]
+    W -->|No| Y[Show feedback, retry]
+    Y --> U
+    X --> Z[Step 6: RESOURCE]
+    Z --> AA[Watch videos, read docs]
+    AA --> AB[Step 7: SUMMARY]
+    AB --> AC[Review takeaways]
+    AC --> AD[Complete Learn! 🎉]
+    AD --> AE[Update progress to 100%]
+    AE --> AF[Suggest next Learn in sequence]
+```
+
+--- FLOWCHART 2: Studio Panel Integration ---
+
+```mermaid
+flowchart TD
+    A[User opens Learn Detail] --> B{Studio exists for this Learn + User?}
+    B -->|No| C[Show Create Studio Notes button]
+    B -->|Yes| D[Load Studio Panel]
+    C --> E[User clicks Create]
+    E --> F[Server: getOrCreateLearnStudio]
+    F --> G[Create Studio with title: Learn Title - Notes]
+    G --> H[Link Studio to LearnProgress.studioId]
+    H --> D
+    D --> I[Studio Panel with 2 tabs]
+    I --> J[Notes Tab]
+    I --> K[AI Chat Tab]
+    J --> L[Block editor with auto-save]
+    L --> M[AI restructure button]
+    K --> N[Context-aware AI chat]
+    N --> O[Uses askLearnAssistant action]
+    O --> P[Receives: LearnTitle, stepTitle, stepContent, history]
+```
+
+--- FLOWCHART 3: Text Selection → Ask AI ---
+
+```mermaid
+flowchart TD
+    A[User selects text in content area] --> B[mouseup event fires]
+    B --> C{Text length > 3 chars?}
+    C -->|No| D[Hide toolbar]
+    C -->|Yes| E[Show floating toolbar above selection]
+    E --> F{User action?}
+    F -->|Ask AI| G[Get selected text]
+    F -->|Copy| H[Copy to clipboard, show toast]
+    F -->|Click away| D
+    G --> I[Switch Studio Panel to AI Chat tab]
+    I --> J[Pre-fill message: Explain this: selected text]
+    J --> K[Auto-send to askLearnAssistant]
+    K --> L[Show AI response in chat]
+```
+
+--- FLOWCHART 4: Learn Prerequisites Chain ---
+
+```mermaid
+flowchart LR
+    subgraph Unit1[Unit 1: Basics]
+        L1[1.1 History] --> L2[1.2 Setup]
+        L2 --> L3[1.3 Variables]
+        L3 --> L4[1.4 I/O]
+        L4 --> L5[1.5 Operators]
+        L5 --> U1E[Unit 1 Review]
+    end
+    subgraph Unit2[Unit 2: Control & Functions]
+        L6[2.1 Conditionals] --> L7[2.2 Loops]
+        L7 --> L8[2.3 Functions]
+        L8 --> L9[2.4 Overloading]
+        L9 --> L10[2.5 Recursion]
+        L10 --> L11[2.6 Scope]
+        L11 --> U2E[Unit 2 Review]
+    end
+    subgraph Unit3[Unit 3: Arrays & Pointers]
+        L12[3.1 Arrays] --> L13[3.2 Strings]
+        L13 --> L14[3.3 Pointers]
+        L14 --> L15[3.4 Dynamic Mem]
+        L15 --> L16[3.5 References]
+        L16 --> U3E[Unit 3 Review]
+    end
+    subgraph Unit4[Unit 4: OOP]
+        L17[4.1 Classes] --> L18[4.2 Constructors]
+        L18 --> L19[4.3 Encapsulation]
+        L19 --> L20[4.4 Inheritance]
+        L20 --> L21[4.5 Polymorphism]
+        L21 --> L22[4.6 Abstract]
+        L22 --> U4E[Unit 4 Review]
+    end
+    subgraph Unit5[Unit 5: Templates & STL]
+        L23[5.1 Templates] --> L24[5.2 Containers]
+        L24 --> L25[5.3 Iterators]
+        L25 --> L26[5.4 Files]
+        L26 --> L27[5.5 StringStream]
+        L27 --> U5E[Unit 5 Review]
+    end
+    subgraph Unit6[Unit 6: Advanced]
+        L28[6.1 Exceptions] --> L29[6.2 Namespaces]
+        L29 --> L30[6.3 Smart Ptrs]
+        L30 --> L31[6.4 Lambda/Move]
+        L31 --> L32[6.5 Threads]
+        L32 --> U6E[Unit 6 Review]
+    end
+    U1E --> L6
+    U2E --> L12
+    U3E --> L17
+    U4E --> L23
+    U5E --> L28
+```
+
+--- FLOWCHART 5: Content Creation (Admin Seed) ---
+
+```mermaid
+flowchart TD
+    A[Admin runs seed script] --> B[Create/Upsert MainCategory: Programming]
+    B --> C[Create/Upsert SubCategory: C++]
+    C --> D[Create Topics per Unit]
+    D --> E[For each Topic: Create Learn record]
+    E --> F[Set Learn metadata: title, slug, difficulty, tags]
+    F --> G[Create Steps in order]
+    G --> H{Step type?}
+    H -->|EXPLANATION| I[Insert markdown content + tips]
+    H -->|CODE| J[Insert content + CodeBlocks]
+    H -->|QUIZ| K[Insert content + stepData.questions]
+    H -->|CHALLENGE| L[Insert content + stepData with starter/solution]
+    H -->|RESOURCE| M[Insert content + stepData.videos/docs]
+    H -->|COMPARISON| N[Insert content + stepData.items/conclusion]
+    H -->|SUMMARY| O[Insert content + tips]
+    H -->|MOCK_INTERVIEW| P[Insert content + stepData config]
+    H -->|PROJECT| Q[Insert content + stepData project config]
+    I --> R[Set prerequisites between Learns]
+    J --> R
+    K --> R
+    L --> R
+    M --> R
+    N --> R
+    O --> R
+    P --> R
+    Q --> R
+    R --> S[Publish all Learns: status = PUBLISHED]
+    S --> T[Revalidate /learn paths]
+    T --> U[Done! Content live ✅]
+```
+
+--- FLOWCHART 6: Progress & Future University Dashboard ---
+
+```mermaid
+flowchart TD
+    subgraph Student[Student Side]
+        A[Student studies Learn] --> B[Progress auto-tracked]
+        B --> C[Step completions]
+        B --> D[Quiz scores]
+        B --> E[Challenge scores]
+        B --> F[Time spent]
+        B --> G[AI interactions]
+        B --> H[Notes in Studio]
+    end
+    subgraph Platform[Platform Analytics]
+        C --> I[LearnProgress record updated]
+        D --> I
+        E --> I
+        F --> I
+        G --> I
+        H --> I
+    end
+    subgraph University[Future: University Dashboard]
+        I --> J[Teacher views class analytics]
+        J --> K[Per-student breakdown]
+        J --> L[Topic difficulty analysis]
+        J --> M[Completion rates]
+        J --> N[Time analytics]
+        K --> O[Export reports]
+        L --> P[Identify weak areas]
+        M --> Q[Send reminders]
+    end
+```
+
+================================================================================
+15. SUMMARY & NEXT STEPS
+================================================================================
+
+This document covers:
+  ✅ Complete C++ syllabus mapping (6 units, 32+ topics, 38 Learns total)
+  ✅ Step flow template for each Learn
+  ✅ Detail page redesign with Studio panel
+  ✅ Text selection → Ask AI feature
+  ✅ Studio integration (Notes + AI Chat)
+  ✅ Comprehensive progress tracking model
+  ✅ Seed script strategy and content format
+  ✅ Schema changes required
+  ✅ University tie-up future flow
+  ✅ Implementation roadmap (4-week plan)
+  ✅ 6 Mermaid flowcharts covering all flows
+
+Next immediate action:
+  1. Review this document and confirm the approach
+  2. Apply schema changes (LearnProgress extensions, Studio link)
+  3. Begin writing the seed script for Unit 1 (5 Learns)
+  4. Implement Studio panel replacing AI Assistant panel
+  5. Build TextSelectionToolbar component
+
+================================================================================
+END OF DOCUMENT
+================================================================================
