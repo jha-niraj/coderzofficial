@@ -1,0 +1,70 @@
+You are an expert C++ developer, curriculum designer, and principal software engineer. I need you to generate seed data for a C++ learning module using my custom Next.js/Prisma platform. 
+
+We have a helper function called `createLearn` that takes an object describing a topic and an array of sequential steps for that topic.
+
+Here is the exact TypeScript interface for `createLearn`:
+```typescript
+    async function createLearn(data: {
+        slug: string; title: string; description: string; difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
+        unitNumber: number; unitTitle: string; estimatedTime: number; tags: string[]; iconEmoji: string;
+        steps: { order: number; title: string; type: string; content: string; tips?: string[]; stepData?: object;
+            codeBlocks?: { order: number; title: string; language: string; code: string; explanation: string; highlightLines?: number[]; isRunnable?: boolean }[];
+        }[];
+    })
+```
+
+Allowed Step Types & Their Required Data Structures:
+1. 'EXPLANATION' (Uses `content` for markdown)
+2. 'CODE' (Uses `content` for markdown + `codeBlocks` array)
+3. 'COMPARISON' (Uses `content` + `stepData` containing `{ items: { title, description, pros[], cons[], useCase }[], conclusion: string }`)
+4. 'VISUAL' (Uses `content` for markdown with ASCII diagrams, memory layouts, flowcharts)
+5. 'QUIZ' (Uses `content` + `stepData`: MUST CONTAIN A `questions` ARRAY. Each question needs `{ question: string, options: { id: string, text: string, isCorrect: boolean }[], explanation: string }`. **I NEED 5 TO 10 QUESTIONS PER QUIZ MINIMUM**.)
+6. 'CHALLENGE' (Uses `content` + `stepData` containing `{ starterCode: string, solution: string, hints: string[], language: 'cpp' }`. **THERE MUST BE EXACTLY ONE CHALLENGE PER TOPIC**.)
+7. 'SUMMARY' (Uses `content` for markdown summarizing the topic)
+
+Pedagogical Structure to Follow:
+Each topic should be broken down into bite-sized, engaging steps. Do not put all explanations in a single step. Use multiple cycles:
+E.g., Explanation (Concept A) -> Code (Concept A) -> Explanation (Concept B) -> Code (Concept B) -> Visual Diagram -> Quiz (5-10 questions) -> Coding Challenge -> Summary.
+
+Below is the Syllabus of what I need you to generate. **PLEASE GENERATE ONLY 3 TOPICS AT A TIME** so you don't hit token limits. Ensure your output is purely raw TypeScript code (wrapped in ```typescript) that I can paste directly into my seed script file. Please write EXTREMELY HIGH QUALITY, detailed markdown for the explanations, and highly robust, commented code examples. 
+
+### Syllabus to Generate:
+
+**UNIT 2: Control Structures & Functions (Continued)**
+1. cpp-loops: Loops (while, do-while, for, range-based for, break, continue)
+2. cpp-functions-basics: Functions Basics (declaration, definition, parameters, return types, pass-by-value vs pass-by-reference)
+3. cpp-functions-advanced: Advanced Functions (overloading, default arguments, inline functions, recursion)
+
+**UNIT 3: Arrays, Strings, and Memory**
+4. cpp-arrays: Arrays (1D, 2D arrays, array decay)
+5. cpp-strings: Strings (C-style strings vs std::string, string methods)
+6. cpp-pointers-basics: Pointers Basics (address-of &, dereference *, null pointers, pointer arithmetic)
+7. cpp-dynamic-memory: Dynamic Memory (new, delete, memory leaks, dangling pointers)
+8. cpp-references: Reference Variables vs Pointers
+
+**UNIT 4: Object-Oriented Programming (OOP) Fundamentals**
+9. cpp-classes-objects: Classes and Objects (attributes, methods, access specifiers: public, private)
+10. cpp-constructors: Constructors & Destructors (default, parameterized, copy constructors)
+11. cpp-encapsulation: Encapsulation & Abstraction (Getters/Setters, data hiding)
+12. cpp-inheritance: Inheritance (Base/Derived classes, types of inheritance, protected modifier)
+13. cpp-polymorphism: Polymorphism (Compile-time vs Runtime, virtual functions, override, abstract classes, pure virtual functions)
+
+**UNIT 5: Advanced C++ & Standard Template Library (STL)**
+14. cpp-templates: Templates (Function templates, Class templates, generic programming)
+15. cpp-exceptions: Exception Handling (try, catch, throw, std::exception)
+16. cpp-stl-containers-1: STL Containers part 1 (std::vector, std::list, std::deque)
+17. cpp-stl-containers-2: STL Containers part 2 (std::map, std::set, std::unordered_map)
+18. cpp-stl-algorithms: STL Algorithms & Iterators (std::sort, std::find, auto keyword)
+
+**UNIT 6: Modern C++ & Best Practices**
+19. cpp-modern-features: Modern C++ Features (Lambda expressions, range-based for, constexpr)
+20. cpp-smart-pointers: Smart Pointers (std::unique_ptr, std::shared_ptr, std::weak_ptr, memory safety)
+21. cpp-file-io: File I/O (std::ifstream, std::ofstream, std::fstream, reading/writing files)
+
+Please start by generating the 3 topics from **UNIT 2**. 
+
+Remember: 
+- 5 to 10 questions per quiz
+- Exactly 1 challenge per topic with proper starterCode and solution
+- Robust, well-commented code examples
+- Use the exact `await createLearn({...})` format.

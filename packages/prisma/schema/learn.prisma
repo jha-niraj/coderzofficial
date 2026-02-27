@@ -7,6 +7,10 @@ model Learn {
     difficulty LearnDifficulty @default(BEGINNER)
     tags       String[]
 
+    // Unit ordering for syllabus-based content
+    unitNumber Int?    @default(0)
+    unitTitle  String?
+
     // New Hierarchical Category System
     mainCategoryId String?
     mainCategory   LearnMainCategory? @relation("LearnMainCategory", fields: [mainCategoryId], references: [id], onDelete: SetNull)
@@ -53,6 +57,9 @@ model Learn {
     views     LearnView[]     @relation("LearnViews")
     progress  LearnProgress[] @relation("LearnProgress")
 
+    // Leaderboard
+    leaderboard LearnLeaderboard[] @relation("LearnLeaderboard")
+
     // Related & Prerequisite Learns (self-relations)
     relatedTo       LearnRelation[]     @relation("RelatedFrom")
     relatedFrom     LearnRelation[]     @relation("RelatedTo")
@@ -78,6 +85,7 @@ model Learn {
     @@index([mainCategoryId])
     @@index([subCategoryId])
     @@index([topicId])
+    @@index([unitNumber])
     @@map("Learn")
 }
 
@@ -313,6 +321,15 @@ model LearnProgress {
     totalTimeSpent Int      @default(0) // in seconds
     lastAccessedAt DateTime @default(now())
 
+    // Studio Integration - linked study notes
+    studioId String? @unique
+
+    // Extended Tracking
+    stepTimeSpent   Json? // { stepId: seconds }
+    aiInteractions  Int   @default(0)
+    quizRetries     Json? // { stepId: retryCount }
+    bookmarkedSteps Int[] // step orders bookmarked
+
     // Timestamps
     startedAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -411,12 +428,16 @@ model LearnSubCategory {
     topics LearnTopic[]
     learns Learn[]      @relation("LearnSubCategory")
 
+    // Leaderboard
+    leaderboard LearnLeaderboard[] @relation("SubCategoryLeaderboard")
+
     // Stats
     learnCount Int @default(0) @map("learnCount")
 
     // Timestamps
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt         DateTime           @default(now())
+    updatedAt         DateTime           @updatedAt
+    learnLeaderboards LearnLeaderboard[]
 
     @@index([slug])
     @@index([mainCategoryId])
@@ -451,4 +472,53 @@ model LearnTopic {
     @@index([subCategoryId])
     @@index([order])
     @@map("LearnTopic")
+}
+
+// ===============================================
+// LEARN LEADERBOARD (Scoring & Rankings)
+// ===============================================
+
+model LearnLeaderboard {
+    id String @id @default(cuid())
+
+    // Which subcategory this leaderboard entry belongs to
+    subCategoryId String
+    subCategory   LearnSubCategory @relation("SubCategoryLeaderboard", fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+    // Optional: specific learn
+    learnId String?
+    learn   Learn?  @relation("LearnLeaderboard", fields: [learnId], references: [id], onDelete: SetNull)
+
+    userId String
+    user   User   @relation("LearnLeaderboard", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Score breakdown
+    quizScore      Int @default(0) // Points from quizzes
+    challengeScore Int @default(0) // Points from coding challenges
+    mockScore      Int @default(0) // Points from mock interviews
+    projectScore   Int @default(0) // Points from projects
+    totalScore     Int @default(0) // Sum of all scores
+
+    // Stats
+    quizzesCompleted    Int @default(0)
+    challengesCompleted Int @default(0)
+    mocksCompleted      Int @default(0)
+    projectsCompleted   Int @default(0)
+    learnsCompleted     Int @default(0)
+
+    // Ranking
+    rank Int? // Computed rank
+
+    // Timestamps
+    createdAt          DateTime          @default(now())
+    updatedAt          DateTime          @updatedAt
+    learnSubCategory   LearnSubCategory? @relation(fields: [learnSubCategoryId], references: [id])
+    learnSubCategoryId String?
+
+    @@unique([subCategoryId, userId])
+    @@index([subCategoryId])
+    @@index([userId])
+    @@index([totalScore])
+    @@index([rank])
+    @@map("LearnLeaderboard")
 }

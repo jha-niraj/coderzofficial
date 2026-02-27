@@ -534,13 +534,14 @@ model User {
     // ===============================================
     // LEARN HUB RELATIONS
     // ===============================================
-    createdLearns  Learn[]         @relation("LearnCreator")
-    learnLikes     LearnLike[]     @relation("LearnLikes")
-    learnBookmarks LearnBookmark[] @relation("LearnBookmarks")
-    learnComments  LearnComment[]  @relation("LearnCommentAuthor")
-    learnViews     LearnView[]     @relation("LearnViews")
-    learnProgress  LearnProgress[] @relation("LearnProgress")
-    learnRequests  LearnRequest[]  @relation("LearnRequests")
+    createdLearns    Learn[]            @relation("LearnCreator")
+    learnLikes       LearnLike[]        @relation("LearnLikes")
+    learnBookmarks   LearnBookmark[]    @relation("LearnBookmarks")
+    learnComments    LearnComment[]     @relation("LearnCommentAuthor")
+    learnViews       LearnView[]        @relation("LearnViews")
+    learnProgress    LearnProgress[]    @relation("LearnProgress")
+    learnRequests    LearnRequest[]     @relation("LearnRequests")
+    learnLeaderboard LearnLeaderboard[] @relation("LearnLeaderboard")
 
     // ===============================================
     // SPACES MODULE RELATIONS

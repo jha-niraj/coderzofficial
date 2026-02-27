@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { seedOpenSourceLearn } from './seed/opensource-git-learn'
 import { seedAchievements } from './seed/achievements-seed'
 import { seedInterviewTemplates } from './seed/interview-templates.seed'
+import { seedCppLearnContent } from './seed/cpp-learn-seed'
 
 async function main() {
 	console.log('🌱 Starting database seeding...\n')
@@ -125,6 +126,15 @@ async function main() {
 	} catch (error) {
 		console.error('⚠️ Error seeding interview templates:', error)
 		// Don't throw - allow other seeds to continue
+	}
+
+	// Seed C++ Learning Content
+	console.log('\n📘 Seeding C++ Learning Content...')
+	try {
+		await seedCppLearnContent()
+		console.log('✅ C++ learning content seeded successfully!')
+	} catch (error) {
+		console.error('⚠️ Error seeding C++ learning content:', error)
 	}
 
 	console.log('🎉 Seeding completed!\n')

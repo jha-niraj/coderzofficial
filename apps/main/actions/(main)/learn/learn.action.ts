@@ -30,3 +30,6 @@ export * from "./prerequisites";
 
 // Re-export Analytics operations
 export * from "./analytics";
+
+// Re-export Subcategory & Leaderboard operations
+export * from "./subcategory";
