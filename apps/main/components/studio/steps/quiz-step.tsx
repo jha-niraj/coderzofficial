@@ -162,7 +162,6 @@ export function QuizStep({ step, quizData }: QuizStepProps) {
 						</div>
 					</div>
 				</div>
-
 				<div className="p-6">
 					<Quiz
 						quizId={quizData.id}

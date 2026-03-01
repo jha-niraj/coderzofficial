@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-    ChevronLeft, Plus, CheckCircle2, Clock,
-    LayoutList, Sparkles, Loader2, Book, Users, AlertTriangle,
-    Brain, Lock, MonitorPlay, FileText, Target, Code2,
-    Lightbulb, ChevronDown, Terminal, Copy, Check, Mic
+    ChevronLeft, Plus, CheckCircle2, Clock, LayoutList, Sparkles, 
+    Loader2, Book, Users, AlertTriangle, Brain, Lock, MonitorPlay, 
+    FileText, Target, Code2, Lightbulb, ChevronDown, Terminal, Copy, 
+    Check, Mic
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'

@@ -1,0 +1,223 @@
+"use client";
+
+import { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    PenLine, Plus, Loader2, X, ExternalLink,
+} from "lucide-react";
+import { Button } from "@repo/ui/components/ui/button";
+import Link from "next/link";
+import { StudioViewer } from "./viewer/studio-viewer";
+import { AIInputPanel } from "./ui/ai-input-panel";
+import { createStudio, getStudioWithSteps } from "@/actions/(main)/studios/studio.actions";
+import toast from "@repo/ui/components/ui/sonner";
+import { useStudioStore } from "@/app/store/studioStore";
+import type { StudioWithSteps } from "@/types/studios";
+
+interface StudioPanelProps {
+    /** Whether the panel is visible */
+    isOpen: boolean;
+    /** Toggle panel visibility */
+    onToggle: () => void;
+    /** Context for creating the studio (title, description, source, sourceId) */
+    context: {
+        title: string;
+        description?: string;
+        source: "pathfinder" | "space" | "manual";
+        sourceId?: string;
+        /** Label for the topic (shown in UI) */
+        topicLabel?: string;
+    };
+    /** Whether the user is logged in */
+    isLoggedIn: boolean;
+    /** Width of the panel */
+    width?: number;
+    /** Optional class for wrapper */
+    className?: string;
+}
+
+/**
+ * StudioPanel — Single, self-contained Studio component.
+ * 
+ * Combines:
+ * - "Create Studio" prompt (when no studio exists)
+ * - StudioViewer (real-time content display)
+ * - AIInputPanel (prompt input for generating content)
+ * 
+ * Uses the Zustand `useStudioStore` for state management so content
+ * appears/disappears in real time without page refresh.
+ * 
+ * Usage:
+ * ```tsx
+ * <StudioPanel
+ *   isOpen={showStudio}
+ *   onToggle={() => setShowStudio(!showStudio)}
+ *   context={{
+ *     title: `Notes: ${learn.title}`,
+ *     description: `Study notes for ${learn.title}`,
+ *     source: "manual",
+ *     sourceId: learn.id,
+ *     topicLabel: learn.subCategory?.name || learn.title,
+ *   }}
+ *   isLoggedIn={isLoggedIn}
+ * />
+ * ```
+ */
+export function StudioPanel({
+    isOpen,
+    onToggle,
+    context,
+    isLoggedIn,
+    width = 420,
+    className,
+}: StudioPanelProps) {
+    const studioId = useStudioStore((s) => s.studioId);
+    const isCreatingStudio = useStudioStore((s) => s.isCreatingStudio);
+    const setIsCreatingStudio = useStudioStore((s) => s.setIsCreatingStudio);
+    const setStudio = useStudioStore((s) => s.setStudio);
+    const initialize = useStudioStore((s) => s.initialize);
+    const externalPrompt = useStudioStore((s) => s.externalPrompt);
+    const setExternalPrompt = useStudioStore((s) => s.setExternalPrompt);
+
+    const [studioData, setStudioData] = useState<StudioWithSteps | null>(null);
+
+    const handleCreateStudio = useCallback(async () => {
+        if (!isLoggedIn) {
+            toast.error("Please login to create a studio");
+            return;
+        }
+        setIsCreatingStudio(true);
+        try {
+            const result = await createStudio({
+                title: context.title,
+                description: context.description,
+                source: context.source,
+                sourceId: context.sourceId,
+            });
+            if (result.success && result.studio) {
+                // Fetch the full studio with steps
+                const studioResult = await getStudioWithSteps(result.studio.id);
+                if (studioResult.success && studioResult.studio) {
+                    initialize(studioResult.studio);
+                    setStudioData(studioResult.studio);
+                }
+                toast.success("Studio created! You can now take notes and ask AI questions.");
+            } else {
+                toast.error(result.error || "Failed to create studio");
+            }
+        } catch {
+            toast.error("Failed to create studio");
+        } finally {
+            setIsCreatingStudio(false);
+        }
+    }, [context, isLoggedIn, initialize, setIsCreatingStudio]);
+
+    // If the user triggers the panel with an external prompt and no studio exists,
+    // auto-create the studio first
+    useEffect(() => {
+        if (isOpen && externalPrompt && !studioId && !isCreatingStudio && isLoggedIn) {
+            handleCreateStudio();
+        }
+    }, [isOpen, externalPrompt, studioId, isCreatingStudio, isLoggedIn, handleCreateStudio]);
+
+    // Callback when AI content is added – refresh studio data
+    const handleContentAdded = useCallback(async () => {
+        if (!studioId) return;
+        try {
+            const result = await getStudioWithSteps(studioId);
+            if (result.success && result.studio) {
+                setStudioData(result.studio);
+            }
+        } catch (err) {
+            console.error("Failed to refresh studio:", err);
+        }
+    }, [studioId]);
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.aside
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`hidden lg:flex flex-col flex-shrink-0 border-l border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 overflow-hidden h-[calc(100vh-4rem)] sticky top-16 ${className || ""}`}
+                >
+                    {/* Studio Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <PenLine className="w-4 h-4 text-purple-500" />
+                            <span className="text-sm font-semibold">Studio</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            {studioId && (
+                                <Link href="/studio">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Open full Studio">
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </Button>
+                                </Link>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggle}>
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    {!studioId ? (
+                        /* No studio yet - show "Create Studio" prompt */
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center mb-4">
+                                <PenLine className="w-8 h-8 text-purple-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-2">Create Studio</h3>
+                            <p className="text-sm text-muted-foreground mb-2 max-w-[280px]">
+                                Create a personal studio for <strong>{context.topicLabel || context.title}</strong> to take AI-powered notes, generate explanations, quizzes, and more.
+                            </p>
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-6 max-w-[260px]">
+                                Tip: Select any text in the lesson and click &ldquo;Ask AI&rdquo; to get instant explanations!
+                            </p>
+                            <Button
+                                onClick={handleCreateStudio}
+                                disabled={isCreatingStudio}
+                                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+                            >
+                                {isCreatingStudio ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Create Studio for {context.topicLabel || "this topic"}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    ) : (
+                        /* Studio exists - show StudioViewer + AIInputPanel */
+                        <>
+                            {/* Studio Content Viewer */}
+                            <div className="flex-1 overflow-hidden">
+                                <StudioViewer
+                                    studio={studioData || undefined}
+                                    studioId={studioId}
+                                    className="h-full"
+                                />
+                            </div>
+                            {/* AI Input Panel at bottom */}
+                            <div className="shrink-0">
+                                <AIInputPanel
+                                    studioId={studioId}
+                                    onContentAdded={handleContentAdded}
+                                    externalPrompt={externalPrompt}
+                                    onExternalPromptConsumed={() => setExternalPrompt(null)}
+                                />
+                            </div>
+                        </>
+                    )}
+                </motion.aside>
+            )}
+        </AnimatePresence>
+    );
+}

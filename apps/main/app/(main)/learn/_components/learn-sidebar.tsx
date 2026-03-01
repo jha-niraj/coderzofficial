@@ -1,20 +1,18 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
-    Search, ChevronRight, Plus, Code, Server, Database, Cpu, Cloud,
+    Search, ChevronRight, Code, Server, Database, Cpu, Cloud,
     Brain, Shield, Box, Palette, Gamepad2, Network, HardDrive, Layers,
     TestTube, GitBranch, Layout, Blocks, Settings, Lightbulb
 } from "lucide-react";
 import { Input } from "@repo/ui/components/ui/input";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Button } from "@repo/ui/components/ui/button";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import { cn } from "@repo/ui/lib/utils";
-import { LearnDifficulty } from "@repo/prisma/client";
 import type { LearnCategory, LearnSubCategory } from "@/types/learn";
 
 // Map slugs or names to icons
@@ -32,6 +30,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
     "cybersecurity": Shield,
     "blockchain": Box,
     "programming-fundamentals": Code,
+    "programming": Code,
     "software-architecture": Layers,
     "api-design": Server,
     "testing": TestTube,
@@ -44,71 +43,81 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 interface LearnsSidebarProps {
     categories: LearnCategory[];
-    selectedMainCategoryId: string | null;
-    selectedSubCategoryId: string | null;
-    onMainCategoryChange: (id: string | null) => void;
-    onSubCategoryChange: (id: string | null) => void;
-    selectedDifficulty?: LearnDifficulty | null;
-    onDifficultyChange?: (difficulty: LearnDifficulty | null) => void;
+    selectedMainCategorySlug: string | null;
     searchQuery: string;
-    onSearchChange: (query: string) => void;
     totalLearns?: number;
 }
 
 export function LearnsSidebar({
     categories,
-    selectedMainCategoryId,
-    selectedSubCategoryId,
-    onMainCategoryChange,
-    onSubCategoryChange,
-    selectedDifficulty: _selectedDifficulty,
-    onDifficultyChange: _onDifficultyChange,
-    searchQuery,
-    onSearchChange,
+    selectedMainCategorySlug,
+    searchQuery: initialSearchQuery,
     totalLearns = 0,
 }: LearnsSidebarProps) {
+    const router = useRouter();
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+    const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
+    // Debounce search - navigate after user stops typing
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (searchQuery !== initialSearchQuery) {
+                const params = new URLSearchParams();
+                if (searchQuery) params.set("search", searchQuery);
+                if (selectedMainCategorySlug) params.set("mainCategory", selectedMainCategorySlug);
+                const url = params.toString() ? `/learn?${params.toString()}` : "/learn";
+                router.push(url);
+            }
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, [searchQuery, initialSearchQuery, selectedMainCategorySlug, router]);
 
     // Auto-expand selected category
     useEffect(() => {
-        if (selectedMainCategoryId) {
+        if (selectedMainCategorySlug) {
             setExpandedCategories(prev => {
                 const newSet = new Set(prev);
-                newSet.add(selectedMainCategoryId);
+                newSet.add(selectedMainCategorySlug);
                 return newSet;
             });
         }
-    }, [selectedMainCategoryId]);
+    }, [selectedMainCategorySlug]);
 
-    const toggleCategory = (id: string) => {
+    const toggleCategory = (slug: string) => {
         setExpandedCategories(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
+            if (newSet.has(slug)) {
+                newSet.delete(slug);
             } else {
-                newSet.add(id);
+                newSet.add(slug);
             }
             return newSet;
         });
     };
 
-    const handleMainCategoryClick = (id: string) => {
-        if (selectedMainCategoryId === id) {
-            // Include clearing logic if desired, or just toggle expand
-            // onMainCategoryChange(null);
-            // onSubCategoryChange(null);
+    const handleMainCategoryClick = (slug: string) => {
+        // Navigate to /learn?mainCategory={slug}
+        if (selectedMainCategorySlug === slug) {
+            // Already selected, just toggle expand
+            toggleCategory(slug);
         } else {
-            onMainCategoryChange(id);
-            onSubCategoryChange(null);
-            if (!expandedCategories.has(id)) {
-                toggleCategory(id);
+            const params = new URLSearchParams();
+            params.set("mainCategory", slug);
+            if (searchQuery) params.set("search", searchQuery);
+            router.push(`/learn?${params.toString()}`);
+            if (!expandedCategories.has(slug)) {
+                toggleCategory(slug);
             }
         }
     };
 
-    const handleSubCategoryClick = (mainId: string, subId: string) => {
-        onMainCategoryChange(mainId);
-        onSubCategoryChange(subId === selectedSubCategoryId ? null : subId);
+    const handleSubCategoryClick = (subSlug: string) => {
+        // Navigate directly to the subcategory page
+        router.push(`/learn/${subSlug}`);
+    };
+
+    const handleAllCategoriesClick = () => {
+        router.push("/learn");
     };
 
     const getCategoryIcon = (slug: string) => {
@@ -132,7 +141,7 @@ export function LearnsSidebar({
                     <Input
                         placeholder="Search Learns..."
                         value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-9 h-9 text-sm bg-white dark:bg-neutral-900"
                     />
                 </div>
@@ -144,109 +153,87 @@ export function LearnsSidebar({
                             Categories
                         </h3>
                         <button
-                            onClick={() => {
-                                onMainCategoryChange(null);
-                                onSubCategoryChange(null);
-                            }}
+                            onClick={handleAllCategoriesClick}
                             className={cn(
                                 "w-full text-left px-3 py-2 rounded-lg text-sm transition-all font-medium",
-                                !selectedMainCategoryId
+                                !selectedMainCategorySlug
                                     ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
                                     : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                             )}
                         >
-                            All Learns
+                            All Categories
                         </button>
                         <div className="space-y-0.5">
-                            {
-                                categories.map((category) => {
-                                    const CategoryIcon = getCategoryIcon(category.slug);
-                                    const hasSubCategories = category.subCategories && category.subCategories.length > 0;
-                                    const isExpanded = expandedCategories.has(category.id);
-                                    const isSelected = selectedMainCategoryId === category.id;
+                            {categories.map((category) => {
+                                const CategoryIcon = getCategoryIcon(category.slug);
+                                const hasSubCategories = category.subCategories && category.subCategories.length > 0;
+                                const isExpanded = expandedCategories.has(category.slug);
+                                const isSelected = selectedMainCategorySlug === category.slug;
 
-                                    return (
-                                        <div key={category.id}>
-                                            <div className="flex items-center">
-                                                <button
-                                                    onClick={() => handleMainCategoryClick(category.id)}
-                                                    className={cn(
-                                                        "flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
-                                                        isSelected && !selectedSubCategoryId
-                                                            ? "bg-neutral-200 dark:bg-neutral-700 font-medium"
-                                                            : isSelected
-                                                                ? "bg-neutral-100 dark:bg-neutral-800"
-                                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                    )}
-                                                >
-                                                    <CategoryIcon className={cn("w-4 h-4", isSelected ? "text-primary" : "text-neutral-500")} />
-                                                    <span className="flex-1 text-left truncate text-neutral-700 dark:text-neutral-300">
-                                                        {category.name}
-                                                    </span>
-                                                    {
-                                                        hasSubCategories && (
-                                                            <motion.div
-                                                                animate={{ rotate: isExpanded ? 90 : 0 }}
-                                                                transition={{ duration: 0.2 }}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    toggleCategory(category.id);
-                                                                }}
-                                                                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded"
-                                                            >
-                                                                <ChevronRight className="w-4 h-4 text-neutral-400" />
-                                                            </motion.div>
-                                                        )
-                                                    }
-                                                </button>
-                                            </div>
-                                            <AnimatePresence>
-                                                {
-                                                    isExpanded && hasSubCategories && (
-                                                        <motion.div
-                                                            initial={{ height: 0, opacity: 0 }}
-                                                            animate={{ height: "auto", opacity: 1 }}
-                                                            exit={{ height: 0, opacity: 0 }}
-                                                            transition={{ duration: 0.2 }}
-                                                            className="overflow-hidden"
-                                                        >
-                                                            <div className="ml-4 pl-3 border-l border-neutral-200 dark:border-neutral-700 py-1 space-y-0.5">
-                                                                {
-                                                                    category.subCategories.map((sub: LearnSubCategory) => (
-                                                                        <button
-                                                                            key={sub.id}
-                                                                            onClick={() => handleSubCategoryClick(category.id, sub.id)}
-                                                                            className={cn(
-                                                                                "w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors block truncate",
-                                                                                selectedSubCategoryId === sub.id
-                                                                                    ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white font-medium"
-                                                                                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                                            )}
-                                                                        >
-                                                                            {sub.name}
-                                                                        </button>
-                                                                    ))
-                                                                }
-                                                            </div>
-                                                        </motion.div>
-                                                    )
-                                                }
-                                            </AnimatePresence>
+                                return (
+                                    <div key={category.id}>
+                                        <div className="flex items-center">
+                                            <button
+                                                onClick={() => handleMainCategoryClick(category.slug)}
+                                                className={cn(
+                                                    "flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
+                                                    isSelected
+                                                        ? "bg-neutral-200 dark:bg-neutral-700 font-medium"
+                                                        : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                )}
+                                            >
+                                                <CategoryIcon className={cn("w-4 h-4", isSelected ? "text-primary" : "text-neutral-500")} />
+                                                <span className="flex-1 text-left truncate text-neutral-700 dark:text-neutral-300">
+                                                    {category.name}
+                                                </span>
+                                                {hasSubCategories && (
+                                                    <motion.div
+                                                        animate={{ rotate: isExpanded ? 90 : 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleCategory(category.slug);
+                                                        }}
+                                                        className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded"
+                                                    >
+                                                        <ChevronRight className="w-4 h-4 text-neutral-400" />
+                                                    </motion.div>
+                                                )}
+                                            </button>
                                         </div>
-                                    );
-                                })
-                            }
+                                        <AnimatePresence>
+                                            {isExpanded && hasSubCategories && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="ml-4 pl-3 border-l border-neutral-200 dark:border-neutral-700 py-1 space-y-0.5">
+                                                        {category.subCategories.map((sub: LearnSubCategory) => (
+                                                            <button
+                                                                key={sub.id}
+                                                                onClick={() => handleSubCategoryClick(sub.slug)}
+                                                                className="w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors block truncate text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                            >
+                                                                {sub.name}
+                                                                {sub._count?.learns ? (
+                                                                    <span className="ml-1 text-neutral-400">({sub._count.learns})</span>
+                                                                ) : null}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
             </ScrollArea>
-            <div className="p-4 border-t border-neutral-200 dark:border-neutral-800">
-                <Link href="/learn/create">
-                    <Button className="w-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100">
-                        <Plus className="w-4 h-4 mr-2" /> Create Learn
-                    </Button>
-                </Link>
-            </div>
         </aside>
     );
 }

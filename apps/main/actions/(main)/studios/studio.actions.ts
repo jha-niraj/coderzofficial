@@ -87,6 +87,34 @@ export async function getStudioWithSteps(
 	}
 }
 
+// Generate a unique slug for a studio
+async function generateUniqueSlug(title: string): Promise<string> {
+	const baseSlug = title
+		.toLowerCase()
+		.trim()
+		.replace(/[^a-z0-9\s-]/g, "")
+		.replace(/\s+/g, "-")
+		.replace(/-+/g, "-")
+		.substring(0, 80);
+
+	let slug = baseSlug;
+	let counter = 0;
+
+	while (true) {
+		const existing = await prisma.studio.findUnique({
+			where: { slug },
+			select: { id: true },
+		});
+
+		if (!existing) break;
+
+		counter++;
+		slug = `${baseSlug}-${counter}`;
+	}
+
+	return slug;
+}
+
 // Create new studio (from Pathfinder or Space)
 export async function createStudio(data: {
 	title: string;
@@ -104,9 +132,12 @@ export async function createStudio(data: {
 			return { success: false, error: "Unauthorized" };
 		}
 
+		const slug = await generateUniqueSlug(data.title);
+
 		const studio = await prisma.studio.create({
 			data: {
 				title: data.title,
+				slug,
 				description: data.description,
 				source: data.source.toUpperCase() as any,
 				sourceId: data.sourceId,

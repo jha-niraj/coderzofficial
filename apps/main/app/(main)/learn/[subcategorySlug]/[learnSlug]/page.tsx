@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
-    getLearnBySlug, recordLearnView
+    getLearnBySlug, recordLearnView, getAdjacentLearns
 } from "@/actions/(main)/learn/learn.action";
 import { auth } from '@repo/auth';
 import LearnDetailClient from "./_components/learn-detail-client";
@@ -32,11 +32,14 @@ export async function generateMetadata({ params }: LearnPageProps): Promise<Meta
 }
 
 export default async function LearnPage({ params }: LearnPageProps) {
-    const { learnSlug } = await params;
+    const { subcategorySlug, learnSlug } = await params;
     const session = await auth();
     const userId = session?.user?.id;
 
-    const result = await getLearnBySlug(learnSlug);
+    const [result, adjacentResult] = await Promise.all([
+        getLearnBySlug(learnSlug),
+        getAdjacentLearns(learnSlug),
+    ]);
 
     if (result.error || !result.learn) {
         notFound();
@@ -56,6 +59,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
                     isLoggedIn={!!userId}
                     isAdmin={result.isAdmin || false}
                     isCreator={result.isCreator || false}
+                    subcategorySlug={subcategorySlug}
+                    previousLearn={adjacentResult.previousLearn}
+                    nextLearn={adjacentResult.nextLearn}
                 />
             </Suspense>
         </div>

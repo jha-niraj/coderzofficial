@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
 	FileText,
@@ -25,11 +25,16 @@ import { cn } from "@repo/ui/lib/utils";
 import { generateExplanation, generateQuiz } from "@/actions/(main)/studios/ai-generation.actions";
 import { saveStep } from "@/actions/(main)/studios/studio.actions";
 import toast from "@repo/ui/components/ui/sonner";
-import type { StudioStepType } from "@/types/studios";
+import type { StudioStepType, StudioStep } from "@/types/studios";
+import { useStudioStore } from "@/app/store/studioStore";
 
 interface AIInputPanelProps {
 	studioId: string;
 	onContentAdded?: () => void;
+	/** External prompt from text selection - will be pre-filled as EXPLANATION */
+	externalPrompt?: string | null;
+	/** Callback when external prompt has been consumed */
+	onExternalPromptConsumed?: () => void;
 }
 
 interface ContentTypeOption {
@@ -121,11 +126,37 @@ const CONTENT_TYPES: ContentTypeOption[] = [
 	},
 ];
 
-export function AIInputPanel({ studioId, onContentAdded }: AIInputPanelProps) {
+export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExternalPromptConsumed }: AIInputPanelProps) {
 	const [selectedType, setSelectedType] = useState<StudioStepType>("EXPLANATION");
 	const [prompt, setPrompt] = useState("");
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [showAllTypes, setShowAllTypes] = useState(false);
+
+	// Zustand store actions
+	const addStep = useStudioStore((s) => s.addStep);
+	const addPendingStep = useStudioStore((s) => s.addPendingStep);
+	const removePendingStep = useStudioStore((s) => s.removePendingStep);
+	const updatePendingStep = useStudioStore((s) => s.updatePendingStep);
+	const storeExternalPrompt = useStudioStore((s) => s.externalPrompt);
+	const setStoreExternalPrompt = useStudioStore((s) => s.setExternalPrompt);
+
+	// Handle external prompt from text selection (prop-based)
+	useEffect(() => {
+		if (externalPrompt) {
+			setSelectedType("EXPLANATION");
+			setPrompt(externalPrompt);
+			onExternalPromptConsumed?.();
+		}
+	}, [externalPrompt, onExternalPromptConsumed]);
+
+	// Handle external prompt from store
+	useEffect(() => {
+		if (storeExternalPrompt) {
+			setSelectedType("EXPLANATION");
+			setPrompt(storeExternalPrompt);
+			setStoreExternalPrompt(null);
+		}
+	}, [storeExternalPrompt, setStoreExternalPrompt]);
 
 	const selectedOption = CONTENT_TYPES.find((t) => t.type === selectedType);
 
@@ -140,8 +171,18 @@ export function AIInputPanel({ studioId, onContentAdded }: AIInputPanelProps) {
 
 		setIsGenerating(true);
 
+		// Add a pending step to the store for real-time skeleton display
+		const pendingId = `pending_${Date.now()}`;
+		addPendingStep({
+			id: pendingId,
+			type: selectedType,
+			prompt: prompt.trim(),
+			status: "generating",
+			createdAt: new Date(),
+		});
+
 		try {
-			let result;
+			let result: { success: boolean; step?: StudioStep; error?: string };
 
 			switch (selectedType) {
 				case "EXPLANATION":
@@ -166,19 +207,35 @@ export function AIInputPanel({ studioId, onContentAdded }: AIInputPanelProps) {
 
 				default:
 					toast.info("This content type is not yet implemented");
+					removePendingStep(pendingId);
 					setIsGenerating(false);
 					return;
 			}
 
-			if (result.success) {
+			if (result.success && result.step) {
+				// Remove pending and add the real step to the store
+				removePendingStep(pendingId);
+				addStep(result.step);
 				toast.success("Content generated successfully!");
 				setPrompt("");
 				onContentAdded?.();
 			} else {
+				// Mark pending as error
+				updatePendingStep(pendingId, {
+					status: "error",
+					errorMessage: result.error || "Failed to generate content",
+				});
+				// Remove after a moment
+				setTimeout(() => removePendingStep(pendingId), 3000);
 				toast.error(result.error || "Failed to generate content");
 			}
 		} catch (error) {
 			console.error("Generation error:", error);
+			updatePendingStep(pendingId, {
+				status: "error",
+				errorMessage: "An error occurred while generating content",
+			});
+			setTimeout(() => removePendingStep(pendingId), 3000);
 			toast.error("An error occurred while generating content");
 		}
 

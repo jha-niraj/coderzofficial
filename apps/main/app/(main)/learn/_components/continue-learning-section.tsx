@@ -77,7 +77,7 @@ export default function ContinueLearningSection({
                     </p>
                 </div>
                 <Link
-                    href="/learn/my-progress"
+                    href="/learn"
                     className="flex items-center gap-1 text-sm text-primary hover:underline"
                 >
                     View all progress

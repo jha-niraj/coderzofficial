@@ -95,13 +95,15 @@ export function ExplanationStep({ step }: ExplanationStepProps) {
 				</ReactMarkdown>
 			</div>
 
-			{step.source === "AI" && metadata.prompt && (
-				<div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-					<p className="text-xs text-neutral-500 dark:text-neutral-400">
-						Generated from: &quot;{metadata.prompt}&quot;
-					</p>
-				</div>
-			)}
+			{
+				step.source === "AI" && metadata.prompt && (
+					<div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+						<p className="text-xs text-neutral-500 dark:text-neutral-400">
+							Generated from: &quot;{metadata.prompt}&quot;
+						</p>
+					</div>
+				)
+			}
 		</motion.div>
 	);
 }

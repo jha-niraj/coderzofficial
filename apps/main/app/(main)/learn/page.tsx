@@ -1,15 +1,11 @@
-'use client';
-
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import { LearnDifficulty } from "@repo/prisma/client";
 import {
-    getLearns, getUserProgress, getHierarchicalCategories
+    getLearns, getHierarchicalCategories
 } from "@/actions/(main)/learn/learn.action";
 import { LearnsContent } from "./_components/learn-content";
 import { LearnsSidebar } from "./_components/learn-sidebar";
-import type { LearnCategory, LearnSubCategory, LearnListItem, LearnProgressItem } from "@/types/learn";
 
 function ContentSkeleton() {
     return (
@@ -23,7 +19,7 @@ function ContentSkeleton() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {
-                    [...Array(9)].map((_, i) => (
+                    [...Array(12)].map((_, i) => (
                         <Skeleton key={i} className="h-64 w-full rounded-xl" />
                     ))
                 }
@@ -32,125 +28,74 @@ function ContentSkeleton() {
     );
 }
 
-export default function LearnsPage() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
+interface PageProps {
+    searchParams: Promise<{
+        mainCategory?: string;
+        search?: string;
+        difficulty?: string;
+    }>;
+}
 
-    const [isLoading, setIsLoading] = useState(true);
-    const [learns, setLearns] = useState<LearnListItem[]>([]);
-    const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, totalPages: 0 });
-    const [userProgress, setUserProgress] = useState<LearnProgressItem[]>([]);
-    const [completedLearns, setCompletedLearns] = useState<LearnProgressItem[]>([]);
-    const [categories, setCategories] = useState<LearnCategory[]>([]);
+export default async function LearnsPage({ searchParams }: PageProps) {
+    const params = await searchParams;
+    const mainCategorySlug = params.mainCategory || null;
+    const searchQuery = params.search || "";
+    const difficulty = params.difficulty || null;
 
-    // Filter states
-    const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-    const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string | null>(
-        searchParams.get("mainCategory") || null
-    );
-    const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string | null>(
-        searchParams.get("subCategory") || null
-    );
-    // Keep old category/subCategory just in case but we prioritize hierarchical
-    const [selectedDifficulty, setSelectedDifficulty] = useState<LearnDifficulty | null>(
-        (searchParams.get("difficulty") as LearnDifficulty) || null
-    );
+    // Fetch categories on the server
+    const categoriesResult = await getHierarchicalCategories();
+    const categories = categoriesResult.categories || [];
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const [LearnsResult, progressResult, categoriesResult] = await Promise.all([
-                getLearns({
-                    search: searchQuery || undefined,
-                    mainCategoryId: selectedMainCategoryId || undefined,
-                    subCategoryId: selectedSubCategoryId || undefined,
-                    difficulty: selectedDifficulty || undefined,
-                    sortBy: "latest",
-                    page: 1,
-                    limit: 12,
-                }),
-                getUserProgress(),
-                getHierarchicalCategories(),
-            ]);
+    // Resolve slug to ID for the getLearns API call
+    let mainCategoryId: string | undefined;
+    if (mainCategorySlug) {
+        const found = categories.find(c => c.slug === mainCategorySlug);
+        mainCategoryId = found?.id;
+    }
 
-            setLearns(LearnsResult.learns || []); // Use lowercase learns from result
-            setPagination(LearnsResult.pagination || { total: 0, page: 1, limit: 12, totalPages: 0 });
-            setUserProgress(progressResult.inProgress || []);
-            setCompletedLearns(progressResult.completed || []);
-            setCategories(categoriesResult.categories || []);
-        } catch (error) {
-            console.error("Failed to load Learns:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [searchQuery, selectedMainCategoryId, selectedSubCategoryId, selectedDifficulty]);
+    // Fetch learns on the server
+    const learnsResult = await getLearns({
+        search: searchQuery || undefined,
+        mainCategoryId,
+        difficulty: (difficulty as LearnDifficulty) || undefined,
+        sortBy: "latest",
+        page: 1,
+        limit: 12,
+    });
 
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-
-    // Update URL when filters change
-    useEffect(() => {
-        const params = new URLSearchParams();
-        if (searchQuery) params.set("search", searchQuery);
-        if (selectedMainCategoryId) params.set("mainCategory", selectedMainCategoryId);
-        if (selectedSubCategoryId) params.set("subCategory", selectedSubCategoryId);
-        if (selectedDifficulty) params.set("difficulty", selectedDifficulty);
-
-        const newUrl = params.toString() ? `?${params.toString()}` : "";
-        router.replace(`/learn${newUrl}`, { scroll: false });
-    }, [searchQuery, selectedMainCategoryId, selectedSubCategoryId, selectedDifficulty, router]);
+    const learns = learnsResult.learns || [];
+    const pagination = learnsResult.pagination || { total: 0, page: 1, limit: 12, totalPages: 0 };
 
     // Generate title based on selection
-    const getTitle = () => {
-        if (selectedSubCategoryId && categories.length > 0) {
-            // Find subcategory name
-            for (const cat of categories) {
-                const sub = cat.subCategories.find((s: LearnSubCategory) => s.id === selectedSubCategoryId);
-                if (sub) return sub.name;
-            }
-        }
-        if (selectedMainCategoryId && categories.length > 0) {
-            const main = categories.find(c => c.id === selectedMainCategoryId);
-            if (main) return main.name;
-        }
-        return "All Learns";
-    };
+    let title = "All Learns";
+    if (mainCategorySlug && categories.length > 0) {
+        const main = categories.find(c => c.slug === mainCategorySlug);
+        if (main) title = main.name;
+    }
+    if (searchQuery) title = `Search: "${searchQuery}"`;
 
     return (
         <div className="flex h-screen">
             <LearnsSidebar
                 categories={categories}
-                selectedMainCategoryId={selectedMainCategoryId}
-                selectedSubCategoryId={selectedSubCategoryId}
-                selectedDifficulty={selectedDifficulty}
-                onMainCategoryChange={setSelectedMainCategoryId}
-                onSubCategoryChange={setSelectedSubCategoryId}
-                onDifficultyChange={setSelectedDifficulty}
+                selectedMainCategorySlug={mainCategorySlug}
                 searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
                 totalLearns={pagination.total}
             />
 
             <main className="flex-1 overflow-auto">
-                {
-                    isLoading ? (
-                        <ContentSkeleton />
-                    ) : (
-                        <Suspense fallback={<ContentSkeleton />}>
-                            <LearnsContent
-                                learns={learns} // Use renamed state
-                                pagination={pagination}
-                                userProgress={userProgress}
-                                completedLearns={completedLearns}
-                                isLoggedIn={true}
-                                title={getTitle()}
-                                selectedDifficulty={selectedDifficulty}
-                                onDifficultyChange={setSelectedDifficulty}
-                            />
-                        </Suspense>
-                    )
-                }
+                <Suspense fallback={<ContentSkeleton />}>
+                    <LearnsContent
+                        learns={learns}
+                        pagination={pagination}
+                        isLoggedIn={true}
+                        title={title}
+                        categories={categories}
+                        selectedMainCategorySlug={mainCategorySlug}
+                        initialSearchQuery={searchQuery}
+                        initialDifficulty={difficulty}
+                    />
+                </Suspense>
             </main>
         </div>
     );

@@ -157,19 +157,19 @@ export async function getLearnBySlug(slug: string) {
                         },
                     },
                 },
-                mainCategory: { 
-                    select: { 
-                        id: true, 
-                        name: true, 
-                        slug: true 
-                    } 
+                mainCategory: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true
+                    }
                 },
-                subCategory: { 
-                    select: { 
-                        id: true, 
-                        name: true, 
-                        slug: true 
-                    } 
+                subCategory: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true
+                    }
                 },
                 _count: {
                     select: {
@@ -392,5 +392,67 @@ export async function getLearnChain(learnId: string) {
     } catch (error) {
         console.error("Error fetching learn chain:", error);
         return { previous: [], next: [] };
+    }
+}
+
+// ==========================================
+// ADJACENT LEARNS (Next / Previous in subcategory)
+// ==========================================
+
+export async function getAdjacentLearns(learnSlug: string) {
+    try {
+        const learn = await prisma.learn.findUnique({
+            where: { slug: learnSlug },
+            select: { id: true, subCategoryId: true, unitNumber: true, createdAt: true },
+        });
+
+        if (!learn || !learn.subCategoryId) {
+            return { previousLearn: null, nextLearn: null };
+        }
+
+        // Get all learns in the same subcategory, ordered by unitNumber then createdAt
+        const allLearns = await prisma.learn.findMany({
+            where: {
+                subCategoryId: learn.subCategoryId,
+                status: LearnStatus.PUBLISHED,
+            },
+            orderBy: [
+                { unitNumber: "asc" },
+                { createdAt: "asc" },
+            ],
+            select: {
+                id: true,
+                slug: true,
+                title: true,
+                iconEmoji: true,
+                subCategory: { select: { slug: true } },
+            },
+        });
+
+        const currentIndex = allLearns.findIndex(l => l.id === learn.id);
+        if (currentIndex === -1) {
+            return { previousLearn: null, nextLearn: null };
+        }
+
+        const prev = allLearns[currentIndex - 1]!;
+        const previousLearn = currentIndex > 0 ? {
+            slug: prev.slug,
+            title: prev.title,
+            iconEmoji: prev.iconEmoji,
+            subCategorySlug: prev.subCategory?.slug || null,
+        } : null;
+
+        const next = allLearns[currentIndex + 1]!;
+        const nextLearn = currentIndex < allLearns.length - 1 ? {
+            slug: next.slug,
+            title: next.title,
+            iconEmoji: next.iconEmoji,
+            subCategorySlug: next.subCategory?.slug || null,
+        } : null;
+
+        return { previousLearn, nextLearn };
+    } catch (error) {
+        console.error("Error fetching adjacent learns:", error);
+        return { previousLearn: null, nextLearn: null };
     }
 }
