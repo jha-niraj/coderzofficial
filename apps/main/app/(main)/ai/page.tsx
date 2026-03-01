@@ -39,6 +39,16 @@ const tools = [
         credits: 0,
         href: "/ai/resumecreator"
     },
+    {
+        id: "coverletter",
+        icon: FileText,
+        name: "Cover Letter",
+        description: "Build ATS-friendly resumes with AI. Sync work experience, education, skills & projects to your profile.",
+        features: ["Profile Sync", "Live Preview", "ATS Optimization"],
+        status: "Live",
+        credits: 0,
+        href: "/ai/coverletter"
+    },
 ]
 
 // Locked / Notify Me tools
