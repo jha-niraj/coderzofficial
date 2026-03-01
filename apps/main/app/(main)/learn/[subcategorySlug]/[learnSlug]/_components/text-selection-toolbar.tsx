@@ -6,7 +6,6 @@ import {
     Sparkles, Copy, BookOpen, Code2, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@repo/ui/components/ui/button';
-import { cn } from '@repo/ui/lib/utils';
 
 interface TextSelectionToolbarProps {
     containerRef: React.RefObject<HTMLDivElement | null>;

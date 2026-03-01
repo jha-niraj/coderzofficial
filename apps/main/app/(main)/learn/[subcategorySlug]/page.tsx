@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -76,7 +76,6 @@ interface SubCategoryData {
 
 export default function SubCategoryPage() {
     const params = useParams();
-    const router = useRouter();
     const subcategorySlug = params.subcategorySlug as string;
 
     const [isLoading, setIsLoading] = useState(true);

@@ -4,14 +4,12 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Button } from "@repo/ui/components/ui/button";
 import { Progress } from "@repo/ui/components/ui/progress";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import {
-    ChevronRight, CheckCircle2, Clock, BookOpen, Flame, Zap
+    CheckCircle2, Clock, BookOpen
 } from "lucide-react";
 import Link from "next/link";
-import { LearnDifficulty } from "@repo/prisma/client";
 import { getUserProgress } from "@/actions/(main)/learn/learn.action";
 
 interface ProgressItem {
@@ -28,13 +26,6 @@ interface ProgressItem {
         _count?: { steps?: number };
     };
 }
-
-const difficultyStyles: Record<string, { label: string; color: string }> = {
-    BEGINNER: { label: "Beginner", color: "text-green-500 bg-green-500/10" },
-    INTERMEDIATE: { label: "Intermediate", color: "text-amber-500 bg-amber-500/10" },
-    ADVANCED: { label: "Advanced", color: "text-orange-500 bg-orange-500/10" },
-    EXPERT: { label: "Expert", color: "text-red-500 bg-red-500/10" },
-};
 
 export function MyProgressTab() {
     const [inProgress, setInProgress] = useState<ProgressItem[]>([]);

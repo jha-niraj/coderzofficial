@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import { ExplanationStep } from "../steps/explanation-step";
@@ -147,7 +147,7 @@ export function StudioViewer({
 	const storeStudioId = useStudioStore((s) => s.studioId);
 
 	// Use store steps if available, otherwise fall back to initial
-	const steps = storeSteps.length > 0 || storeStudioId ? storeSteps : (initialStudio?.steps || []);
+	const steps = useMemo(() => storeSteps.length > 0 || storeStudioId ? storeSteps : (initialStudio?.steps || []), [storeSteps, storeStudioId, initialStudio]);
 
 	// Allow fetching by studioId
 	const fetchStudio = useCallback(async () => {

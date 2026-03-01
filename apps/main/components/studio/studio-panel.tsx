@@ -74,7 +74,6 @@ export function StudioPanel({
     const studioId = useStudioStore((s) => s.studioId);
     const isCreatingStudio = useStudioStore((s) => s.isCreatingStudio);
     const setIsCreatingStudio = useStudioStore((s) => s.setIsCreatingStudio);
-    const setStudio = useStudioStore((s) => s.setStudio);
     const initialize = useStudioStore((s) => s.initialize);
     const externalPrompt = useStudioStore((s) => s.externalPrompt);
     const setExternalPrompt = useStudioStore((s) => s.setExternalPrompt);

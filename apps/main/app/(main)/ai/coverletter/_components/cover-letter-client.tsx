@@ -1,32 +1,32 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { 
-    extractJobDescription, generateCoverLetterQuestions, generateAndSaveCoverLetter, 
-    getCoverLetter, deleteCoverLetter 
+import { useState, useRef, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import {
+    extractJobDescription, generateCoverLetterQuestions, generateAndSaveCoverLetter,
+    getCoverLetter, deleteCoverLetter
 } from "@/actions/(main)/ai/cover-letter.action"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
 import { Textarea } from "@repo/ui/components/ui/textarea"
-import { 
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
-import { 
-    RadioGroup, RadioGroupItem 
+import {
+    RadioGroup, RadioGroupItem
 } from "@repo/ui/components/ui/radio-group"
-import { 
-    Loader2, ArrowRight, Download, Copy, RefreshCcw, Mic, Square, Trash2, 
-    ArrowLeft 
+import {
+    Loader2, Download, Copy, Mic, Square, Trash2,
+    ArrowLeft
 } from "lucide-react"
 import toast from "@repo/ui/components/ui/sonner"
 import { transcribeAndPolishWorkExperience } from "@/actions/(main)/ai/resume-ai.action"
 import { usePDF } from "react-to-pdf"
 import { MarkdownRenderer } from "@/components/common/markdown-renderer"
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@repo/ui/components/ui/card"
 import { CoverLetterHistoryItem, CoverLetterQuestion } from "@/types/aitools/cover-letter"
 
@@ -57,13 +57,7 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
     // History state
     const [history, setHistory] = useState<CoverLetterHistoryItem[]>(initialCoverLetters)
 
-    useEffect(() => {
-        if (selectedId) {
-            fetchLetter(selectedId)
-        }
-    }, [selectedId])
-
-    const fetchLetter = async (id: string) => {
+    const fetchLetter = useCallback(async (id: string) => {
         const res = await getCoverLetter(id)
         if (res.success && res.coverLetter) {
             setGeneratedContent(res.coverLetter.generatedContent || "")
@@ -72,7 +66,13 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
             toast.error("Cover letter not found")
             router.push("/ai/coverletter")
         }
-    }
+    }, [router])
+
+    useEffect(() => {
+        if (selectedId) {
+            fetchLetter(selectedId)
+        }
+    }, [selectedId, fetchLetter])
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();

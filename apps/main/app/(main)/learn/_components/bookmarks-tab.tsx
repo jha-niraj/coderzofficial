@@ -7,10 +7,9 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import {
-    ChevronRight, Clock, Eye, Heart, Bookmark, BookmarkX, Layers
+    ChevronRight, Clock, Eye, Heart, Bookmark, BookmarkX
 } from "lucide-react";
 import Link from "next/link";
-import { LearnDifficulty } from "@repo/prisma/client";
 import { toggleLearnBookmark, getUserBookmarks } from "@/actions/(main)/learn/learn.action";
 import toast from "@repo/ui/components/ui/sonner";
 

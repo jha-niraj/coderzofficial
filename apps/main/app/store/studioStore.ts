@@ -63,7 +63,7 @@ interface StudioStoreState {
 // STORE IMPLEMENTATION
 // ==========================================
 
-export const useStudioStore = create<StudioStoreState>()((set, get) => ({
+export const useStudioStore = create<StudioStoreState>()((set) => ({
     // Initial state
     studioId: null,
     studio: null,

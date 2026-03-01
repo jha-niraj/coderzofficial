@@ -10,9 +10,8 @@ import {
 } from '@repo/ui/components/ui/card'
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
-import { Separator } from '@repo/ui/components/ui/separator'
 import {
-    ArrowLeft, Download, Share2, CheckCircle, AlertTriangle,
+    ArrowLeft, Share2, CheckCircle, AlertTriangle,
     TrendingUp, Target, MessageSquare, Loader2, Trophy, Star
 } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
