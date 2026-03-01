@@ -1,0 +1,72 @@
+================================================================================
+SYSTEM DESIGN PRACTICE: TECHNICAL DESIGN & IMPLEMENTATION
+================================================================================
+
+1. OVERVIEW
+===========
+System Design is inherently ambiguous and visual. Traditional platforms fail because they treat it as a text-based Q&A. Our approach uses Excalidraw as a free-form canvas with AI acting as a Principal Engineer reviewing the architecture.
+
+URL: `/mock/practice/sd/[problemId]`
+
+2. UI & LAYOUT SPECIFICS
+========================
+A. Left Column: Requirements & Constraints
+- Functional Requirements (e.g., "Users can upload 5GB videos").
+- Non-Functional Requirements (e.g., "Highly available, low latency").
+- Capacity estimation scratchpad.
+
+B. Center Column: The Whiteboard (Excalidraw)
+- We will embed the `@excalidraw/excalidraw` React component.
+- Custom Library integration: We will inject an "Architecture Components" library (Databases, Load Balancers, API Gateways, CDNs, Queues) so users can drag and drop easily.
+
+C. Right Column: AI Reviewer & Chat
+- Conversational interface.
+- "Submit Architecture" / "Assess" button.
+
+3. THE "ASSESS" INTERACTION FLOW
+================================
+AI cannot easily "read" a standard image without high latency, and drawing coordinates are hard to interpret.
+
+The Strategy (Snapshot & Structural Analysis):
+--------------------------------------------
+When the user hits "Assess/Run", we extract the Excalidraw canvas data (JSON).
+1. We filter the JSON to extract meaningful blocks (e.g., Text nodes, Library Items like "PostgreSQL icon").
+2. We map out connections (Lines/Arrows linking Component A to Component B).
+3. We generate a text-based topology to send to the LLM (much faster and more accurate than sending a raw image).
+
+Example Topology sent to AI:
+```json
+{
+  "Client": ["Connects to" -> "Load Balancer"],
+  "Load Balancer": ["Connects to" -> "NodeJS API Server"],
+  "NodeJS API Server": ["Connects to" -> "MongoDB (User Data)", "Connects to" -> "S3 (Video Storage)"],
+  "Missing Requirements": "The system needs to process videos asynchronously, but no message queue is present."
+}
+```
+
+(Note: We *can* send a base64 snapshot of the canvas to a Vision LLM like GPT-4o if preferred, but generating a structural map first provides better context).
+
+4. AI FEEDBACK & SOCRATIC METHOD
+================================
+If the user designs a Video Processing system without a Message Queue, the AI should NOT say: "You forgot a RabbitMQ queue."
+
+Instead, the AI responds:
+"I see you have the Node.js API directly saving videos to S3 and then processing them. What happens if 10,000 users upload a video at the exact same time? How will your Node server handle the processing load without crashing?"
+
+The user can respond via Voice: "Oh, right. I guess the requests would time out. I need to decouple the processing."
+AI Voice: "Exactly! Decoupling is the key here. What architectural component helps decouple heavy asynchronous tasks?"
+
+5. COMPONENT HINT SYSTEM
+========================
+If the user is stuck, the AI can suggest a category.
+"Take a look at the 'Messaging & Queues' section in your component library."
+
+6. EVALUATION RUBRIC
+====================
+When the user indicates they are finished, the AI grades the final canvas diagram based on:
+1. Scalability
+2. Single Points of Failure (SPOF)
+3. Database Choice (SQL vs NoSQL logic)
+4. Overall Data Flow
+
+This score is then recorded in their practice history.

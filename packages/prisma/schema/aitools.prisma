@@ -123,3 +123,21 @@ model InterviewPlanPurchase {
     newInterviewPlanId String?
     newInterviewPlan   JobInterviewAssistant? @relation("PurchasedInterviewPlan", fields: [newInterviewPlanId], references: [id])
 }
+
+model CoverLetter {
+    id               String   @id @default(cuid())
+    userId           String
+    jobUrl           String
+    companyName      String?
+    jobTitle         String?
+    jobDescription   String?  @db.Text
+    questions        Json? // AI generated questions
+    answers          Json? // User answers
+    tone             String?  @default("Professional")
+    generatedContent String?  @db.Text
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+    user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+}

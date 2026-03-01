@@ -411,6 +411,7 @@ model User {
     xpTransactions XpTransaction[]
 
     JobInterviewAssistant JobInterviewAssistant[]
+    coverLetters          CoverLetter[]
 
     dailyActivities  DailyActivity[]
     activityEntries  ActivityEntry[]   @relation("UserActivityEntries")

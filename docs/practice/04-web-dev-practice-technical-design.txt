@@ -1,0 +1,67 @@
+================================================================================
+WEB DEV & API PRACTICE: TECHNICAL DESIGN & IMPLEMENTATION
+================================================================================
+
+1. OVERVIEW
+===========
+Web development (Frontend, Backend, APIs) requires a different testing approach than DSA. It's less about math boundaries and more about correct integration, error handling, state management, and standard HTTP practices.
+
+URL Paths:
+`/mock/practice/web/frontend/[problemId]`
+`/mock/practice/web/backend/[problemId]`
+
+2. UI & LAYOUT SPECIFICS
+========================
+Similar to the DSA layout (Problem -> Editor -> AI Chat), but the Editor workspace behaves differently depending on the track.
+
+A. Backend / API Track
+- Right pane acts as a simulated "Postman" or Terminal.
+- The user is tasked with writing server-side code (e.g., Express middleware, Next.js API routes).
+
+B. Frontend Track
+- Center pane is a CodeSandbox-like environment (or direct Monaco editor rendering a mini preview).
+- Tasks involve writing specific components (e.g., "Build an accessible dropdown", "Handle API loading states").
+
+3. THE ASSESSMENT FLOW (BACKEND / API)
+======================================
+Scenario: The user is asked to write a JWT Authentication Middleware.
+
+User writes the code and hits "Run Tests".
+Instead of just checking output strings, we need to inspect the code structure and behavior.
+
+Step 1: Automated Sandboxed Tests (Optional but recommended)
+We can run basic unit tests against their code. "Did it return a 401 when no token was provided?"
+
+Step 2: AI Code Review
+The AI receives the code and the objective.
+Prompt:
+"The user is writing a JWT validation middleware in Node.js. They successfully checked for the token, but they forgot to check for the 'Bearer ' prefix in the Authorization header. Guide them Socratic-style to realize this bug without writing the code."
+
+AI Response:
+"Your logic to verify the token is spot on! However, take a look at how standard HTTP Authorization headers are formatted. Have you handled the scheme prefix before the actual token?"
+
+4. THE ASSESSMENT FLOW (FRONTEND)
+=================================
+Scenario: The user is building a 'Submit Form with Loading State'.
+
+The AI evaluates:
+1. Is state being managed correctly (useState)?
+2. Is the button disabled while loading?
+3. Are errors being displayed?
+
+If the user forgets to disable the button while loading:
+AI Response:
+"Your form works great and the data sends perfectly. But put yourself in the user's shoes. What happens if they impatiently click the 'Submit' button three times while the API is resolving?"
+
+5. WHY THIS IS REVOLUTIONARY
+============================
+Traditional platforms use fixed AST (Abstract Syntax Tree) parsing or Regex to check if you used the right variable. It's rigid and frustrating.
+
+By using an AI-first evaluation, we allow the user creative freedom. They can build the API using classes, functional approaches, or different patterns. The AI understands the *intent* of the code and focuses on security, performance, and best practices.
+
+6. VOICE INTERACTION ADDITION
+=============================
+In API/Web questions, the user can "talk out loud" about their architecture.
+User Voice: "I'm returning a 404 here, but maybe it should be a 400?"
+AI Voice: "A 404 means the resource wasn't found. A 400 means the client sent bad data. Which one accurately describes an invalid payload?" 
+(This transforms the platform from a code editor into a genuine classroom experience.)

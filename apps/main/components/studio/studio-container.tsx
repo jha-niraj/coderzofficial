@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { StudioViewer } from "./viewer/studio-viewer";
 import { AIInputPanel } from "./ui/ai-input-panel";
 import { Button } from "@repo/ui/components/ui/button";
-import { 
-	ArrowLeft, MoreVertical, Trash2 
+import {
+	ArrowLeft, MoreVertical, Trash2
 } from "lucide-react";
 import {
-	DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, 
+	DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 	DropdownMenuSeparator
 } from "@repo/ui/components/ui/dropdown-menu";
 import { deleteStudio } from "@/actions/(main)/studios/studio.actions";
