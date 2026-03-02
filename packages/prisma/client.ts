@@ -174,5 +174,10 @@ export {
     UniversitySubscriptionPlan,
     UniversitySubscriptionStatus,
 
+    // Practice Module Enums and Types:
+    PracticeModule,
+    PracticeDifficulty,
+    PracticeSessionStatus,
+    PracticeMode,
 
 } from "@prisma/client";

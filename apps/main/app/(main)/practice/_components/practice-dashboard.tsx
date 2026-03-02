@@ -1,0 +1,304 @@
+"use client";
+
+import Link from "next/link";
+import {
+    Trophy, Flame, Zap, Target, Code2, Network, Globe, Server,
+    ChevronRight
+} from "lucide-react";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { cn } from "@repo/ui/lib/utils";
+import type {
+    PracticeUserStats, PracticeModule, PracticeProgressData,
+    PracticeRecentSession
+} from "@/types/practice";
+import { MODULE_CONFIG } from "@/types/practice";
+
+const MODULE_ICONS: Record<PracticeModule, typeof Code2> = {
+    DSA: Code2,
+    SYSTEM_DESIGN: Network,
+    WEB_FRONTEND: Globe,
+    WEB_BACKEND: Server,
+};
+
+const MODULE_PATHS: Record<PracticeModule, string> = {
+    DSA: "/practice/dsa",
+    SYSTEM_DESIGN: "/practice/system-design",
+    WEB_FRONTEND: "/practice/web-frontend",
+    WEB_BACKEND: "/practice/web-backend",
+};
+
+const DIFFICULTY_COLORS = {
+    EASY: "text-emerald-600 dark:text-emerald-400",
+    MEDIUM: "text-amber-600 dark:text-amber-400",
+    HARD: "text-red-600 dark:text-red-400",
+};
+
+interface PracticeDashboardProps {
+    stats: PracticeUserStats | null;
+}
+
+export function PracticeDashboard({ stats }: PracticeDashboardProps) {
+    if (!stats) {
+        return <EmptyDashboard />;
+    }
+
+    return (
+        <div className="p-6 lg:p-8 space-y-8 w-full mx-auto">
+            <div>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    Practice
+                </h1>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                    Sharpen your skills with hands-on coding challenges
+                </p>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                    icon={Target}
+                    label="Problems Solved"
+                    value={stats.totalSolved}
+                    subtitle={`of ${stats.difficultyBreakdown.easy.total + stats.difficultyBreakdown.medium.total + stats.difficultyBreakdown.hard.total}`}
+                />
+                <StatCard
+                    icon={Zap}
+                    label="Total XP"
+                    value={stats.totalXP.toLocaleString()}
+                />
+                <StatCard
+                    icon={Flame}
+                    label="Current Streak"
+                    value={stats.currentStreak}
+                    subtitle={`Best: ${stats.longestStreak}`}
+                />
+                <StatCard
+                    icon={Trophy}
+                    label="Avg Score"
+                    value={`${stats.averageScore}%`}
+                />
+            </div>
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5">
+                <h2 className="text-sm font-semibold text-neutral-900 dark:text-white mb-4">
+                    Difficulty Progress
+                </h2>
+                <div className="grid grid-cols-3 gap-6">
+                    <DifficultyBar
+                        label="Easy"
+                        completed={stats.difficultyBreakdown.easy.completed}
+                        total={stats.difficultyBreakdown.easy.total}
+                        color="bg-emerald-500"
+                    />
+                    <DifficultyBar
+                        label="Medium"
+                        completed={stats.difficultyBreakdown.medium.completed}
+                        total={stats.difficultyBreakdown.medium.total}
+                        color="bg-amber-500"
+                    />
+                    <DifficultyBar
+                        label="Hard"
+                        completed={stats.difficultyBreakdown.hard.completed}
+                        total={stats.difficultyBreakdown.hard.total}
+                        color="bg-red-500"
+                    />
+                </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5">
+                    <h2 className="text-sm font-semibold text-neutral-900 dark:text-white mb-4">
+                        Modules
+                    </h2>
+                    <div className="space-y-3">
+                        {
+                            stats.moduleBreakdown.map((mod) => (
+                                <ModuleCard key={mod.module} data={mod} />
+                            ))
+                        }
+                    </div>
+                </div>
+                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5">
+                    <h2 className="text-sm font-semibold text-neutral-900 dark:text-white mb-4">
+                        Recent Sessions
+                    </h2>
+                    {
+                        stats.recentSessions.length === 0 ? (
+                            <p className="text-sm text-neutral-400">No sessions yet. Start practicing!</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {
+                                    stats.recentSessions.slice(0, 8).map((s, i) => (
+                                        <RecentSessionRow key={i} session={s} />
+                                    ))
+                                }
+                            </div>
+                        )
+                    }
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function EmptyDashboard() {
+    return (
+        <div className="p-6 lg:p-8 space-y-8 max-w-6xl mx-auto">
+            <div>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    Practice
+                </h1>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                    Sharpen your skills with hands-on coding challenges
+                </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {
+                    (Object.keys(MODULE_CONFIG) as PracticeModule[]).map((mod) => {
+                        const config = MODULE_CONFIG[mod];
+                        const Icon = MODULE_ICONS[mod];
+                        return (
+                            <Link
+                                key={mod}
+                                href={MODULE_PATHS[mod]}
+                                className="group rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
+                            >
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="h-10 w-10 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                                        <Icon className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-neutral-900 dark:text-white">
+                                            {config.label}
+                                        </h3>
+                                        <p className="text-xs text-neutral-500">
+                                            {Object.keys(config.categories).length} topics
+                                        </p>
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-neutral-400 ml-auto group-hover:translate-x-0.5 transition-transform" />
+                                </div>
+                                <p className="text-xs text-neutral-400">
+                                    Start solving {config.label.toLowerCase()} problems to build your skills
+                                </p>
+                            </Link>
+                        );
+                    })
+                }
+            </div>
+        </div>
+    );
+}
+
+function StatCard({
+    icon: Icon,
+    label,
+    value,
+    subtitle,
+}: {
+    icon: typeof Target;
+    label: string;
+    value: string | number;
+    subtitle?: string;
+}) {
+    return (
+        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+            <div className="flex items-center gap-2 mb-2">
+                <Icon className="h-4 w-4 text-neutral-400" />
+                <span className="text-xs text-neutral-500 font-medium">{label}</span>
+            </div>
+            <p className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</p>
+            {
+                subtitle && (
+                    <p className="text-xs text-neutral-400 mt-0.5">{subtitle}</p>
+                )
+            }
+        </div>
+    );
+}
+
+function DifficultyBar({
+    label,
+    completed,
+    total,
+    color,
+}: {
+    label: string;
+    completed: number;
+    total: number;
+    color: string;
+}) {
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{label}</span>
+                <span className="text-xs text-neutral-400">
+                    {completed}/{total}
+                </span>
+            </div>
+            <div className="h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                <div
+                    className={cn("h-full rounded-full transition-all", color)}
+                    style={{ width: `${pct}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
+function ModuleCard({ data }: { data: PracticeProgressData }) {
+    const config = MODULE_CONFIG[data.module];
+    const Icon = MODULE_ICONS[data.module];
+    const path = MODULE_PATHS[data.module];
+
+    return (
+        <Link
+            href={path}
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors group"
+        >
+            <div className="h-9 w-9 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
+                <Icon className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
+                    {config.label}
+                </p>
+                <p className="text-xs text-neutral-400">
+                    {data.completed} solved · {data.totalXP} XP
+                </p>
+            </div>
+            <ChevronRight className="h-3.5 w-3.5 text-neutral-300 group-hover:text-neutral-500 transition-colors" />
+        </Link>
+    );
+}
+
+function RecentSessionRow({ session }: { session: PracticeRecentSession }) {
+    const config = MODULE_CONFIG[session.module];
+    const path = MODULE_PATHS[session.module];
+
+    return (
+        <Link
+            href={`${path}/${session.problemSlug}`}
+            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+        >
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
+                    {session.problemTitle}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-neutral-400">{config.label}</span>
+                    <span className={cn("text-[10px] font-medium", DIFFICULTY_COLORS[session.difficulty])}>
+                        {session.difficulty}
+                    </span>
+                </div>
+            </div>
+            {
+                session.status === "COMPLETED" ? (
+                    <Badge variant="outline" className="text-[10px] border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400">
+                        {session.bestScore}%
+                    </Badge>
+                ) : (
+                    <Badge variant="outline" className="text-[10px] border-amber-200 text-amber-600 dark:border-amber-800 dark:text-amber-400">
+                        In Progress
+                    </Badge>
+                )
+            }
+        </Link>
+    );
+}

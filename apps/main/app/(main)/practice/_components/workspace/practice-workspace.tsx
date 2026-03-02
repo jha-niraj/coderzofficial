@@ -1,0 +1,762 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+    ArrowLeft, Clock, Send, Loader2, CheckCircle2, AlertCircle, Play,
+    Mic, MicOff, Volume2, Square,
+} from "lucide-react";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
+import { Textarea } from "@repo/ui/components/ui/textarea";
+import { cn } from "@repo/ui/lib/utils";
+import dynamic from "next/dynamic";
+import { useTheme } from "@repo/ui/components/themeprovider";
+import {
+    usePracticeStore, type PracticeWorkspaceState,
+} from "@/app/store/practiceStore";
+import {
+    saveSessionProgress, updateSessionAfterAssess,
+} from "@/actions/(main)/practice";
+import {
+    assessPracticeWork, getMentorResponse,
+} from "@/actions/(main)/practice";
+import { getScribeToken, generateTTSAudio } from "@/actions/(main)/practice";
+import CodeEditor from "@/components/main/code-editor";
+import type {
+    PracticeProblemDetail, PracticeSessionData, PracticeMode,
+    PracticeChatMessage,
+} from "@/types/practice";
+import { getPathFromModule } from "@/types/practice";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
+import { useScribe } from "@elevenlabs/react";
+
+const ExcalidrawCanvas = dynamic(
+    () => import("./excalidraw-canvas"),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="h-full flex items-center justify-center bg-neutral-900 text-neutral-500 text-sm">
+                Loading canvas...
+            </div>
+        ),
+    }
+);
+
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+
+const DIFFICULTY_COLORS = {
+    EASY: "text-emerald-500",
+    MEDIUM: "text-amber-500",
+    HARD: "text-red-500",
+};
+
+const DSA_LANGUAGES = ["javascript", "typescript", "python", "java", "cpp"];
+
+// ─────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────
+
+interface PracticeWorkspaceProps {
+    problem: PracticeProblemDetail;
+    session: PracticeSessionData | null;
+    mode: PracticeMode;
+}
+
+export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceProps) {
+    const router = useRouter();
+    const { theme } = useTheme();
+    const store = usePracticeStore();
+    const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Initialize store on mount
+    useEffect(() => {
+        if (session) {
+            store.initialize(problem, session);
+        }
+        return () => {
+            store.reset();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [problem.id, session?.id]);
+
+    // Timer
+    useEffect(() => {
+        if (store.isTimerRunning && session) {
+            timerRef.current = setInterval(() => {
+                store.incrementTimer();
+            }, 1000);
+        }
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [store.isTimerRunning]);
+
+    // Auto-save every 30s
+    useEffect(() => {
+        if (!session) return;
+        autoSaveRef.current = setInterval(async () => {
+            if (store.isDirty) {
+                store.setSaving(true);
+                await saveSessionProgress(session.id, {
+                    code: store.code,
+                    cssCode: store.cssCode,
+                    canvasData: store.canvasData as object,
+                    language: store.language,
+                    chatHistory: store.chatHistory,
+                    totalTimeSeconds: store.elapsedSeconds,
+                });
+                store.markClean();
+                store.setSaving(false);
+            }
+        }, 30000);
+        return () => {
+            if (autoSaveRef.current) clearInterval(autoSaveRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [session?.id]);
+
+    const handleBack = () => {
+        const path = getPathFromModule(problem.module);
+        router.push(`/practice/${path}`);
+    };
+
+    const formatTime = (seconds: number): string => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    };
+
+    if (!session) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-neutral-950 text-white">
+                <div className="text-center">
+                    <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
+                    <p className="text-sm">Please sign in to start practicing.</p>
+                    <Button variant="outline" onClick={handleBack} className="mt-4">
+                        Go Back
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    const isWebModule = problem.module === "WEB_FRONTEND" || problem.module === "WEB_BACKEND";
+    const isSystemDesign = problem.module === "SYSTEM_DESIGN";
+
+    return (
+        <div className="h-screen flex flex-col bg-neutral-950 text-white">
+            <header className="h-12 border-b border-neutral-800 flex items-center justify-between px-4 flex-shrink-0 bg-neutral-950/90 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                    <button onClick={handleBack} className="text-neutral-400 hover:text-white transition-colors">
+                        <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <div className="h-4 w-px bg-neutral-700" />
+                    <h1 className="text-sm font-medium truncate max-w-[300px]">{problem.title}</h1>
+                    <Badge variant="outline" className={cn("text-[10px] border-neutral-700", DIFFICULTY_COLORS[problem.difficulty])}>
+                        {problem.difficulty}
+                    </Badge>
+                    <Badge variant="outline" className={cn(
+                        "text-[10px] border-neutral-700",
+                        mode === "EXAM" ? "text-red-400 border-red-800" : "text-blue-400 border-blue-800"
+                    )}>
+                        {mode === "EXAM" ? "🔒 Exam" : "💡 Assist"}
+                    </Badge>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-neutral-400 text-xs">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="font-mono">{formatTime(store.elapsedSeconds)}</span>
+                    </div>
+                    {
+                        store.isSaving && (
+                            <span className="text-[10px] text-neutral-500 animate-pulse">Saving...</span>
+                        )
+                    }
+                    {
+                        !isSystemDesign && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs h-8 border-neutral-700 hover:bg-neutral-800"
+                                onClick={async () => {
+                                    // Trigger a run (for testing) — just saves progress for now
+                                    store.setSaving(true);
+                                    await saveSessionProgress(session.id, {
+                                        code: store.code,
+                                        cssCode: store.cssCode,
+                                        canvasData: store.canvasData as object,
+                                        language: store.language,
+                                        chatHistory: store.chatHistory,
+                                        totalTimeSeconds: store.elapsedSeconds,
+                                    });
+                                    store.markClean();
+                                    store.setSaving(false);
+                                }}
+                            >
+                                <Play className="h-3.5 w-3.5 mr-1" />
+                                Run
+                            </Button>
+                        )
+                    }
+                    <SubmitButton problem={problem} session={session} store={store} mode={mode} />
+                </div>
+            </header>
+            <div className="flex-1 flex overflow-hidden">
+                <div className="w-[420px] min-w-[360px] border-r border-neutral-800 flex-shrink-0">
+                    <ProblemPanel problem={problem} requirementsMet={store.requirementsMet} />
+                </div>
+                <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                    {
+                        isSystemDesign ? (
+                            <div className="flex-1">
+                                <ExcalidrawCanvas
+                                    initialData={store.canvasData}
+                                    onChange={(data: { elements: unknown[]; appState: unknown }) => store.setCanvasData(data)}
+                                    darkMode={theme === "dark"}
+                                />
+                            </div>
+                        ) : (
+                            <>
+                                <div className={cn("flex-1 overflow-hidden", isWebModule ? "h-[55%]" : "h-full")}>
+                                    <CodeEditor
+                                        code={store.code}
+                                        language={store.language}
+                                        height="100%"
+                                        onChange={(val) => store.setCode(val)}
+                                        onLanguageChange={(lang) => store.setLanguage(lang)}
+                                        showLanguageSelector={problem.module === "DSA"}
+                                        showCopyButton={true}
+                                        showRunButton={true}
+                                        enableExecution={true}
+                                        showExpandButton={false}
+                                        allowedLanguages={problem.module === "DSA" ? DSA_LANGUAGES : ["javascript", "typescript"]}
+                                        className="h-full rounded-none border-0"
+                                    />
+                                </div>
+                                {
+                                    isWebModule && (
+                                        <div className="h-[45%] border-t border-neutral-800">
+                                            <WebPreview code={store.code} css={store.cssCode} />
+                                        </div>
+                                    )
+                                }
+                            </>
+                        )
+                    }
+                </div>
+
+                {
+                    mode === "ASSIST" && (
+                        <div className="w-[38%] min-w-[320px] max-w-[500px] border-l border-neutral-800 flex-shrink-0">
+                            <ChatPanel problem={problem} store={store} />
+                        </div>
+                    )
+                }
+            </div>
+        </div>
+    );
+}
+
+function ProblemPanel({
+    problem,
+    requirementsMet,
+}: {
+    problem: PracticeProblemDetail;
+    requirementsMet: Record<string, boolean>;
+}) {
+    return (
+        <ScrollArea className="h-full">
+            <div className="p-6 space-y-5">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold">{problem.title}</h2>
+                    <Badge variant="outline" className={cn("text-[10px]", DIFFICULTY_COLORS[problem.difficulty])}>
+                        {problem.difficulty}
+                    </Badge>
+                </div>
+                <div className="prose prose-invert prose-sm max-w-none">
+                    <MarkdownRenderer
+                        content={problem.description}
+                        className="[&>*:first-child]:mt-0 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-4 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-3 [&_p]:text-neutral-400 [&_p]:text-sm [&_p]:leading-relaxed [&_code]:text-xs [&_li]:text-sm [&_li]:text-neutral-400"
+                    />
+                </div>
+                <div>
+                    <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+                        Requirements
+                    </h3>
+                    <div className="space-y-1.5">
+                        {
+                            problem.requirements.map((req, i) => {
+                                const met = requirementsMet[`req-${i}`] ?? false;
+                                return (
+                                    <div key={i} className="flex items-start gap-2">
+                                        {
+                                            met ? (
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                                            ) : (
+                                                <div className="h-4 w-4 rounded-full border border-neutral-600 flex-shrink-0 mt-0.5" />
+                                            )
+                                        }
+                                        <span className={cn("text-sm", met ? "text-neutral-300" : "text-neutral-500")}>
+                                            {req}
+                                        </span>
+                                    </div>
+                                );
+                            })
+                        }
+                    </div>
+                </div>
+
+                {problem.hints.length > 0 && <HintsSection hints={problem.hints} />}
+
+                {
+                    problem.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-2">
+                            {
+                                problem.tags.map((tag) => (
+                                    <Badge key={tag} variant="outline" className="text-[10px] border-neutral-700 text-neutral-400">
+                                        {tag}
+                                    </Badge>
+                                ))
+                            }
+                        </div>
+                    )
+                }
+            </div>
+        </ScrollArea>
+    );
+}
+
+function HintsSection({ hints }: { hints: string[] }) {
+    const [revealed, setRevealed] = useState(0);
+    return (
+        <div>
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Hints</h3>
+            <div className="space-y-2">
+                {
+                    hints.slice(0, revealed).map((hint, i) => (
+                        <p key={i} className="text-sm text-neutral-400 bg-neutral-900 rounded-lg p-3 border border-neutral-800">
+                            💡 {hint}
+                        </p>
+                    ))
+                }
+                {
+                    revealed < hints.length && (
+                        <button
+                            onClick={() => setRevealed((r) => r + 1)}
+                            className="cursor-pointer text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                            Reveal hint {revealed + 1} of {hints.length}
+                        </button>
+                    )
+                }
+            </div>
+        </div>
+    );
+}
+
+function WebPreview({ code, css }: { code: string; css: string }) {
+    const srcDoc = `<!DOCTYPE html>
+<html>
+<head><style>${css}</style></head>
+<body>${code}</body>
+</html>`;
+
+    return (
+        <div className="h-full flex flex-col">
+            <div className="h-8 bg-neutral-900 border-b border-neutral-800 flex items-center px-3">
+                <span className="text-[10px] text-neutral-500 font-medium">Live Preview</span>
+            </div>
+            <iframe srcDoc={srcDoc} className="flex-1 bg-white" sandbox="allow-scripts" title="Live Preview" />
+        </div>
+    );
+}
+
+function ChatPanel({
+    problem,
+    store,
+}: {
+    problem: PracticeProblemDetail;
+    store: PracticeWorkspaceState;
+}) {
+    const [input, setInput] = useState("");
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // ── ElevenLabs Scribe (official real-time STT) ──
+    const scribe = useScribe({
+        onPartialTranscript: (data) => {
+            // Live partial transcript → show in input box in real time
+            store.setVoiceTranscript(data.text);
+            setInput(data.text);
+        },
+        onCommittedTranscript: (data) => {
+            // Final committed transcript → set in input
+            const committed = data.text.trim();
+            if (committed) {
+                setInput(committed);
+                store.setVoiceTranscript(committed);
+            }
+        },
+    });
+
+    // Auto-scroll to bottom on new messages
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [store.chatHistory.length, store.isChatLoading]);
+
+    // ── Start/Stop voice recording ──
+    const toggleVoice = async () => {
+        if (scribe.isConnected) {
+            // Stop recording
+            scribe.disconnect();
+            store.setVoiceActive(false);
+
+            // Auto-send the transcript if we have content
+            const transcript = input.trim();
+            if (transcript) {
+                handleSend(transcript);
+            }
+        } else {
+            // Start recording — fetch single-use token from server
+            const tokenResult = await getScribeToken();
+            if (!tokenResult.success) {
+                console.error("Failed to get scribe token:", tokenResult.error);
+                return;
+            }
+
+            store.setVoiceActive(true);
+            setInput(""); // Clear input for fresh transcript
+
+            await scribe.connect({
+                token: tokenResult.token,
+                microphone: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                },
+            });
+        }
+    };
+
+    // ── Send message ──
+    const handleSend = async (messageText?: string) => {
+        const trimmed = (messageText ?? input).trim();
+        if (!trimmed || store.isChatLoading) return;
+
+        const userMsg: PracticeChatMessage = {
+            id: crypto.randomUUID(),
+            role: "user",
+            content: trimmed,
+            timestamp: new Date().toISOString(),
+        };
+
+        store.addChatMessage(userMsg);
+        setInput("");
+        store.setVoiceTranscript("");
+        store.setChatLoading(true);
+
+        const history = store.chatHistory.map((m: PracticeChatMessage) => ({
+            role: m.role,
+            content: m.content,
+        }));
+
+        const result = await getMentorResponse(
+            problem.slug,
+            history,
+            trimmed,
+            store.code,
+            problem.module
+        );
+
+        if (result.success) {
+            const assistantMsg: PracticeChatMessage = {
+                id: crypto.randomUUID(),
+                role: "assistant",
+                content: result.message,
+                timestamp: new Date().toISOString(),
+            };
+            store.addChatMessage(assistantMsg);
+        }
+
+        store.setChatLoading(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    // ── TTS: Play assistant message aloud ──
+    const playTTS = async (text: string) => {
+        if (isSpeaking) {
+            // Stop current playback
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+            setIsSpeaking(false);
+            return;
+        }
+
+        setIsSpeaking(true);
+        try {
+            const result = await generateTTSAudio(text);
+            if (result.success) {
+                const audio = new Audio(`data:audio/mp3;base64,${result.audioBase64}`);
+                audioRef.current = audio;
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                    audioRef.current = null;
+                };
+                audio.onerror = () => {
+                    setIsSpeaking(false);
+                    audioRef.current = null;
+                };
+                await audio.play();
+            } else {
+                setIsSpeaking(false);
+            }
+        } catch {
+            setIsSpeaking(false);
+        }
+    };
+
+    return (
+        <div className="h-full flex flex-col">
+            <div className="h-10 border-b border-neutral-800 flex items-center justify-between px-4">
+                <span className="text-xs font-semibold text-neutral-400">AI Mentor</span>
+                {
+                    scribe.isConnected && (
+                        <span className="text-[10px] text-red-400 animate-pulse flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                            Listening...
+                        </span>
+                    )
+                }
+            </div>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+                {
+                    store.chatHistory.length === 0 && (
+                        <div className="text-center py-8">
+                            <p className="text-xs text-neutral-500 leading-relaxed">
+                                Ask questions about the problem. I&apos;ll guide you with hints without giving away the answer.
+                            </p>
+                        </div>
+                    )
+                }
+                {
+                    store.chatHistory.map((msg: PracticeChatMessage) => (
+                        <ChatBubble
+                            key={msg.id}
+                            message={msg}
+                            onPlayTTS={msg.role === "assistant" ? () => playTTS(msg.content) : undefined}
+                            isSpeaking={isSpeaking}
+                        />
+                    ))
+                }
+                {
+                    store.isChatLoading && (
+                        <div className="flex items-center gap-2 text-neutral-500">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span className="text-xs">Thinking...</span>
+                        </div>
+                    )
+                }
+            </div>
+
+            {
+                scribe.isConnected && store.voiceTranscript && (
+                    <div className="px-4 pb-1">
+                        <p className="text-xs text-neutral-500 italic truncate">
+                            🎙️ {store.voiceTranscript}
+                        </p>
+                    </div>
+                )
+            }
+
+            <div className="border-t border-neutral-800 p-3">
+                <div className="flex items-end gap-2">
+                    <Textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={scribe.isConnected ? "Listening... speak now" : "Ask for a hint..."}
+                        rows={2}
+                        className="bg-neutral-900 border-neutral-700 text-sm resize-none text-white placeholder:text-neutral-500 focus-visible:ring-neutral-600"
+                    />
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={toggleVoice}
+                        className={cn(
+                            "h-9 w-9 flex-shrink-0 transition-colors",
+                            scribe.isConnected
+                                ? "text-red-400 hover:text-red-300 bg-red-900/20"
+                                : "text-neutral-400 hover:text-white"
+                        )}
+                    >
+                        {scribe.isConnected ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleSend()}
+                        disabled={!input.trim() || store.isChatLoading}
+                        className="h-9 w-9 text-neutral-400 hover:text-white flex-shrink-0"
+                    >
+                        <Send className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ChatBubble({
+    message,
+    onPlayTTS,
+    isSpeaking,
+}: {
+    message: PracticeChatMessage;
+    onPlayTTS?: () => void;
+    isSpeaking?: boolean;
+}) {
+    const isUser = message.role === "user";
+    return (
+        <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+            <div
+                className={cn(
+                    "max-w-[90%] rounded-lg px-3 py-2 text-sm",
+                    isUser
+                        ? "bg-neutral-700 text-white"
+                        : "bg-neutral-900 text-neutral-300 border border-neutral-800"
+                )}
+            >
+                {
+                    isUser ? (
+                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    ) : (
+                        <MarkdownRenderer
+                            content={message.content}
+                            className="prose-invert prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:mb-2 [&_code]:text-xs"
+                        />
+                    )
+                }
+                {
+                    !isUser && onPlayTTS && (
+                        <button
+                            onClick={onPlayTTS}
+                            disabled={false}
+                            className="mt-1.5 flex items-center gap-1 text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors"
+                        >
+                            {
+                                isSpeaking ? (
+                                    <>
+                                        <Square className="h-3 w-3" />
+                                        Stop
+                                    </>
+                                ) : (
+                                    <>
+                                        <Volume2 className="h-3 w-3" />
+                                        Listen
+                                    </>
+                                )
+                            }
+                        </button>
+                    )
+                }
+            </div>
+        </div>
+    );
+}
+
+function SubmitButton({
+    problem,
+    session,
+    store,
+    mode,
+}: {
+    problem: PracticeProblemDetail;
+    session: PracticeSessionData;
+    store: PracticeWorkspaceState;
+    mode: PracticeMode;
+}) {
+    const handleSubmit = async () => {
+        if (store.isAssessing) return;
+        store.setAssessing(true);
+
+        // Save first
+        await saveSessionProgress(session.id, {
+            code: store.code,
+            cssCode: store.cssCode,
+            canvasData: store.canvasData as object,
+            language: store.language,
+            chatHistory: store.chatHistory,
+            totalTimeSeconds: store.elapsedSeconds,
+        });
+
+        const result = await assessPracticeWork({
+            module: problem.module,
+            problemSlug: problem.slug,
+            mode,
+            attemptNumber: session.attempts + 1,
+            userWork: problem.module === "SYSTEM_DESIGN"
+                ? JSON.stringify(store.canvasData)
+                : store.code,
+            userCss: store.cssCode || undefined,
+            language: store.language,
+            conversationHistory: store.chatHistory,
+            previousFeedback: store.lastFeedback ?? undefined,
+        });
+
+        if (result.success) {
+            store.setAssessmentResult(
+                result.result.score,
+                result.result.feedback,
+                result.result.requirementsMet
+            );
+
+            await updateSessionAfterAssess(session.id, {
+                score: result.result.score,
+                feedback: result.result.feedback,
+                requirementsMet: result.result.requirementsMet,
+                xpAwarded: result.result.xpAwarded,
+            });
+        } else {
+            store.setAssessing(false);
+        }
+    };
+
+    return (
+        <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={store.isAssessing}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
+        >
+            {
+                store.isAssessing ? (
+                    <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Assessing...
+                    </>
+                ) : (
+                    <>
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                        Submit
+                    </>
+                )
+            }
+        </Button>
+    );
+}

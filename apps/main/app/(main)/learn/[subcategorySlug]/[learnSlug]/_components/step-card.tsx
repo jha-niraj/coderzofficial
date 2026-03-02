@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     CheckCircle2, Code2, Eye, BarChart3, HelpCircle, Zap, Lightbulb,
     Copy, Check, Play, ChevronDown, ChevronUp, Video, Globe,
     ExternalLink, Loader2, Star, AlertCircle, Image as ImageIcon,
-    Mic, FolderGit2, Plus
+    Mic, FolderGit2, Plus, Layers, ChevronLeft, ChevronRight, RotateCcw
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -25,7 +25,7 @@ import toast from "@repo/ui/components/ui/sonner";
 import { LucideIcon } from "lucide-react";
 import { LearnStepType } from "@repo/prisma/client";
 import {
-    submitQuizAnswer, submitChallengeCode
+    submitQuizAnswer, submitChallengeCode, submitInterviewCardReview
 } from "@/actions/(main)/learn/learn.action";
 import { evaluateChallengeCode } from "@/actions/(main)/learn/learn-ai.action";
 import CodeEditor from "@/components/main/code-editor";
@@ -61,6 +61,30 @@ interface LearnStep {
     stepData?: unknown;
     tips?: unknown;
     codeBlocks: CodeBlock[];
+    interviewCards?: {
+        id: string;
+        order: number;
+        category: string | null;
+        question: string;
+        answer: string;
+        codeSnippet: string | null;
+        codeLanguage: string | null;
+        difficulty: string;
+        tags: string[];
+    }[];
+    quizQuestions?: {
+        id: string;
+        order: number;
+        question: string;
+        type: string;
+        options: unknown;
+        explanation: string | null;
+        codeSnippet: string | null;
+        codeLanguage: string | null;
+        difficulty: string;
+        points: number;
+        hint: string | null;
+    }[];
 }
 
 interface StepCardProps {
@@ -90,6 +114,7 @@ const stepTypeConfig: Record<LearnStepType, { icon: LucideIcon; label: string; c
     VISUAL: { icon: ImageIcon, label: "Visual", color: "text-cyan-600" },
     MOCK_INTERVIEW: { icon: Mic, label: "Mock Interview", color: "text-red-600" },
     PROJECT: { icon: FolderGit2, label: "Project", color: "text-indigo-600" },
+    INTERVIEW_QUESTIONS: { icon: Layers, label: "Interview Questions", color: "text-orange-600" },
 };
 
 // ==================== HELPERS ====================
@@ -134,6 +159,14 @@ export default function StepCard({
     // Project step state
     const [addProjectOpen, setAddProjectOpen] = useState(false);
     const [generateProjectOpen, setGenerateProjectOpen] = useState(false);
+
+    // Interview card (flashcard) state
+    const [cardIndex, setCardIndex] = useState(0);
+    const [isFlipped, setIsFlipped] = useState(false);
+    const [knownCards, setKnownCards] = useState<Set<number>>(new Set());
+    const [reviewCards, setReviewCards] = useState<Set<number>>(new Set());
+    const [showCardResults, setShowCardResults] = useState(false);
+    const [cardFilter, setCardFilter] = useState<string>("All");
 
     // Mock interview step state
     const [_createMockOpen, _setCreateMockOpen] = useState(false)
@@ -247,7 +280,16 @@ export default function StepCard({
 
             // Save progress
             if (isLoggedIn) {
-                await submitChallengeCode(LearnId, step.id, challengeCode, result.isCorrect);
+                await submitChallengeCode(
+                    LearnId,
+                    step.id,
+                    challengeCode,
+                    result.isCorrect,
+                    result.score,
+                    result.feedback,
+                    result.suggestions,
+                    (data.language as string) || "javascript"
+                );
             }
 
             if (result.isCorrect && result.score >= 70) {
@@ -1103,6 +1145,233 @@ export default function StepCard({
                             }
                         </div>
                     )
+                }
+                {
+                    step.type === "INTERVIEW_QUESTIONS" && (() => {
+                        const cards = step.interviewCards || [];
+                        const categories = ["All", ...Array.from(new Set(cards.map(c => c.category || "General")))];
+                        const filtered = cardFilter === "All" ? cards : cards.filter(c => (c.category || "General") === cardFilter);
+
+                        if (filtered.length === 0) {
+                            return (
+                                <div className="p-6 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 text-center">
+                                    <Layers className="w-10 h-10 text-orange-500 mx-auto mb-3" />
+                                    <p className="text-muted-foreground">No interview cards available yet.</p>
+                                </div>
+                            );
+                        }
+
+                        if (showCardResults) {
+                            const knownCount = knownCards.size;
+                            const reviewCount = reviewCards.size;
+                            const percentage = Math.round((knownCount / filtered.length) * 100);
+
+                            // Save interview card progress
+                            if (isLoggedIn) {
+                                submitInterviewCardReview(LearnId, knownCount + reviewCount, knownCount, percentage);
+                            }
+
+                            return (
+                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                    className="p-6 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border border-orange-200 dark:border-orange-800">
+                                    <div className="text-center">
+                                        <div className="w-16 h-16 rounded-full bg-orange-500 mx-auto mb-4 flex items-center justify-center">
+                                            <Star className="w-8 h-8 text-white" />
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-2">Review Complete!</h3>
+                                        <div className="flex items-center justify-center gap-6 mb-6">
+                                            <div className="text-center">
+                                                <p className="text-2xl font-bold text-green-600">{knownCount}</p>
+                                                <p className="text-xs text-muted-foreground">Knew It ✅</p>
+                                            </div>
+                                            <div className="h-10 w-px bg-neutral-200 dark:bg-neutral-700" />
+                                            <div className="text-center">
+                                                <p className="text-2xl font-bold text-amber-600">{reviewCount}</p>
+                                                <p className="text-xs text-muted-foreground">Review 🤔</p>
+                                            </div>
+                                            <div className="h-10 w-px bg-neutral-200 dark:bg-neutral-700" />
+                                            <div className="text-center">
+                                                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{percentage}%</p>
+                                                <p className="text-xs text-muted-foreground">Score</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 justify-center">
+                                            <Button variant="outline" onClick={() => {
+                                                setShowCardResults(false);
+                                                setCardIndex(0);
+                                                setIsFlipped(false);
+                                                setKnownCards(new Set());
+                                                setReviewCards(new Set());
+                                            }}>
+                                                <RotateCcw className="w-4 h-4 mr-2" /> Study Again
+                                            </Button>
+                                            {
+                                                percentage >= 60 && (
+                                                    <Button onClick={onComplete} className="bg-green-600 hover:bg-green-700">
+                                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Mark Complete
+                                                    </Button>
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        }
+
+                        const currentCard = filtered[cardIndex];
+                        const progress = ((knownCards.size + reviewCards.size) / filtered.length) * 100;
+
+                        const goNextCard = () => {
+                            setIsFlipped(false);
+                            if (cardIndex < filtered.length - 1) {
+                                setTimeout(() => setCardIndex(cardIndex + 1), 200);
+                            } else {
+                                setTimeout(() => setShowCardResults(true), 200);
+                            }
+                        };
+
+                        return (
+                            <div className="space-y-4 p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center">
+                                            <Layers className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-orange-700 dark:text-orange-400">Interview Questions</h4>
+                                            <p className="text-xs text-muted-foreground">Card {cardIndex + 1} of {filtered.length}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {
+                                            currentCard?.difficulty && (
+                                                <Badge variant="outline" className="text-xs border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-400">
+                                                    {currentCard.difficulty}
+                                                </Badge>
+                                            )
+                                        }
+                                        {
+                                            currentCard?.category && (
+                                                <Badge variant="secondary" className="text-xs">{currentCard.category}</Badge>
+                                            )
+                                        }
+                                    </div>
+                                </div>
+
+                                {
+                                    categories.length > 2 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {
+                                                categories.map(cat => (
+                                                    <Button key={cat} variant={cardFilter === cat ? "default" : "outline"} size="sm" className="text-xs h-7"
+                                                        onClick={() => { setCardFilter(cat); setCardIndex(0); setIsFlipped(false); }}>
+                                                        {cat}
+                                                    </Button>
+                                                ))
+                                            }
+                                        </div>
+                                    )
+                                }
+
+                                <Progress value={progress} className="h-2" />
+
+                                {
+                                    currentCard && (
+                                        <div
+                                            className="w-full min-h-[200px] cursor-pointer rounded-xl p-6 transition-all"
+                                            onClick={() => setIsFlipped(!isFlipped)}
+                                        >
+                                            <AnimatePresence mode="wait">
+                                                <motion.div
+                                                    key={`${cardIndex}-${isFlipped}`}
+                                                    initial={{ rotateY: isFlipped ? -90 : 90, opacity: 0 }}
+                                                    animate={{ rotateY: 0, opacity: 1 }}
+                                                    exit={{ rotateY: isFlipped ? 90 : -90, opacity: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    className={`rounded-xl p-6 border ${isFlipped
+                                                        ? "bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-300 dark:border-orange-800"
+                                                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700"
+                                                        }`}
+                                                >
+                                                    {
+                                                        !isFlipped ? (
+                                                            <div className="space-y-4">
+                                                                <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Question</p>
+                                                                <p className="text-base font-medium text-foreground leading-relaxed">{currentCard.question}</p>
+                                                                {
+                                                                    currentCard.codeSnippet && (
+                                                                        <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                                                                            <CodeEditor
+                                                                                code={currentCard.codeSnippet}
+                                                                                language={currentCard.codeLanguage || "go"}
+                                                                                readOnly
+                                                                                showLanguageSelector={false}
+                                                                                showCopyButton={false}
+                                                                                showRunButton={false}
+                                                                                height="auto"
+                                                                            />
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                                <p className="text-xs text-muted-foreground text-center mt-4">
+                                                                    💡 Click or press Space to reveal answer
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-3">
+                                                                <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">Answer</p>
+                                                                <div className="text-sm text-foreground leading-relaxed">
+                                                                    <MarkdownRenderer content={currentCard.answer} />
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    }
+                                                </motion.div>
+                                            </AnimatePresence>
+                                        </div>
+                                    )
+                                }
+
+                                <div className="flex items-center justify-between">
+                                    <Button variant="ghost" size="sm" onClick={() => { if (cardIndex > 0) { setIsFlipped(false); setCardIndex(cardIndex - 1); } }} disabled={cardIndex === 0}>
+                                        <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                                    </Button>
+
+                                    {
+                                        isFlipped && (
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="outline" size="sm" className="text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                                                    onClick={() => { setReviewCards(prev => new Set(prev).add(cardIndex)); goNextCard(); }}>
+                                                    🤔 Review
+                                                </Button>
+                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                                                    onClick={() => { setKnownCards(prev => new Set(prev).add(cardIndex)); goNextCard(); }}>
+                                                    ✅ Knew It
+                                                </Button>
+                                            </div>
+                                        )
+                                    }
+
+                                    <Button variant="ghost" size="sm" onClick={goNextCard}>
+                                        {cardIndex < filtered.length - 1 ? <>Next <ChevronRight className="w-4 h-4 ml-1" /></> : "Finish"}
+                                    </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-1 justify-center">
+                                    {
+                                        filtered.map((_, idx) => (
+                                            <button key={idx} onClick={() => { setCardIndex(idx); setIsFlipped(false); }}
+                                                className={`w-2 h-2 rounded-full transition-all ${cardIndex === idx ? "w-5 bg-orange-500"
+                                                    : knownCards.has(idx) ? "bg-green-500"
+                                                        : reviewCards.has(idx) ? "bg-amber-500"
+                                                            : "bg-neutral-300 dark:bg-neutral-600"
+                                                    }`}
+                                            />
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        );
+                    })()
                 }
                 {
                     Array.isArray(step.tips) && (step.tips as string[]).length > 0 && (

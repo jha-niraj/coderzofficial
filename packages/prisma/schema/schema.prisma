@@ -325,6 +325,27 @@ enum LearnStepType {
     VISUAL
     MOCK_INTERVIEW
     PROJECT
+    INTERVIEW_QUESTIONS
+}
+
+enum QuizQuestionType {
+    SINGLE_CHOICE
+    MULTIPLE_CHOICE
+    CODE_OUTPUT
+    TRUE_FALSE
+}
+
+enum QuizDifficulty {
+    EASY
+    MEDIUM
+    HARD
+}
+
+enum InterviewCardDifficulty {
+    EASY
+    MEDIUM
+    HARD
+    EXPERT
 }
 
 enum LearnRequestStatus {
@@ -543,6 +564,8 @@ model User {
     learnProgress    LearnProgress[]    @relation("LearnProgress")
     learnRequests    LearnRequest[]     @relation("LearnRequests")
     learnLeaderboard LearnLeaderboard[] @relation("LearnLeaderboard")
+    learnQuizAnswers            LearnQuizAnswer[]            @relation("LearnQuizAnswers")
+    learnChallengeSubmissions   LearnChallengeSubmission[]   @relation("LearnChallengeSubmissions")
 
     // ===============================================
     // SPACES MODULE RELATIONS
@@ -654,6 +677,13 @@ model User {
     achievementNotifications AchievementNotification[] @relation("UserAchievementNotifications")
     achievementStats         UserAchievementStats?     @relation("UserAchievementStats")
     featureNotifyInterests   FeatureNotifyInterest[]
+
+    // ===============================================
+    // PRACTICE MODULE RELATIONS
+    // ===============================================
+    practiceSessions         PracticeUserSession[]     @relation("UserPracticeSessions")
+    practiceModuleProgress   PracticeModuleProgress[]  @relation("UserPracticeProgress")
+    practiceLeaderboard      PracticeLeaderboard[]     @relation("UserPracticeLeaderboard")
 
     @@index([username])
     @@index([email])

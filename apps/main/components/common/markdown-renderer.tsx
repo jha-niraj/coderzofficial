@@ -1,9 +1,65 @@
 "use client";
 
+import { useEffect, useRef, useId } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
+import mermaid from "mermaid";
+
+// Initialize mermaid once
+mermaid.initialize({
+    startOnLoad: false,
+    theme: "dark",
+    securityLevel: "loose",
+    fontFamily: "inherit",
+    themeVariables: {
+        primaryColor: "#3b82f6",
+        primaryTextColor: "#f5f5f5",
+        primaryBorderColor: "#525252",
+        lineColor: "#737373",
+        secondaryColor: "#1e3a5f",
+        tertiaryColor: "#171717",
+        background: "#0a0a0a",
+        mainBkg: "#171717",
+        nodeBorder: "#525252",
+        clusterBkg: "#171717",
+        titleColor: "#f5f5f5",
+        edgeLabelBackground: "#171717",
+    },
+});
+
+// ─── Mermaid diagram block ──────────────────
+function MermaidBlock({ code }: { code: string }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const uniqueId = useId();
+    const mermaidId = `mermaid-${uniqueId.replace(/:/g, "")}`;
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (!containerRef.current) return;
+            try {
+                const { svg } = await mermaid.render(mermaidId, code.trim());
+                if (!cancelled && containerRef.current) {
+                    containerRef.current.innerHTML = svg;
+                }
+            } catch {
+                if (!cancelled && containerRef.current) {
+                    containerRef.current.innerHTML = `<pre class="text-red-400 text-xs whitespace-pre-wrap p-3">${code}</pre>`;
+                }
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [code, mermaidId]);
+
+    return (
+        <div
+            ref={containerRef}
+            className="my-4 flex justify-center overflow-x-auto rounded-lg bg-neutral-950 border border-neutral-800 p-4"
+        />
+    );
+}
 
 interface MarkdownRendererProps {
     content: string;
@@ -12,13 +68,19 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
     return (
-        <div className={className}>
+        <div className={`text-left w-full ${className}`}>
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                     code({ className, children, ...props }) {
                         const match = /language-(\w+)/.exec(className || "");
                         const inline = !match;
+
+                        // Handle mermaid code blocks
+                        if (match && match[1] === "mermaid") {
+                            return <MermaidBlock code={String(children).replace(/\n$/, "")} />;
+                        }
+
                         return inline ? (
                             <code
                                 className="bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded text-sm font-mono"
@@ -29,7 +91,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
                         ) : (
                             <SyntaxHighlighter
                                 style={oneDark}
-                                language={match[1]}
+                                language={match![1]}
                                 PreTag="div"
                                 className="rounded-lg !mt-3 !mb-3 text-sm"
                             >

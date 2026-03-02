@@ -1,0 +1,854 @@
+================================================================================
+  LEARN MODULE — DEEP ANALYSIS, ISSUES & REDESIGN PROPOSAL
+  Platform: CoderzHQ (BuildRHQ)
+  Created: 2026-03-03
+  Status: Analysis & Proposal Document
+================================================================================
+
+TABLE OF CONTENTS
+─────────────────
+1.  Current Architecture Recap
+2.  PROBLEM ANALYSIS — What's Wrong Today
+3.  SCHEMA REDESIGN — What Needs to Change
+4.  QUIZ MODULE REDESIGN — Structured Data, Not Markdown
+5.  NEW: INTERVIEW QUESTIONS / FLASHCARD STEP
+6.  CHALLENGE MODULE IMPROVEMENT — Code Editor + Test Cases
+7.  CONTENT STRUCTURE — Separation of Concerns
+8.  UI/UX FLOW — Redesigned Screen Layouts
+9.  PROGRESS TRACKING IMPROVEMENTS
+10. IMPLEMENTATION ROADMAP (Priority Order)
+11. SCREEN FLOWCHARTS (Mermaid)
+
+================================================================================
+1. CURRENT ARCHITECTURE RECAP
+================================================================================
+
+Models:
+  Learn ──┬── LearnStep (order, type, content:TEXT, stepData:JSON)
+          │     └── LearnCodeBlock (language, code, explanation)
+          ├── LearnProgress (per user, completedSteps[], quizAnswers:JSON)
+          ├── LearnLike, LearnBookmark, LearnComment, LearnView
+          └── LearnLeaderboard
+
+Categories:
+  LearnMainCategory → LearnSubCategory → LearnTopic
+  (LearnTopic is in the schema but NEVER USED in any action or UI)
+
+Step Types (LearnStepType enum):
+  EXPLANATION, CODE, VISUALIZATION, COMPARISON, QUIZ, CHALLENGE,
+  INTERACTIVE, SUMMARY, RESOURCE, VISUAL, MOCK_INTERVIEW, PROJECT
+
+Content Storage:
+  - step.content → Markdown (TEXT field)
+  - step.stepData → JSON (quiz options, challenge data, comparison items)
+  - step.codeBlocks → Separate model (LearnCodeBlock)
+
+Current Flow:
+  Admin creates Learn → Adds Steps (AI generates content) → Publishes
+  User reads step-by-step → Quizzes/Challenges tracked in LearnProgress
+
+================================================================================
+2. PROBLEM ANALYSIS — What's Wrong Today
+================================================================================
+
+PROBLEM 1: LearnTopic Model Does Nothing
+─────────────────────────────────────────
+The LearnTopic model exists in the schema with a relation to Learn, but:
+  - No server actions use it (no CRUD, no filtering)
+  - No UI references it
+  - The Learn model has `topicId` but it's never set
+  - Topics should organize Learns within a SubCategory (e.g., "React Hooks"
+    under "React") but they're completely orphaned
+
+  VERDICT: Either USE IT properly or REMOVE IT.
+  RECOMMENDATION: Keep it, but actually use it for organizing learns
+  within subcategories and for the navigation sidebar.
+
+PROBLEM 2: Quiz Data Stored as JSON Blob in stepData
+─────────────────────────────────────────────────────
+Currently quiz data is stored as:
+  stepData: {
+    questions: [
+      { question: "...", options: [{id, text, isCorrect}], explanation: "..." }
+    ]
+  }
+  OR legacy format:
+  stepData: { question: "...", options: [...], explanation: "..." }
+
+Issues:
+  - Two different formats (legacy single vs batch) → code handles both
+  - Quiz answers tracked in LearnProgress.quizAnswers as JSON → hard to
+    query, aggregate, or build analytics
+  - No way to track individual question performance across users
+  - No retry tracking per question (just per step)
+  - Quiz questions can't be shared/reused across steps
+  - No difficulty level per question
+  - No support for code-based questions (e.g., "What does this code output?")
+  - Parsing JSON on every render is fragile
+
+  VERDICT: Quiz needs its own model with structured fields.
+
+PROBLEM 3: Challenge Data Also JSON Blob
+─────────────────────────────────────────
+Challenge (coding exercise) data stored as:
+  stepData: {
+    starterCode: "...",
+    solution: "...",
+    hints: ["..."],
+    testCases: [{input, expectedOutput}],
+    language: "javascript"
+  }
+
+And user submissions tracked in LearnProgress.challengeSubmissions as JSON:
+  { stepId: { code, passed, submittedAt } }
+
+Issues:
+  - Test cases are JSON strings, not structured → can't run automated tests
+  - Only stores pass/fail, not granular test results
+  - No support for multiple languages per challenge
+  - No versioning of submissions
+  - Submission history is a flat JSON blob
+
+  VERDICT: Challenges need better test case structure.
+
+PROBLEM 4: Content Is One Giant Markdown Field
+───────────────────────────────────────────────
+Each step has a single `content: String @db.Text` field that stores
+everything in Markdown. This means:
+  - Can't search within specific content blocks
+  - Can't reorder or restructure content sections
+  - Heavy for rendering (1 massive Markdown block per step)
+  - No way to have "expandable" sections, "key takeaways", "warnings"
+    as structured data
+
+  VERDICT: This is FINE for explanatory content. Markdown is the right
+  format for educational text. But we should add structured companion
+  fields for things like key takeaways and warnings.
+
+PROBLEM 5: No Interview Questions / Flashcard System
+─────────────────────────────────────────────────────
+The user specifically wants:
+  "Add another step which would be like interview questions, where we
+   should add the questions that could be asked in an interview using
+   the flash card, so the user can read that as well."
+
+This doesn't exist at all. Need a new step type: INTERVIEW_QUESTIONS
+with a flashcard UI.
+
+PROBLEM 6: Quiz Module Can't Show Code
+───────────────────────────────────────
+The user said:
+  "We do need to update the quiz module to be able to handle a code
+   which will be shown using a code editor, which will be read only."
+
+Currently the Quiz component (quiz.tsx) already has a `codeSnippet`
+field in QuizQuestion interface, but it's not connected to the
+stepData generation. The AI generates questions without code context.
+
+  VERDICT: Need `codeSnippet` field in quiz generation and in the
+  stepData schema so code-based questions are properly supported.
+
+PROBLEM 7: Single Challenge Per Step
+─────────────────────────────────────
+Each CHALLENGE step can only have one challenge (one starterCode,
+one solution). The user mentioned "there is only one challenge" —
+this is limiting. Should support multiple progressive challenges.
+
+================================================================================
+3. SCHEMA REDESIGN — What Needs to Change
+================================================================================
+
+CHANGE 1: Add LearnQuizQuestion Model (extract from JSON)
+──────────────────────────────────────────────────────────
+
+```prisma
+model LearnQuizQuestion {
+    id        String   @id @default(cuid())
+
+    stepId    String
+    step      LearnStep @relation("StepQuizQuestions", fields: [stepId], references: [id], onDelete: Cascade)
+
+    order     Int      @default(0)
+    question  String   @db.Text
+    type      QuizQuestionType @default(SINGLE_CHOICE)
+
+    // Options stored as structured JSON (not markdown)
+    options   Json     // [{id: "a", text: "...", isCorrect: true/false}]
+
+    // Explanation shown after answering
+    explanation String? @db.Text
+
+    // Optional code snippet (displayed in read-only CodeEditor)
+    codeSnippet String? @db.Text
+    codeLanguage String? @default("javascript")
+
+    // Difficulty for analytics
+    difficulty  QuizDifficulty @default(MEDIUM)
+
+    // Points awarded
+    points    Int      @default(10)
+
+    createdAt DateTime @default(now())
+
+    // Track individual answers
+    answers   LearnQuizAnswer[] @relation("QuizQuestionAnswers")
+
+    @@index([stepId])
+    @@index([order])
+    @@map("LearnQuizQuestion")
+}
+
+enum QuizQuestionType {
+    SINGLE_CHOICE    // One correct answer
+    MULTIPLE_CHOICE  // Multiple correct answers
+    CODE_OUTPUT      // "What does this code output?" with code snippet
+    TRUE_FALSE       // True/False question
+}
+
+enum QuizDifficulty {
+    EASY
+    MEDIUM
+    HARD
+}
+
+model LearnQuizAnswer {
+    id          String   @id @default(cuid())
+
+    questionId  String
+    question    LearnQuizQuestion @relation("QuizQuestionAnswers", fields: [questionId], references: [id], onDelete: Cascade)
+
+    userId      String
+    user        User     @relation("LearnQuizAnswers", fields: [userId], references: [id], onDelete: Cascade)
+
+    selectedOptions String[]  // Array of option IDs selected
+    isCorrect   Boolean
+    attemptNumber Int     @default(1)
+    timeTaken   Int?     // seconds to answer
+
+    answeredAt  DateTime @default(now())
+
+    @@index([questionId])
+    @@index([userId])
+    @@index([questionId, userId])
+    @@map("LearnQuizAnswer")
+}
+```
+
+WHY: This gives us:
+  ✅ Per-question analytics (which questions are hard?)
+  ✅ Per-user answer history with retry tracking
+  ✅ Code snippets in questions natively
+  ✅ Multiple question types
+  ✅ Difficulty levels for adaptive learning
+  ✅ Points system for gamification
+
+CHANGE 2: Add LearnFlashcard Model (Interview Questions)
+────────────────────────────────────────────────────────
+
+```prisma
+model LearnFlashcard {
+    id        String   @id @default(cuid())
+
+    stepId    String
+    step      LearnStep @relation("StepFlashcards", fields: [stepId], references: [id], onDelete: Cascade)
+
+    order     Int      @default(0)
+    category  String?  // e.g., "Conceptual", "Coding", "Behavioral", "Tricky"
+
+    // Front of the card (the question)
+    question  String   @db.Text
+
+    // Back of the card (the answer)
+    answer    String   @db.Text
+
+    // Optional code snippet on the question side
+    codeSnippet  String? @db.Text
+    codeLanguage String? @default("javascript")
+
+    // Difficulty tag
+    difficulty FlashcardDifficulty @default(MEDIUM)
+
+    // Tags for filtering
+    tags      String[]
+
+    // Spaced repetition data (per user tracked in progress)
+    createdAt DateTime @default(now())
+
+    @@index([stepId])
+    @@index([order])
+    @@map("LearnFlashcard")
+}
+
+enum FlashcardDifficulty {
+    EASY
+    MEDIUM
+    HARD
+    EXPERT
+}
+```
+
+CHANGE 3: Add New Step Type to Enum
+───────────────────────────────────
+
+```prisma
+enum LearnStepType {
+    EXPLANATION
+    CODE
+    VISUALIZATION
+    COMPARISON
+    QUIZ
+    CHALLENGE
+    INTERACTIVE
+    SUMMARY
+    RESOURCE
+    VISUAL
+    MOCK_INTERVIEW
+    PROJECT
+    INTERVIEW_QUESTIONS   // ← NEW: Flashcard-based interview prep
+}
+```
+
+CHANGE 4: Update LearnStep Relations
+─────────────────────────────────────
+
+```prisma
+model LearnStep {
+    // ... existing fields ...
+
+    // ADD these new relations
+    quizQuestions  LearnQuizQuestion[] @relation("StepQuizQuestions")
+    flashcards     LearnFlashcard[]    @relation("StepFlashcards")
+
+    // ... existing relations ...
+}
+```
+
+CHANGE 5: Add Step Key Takeaways (Structured)
+──────────────────────────────────────────────
+
+Add to LearnStep:
+```prisma
+    // Structured metadata
+    keyTakeaways  String[]  // Key points for this step (shown in summary card)
+    warnings      String[]  // Common mistakes / warnings
+```
+
+CHANGE 6: Update LearnProgress for Better Tracking
+───────────────────────────────────────────────────
+
+Remove the JSON blob fields:
+```prisma
+model LearnProgress {
+    // ... existing fields ...
+
+    // REMOVE these (replaced by LearnQuizAnswer model):
+    // quizAnswers Json?
+    // challengeSubmissions Json?
+    // quizRetries Json?
+
+    // ADD these:
+    quizScorePercent    Float?   @default(0)  // Overall quiz performance
+    flashcardsReviewed  Int      @default(0)  // Number of flashcards seen
+    flashcardsMastered  Int      @default(0)  // Cards marked as "known"
+}
+```
+
+================================================================================
+4. QUIZ MODULE REDESIGN — Structured Data, Not Markdown
+================================================================================
+
+CURRENT FLOW (BAD):
+  1. Admin clicks "Generate Quiz" in editor
+  2. AI returns JSON: {questions: [{question, options, explanation}]}
+  3. Stored in stepData JSON blob
+  4. On render, parsed from JSON → passed to Quiz component
+  5. User answers → stored in LearnProgress.quizAnswers as JSON blob
+  6. No way to know which specific questions are hard across all users
+
+NEW FLOW (GOOD):
+  1. Admin clicks "Generate Quiz" in editor
+  2. AI returns structured questions
+  3. Each question saved as LearnQuizQuestion record in DB
+  4. On render, questions fetched with proper includes
+  5. User answers → saved as LearnQuizAnswer records
+  6. Analytics: "Question X has 30% success rate" → improve content
+  7. Code-based questions show read-only CodeEditor with the snippet
+
+QUIZ QUESTION WITH CODE (New Feature):
+┌─────────────────────────────────────────────────────┐
+│  Question 3 of 5                                    │
+│                                                     │
+│  What will be the output of this code?              │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ ```cpp                                      │    │
+│  │ #include <iostream>                          │    │
+│  │ int main() {                                 │    │
+│  │     int x = 5;                               │    │
+│  │     int* p = &x;                             │    │
+│  │     *p = 10;                                 │    │
+│  │     std::cout << x << std::endl;             │    │
+│  │     return 0;                                │    │
+│  │ }                                            │    │
+│  │ ```                            [READ-ONLY]   │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                     │
+│  ○ A) 5                                             │
+│  ● B) 10        ← selected                         │
+│  ○ C) 0                                             │
+│  ○ D) Compiler Error                                │
+│                                                     │
+│  [Submit Answer]                                    │
+└─────────────────────────────────────────────────────┘
+
+================================================================================
+5. NEW: INTERVIEW QUESTIONS / FLASHCARD STEP
+================================================================================
+
+When step type is INTERVIEW_QUESTIONS, the UI shows a flashcard deck:
+
+┌─────────────────────────────────────────────────────┐
+│  🎯 Interview Questions — Pointers & Memory        │
+│  Card 3 of 12                                       │
+│                                                     │
+│  [Conceptual] [Medium]                              │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐    │
+│  │                                             │    │
+│  │  Q: What is the difference between          │    │
+│  │     a pointer and a reference in C++?       │    │
+│  │                                             │    │
+│  │  ┌───────────────────────────────────┐      │    │
+│  │  │ int x = 5;                        │      │    │
+│  │  │ int* ptr = &x;  // pointer        │      │    │
+│  │  │ int& ref = x;   // reference      │      │    │
+│  │  └───────────────────────────────────┘      │    │
+│  │                                             │    │
+│  │         [ 🔄 Flip to see answer ]           │    │
+│  │                                             │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                     │
+│  After flipping:                                    │
+│  ┌─────────────────────────────────────────────┐    │
+│  │  A: Key differences:                        │    │
+│  │  • Pointer can be null, reference cannot    │    │
+│  │  • Pointer can be reassigned, ref cannot    │    │
+│  │  • Pointer uses * and ->, ref uses .        │    │
+│  │  • Reference must be initialized at decl    │    │
+│  │  • Pointer has its own memory address       │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                     │
+│  Rate your knowledge:                               │
+│  [😫 Didn't Know] [🤔 Partially] [✅ Knew It]      │
+│                                                     │
+│  ◄ Previous    ● ● ● ○ ○ ○ ○ ○ ○ ○    Next ►      │
+└─────────────────────────────────────────────────────┘
+
+FEATURES:
+  - Keyboard shortcuts: Space to flip, → for next, ← for previous
+  - Self-rating: Didn't Know / Partially / Knew It (for spaced repetition)
+  - Categories: Conceptual, Coding, Behavioral, Tricky
+  - Code snippets on question side (read-only CodeEditor)
+  - Progress bar showing cards reviewed
+  - Shuffle mode option
+  - Filter by category / difficulty
+
+================================================================================
+6. CHALLENGE MODULE IMPROVEMENT
+================================================================================
+
+CURRENT ISSUES:
+  - Only one challenge per step
+  - Test cases are just display strings, not executable
+  - No multiple language support per challenge
+  - Only AI evaluation (subjective), no objective test runner
+
+IMPROVEMENTS:
+  a) Keep AI evaluation (it works well for learning context)
+  b) Add structured test cases that show expected vs actual
+  c) Support multiple progressive challenges in one step
+  d) Add "reset to starter code" button
+  e) Show test case results visually (✅ Pass / ❌ Fail table)
+
+No schema change needed for this — the stepData JSON can hold
+an array of challenges:
+  stepData: {
+    challenges: [
+      {
+        id: "c1",
+        title: "Challenge 1: Basic Function",
+        description: "Write a function that...",
+        starterCode: "...",
+        solution: "...",
+        hints: ["..."],
+        testCases: [{input: "...", expectedOutput: "..."}],
+        language: "cpp"
+      },
+      {
+        id: "c2",
+        title: "Challenge 2: Advanced Version",
+        ...
+      }
+    ]
+  }
+
+================================================================================
+7. CONTENT STRUCTURE — Separation of Concerns
+================================================================================
+
+Current state: step.content (Markdown) + step.stepData (JSON) works
+well enough. The real issue is that quiz and flashcard data should
+be in proper DB models, NOT in stepData JSON.
+
+RECOMMENDED DATA SPLIT:
+┌──────────────────────────────────────────────────────┐
+│ What stays in step.content (Markdown TEXT):           │
+│  - Explanations, tutorials, theory                   │
+│  - Code examples within markdown (```blocks)         │
+│  - Diagrams via Mermaid syntax                       │
+│  - Rich formatted educational content                │
+├──────────────────────────────────────────────────────┤
+│ What stays in step.stepData (JSON):                  │
+│  - Comparison items [{title, pros, cons}]            │
+│  - Challenge config {starterCode, solution, hints}   │
+│  - Resource links [{url, title, type}]               │
+│  - Visualization config                              │
+│  - Summary keyTakeaways, assignment                  │
+├──────────────────────────────────────────────────────┤
+│ What moves to SEPARATE MODELS:                       │
+│  - Quiz questions → LearnQuizQuestion model          │
+│  - Interview flashcards → LearnFlashcard model       │
+├──────────────────────────────────────────────────────┤
+│ What stays in LearnCodeBlock model:                  │
+│  - Standalone code examples with explanations        │
+│  - Runnable code snippets                            │
+│  - Highlighted line configurations                   │
+└──────────────────────────────────────────────────────┘
+
+================================================================================
+8. UI/UX FLOW — Redesigned Screen Layouts
+================================================================================
+
+LEARN DETAIL PAGE (Current = Good, Small Improvements):
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  ← Back   📚 Variables & Data Types   [BEGINNER]   ♥ ⊟ ↗ ✎       │
+│           ◄ Prev  Step 3/8 [████████░░] 62%  Next ►                │
+├────────┬──────────────────────────────────────────────┬─────────────┤
+│ STEPS  │                CONTENT                      │   STUDIO    │
+│        │                                             │   (notes)   │
+│ 1. ✓   │  ## Variables & Data Types                  │             │
+│ 2. ✓   │                                             │  AI Chat    │
+│ 3. ●   │  In C++, every variable must be declared    │  + Notes    │
+│ 4. ○   │  with a data type...                        │             │
+│ 5. ○   │                                             │             │
+│ 6. ○   │  ```cpp                                     │             │
+│ 7. ○   │  int age = 25;                              │             │
+│ 8. ○   │  double pi = 3.14;                          │             │
+│        │  ```                                        │             │
+│        │                                             │             │
+│        │  > ⚠️ Key Takeaway: Always initialize       │             │
+│        │  > your variables to avoid undefined...     │             │
+│        │                                             │             │
+│        │  [Mark as Complete ✓]                        │             │
+│        │                                             │             │
+│        │  ◄ Previous                     Next ►      │             │
+├────────┴──────────────────────────────────────────────┴─────────────┤
+│  Continue Learning: ← Prev Topic   │   Next Topic →                │
+└──────────────────────────────────────────────────────────────────────┘
+
+QUIZ STEP (Redesigned with Code Support):
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  Quiz: Test Your Knowledge                    3/5 Questions         │
+│  [████████████░░░░░░░░] 60%                                        │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  What will this code print?                                         │
+│                                                                     │
+│  ┌────────────────────────────────────────────┐                     │
+│  │ #include <iostream>              [cpp]     │  ← Read-only        │
+│  │ using namespace std;                       │    CodeEditor        │
+│  │                                            │                     │
+│  │ int main() {                               │                     │
+│  │     int arr[] = {1, 2, 3, 4, 5};           │                     │
+│  │     cout << *(arr + 2) << endl;            │                     │
+│  │     return 0;                              │                     │
+│  │ }                                          │                     │
+│  └────────────────────────────────────────────┘                     │
+│                                                                     │
+│  ○ A) 1                                                             │
+│  ○ B) 2                                                             │
+│  ● C) 3                                                             │
+│  ○ D) Compiler error                                                │
+│                                                                     │
+│  [Submit Answer]                                                    │
+│                                                                     │
+│  ← Previous    Skip →                                               │
+└──────────────────────────────────────────────────────────────────────┘
+
+FLASHCARD / INTERVIEW STEP:
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  🎯 Interview Questions — C++ OOP          Card 5/15               │
+│  [████████████████░░░░] 33%                                        │
+│                                                                     │
+│  Filter: [All] [Conceptual] [Coding] [Tricky]  🔀 Shuffle          │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌────────────────────────────────────────────────────────────┐     │
+│  │                                                            │     │
+│  │   [Conceptual]  [Medium]                                   │     │
+│  │                                                            │     │
+│  │   Q: Explain the difference between compile-time           │     │
+│  │      polymorphism and runtime polymorphism in C++.         │     │
+│  │      Give examples of each.                                │     │
+│  │                                                            │     │
+│  │   ```cpp                                                   │     │
+│  │   // Which type of polymorphism is this?                   │     │
+│  │   class Shape {                                            │     │
+│  │       virtual void draw() = 0;                             │     │
+│  │   };                                                       │     │
+│  │   ```                                                      │     │
+│  │                                                            │     │
+│  │              [ 🔄 Tap or press Space to flip ]             │     │
+│  │                                                            │     │
+│  └────────────────────────────────────────────────────────────┘     │
+│                                                                     │
+│  [😫 Didn't Know]    [🤔 Partially]    [✅ Knew It]                │
+│                                                                     │
+│  ◄ Prev   ● ● ● ● ● ○ ○ ○ ○ ○ ○ ○ ○ ○ ○   Next ►                │
+│                                                                     │
+│  Stats: ✅ 3 Known  🤔 1 Partial  😫 1 Unknown                    │
+└──────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+9. PROGRESS TRACKING IMPROVEMENTS
+================================================================================
+
+CURRENT:
+  LearnProgress.quizAnswers = JSON blob → can't query
+  LearnProgress.challengeSubmissions = JSON blob → can't query
+
+NEW:
+  LearnQuizAnswer model → proper per-question tracking
+  Keep challengeSubmissions in JSON for now (simpler, less critical)
+  Add flashcard tracking: reviewed count, mastered count
+
+ANALYTICS UNLOCKED:
+  - "Which quiz questions have the lowest success rate?"
+    → Improve content for those topics
+  - "Average quiz score per subcategory"
+    → Show users their weak areas
+  - "Flashcards mastered vs total"
+    → Spaced repetition scheduling
+  - "Time spent per step type"
+    → Optimize content length
+  - "Which steps have highest drop-off?"
+    → Improve those steps
+
+================================================================================
+10. IMPLEMENTATION ROADMAP (Priority Order)
+================================================================================
+
+PHASE 1: Schema Updates (Non-Breaking)
+───────────────────────────────────────
+  1. Add INTERVIEW_QUESTIONS to LearnStepType enum
+  2. Create LearnQuizQuestion model
+  3. Create LearnQuizAnswer model
+  4. Create LearnFlashcard model
+  5. Add keyTakeaways, warnings fields to LearnStep
+  6. Add quizScorePercent, flashcardsReviewed, flashcardsMastered
+     to LearnProgress
+  7. Run prisma db:push && db:generate
+  8. Keep old quizAnswers JSON field (backward compat)
+
+PHASE 2: Server Actions
+────────────────────────
+  1. Create quiz question CRUD actions (addQuizQuestion, etc.)
+  2. Create flashcard CRUD actions
+  3. Create submitQuizAnswer action (writes to LearnQuizAnswer)
+  4. Create trackFlashcardReview action
+  5. Update AI generation to save questions as DB records
+  6. Migration: convert existing stepData quiz questions to
+     LearnQuizQuestion records (one-time script)
+
+PHASE 3: UI Components
+───────────────────────
+  1. Update Quiz rendering in step-card.tsx to read from
+     quizQuestions relation instead of stepData
+  2. Add code snippet support to Quiz component (read-only CodeEditor)
+  3. Create FlashcardDeck component (flip animation, keyboard nav)
+  4. Create FlashcardCard component (question/answer sides)
+  5. Add INTERVIEW_QUESTIONS step type handling in step-card.tsx
+  6. Update quiz-data-editor.tsx in /create to save to DB
+
+PHASE 4: Content & Polish
+──────────────────────────
+  1. Generate interview questions for existing C++ learns
+  2. Add code-based quiz questions for code-heavy topics
+  3. Add flashcard AI generation endpoint
+  4. Polish flashcard UI with animations
+  5. Add flashcard progress to user dashboard
+
+================================================================================
+11. SCREEN FLOWCHARTS (Mermaid)
+================================================================================
+
+LEARN STEP FLOW (User Journey):
+```mermaid
+flowchart TD
+    A[User opens Learn] --> B[Step 1: EXPLANATION]
+    B --> |Read content| C{Mark Complete?}
+    C --> |Yes| D[Step 2: CODE]
+    C --> |No| B
+    D --> |Study code examples| E{Mark Complete?}
+    E --> |Yes| F[Step 3: QUIZ]
+    F --> |Answer questions| G{Score >= 60%?}
+    G --> |Yes| H[Step 4: CHALLENGE]
+    G --> |No| F
+    H --> |Write code + AI eval| I{Score >= 70%?}
+    I --> |Yes| J[Step 5: INTERVIEW_QUESTIONS]
+    I --> |No| H
+    J --> |Review flashcards| K{All reviewed?}
+    K --> |Yes| L[Step 6: RESOURCE]
+    L --> M[Step 7: SUMMARY]
+    M --> N{All steps done?}
+    N --> |Yes| O[✅ Learn Complete! XP Awarded]
+    N --> |No| B
+    O --> P[Next Learn in SubCategory]
+```
+
+QUIZ FLOW (With Code Support):
+```mermaid
+flowchart TD
+    A[Start Quiz] --> B[Load Questions from DB]
+    B --> C[Display Question]
+    C --> D{Has Code Snippet?}
+    D --> |Yes| E[Show Read-Only CodeEditor]
+    D --> |No| F[Show Text-Only Question]
+    E --> G[Show Options]
+    F --> G
+    G --> H[User Selects Answer]
+    H --> I[Submit to Server]
+    I --> J[Save LearnQuizAnswer Record]
+    J --> K{Correct?}
+    K --> |Yes ✅| L[Show Explanation + Green]
+    K --> |No ❌| M[Show Explanation + Red]
+    L --> N{More Questions?}
+    M --> N
+    N --> |Yes| C
+    N --> |No| O[Show Results Summary]
+    O --> P{Score >= 60%?}
+    P --> |Yes| Q[Mark Step Complete]
+    P --> |No| R[Offer Retry]
+    R --> A
+```
+
+FLASHCARD FLOW:
+```mermaid
+flowchart TD
+    A[Start Flashcards] --> B[Load Cards from DB]
+    B --> C[Show Question Side]
+    C --> D[User reads question]
+    D --> |Space / Tap| E[Flip to Answer Side]
+    E --> F[User rates knowledge]
+    F --> G{Rating}
+    G --> |Didn't Know 😫| H[Mark for review]
+    G --> |Partially 🤔| I[Mark as partial]
+    G --> |Knew It ✅| J[Mark as mastered]
+    H --> K{More Cards?}
+    I --> K
+    J --> K
+    K --> |Yes| C
+    K --> |No| L[Show Summary]
+    L --> M[Stats: X known, Y partial, Z unknown]
+    M --> N{Review unknown?}
+    N --> |Yes| O[Filter to unknown cards only]
+    O --> C
+    N --> |No| P[Mark Step Complete]
+```
+
+COMPLETE LEARN MODULE ARCHITECTURE:
+```mermaid
+graph TB
+    subgraph "Database Layer"
+        LMC[LearnMainCategory] --> LSC[LearnSubCategory]
+        LSC --> LT[LearnTopic]
+        LT --> L[Learn]
+        L --> LS[LearnStep]
+        LS --> LCB[LearnCodeBlock]
+        LS --> LQQ[LearnQuizQuestion]
+        LS --> LFC[LearnFlashcard]
+        LQQ --> LQA[LearnQuizAnswer]
+        L --> LP[LearnProgress]
+        L --> LLB[LearnLeaderboard]
+    end
+
+    subgraph "Step Types"
+        S1[EXPLANATION] --> |Markdown + CodeBlocks| LS
+        S2[CODE] --> |CodeBlocks array| LS
+        S3[QUIZ] --> |QuizQuestion records| LS
+        S4[CHALLENGE] --> |stepData JSON| LS
+        S5[INTERVIEW_QUESTIONS] --> |Flashcard records| LS
+        S6[COMPARISON] --> |stepData JSON| LS
+        S7[RESOURCE] --> |stepData JSON| LS
+        S8[SUMMARY] --> |Markdown + tips| LS
+        S9[MOCK_INTERVIEW] --> |Voice component| LS
+        S10[PROJECT] --> |Project link| LS
+    end
+
+    subgraph "Content Flow"
+        AI[AI Generation] --> |gpt-4o-mini| Content
+        Content --> |Markdown| LS
+        Content --> |Structured JSON| LQQ
+        Content --> |Structured JSON| LFC
+        Content --> |Structured JSON| LCB
+    end
+```
+
+================================================================================
+SUMMARY OF ALL CHANGES
+================================================================================
+
+SCHEMA ADDITIONS:
+  ☐ LearnQuizQuestion model (structured quiz with code support)
+  ☐ LearnQuizAnswer model (per-user per-question tracking)
+  ☐ LearnFlashcard model (interview prep flashcards)
+  ☐ QuizQuestionType enum (SINGLE_CHOICE, MULTIPLE_CHOICE, CODE_OUTPUT, TRUE_FALSE)
+  ☐ QuizDifficulty enum (EASY, MEDIUM, HARD)
+  ☐ FlashcardDifficulty enum (EASY, MEDIUM, HARD, EXPERT)
+  ☐ INTERVIEW_QUESTIONS added to LearnStepType enum
+  ☐ keyTakeaways, warnings fields on LearnStep
+  ☐ quizScorePercent, flashcardsReviewed, flashcardsMastered on LearnProgress
+  ☐ LearnStep relations: quizQuestions, flashcards
+
+SERVER ACTION ADDITIONS:
+  ☐ Quiz question CRUD (create, update, delete, reorder)
+  ☐ Flashcard CRUD (create, update, delete, reorder)
+  ☐ submitStructuredQuizAnswer (writes LearnQuizAnswer record)
+  ☐ trackFlashcardReview (updates progress)
+  ☐ AI: generateQuizQuestionsStructured (saves to DB, not JSON)
+  ☐ AI: generateFlashcards (creates DB records)
+
+UI COMPONENT ADDITIONS/UPDATES:
+  ☐ FlashcardDeck component (new)
+  ☐ FlashcardCard component (new, flip animation)
+  ☐ Quiz component: add CodeEditor for code-based questions
+  ☐ step-card.tsx: handle INTERVIEW_QUESTIONS step type
+  ☐ quiz-data-editor.tsx: save to DB instead of JSON
+  ☐ New: flashcard-data-editor.tsx for /create page
+
+THINGS THAT DON'T CHANGE:
+  ✓ Markdown content in step.content (stays as is — good format)
+  ✓ LearnCodeBlock model (stays as is — works well)
+  ✓ Challenge data in stepData JSON (adequate for now)
+  ✓ Comparison data in stepData JSON (adequate for now)
+  ✓ Resource data in stepData JSON (adequate for now)
+  ✓ Studio panel integration (already working)
+  ✓ Text selection → Ask AI feature (already working)
+  ✓ Learn navigation (previous/next) (already working)
+
+================================================================================
+END OF DOCUMENT
+================================================================================

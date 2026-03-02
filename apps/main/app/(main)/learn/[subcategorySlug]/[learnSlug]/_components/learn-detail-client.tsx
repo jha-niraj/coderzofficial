@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     ChevronLeft, ChevronRight, Heart, Bookmark, Share2,
-    ArrowLeft, CheckCircle2, PenLine,
+    ArrowLeft, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -36,6 +36,8 @@ interface LearnStep {
     content: string;
     stepData?: unknown;
     tips?: unknown;
+    keyTakeaways?: string | null;
+    warnings?: string | null;
     codeBlocks: {
         id: string;
         order: number;
@@ -46,6 +48,30 @@ interface LearnStep {
         highlightLines: number[];
         showLineNumbers: boolean;
         isRunnable: boolean;
+    }[];
+    interviewCards?: {
+        id: string;
+        order: number;
+        category: string | null;
+        question: string;
+        answer: string;
+        codeSnippet: string | null;
+        codeLanguage: string | null;
+        difficulty: string;
+        tags: string[];
+    }[];
+    quizQuestions?: {
+        id: string;
+        order: number;
+        question: string;
+        type: string;
+        options: unknown;
+        explanation: string | null;
+        codeSnippet: string | null;
+        codeLanguage: string | null;
+        difficulty: string;
+        points: number;
+        hint: string | null;
     }[];
 }
 
@@ -138,7 +164,7 @@ export default function LearnDetailClient({
     const [isLiked, setIsLiked] = useState(initialIsLiked);
     const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
     const [likeCount, setLikeCount] = useState(learn._count.likes);
-    const [showStudio, setShowStudio] = useState(false);
+    const [showStudio, setShowStudio] = useState(true);
     const contentRef = useRef<HTMLDivElement>(null);
     const [shareOpen, setShareOpen] = useState(false);
 
@@ -335,19 +361,6 @@ export default function LearnDetailClient({
                                     </TooltipTrigger>
                                     <TooltipContent>Share</TooltipContent>
                                 </Tooltip>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant={showStudio ? "secondary" : "ghost"}
-                                            size="icon"
-                                            onClick={() => setShowStudio(!showStudio)}
-                                            className="h-8 w-8"
-                                        >
-                                            <PenLine className="w-4 h-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Studio</TooltipContent>
-                                </Tooltip>
                             </TooltipProvider>
                         </div>
                     </div>
@@ -357,7 +370,7 @@ export default function LearnDetailClient({
             {/* Main Layout */}
             <div className="flex">
                 {/* Left Sidebar - Steps Navigation */}
-                <aside className="hidden lg:block w-72 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 h-[calc(100vh-4rem)] sticky top-16">
+                <aside className="hidden lg:block w-56 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 h-[calc(100vh-3.5rem)] sticky top-14">
                     <ScrollArea className="h-full">
                         <div className="p-4">
                             <h3 className="font-semibold text-sm text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide">
@@ -396,9 +409,9 @@ export default function LearnDetailClient({
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 min-w-0 h-[calc(100vh-4rem)]">
+                <main className="w-[60%] min-w-0 h-[calc(100vh-3.5rem)]">
                     <ScrollArea className="h-full">
-                        <div ref={contentRef} className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div ref={contentRef} className="relative max-w-3xl mx-auto px-4 sm:px-6 py-8">
                             <TextSelectionToolbar
                                 containerRef={contentRef}
                                 onAskAI={handleAskAI}
@@ -534,19 +547,23 @@ export default function LearnDetailClient({
                     </ScrollArea>
                 </main>
 
-                {/* Right Side - Studio Panel (single component) */}
-                <StudioPanel
-                    isOpen={showStudio}
-                    onToggle={() => setShowStudio(!showStudio)}
-                    context={{
-                        title: `Notes: ${learn.title}`,
-                        description: `Study notes for ${learn.title} - ${learn.subCategory?.name || learn.mainCategory?.name || 'Learn'}`,
-                        source: "manual",
-                        sourceId: learn.id,
-                        topicLabel: learn.subCategory?.name || learn.title,
-                    }}
-                    isLoggedIn={isLoggedIn}
-                />
+                {/* Right Side - Studio Panel (always visible, 40% width) */}
+                <div className="hidden lg:block w-[40%] flex-shrink-0">
+                    <StudioPanel
+                        isOpen={showStudio}
+                        onToggle={() => {}}
+                        context={{
+                            title: `Notes: ${learn.title}`,
+                            description: `Study notes for ${learn.title} - ${learn.subCategory?.name || learn.mainCategory?.name || 'Learn'}`,
+                            source: "manual",
+                            sourceId: learn.id,
+                            topicLabel: learn.subCategory?.name || learn.title,
+                        }}
+                        isLoggedIn={isLoggedIn}
+                        width="100%"
+                        hideClose
+                    />
+                </div>
             </div>
 
             <ShareDialog

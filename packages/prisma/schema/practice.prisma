@@ -1,0 +1,157 @@
+// ===============================================
+// PRACTICE MODULE — DSA, System Design, Web Dev
+// ===============================================
+
+// Enums
+enum PracticeModule {
+    DSA
+    SYSTEM_DESIGN
+    WEB_FRONTEND
+    WEB_BACKEND
+}
+
+enum PracticeDifficulty {
+    EASY
+    MEDIUM
+    HARD
+}
+
+enum PracticeSessionStatus {
+    NOT_STARTED
+    IN_PROGRESS
+    COMPLETED
+}
+
+enum PracticeMode {
+    EXAM
+    ASSIST
+}
+
+// ── Problem Bank ──
+model PracticeProblem {
+    id          String              @id @default(cuid())
+    slug        String              @unique
+    title       String
+    description String              @db.Text
+    module      PracticeModule
+    category    String              // "arrays-and-hashing", "two-pointers", "rest-apis", etc.
+    difficulty  PracticeDifficulty
+    requirements String[]           // Checklist items: ["O(n) time complexity", "Handle edge cases"]
+    hints       String[]            // Progressive hints
+    starterCode String?             @db.Text   // DSA/Web: pre-filled code
+    starterCss  String?             @db.Text   // Frontend Web: starter CSS
+    testCases   Json?               // Backend Web: API test scenarios JSON
+    tags        String[]            // For search/filtering
+    sortOrder   Int                 @default(0) // Sort order within category
+    isActive    Boolean             @default(true)
+
+    // Relations
+    sessions    PracticeUserSession[]
+
+    createdAt   DateTime            @default(now())
+    updatedAt   DateTime            @updatedAt
+
+    @@index([module, category])
+    @@index([module, difficulty])
+    @@index([slug])
+}
+
+// ── User Sessions (one per user+problem+mode combo) ──
+model PracticeUserSession {
+    id          String                @id @default(cuid())
+    userId      String
+    user        User                  @relation("UserPracticeSessions", fields: [userId], references: [id], onDelete: Cascade)
+    problemId   String
+    problem     PracticeProblem       @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+    module      PracticeModule
+    mode        PracticeMode
+    status      PracticeSessionStatus @default(IN_PROGRESS)
+
+    // Work snapshot
+    code        String?               @db.Text
+    cssCode     String?               @db.Text
+    canvasData  Json?
+    language    String?               @default("javascript")
+
+    // Assessment
+    attempts    Int                   @default(0)
+    bestScore   Int                   @default(0)   // 0-100
+    lastFeedback String?              @db.Text
+
+    // Requirements tracking: { "req-0": true, "req-1": false }
+    requirementsMet Json?
+
+    // Timing
+    totalTimeSeconds Int              @default(0)
+    startedAt   DateTime              @default(now())
+    completedAt DateTime?
+
+    // Voice usage
+    voiceUsed   Boolean               @default(false)
+
+    // Chat history stored for resume capability
+    chatHistory Json?                 // Array of { role, content, timestamp }
+
+    // XP awarded for this session
+    xpAwarded   Int                   @default(0)
+
+    createdAt   DateTime              @default(now())
+    updatedAt   DateTime              @updatedAt
+
+    @@unique([userId, problemId, mode])
+    @@index([userId, module])
+    @@index([userId, problemId])
+    @@index([userId, module, status])
+}
+
+// ── Module-level aggregated progress ──
+model PracticeModuleProgress {
+    id              String          @id @default(cuid())
+    userId          String
+    user            User            @relation("UserPracticeProgress", fields: [userId], references: [id], onDelete: Cascade)
+    module          PracticeModule
+
+    totalProblems   Int             @default(0)
+    completed       Int             @default(0)
+    inProgress      Int             @default(0)
+    totalXP         Int             @default(0)
+    currentStreak   Int             @default(0)
+    longestStreak   Int             @default(0)
+    lastPracticedAt DateTime?
+
+    // Per-difficulty breakdown
+    easyCompleted   Int             @default(0)
+    mediumCompleted Int             @default(0)
+    hardCompleted   Int             @default(0)
+
+    // Average score across completed problems
+    averageScore    Int             @default(0)
+
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+
+    @@unique([userId, module])
+    @@index([userId])
+    @@index([module, totalXP(sort: Desc)])
+}
+
+// ── Leaderboard snapshot per module ──
+model PracticeLeaderboard {
+    id          String          @id @default(cuid())
+    userId      String
+    user        User            @relation("UserPracticeLeaderboard", fields: [userId], references: [id], onDelete: Cascade)
+    module      PracticeModule
+
+    rank        Int             @default(0)
+    totalXP     Int             @default(0)
+    completed   Int             @default(0)
+    averageScore Int            @default(0)
+    streak      Int             @default(0)
+
+    updatedAt   DateTime        @updatedAt
+
+    @@unique([userId, module])
+    @@index([module, totalXP(sort: Desc)])
+    @@index([module, rank])
+}

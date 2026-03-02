@@ -1,0 +1,80 @@
+"use client";
+
+import { useRef, useCallback } from "react";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+interface ExcalidrawCanvasProps {
+    initialData?: unknown;
+    onChange?: (data: { elements: unknown[]; appState: unknown }) => void;
+    darkMode?: boolean;
+}
+
+export function ExcalidrawCanvas({ initialData, onChange, darkMode = true }: ExcalidrawCanvasProps) {
+    const isInitialRef = useRef(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const excalidrawAPIRef = useRef<any>(null);
+
+    const handleChange = useCallback(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (elements: readonly any[], appState: any) => {
+            // Skip the very first onChange call from initialization
+            if (isInitialRef.current) {
+                isInitialRef.current = false;
+                return;
+            }
+            onChange?.({
+                elements: [...elements],
+                appState: {
+                    viewBackgroundColor: appState.viewBackgroundColor,
+                    currentItemStrokeColor: appState.currentItemStrokeColor,
+                    currentItemBackgroundColor: appState.currentItemBackgroundColor,
+                },
+            });
+        },
+        [onChange]
+    );
+
+    // Build initial data object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const initial = initialData as any;
+    const initialDataObj = initial?.elements
+        ? {
+              elements: initial.elements,
+              appState: {
+                  ...initial.appState,
+                  theme: darkMode ? "dark" : "light",
+              },
+          }
+        : {
+              elements: [],
+              appState: {
+                  viewBackgroundColor: darkMode ? "#1a1a2e" : "#ffffff",
+                  theme: darkMode ? "dark" : "light",
+              },
+          };
+
+    return (
+        <div className="h-full w-full" style={{ minHeight: "400px" }}>
+            <Excalidraw
+                initialData={initialDataObj}
+                onChange={handleChange}
+                theme={darkMode ? "dark" : "light"}
+                UIOptions={{
+                    canvasActions: {
+                        saveToActiveFile: false,
+                        loadScene: false,
+                        export: false,
+                        toggleTheme: false,
+                    },
+                }}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                excalidrawAPI={(api: any) => {
+                    excalidrawAPIRef.current = api;
+                }}
+            />
+        </div>
+    );
+}
+
+export default ExcalidrawCanvas;

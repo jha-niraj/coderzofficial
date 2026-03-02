@@ -144,6 +144,19 @@ model LearnStep {
     // For CODE type - keep code blocks as separate model for complex code
     codeBlocks LearnCodeBlock[] @relation("StepCodeBlocks")
 
+    // Quiz questions (structured - replaces stepData quiz JSON)
+    quizQuestions LearnQuizQuestion[] @relation("StepQuizQuestions")
+
+    // Flashcards for INTERVIEW_QUESTIONS step type
+    interviewCards LearnInterviewCard[] @relation("StepInterviewCards")
+
+    // Challenge submissions
+    challengeSubmissions LearnChallengeSubmission[] @relation("StepChallengeSubmissions")
+
+    // Key Takeaways & Warnings (structured metadata)
+    keyTakeaways String[]
+    warnings     String[]
+
     // Tips/Notes for the step (markdown)
     tips String[]
 
@@ -307,11 +320,18 @@ model LearnProgress {
     totalSteps      Int   @default(0)
     progressPercent Float @default(0)
 
-    // Quiz Answers (for quiz steps)
+    // Quiz Answers (for quiz steps) - kept for backward compat
     quizAnswers Json? // {stepId: {selectedOption, isCorrect}}
 
     // Challenge Submissions
     challengeSubmissions Json? // {stepId: {code, passed}}
+
+    // Quiz & Interview Card & Challenge tracking
+    quizScorePercent          Float @default(0)
+    interviewCardsReviewed    Int   @default(0)
+    interviewCardsMastered    Int   @default(0)
+    challengeBestScore        Int   @default(0) // best score out of 100
+    challengeAttempts         Int   @default(0)
 
     // Status
     isCompleted Boolean   @default(false)
@@ -437,7 +457,6 @@ model LearnSubCategory {
     // Timestamps
     createdAt         DateTime           @default(now())
     updatedAt         DateTime           @updatedAt
-    learnLeaderboards LearnLeaderboard[]
 
     @@index([slug])
     @@index([mainCategoryId])
@@ -472,6 +491,142 @@ model LearnTopic {
     @@index([subCategoryId])
     @@index([order])
     @@map("LearnTopic")
+}
+
+// ===============================================
+// QUIZ QUESTION MODEL (Structured Quiz Data)
+// ===============================================
+
+model LearnQuizQuestion {
+    id String @id @default(cuid())
+
+    stepId String
+    step   LearnStep @relation("StepQuizQuestions", fields: [stepId], references: [id], onDelete: Cascade)
+
+    order       Int              @default(0)
+    question    String           @db.Text
+    type        QuizQuestionType @default(SINGLE_CHOICE)
+
+    // Options stored as structured JSON [{id, text, isCorrect}]
+    options Json
+
+    // Explanation shown after answering
+    explanation String? @db.Text
+
+    // Optional code snippet (displayed in read-only CodeEditor)
+    codeSnippet  String? @db.Text
+    codeLanguage String? @default("go")
+
+    // Difficulty for analytics
+    difficulty QuizDifficulty @default(MEDIUM)
+
+    // Points awarded
+    points Int @default(10)
+
+    // Hint
+    hint String? @db.Text
+
+    createdAt DateTime @default(now())
+
+    // Track individual answers
+    answers LearnQuizAnswer[] @relation("QuizQuestionAnswers")
+
+    @@index([stepId])
+    @@index([order])
+    @@map("LearnQuizQuestion")
+}
+
+model LearnQuizAnswer {
+    id String @id @default(cuid())
+
+    questionId String
+    question   LearnQuizQuestion @relation("QuizQuestionAnswers", fields: [questionId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User @relation("LearnQuizAnswers", fields: [userId], references: [id], onDelete: Cascade)
+
+    selectedOptions String[]
+    isCorrect       Boolean
+    attemptNumber   Int      @default(1)
+    timeTaken       Int? // seconds to answer
+
+    answeredAt DateTime @default(now())
+
+    @@index([questionId])
+    @@index([userId])
+    @@index([questionId, userId])
+    @@map("LearnQuizAnswer")
+}
+
+// ===============================================
+// INTERVIEW CARD MODEL (Interview Questions)
+// ===============================================
+
+model LearnInterviewCard {
+    id String @id @default(cuid())
+
+    stepId String
+    step   LearnStep @relation("StepInterviewCards", fields: [stepId], references: [id], onDelete: Cascade)
+
+    order    Int     @default(0)
+    category String? // e.g., "Conceptual", "Coding", "Behavioral", "Tricky"
+
+    // Front of the card (the question)
+    question String @db.Text
+
+    // Back of the card (the answer)
+    answer String @db.Text
+
+    // Optional code snippet on the question side
+    codeSnippet  String? @db.Text
+    codeLanguage String? @default("go")
+
+    // Difficulty tag
+    difficulty InterviewCardDifficulty @default(MEDIUM)
+
+    // Tags for filtering
+    tags String[]
+
+    createdAt DateTime @default(now())
+
+    @@index([stepId])
+    @@index([order])
+    @@map("LearnInterviewCard")
+}
+
+// ===============================================
+// CHALLENGE SUBMISSION MODEL (Structured)
+// ===============================================
+
+model LearnChallengeSubmission {
+    id String @id @default(cuid())
+
+    stepId String
+    step   LearnStep @relation("StepChallengeSubmissions", fields: [stepId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User @relation("LearnChallengeSubmissions", fields: [userId], references: [id], onDelete: Cascade)
+
+    // Submitted code
+    code     String @db.Text
+    language String @default("go")
+
+    // AI Evaluation results
+    score       Int     @default(0) // 0-100
+    isCorrect   Boolean @default(false)
+    feedback    String? @db.Text // AI markdown feedback
+    suggestions String[] // AI suggestions array
+
+    // Attempt tracking
+    attemptNumber Int @default(1)
+
+    // Timestamps
+    submittedAt DateTime @default(now())
+
+    @@index([stepId])
+    @@index([userId])
+    @@index([stepId, userId])
+    @@map("LearnChallengeSubmission")
 }
 
 // ===============================================
@@ -512,8 +667,6 @@ model LearnLeaderboard {
     // Timestamps
     createdAt          DateTime          @default(now())
     updatedAt          DateTime          @updatedAt
-    learnSubCategory   LearnSubCategory? @relation(fields: [learnSubCategoryId], references: [id])
-    learnSubCategoryId String?
 
     @@unique([subCategoryId, userId])
     @@index([subCategoryId])

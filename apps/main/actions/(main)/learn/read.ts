@@ -155,6 +155,12 @@ export async function getLearnBySlug(slug: string) {
                         codeBlocks: {
                             orderBy: { order: "asc" },
                         },
+                        interviewCards: {
+                            orderBy: { order: "asc" },
+                        },
+                        quizQuestions: {
+                            orderBy: { order: "asc" },
+                        },
                     },
                 },
                 mainCategory: {

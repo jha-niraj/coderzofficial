@@ -57,9 +57,11 @@ const Layout = ({ children }: LayoutProps) => {
     // Define paths where sidebar and navbar should be hidden (full-screen mode)
     const fullScreenPaths = [
         '/ai/jobinterviewassistant/[slug]/codingquestions',
-        // Add more paths here as needed
-        // '/mock/[slug]/practice',
-        // '/assessments/[slug]/exam',
+        '/practice/dsa/[slug]',
+        '/practice/system-design/[slug]',
+        '/practice/web-frontend/[slug]',
+        '/practice/web-backend/[slug]',
+        '/learn/[subcategorySlug]/[learnSlug]',
     ];
 
     // Check if current path should be in full-screen mode

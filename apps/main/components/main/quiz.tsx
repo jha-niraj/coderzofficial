@@ -46,6 +46,7 @@ export interface QuizQuestion {
     difficulty?: "EASY" | "MEDIUM" | "INTERMEDIATE" | "HARD";
     points?: number;
     codeSnippet?: string;
+    codeLanguage?: string;
     correctAnswer?: number; // For index-based answer
 }
 
@@ -581,10 +582,17 @@ export default function Quiz({
                 </div>
                 {
                     currentQuestion.codeSnippet && (
-                        <CodeEditor
-                            placeholder={currentQuestion?.codeSnippet}
-                            readOnly={true}
-                        />
+                        <div className="mb-4 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                            <CodeEditor
+                                code={currentQuestion.codeSnippet}
+                                language={currentQuestion.codeLanguage || "javascript"}
+                                readOnly={true}
+                                showLanguageSelector={false}
+                                showCopyButton={true}
+                                showRunButton={false}
+                                height="auto"
+                            />
+                        </div>
                     )
                 }
                 <AnimatePresence>

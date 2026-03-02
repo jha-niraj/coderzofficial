@@ -3,7 +3,7 @@
  * 
  * This utility provides speech-to-text functionality using ElevenLabs API.
  * It can handle audio files up to 1GB and supports all major audio/video formats.
- */
+*/
 
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 

@@ -88,7 +88,6 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             setTimeout(() => {
                 router.push(`/mock/voice/results/${resolvedParams.sessionId}`)
             }, 1500)
-
         } catch (error) {
             console.error('Error processing conversation:', error)
             setProcessingStatus('error')

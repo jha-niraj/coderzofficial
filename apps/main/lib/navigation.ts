@@ -2,7 +2,8 @@ import {
     Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Video, Brain, Cable, LayoutDashboard, Heading,
     Home, LucideWandSparkles, GraduationCap, Rocket, Activity,
-    Share2, Target, FileText, BookOpen, StickyNote
+    Share2, Target, FileText, BookOpen, StickyNote, Code2,
+    Network, Globe, Server
 } from "lucide-react"
 
 export type LucideIcon = typeof LayoutDashboard
@@ -71,6 +72,34 @@ export const mainNavigation: NavigationConfig = {
             path: "pathfinder",
             icon: Target,
             status: "active"
+        },
+        {
+            name: "Practice",
+            path: "practice",
+            icon: Code2,
+            status: "active",
+            children: [
+                {
+                    name: 'DSA',
+                    path: 'practice/dsa',
+                    icon: Code2
+                },
+                {
+                    name: 'System Design',
+                    path: 'practice/system-design',
+                    icon: Network
+                },
+                {
+                    name: 'Web Frontend',
+                    path: 'practice/web-frontend',
+                    icon: Globe
+                },
+                {
+                    name: 'Web Backend',
+                    path: 'practice/web-backend',
+                    icon: Server
+                }
+            ]
         },
         {
             name: "Communities",
