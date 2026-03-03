@@ -253,7 +253,6 @@ export default function LearnDetailClient({
 
     return (
         <div className="relative">
-            {/* Header */}
             <div className="sticky top-0 z-40 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800">
                 <div className="max-w-full mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between h-14">
@@ -277,7 +276,6 @@ export default function LearnDetailClient({
                                 </Badge>
                             </div>
                         </div>
-                        {/* Step navigation in header */}
                         <div className="hidden md:flex items-center gap-2">
                             <Button
                                 variant="outline"
@@ -295,32 +293,33 @@ export default function LearnDetailClient({
                                 </span>
                                 <Progress value={progressPercent} className="w-24 h-2" />
                             </div>
-                            {currentStepIndex < totalSteps - 1 ? (
-                                <Button
-                                    size="sm"
-                                    onClick={() => goToStep(currentStepIndex + 1)}
-                                    className="h-8"
-                                >
-                                    <span className="hidden lg:inline mr-1">Next</span>
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="sm"
-                                    onClick={() => {
-                                        if (currentStep) {
-                                            markStepComplete(currentStep.order);
-                                        }
-                                        toast.success("🎉 Learn completed!");
-                                    }}
-                                    className="h-8 bg-green-600 hover:bg-green-700"
-                                >
-                                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                                    Complete
-                                </Button>
-                            )}
+                            {
+                                currentStepIndex < totalSteps - 1 ? (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => goToStep(currentStepIndex + 1)}
+                                        className="h-8"
+                                    >
+                                        <span className="hidden lg:inline mr-1">Next</span>
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            if (currentStep) {
+                                                markStepComplete(currentStep.order);
+                                            }
+                                            toast.success("🎉 Learn completed!");
+                                        }}
+                                        className="h-8 bg-green-600 hover:bg-green-700"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4 mr-1" />
+                                        Complete
+                                    </Button>
+                                )
+                            }
                         </div>
-                        {/* Action buttons */}
                         <div className="flex items-center gap-1">
                             <TooltipProvider>
                                 <Tooltip>
@@ -366,10 +365,7 @@ export default function LearnDetailClient({
                     </div>
                 </div>
             </div>
-
-            {/* Main Layout */}
             <div className="flex">
-                {/* Left Sidebar - Steps Navigation */}
                 <aside className="hidden lg:block w-56 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 h-[calc(100vh-3.5rem)] sticky top-14">
                     <ScrollArea className="h-full">
                         <div className="p-4">
@@ -377,38 +373,40 @@ export default function LearnDetailClient({
                                 STEPS
                             </h3>
                             <div className="space-y-1">
-                                {learn.steps.map((step, index) => (
-                                    <button
-                                        key={step.id}
-                                        onClick={() => goToStep(index)}
-                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${currentStepIndex === index
-                                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                            }`}
-                                    >
-                                        <div
-                                            className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${completedSteps.includes(step.order)
-                                                ? "bg-green-500 text-white"
-                                                : currentStepIndex === index
-                                                    ? "bg-blue-500 text-white"
-                                                    : "bg-neutral-200 dark:bg-neutral-700 text-muted-foreground"
+                                {
+                                    learn.steps.map((step, index) => (
+                                        <button
+                                            key={step.id}
+                                            onClick={() => goToStep(index)}
+                                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${currentStepIndex === index
+                                                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                                 }`}
                                         >
-                                            {completedSteps.includes(step.order) ? (
-                                                <CheckCircle2 className="w-4 h-4" />
-                                            ) : (
-                                                index + 1
-                                            )}
-                                        </div>
-                                        <span className="text-sm truncate">{step.title}</span>
-                                    </button>
-                                ))}
+                                            <div
+                                                className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${completedSteps.includes(step.order)
+                                                    ? "bg-green-500 text-white"
+                                                    : currentStepIndex === index
+                                                        ? "bg-blue-500 text-white"
+                                                        : "bg-neutral-200 dark:bg-neutral-700 text-muted-foreground"
+                                                    }`}
+                                            >
+                                                {
+                                                    completedSteps.includes(step.order) ? (
+                                                        <CheckCircle2 className="w-4 h-4" />
+                                                    ) : (
+                                                        index + 1
+                                                    )
+                                                }
+                                            </div>
+                                            <span className="text-sm truncate">{step.title}</span>
+                                        </button>
+                                    ))
+                                }
                             </div>
                         </div>
                     </ScrollArea>
                 </aside>
-
-                {/* Main Content */}
                 <main className="w-[60%] min-w-0 h-[calc(100vh-3.5rem)]">
                     <ScrollArea className="h-full">
                         <div ref={contentRef} className="relative max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -417,7 +415,6 @@ export default function LearnDetailClient({
                                 onAskAI={handleAskAI}
                                 onCopy={handleCopyText}
                             />
-                            {/* Mobile progress */}
                             <div className="md:hidden mb-4">
                                 <div className="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400 mb-2">
                                     <span>Step {currentStepIndex + 1} of {totalSteps}</span>
@@ -425,31 +422,31 @@ export default function LearnDetailClient({
                                 </div>
                                 <Progress value={progressPercent} className="h-2" />
                             </div>
-                            {/* Step Content */}
                             <AnimatePresence mode="wait">
-                                {currentStep && (
-                                    <motion.div
-                                        key={currentStep.id}
-                                        initial={{ opacity: 0, x: 50 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -50 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <StepCard
-                                            step={currentStep}
-                                            stepNumber={currentStepIndex + 1}
-                                            totalSteps={totalSteps}
-                                            isCompleted={completedSteps.includes(currentStep.order)}
-                                            onComplete={() => markStepComplete(currentStep.order)}
-                                            LearnId={learn.id}
-                                            isLoggedIn={isLoggedIn}
-                                            allSteps={learn.steps}
-                                            LearnTitle={learn.title}
-                                        />
-                                    </motion.div>
-                                )}
+                                {
+                                    currentStep && (
+                                        <motion.div
+                                            key={currentStep.id}
+                                            initial={{ opacity: 0, x: 50 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -50 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <StepCard
+                                                step={currentStep}
+                                                stepNumber={currentStepIndex + 1}
+                                                totalSteps={totalSteps}
+                                                isCompleted={completedSteps.includes(currentStep.order)}
+                                                onComplete={() => markStepComplete(currentStep.order)}
+                                                LearnId={learn.id}
+                                                isLoggedIn={isLoggedIn}
+                                                allSteps={learn.steps}
+                                                LearnTitle={learn.title}
+                                            />
+                                        </motion.div>
+                                    )
+                                }
                             </AnimatePresence>
-                            {/* Step Navigation */}
                             <div className="flex items-center justify-between mt-6">
                                 <Button
                                     variant="outline"
@@ -460,98 +457,105 @@ export default function LearnDetailClient({
                                     Previous
                                 </Button>
                                 <div className="hidden sm:flex items-center gap-1">
-                                    {learn.steps.map((step, index) => (
-                                        <button
-                                            key={step.id}
-                                            onClick={() => goToStep(index)}
-                                            className={`w-2.5 h-2.5 rounded-full transition-all ${currentStepIndex === index
-                                                ? "w-6 bg-blue-500"
-                                                : completedSteps.includes(step.order)
-                                                    ? "bg-green-500"
-                                                    : "bg-neutral-300 dark:bg-neutral-600"
-                                                }`}
-                                        />
-                                    ))}
+                                    {
+                                        learn.steps.map((step, index) => (
+                                            <button
+                                                key={step.id}
+                                                onClick={() => goToStep(index)}
+                                                className={`w-2.5 h-2.5 rounded-full transition-all ${currentStepIndex === index
+                                                    ? "w-6 bg-blue-500"
+                                                    : completedSteps.includes(step.order)
+                                                        ? "bg-green-500"
+                                                        : "bg-neutral-300 dark:bg-neutral-600"
+                                                    }`}
+                                            />
+                                        ))
+                                    }
                                 </div>
-                                {currentStepIndex < totalSteps - 1 ? (
-                                    <Button onClick={() => goToStep(currentStepIndex + 1)}>
-                                        Next
-                                        <ChevronRight className="w-4 h-4 ml-1" />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        onClick={() => {
-                                            if (currentStep) {
-                                                markStepComplete(currentStep.order);
-                                            }
-                                            toast.success("🎉 Congratulations! You completed this Learn!");
-                                        }}
-                                        className="bg-green-600 hover:bg-green-700"
-                                    >
-                                        <CheckCircle2 className="w-4 h-4 mr-1" />
-                                        Complete
-                                    </Button>
-                                )}
+                                {
+                                    currentStepIndex < totalSteps - 1 ? (
+                                        <Button onClick={() => goToStep(currentStepIndex + 1)}>
+                                            Next
+                                            <ChevronRight className="w-4 h-4 ml-1" />
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            onClick={() => {
+                                                if (currentStep) {
+                                                    markStepComplete(currentStep.order);
+                                                }
+                                                toast.success("🎉 Congratulations! You completed this Learn!");
+                                            }}
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                                            Complete
+                                        </Button>
+                                    )
+                                }
                             </div>
 
-                            {/* Next / Previous Topic Navigation */}
-                            {(previousLearn || nextLearn || isAllStepsCompleted) && (
-                                <div className="mt-10 pt-8 border-t border-neutral-200 dark:border-neutral-800">
-                                    <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide uppercase">
-                                        Continue Learning
-                                    </h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {previousLearn && (
-                                            <Link
-                                                href={`/learn/${previousLearn.subCategorySlug || subcategorySlug}/${previousLearn.slug}`}
-                                                className="group flex items-center gap-3 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all bg-white dark:bg-neutral-900/50"
-                                            >
-                                                <ChevronLeft className="w-5 h-5 text-neutral-400 group-hover:text-blue-500 transition-colors shrink-0" />
-                                                <div className="min-w-0">
-                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">Previous Topic</p>
-                                                    <p className="text-sm font-medium text-neutral-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                        {previousLearn.iconEmoji || "📖"} {previousLearn.title}
-                                                    </p>
-                                                </div>
-                                            </Link>
-                                        )}
-                                        {nextLearn && (
-                                            <Link
-                                                href={`/learn/${nextLearn.subCategorySlug || subcategorySlug}/${nextLearn.slug}`}
-                                                className={`group flex items-center gap-3 p-4 rounded-xl border transition-all ${isAllStepsCompleted
-                                                    ? "border-green-300 dark:border-green-700 hover:border-green-400 dark:hover:border-green-600 bg-green-50/50 dark:bg-green-950/10 hover:shadow-md hover:shadow-green-100 dark:hover:shadow-green-900/20"
-                                                    : "border-neutral-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-700 bg-white dark:bg-neutral-900/50 hover:shadow-md"
-                                                    } ${!previousLearn ? 'sm:col-start-2' : ''}`}
-                                            >
-                                                <div className="flex-1 min-w-0 text-right">
-                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">
-                                                        {isAllStepsCompleted ? "🎉 Next Topic" : "Next Topic"}
-                                                    </p>
-                                                    <p className={`text-sm font-medium truncate transition-colors ${isAllStepsCompleted
-                                                        ? "text-green-700 dark:text-green-400 group-hover:text-green-600"
-                                                        : "text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"
-                                                        }`}>
-                                                        {nextLearn.iconEmoji || "📖"} {nextLearn.title}
-                                                    </p>
-                                                </div>
-                                                <ChevronRight className={`w-5 h-5 shrink-0 transition-colors ${isAllStepsCompleted
-                                                    ? "text-green-400 group-hover:text-green-500"
-                                                    : "text-neutral-400 group-hover:text-blue-500"
-                                                    }`} />
-                                            </Link>
-                                        )}
+                            {
+                                (previousLearn || nextLearn || isAllStepsCompleted) && (
+                                    <div className="mt-10 pt-8 border-t border-neutral-200 dark:border-neutral-800">
+                                        <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide uppercase">
+                                            Continue Learning
+                                        </h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {
+                                                previousLearn && (
+                                                    <Link
+                                                        href={`/learn/${previousLearn.subCategorySlug || subcategorySlug}/${previousLearn.slug}`}
+                                                        className="group flex items-center gap-3 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all bg-white dark:bg-neutral-900/50"
+                                                    >
+                                                        <ChevronLeft className="w-5 h-5 text-neutral-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">Previous Topic</p>
+                                                            <p className="text-sm font-medium text-neutral-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                {previousLearn.iconEmoji || "📖"} {previousLearn.title}
+                                                            </p>
+                                                        </div>
+                                                    </Link>
+                                                )
+                                            }
+                                            {
+                                                nextLearn && (
+                                                    <Link
+                                                        href={`/learn/${nextLearn.subCategorySlug || subcategorySlug}/${nextLearn.slug}`}
+                                                        className={`group flex items-center gap-3 p-4 rounded-xl border transition-all ${isAllStepsCompleted
+                                                            ? "border-green-300 dark:border-green-700 hover:border-green-400 dark:hover:border-green-600 bg-green-50/50 dark:bg-green-950/10 hover:shadow-md hover:shadow-green-100 dark:hover:shadow-green-900/20"
+                                                            : "border-neutral-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-700 bg-white dark:bg-neutral-900/50 hover:shadow-md"
+                                                            } ${!previousLearn ? 'sm:col-start-2' : ''}`}
+                                                    >
+                                                        <div className="flex-1 min-w-0 text-right">
+                                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">
+                                                                {isAllStepsCompleted ? "🎉 Next Topic" : "Next Topic"}
+                                                            </p>
+                                                            <p className={`text-sm font-medium truncate transition-colors ${isAllStepsCompleted
+                                                                ? "text-green-700 dark:text-green-400 group-hover:text-green-600"
+                                                                : "text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                                                                }`}>
+                                                                {nextLearn.iconEmoji || "📖"} {nextLearn.title}
+                                                            </p>
+                                                        </div>
+                                                        <ChevronRight className={`w-5 h-5 shrink-0 transition-colors ${isAllStepsCompleted
+                                                            ? "text-green-400 group-hover:text-green-500"
+                                                            : "text-neutral-400 group-hover:text-blue-500"
+                                                            }`} />
+                                                    </Link>
+                                                )
+                                            }
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )
+                            }
                         </div>
                     </ScrollArea>
                 </main>
-
-                {/* Right Side - Studio Panel (always visible, 40% width) */}
                 <div className="hidden lg:block w-[40%] flex-shrink-0">
                     <StudioPanel
                         isOpen={showStudio}
-                        onToggle={() => {}}
+                        onToggle={() => { }}
                         context={{
                             title: `Notes: ${learn.title}`,
                             description: `Study notes for ${learn.title} - ${learn.subCategory?.name || learn.mainCategory?.name || 'Learn'}`,

@@ -141,3 +141,37 @@ model CoverLetter {
 
     @@index([userId])
 }
+
+// ===============================================
+// RESUME TEMPLATE SYSTEM
+// ===============================================
+
+model ResumeTemplate {
+    id              String   @id @default(cuid())
+    slug            String   @unique
+    name            String
+    description     String   @db.Text
+    previewImageUrl String // Demo/preview image URL
+    sectionOrder    Json // Ordered array of sections e.g. ["header","experience","education","skills","projects"]
+    isDefault       Boolean  @default(false)
+    creditsCost     Int      @default(10)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    generations ResumeTemplateGeneration[]
+}
+
+model ResumeTemplateGeneration {
+    id               String   @id @default(cuid())
+    userId           String
+    templateId       String
+    generatedContent Json? // The generated resume content with the template applied
+    createdAt        DateTime @default(now())
+
+    user     User           @relation("UserResumeTemplateGenerations", fields: [userId], references: [id], onDelete: Cascade)
+    template ResumeTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([templateId])
+    @@index([userId, templateId])
+}

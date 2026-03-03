@@ -64,7 +64,7 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
             setStep(3)
         } else {
             toast.error("Cover letter not found")
-            router.push("/ai/coverletter")
+            router.push("/ai/resume/cover-letter")
         }
     }, [router])
 
@@ -89,7 +89,7 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
     }
 
     const resetFlow = () => {
-        router.push("/ai/coverletter")
+        router.push("/ai/resume/cover-letter")
         setStep(1)
         setJobUrl("")
         setJobDescription("")
@@ -156,7 +156,7 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
             createdAt: new Date()
         }, ...prev])
 
-        router.push(`/ai/coverletter?id=${res.coverLetterId}`)
+        router.push(`/resume/cover-letter?id=${res.coverLetterId}`)
     }
 
     return (
@@ -310,7 +310,7 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
                         {history.map((h: CoverLetterHistoryItem) => (
                             <div
                                 key={h.id}
-                                onClick={() => router.push(`/ai/coverletter?id=${h.id}`)}
+                                onClick={() => router.push(`/resume/cover-letter?id=${h.id}`)}
                                 className={`p-3 border rounded-lg cursor-pointer transition flex justify-between items-start ${selectedId === h.id ? 'bg-primary/5 border-primary' : 'hover:bg-accent'}`}
                             >
                                 <div className="space-y-1 overflow-hidden">

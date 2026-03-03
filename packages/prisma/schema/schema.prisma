@@ -685,6 +685,11 @@ model User {
     practiceModuleProgress   PracticeModuleProgress[]  @relation("UserPracticeProgress")
     practiceLeaderboard      PracticeLeaderboard[]     @relation("UserPracticeLeaderboard")
 
+    // ===============================================
+    // RESUME TEMPLATE RELATIONS
+    // ===============================================
+    resumeTemplateGenerations ResumeTemplateGeneration[] @relation("UserResumeTemplateGenerations")
+
     @@index([username])
     @@index([email])
 }

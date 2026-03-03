@@ -36,7 +36,7 @@ interface ProfileStrengthSheetProps {
 
 const defaultImage = "https://tse4.mm.bing.net/th?id=OIP.-BS8Y2nH1k93GJiitUVBCAHaHa&pid=Api&P=0";
 
-const RESUME_CREATOR_LINK = "/ai/resumecreator";
+const RESUME_CREATOR_LINK = "/ai/resume/create";
 
 export function ProfileStrengthSheet({
 	open,

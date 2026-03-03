@@ -1,7 +1,5 @@
-"use client"
-
-import { ResumeCreatorTabs } from "./_components/resume-creator-tabs"
+import { redirect } from "next/navigation"
 
 export default function ResumeCreatorPage() {
-	return <ResumeCreatorTabs />
+    redirect("/ai/resume/create")
 }

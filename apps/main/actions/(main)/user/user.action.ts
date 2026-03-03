@@ -223,7 +223,7 @@ export async function updateUserSkills(skills: UserSkill[]) {
     }
 
     revalidatePath('/profile')
-    revalidatePath('/ai/resumecreator')
+    revalidatePath('/ai/resume/create')
 
     return updatedUser.skills.map(skill => ({
         id: skill.id,
@@ -253,7 +253,7 @@ export async function deleteSkill(id: string) {
     }
     await prisma.skills.delete({ where: { id } })
     revalidatePath("/profile")
-    revalidatePath("/ai/resumecreator")
+    revalidatePath("/ai/resume/create")
 }
 
 export async function updateUserCertifications(certifications: UserCertification[]) {

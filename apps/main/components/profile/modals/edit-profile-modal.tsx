@@ -336,7 +336,7 @@ export function EditProfileModal({
                             <div className="p-4 rounded-lg bg-muted/50 border border-dashed">
                                 <p className="text-sm text-muted-foreground">
                                     To add work experience, education, skills, or social links, use the{" "}
-                                    <Link href="/ai/resumecreator" className="text-primary hover:underline font-medium">
+                                    <Link href="/ai/resume/create" className="text-primary hover:underline font-medium">
                                         Resume Creator
                                     </Link>
                                     .

@@ -379,7 +379,7 @@ export default function ProfilePage() {
                         {...commonProps}
                         currentUserId={(displayProfile ?? profileData)?.id}
                         onEndorseSkill={handleEndorseSkill}
-                        onAddSkill={() => router.push("/ai/resumecreator")}
+                        onAddSkill={() => router.push("/ai/resume/create")}
                     />
                 );
             case "work_experience":

@@ -274,7 +274,10 @@ Rules:
 3. If they ask for the answer directly, redirect them with a guiding question.
 4. Acknowledge what they've done well before pointing out issues.
 5. Keep responses concise (2-4 sentences usually).
-6. Use code snippets only for small illustrative examples, never full solutions.`;
+6. Use code snippets only for small illustrative examples, never full solutions.
+7. When the student asks for a flowchart, diagram, or visual explanation, generate it using a mermaid code block (\`\`\`mermaid). Use graph TD for flowcharts, sequenceDiagram for sequence flows, classDiagram for class relationships, etc.
+8. Format numbered lists properly using markdown (1. item, 2. item). Use bullet points (- item) for unordered lists. Always add a blank line before and after lists.
+9. When analyzing code the student sends to "run", walk through the logic step by step: identify potential bugs, predict the output, and suggest improvements. Do NOT just give the corrected code.`;
 
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
             { role: "system", content: systemMessage },
@@ -286,7 +289,7 @@ Rules:
             model: "gpt-4o",
             messages,
             temperature: 0.7,
-            max_tokens: 500,
+            max_tokens: 1000,
         });
 
         const response = completion.choices[0]?.message?.content;

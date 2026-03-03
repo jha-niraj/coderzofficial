@@ -117,7 +117,7 @@ export function PublicProfileClient({
                         }}
                         onAddSkill={
                             isOwnProfile
-                                ? () => router.push("/ai/resumecreator")
+                                ? () => router.push("/ai/resume/create")
                                 : undefined
                         }
                     />

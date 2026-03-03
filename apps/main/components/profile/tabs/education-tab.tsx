@@ -40,7 +40,7 @@ export function EducationTab({ user, isOwnProfile }: EducationTabProps) {
                             </CardTitle>
                             {isOwnProfile && (
                                 <Button variant="ghost" size="sm" asChild>
-                                    <Link href="/ai/resumecreator">Edit in Resume Creator</Link>
+                                    <Link href="/ai/resume/create">Edit in Resume Creator</Link>
                                 </Button>
                             )}
                         </div>
@@ -82,7 +82,7 @@ export function EducationTab({ user, isOwnProfile }: EducationTabProps) {
                                 )}
                                 {isOwnProfile && (
                                     <Button variant="outline" size="sm" className="mt-3" asChild>
-                                        <Link href="/ai/resumecreator">Add education in Resume Creator</Link>
+                                        <Link href="/ai/resume/create">Add education in Resume Creator</Link>
                                     </Button>
                                 )}
                             </div>

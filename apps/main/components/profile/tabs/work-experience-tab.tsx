@@ -156,7 +156,7 @@ export function WorkExperienceTab({
                                 {
                                     isOwnProfile && (
                                         <Button variant="outline" size="sm" className="gap-2" asChild>
-                                            <Link href="/ai/resumecreator">
+                                            <Link href="/ai/resume/create">
                                                 <Pencil className="w-4 h-4" />
                                                 Edit in Resume Creator
                                             </Link>
@@ -208,7 +208,7 @@ export function WorkExperienceTab({
                                     </Link>
                                 </Button>
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href="/ai/resumecreator">
+                                    <Link href="/ai/resume/create">
                                         <Pencil className="w-4 h-4 mr-1" />
                                         Edit
                                     </Link>

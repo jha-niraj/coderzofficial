@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
     ArrowLeft, Clock, Send, Loader2, CheckCircle2, AlertCircle, Play,
@@ -31,6 +31,8 @@ import type {
 import { getPathFromModule } from "@/types/practice";
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { useScribe } from "@elevenlabs/react";
+import { TextSelectionToolbar } from "@/app/(main)/learn/[subcategorySlug]/[learnSlug]/_components/text-selection-toolbar";
+import toast from "@repo/ui/components/ui/sonner";
 
 const ExcalidrawCanvas = dynamic(
     () => import("./excalidraw-canvas"),
@@ -56,10 +58,6 @@ const DIFFICULTY_COLORS = {
 
 const DSA_LANGUAGES = ["javascript", "typescript", "python", "java", "cpp"];
 
-// ─────────────────────────────────────────────
-// MAIN COMPONENT
-// ─────────────────────────────────────────────
-
 interface PracticeWorkspaceProps {
     problem: PracticeProblemDetail;
     session: PracticeSessionData | null;
@@ -72,6 +70,8 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
     const store = usePracticeStore();
     const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const problemPanelRef = useRef<HTMLDivElement>(null);
+    const sendToChatRef = useRef<((message: string) => void) | null>(null);
 
     // Initialize store on mount
     useEffect(() => {
@@ -153,7 +153,7 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
         <div className="h-screen flex flex-col bg-neutral-950 text-white">
             <header className="h-12 border-b border-neutral-800 flex items-center justify-between px-4 flex-shrink-0 bg-neutral-950/90 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
-                    <button onClick={handleBack} className="text-neutral-400 hover:text-white transition-colors">
+                    <button onClick={handleBack} className="cursor-pointer text-neutral-400 hover:text-white transition-colors">
                         <ArrowLeft className="h-4 w-4" />
                     </button>
                     <div className="h-4 w-px bg-neutral-700" />
@@ -184,19 +184,13 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
                                 size="sm"
                                 variant="outline"
                                 className="text-xs h-8 border-neutral-700 hover:bg-neutral-800"
-                                onClick={async () => {
-                                    // Trigger a run (for testing) — just saves progress for now
-                                    store.setSaving(true);
-                                    await saveSessionProgress(session.id, {
-                                        code: store.code,
-                                        cssCode: store.cssCode,
-                                        canvasData: store.canvasData as object,
-                                        language: store.language,
-                                        chatHistory: store.chatHistory,
-                                        totalTimeSeconds: store.elapsedSeconds,
-                                    });
-                                    store.markClean();
-                                    store.setSaving(false);
+                                onClick={() => {
+                                    if (!store.code.trim()) {
+                                        toast.error("Write some code first!");
+                                        return;
+                                    }
+                                    const runMessage = `🔄 Run my code:\n\`\`\`${store.language}\n${store.code}\n\`\`\`\nPlease analyze this code step by step: check for errors, predict the output, and suggest improvements.`;
+                                    sendToChatRef.current?.(runMessage);
                                 }}
                             >
                                 <Play className="h-3.5 w-3.5 mr-1" />
@@ -207,11 +201,26 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
                     <SubmitButton problem={problem} session={session} store={store} mode={mode} />
                 </div>
             </header>
-            <div className="flex-1 flex overflow-hidden">
-                <div className="w-[420px] min-w-[360px] border-r border-neutral-800 flex-shrink-0">
+            <div className="h-screen grid grid-cols-12 overflow-hidden">
+                <div className="col-span-12 md:col-span-3 border-r border-neutral-800 h-full overflow-hidden min-w-0 relative" ref={problemPanelRef}>
                     <ProblemPanel problem={problem} requirementsMet={store.requirementsMet} />
+                    {
+                        mode === "ASSIST" && (
+                            <TextSelectionToolbar
+                                containerRef={problemPanelRef}
+                                onAskAI={(text, prompt) => {
+                                    const message = prompt || `Explain this: "${text}"`;
+                                    sendToChatRef.current?.(message);
+                                }}
+                                onCopy={(text) => {
+                                    navigator.clipboard.writeText(text);
+                                    toast.success("Copied to clipboard!");
+                                }}
+                            />
+                        )
+                    }
                 </div>
-                <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                <div className="col-span-12 md:col-span-4 flex flex-col h-full overflow-hidden min-w-0">
                     {
                         isSystemDesign ? (
                             <div className="flex-1">
@@ -253,8 +262,8 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
 
                 {
                     mode === "ASSIST" && (
-                        <div className="w-[38%] min-w-[320px] max-w-[500px] border-l border-neutral-800 flex-shrink-0">
-                            <ChatPanel problem={problem} store={store} />
+                        <div className="col-span-12 md:col-span-5 flex flex-col h-full overflow-hidden min-w-0">
+                            <ChatPanel problem={problem} store={store} sendToChatRef={sendToChatRef} />
                         </div>
                     )
                 }
@@ -271,7 +280,7 @@ function ProblemPanel({
     requirementsMet: Record<string, boolean>;
 }) {
     return (
-        <ScrollArea className="h-full">
+        <ScrollArea className="w-full h-full">
             <div className="p-6 space-y-5">
                 <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold">{problem.title}</h2>
@@ -380,9 +389,11 @@ function WebPreview({ code, css }: { code: string; css: string }) {
 function ChatPanel({
     problem,
     store,
+    sendToChatRef,
 }: {
     problem: PracticeProblemDetail;
     store: PracticeWorkspaceState;
+    sendToChatRef: React.MutableRefObject<((message: string) => void) | null>;
 }) {
     const [input, setInput] = useState("");
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -447,7 +458,7 @@ function ChatPanel({
     };
 
     // ── Send message ──
-    const handleSend = async (messageText?: string) => {
+    const handleSend = useCallback(async (messageText?: string) => {
         const trimmed = (messageText ?? input).trim();
         if (!trimmed || store.isChatLoading) return;
 
@@ -487,7 +498,13 @@ function ChatPanel({
         }
 
         store.setChatLoading(false);
-    };
+    }, [input, store, problem.slug, problem.module]);
+
+    // Expose handleSend to parent via ref
+    useEffect(() => {
+        sendToChatRef.current = (message: string) => handleSend(message);
+        return () => { sendToChatRef.current = null; };
+    }, [handleSend, sendToChatRef]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -648,7 +665,7 @@ function ChatBubble({
                     ) : (
                         <MarkdownRenderer
                             content={message.content}
-                            className="prose-invert prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:mb-2 [&_code]:text-xs"
+                            className="prose-invert prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:mb-2 [&_code]:text-xs [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ul]:space-y-1 [&_li]:pl-1 [&_li]:leading-relaxed"
                         />
                     )
                 }

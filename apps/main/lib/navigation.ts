@@ -173,13 +173,8 @@ export const mainNavigation: NavigationConfig = {
                     icon: Briefcase
                 },
                 {
-                    name: 'Resume Creator',
-                    path: 'ai/resumecreator',
-                    icon: FileText
-                },
-                {
-                    name: 'Cover Letter',
-                    path: 'ai/coverletter',
+                    name: 'Resume',
+                    path: 'ai/resume',
                     icon: FileText
                 },
             ]

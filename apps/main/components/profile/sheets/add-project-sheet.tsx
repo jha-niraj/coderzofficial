@@ -20,7 +20,7 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
-import { TechSelect } from "@/app/(main)/ai/resumecreator/_components/projects-tab-form"
+import { TechSelect } from "@/app/(main)/ai/resume/_components/projects-tab-form"
 import toast from "@repo/ui/components/ui/sonner"
 import { addPortfolioProject } from "@/actions/(main)/user/profile.action"
 
@@ -124,7 +124,7 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
                         <p className="text-sm text-muted-foreground mt-1 font-normal">
                             You can also add projects in the{" "}
                             <Link
-                                href="/ai/resumecreator"
+                                href="/ai/resume/create"
                                 className="text-primary hover:underline"
                                 onClick={() => onOpenChange(false)}
                             >
