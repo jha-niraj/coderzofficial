@@ -50,6 +50,7 @@ export default async function ResumeHubPage() {
 
     // Use DB templates if available, otherwise show demo templates
     const templates = dbTemplates.length > 0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? dbTemplates.map((t: any) => ({
             id: t.id,
             slug: t.slug,
@@ -59,6 +60,7 @@ export default async function ResumeHubPage() {
             creditsCost: t.creditsCost,
             sectionOrder: t.sectionOrder,
             usageCount: t._count?.generations ?? 0,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             isPurchased: userGenerations.some((g: any) => g.templateId === t.id),
         }))
         : demoTemplates.map((t, i) => ({

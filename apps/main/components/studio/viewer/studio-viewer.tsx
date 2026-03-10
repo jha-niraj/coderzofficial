@@ -219,6 +219,7 @@ export function StudioViewer({
 		};
 
 		loadQuizData();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [steps]);
 
 	const studioForRender = useStudioStore((s) => s.studio) || initialStudio;

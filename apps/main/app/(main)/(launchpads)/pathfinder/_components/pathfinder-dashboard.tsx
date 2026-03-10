@@ -9,7 +9,7 @@ import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Target, Plus, CheckCircle2, Trophy, Flame, FolderOpen, MoreVertical,
     MoveRight, Code2, Brain, BarChart3, Zap, ChevronRight, Play,
-    PauseCircle, CheckCircle, XCircle, Compass, TrendingUp, Calendar
+    PauseCircle, CheckCircle, XCircle, Compass, TrendingUp
 } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -24,9 +24,7 @@ import {
 import {
     Collapsible, CollapsibleContent, CollapsibleTrigger
 } from '@repo/ui/components/ui/collapsible'
-import {
-    Tabs, TabsContent, TabsList, TabsTrigger
-} from '@repo/ui/components/ui/tabs'
+// Tabs imports reserved for future use
 import { cn } from '@repo/ui/lib/utils'
 import {
     usePathfinderStore, type PathfinderGoal, type PathfinderGroup
@@ -371,7 +369,7 @@ function RecentActivity({ goals }: { goals: Goal[] }) {
     )
 }
 
-function OverviewContent({ goals, groups }: { goals: Goal[]; groups: Group[] }) {
+function OverviewContent({ goals, groups: _groups }: { goals: Goal[]; groups: Group[] }) {
     if (goals.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center py-20">

@@ -6,7 +6,6 @@ import {
     ChevronRight, Code2, Network, Globe, Server, BarChart3
 } from "lucide-react";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
-import { Badge } from "@repo/ui/components/ui/badge";
 import { cn } from "@repo/ui/lib/utils";
 import { MODULE_CONFIG } from "@/types/practice";
 import type { PracticeModule } from "@/types/practice";

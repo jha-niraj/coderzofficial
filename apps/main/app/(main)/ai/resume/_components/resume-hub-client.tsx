@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    FileText, PenTool, ArrowRight, Lock, ChevronRight,
+    FileText, PenTool, ArrowRight, Lock,
     Sparkles, Target, LineChart, Mail, Search, Briefcase,
     MessageSquare, ArrowUpRight, CheckCircle2, Zap,
     LayoutTemplate, Coins, Image as ImageIcon
@@ -20,10 +20,11 @@ import { purchaseResumeTemplate } from "@/actions/(main)/ai/resume-template.acti
 import { FeatureNotifySection } from "@repo/prisma/client"
 
 // Icon map for serialized icon names from server
-const iconMap: Record<string, any> = {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const iconMap = {
     FileText, PenTool, Target, Sparkles, ArrowUpRight,
     Mail, LineChart, MessageSquare, Search, Briefcase,
-}
+} as const
 
 interface Template {
     id: string
@@ -43,15 +44,6 @@ interface Stats {
     coverLetters: number
     templatesUsed: number
     totalTemplates: number
-}
-
-interface UpcomingTool {
-    id: string
-    icon: string
-    name: string
-    description: string
-    pain: string
-    section: string
 }
 
 const activeTools = [

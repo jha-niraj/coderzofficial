@@ -8,7 +8,7 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2,
     Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles, Coins,
-    NotebookPen, Wand2
+    NotebookPen
 } from 'lucide-react'
 import Link from 'next/link'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
