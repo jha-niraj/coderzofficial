@@ -36,8 +36,8 @@ interface LearnStep {
     content: string;
     stepData?: unknown;
     tips?: unknown;
-    keyTakeaways?: string | null;
-    warnings?: string | null;
+    keyTakeaways?: string[] | null;
+    warnings?: string[] | null;
     codeBlocks: {
         id: string;
         order: number;
@@ -372,44 +372,52 @@ export default function LearnDetailClient({
                             <h3 className="font-semibold text-sm text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide">
                                 STEPS
                             </h3>
-                            <div className="space-y-1">
-                                {
-                                    learn.steps.map((step, index) => (
-                                        <button
-                                            key={step.id}
-                                            onClick={() => goToStep(index)}
-                                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${currentStepIndex === index
-                                                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                                : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                }`}
-                                        >
-                                            <div
-                                                className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${completedSteps.includes(step.order)
-                                                    ? "bg-green-500 text-white"
-                                                    : currentStepIndex === index
-                                                        ? "bg-blue-500 text-white"
-                                                        : "bg-neutral-200 dark:bg-neutral-700 text-muted-foreground"
-                                                    }`}
-                                            >
-                                                {
-                                                    completedSteps.includes(step.order) ? (
-                                                        <CheckCircle2 className="w-4 h-4" />
-                                                    ) : (
-                                                        index + 1
-                                                    )
-                                                }
-                                            </div>
-                                            <span className="text-sm truncate">{step.title}</span>
-                                        </button>
-                                    ))
-                                }
-                            </div>
+                            <TooltipProvider delayDuration={300}>
+                                <div className="space-y-1">
+                                    {
+                                        learn.steps.map((step, index) => (
+                                            <Tooltip key={step.id}>
+                                                <TooltipTrigger asChild>
+                                                    <button
+                                                        onClick={() => goToStep(index)}
+                                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${currentStepIndex === index
+                                                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                                                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                                            }`}
+                                                    >
+                                                        <div
+                                                            className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${completedSteps.includes(step.order)
+                                                                ? "bg-green-500 text-white"
+                                                                : currentStepIndex === index
+                                                                    ? "bg-blue-500 text-white"
+                                                                    : "bg-neutral-200 dark:bg-neutral-700 text-muted-foreground"
+                                                                }`}
+                                                        >
+                                                            {
+                                                                completedSteps.includes(step.order) ? (
+                                                                    <CheckCircle2 className="w-4 h-4" />
+                                                                ) : (
+                                                                    index + 1
+                                                                )
+                                                            }
+                                                        </div>
+                                                        <span className="text-sm truncate">{step.title}</span>
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="right" className="max-w-64">
+                                                    {step.title}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        ))
+                                    }
+                                </div>
+                            </TooltipProvider>
                         </div>
                     </ScrollArea>
                 </aside>
                 <main className="w-[60%] min-w-0 h-[calc(100vh-3.5rem)]">
                     <ScrollArea className="h-full">
-                        <div ref={contentRef} className="relative max-w-3xl mx-auto px-4 sm:px-6 py-8">
+                        <div ref={contentRef} className="relative w-full mx-auto">
                             <TextSelectionToolbar
                                 containerRef={contentRef}
                                 onAskAI={handleAskAI}

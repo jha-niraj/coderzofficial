@@ -42,8 +42,20 @@ interface LearnItem {
     unitNumber: number | null;
     unitTitle: string | null;
     tags: string[];
+    topicId: string | null;
+    topic: { name: string; slug: string; icon: string | null; order: number } | null;
     _count: { steps: number };
     progress?: { progressPercent: number; isCompleted: boolean } | null;
+}
+
+interface TopicInfo {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    icon: string | null;
+    order: number;
+    learnCount: number;
 }
 
 interface LeaderboardEntry {
@@ -80,6 +92,7 @@ export default function SubCategoryPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [learns, setLearns] = useState<LearnItem[]>([]);
+    const [topicsData, setTopicsData] = useState<TopicInfo[]>([]);
     const [subCategory, setSubCategory] = useState<SubCategoryData | null>(null);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [stats, setStats] = useState({ totalLearns: 0, totalSteps: 0, usersEnrolled: 0, avgCompletion: 0 });
@@ -94,6 +107,7 @@ export default function SubCategoryPage() {
 
             if (learnsResult.subCategory) setSubCategory(learnsResult.subCategory);
             setLearns(learnsResult.learns || []);
+            setTopicsData(learnsResult.topics || []);
             setLeaderboard(leaderboardResult.leaderboard || []);
             setStats(learnsResult.stats || { totalLearns: 0, totalSteps: 0, usersEnrolled: 0, avgCompletion: 0 });
         } catch (error) {
@@ -107,13 +121,32 @@ export default function SubCategoryPage() {
         loadData();
     }, [loadData]);
 
-    // Group learns by unit
-    const unitGroups = learns.reduce<Record<string, LearnItem[]>>((acc, learn) => {
-        const key = learn.unitTitle || `Unit ${learn.unitNumber || 0}`;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(learn);
-        return acc;
-    }, {});
+    // Build topic map for enhanced display
+    const topicMap = new Map(topicsData.map(t => [t.id, t]));
+
+    // Group learns by topic (or fallback to unitTitle)
+    const unitGroups: { key: string; title: string; icon: string | null; description: string | null; learns: LearnItem[] }[] = [];
+    const grouped = new Map<string, LearnItem[]>();
+    const groupMeta = new Map<string, { title: string; icon: string | null; description: string | null }>();
+
+    for (const learn of learns) {
+        const topicInfo = learn.topicId ? topicMap.get(learn.topicId) : null;
+        const key = topicInfo?.slug || learn.unitTitle || `Unit ${learn.unitNumber || 0}`;
+        if (!grouped.has(key)) {
+            grouped.set(key, []);
+            groupMeta.set(key, {
+                title: topicInfo?.name || learn.unitTitle || `Unit ${learn.unitNumber || 0}`,
+                icon: topicInfo?.icon || null,
+                description: topicInfo?.description || null,
+            });
+        }
+        grouped.get(key)!.push(learn);
+    }
+
+    for (const [key, groupLearns] of grouped) {
+        const meta = groupMeta.get(key)!;
+        unitGroups.push({ key, title: meta.title, icon: meta.icon, description: meta.description, learns: groupLearns });
+    }
 
     if (isLoading) return <SubCategorySkeleton />;
 
@@ -189,25 +222,28 @@ export default function SubCategoryPage() {
 
                     {/* Units & Learns */}
                     <div className="space-y-8">
-                        {Object.entries(unitGroups).map(([unitTitle, unitLearns], unitIdx) => (
+                        {unitGroups.map((group, unitIdx) => (
                             <motion.div
-                                key={unitTitle}
+                                key={group.key}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: unitIdx * 0.1 }}
                             >
-                                <div className="flex items-center gap-3 mb-4">
+                                <div className="flex items-center gap-3 mb-1">
                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold">
-                                        {unitIdx + 1}
+                                        {group.icon || (unitIdx + 1)}
                                     </div>
                                     <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">
-                                        {unitTitle}
+                                        {group.title}
                                     </h2>
-                                    <Badge variant="outline" className="text-xs">{unitLearns.length} topics</Badge>
+                                    <Badge variant="outline" className="text-xs">{group.learns.length} topics</Badge>
                                 </div>
+                                {group.description && (
+                                    <p className="text-xs text-muted-foreground ml-11 mb-3">{group.description}</p>
+                                )}
 
                                 <div className="space-y-3 ml-4 pl-7 border-l-2 border-neutral-200 dark:border-neutral-800">
-                                    {unitLearns.map((learn, learnIdx) => {
+                                    {group.learns.map((learn, learnIdx) => {
                                         const isCompleted = learn.progress?.isCompleted;
                                         const inProgress = learn.progress && !learn.progress.isCompleted && learn.progress.progressPercent > 0;
                                         const progressPercent = learn.progress?.progressPercent || 0;

@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import type { StudioListItem } from "@/types/studios";
+import { CreateStudioButton } from "./_components/create-studio-button";
 
 export const metadata: Metadata = {
     title: "My Studios | The Coderz",
@@ -29,9 +30,10 @@ export default async function StudiosPage() {
                                 My Studios
                             </h1>
                             <p className="text-neutral-500 mt-2 text-sm">
-                                AI-powered learning workspaces created from your Pathfinder goals and Spaces.
+                                AI-powered learning workspaces for notes, code, quizzes, and more.
                             </p>
                         </div>
+                        <CreateStudioButton />
                     </div>
 
                     {/* Context info cards */}
@@ -100,21 +102,16 @@ async function StudiosContent() {
                     No studios yet
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-400 max-w-md mx-auto mb-6">
-                    Studios are automatically created when you start learning goals in Pathfinder
-                    or join learning Spaces. They provide an AI-powered workspace for your learning journey.
+                    Create a studio to start your learning workspace. Add notes, code snippets, quizzes, and more.
+                    You can also create studios from Pathfinder goals or Spaces.
                 </p>
                 <div className="flex items-center justify-center gap-3">
+                    <CreateStudioButton />
                     <Link
                         href="/pathfinder"
-                        className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white transition-colors"
-                    >
-                        Go to Pathfinder
-                    </Link>
-                    <Link
-                        href="/space"
                         className="px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                     >
-                        Browse Spaces
+                        Go to Pathfinder
                     </Link>
                 </div>
             </div>

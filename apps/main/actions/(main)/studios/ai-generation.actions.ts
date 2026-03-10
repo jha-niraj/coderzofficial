@@ -258,3 +258,52 @@ Make questions challenging but fair. Include clear explanations.`;
 		return { success: false, error: "Failed to generate quiz" };
 	}
 }
+
+// Get quiz data by ID
+export async function getQuizById(quizId: string): Promise<{
+	success: boolean;
+	quiz?: {
+		id: string;
+		title: string;
+		questions: Array<{
+			id: string;
+			question: string;
+			options: string[];
+			correctAnswer: number;
+			explanation?: string;
+		}>;
+	};
+	error?: string;
+}> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) {
+			return { success: false, error: "Unauthorized" };
+		}
+
+		const quiz = await prisma.studioQuiz.findUnique({
+			where: { id: quizId },
+			include: { studio: { select: { userId: true } } },
+		});
+
+		if (!quiz || quiz.studio.userId !== session.user.id) {
+			return { success: false, error: "Quiz not found" };
+		}
+
+		const questions = (quiz.questions as any[]).map((q: any, idx: number) => ({
+			id: `q_${idx}`,
+			question: q.question,
+			options: q.options,
+			correctAnswer: q.correctAnswer,
+			explanation: q.explanation,
+		}));
+
+		return {
+			success: true,
+			quiz: { id: quiz.id, title: quiz.title, questions },
+		};
+	} catch (error) {
+		console.error("Error fetching quiz:", error);
+		return { success: false, error: "Failed to fetch quiz" };
+	}
+}

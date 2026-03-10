@@ -386,58 +386,58 @@ export async function submitInterviewCardReview(
  * Called internally from other actions when a step is completed.
  */
 export async function updateLeaderboardScore(
-    learnId: string,
-    type: 'quiz' | 'challenge' | 'mock' | 'project',
-    pointsEarned: number
+    subCategoryId: string,
+    userId: string,
+    scoreUpdate: {
+        quizScore?: number;
+        challengeScore?: number;
+        mockScore?: number;
+        projectScore?: number;
+        quizzesCompleted?: number;
+        challengesCompleted?: number;
+        mocksCompleted?: number;
+        projectsCompleted?: number;
+        learnsCompleted?: number;
+    }
 ) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return { error: "Unauthorized" };
-        }
-
-        const userId = session.user.id;
-
-        // Find the subcategory for this learn
-        const learn = await prisma.learn.findUnique({
-            where: { id: learnId },
-            select: { subCategoryId: true },
-        });
-
-        if (!learn?.subCategoryId) return { error: "No subcategory" };
-
-        const subCategoryId = learn.subCategoryId;
-
-        // Build update based on type
-        const scoreField = `${type}Score` as const;
-        const countField = type === 'quiz' ? 'quizzesCompleted'
-            : type === 'challenge' ? 'challengesCompleted'
-                : type === 'mock' ? 'mocksCompleted'
-                    : 'projectsCompleted';
-
         const existing = await prisma.learnLeaderboard.findUnique({
             where: { subCategoryId_userId: { subCategoryId, userId } },
         });
 
-        const currentScore = existing ? (existing as any)[scoreField] || 0 : 0;
-        const currentCount = existing ? (existing as any)[countField] || 0 : 0;
-        const newScore = currentScore + pointsEarned;
-        const newTotal = (existing?.totalScore || 0) + pointsEarned;
+        const newQuizScore = (existing?.quizScore || 0) + (scoreUpdate.quizScore || 0);
+        const newChallengeScore = (existing?.challengeScore || 0) + (scoreUpdate.challengeScore || 0);
+        const newMockScore = (existing?.mockScore || 0) + (scoreUpdate.mockScore || 0);
+        const newProjectScore = (existing?.projectScore || 0) + (scoreUpdate.projectScore || 0);
+        const totalScore = newQuizScore + newChallengeScore + newMockScore + newProjectScore;
 
         await prisma.learnLeaderboard.upsert({
             where: { subCategoryId_userId: { subCategoryId, userId } },
             update: {
-                [scoreField]: newScore,
-                [countField]: currentCount + 1,
-                totalScore: newTotal,
+                quizScore: newQuizScore,
+                challengeScore: newChallengeScore,
+                mockScore: newMockScore,
+                projectScore: newProjectScore,
+                totalScore,
+                quizzesCompleted: { increment: scoreUpdate.quizzesCompleted || 0 },
+                challengesCompleted: { increment: scoreUpdate.challengesCompleted || 0 },
+                mocksCompleted: { increment: scoreUpdate.mocksCompleted || 0 },
+                projectsCompleted: { increment: scoreUpdate.projectsCompleted || 0 },
+                learnsCompleted: { increment: scoreUpdate.learnsCompleted || 0 },
             },
             create: {
                 subCategoryId,
                 userId,
-                learnId,
-                [scoreField]: pointsEarned,
-                [countField]: 1,
-                totalScore: pointsEarned,
+                quizScore: scoreUpdate.quizScore || 0,
+                challengeScore: scoreUpdate.challengeScore || 0,
+                mockScore: scoreUpdate.mockScore || 0,
+                projectScore: scoreUpdate.projectScore || 0,
+                totalScore: (scoreUpdate.quizScore || 0) + (scoreUpdate.challengeScore || 0) + (scoreUpdate.mockScore || 0) + (scoreUpdate.projectScore || 0),
+                quizzesCompleted: scoreUpdate.quizzesCompleted || 0,
+                challengesCompleted: scoreUpdate.challengesCompleted || 0,
+                mocksCompleted: scoreUpdate.mocksCompleted || 0,
+                projectsCompleted: scoreUpdate.projectsCompleted || 0,
+                learnsCompleted: scoreUpdate.learnsCompleted || 0,
             },
         });
 

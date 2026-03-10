@@ -1,5 +1,42 @@
 import { prisma } from '@repo/prisma';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Go (Golang) Learning Module — 6-Unit Curriculum Plan
+// ═══════════════════════════════════════════════════════════════════════════════
+// Unit 1: Go Fundamentals
+//   - Introduction to Go & Environment Setup
+//   - Variables, Types & Constants
+//   - Operators & Control Flow (if/else, switch, loops)
+//
+// Unit 2: Functions, Packages & Error Handling
+//   - Functions (declarations, multiple returns, variadic, closures)
+//   - Packages, Modules & Imports
+//   - Error Handling (error interface, custom errors, panic/recover)
+//
+// Unit 3: Data Structures
+//   - Arrays & Slices
+//   - Maps
+//   - Structs & Methods
+//   - Pointers
+//
+// Unit 4: Interfaces & Generics
+//   - Interfaces (implicit implementation, empty interface, type assertions)
+//   - Generics (type parameters, constraints)
+//   - Composition vs Inheritance
+//
+// Unit 5: Concurrency
+//   - Goroutines
+//   - Channels (buffered, unbuffered, select)
+//   - sync package (Mutex, WaitGroup, Once)
+//   - Concurrency patterns (fan-in, fan-out, pipeline, worker pool)
+//
+// Unit 6: Advanced Go & Interview Mastery
+//   - Testing (unit, table-driven, benchmarks)
+//   - Context package
+//   - Reflection, unsafe, and internals
+//   - Interview prep & review
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export async function seedGolangLearnContent() {
     console.log('📚 Seeding Golang Learn Content...');
 
@@ -7,41 +44,70 @@ export async function seedGolangLearnContent() {
     if (!admin) { console.log('⚠️ No admin user found, skipping Golang seed'); return; }
     const creatorId = admin.id;
 
-    // 1. Reuse or create main category
+    // ── Step 0: Clean up existing Golang learns ──
+    console.log('  🗑️ Cleaning existing Golang data...');
+    const existingGo = await prisma.learnSubCategory.findUnique({ where: { slug: 'golang' } });
+    if (existingGo) {
+        await prisma.learn.deleteMany({ where: { subCategoryId: existingGo.id } });
+        await prisma.learnTopic.deleteMany({ where: { subCategoryId: existingGo.id } });
+    }
+
+    // ── Step 1: Categories ──
     const programming = await prisma.learnMainCategory.upsert({
         where: { slug: 'programming' },
         update: {},
         create: { slug: 'programming', name: 'Programming', description: 'Learn programming languages and fundamentals', icon: '💻', color: '#3B82F6', order: 1 },
     });
 
-    // 2. Create Go sub category
     const golang = await prisma.learnSubCategory.upsert({
         where: { slug: 'golang' },
         update: {},
         create: { slug: 'golang', name: 'Go (Golang)', description: 'Master Go programming — the language of cloud, concurrency, and simplicity', mainCategoryId: programming.id, icon: '🐹', color: '#00ADD8', order: 2 },
     });
 
-    // Helper: create a learn with steps, interviewCards, quizQuestions
+    // ── Step 2: Create LearnTopics (one per unit) ──
+    const topicDefs = [
+        { slug: 'go-unit1-fundamentals', name: 'Go Fundamentals', description: 'Introduction, variables, types, constants, operators, control flow', icon: '🚀', order: 1 },
+        { slug: 'go-unit2-functions', name: 'Functions, Packages & Error Handling', description: 'Functions, multiple returns, modules, error handling', icon: '⚙️', order: 2 },
+        { slug: 'go-unit3-data-structures', name: 'Data Structures', description: 'Arrays, slices, maps, structs, methods, pointers', icon: '📦', order: 3 },
+        { slug: 'go-unit4-interfaces', name: 'Interfaces & Generics', description: 'Interfaces, type assertions, generics, composition', icon: '🔌', order: 4 },
+        { slug: 'go-unit5-concurrency', name: 'Concurrency', description: 'Goroutines, channels, sync, concurrency patterns', icon: '🧵', order: 5 },
+        { slug: 'go-unit6-advanced', name: 'Advanced Go & Interview Mastery', description: 'Testing, context, reflection, interview prep', icon: '🏆', order: 6 },
+    ];
+    const topics: Record<string, any> = {};
+    for (const t of topicDefs) {
+        topics[t.slug] = await prisma.learnTopic.create({
+            data: { slug: t.slug, name: t.name, description: t.description, icon: t.icon, order: t.order, subCategoryId: golang.id },
+        });
+    }
+    console.log(`  ✅ Created ${topicDefs.length} LearnTopics`);
+
+    // ── Helper: global sequential counter ──
+    let globalOrder = 0;
+    const createdLearns: any[] = [];
+
     async function createLearn(data: {
         slug: string; title: string; description: string; difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
-        unitNumber: number; unitTitle: string; estimatedTime: number; tags: string[]; iconEmoji: string;
+        topicSlug: string; unitTitle: string; estimatedTime: number; tags: string[]; iconEmoji: string;
         steps: {
-            order: number; title: string; type: string; content: string; tips?: string[]; stepData?: object;
+            order: number; title: string; type: string; content: string; tips?: string[]; keyTakeaways?: string[]; stepData?: object;
             codeBlocks?: { order: number; title: string; language: string; code: string; explanation: string; highlightLines?: number[]; isRunnable?: boolean }[];
             interviewCards?: { order: number; question: string; answer: string; category?: string; codeSnippet?: string; codeLanguage?: string; difficulty?: string; tags?: string[] }[];
             quizQuestions?: { order: number; question: string; type?: string; options: { id: string; text: string; isCorrect: boolean }[]; explanation?: string; codeSnippet?: string; codeLanguage?: string; difficulty?: string; points?: number; hint?: string }[];
         }[];
     }) {
-        const existing = await prisma.learn.findUnique({ where: { slug: data.slug } });
-        if (existing) { console.log(`  ⏭️ Skipping ${data.slug} (exists)`); return existing; }
+        globalOrder++;
+        const topic = topics[data.topicSlug];
 
         const learn = await prisma.learn.create({
             data: {
                 slug: data.slug, title: data.title, description: data.description,
-                difficulty: data.difficulty as any, tags: data.tags, unitNumber: data.unitNumber, unitTitle: data.unitTitle,
+                difficulty: data.difficulty as any, tags: data.tags,
+                unitNumber: globalOrder, unitTitle: data.unitTitle,
                 estimatedTime: data.estimatedTime, iconEmoji: data.iconEmoji, accentColor: '#00ADD8',
                 status: 'PUBLISHED', publishedAt: new Date(), creatorId,
                 mainCategoryId: programming.id, subCategoryId: golang.id,
+                topicId: topic?.id || null,
             },
         });
 
@@ -50,11 +116,11 @@ export async function seedGolangLearnContent() {
                 data: {
                     learnId: learn.id, order: step.order, title: step.title,
                     type: step.type as any, content: step.content,
-                    tips: step.tips || [], stepData: step.stepData ? (step.stepData as any) : undefined,
+                    tips: step.tips || [], keyTakeaways: step.keyTakeaways || [],
+                    stepData: step.stepData ? (step.stepData as any) : undefined,
                 },
             });
 
-            // Code blocks
             if (step.codeBlocks) {
                 for (const cb of step.codeBlocks) {
                     await prisma.learnCodeBlock.create({
@@ -67,7 +133,6 @@ export async function seedGolangLearnContent() {
                 }
             }
 
-            // Interview cards
             if (step.interviewCards) {
                 for (const card of step.interviewCards) {
                     await prisma.learnInterviewCard.create({
@@ -84,7 +149,6 @@ export async function seedGolangLearnContent() {
                 }
             }
 
-            // Quiz questions
             if (step.quizQuestions) {
                 for (const q of step.quizQuestions) {
                     await prisma.learnQuizQuestion.create({
@@ -103,7 +167,8 @@ export async function seedGolangLearnContent() {
                 }
             }
         }
-        console.log(`  ✅ Created: ${data.title} (${data.steps.length} steps)`);
+        console.log(`  ✅ [${globalOrder}] ${data.title} (${data.steps.length} steps)`);
+        createdLearns.push(learn);
         return learn;
     }
 
@@ -115,7 +180,7 @@ export async function seedGolangLearnContent() {
         title: 'Introduction to Go & Environment Setup',
         description: 'Learn what Go is, why it was created, how it compares to other languages, and set up your development environment from scratch.',
         difficulty: 'BEGINNER',
-        unitNumber: 1,
+        topicSlug: 'go-unit1-fundamentals',
         unitTitle: 'Unit 1: Go Fundamentals',
         estimatedTime: 40,
         tags: ['go', 'golang', 'setup', 'installation', 'hello-world', 'introduction'],
@@ -714,7 +779,7 @@ In the next topic, you'll learn about **Variables, Types, and Constants** — th
         title: 'Variables, Types & Constants',
         description: 'Master Go\'s type system — learn how to declare variables, understand all primitive types, use constants, work with type conversions, and the zero-value concept.',
         difficulty: 'BEGINNER',
-        unitNumber: 1,
+        topicSlug: 'go-unit1-fundamentals',
         unitTitle: 'Unit 1: Go Fundamentals',
         estimatedTime: 50,
         tags: ['go', 'variables', 'types', 'constants', 'type-conversion', 'zero-value'],
@@ -1453,4 +1518,581 @@ In the next topic, you'll learn about **Operators & Control Flow** — if/else, 
     });
 
     console.log('✅ Golang Topic 2 seeded!');
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  TOPIC 3: Operators & Control Flow
+    // ═══════════════════════════════════════════════════════════════════
+    await createLearn({
+        slug: 'go-operators-control-flow',
+        title: 'Operators & Control Flow',
+        description: 'Master Go operators (arithmetic, comparison, logical, bitwise), if/else statements, switch (including type switch), and all loop patterns (for, while-style, range, break, continue).',
+        difficulty: 'BEGINNER',
+        topicSlug: 'go-unit1-fundamentals',
+        unitTitle: 'Unit 1: Go Fundamentals',
+        estimatedTime: 45,
+        tags: ['go', 'operators', 'if-else', 'switch', 'loops', 'for', 'range', 'control-flow'],
+        iconEmoji: '🔀',
+        steps: [
+            {
+                order: 0,
+                title: 'Operators & if/else in Go',
+                type: 'EXPLANATION',
+                tips: [
+                    'Go has NO ternary operator (? :). Use if/else instead.',
+                    'if statements can have an initialization statement before the condition.',
+                    'switch in Go does NOT fall through by default — no break needed.',
+                ],
+                content: `# Operators & Control Flow in Go
+
+## Operators
+
+### Arithmetic Operators
+
+\`\`\`go
+a, b := 17, 5
+fmt.Println(a + b)   // 22  (addition)
+fmt.Println(a - b)   // 12  (subtraction)
+fmt.Println(a * b)   // 85  (multiplication)
+fmt.Println(a / b)   // 3   (integer division — truncates!)
+fmt.Println(a % b)   // 2   (modulus/remainder)
+\`\`\`
+
+> ⚠️ Integer division **truncates** in Go. \`17 / 5 = 3\`, not 3.4.
+
+### Comparison Operators
+
+\`\`\`go
+fmt.Println(5 == 5)  // true
+fmt.Println(5 != 3)  // true
+fmt.Println(5 > 3)   // true
+fmt.Println(5 < 3)   // false
+fmt.Println(5 >= 5)  // true
+fmt.Println(5 <= 4)  // false
+\`\`\`
+
+### Logical Operators
+
+\`\`\`go
+fmt.Println(true && false)  // false (AND)
+fmt.Println(true || false)  // true  (OR)
+fmt.Println(!true)          // false (NOT)
+\`\`\`
+
+### Bitwise Operators
+
+\`\`\`go
+a, b := 0b1100, 0b1010  // 12, 10
+fmt.Println(a & b)   // 8   (AND)
+fmt.Println(a | b)   // 14  (OR)
+fmt.Println(a ^ b)   // 6   (XOR)
+fmt.Println(a << 2)  // 48  (left shift)
+fmt.Println(a >> 1)  // 6   (right shift)
+\`\`\`
+
+---
+
+## if / else — Go Style
+
+\`\`\`go
+age := 25
+
+if age >= 18 {
+    fmt.Println("Adult")
+} else if age >= 13 {
+    fmt.Println("Teenager")
+} else {
+    fmt.Println("Child")
+}
+\`\`\`
+
+**Go difference: if with initialization statement**
+
+\`\`\`go
+if err := doSomething(); err != nil {
+    fmt.Println("Error:", err)
+    // err is scoped to this if block
+}
+// err is NOT accessible here
+\`\`\`
+
+This pattern is **extremely common** in Go for error handling. The variable is scoped to the if/else block.
+
+---
+
+## switch — Powerful & Clean
+
+Go's switch is more powerful than most languages:
+
+\`\`\`go
+day := "Wednesday"
+
+switch day {
+case "Monday", "Tuesday", "Wednesday", "Thursday", "Friday":
+    fmt.Println("Weekday")
+case "Saturday", "Sunday":
+    fmt.Println("Weekend")
+default:
+    fmt.Println("Unknown")
+}
+\`\`\`
+
+**Key differences from C/Java:**
+- **No break needed** — Go automatically breaks after each case
+- **Multiple values per case** — \`case "Monday", "Tuesday"\`
+- **No fallthrough by default** — use \`fallthrough\` keyword explicitly
+- **Cases can be expressions** — not just constants
+
+### Switch Without a Condition (like if/else chain)
+
+\`\`\`go
+score := 85
+
+switch {
+case score >= 90:
+    fmt.Println("A")
+case score >= 80:
+    fmt.Println("B")
+case score >= 70:
+    fmt.Println("C")
+default:
+    fmt.Println("F")
+}
+\`\`\`
+
+### Type Switch (unique to Go)
+
+\`\`\`go
+func describe(i interface{}) {
+    switch v := i.(type) {
+    case int:
+        fmt.Printf("Integer: %d\\n", v)
+    case string:
+        fmt.Printf("String: %s\\n", v)
+    case bool:
+        fmt.Printf("Boolean: %t\\n", v)
+    default:
+        fmt.Printf("Unknown type: %T\\n", v)
+    }
+}
+\`\`\``,
+            },
+            {
+                order: 1,
+                title: 'Loops in Go — for is All You Need',
+                type: 'EXPLANATION',
+                content: `# Loops in Go
+
+Go has **only one loop keyword: \`for\`**. But it covers every loop pattern.
+
+## 1. Standard For Loop
+
+\`\`\`go
+for i := 0; i < 5; i++ {
+    fmt.Println(i)  // 0, 1, 2, 3, 4
+}
+\`\`\`
+
+## 2. While-Style Loop (for with condition only)
+
+\`\`\`go
+count := 0
+for count < 5 {
+    fmt.Println(count)
+    count++
+}
+\`\`\`
+
+## 3. Infinite Loop
+
+\`\`\`go
+for {
+    fmt.Println("Running forever...")
+    // Use break to exit
+    break
+}
+\`\`\`
+
+## 4. Range Loop (iterating collections)
+
+\`\`\`go
+// Range over slice
+fruits := []string{"apple", "banana", "cherry"}
+for index, value := range fruits {
+    fmt.Printf("[%d] %s\\n", index, value)
+}
+
+// Range over string (gives runes)
+for i, ch := range "Go🐹" {
+    fmt.Printf("Index: %d, Char: %c\\n", i, ch)
+}
+
+// Range over map
+ages := map[string]int{"Alice": 30, "Bob": 25}
+for name, age := range ages {
+    fmt.Printf("%s is %d\\n", name, age)
+}
+
+// Ignore index with _
+for _, fruit := range fruits {
+    fmt.Println(fruit)
+}
+\`\`\`
+
+## 5. break & continue
+
+\`\`\`go
+// break — exit the loop
+for i := 0; i < 10; i++ {
+    if i == 5 {
+        break  // exits at 5
+    }
+    fmt.Println(i)  // 0, 1, 2, 3, 4
+}
+
+// continue — skip to next iteration
+for i := 0; i < 10; i++ {
+    if i%2 == 0 {
+        continue  // skip even numbers
+    }
+    fmt.Println(i)  // 1, 3, 5, 7, 9
+}
+\`\`\`
+
+## 6. Labeled Loops (break/continue outer loop)
+
+\`\`\`go
+outer:
+for i := 0; i < 3; i++ {
+    for j := 0; j < 3; j++ {
+        if i == 1 && j == 1 {
+            break outer  // breaks the OUTER loop
+        }
+        fmt.Printf("(%d, %d) ", i, j)
+    }
+}
+// Output: (0, 0) (0, 1) (0, 2) (1, 0)
+\`\`\``,
+            },
+            {
+                order: 2,
+                title: 'Control Flow — Code Examples',
+                type: 'CODE',
+                content: '## Control Flow in Practice',
+                codeBlocks: [
+                    {
+                        order: 0,
+                        title: 'FizzBuzz — Classic Interview Problem',
+                        language: 'go',
+                        code: `package main
+
+import "fmt"
+
+func main() {
+    for i := 1; i <= 30; i++ {
+        switch {
+        case i%15 == 0:
+            fmt.Println("FizzBuzz")
+        case i%3 == 0:
+            fmt.Println("Fizz")
+        case i%5 == 0:
+            fmt.Println("Buzz")
+        default:
+            fmt.Println(i)
+        }
+    }
+}`,
+                        explanation: 'FizzBuzz using switch without a condition — a clean Go idiom. Check divisible by 15 first (both 3 and 5), then 3, then 5.',
+                        highlightLines: [7, 8, 10, 12],
+                        isRunnable: true,
+                    },
+                    {
+                        order: 1,
+                        title: 'Error Handling with if-init',
+                        language: 'go',
+                        code: `package main
+
+import (
+    "fmt"
+    "strconv"
+)
+
+func main() {
+    inputs := []string{"42", "hello", "100", "", "3.14"}
+
+    for _, input := range inputs {
+        if num, err := strconv.Atoi(input); err != nil {
+            fmt.Printf("%-10s → Error: %s\\n", input, err)
+        } else {
+            fmt.Printf("%-10s → Parsed: %d\\n", input, num)
+        }
+    }
+}`,
+                        explanation: 'The if-init pattern: declare and test in one line. The variables num and err are scoped to the if/else block. This is the idiomatic Go error handling pattern.',
+                        highlightLines: [12, 13, 15],
+                        isRunnable: true,
+                    },
+                    {
+                        order: 2,
+                        title: 'Patterns: Sum, Fibonacci, Prime Check',
+                        language: 'go',
+                        code: `package main
+
+import (
+    "fmt"
+    "math"
+)
+
+func main() {
+    // Sum 1 to N
+    sum := 0
+    for i := 1; i <= 100; i++ {
+        sum += i
+    }
+    fmt.Println("Sum 1-100:", sum)
+
+    // Fibonacci sequence
+    a, b := 0, 1
+    fmt.Print("Fibonacci: ")
+    for i := 0; i < 10; i++ {
+        fmt.Print(a, " ")
+        a, b = b, a+b
+    }
+    fmt.Println()
+
+    // Prime check
+    n := 29
+    isPrime := n > 1
+    for i := 2; i <= int(math.Sqrt(float64(n))); i++ {
+        if n%i == 0 {
+            isPrime = false
+            break
+        }
+    }
+    fmt.Printf("%d is prime: %t\\n", n, isPrime)
+}`,
+                        explanation: 'Three classic patterns: accumulator loop, parallel assignment for Fibonacci (a, b = b, a+b swaps simultaneously), and break for early exit in prime checking.',
+                        highlightLines: [11, 21, 28, 30],
+                        isRunnable: true,
+                    },
+                ],
+            },
+            {
+                order: 3,
+                title: 'Control Flow Visualization',
+                type: 'VISUALIZATION',
+                content: `# Go Control Flow — Visual
+
+## Go Loop Patterns
+
+\`\`\`mermaid
+flowchart TD
+    A["Go for Loop"] --> B["Standard for\nfor i := 0; i < n; i++"]
+    A --> C["While-style\nfor condition"]
+    A --> D["Infinite\nfor { }"]
+    A --> E["Range\nfor i, v := range collection"]
+
+    B --> F["Classic iteration\nwith index control"]
+    C --> G["Loop until\ncondition is false"]
+    D --> H["Server loops\nevent loops"]
+    E --> I["Slices, maps\nstrings, channels"]
+
+    style A fill:#00ADD8,color:#fff
+    style B fill:#10b981,color:#fff
+    style C fill:#f59e0b,color:#fff
+    style D fill:#ef4444,color:#fff
+    style E fill:#8b5cf6,color:#fff
+\`\`\`
+
+## switch vs if/else Decision
+
+\`\`\`mermaid
+flowchart TD
+    A["Need branching logic?"] --> B{"How many cases?"}
+    B -->|"2-3"| C["Use if/else\nSimpler for few conditions"]
+    B -->|"4+"| D["Use switch\nCleaner for many cases"]
+    D --> E{"Comparing one variable?"}
+    E -->|Yes| F["switch variable\ncase val1, val2:"]
+    E -->|No| G["switch without condition\ncase expr1:\ncase expr2:"]
+
+    style A fill:#00ADD8,color:#fff
+    style F fill:#10b981,color:#fff
+    style G fill:#f59e0b,color:#fff
+\`\`\``,
+            },
+            {
+                order: 4,
+                title: 'Quiz: Operators & Control Flow',
+                type: 'QUIZ',
+                content: '## Test Your Knowledge',
+                quizQuestions: [
+                    {
+                        order: 0, question: 'What is the result of 17 / 5 in Go (both are int)?',
+                        options: [
+                            { id: 'a', text: '3.4', isCorrect: false },
+                            { id: 'b', text: '3', isCorrect: true },
+                            { id: 'c', text: '4', isCorrect: false },
+                            { id: 'd', text: 'Error', isCorrect: false },
+                        ],
+                        explanation: 'Integer division truncates in Go. 17 / 5 = 3 (not 3.4). For float result, use float64(17) / float64(5).',
+                        difficulty: 'EASY', points: 5,
+                    },
+                    {
+                        order: 1, question: 'Does Go have a ternary operator (? :)?',
+                        options: [
+                            { id: 'a', text: 'Yes, same as C', isCorrect: false },
+                            { id: 'b', text: 'No, use if/else instead', isCorrect: true },
+                            { id: 'c', text: 'Yes, but different syntax', isCorrect: false },
+                            { id: 'd', text: 'Only in generics', isCorrect: false },
+                        ],
+                        explanation: 'Go deliberately has NO ternary operator. The designers felt if/else is clearer. Use: if cond { x = a } else { x = b }.',
+                        difficulty: 'EASY', points: 5,
+                    },
+                    {
+                        order: 2, question: 'What loop keywords does Go have?',
+                        options: [
+                            { id: 'a', text: 'for, while, do-while', isCorrect: false },
+                            { id: 'b', text: 'for, foreach, while', isCorrect: false },
+                            { id: 'c', text: 'Only for (handles all loop patterns)', isCorrect: true },
+                            { id: 'd', text: 'for, loop, repeat', isCorrect: false },
+                        ],
+                        explanation: 'Go has ONLY the "for" keyword. It covers standard for, while-style, infinite loops, and range loops.',
+                        difficulty: 'EASY', points: 5,
+                    },
+                    {
+                        order: 3, question: 'What does switch do in Go without a break statement?',
+                        options: [
+                            { id: 'a', text: 'Falls through to the next case (like C)', isCorrect: false },
+                            { id: 'b', text: 'Automatically breaks after each case', isCorrect: true },
+                            { id: 'c', text: 'Throws an error', isCorrect: false },
+                            { id: 'd', text: 'Runs all cases', isCorrect: false },
+                        ],
+                        explanation: 'Go switch does NOT fall through by default — each case automatically breaks. Use the "fallthrough" keyword explicitly if you need fall-through behavior.',
+                        difficulty: 'MEDIUM', points: 10,
+                    },
+                    {
+                        order: 4, question: 'What is special about if-init in Go?',
+                        codeSnippet: 'if err := doSomething(); err != nil { ... }',
+                        codeLanguage: 'go',
+                        options: [
+                            { id: 'a', text: 'It\'s a syntax error', isCorrect: false },
+                            { id: 'b', text: 'err is scoped to the if/else block only', isCorrect: true },
+                            { id: 'c', text: 'err is accessible everywhere', isCorrect: false },
+                            { id: 'd', text: 'It runs doSomething twice', isCorrect: false },
+                        ],
+                        explanation: 'The if-init pattern: "if stmt; condition { }". Variables declared in the init statement are scoped to the if/else block, keeping the outer scope clean.',
+                        difficulty: 'MEDIUM', points: 10,
+                    },
+                    {
+                        order: 5, question: 'What does range return when iterating a map?',
+                        options: [
+                            { id: 'a', text: 'index, value', isCorrect: false },
+                            { id: 'b', text: 'key, value', isCorrect: true },
+                            { id: 'c', text: 'Just the key', isCorrect: false },
+                            { id: 'd', text: 'Just the value', isCorrect: false },
+                        ],
+                        explanation: 'range on a map returns key, value pairs: for k, v := range myMap { }. Iteration order is random (not sorted).',
+                        difficulty: 'EASY', points: 5,
+                    },
+                ],
+            },
+            {
+                order: 5,
+                title: 'Interview Questions: Control Flow',
+                type: 'INTERVIEW_QUESTIONS',
+                content: `# Interview Questions — Operators & Control Flow`,
+                interviewCards: [
+                    {
+                        order: 0, category: 'Conceptual', difficulty: 'EASY',
+                        question: 'Why does Go only have "for" and no "while" or "do-while"?',
+                        answer: `Go's design philosophy is **simplicity**. Having one loop keyword that handles all patterns reduces cognitive load:\n\n\`\`\`go\n// Standard for\nfor i := 0; i < 10; i++ { }\n\n// While-style\nfor condition { }\n\n// Infinite loop\nfor { }\n\n// Range iteration\nfor i, v := range collection { }\n\`\`\`\n\nOne keyword, four patterns. No ambiguity about which loop to use.`,
+                        tags: ['design-philosophy', 'loops'],
+                    },
+                    {
+                        order: 1, category: 'Tricky', difficulty: 'MEDIUM',
+                        question: 'How does Go switch differ from C/Java switch?',
+                        answer: `**No automatic fall-through:** Go breaks after each case by default. Use \`fallthrough\` explicitly.\n\n**Multiple values per case:** \`case 1, 2, 3:\`\n\n**No constant requirement:** Cases can be expressions, not just constants.\n\n**Condition-less switch:** \`switch { case x > 0: ... }\` replaces if/else chains.\n\n**Type switch:** \`switch v := x.(type) { case int: ... }\` for runtime type checking.\n\nGo's switch is much more powerful and safer than C/Java's.`,
+                        tags: ['switch', 'comparison'],
+                    },
+                    {
+                        order: 2, category: 'Coding', difficulty: 'MEDIUM',
+                        question: 'What is the if-init pattern and when would you use it?',
+                        answer: `The if-init pattern combines variable declaration with a condition:\n\n\`\`\`go\nif num, err := strconv.Atoi(s); err != nil {\n    log.Println("Error:", err)\n} else {\n    fmt.Println("Parsed:", num)\n}\n// num and err are NOT accessible here\n\`\`\`\n\n**When to use:**\n- Error checking: \`if err := fn(); err != nil\`\n- Type assertions: \`if v, ok := m[key]; ok\`\n- Channel receives: \`if v, ok := <-ch; ok\`\n\nIt keeps variables tightly scoped — a core Go idiom.`,
+                        codeSnippet: `if num, err := strconv.Atoi(s); err != nil {\n    log.Println("Error:", err)\n} else {\n    fmt.Println("Parsed:", num)\n}`,
+                        codeLanguage: 'go',
+                        tags: ['if-init', 'error-handling', 'idiom'],
+                    },
+                    {
+                        order: 3, category: 'Tricky', difficulty: 'HARD',
+                        question: 'What is a labeled break/continue and when is it needed?',
+                        answer: `Labels allow break/continue to target an **outer loop** in nested loops:\n\n\`\`\`go\nouter:\nfor i := 0; i < 5; i++ {\n    for j := 0; j < 5; j++ {\n        if i*j > 10 {\n            break outer  // breaks the OUTER loop\n        }\n    }\n}\n\`\`\`\n\n**Without the label:** \`break\` only exits the inner loop.\n\n**Use cases:**\n- Searching in 2D structures\n- Breaking out of nested event loops\n- Early termination when a condition in an inner loop affects the outer loop`,
+                        tags: ['labeled-loops', 'advanced'],
+                    },
+                ],
+            },
+            {
+                order: 6,
+                title: 'Summary: Operators & Control Flow',
+                type: 'SUMMARY',
+                keyTakeaways: [
+                    'Go has standard arithmetic, comparison, logical, and bitwise operators',
+                    'Integer division truncates — use float conversion for decimal results',
+                    'No ternary operator — use if/else',
+                    'if-init pattern scopes variables to the if/else block',
+                    'switch auto-breaks, supports multiple values per case, and condition-less form',
+                    'Go has ONLY "for" — it covers standard, while, infinite, and range loops',
+                    'Labeled break/continue targets outer loops in nested loops',
+                ],
+                content: `# Summary — Operators & Control Flow
+
+## Key Patterns
+
+| Pattern | Go Syntax |
+|---------|-----------|
+| Standard loop | \`for i := 0; i < n; i++ { }\` |
+| While loop | \`for condition { }\` |
+| Infinite loop | \`for { }\` |
+| Range loop | \`for i, v := range collection { }\` |
+| if-init | \`if err := fn(); err != nil { }\` |
+| Multi-case switch | \`case "a", "b", "c":\` |
+| Condition-less switch | \`switch { case x > 0: ... }\` |
+
+## Next Up
+
+**Functions** — declarations, multiple returns, variadic functions, closures, and defer!`,
+            },
+        ],
+    });
+
+    console.log('✅ Golang Topic 3 seeded!');
+
+    // ── Step 3: Create LearnPrerequisite links ──
+    console.log('  🔗 Creating prerequisite links...');
+    for (let i = 1; i < createdLearns.length; i++) {
+        const prev = createdLearns[i - 1];
+        const curr = createdLearns[i];
+        if (prev && curr) {
+            await prisma.learnPrerequisite.create({
+                data: { learnId: curr.id, prerequisiteId: prev.id },
+            }).catch(() => {});
+        }
+    }
+    console.log(`  ✅ Created ${createdLearns.length - 1} prerequisite links`);
+
+    // Update topic learn counts
+    for (const t of topicDefs) {
+        const count = await prisma.learn.count({ where: { topicId: topics[t.slug]?.id } });
+        await prisma.learnTopic.update({
+            where: { id: topics[t.slug]?.id },
+            data: { learnCount: count },
+        });
+    }
+
+    // Update subcategory learn count
+    const totalCount = await prisma.learn.count({ where: { subCategoryId: golang.id } });
+    await prisma.learnSubCategory.update({
+        where: { id: golang.id },
+        data: { learnCount: totalCount },
+    });
+
+    console.log(`\n✅ Golang Learn seeded: ${createdLearns.length} learns across ${topicDefs.length} topics`);
 }

@@ -9,7 +9,9 @@ import { Button } from "@repo/ui/components/ui/button";
 import Link from "next/link";
 import { StudioViewer } from "./viewer/studio-viewer";
 import { AIInputPanel } from "./ui/ai-input-panel";
-import { createStudio, getStudioWithSteps } from "@/actions/(main)/studios/studio.actions";
+import { 
+    createStudio, getStudioWithSteps
+} from "@/actions/(main)/studios/studio.actions";
 import toast from "@repo/ui/components/ui/sonner";
 import { useStudioStore } from "@/app/store/studioStore";
 import type { StudioWithSteps } from "@/types/studios";
@@ -137,91 +139,96 @@ export function StudioPanel({
 
     return (
         <AnimatePresence>
-            {isOpen && (
-                <motion.aside
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`hidden lg:flex flex-col flex-shrink-0 border-l border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 overflow-hidden h-[calc(100vh-4rem)] sticky top-14 ${className || ""}`}
-                >
-                    {/* Studio Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
-                        <div className="flex items-center gap-2">
-                            <PenLine className="w-4 h-4 text-purple-500" />
-                            <span className="text-sm font-semibold">Studio</span>
+            {
+                isOpen && (
+                    <motion.aside
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width, opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className={`hidden lg:flex flex-col flex-shrink-0 border-l border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 overflow-hidden h-[calc(100vh-4rem)] sticky top-14 ${className || ""}`}
+                    >
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <PenLine className="w-4 h-4 text-purple-500" />
+                                <span className="text-sm font-semibold">Studio</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                {
+                                    studioId && (
+                                        <Link href="/studio">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" title="Open full Studio">
+                                                <ExternalLink className="w-3.5 h-3.5" />
+                                            </Button>
+                                        </Link>
+                                    )
+                                }
+                                {
+                                    !hideClose && (
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggle}>
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                    )
+                                }
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                            {studioId && (
-                                <Link href="/studio">
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Open full Studio">
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                    </Button>
-                                </Link>
-                            )}
-                            {!hideClose && (
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggle}>
-                                    <X className="w-4 h-4" />
-                                </Button>
-                            )}
-                        </div>
-                    </div>
 
-                    {!studioId ? (
-                        /* No studio yet - show "Create Studio" prompt */
-                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center mb-4">
-                                <PenLine className="w-8 h-8 text-purple-500" />
-                            </div>
-                            <h3 className="text-lg font-semibold mb-2">Create Studio</h3>
-                            <p className="text-sm text-muted-foreground mb-2 max-w-[280px]">
-                                Create a personal studio for <strong>{context.topicLabel || context.title}</strong> to take AI-powered notes, generate explanations, quizzes, and more.
-                            </p>
-                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-6 max-w-[260px]">
-                                Tip: Select any text in the lesson and click &ldquo;Ask AI&rdquo; to get instant explanations!
-                            </p>
-                            <Button
-                                onClick={handleCreateStudio}
-                                disabled={isCreatingStudio}
-                                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
-                            >
-                                {isCreatingStudio ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Creating...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Create Studio for {context.topicLabel || "this topic"}
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    ) : (
-                        /* Studio exists - show StudioViewer + AIInputPanel */
-                        <>
-                            {/* Studio Content Viewer */}
-                            <div className="flex-1 overflow-hidden">
-                                <StudioViewer
-                                    studio={studioData || undefined}
-                                    studioId={studioId}
-                                    className="h-full"
-                                />
-                            </div>
-                            {/* AI Input Panel at bottom */}
-                            <div className="shrink-0">
-                                <AIInputPanel
-                                    studioId={studioId}
-                                    onContentAdded={handleContentAdded}
-                                    externalPrompt={externalPrompt}
-                                    onExternalPromptConsumed={() => setExternalPrompt(null)}
-                                />
-                            </div>
-                        </>
-                    )}
-                </motion.aside>
-            )}
+                        {
+                            !studioId ? (
+                                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                                    <div className="w-16 h-16 rounded-2xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-center mb-4">
+                                        <PenLine className="w-8 h-8 text-white dark:text-black" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold mb-2">Create Studio</h3>
+                                    <p className="text-sm text-black dark:text-white mb-2 max-w-[280px]">
+                                        Create a personal studio for <strong>{context.topicLabel || context.title}</strong> to take AI-powered notes, generate explanations, quizzes, and more.
+                                    </p>
+                                    <p className="text-xs text-black dark:text-white mb-6 max-w-[260px]">
+                                        Tip: Select any text in the lesson and click &ldquo;Ask AI&rdquo; to get instant explanations!
+                                    </p>
+                                    <Button
+                                        onClick={handleCreateStudio}
+                                        disabled={isCreatingStudio}
+                                        className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+                                    >
+                                        {
+                                            isCreatingStudio ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Creating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Create Studio for {context.topicLabel || "this topic"}
+                                                </>
+                                            )
+                                        }
+                                    </Button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex-1 overflow-hidden">
+                                        <StudioViewer
+                                            studio={studioData || undefined}
+                                            studioId={studioId}
+                                            className="h-full"
+                                        />
+                                    </div>
+                                    <div className="shrink-0">
+                                        <AIInputPanel
+                                            studioId={studioId}
+                                            onContentAdded={handleContentAdded}
+                                            externalPrompt={externalPrompt}
+                                            onExternalPromptConsumed={() => setExternalPrompt(null)}
+                                        />
+                                    </div>
+                                </>
+                            )
+                        }
+                    </motion.aside>
+                )
+            }
         </AnimatePresence>
     );
 }

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { StudioWithSteps, StudioStep, QuizMetadata } from "@/types/studios";
 import { getStudioWithSteps } from "@/actions/(main)/studios/studio.actions";
+import { getQuizById } from "@/actions/(main)/studios/ai-generation.actions";
 import { useStudioStore } from "@/app/store/studioStore";
 
 interface StudioViewerProps {
@@ -194,22 +195,27 @@ export function StudioViewer({
 		if (steps.length === 0) return;
 		const loadQuizData = async () => {
 			const quizSteps = steps.filter((s) => s.type === "QUIZ");
-
-			if (quizSteps.length === 0) {
-				return;
-			}
+			if (quizSteps.length === 0) return;
 
 			const quizDataMap: Record<string, unknown> = {};
 
 			for (const step of quizSteps) {
 				const metadata = step.metadata as unknown as QuizMetadata;
-				if (metadata.quizId) {
-					// Fetch quiz data
-					// quizDataMap[metadata.quizId] = await fetchQuizData(metadata.quizId);
+				if (metadata.quizId && !quizData[metadata.quizId]) {
+					try {
+						const result = await getQuizById(metadata.quizId);
+						if (result.success && result.quiz) {
+							quizDataMap[metadata.quizId] = result.quiz;
+						}
+					} catch (err) {
+						console.error("Failed to load quiz:", err);
+					}
 				}
 			}
 
-			setQuizData(quizDataMap);
+			if (Object.keys(quizDataMap).length > 0) {
+				setQuizData((prev) => ({ ...prev, ...quizDataMap }));
+			}
 		};
 
 		loadQuizData();

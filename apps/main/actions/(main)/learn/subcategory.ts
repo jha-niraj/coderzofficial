@@ -25,6 +25,21 @@ export async function getSubCategoryLearns(subcategorySlug: string) {
             return { error: "Subcategory not found", learns: [], stats: { totalLearns: 0, totalSteps: 0, usersEnrolled: 0, avgCompletion: 0 } };
         }
 
+        // Fetch topics for this subcategory
+        const topics = await prisma.learnTopic.findMany({
+            where: { subCategoryId: subCategory.id },
+            orderBy: { order: "asc" },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                description: true,
+                icon: true,
+                order: true,
+                learnCount: true,
+            },
+        });
+
         const learns = await prisma.learn.findMany({
             where: {
                 subCategoryId: subCategory.id,
@@ -45,6 +60,8 @@ export async function getSubCategoryLearns(subcategorySlug: string) {
                 unitNumber: true,
                 unitTitle: true,
                 tags: true,
+                topicId: true,
+                topic: { select: { name: true, slug: true, icon: true, order: true } },
                 _count: { select: { steps: true } },
             },
         });
@@ -102,6 +119,7 @@ export async function getSubCategoryLearns(subcategorySlug: string) {
                     slug: subCategory.mainCategory.slug,
                 } : null,
             },
+            topics,
             learns: learnsWithProgress,
             stats: {
                 totalLearns: learns.length,
@@ -157,68 +175,5 @@ export async function getSubCategoryLeaderboard(subcategorySlug: string) {
     } catch (error) {
         console.error("Error fetching leaderboard:", error);
         return { leaderboard: [] };
-    }
-}
-
-export async function updateLeaderboardScore(
-    subCategoryId: string,
-    userId: string,
-    scoreUpdate: {
-        quizScore?: number;
-        challengeScore?: number;
-        mockScore?: number;
-        projectScore?: number;
-        quizzesCompleted?: number;
-        challengesCompleted?: number;
-        mocksCompleted?: number;
-        projectsCompleted?: number;
-        learnsCompleted?: number;
-    }
-) {
-    try {
-        const existing = await prisma.learnLeaderboard.findUnique({
-            where: { subCategoryId_userId: { subCategoryId, userId } },
-        });
-
-        const newQuizScore = (existing?.quizScore || 0) + (scoreUpdate.quizScore || 0);
-        const newChallengeScore = (existing?.challengeScore || 0) + (scoreUpdate.challengeScore || 0);
-        const newMockScore = (existing?.mockScore || 0) + (scoreUpdate.mockScore || 0);
-        const newProjectScore = (existing?.projectScore || 0) + (scoreUpdate.projectScore || 0);
-        const totalScore = newQuizScore + newChallengeScore + newMockScore + newProjectScore;
-
-        await prisma.learnLeaderboard.upsert({
-            where: { subCategoryId_userId: { subCategoryId, userId } },
-            update: {
-                quizScore: newQuizScore,
-                challengeScore: newChallengeScore,
-                mockScore: newMockScore,
-                projectScore: newProjectScore,
-                totalScore,
-                quizzesCompleted: { increment: scoreUpdate.quizzesCompleted || 0 },
-                challengesCompleted: { increment: scoreUpdate.challengesCompleted || 0 },
-                mocksCompleted: { increment: scoreUpdate.mocksCompleted || 0 },
-                projectsCompleted: { increment: scoreUpdate.projectsCompleted || 0 },
-                learnsCompleted: { increment: scoreUpdate.learnsCompleted || 0 },
-            },
-            create: {
-                subCategoryId,
-                userId,
-                quizScore: scoreUpdate.quizScore || 0,
-                challengeScore: scoreUpdate.challengeScore || 0,
-                mockScore: scoreUpdate.mockScore || 0,
-                projectScore: scoreUpdate.projectScore || 0,
-                totalScore: (scoreUpdate.quizScore || 0) + (scoreUpdate.challengeScore || 0) + (scoreUpdate.mockScore || 0) + (scoreUpdate.projectScore || 0),
-                quizzesCompleted: scoreUpdate.quizzesCompleted || 0,
-                challengesCompleted: scoreUpdate.challengesCompleted || 0,
-                mocksCompleted: scoreUpdate.mocksCompleted || 0,
-                projectsCompleted: scoreUpdate.projectsCompleted || 0,
-                learnsCompleted: scoreUpdate.learnsCompleted || 0,
-            },
-        });
-
-        return { success: true };
-    } catch (error) {
-        console.error("Error updating leaderboard:", error);
-        return { error: "Failed to update leaderboard" };
     }
 }

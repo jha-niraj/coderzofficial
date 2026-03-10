@@ -2,6 +2,7 @@ import { prisma } from '@repo/prisma'
 import bcrypt from 'bcryptjs'
 import { seedCppLearnContent } from './cpp-learn-seed'
 import { seedGolangLearnContent } from './golang-learn-seed'
+import { seedSqlLearnContent } from './sql-learn-seed'
 
 async function main() {
     console.log('🌱 Starting database seeding...\n')
@@ -22,6 +23,15 @@ async function main() {
         console.log('✅ Golang learning content seeded successfully!')
     } catch (error) {
         console.error('⚠️ Error seeding Golang learning content:', error)
+    }
+
+    try {
+        // Seed SQL Learning Content
+        console.log('\n📘 Seeding SQL Learning Content...')
+        await seedSqlLearnContent()
+        console.log('✅ SQL learning content seeded successfully!')
+    } catch (error) {
+        console.error('⚠️ Error seeding SQL learning content:', error)
     }
 
     console.log('🎉 Seeding completed!\n')

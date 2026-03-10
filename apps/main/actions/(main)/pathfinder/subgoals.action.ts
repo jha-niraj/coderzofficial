@@ -262,6 +262,15 @@ export async function createSubGoal(input: CreateSubGoalInput) {
             include: { goal: true },
         })
 
+        // Push AI-generated content to the goal's Studio (non-blocking)
+        pushSubgoalContentToStudio(
+            input.goalId,
+            session.user.id,
+            input.title,
+            updatedSubGoal,
+            resources
+        ).catch((err) => console.error('Failed to push content to studio:', err))
+
         // Get updated usage summary for instant UI
         const usageSummary = await getGoalUsageSummary(input.goalId)
 
@@ -798,5 +807,109 @@ export async function saveSessionNotes(sessionId: string, notes: string) {
     } catch (error) {
         console.error('Error saving notes:', error)
         return { success: false, error: 'Failed to save notes' }
+    }
+}
+
+// ================================================================================
+// PUSH SUBGOAL CONTENT TO STUDIO
+// ================================================================================
+
+async function pushSubgoalContentToStudio(
+    goalId: string,
+    userId: string,
+    subgoalTitle: string,
+    subGoal: any,
+    resources: any
+) {
+    try {
+        const goal = await prisma.pathfinderGoal.findUnique({
+            where: { id: goalId },
+            select: { studioId: true, title: true, slug: true, category: true },
+        })
+        if (!goal) return
+
+        let studioId = goal.studioId
+
+        if (!studioId) {
+            const { StudioVisibility } = await import('@repo/prisma/client')
+            const studioSlug = `notes-${goal.slug}-${Date.now().toString(36)}`
+            const categoryMap: Record<string, string> = {
+                DSA: 'PROGRAMMING', WEB_DEVELOPMENT: 'WEB_DEVELOPMENT', FRONTEND: 'WEB_DEVELOPMENT',
+                BACKEND: 'PROGRAMMING', DEVOPS: 'DEVOPS', AI_ML: 'DATA_SCIENCE',
+                DATABASE: 'PROGRAMMING', SYSTEM_DESIGN: 'SYSTEM_DESIGN', MOBILE: 'MOBILE_DEVELOPMENT', OTHER: 'GENERAL',
+            }
+            const studio = await prisma.studio.create({
+                data: {
+                    slug: studioSlug,
+                    title: `📝 Notes: ${goal.title}`,
+                    description: `Personal notes for: ${goal.title}`,
+                    category: (categoryMap[goal.category] || 'GENERAL') as any,
+                    tags: ['pathfinder', 'notes'],
+                    visibility: StudioVisibility.PRIVATE,
+                    userId,
+                },
+            })
+            studioId = studio.id
+            await prisma.pathfinderGoal.update({ where: { id: goalId }, data: { studioId: studio.id } })
+        }
+
+        const maxOrder = await prisma.studioStep.findFirst({
+            where: { studioId },
+            orderBy: { orderNumber: 'desc' },
+            select: { orderNumber: true },
+        })
+        let nextOrder = (maxOrder?.orderNumber ?? 0) + 1
+
+        // Build markdown from resources
+        let markdownContent = `# ${subgoalTitle}\n\n`
+
+        if (resources?.explanation) {
+            markdownContent += resources.explanation + '\n\n'
+        }
+
+        if (resources?.videos?.length > 0) {
+            markdownContent += '## 📹 Recommended Videos\n\n'
+            for (const video of resources.videos) {
+                markdownContent += `- [${video.title}](${video.url})\n`
+            }
+            markdownContent += '\n'
+        }
+
+        if (resources?.docs?.length > 0) {
+            markdownContent += '## 📄 Resources\n\n'
+            for (const doc of resources.docs) {
+                markdownContent += `- [${doc.title}](${doc.url})${doc.description ? ` — ${doc.description}` : ''}\n`
+            }
+            markdownContent += '\n'
+        }
+
+        if (resources?.flashcards?.length > 0) {
+            markdownContent += '## 🃏 Key Concepts\n\n'
+            for (const card of resources.flashcards) {
+                markdownContent += `**${card.front}**\n> ${card.back}\n\n`
+            }
+        }
+
+        if (markdownContent.trim().length > subgoalTitle.length + 5) {
+            await prisma.studioStep.create({
+                data: {
+                    studioId,
+                    type: 'EXPLANATION',
+                    content: markdownContent,
+                    metadata: { prompt: `Subgoal: ${subgoalTitle}`, model: 'pathfinder-auto' },
+                    source: 'AI',
+                    orderNumber: nextOrder,
+                    status: 'COMPLETED',
+                },
+            })
+            nextOrder++
+
+            await prisma.studio.update({
+                where: { id: studioId },
+                data: { stepCount: { increment: 1 }, lastEditedAt: new Date() },
+            })
+        }
+    } catch (error) {
+        console.error('Error pushing subgoal content to studio:', error)
     }
 }

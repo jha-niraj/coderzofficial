@@ -1012,8 +1012,6 @@ export default function StepCard({
                                     </div>
                                 )
                             }
-
-                            {/* Voice Interview Section */}
                             {
                                 showVoiceInterview ? (
                                     <div className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-rose-200 dark:border-rose-800">
