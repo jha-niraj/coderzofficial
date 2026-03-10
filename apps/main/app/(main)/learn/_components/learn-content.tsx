@@ -308,7 +308,7 @@ export function LearnsContent({
                                                                 <Card className="group p-5 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 bg-white dark:bg-neutral-900/50 hover:shadow-md transition-all cursor-pointer h-full">
                                                                     <div className="flex items-start justify-between mb-3">
                                                                         <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xl">
-                                                                            {sub.icon || <Code className="w-5 h-5 text-neutral-500" />}
+                                                                            {(typeof sub.icon === 'string' && sub.icon) ? sub.icon : <Code className="w-5 h-5 text-neutral-500" />}
                                                                         </div>
                                                                         <ArrowRight className="w-4 h-4 text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-500 group-hover:translate-x-0.5 transition-all" />
                                                                     </div>

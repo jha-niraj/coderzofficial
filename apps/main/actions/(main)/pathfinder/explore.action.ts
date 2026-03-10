@@ -121,6 +121,7 @@ export async function getPublicPathfinderGoalBySlugOnly(slug: string) {
                                 description: true,
                                 status: true,
                                 hasCoding: true,
+                                isAIGenerated: true,
                             },
                         },
                     },

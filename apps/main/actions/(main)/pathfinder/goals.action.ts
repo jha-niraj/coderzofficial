@@ -3,7 +3,9 @@
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
-import { PathfinderCategory, PathfinderLevel, PathfinderStatus, Currency } from '@repo/prisma/client'
+import { 
+    PathfinderCategory, PathfinderLevel, PathfinderStatus, Currency 
+} from '@repo/prisma/client'
 import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
 // ================================================================================
@@ -22,6 +24,8 @@ export interface CreateGoalInput {
     groupId?: string | null
     /** false = private (5 credits), true = public (free) */
     isPublic?: boolean
+    /** If true, AI generates a study plan (5-15 subgoals) after goal creation */
+    generateAIPlan?: boolean
 }
 
 // ================================================================================
@@ -215,6 +219,18 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
             },
         })
 
+        // Generate AI study plan if requested (non-blocking)
+        if (input.generateAIPlan) {
+            generateAIStudyPlan(
+                goal.id,
+                session.user.id,
+                input.title,
+                input.category,
+                input.level,
+                input.focusAreas
+            ).catch((err) => console.error('Failed to generate AI study plan:', err))
+        }
+
         revalidatePath('/pathfinder')
         return { success: true, goalId: goal.id, slug: goal.slug }
     } catch (error) {
@@ -384,6 +400,290 @@ export async function deletePathfinderGoal(goalId: string) {
 // ================================================================================
 // HELPER FUNCTIONS
 // ================================================================================
+
+// ================================================================================
+// AI STUDY PLAN GENERATION
+// ================================================================================
+
+import OpenAI from 'openai'
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+interface StudyPlanTopic {
+    title: string
+    description: string
+    order: number
+}
+
+async function generateAIStudyPlan(
+    goalId: string,
+    userId: string,
+    title: string,
+    category: PathfinderCategory,
+    level: PathfinderLevel,
+    focusAreas: string[]
+) {
+    try {
+        const topicCount = level === 'BEGINNER' ? '8-12' : level === 'INTERMEDIATE' ? '10-15' : '12-15'
+
+        const prompt = `You are an expert educator creating a structured study plan.
+
+A user wants to learn "${title}" at ${level.toLowerCase()} level.
+Category: ${category.replace('_', ' ')}
+Focus areas: ${focusAreas.length > 0 ? focusAreas.join(', ') : 'General'}
+
+Generate ${topicCount} study topics/sub-goals that form a logical learning path from basics to advanced.
+
+Rules:
+- Topics should be ordered from foundational to advanced
+- Each topic should be a discrete learning unit (1-3 hours of study)
+- Cover theory, practice, and real-world application
+- For ${level.toLowerCase()} level, adjust depth appropriately
+- Be specific (not "Learn arrays" but "Arrays: Traversal, Insertion, and Deletion Patterns")
+- Include practical/hands-on topics (not just theory)
+
+Return JSON:
+{
+  "topics": [
+    { "title": "Topic title", "description": "Brief 1-2 sentence description of what this covers", "order": 1 }
+  ]
+}
+
+Return ONLY valid JSON, no markdown.`
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 2000,
+            response_format: { type: 'json_object' },
+        })
+
+        const content = response.choices[0]?.message?.content
+        if (!content) return
+
+        const parsed = JSON.parse(content) as { topics: StudyPlanTopic[] }
+        if (!parsed.topics || !Array.isArray(parsed.topics)) return
+
+        // Log usage
+        const { logPathfinderUsage } = await import('./usage.action')
+        const inputTokens = response.usage?.prompt_tokens ?? 0
+        const outputTokens = response.usage?.completion_tokens ?? 0
+        if (inputTokens > 0 || outputTokens > 0) {
+            await logPathfinderUsage({
+                goalId,
+                userId,
+                action: 'ai_study_plan',
+                provider: 'openai',
+                inputTokens,
+                outputTokens,
+            })
+        }
+
+        // Create a daily session for the AI-generated plan
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        let dailySession = await prisma.pathfinderDailySession.findUnique({
+            where: { goalId_date: { goalId, date: today } },
+        })
+
+        if (!dailySession) {
+            dailySession = await prisma.pathfinderDailySession.create({
+                data: { goalId, userId, date: today },
+            })
+        }
+
+        // Create sub-goals from AI topics
+        for (const topic of parsed.topics) {
+            await prisma.pathfinderSubGoal.create({
+                data: {
+                    goalId,
+                    sessionId: dailySession.id,
+                    title: topic.title,
+                    description: topic.description,
+                    source: 'text',
+                    order: topic.order,
+                    isAIGenerated: true,
+                    isContentLoaded: false,
+                },
+            })
+        }
+
+        // Update session and goal stats
+        await prisma.pathfinderDailySession.update({
+            where: { id: dailySession.id },
+            data: { totalSubGoals: { increment: parsed.topics.length } },
+        })
+
+        await prisma.pathfinderGoal.update({
+            where: { id: goalId },
+            data: {
+                totalSubGoals: { increment: parsed.topics.length },
+                aiGeneratedPlan: JSON.parse(JSON.stringify(parsed.topics)),
+                lastActivityAt: new Date(),
+            },
+        })
+
+        revalidatePath('/pathfinder')
+    } catch (error) {
+        console.error('Error generating AI study plan:', error)
+    }
+}
+
+/**
+ * Generate AI content (quiz, coding, resources) for an AI-generated sub-goal
+ * that hasn't had content loaded yet. Called when user clicks "Generate Content".
+ */
+export async function generateContentForAISubGoal(subGoalId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { success: false, error: 'Unauthorized' }
+        }
+
+        const subGoal = await prisma.pathfinderSubGoal.findFirst({
+            where: { id: subGoalId },
+            include: { goal: { select: { id: true, userId: true, category: true, level: true, title: true } } },
+        })
+
+        if (!subGoal || subGoal.goal.userId !== session.user.id) {
+            return { success: false, error: 'Sub-goal not found' }
+        }
+
+        if (subGoal.isContentLoaded) {
+            return { success: true, message: 'Content already loaded' }
+        }
+
+        // Check usage
+        const { canRunPathfinderAI, getGoalUsageSummary } = await import('./usage.action')
+        const canRun = await canRunPathfinderAI(subGoal.goalId)
+        if (!canRun.allowed) {
+            return {
+                success: false,
+                error: canRun.reason ?? 'AI usage limit reached',
+                code: 'USAGE_BLOCKED',
+            }
+        }
+
+        // Generate content and resources in parallel
+        const { generateSubGoalResources } = await import('./resources.action')
+
+        const [, resourcesResult] = await Promise.all([
+            generateQuizAndCoding(subGoalId, subGoal.goalId, session.user.id, subGoal.title, subGoal.goal.category, subGoal.goal.level),
+            generateSubGoalResources(subGoalId, subGoal.goalId, session.user.id, subGoal.title, subGoal.goal.category, subGoal.goal.level),
+        ])
+
+        // Mark as content loaded
+        await prisma.pathfinderSubGoal.update({
+            where: { id: subGoalId },
+            data: { isContentLoaded: true },
+        })
+
+        const usageSummary = await getGoalUsageSummary(subGoal.goalId)
+
+        revalidatePath(`/pathfinder/${subGoal.goalId}`)
+        return {
+            success: true,
+            resources: resourcesResult?.resources ?? null,
+            usageSummary: usageSummary ?? undefined,
+        }
+    } catch (error) {
+        console.error('Error generating content for AI sub-goal:', error)
+        return { success: false, error: 'Failed to generate content' }
+    }
+}
+
+async function generateQuizAndCoding(
+    subGoalId: string,
+    goalId: string,
+    userId: string,
+    title: string,
+    category: string,
+    level: string
+) {
+    try {
+        const prompt = `You are an expert educator creating learning content.
+
+A user is learning about "${title}" as part of their ${category} studies at ${level} level.
+
+Generate:
+1. 3-5 quiz questions to test understanding of this topic
+2. Optionally, ONE coding problem if this topic involves practical coding skills
+
+Return JSON in this exact format:
+{
+  "quizQuestions": [
+    {
+      "id": "q1",
+      "question": "The question text",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": 0,
+      "explanation": "Why this is correct"
+    }
+  ],
+  "codingProblem": null OR {
+    "title": "Problem title",
+    "description": "Detailed problem description",
+    "difficulty": "EASY" | "MEDIUM" | "HARD",
+    "starterCode": "function solve() {\\n  // Your code here\\n}",
+    "hints": ["Hint 1", "Hint 2"],
+    "sampleInput": "Example input",
+    "sampleOutput": "Expected output"
+  }
+}
+
+Return ONLY valid JSON, no markdown.`
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 2000,
+            response_format: { type: 'json_object' },
+        })
+
+        const content = response.choices[0]?.message?.content
+        if (!content) return
+
+        const { logPathfinderUsage } = await import('./usage.action')
+        const inputTokens = response.usage?.prompt_tokens ?? 0
+        const outputTokens = response.usage?.completion_tokens ?? 0
+        if (inputTokens > 0 || outputTokens > 0) {
+            await logPathfinderUsage({ goalId, userId, action: 'subgoal_quiz_coding', provider: 'openai', inputTokens, outputTokens })
+        }
+
+        const aiContent = JSON.parse(content)
+
+        await prisma.pathfinderSubGoal.update({
+            where: { id: subGoalId },
+            data: {
+                aiQuizQuestions: aiContent.quizQuestions || [],
+                aiCodingProblem: aiContent.codingProblem || null,
+                hasCoding: !!aiContent.codingProblem,
+            },
+        })
+
+        const subGoal = await prisma.pathfinderSubGoal.findUnique({
+            where: { id: subGoalId },
+            select: { sessionId: true },
+        })
+
+        if (subGoal) {
+            const quizCount = aiContent.quizQuestions?.length || 0
+            const codingCount = aiContent.codingProblem ? 1 : 0
+            await prisma.pathfinderDailySession.update({
+                where: { id: subGoal.sessionId },
+                data: {
+                    totalQuizQuestions: { increment: quizCount },
+                    totalCodingProblems: { increment: codingCount },
+                },
+            })
+        }
+    } catch (error) {
+        console.error('Error generating quiz/coding for AI sub-goal:', error)
+    }
+}
 
 function getCategoryEmoji(category: PathfinderCategory): string {
     const emojis: Record<PathfinderCategory, string> = {

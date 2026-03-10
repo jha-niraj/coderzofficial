@@ -12,8 +12,9 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import { Progress } from '@repo/ui/components/ui/progress'
 import {
     Target, CheckCircle, Sparkles, ArrowRight, ArrowLeft, Brain, Check,
-    Link as LinkIcon, FolderPlus, Loader2
+    Link as LinkIcon, FolderPlus, Loader2, Wand2
 } from 'lucide-react'
+import { Switch } from '@repo/ui/components/ui/switch'
 import toast from '@repo/ui/components/ui/sonner'
 import {
     createPathfinderGoal, createPathfinderGroup
@@ -91,6 +92,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
         focusAreas: [] as string[],
         groupId: null as string | null,
         isPublic: true as boolean,
+        generateAIPlan: true as boolean,
     })
 
     // Group creation state
@@ -129,6 +131,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
             focusAreas: [],
             groupId: null,
             isPublic: true as boolean,
+            generateAIPlan: true as boolean,
         })
         setShowNewGroup(false)
         setNewGroupName('')
@@ -225,6 +228,7 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                 focusAreas: formData.focusAreas,
                 groupId: formData.groupId,
                 isPublic: formData.isPublic,
+                generateAIPlan: formData.generateAIPlan,
             })
 
             if (!result.success) {
@@ -301,10 +305,14 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                         </div>
                                     </div>
                                     <h3 className="text-lg font-medium mb-1 text-neutral-900 dark:text-white">
-                                        {progressPercent === 100 ? 'Goal Created!' : 'Creating Goal...'}
+                                        {progressPercent === 100 ? 'Goal Created!' : formData.generateAIPlan ? 'Creating Goal & Study Plan...' : 'Creating Goal...'}
                                     </h3>
                                     <p className="text-sm text-neutral-500 mb-6">
-                                        {progressPercent === 100 ? 'Redirecting to your goal' : 'Setting up...'}
+                                        {progressPercent === 100
+                                            ? 'Redirecting to your goal'
+                                            : formData.generateAIPlan
+                                                ? 'AI is generating your personalized study plan'
+                                                : 'Setting up...'}
                                     </p>
 
                                     <div className="w-full max-w-xs">
@@ -545,6 +553,28 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                                             </h3>
                                                             <p className="text-sm text-neutral-500">Group your goal for better organization</p>
                                                         </div>
+
+                                                        {/* AI Study Plan Toggle */}
+                                                        <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-gradient-to-r from-neutral-50 to-neutral-100/50 dark:from-neutral-800/50 dark:to-neutral-900/50">
+                                                            <div className="flex items-start gap-3">
+                                                                <div className="w-9 h-9 rounded-lg bg-neutral-900 dark:bg-white flex items-center justify-center shrink-0">
+                                                                    <Wand2 className="w-4 h-4 text-white dark:text-neutral-900" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <p className="text-sm font-medium text-neutral-900 dark:text-white">AI Study Plan</p>
+                                                                        <Switch
+                                                                            checked={formData.generateAIPlan}
+                                                                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, generateAIPlan: checked }))}
+                                                                        />
+                                                                    </div>
+                                                                    <p className="text-xs text-neutral-500 mt-0.5">
+                                                                        Generate 8-15 study topics tailored to your level with AI
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
                                                         <div className="space-y-2">
                                                             <Label className="text-xs text-neutral-500">Visibility</Label>
                                                             <div className="grid grid-cols-2 gap-2">
@@ -743,8 +773,8 @@ export function CreateGoalSheet({ open, onOpenChange, onSuccess, groups = [], on
                                             {
                                                 step === steps.length - 1 ? (
                                                     <>
-                                                        <Sparkles className="w-4 h-4 mr-1" />
-                                                        Create Goal
+                                                        {formData.generateAIPlan ? <Wand2 className="w-4 h-4 mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                                                        {formData.generateAIPlan ? 'Create Goal + AI Plan' : 'Create Goal'}
                                                     </>
                                                 ) : (
                                                     <>

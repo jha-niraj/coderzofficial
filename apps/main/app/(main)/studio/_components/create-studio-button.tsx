@@ -23,7 +23,7 @@ import {
     SelectValue,
 } from "@repo/ui/components/ui/select";
 import { createStudio } from "@/actions/(main)/studios/studio.actions";
-import { toast } from "sonner";
+import toast from "@repo/ui/components/ui/sonner";
 
 const CATEGORY_OPTIONS = [
     { value: "GENERAL", label: "General", emoji: "📚" },

@@ -8,7 +8,7 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2,
     Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles, Coins,
-    NotebookPen
+    NotebookPen, Wand2
 } from 'lucide-react'
 import Link from 'next/link'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
@@ -16,6 +16,7 @@ import { cn } from '@repo/ui/lib/utils'
 import {
     updateSubGoalStatus, deleteSubGoal, getSubGoalWithContent
 } from '@/actions/(main)/pathfinder/subgoals.action'
+import { generateContentForAISubGoal } from '@/actions/(main)/pathfinder/goals.action'
 import { createOrGetStudioForGoal } from '@/actions/(main)/pathfinder/studio-link.action'
 import { useRouter } from 'next/navigation'
 import {
@@ -44,6 +45,8 @@ interface SubGoal {
     codingCompleted: boolean
     codingPassed: boolean
     order: number
+    isAIGenerated?: boolean
+    isContentLoaded?: boolean
 }
 
 interface DailySession {
@@ -149,15 +152,19 @@ function SubGoalItem({
     onSelect,
     onStatusChange,
     onDelete,
+    onGenerateContent,
 }: {
     subGoal: SubGoal
     isSelected: boolean
     onSelect: () => void
     onStatusChange: (status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED') => void
     onDelete: () => void
+    onGenerateContent?: () => void
 }) {
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isGenerating, setIsGenerating] = useState(false)
     const hasAiContent = subGoal.aiQuizQuestions !== null
+    const needsContentGeneration = subGoal.isAIGenerated && !subGoal.isContentLoaded && !hasAiContent
 
     const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -211,7 +218,33 @@ function SubGoalItem({
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                     {
-                        !hasAiContent && (
+                        needsContentGeneration && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (onGenerateContent && !isGenerating) {
+                                        setIsGenerating(true)
+                                        onGenerateContent()
+                                    }
+                                }}
+                                className="inline-flex items-center gap-1 text-[10px] h-5 px-2 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium hover:opacity-90 transition-opacity"
+                                disabled={isGenerating}
+                            >
+                                {isGenerating ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Sparkles className="w-2.5 h-2.5" />}
+                                {isGenerating ? 'Generating...' : 'Generate Content'}
+                            </button>
+                        )
+                    }
+                    {
+                        subGoal.isAIGenerated && !needsContentGeneration && !hasAiContent && (
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                                <Loader2 className="w-2 h-2 mr-1 animate-spin" />
+                                Generating...
+                            </Badge>
+                        )
+                    }
+                    {
+                        !subGoal.isAIGenerated && !hasAiContent && (
                             <Badge variant="secondary" className="text-[10px] h-4 px-1">
                                 <Loader2 className="w-2 h-2 mr-1 animate-spin" />
                                 Generating...
@@ -236,6 +269,13 @@ function SubGoalItem({
                             )}>
                                 <Code2 className="w-2 h-2 mr-1" />
                                 {subGoal.codingPassed ? 'Passed' : 'Failed'}
+                            </Badge>
+                        )
+                    }
+                    {
+                        subGoal.isAIGenerated && (
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
+                                AI
                             </Badge>
                         )
                     }
@@ -384,6 +424,36 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
         router.refresh()
     }
 
+    const handleGenerateContent = async (subGoalId: string) => {
+        try {
+            const result = await generateContentForAISubGoal(subGoalId)
+            if (result.success) {
+                toast.success('Content generated! Quiz and resources are ready.')
+                const updated = await getSubGoalWithContent(subGoalId)
+                if (updated.success && updated.subGoal) {
+                    const updatedSubGoal = updated.subGoal as SubGoal
+                    setSelectedSubGoal(updatedSubGoal)
+                    if (session) {
+                        setSession({
+                            ...session,
+                            subGoals: session.subGoals.map(sg =>
+                                sg.id === subGoalId ? updatedSubGoal : sg
+                            ),
+                        })
+                    }
+                    if (result.resources) {
+                        setSubGoalResources(subGoalId, result.resources as SubGoalResources)
+                    }
+                }
+                router.refresh()
+            } else {
+                toast.error(result.error || 'Failed to generate content')
+            }
+        } catch {
+            toast.error('Failed to generate content')
+        }
+    }
+
     const today = new Date().toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'short',
@@ -455,6 +525,11 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
                                             onSelect={() => setSelectedSubGoal(subGoal)}
                                             onStatusChange={(status) => handleStatusChange(subGoal.id, status)}
                                             onDelete={() => handleDelete(subGoal.id)}
+                                            onGenerateContent={
+                                                subGoal.isAIGenerated && !subGoal.isContentLoaded
+                                                    ? () => handleGenerateContent(subGoal.id)
+                                                    : undefined
+                                            }
                                         />
                                     ))
                                 }
