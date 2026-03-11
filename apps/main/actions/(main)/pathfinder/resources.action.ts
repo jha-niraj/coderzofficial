@@ -263,11 +263,7 @@ export async function generateSubGoalResources(
             flashcards: openaiResult.flashcards
         }
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: { aiResources: resources as unknown as object }
-        })
-
+        // Resources are now stored in Studio; return for in-memory use by caller
         // Log usage
         let totalCost = 0
         if (openaiResult.inputTokens > 0 || openaiResult.outputTokens > 0) {

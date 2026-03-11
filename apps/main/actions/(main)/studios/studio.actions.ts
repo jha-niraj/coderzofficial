@@ -11,10 +11,24 @@ import type {
 	StudioListItem,
 } from "@/types/studios";
 
+// Get studio IDs linked to Learn (from LearnProgress)
+export async function getLearnStudioIds(userId: string): Promise<string[]> {
+	try {
+		const progress = await prisma.learnProgress.findMany({
+			where: { userId, studioId: { not: null } },
+			select: { studioId: true },
+		});
+		return progress.map((p) => p.studioId!).filter(Boolean);
+	} catch {
+		return [];
+	}
+}
+
 // Get user's studios
 export async function getUserStudios(): Promise<{
 	success: boolean;
 	studios?: StudioListItem[];
+	learnStudioIds?: string[];
 	error?: string;
 }> {
 	try {
@@ -23,26 +37,30 @@ export async function getUserStudios(): Promise<{
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const studios = await prisma.studio.findMany({
-			where: { userId: session.user.id },
-			select: {
-				id: true,
-				slug: true,
-				title: true,
-				description: true,
-				emoji: true,
-				source: true,
-				sourceId: true,
-				stepCount: true,
-				lastEditedAt: true,
-				createdAt: true,
-			},
-			orderBy: { lastEditedAt: "desc" },
-		});
+		const [studios, learnStudioIds] = await Promise.all([
+			prisma.studio.findMany({
+				where: { userId: session.user.id },
+				select: {
+					id: true,
+					slug: true,
+					title: true,
+					description: true,
+					emoji: true,
+					source: true,
+					sourceId: true,
+					stepCount: true,
+					lastEditedAt: true,
+					createdAt: true,
+				},
+				orderBy: { lastEditedAt: "desc" },
+			}),
+			getLearnStudioIds(session.user.id),
+		]);
 
 		return {
 			success: true,
 			studios: studios as unknown as StudioListItem[],
+			learnStudioIds,
 		};
 	} catch (error) {
 		console.error("Error fetching studios:", error);
@@ -50,9 +68,9 @@ export async function getUserStudios(): Promise<{
 	}
 }
 
-// Get studio by ID with all steps
+// Get studio by ID or slug with all steps
 export async function getStudioWithSteps(
-	studioId: string
+	studioIdOrSlug: string
 ): Promise<{
 	success: boolean;
 	studio?: StudioWithSteps;
@@ -64,8 +82,14 @@ export async function getStudioWithSteps(
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const studio = await prisma.studio.findUnique({
-			where: { id: studioId, userId: session.user.id },
+		const studio = await prisma.studio.findFirst({
+			where: {
+				userId: session.user.id,
+				OR: [
+					{ id: studioIdOrSlug },
+					{ slug: studioIdOrSlug },
+				],
+			},
 			include: {
 				studioSteps: {
 					orderBy: { orderNumber: "asc" },

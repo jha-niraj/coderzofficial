@@ -45,12 +45,7 @@ export async function createStudioForGoal(
             },
         });
 
-        // Link studio to goal
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: { studioId: studio.id },
-        });
-
+        // Studio is linked via sourceId=goalId (goal-level studio)
         revalidatePath(`/pathfinder/${goalId}`);
         return { success: true, studioId: studio.id };
     } catch (error) {

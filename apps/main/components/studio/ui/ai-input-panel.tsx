@@ -149,14 +149,72 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 
 	const selectedOption = CONTENT_TYPES.find((t) => t.type === selectedType);
 
-	const handleGenerate = async () => {
-		if (!prompt.trim() || isGenerating) return;
+	const handleAddCodeOrNote = async () => {
+		if (selectedType !== "CODE" && selectedType !== "NOTE") return;
+		if (isGenerating) return;
 
+		setIsGenerating(true);
+		const pendingId = `pending_${Date.now()}`;
+		addPendingStep({
+			id: pendingId,
+			type: selectedType,
+			prompt: selectedType === "CODE" ? "Adding code block..." : "Adding note...",
+			status: "generating",
+			createdAt: new Date(),
+		});
+
+		try {
+			const result = await saveStep({
+				studioId,
+				type: selectedType,
+				content: selectedType === "NOTE" ? "" : "",
+				metadata:
+					selectedType === "NOTE"
+						? { editorType: "rich" }
+						: { language: "javascript", problemTitle: prompt.trim() || "Code block" },
+				source: "USER",
+			});
+
+			if (result.success && result.step) {
+				removePendingStep(pendingId);
+				addStep(result.step);
+				toast.success(selectedType === "NOTE" ? "Note added!" : "Code block added!");
+				setPrompt("");
+				onContentAdded?.();
+			} else {
+				updatePendingStep(pendingId, {
+					status: "error",
+					errorMessage: result.error || "Failed to add",
+				});
+				setTimeout(() => removePendingStep(pendingId), 3000);
+				toast.error(result.error || "Failed to add");
+			}
+		} catch (error) {
+			console.error("Add error:", error);
+			updatePendingStep(pendingId, {
+				status: "error",
+				errorMessage: "An error occurred",
+			});
+			setTimeout(() => removePendingStep(pendingId), 3000);
+			toast.error("An error occurred");
+		}
+		setIsGenerating(false);
+	};
+
+	const handleGenerate = async () => {
 		const option = CONTENT_TYPES.find((t) => t.type === selectedType);
 		if (option?.comingSoon) {
 			toast.info("This feature is coming soon!");
 			return;
 		}
+
+		// For Code and Note: allow adding without prompt (adds empty step directly)
+		if ((selectedType === "CODE" || selectedType === "NOTE") && !prompt.trim()) {
+			await handleAddCodeOrNote();
+			return;
+		}
+
+		if (!prompt.trim() || isGenerating) return;
 
 		setIsGenerating(true);
 
@@ -342,9 +400,9 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 									: selectedType === "QUIZ"
 										? "e.g., Create a quiz on React hooks"
 										: selectedType === "NOTE"
-											? "Write a title for your note..."
+											? "Optional: Add a title or leave empty to add a blank note"
 											: selectedType === "CODE"
-												? "e.g., Name your code block or describe the problem"
+												? "Optional: Name your code block or leave empty to add a blank editor"
 												: selectedType === "FLASHCARD"
 													? "e.g., Generate flashcards on JavaScript array methods"
 													: selectedType === "VIDEO"
@@ -359,7 +417,10 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 						<div className="absolute bottom-2 right-2">
 							<Button
 								onClick={handleGenerate}
-								disabled={!prompt.trim() || isGenerating}
+								disabled={
+									isGenerating ||
+									(!prompt.trim() && selectedType !== "CODE" && selectedType !== "NOTE")
+								}
 								size="icon"
 								className="h-8 w-8 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
 							>

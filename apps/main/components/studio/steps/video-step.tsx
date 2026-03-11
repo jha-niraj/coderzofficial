@@ -10,7 +10,10 @@ interface VideoStepProps {
 }
 
 export function VideoStep({ step }: VideoStepProps) {
-  const metadata = (step.metadata || {}) as Partial<VideoMetadata> & { videos?: Array<{ url: string; title?: string; duration?: string; description?: string }> };
+  const metadata = (step.metadata || {}) as Partial<VideoMetadata> & {
+    videos?: Array<{ url: string; title?: string; duration?: string; description?: string }>;
+    description?: string;
+  };
 
   // Support both single video (metadata.url) and multiple videos (metadata.videos from Exa)
   const videos = metadata.videos?.length
@@ -33,16 +36,16 @@ export function VideoStep({ step }: VideoStepProps) {
     return url;
   };
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins >= 60) {
-      const hours = Math.floor(mins / 60);
-      const remainingMins = mins % 60;
-      return `${hours}h ${remainingMins}m`;
-    }
-    return `${mins}:${String(secs).padStart(2, "0")}`;
-  };
+  // const formatDuration = (seconds: number) => {
+  //   const mins = Math.floor(seconds / 60);
+  //   const secs = seconds % 60;
+  //   if (mins >= 60) {
+  //     const hours = Math.floor(mins / 60);
+  //     const remainingMins = mins % 60;
+  //     return `${hours}h ${remainingMins}m`;
+  //   }
+  //   return `${mins}:${String(secs).padStart(2, "0")}`;
+  // };
 
   if (videos.length === 0) {
     return (
@@ -65,50 +68,60 @@ export function VideoStep({ step }: VideoStepProps) {
       animate={{ opacity: 1, y: 0 }}
       className="py-8 space-y-6"
     >
-      {videos.map((v, i) => (
-        <div key={i} className="rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 shadow-sm">
-          <div className="aspect-video bg-black">
-            <iframe
-              src={getEmbedUrl(v.url)}
-              title={v.title || "Video"}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-          {(v.title || v.duration || v.description) && (
-            <div className="px-6 py-4 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  {v.title && (
-                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-1">{v.title}</h4>
-                  )}
-                  <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
-                    {v.duration && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {v.duration}
-                      </span>
-                    )}
-                  </div>
-                  {v.description && (
-                    <p className="text-sm text-neutral-500 mt-1 line-clamp-2">{v.description}</p>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1 text-xs shrink-0"
-                  onClick={() => window.open(v.url, "_blank")}
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Open
-                </Button>
-              </div>
+      {
+        videos.map((v, i) => (
+          <div key={i} className="rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 shadow-sm">
+            <div className="aspect-video bg-black">
+              <iframe
+                src={getEmbedUrl(v.url)}
+                title={v.title || "Video"}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
             </div>
-          )}
-        </div>
-      ))}
+            {
+              (v.title || v.duration || v.description) && (
+                <div className="px-6 py-4 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      {
+                        v.title && (
+                          <h4 className="font-semibold text-neutral-900 dark:text-white mb-1">{v.title}</h4>
+                        )
+                      }
+                      <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                        {
+                          v.duration && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {v.duration}
+                            </span>
+                          )
+                        }
+                      </div>
+                      {
+                        v.description && (
+                          <p className="text-sm text-neutral-500 mt-1 line-clamp-2">{v.description}</p>
+                        )
+                      }
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1 text-xs shrink-0"
+                      onClick={() => window.open(v.url, "_blank")}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open
+                    </Button>
+                  </div>
+                </div>
+              )
+            }
+          </div>
+        ))
+      }
     </motion.div>
   );
 }

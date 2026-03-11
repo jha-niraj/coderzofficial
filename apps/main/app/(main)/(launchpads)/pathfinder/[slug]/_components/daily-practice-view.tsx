@@ -469,6 +469,7 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
             const result = await generateContentForAISubGoal(subGoalId)
             if (result.success) {
                 toast.success('Content generated! Quiz and resources are ready.')
+                if (result.usageSummary) setGoalUsage(goal.id, result.usageSummary)
                 const updated = await getSubGoalWithContent(subGoalId)
                 if (updated.success && updated.subGoal) {
                     const updatedSubGoal = updated.subGoal as SubGoal
@@ -480,9 +481,6 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
                                 sg.id === subGoalId ? updatedSubGoal : sg
                             ),
                         })
-                    }
-                    if (result.resources) {
-                        setSubGoalResources(subGoalId, result.resources as SubGoalResources)
                     }
                 }
                 router.refresh()

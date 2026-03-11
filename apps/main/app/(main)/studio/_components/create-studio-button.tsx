@@ -67,6 +67,9 @@ export function CreateStudioButton() {
                 setDescription("");
                 setCategory("GENERAL");
                 router.refresh();
+                // Redirect to the new studio
+                const slug = result.studio.slug || result.studio.id;
+                router.push(`/studio/${slug}`);
             } else {
                 toast.error(result.error || "Failed to create studio");
             }
