@@ -33,6 +33,9 @@ import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { useScribe } from "@elevenlabs/react";
 import { TextSelectionToolbar } from "@/app/(main)/learn/[subcategorySlug]/[learnSlug]/_components/text-selection-toolbar";
 import toast from "@repo/ui/components/ui/sonner";
+import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
+import { SDComponentLibrary } from "./sd-component-library";
+import { APITester } from "./api-tester";
 
 const ExcalidrawCanvas = dynamic(
     () => import("./excalidraw-canvas"),
@@ -201,73 +204,111 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
                     <SubmitButton problem={problem} session={session} store={store} mode={mode} />
                 </div>
             </header>
-            <div className="h-screen grid grid-cols-12 overflow-hidden">
-                <div className="col-span-12 md:col-span-3 border-r border-neutral-800 h-full overflow-hidden min-w-0 relative" ref={problemPanelRef}>
-                    <ProblemPanel problem={problem} requirementsMet={store.requirementsMet} />
-                    {
-                        mode === "ASSIST" && (
-                            <TextSelectionToolbar
-                                containerRef={problemPanelRef}
-                                onAskAI={(text, prompt) => {
-                                    const message = prompt || `Explain this: "${text}"`;
-                                    sendToChatRef.current?.(message);
-                                }}
-                                onCopy={(text) => {
-                                    navigator.clipboard.writeText(text);
-                                    toast.success("Copied to clipboard!");
-                                }}
-                            />
-                        )
-                    }
-                </div>
-                <div className="col-span-12 md:col-span-4 flex flex-col h-full overflow-hidden min-w-0">
-                    {
-                        isSystemDesign ? (
-                            <div className="flex-1">
-                                <ExcalidrawCanvas
-                                    initialData={store.canvasData}
-                                    onChange={(data: { elements: unknown[]; appState: unknown }) => store.setCanvasData(data)}
-                                    darkMode={theme === "dark"}
+            <PanelGroup orientation="horizontal" className="h-[calc(100vh-48px)]">
+                <Panel defaultSize="25%" minSize="15%" maxSize="40%">
+                    <div className="h-full overflow-hidden relative" ref={problemPanelRef}>
+                        <ProblemPanel problem={problem} requirementsMet={store.requirementsMet} />
+                        {
+                            mode === "ASSIST" && (
+                                <TextSelectionToolbar
+                                    containerRef={problemPanelRef}
+                                    onAskAI={(text, prompt) => {
+                                        const message = prompt || `Explain this: "${text}"`;
+                                        sendToChatRef.current?.(message);
+                                    }}
+                                    onCopy={(text) => {
+                                        navigator.clipboard.writeText(text);
+                                        toast.success("Copied to clipboard!");
+                                    }}
                                 />
-                            </div>
-                        ) : (
-                            <>
-                                <div className={cn("flex-1 overflow-hidden", isWebModule ? "h-[55%]" : "h-full")}>
-                                    <CodeEditor
-                                        code={store.code}
-                                        language={store.language}
-                                        height="100%"
-                                        onChange={(val) => store.setCode(val)}
-                                        onLanguageChange={(lang) => store.setLanguage(lang)}
-                                        showLanguageSelector={problem.module === "DSA"}
-                                        showCopyButton={true}
-                                        showRunButton={true}
-                                        enableExecution={true}
-                                        showExpandButton={false}
-                                        allowedLanguages={problem.module === "DSA" ? DSA_LANGUAGES : ["javascript", "typescript"]}
-                                        className="h-full rounded-none border-0"
+                            )
+                        }
+                    </div>
+                </Panel>
+                <PanelResizeHandle className="w-1 bg-neutral-800 hover:bg-blue-500 transition-colors cursor-col-resize" />
+                <Panel defaultSize={mode === "ASSIST" ? "40%" : "75%"} minSize="30%">
+                    <div className="h-full overflow-hidden flex flex-col">
+                        {
+                            isSystemDesign ? (
+                                <div className="flex-1 flex">
+                                    <SDComponentLibrary
+                                        onAddComponent={(comp) => {
+                                            sendToChatRef.current?.(`I'm adding a ${comp.label} component to my design. What should I consider when using a ${comp.label}?`);
+                                        }}
                                     />
+                                    <div className="flex-1">
+                                        <ExcalidrawCanvas
+                                            initialData={store.canvasData}
+                                            onChange={(data: { elements: unknown[]; appState: unknown }) => store.setCanvasData(data)}
+                                            darkMode={theme === "dark"}
+                                        />
+                                    </div>
                                 </div>
-                                {
-                                    isWebModule && (
-                                        <div className="h-[45%] border-t border-neutral-800">
-                                            <WebPreview code={store.code} css={store.cssCode} />
-                                        </div>
-                                    )
-                                }
-                            </>
-                        )
-                    }
-                </div>
-
+                            ) : (
+                                <>
+                                    <div className={cn("flex-1 overflow-hidden", isWebModule ? "h-[55%]" : "h-full")}>
+                                        <CodeEditor
+                                            code={store.code}
+                                            language={store.language}
+                                            height="100%"
+                                            onChange={(val) => store.setCode(val)}
+                                            onLanguageChange={(lang) => store.setLanguage(lang)}
+                                            showLanguageSelector={problem.module === "DSA"}
+                                            showCopyButton={true}
+                                            showRunButton={true}
+                                            enableExecution={true}
+                                            showExpandButton={false}
+                                            allowedLanguages={problem.module === "DSA" ? DSA_LANGUAGES : ["javascript", "typescript"]}
+                                            className="h-full rounded-none border-0"
+                                        />
+                                    </div>
+                                    {
+                                        isWebModule && (
+                                            <div className="h-[45%] border-t border-neutral-800">
+                                                <WebPreview code={store.code} css={store.cssCode} />
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        problem.module === "WEB_BACKEND" && problem.testCases && (
+                                            <div className="h-[40%] border-t border-neutral-800">
+                                                <APITester
+                                                    testCases={problem.testCases}
+                                                    code={store.code}
+                                                    onRunTest={async (tc, code) => {
+                                                        const msg = `Analyze my code against this API test:\nMethod: ${tc.method} ${tc.path}\nExpected status: ${tc.expectedStatus}\nDescription: ${tc.description}${tc.body ? `\nRequest body: ${JSON.stringify(tc.body)}` : ""}\n\nMy code:\n\`\`\`\n${code}\n\`\`\`\n\nDoes my implementation handle this test case correctly? Answer with PASS or FAIL and explain why.`;
+                                                        const result = await getMentorResponse(
+                                                            problem.slug,
+                                                            [],
+                                                            msg,
+                                                            code,
+                                                            problem.module,
+                                                            1
+                                                        );
+                                                        return result.success ? result.message : "Failed to analyze";
+                                                    }}
+                                                />
+                                            </div>
+                                        )
+                                    }
+                                </>
+                            )
+                        }
+                    </div>
+                </Panel>
                 {
                     mode === "ASSIST" && (
-                        <div className="col-span-12 md:col-span-5 flex flex-col h-full overflow-hidden min-w-0">
-                            <ChatPanel problem={problem} store={store} sendToChatRef={sendToChatRef} />
-                        </div>
+                        <>
+                            <PanelResizeHandle className="w-1 bg-neutral-800 hover:bg-blue-500 transition-colors cursor-col-resize" />
+                            <Panel defaultSize="35%" minSize="20%" maxSize="50%">
+                                <div className="h-full overflow-hidden">
+                                    <ChatPanel problem={problem} store={store} session={session} sendToChatRef={sendToChatRef} />
+                                </div>
+                            </Panel>
+                        </>
                     )
                 }
-            </div>
+            </PanelGroup>
         </div>
     );
 }
@@ -389,10 +430,12 @@ function WebPreview({ code, css }: { code: string; css: string }) {
 function ChatPanel({
     problem,
     store,
+    session,
     sendToChatRef,
 }: {
     problem: PracticeProblemDetail;
     store: PracticeWorkspaceState;
+    session: PracticeSessionData;
     sendToChatRef: React.MutableRefObject<((message: string) => void) | null>;
 }) {
     const [input, setInput] = useState("");
@@ -457,7 +500,7 @@ function ChatPanel({
         }
     };
 
-    // ── Send message ──
+    // ── Send message (streaming) ──
     const handleSend = useCallback(async (messageText?: string) => {
         const trimmed = (messageText ?? input).trim();
         if (!trimmed || store.isChatLoading) return;
@@ -479,26 +522,89 @@ function ChatPanel({
             content: m.content,
         }));
 
-        const result = await getMentorResponse(
-            problem.slug,
-            history,
-            trimmed,
-            store.code,
-            problem.module
-        );
+        const assistantMsgId = crypto.randomUUID();
+        const assistantMsg: PracticeChatMessage = {
+            id: assistantMsgId,
+            role: "assistant",
+            content: "",
+            timestamp: new Date().toISOString(),
+        };
+        store.addChatMessage(assistantMsg);
 
-        if (result.success) {
-            const assistantMsg: PracticeChatMessage = {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                content: result.message,
-                timestamp: new Date().toISOString(),
-            };
-            store.addChatMessage(assistantMsg);
+        try {
+            const res = await fetch("/api/practice/mentor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    problemSlug: problem.slug,
+                    chatHistory: history,
+                    userMessage: trimmed,
+                    userCode: store.code,
+                    attemptNumber: session.attempts + 1,
+                }),
+            });
+
+            if (!res.ok || !res.body) {
+                const fallback = await getMentorResponse(
+                    problem.slug, history, trimmed, store.code, problem.module, session.attempts + 1
+                );
+                if (fallback.success) {
+                    store.setChatHistory(
+                        store.chatHistory.map((m) =>
+                            m.id === assistantMsgId ? { ...m, content: fallback.message } : m
+                        )
+                    );
+                }
+                store.setChatLoading(false);
+                return;
+            }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulated = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const text = decoder.decode(value, { stream: true });
+                const lines = text.split("\n");
+
+                for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                        const data = line.slice(6);
+                        if (data === "[DONE]") break;
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.content) {
+                                accumulated += parsed.content;
+                                store.setChatHistory(
+                                    store.chatHistory.map((m) =>
+                                        m.id === assistantMsgId ? { ...m, content: accumulated } : m
+                                    )
+                                );
+                            }
+                        } catch {
+                            // skip malformed chunks
+                        }
+                    }
+                }
+            }
+        } catch {
+            const fallback = await getMentorResponse(
+                problem.slug, history, trimmed, store.code, problem.module, session.attempts + 1
+            );
+            if (fallback.success) {
+                store.setChatHistory(
+                    store.chatHistory.map((m) =>
+                        m.id === assistantMsgId ? { ...m, content: fallback.message } : m
+                    )
+                );
+            }
         }
 
         store.setChatLoading(false);
-    }, [input, store, problem.slug, problem.module]);
+    }, [input, store, problem.slug, problem.module, session.attempts]);
 
     // Expose handleSend to parent via ref
     useEffect(() => {

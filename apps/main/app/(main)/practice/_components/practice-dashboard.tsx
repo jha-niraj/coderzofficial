@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
     Trophy, Flame, Zap, Target, Code2, Network, Globe, Server,
-    ChevronRight
+    ChevronRight, Sparkles, ArrowRight
 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { cn } from "@repo/ui/lib/utils";
@@ -33,13 +33,22 @@ const DIFFICULTY_COLORS = {
     HARD: "text-red-600 dark:text-red-400",
 };
 
-interface PracticeDashboardProps {
-    stats: PracticeUserStats | null;
+interface DailyChallengeData {
+    slug: string;
+    title: string;
+    module: PracticeModule;
+    difficulty: "EASY" | "MEDIUM" | "HARD";
+    category: string;
 }
 
-export function PracticeDashboard({ stats }: PracticeDashboardProps) {
+interface PracticeDashboardProps {
+    stats: PracticeUserStats | null;
+    dailyChallenge?: DailyChallengeData | null;
+}
+
+export function PracticeDashboard({ stats, dailyChallenge }: PracticeDashboardProps) {
     if (!stats) {
-        return <EmptyDashboard />;
+        return <EmptyDashboard dailyChallenge={dailyChallenge} />;
     }
 
     return (
@@ -52,6 +61,7 @@ export function PracticeDashboard({ stats }: PracticeDashboardProps) {
                     Sharpen your skills with hands-on coding challenges
                 </p>
             </div>
+            {dailyChallenge && <DailyChallengeCard challenge={dailyChallenge} />}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={Target}
@@ -137,7 +147,44 @@ export function PracticeDashboard({ stats }: PracticeDashboardProps) {
     );
 }
 
-function EmptyDashboard() {
+function DailyChallengeCard({ challenge }: { challenge: DailyChallengeData }) {
+    const config = MODULE_CONFIG[challenge.module];
+    const path = MODULE_PATHS[challenge.module];
+
+    return (
+        <Link
+            href={`${path}/${challenge.slug}?mode=assist`}
+            className="group block rounded-xl border border-neutral-200 dark:border-neutral-800 bg-gradient-to-r from-amber-50/50 via-orange-50/30 to-transparent dark:from-amber-950/20 dark:via-orange-950/10 dark:to-transparent p-5 hover:border-amber-300 dark:hover:border-amber-700 transition-all"
+        >
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                                Daily Challenge
+                            </span>
+                            <Badge variant="outline" className={cn("text-[10px] border", DIFFICULTY_COLORS[challenge.difficulty])}>
+                                {challenge.difficulty}
+                            </Badge>
+                        </div>
+                        <h3 className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
+                            {challenge.title}
+                        </h3>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                            {config.icon} {config.label}
+                        </p>
+                    </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-neutral-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+            </div>
+        </Link>
+    );
+}
+
+function EmptyDashboard({ dailyChallenge }: { dailyChallenge?: DailyChallengeData | null }) {
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-6xl mx-auto">
             <div>
@@ -148,6 +195,7 @@ function EmptyDashboard() {
                     Sharpen your skills with hands-on coding challenges
                 </p>
             </div>
+            {dailyChallenge && <DailyChallengeCard challenge={dailyChallenge} />}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {
                     (Object.keys(MODULE_CONFIG) as PracticeModule[]).map((mod) => {

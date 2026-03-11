@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
-import { getUserPracticeStats } from "@/actions/(main)/practice";
+import { getUserPracticeStats, getDailyChallenge } from "@/actions/(main)/practice";
 import { PracticeDashboard } from "./_components/practice-dashboard";
 
 function DashboardSkeleton() {
@@ -23,12 +23,15 @@ function DashboardSkeleton() {
 }
 
 export default async function PracticePage() {
-    const stats = await getUserPracticeStats();
+    const [stats, dailyChallenge] = await Promise.all([
+        getUserPracticeStats(),
+        getDailyChallenge(),
+    ]);
 
     return (
         <div className="flex-1 overflow-auto">
             <Suspense fallback={<DashboardSkeleton />}>
-                <PracticeDashboard stats={stats} />
+                <PracticeDashboard stats={stats} dailyChallenge={dailyChallenge.problem} />
             </Suspense>
         </div>
     );

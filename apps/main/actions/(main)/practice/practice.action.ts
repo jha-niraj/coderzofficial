@@ -346,6 +346,40 @@ async function updateModuleProgress(userId: string, module: PracticeModule, comp
         },
     });
 
+    // Calculate streak
+    const streakProgress = await prisma.practiceModuleProgress.findUnique({
+        where: { userId_module: { userId, module } },
+    });
+    if (streakProgress) {
+        const lastPracticed = streakProgress.lastPracticedAt;
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        let newStreak = streakProgress.currentStreak;
+        if (lastPracticed) {
+            const lastDate = new Date(lastPracticed.getFullYear(), lastPracticed.getMonth(), lastPracticed.getDate());
+            const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+                newStreak = streakProgress.currentStreak + 1;
+            } else if (diffDays > 1) {
+                newStreak = 1;
+            }
+        } else {
+            newStreak = 1;
+        }
+
+        const newLongest = Math.max(streakProgress.longestStreak, newStreak);
+
+        await prisma.practiceModuleProgress.update({
+            where: { userId_module: { userId, module } },
+            data: {
+                currentStreak: newStreak,
+                longestStreak: newLongest,
+            },
+        });
+    }
+
     // Update leaderboard
     const progress = await prisma.practiceModuleProgress.findUnique({
         where: { userId_module: { userId, module } },
@@ -428,6 +462,46 @@ export async function getModuleProgress(module: PracticeModule): Promise<Practic
 }
 
 // ─────────────────────────────────────────────
+// DAILY CHALLENGE
+// ─────────────────────────────────────────────
+
+export async function getDailyChallenge(): Promise<{
+    problem: {
+        slug: string;
+        title: string;
+        module: PracticeModule;
+        difficulty: "EASY" | "MEDIUM" | "HARD";
+        category: string;
+    } | null;
+}> {
+    try {
+        const today = new Date();
+        const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+
+        const problems = await prisma.practiceProblem.findMany({
+            where: { isActive: true },
+            select: { slug: true, title: true, module: true, difficulty: true, category: true },
+        });
+
+        if (problems.length === 0) return { problem: null };
+
+        const index = seed % problems.length;
+        const p = problems[index]!;
+        return {
+            problem: {
+                slug: p.slug,
+                title: p.title,
+                module: p.module,
+                difficulty: p.difficulty,
+                category: p.category,
+            },
+        };
+    } catch {
+        return { problem: null };
+    }
+}
+
+// ─────────────────────────────────────────────
 // LEADERBOARD
 // ─────────────────────────────────────────────
 
@@ -499,11 +573,24 @@ export async function getUserPracticeStats(): Promise<PracticeUserStats | null> 
     const mediumCompleted = modules.reduce((acc, m) => acc + m.mediumCompleted, 0);
     const hardCompleted = modules.reduce((acc, m) => acc + m.hardCompleted, 0);
 
+    const [dsaCount, sdCount, wfCount, wbCount] = await Promise.all([
+        prisma.practiceProblem.count({ where: { module: "DSA", isActive: true } }),
+        prisma.practiceProblem.count({ where: { module: "SYSTEM_DESIGN", isActive: true } }),
+        prisma.practiceProblem.count({ where: { module: "WEB_FRONTEND", isActive: true } }),
+        prisma.practiceProblem.count({ where: { module: "WEB_BACKEND", isActive: true } }),
+    ]);
+    const moduleProblemCounts: Record<string, number> = {
+        DSA: dsaCount,
+        SYSTEM_DESIGN: sdCount,
+        WEB_FRONTEND: wfCount,
+        WEB_BACKEND: wbCount,
+    };
+
     const moduleBreakdown: PracticeProgressData[] = (["DSA", "SYSTEM_DESIGN", "WEB_FRONTEND", "WEB_BACKEND"] as PracticeModule[]).map((mod) => {
         const m = modules.find((mp) => mp.module === mod);
         return {
             module: mod,
-            totalProblems: 0,
+            totalProblems: moduleProblemCounts[mod] ?? 0,
             completed: m?.completed ?? 0,
             inProgress: m?.inProgress ?? 0,
             totalXP: m?.totalXP ?? 0,

@@ -118,16 +118,19 @@ export const useStudioStore = create<StudioStoreState>()((set) => ({
     setSteps: (steps) => set({ steps }),
 
     addStep: (step) => {
-        set((state) => ({
-            steps: [...state.steps, step],
-            studio: state.studio
-                ? {
-                    ...state.studio,
-                    steps: [...state.studio.steps, step],
-                    stepCount: state.studio.stepCount + 1,
-                }
-                : null,
-        }));
+        set((state) => {
+            const newSteps = [...state.steps, step];
+            return {
+                steps: newSteps,
+                studio: state.studio
+                    ? {
+                        ...state.studio,
+                        steps: newSteps,
+                        stepCount: (state.studio.stepCount || 0) + 1,
+                    }
+                    : null,
+            };
+        });
     },
 
     updateStep: (stepId, data) => {
@@ -139,16 +142,19 @@ export const useStudioStore = create<StudioStoreState>()((set) => ({
     },
 
     removeStep: (stepId) => {
-        set((state) => ({
-            steps: state.steps.filter((s) => s.id !== stepId),
-            studio: state.studio
-                ? {
-                    ...state.studio,
-                    steps: state.studio.steps.filter((s) => s.id !== stepId),
-                    stepCount: Math.max(0, state.studio.stepCount - 1),
-                }
-                : null,
-        }));
+        set((state) => {
+            const newSteps = state.steps.filter((s) => s.id !== stepId);
+            return {
+                steps: newSteps,
+                studio: state.studio
+                    ? {
+                        ...state.studio,
+                        steps: newSteps,
+                        stepCount: Math.max(0, (state.studio.stepCount || 0) - 1),
+                    }
+                    : null,
+            };
+        });
     },
 
     // Generating actions

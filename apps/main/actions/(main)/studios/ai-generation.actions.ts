@@ -259,6 +259,154 @@ Make questions challenging but fair. Include clear explanations.`;
 	}
 }
 
+// Generate flashcards
+export async function generateFlashcards(
+	studioId: string,
+	topic: string,
+	cardCount: number = 10
+): Promise<{
+	success: boolean;
+	step?: StudioStep;
+	error?: string;
+}> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) {
+			return { success: false, error: "Unauthorized" };
+		}
+
+		const studio = await prisma.studio.findUnique({
+			where: { id: studioId, userId: session.user.id },
+		});
+
+		if (!studio) {
+			return { success: false, error: "Studio not found" };
+		}
+
+		const context = await buildContext(studioId);
+
+		const systemPrompt = `You are an expert educator creating flashcards for students.
+
+${context ? `Previous learning context:\n${context}\n` : ""}
+
+Create ${cardCount} flashcards about: ${topic}
+
+Return ONLY a valid JSON array with this exact structure:
+[
+  {
+    "front": "Question or concept to recall",
+    "back": "The answer or explanation",
+    "hint": "Optional hint to help recall"
+  }
+]
+
+Make flashcards concise, focused, and useful for active recall. Cover key concepts, definitions, and common patterns.`;
+
+		const completion = await openai.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [{ role: "system", content: systemPrompt }],
+			temperature: 0.7,
+			max_tokens: 2000,
+		});
+
+		const content = completion.choices[0]?.message?.content;
+		if (!content) {
+			return { success: false, error: "Failed to generate flashcards" };
+		}
+
+		let cards;
+		try {
+			const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+			cards = JSON.parse(cleaned);
+		} catch {
+			return { success: false, error: "Failed to parse flashcard data" };
+		}
+
+		const maxOrder = await prisma.studioStep.findFirst({
+			where: { studioId },
+			orderBy: { orderNumber: "desc" },
+			select: { orderNumber: true },
+		});
+
+		const nextOrder = (maxOrder?.orderNumber ?? 0) + 1;
+
+		const step = await prisma.studioStep.create({
+			data: {
+				studioId,
+				type: "FLASHCARD",
+				content: JSON.stringify(cards),
+			metadata: JSON.parse(JSON.stringify({
+				topic,
+				cardCount: cards.length,
+			})),
+				source: "AI",
+				orderNumber: nextOrder,
+				status: "COMPLETED",
+			},
+		});
+
+		await prisma.studio.update({
+			where: { id: studioId },
+			data: {
+				stepCount: { increment: 1 },
+				lastEditedAt: new Date(),
+			},
+		});
+
+		return { success: true, step: step as unknown as StudioStep };
+	} catch (error) {
+		console.error("Error generating flashcards:", error);
+		return { success: false, error: "Failed to generate flashcards" };
+	}
+}
+
+// Enhance note content with AI
+export async function enhanceNoteWithAI(
+	content: string
+): Promise<{
+	success: boolean;
+	enhanced?: string;
+	error?: string;
+}> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) {
+			return { success: false, error: "Unauthorized" };
+		}
+
+		const completion = await openai.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [
+				{
+					role: "system",
+					content: `You are a writing assistant that enhances notes. Given the user's rough notes, improve them by:
+- Fixing grammar and spelling
+- Improving clarity and structure
+- Adding formatting (headings, bold, lists) using HTML tags (h2, strong, ul/li, etc.)
+- Keeping the original meaning and tone intact
+- Expanding brief points with more detail where helpful
+- Keeping it concise but comprehensive
+
+Return ONLY the enhanced HTML content. Do not add any prefix or explanation.`,
+				},
+				{ role: "user", content },
+			],
+			temperature: 0.5,
+			max_tokens: 2000,
+		});
+
+		const enhanced = completion.choices[0]?.message?.content;
+		if (!enhanced) {
+			return { success: false, error: "Failed to enhance note" };
+		}
+
+		return { success: true, enhanced };
+	} catch (error) {
+		console.error("Error enhancing note:", error);
+		return { success: false, error: "Failed to enhance note" };
+	}
+}
+
 // Get quiz data by ID
 export async function getQuizById(quizId: string): Promise<{
 	success: boolean;

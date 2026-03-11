@@ -22,7 +22,7 @@ import {
 import { Button } from "@repo/ui/components/ui/button";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { cn } from "@repo/ui/lib/utils";
-import { generateExplanation, generateQuiz } from "@/actions/(main)/studios/ai-generation.actions";
+import { generateExplanation, generateQuiz, generateFlashcards } from "@/actions/(main)/studios/ai-generation.actions";
 import { saveStep } from "@/actions/(main)/studios/studio.actions";
 import toast from "@repo/ui/components/ui/sonner";
 import type { StudioStepType, StudioStep } from "@/types/studios";
@@ -65,9 +65,8 @@ const CONTENT_TYPES: ContentTypeOption[] = [
 		type: "CODE",
 		label: "Code",
 		icon: Code,
-		description: "Coding challenge",
+		description: "Add a code block to write and run code",
 		category: "interactive",
-		comingSoon: true,
 	},
 	{
 		type: "NOTE",
@@ -80,9 +79,8 @@ const CONTENT_TYPES: ContentTypeOption[] = [
 		type: "FLASHCARD",
 		label: "Flashcards",
 		icon: Layers,
-		description: "Study with flashcards",
+		description: "AI-generated flashcards for review",
 		category: "interactive",
-		comingSoon: true,
 	},
 	{
 		type: "IMAGE",
@@ -194,7 +192,6 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 					break;
 
 				case "NOTE": {
-					// Create a note step directly
 					result = await saveStep({
 						studioId,
 						type: "NOTE",
@@ -202,6 +199,22 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 						metadata: { editorType: "rich" },
 						source: "USER",
 					});
+					break;
+				}
+
+				case "CODE": {
+					result = await saveStep({
+						studioId,
+						type: "CODE",
+						content: "",
+						metadata: { language: "javascript", problemTitle: prompt.trim() },
+						source: "USER",
+					});
+					break;
+				}
+
+				case "FLASHCARD": {
+					result = await generateFlashcards(studioId, prompt);
 					break;
 				}
 
@@ -213,19 +226,20 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 			}
 
 			if (result.success && result.step) {
-				// Remove pending and add the real step to the store
 				removePendingStep(pendingId);
 				addStep(result.step);
-				toast.success("Content generated successfully!");
+				toast.success(
+					selectedType === "NOTE" ? "Note added!" :
+					selectedType === "CODE" ? "Code block added!" :
+					"Content generated successfully!"
+				);
 				setPrompt("");
 				onContentAdded?.();
 			} else {
-				// Mark pending as error
 				updatePendingStep(pendingId, {
 					status: "error",
 					errorMessage: result.error || "Failed to generate content",
 				});
-				// Remove after a moment
 				setTimeout(() => removePendingStep(pendingId), 3000);
 				toast.error(result.error || "Failed to generate content");
 			}
@@ -327,8 +341,12 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 									: selectedType === "QUIZ"
 										? "e.g., Create a quiz on React hooks"
 										: selectedType === "NOTE"
-											? "Click to add a personal note"
-											: `Ask AI to generate ${selectedOption?.label.toLowerCase()}...`
+											? "Write a title for your note..."
+											: selectedType === "CODE"
+												? "e.g., Name your code block or describe the problem"
+												: selectedType === "FLASHCARD"
+													? "e.g., Generate flashcards on JavaScript array methods"
+													: `Ask AI to generate ${selectedOption?.label.toLowerCase()}...`
 							}
 							className="min-h-[60px] max-h-[120px] pr-12 resize-none rounded-xl border-neutral-200 dark:border-neutral-800 focus:border-purple-500 dark:focus:border-purple-500"
 							disabled={isGenerating}

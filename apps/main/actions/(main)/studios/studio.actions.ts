@@ -77,9 +77,12 @@ export async function getStudioWithSteps(
 			return { success: false, error: "Studio not found" };
 		}
 
+		const { studioSteps, ...rest } = studio;
+		const mapped = { ...rest, steps: studioSteps } as unknown as StudioWithSteps;
+
 		return {
 			success: true,
-			studio: studio as unknown as StudioWithSteps,
+			studio: mapped,
 		};
 	} catch (error) {
 		console.error("Error fetching studio:", error);

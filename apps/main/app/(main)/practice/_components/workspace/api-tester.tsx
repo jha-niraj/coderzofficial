@@ -1,0 +1,211 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronUp,
+} from "lucide-react";
+import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
+import { cn } from "@repo/ui/lib/utils";
+
+interface TestCase {
+    id: string;
+    label: string;
+    method: string;
+    path: string;
+    headers: Record<string, string>;
+    body?: Record<string, unknown>;
+    expectedStatus: number;
+    expectedBodyContains?: string;
+    description: string;
+}
+
+interface TestResult {
+    testId: string;
+    passed: boolean;
+    message: string;
+}
+
+interface APITesterProps {
+    testCases: TestCase[];
+    onRunTest: (testCase: TestCase, code: string) => Promise<string>;
+    code: string;
+}
+
+const METHOD_STYLES: Record<string, string> = {
+    GET: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    POST: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    PUT: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    PATCH: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+    DELETE: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+};
+
+export function APITester({ testCases, onRunTest, code }: APITesterProps) {
+    const [results, setResults] = useState<Record<string, TestResult>>({});
+    const [runningTest, setRunningTest] = useState<string | null>(null);
+    const [expandedTest, setExpandedTest] = useState<string | null>(null);
+
+    if (!testCases || testCases.length === 0) {
+        return (
+            <div className="p-4 text-center text-sm text-neutral-500">
+                No API test cases for this problem.
+            </div>
+        );
+    }
+
+    const handleRunTest = async (tc: TestCase) => {
+        setRunningTest(tc.id);
+        try {
+            const response = await onRunTest(tc, code);
+            const passed = response.toLowerCase().includes("pass") ||
+                response.toLowerCase().includes("correct") ||
+                response.toLowerCase().includes("✅");
+            setResults((prev) => ({
+                ...prev,
+                [tc.id]: { testId: tc.id, passed, message: response },
+            }));
+        } catch {
+            setResults((prev) => ({
+                ...prev,
+                [tc.id]: { testId: tc.id, passed: false, message: "Failed to run test" },
+            }));
+        }
+        setRunningTest(null);
+    };
+
+    const handleRunAll = async () => {
+        for (const tc of testCases) {
+            await handleRunTest(tc);
+        }
+    };
+
+    const passCount = Object.values(results).filter((r) => r.passed).length;
+    const totalRun = Object.keys(results).length;
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-neutral-400">API Tests</span>
+                    {totalRun > 0 && (
+                        <span className="text-[10px] text-neutral-500">
+                            {passCount}/{totalRun} passed
+                        </span>
+                    )}
+                </div>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[10px] border-neutral-700 hover:bg-neutral-800"
+                    onClick={handleRunAll}
+                    disabled={runningTest !== null}
+                >
+                    <Play className="h-3 w-3 mr-1" />
+                    Run All
+                </Button>
+            </div>
+            <ScrollArea className="flex-1">
+                <div className="p-2 space-y-1">
+                    {testCases.map((tc) => {
+                        const result = results[tc.id];
+                        const isExpanded = expandedTest === tc.id;
+                        const isRunning = runningTest === tc.id;
+
+                        return (
+                            <div key={tc.id} className="rounded-lg border border-neutral-800 overflow-hidden">
+                                <button
+                                    onClick={() => setExpandedTest(isExpanded ? null : tc.id)}
+                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-neutral-900/50 transition-colors"
+                                >
+                                    {result ? (
+                                        result.passed ? (
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                                        ) : (
+                                            <XCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                                        )
+                                    ) : (
+                                        <div className="h-3.5 w-3.5 rounded-full border border-neutral-600 flex-shrink-0" />
+                                    )}
+                                    <Badge
+                                        className={cn(
+                                            "text-[9px] font-bold px-1.5 py-0 border-0",
+                                            METHOD_STYLES[tc.method] ?? METHOD_STYLES.GET
+                                        )}
+                                    >
+                                        {tc.method}
+                                    </Badge>
+                                    <span className="text-xs text-neutral-300 font-mono truncate flex-1">
+                                        {tc.path}
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0 text-neutral-500"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRunTest(tc);
+                                        }}
+                                        disabled={isRunning}
+                                    >
+                                        {isRunning ? (
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                        ) : (
+                                            <Play className="h-3 w-3" />
+                                        )}
+                                    </Button>
+                                    {isExpanded ? (
+                                        <ChevronUp className="h-3 w-3 text-neutral-500" />
+                                    ) : (
+                                        <ChevronDown className="h-3 w-3 text-neutral-500" />
+                                    )}
+                                </button>
+                                <AnimatePresence>
+                                    {isExpanded && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden border-t border-neutral-800"
+                                        >
+                                            <div className="px-3 py-2 space-y-1.5 text-[11px]">
+                                                <p className="text-neutral-400">{tc.description}</p>
+                                                <p className="text-neutral-500">
+                                                    Expected: <span className="text-neutral-300">{tc.expectedStatus}</span>
+                                                    {tc.expectedBodyContains && (
+                                                        <> containing <span className="text-neutral-300 font-mono">{tc.expectedBodyContains}</span></>
+                                                    )}
+                                                </p>
+                                                {tc.body && (
+                                                    <pre className="bg-neutral-900 rounded p-2 text-neutral-400 font-mono text-[10px] overflow-x-auto">
+                                                        {JSON.stringify(tc.body, null, 2)}
+                                                    </pre>
+                                                )}
+                                                {result && (
+                                                    <div className={cn(
+                                                        "rounded-md p-2 mt-1",
+                                                        result.passed
+                                                            ? "bg-emerald-900/20 border border-emerald-800/30"
+                                                            : "bg-red-900/20 border border-red-800/30"
+                                                    )}>
+                                                        <p className={cn(
+                                                            "text-[10px]",
+                                                            result.passed ? "text-emerald-400" : "text-red-400"
+                                                        )}>
+                                                            {result.message}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        );
+                    })}
+                </div>
+            </ScrollArea>
+        </div>
+    );
+}

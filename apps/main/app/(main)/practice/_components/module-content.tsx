@@ -14,6 +14,7 @@ import type {
 } from "@/types/practice";
 import { MODULE_CONFIG } from "@/types/practice";
 import Image from "next/image";
+import { AddProblemSheet } from "./add-problem-sheet";
 
 const DIFFICULTY_COLORS = {
     EASY: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800",
@@ -104,24 +105,30 @@ export function ModuleContent({
                         {filteredProblems.length} problem{filteredProblems.length !== 1 ? "s" : ""}
                     </p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <Filter className="h-3.5 w-3.5 text-neutral-400 mr-1" />
-                    {
-                        ["EASY", "MEDIUM", "HARD"].map((d) => (
-                            <button
-                                key={d}
-                                onClick={() => setDifficultyFilter(difficultyFilter === d ? null : d)}
-                                className={cn(
-                                    "px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors",
-                                    difficultyFilter === d
-                                        ? DIFFICULTY_COLORS[d as keyof typeof DIFFICULTY_COLORS]
-                                        : "text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
-                                )}
-                            >
-                                {d}
-                            </button>
-                        ))
-                    }
+                <div className="flex items-center gap-3">
+                    <AddProblemSheet
+                        module={module}
+                        onProblemAdded={() => router.refresh()}
+                    />
+                    <div className="flex items-center gap-1.5">
+                        <Filter className="h-3.5 w-3.5 text-neutral-400 mr-1" />
+                        {
+                            ["EASY", "MEDIUM", "HARD"].map((d) => (
+                                <button
+                                    key={d}
+                                    onClick={() => setDifficultyFilter(difficultyFilter === d ? null : d)}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors",
+                                        difficultyFilter === d
+                                            ? DIFFICULTY_COLORS[d as keyof typeof DIFFICULTY_COLORS]
+                                            : "text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
+                                    )}
+                                >
+                                    {d}
+                                </button>
+                            ))
+                        }
+                    </div>
                 </div>
             </div>
 

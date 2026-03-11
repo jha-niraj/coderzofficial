@@ -366,51 +366,66 @@ export default function LearnDetailClient({
                 </div>
             </div>
             <div className="flex">
-                <aside className="hidden lg:block w-56 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 h-[calc(100vh-3.5rem)] sticky top-14">
+                <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 h-[calc(100vh-3.5rem)] sticky top-14">
                     <ScrollArea className="h-full">
-                        <div className="p-4">
-                            <h3 className="font-semibold text-sm text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide">
-                                STEPS
+                        <div className="px-3 py-5">
+                            <h3 className="font-semibold text-[11px] text-neutral-400 dark:text-neutral-500 mb-3 px-3 uppercase tracking-widest">
+                                Steps
                             </h3>
-                            <TooltipProvider delayDuration={300}>
-                                <div className="space-y-1">
+                            <TooltipProvider delayDuration={200}>
+                                <nav className="space-y-0.5">
                                     {
-                                        learn.steps.map((step, index) => (
-                                            <Tooltip key={step.id}>
-                                                <TooltipTrigger asChild>
-                                                    <button
-                                                        onClick={() => goToStep(index)}
-                                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${currentStepIndex === index
-                                                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                                            }`}
-                                                    >
-                                                        <div
-                                                            className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${completedSteps.includes(step.order)
-                                                                ? "bg-green-500 text-white"
-                                                                : currentStepIndex === index
-                                                                    ? "bg-blue-500 text-white"
-                                                                    : "bg-neutral-200 dark:bg-neutral-700 text-muted-foreground"
+                                        learn.steps.map((step, index) => {
+                                            const isActive = currentStepIndex === index;
+                                            const isCompleted = completedSteps.includes(step.order);
+                                            return (
+                                                <Tooltip key={step.id}>
+                                                    <TooltipTrigger asChild>
+                                                        <button
+                                                            onClick={() => goToStep(index)}
+                                                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all group ${isActive
+                                                                ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
+                                                                : isCompleted
+                                                                    ? "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
+                                                                    : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
                                                                 }`}
                                                         >
-                                                            {
-                                                                completedSteps.includes(step.order) ? (
-                                                                    <CheckCircle2 className="w-4 h-4" />
-                                                                ) : (
-                                                                    index + 1
-                                                                )
-                                                            }
-                                                        </div>
-                                                        <span className="text-sm truncate">{step.title}</span>
-                                                    </button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="right" className="max-w-64">
-                                                    {step.title}
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        ))
+                                                            <div
+                                                                className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-semibold transition-colors ${isCompleted
+                                                                    ? isActive
+                                                                        ? "bg-white/20 text-white dark:bg-neutral-900/20 dark:text-neutral-900"
+                                                                        : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+                                                                    : isActive
+                                                                        ? "bg-white/20 text-white dark:bg-neutral-900/20 dark:text-neutral-900"
+                                                                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                                                                    }`}
+                                                            >
+                                                                {
+                                                                    isCompleted ? (
+                                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    ) : (
+                                                                        index + 1
+                                                                    )
+                                                                }
+                                                            </div>
+                                                            <span className={`text-[13px] truncate leading-tight ${isActive ? "font-medium" : ""}`}>
+                                                                {step.title}
+                                                            </span>
+                                                        </button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent
+                                                        side="right"
+                                                        sideOffset={8}
+                                                        className="max-w-72 text-sm z-[9999]"
+                                                    >
+                                                        <p className="font-medium">{step.title}</p>
+                                                        <p className="text-xs text-neutral-400 mt-0.5">Step {index + 1} of {totalSteps}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            );
+                                        })
                                     }
-                                </div>
+                                </nav>
                             </TooltipProvider>
                         </div>
                     </ScrollArea>
@@ -455,7 +470,7 @@ export default function LearnDetailClient({
                                     )
                                 }
                             </AnimatePresence>
-                            <div className="flex items-center justify-between mt-6">
+                            <div className="flex items-center justify-between mt-6 p-4">
                                 <Button
                                     variant="outline"
                                     onClick={() => goToStep(currentStepIndex - 1)}
@@ -505,11 +520,8 @@ export default function LearnDetailClient({
 
                             {
                                 (previousLearn || nextLearn || isAllStepsCompleted) && (
-                                    <div className="mt-10 pt-8 border-t border-neutral-200 dark:border-neutral-800">
-                                        <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 mb-4 tracking-wide uppercase">
-                                            Continue Learning
-                                        </h3>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="mt-10 pt-8">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                                             {
                                                 previousLearn && (
                                                     <Link

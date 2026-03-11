@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-	Code, Play, Loader2, RotateCcw, CheckCircle, XCircle
+	Code, Play, Loader2, RotateCcw, CheckCircle, XCircle, Save, Check
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import dynamic from "next/dynamic";
@@ -24,9 +24,39 @@ export function CodeStep({ step, studioId }: CodeStepProps) {
 	const [currentCode, setCurrentCode] = useState(step.content || "// Start coding here...");
 	const [output, setOutput] = useState<string | null>(null);
 	const [hasError, setHasError] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
+	const [isSaved, setIsSaved] = useState(true);
+	const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	const debouncedSave = useCallback(async (code: string) => {
+		if (!studioId || code === step.content) return;
+		setIsSaving(true);
+		const result = await saveStep({
+			studioId,
+			stepId: step.id,
+			type: "CODE",
+			content: code,
+			metadata: { ...metadata },
+			source: "USER",
+		});
+		setIsSaving(false);
+		if (result.success) {
+			setIsSaved(true);
+			setTimeout(() => setIsSaved(false), 2000);
+		}
+	}, [studioId, step.id, step.content, metadata]);
 
 	const handleCodeChange = useCallback((code: string) => {
 		setCurrentCode(code);
+		setIsSaved(false);
+		if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+		saveTimeoutRef.current = setTimeout(() => debouncedSave(code), 2000);
+	}, [debouncedSave]);
+
+	useEffect(() => {
+		return () => {
+			if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+		};
 	}, []);
 
 	const handleRun = useCallback(async () => {
@@ -97,7 +127,7 @@ export function CodeStep({ step, studioId }: CodeStepProps) {
 						</div>
 						<div>
 							<h3 className="font-semibold text-white">
-								{metadata.problemTitle || "Code Challenge"}
+								{metadata.problemTitle || "Code Block"}
 							</h3>
 							<p className="text-sm text-neutral-400">
 								{metadata.language || "javascript"}
@@ -105,6 +135,18 @@ export function CodeStep({ step, studioId }: CodeStepProps) {
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
+						{isSaving && (
+							<span className="text-xs text-neutral-400 flex items-center gap-1">
+								<Save className="h-3 w-3 animate-pulse" />
+								Saving...
+							</span>
+						)}
+						{isSaved && !isSaving && (
+							<span className="text-xs text-green-400 flex items-center gap-1">
+								<Check className="h-3 w-3" />
+								Saved
+							</span>
+						)}
 						<Button
 							size="sm"
 							variant="ghost"

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
 	StickyNote, Save, Check, Bold, Italic, Underline, List,
 	ListOrdered, Code, Quote, Heading1, Heading2, Heading3,
-	Link as LinkIcon, Undo, Redo
+	Link as LinkIcon, Undo, Redo, Sparkles, Loader2
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -14,6 +14,7 @@ import UnderlineExt from "@tiptap/extension-underline";
 import LinkExt from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { saveStep } from "@/actions/(main)/studios/studio.actions";
+import { enhanceNoteWithAI } from "@/actions/(main)/studios/ai-generation.actions";
 import toast from "@repo/ui/components/ui/sonner";
 import type { StudioStep } from "@/types/studios";
 import { cn } from "@repo/ui/lib/utils";
@@ -27,6 +28,7 @@ export function NoteStep({ step, studioId }: NoteStepProps) {
 	const [isSaving, setIsSaving] = useState(false);
 	const [isSaved, setIsSaved] = useState(true);
 	const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+	const [isEnhancing, setIsEnhancing] = useState(false);
 
 	const editor = useEditor({
 		extensions: [
@@ -121,6 +123,31 @@ export function NoteStep({ step, studioId }: NoteStepProps) {
 
 		editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
 	}, [editor]);
+
+	const handleAIEnhance = useCallback(async () => {
+		if (!editor) return;
+		const content = editor.getText();
+		if (!content.trim()) {
+			toast.error("Write something first, then AI can enhance it");
+			return;
+		}
+
+		setIsEnhancing(true);
+		try {
+			const result = await enhanceNoteWithAI(content);
+			if (result.success && result.enhanced) {
+				editor.commands.setContent(result.enhanced);
+				setIsSaved(false);
+				handleSave(result.enhanced);
+				toast.success("Note enhanced by AI!");
+			} else {
+				toast.error(result.error || "Failed to enhance note");
+			}
+		} catch {
+			toast.error("Failed to enhance note");
+		}
+		setIsEnhancing(false);
+	}, [editor, handleSave]);
 
 	if (!editor) {
 		return (
@@ -284,6 +311,28 @@ export function NoteStep({ step, studioId }: NoteStepProps) {
 					>
 						<Redo className="h-3.5 w-3.5" />
 					</ToolbarButton>
+
+					<div className="w-px h-5 bg-amber-300 dark:bg-amber-800 mx-1" />
+
+					<button
+						type="button"
+						onClick={handleAIEnhance}
+						disabled={isEnhancing}
+						title="Enhance with AI"
+						className={cn(
+							"flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+							isEnhancing
+								? "bg-purple-200 dark:bg-purple-800 text-purple-700 dark:text-purple-200 cursor-wait"
+								: "bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 text-purple-700 dark:text-purple-300 hover:from-purple-200 hover:to-pink-200 dark:hover:from-purple-900/60 dark:hover:to-pink-900/60"
+						)}
+					>
+						{isEnhancing ? (
+							<Loader2 className="h-3 w-3 animate-spin" />
+						) : (
+							<Sparkles className="h-3 w-3" />
+						)}
+						{isEnhancing ? "Enhancing..." : "AI Enhance"}
+					</button>
 				</div>
 
 				{/* Editor */}
