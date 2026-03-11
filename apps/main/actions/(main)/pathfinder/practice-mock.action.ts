@@ -26,12 +26,7 @@ export async function createPathfinderPracticeMockAndSession(subGoalId: string) 
         })
 
         if (!mock) {
-            const resources = subGoal.aiResources as {
-                content?: string
-                videos?: unknown[]
-                documentations?: unknown[]
-            } | null
-
+            const resources = (subGoal as { aiResources?: { content?: string } }).aiResources
             const knowledgeBase = resources?.content
                 ? `${resources.content}\n\nTopic: ${subGoal.title}. Ask interview-style questions to test understanding.`
                 : `Topic: ${subGoal.title}. Act as a technical interviewer. Ask interview-style questions to test the candidate's understanding. Category: ${subGoal.goal.category}, Level: ${subGoal.goal.level}.`

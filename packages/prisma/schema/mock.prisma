@@ -59,9 +59,7 @@ model MockInterviewVoice {
     sessions MockVoiceSession[]
     ratings  MockVoiceRating[]
 
-    // Pathfinder (Learning Goals) back-relation
-    pathfinderGoal PathfinderGoal? @relation("PathfinderMockInterview")
-
+    // Pathfinder Sub-Goal (practice mock per sub-goal)
     pathfinderSubGoalId String?            @unique // Link to subgoal for practice mock
     pathfinderSubGoal   PathfinderSubGoal? @relation("PathfinderSubGoalMock", fields: [pathfinderSubGoalId], references: [id], onDelete: SetNull)
 

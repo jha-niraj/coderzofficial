@@ -83,7 +83,6 @@ export interface GoalWithRelations {
     level: PathfinderLevel
     focusAreas: string[]
     targetDate: Date | null
-    aiGeneratedPlan: unknown
     overview: string | null
     estimatedDays: number | null
     estimatedHours: number | null
@@ -101,8 +100,6 @@ export interface GoalWithRelations {
     updatedAt: Date
     startedAt: Date | null
     completedAt: Date | null
-    studioId: string | null
-    mockInterviewId: string | null
     groupId: string | null
 }
 
@@ -314,8 +311,6 @@ export async function getPathfinderGoal(slugOrId: string) {
                         },
                     },
                 },
-                studio: true,
-                mockInterview: true,
             },
         })
 
@@ -520,7 +515,6 @@ Return ONLY valid JSON, no markdown.`
             where: { id: goalId },
             data: {
                 totalSubGoals: { increment: parsed.topics.length },
-                aiGeneratedPlan: JSON.parse(JSON.stringify(parsed.topics)),
                 lastActivityAt: new Date(),
             },
         })
@@ -566,15 +560,41 @@ export async function generateContentForAISubGoal(subGoalId: string) {
             }
         }
 
-        // Generate content and resources in parallel
-        const { generateSubGoalResources } = await import('./resources.action')
+        const { generateExplanation, generateVideos, generateDocuments } = await import('@/actions/(main)/studios/ai-generation.actions')
+        const { StudioVisibility } = await import('@repo/prisma/client')
 
-        const [, resourcesResult] = await Promise.all([
-            generateQuizAndCoding(subGoalId, subGoal.goalId, session.user.id, subGoal.title, subGoal.goal.category, subGoal.goal.level),
-            generateSubGoalResources(subGoalId, subGoal.goalId, session.user.id, subGoal.title, subGoal.goal.category, subGoal.goal.level),
-        ])
+        // Create Studio for this sub-goal
+        const studioSlug = `subgoal-${subGoalId}-${Date.now().toString(36)}`
+        const studio = await prisma.studio.create({
+            data: {
+                slug: studioSlug,
+                title: `📝 ${subGoal.title}`,
+                description: `Study notes for: ${subGoal.title}`,
+                source: 'PATHFINDER',
+                sourceId: subGoalId,
+                visibility: StudioVisibility.PRIVATE,
+                userId: session.user.id,
+                stepCount: 0,
+            },
+        })
 
-        // Mark as content loaded
+        await prisma.pathfinderSubGoal.update({
+            where: { id: subGoalId },
+            data: { studioId: studio.id },
+        })
+
+        await generateExplanation(
+            studio.id,
+            `Provide a detailed explanation of "${subGoal.title}". Include key concepts, practical examples, code snippets where relevant, and best practices. Use clear markdown formatting.`
+        )
+
+        Promise.all([
+            generateVideos(studio.id, subGoal.title),
+            generateDocuments(studio.id, subGoal.title),
+        ]).catch((err) => console.error('Failed to add videos/docs:', err))
+
+        await generateQuizAndCoding(subGoalId, subGoal.goalId, session.user.id, subGoal.title, subGoal.goal.category, subGoal.goal.level)
+
         await prisma.pathfinderSubGoal.update({
             where: { id: subGoalId },
             data: { isContentLoaded: true },
@@ -585,7 +605,6 @@ export async function generateContentForAISubGoal(subGoalId: string) {
         revalidatePath(`/pathfinder/${subGoal.goalId}`)
         return {
             success: true,
-            resources: resourcesResult?.resources ?? null,
             usageSummary: usageSummary ?? undefined,
         }
     } catch (error) {
@@ -604,17 +623,14 @@ async function generateQuizAndCoding(
 ) {
     try {
         const codingCount = level === 'BEGINNER' ? 2 : level === 'INTERMEDIATE' ? 2 : 3
-        const prompt = `You are an expert educator creating learning content.
+        const prompt = `You are an expert educator creating coding practice.
 
 A user is learning about "${title}" as part of their ${category} studies at ${level} level.
 
-Generate:
-1. 3-5 quiz questions to test understanding of this topic
-2. ${codingCount} coding problems if this topic involves practical coding skills. Pick appropriate difficulty (EASY, MEDIUM, HARD) for each - vary them. For theory-only topics, use [].
+Generate ${codingCount} coding problems if this topic involves practical coding skills. Pick appropriate difficulty (EASY, MEDIUM, HARD) for each - vary them. For theory-only topics, use [].
 
 Return JSON in this exact format:
 {
-  "quizQuestions": [...],
   "codingProblems": [
     {
       "id": "cp1",
@@ -660,7 +676,6 @@ Rules: Vary difficulty. Return ONLY valid JSON, no markdown.`
         await prisma.pathfinderSubGoal.update({
             where: { id: subGoalId },
             data: {
-                aiQuizQuestions: aiContent.quizQuestions || [],
                 aiCodingProblem: hasCoding ? codingProblems : null,
                 hasCoding,
             },
@@ -672,13 +687,10 @@ Rules: Vary difficulty. Return ONLY valid JSON, no markdown.`
         })
 
         if (subGoal) {
-            const quizCount = aiContent.quizQuestions?.length || 0
-            const codingCount = codingProblems.length
             await prisma.pathfinderDailySession.update({
                 where: { id: subGoal.sessionId },
                 data: {
-                    totalQuizQuestions: { increment: quizCount },
-                    totalCodingProblems: { increment: codingCount },
+                    totalCodingProblems: { increment: codingProblems.length },
                 },
             })
         }

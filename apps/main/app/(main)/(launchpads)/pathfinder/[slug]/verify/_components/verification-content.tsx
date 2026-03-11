@@ -82,13 +82,13 @@ interface Goal {
     title: string
     category: PathfinderCategory
     level: PathfinderLevel
-    aiGeneratedPlan: unknown
-    mockInterviewId: string | null
 }
 
 interface VerificationContentProps {
     goal: Goal
     verification: Verification | null
+    aiPlan?: AIPlan | null
+    mockInterviewId?: string | null
 }
 
 const statusIcons: Record<VerificationSectionStatus, React.ReactNode> = {
@@ -177,8 +177,8 @@ function CompletionScreen({ verification }: { verification: Verification }) {
     )
 }
 
-export function VerificationContent({ goal, verification }: VerificationContentProps) {
-    const aiPlan = goal.aiGeneratedPlan as AIPlan | null
+export function VerificationContent({ goal, verification, aiPlan: aiPlanProp, mockInterviewId }: VerificationContentProps) {
+    const aiPlan = aiPlanProp ?? null
     const hasProject = !!(aiPlan?.minorProject || aiPlan?.majorProject)
 
     // Determine which tab should be active based on status
@@ -280,7 +280,7 @@ export function VerificationContent({ goal, verification }: VerificationContentP
                         </TabsContent>
                         <TabsContent value="mock" className="h-full m-0">
                             <MockVerification
-                                mockInterviewId={goal.mockInterviewId}
+                                mockInterviewId={mockInterviewId ?? null}
                                 mockConfig={aiPlan?.mockInterview}
                                 status={verification?.mockStatus || 'LOCKED'}
                                 score={verification?.mockScore ?? null}

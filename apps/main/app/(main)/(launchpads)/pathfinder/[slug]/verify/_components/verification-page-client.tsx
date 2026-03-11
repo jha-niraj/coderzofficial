@@ -27,12 +27,12 @@ interface Goal {
     slug?: string
     category: PathfinderCategory
     level: PathfinderLevel
-    aiGeneratedPlan: unknown
-    mockInterviewId: string | null
 }
 
 interface Verification {
     id: string
+    generatedPlan?: unknown
+    mockInterviewId?: string | null
     quizStatus: VerificationSectionStatus
     codingStatus: VerificationSectionStatus
     mockStatus: VerificationSectionStatus
@@ -59,7 +59,7 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
     const [generateSheetOpen, setGenerateSheetOpen] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
 
-    const aiPlan = (storedPlan ?? initialGoal.aiGeneratedPlan) as VerificationAIPlan | null
+    const aiPlan = (storedPlan ?? verification?.generatedPlan) as VerificationAIPlan | null
     const hasQuestions = Boolean(aiPlan?.quizQuestions?.length ?? 0)
 
     const handleOpenSheet = () => setGenerateSheetOpen(true)
@@ -89,8 +89,10 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
     if (hasQuestions) {
         return (
             <VerificationContent
-                goal={{ ...initialGoal, aiGeneratedPlan: aiPlan ?? initialGoal.aiGeneratedPlan }}
+                goal={initialGoal}
                 verification={verification}
+                aiPlan={aiPlan}
+                mockInterviewId={verification?.mockInterviewId ?? null}
             />
         )
     }

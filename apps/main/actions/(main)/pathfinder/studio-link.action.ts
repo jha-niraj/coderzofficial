@@ -6,7 +6,8 @@ import { StudioVisibility } from "@repo/prisma/client";
 import { revalidatePath } from "next/cache";
 
 // ==========================================
-// Create or get a Studio linked to a Pathfinder Goal
+// Create or get a Studio for a Pathfinder Goal (via source/sourceId)
+// Note: Each sub-goal has its own studio; this is for legacy goal-level notes.
 // ==========================================
 
 export async function createOrGetStudioForGoal(goalId: string) {
@@ -16,40 +17,33 @@ export async function createOrGetStudioForGoal(goalId: string) {
             return { error: "Unauthorized" };
         }
 
-        // Check if goal exists and belongs to user
         const goal = await prisma.pathfinderGoal.findFirst({
             where: { id: goalId, userId: session.user.id },
-            select: {
-                id: true,
-                title: true,
-                slug: true,
-                studioId: true,
-                category: true,
-                studio: {
-                    select: {
-                        id: true,
-                        slug: true,
-                        title: true,
-                        // content: true, // removed
-                    }
-                }
-            }
+            select: { id: true, title: true, slug: true, category: true },
         });
 
         if (!goal) {
             return { error: "Goal not found" };
         }
 
-        // If studio already exists, return it
-        if (goal.studioId && goal.studio) {
+        // Find existing studio by sourceId (goal-level studio)
+        const existing = await prisma.studio.findFirst({
+            where: {
+                userId: session.user.id,
+                source: "PATHFINDER",
+                sourceId: goalId,
+            },
+            select: { id: true, slug: true },
+        });
+
+        if (existing) {
             return {
-                studioId: goal.studio.id,
-                studioSlug: goal.studio.slug,
+                studioId: existing.id,
+                studioSlug: existing.slug ?? undefined,
                 isNew: false,
             };
         }
 
-        // Map PathfinderCategory to StudioCategory
         const categoryMap: Record<string, string> = {
             DSA: "PROGRAMMING",
             WEB_DEVELOPMENT: "WEB_DEVELOPMENT",
@@ -63,9 +57,7 @@ export async function createOrGetStudioForGoal(goalId: string) {
             OTHER: "GENERAL",
         };
 
-        // Create a new studio linked to this goal
         const studioSlug = `notes-${goal.slug}-${Date.now().toString(36)}`;
-
         const studio = await prisma.studio.create({
             data: {
                 slug: studioSlug,
@@ -75,20 +67,16 @@ export async function createOrGetStudioForGoal(goalId: string) {
                 tags: ["pathfinder", "notes"],
                 visibility: StudioVisibility.PRIVATE,
                 userId: session.user.id,
+                source: "PATHFINDER",
+                sourceId: goalId,
             },
-        });
-
-        // Link studio to goal
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: { studioId: studio.id },
         });
 
         revalidatePath(`/pathfinder/${goal.slug}`);
 
         return {
             studioId: studio.id,
-            studioSlug: studio.slug,
+            studioSlug: studio.slug ?? undefined,
             isNew: true,
         };
     } catch (error) {
@@ -98,7 +86,59 @@ export async function createOrGetStudioForGoal(goalId: string) {
 }
 
 // ==========================================
+// Create or get Studio for a Pathfinder Sub-Goal
+// ==========================================
+
+export async function createOrGetStudioForSubGoal(subGoalId: string, subGoalTitle: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { error: "Unauthorized" };
+        }
+
+        const subGoal = await prisma.pathfinderSubGoal.findFirst({
+            where: { id: subGoalId },
+            include: { goal: { select: { userId: true } } },
+        });
+
+        if (!subGoal || subGoal.goal.userId !== session.user.id) {
+            return { error: "Sub-goal not found" };
+        }
+
+        if (subGoal.studioId) {
+            return { studioId: subGoal.studioId, isNew: false };
+        }
+
+        const studioSlug = `subgoal-${subGoalId}-${Date.now().toString(36)}`;
+        const studio = await prisma.studio.create({
+            data: {
+                slug: studioSlug,
+                title: `📝 ${subGoalTitle}`,
+                description: `Study notes for: ${subGoalTitle}`,
+                source: "PATHFINDER",
+                sourceId: subGoalId,
+                visibility: StudioVisibility.PRIVATE,
+                userId: session.user.id,
+                stepCount: 0,
+            },
+        });
+
+        await prisma.pathfinderSubGoal.update({
+            where: { id: subGoalId },
+            data: { studioId: studio.id },
+        });
+
+        revalidatePath(`/pathfinder`);
+        return { studioId: studio.id, isNew: true };
+    } catch (error) {
+        console.error("Error creating studio for sub-goal:", error);
+        return { error: "Failed to create studio" };
+    }
+}
+
+// ==========================================
 // Get Studio content for a Pathfinder Goal (lightweight)
+// Finds studio by source=PATHFINDER, sourceId=goalId
 // ==========================================
 
 export async function getGoalStudioContent(goalId: string) {
@@ -108,52 +148,47 @@ export async function getGoalStudioContent(goalId: string) {
             return { error: "Unauthorized" };
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
+        const studio = await prisma.studio.findFirst({
+            where: {
+                userId: session.user.id,
+                source: "PATHFINDER",
+                sourceId: goalId,
+            },
             select: {
-                studioId: true,
-                studio: {
+                id: true,
+                slug: true,
+                title: true,
+                quizzes: {
                     select: {
                         id: true,
-                        slug: true,
+                        blockId: true,
                         title: true,
-                        quizzes: {
-                            select: {
-                                id: true,
-                                blockId: true,
-                                title: true,
-                                questions: true,
-                                timeLimit: true,
-                                shuffleQuestions: true,
-                                showCorrectAnswers: true,
-                                studioId: true,
-                                createdAt: true,
-                                updatedAt: true,
-                            }
-                        },
-                        flashcardDecks: {
-                            select: {
-                                id: true,
-                                blockId: true,
-                                title: true,
-                                cards: true,
-                                studioId: true,
-                                createdAt: true,
-                                updatedAt: true,
-                            }
-                        },
-                        codeBlocks: true,
-                        mediaBlocks: true,
-                    }
-                }
-            }
+                        questions: true,
+                        timeLimit: true,
+                        shuffleQuestions: true,
+                        showCorrectAnswers: true,
+                        studioId: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    },
+                },
+                flashcardDecks: {
+                    select: {
+                        id: true,
+                        blockId: true,
+                        title: true,
+                        cards: true,
+                        studioId: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    },
+                },
+                codeBlocks: true,
+                mediaBlocks: true,
+            },
         });
 
-        if (!goal) {
-            return { error: "Goal not found" };
-        }
-
-        return { studio: goal.studio };
+        return { studio };
     } catch (error) {
         console.error("Error getting goal studio content:", error);
         return { error: "Failed to get notes" };

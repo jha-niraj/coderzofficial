@@ -38,7 +38,6 @@ export interface PathfinderGoal {
     startedAt: Date | null
     completedAt: Date | null
     groupId: string | null
-    studioId: string | null
 }
 
 /** Minimal shape for home page goals (from home action) */

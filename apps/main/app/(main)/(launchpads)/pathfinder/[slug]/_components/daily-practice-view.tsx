@@ -20,12 +20,10 @@ import {
     updateSubGoalStatus, deleteSubGoal, getSubGoalWithContent
 } from '@/actions/(main)/pathfinder/subgoals.action'
 import { generateContentForAISubGoal } from '@/actions/(main)/pathfinder/goals.action'
-import { createOrGetStudioForGoal } from '@/actions/(main)/pathfinder/studio-link.action'
 import { useRouter } from 'next/navigation'
 import {
-    usePathfinderStore, type SubGoalResources
+    usePathfinderStore
 } from '@/app/store/pathfinderStore'
-import { SubGoalQuiz } from './subgoal-quiz'
 import { SubGoalCoding } from './subgoal-coding'
 import { CreateSubGoalSheet } from './create-subgoal-sheet'
 import { SubGoalContentTabs } from './subgoal-content-tabs'
@@ -62,9 +60,7 @@ interface SubGoal {
     description: string | null
     status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED'
     source: string
-    aiQuizQuestions: unknown
     aiCodingProblem: unknown
-    aiResources?: unknown
     hasCoding: boolean
     quizCompleted: boolean
     quizScore: number | null
@@ -73,6 +69,7 @@ interface SubGoal {
     order: number
     isAIGenerated?: boolean
     isContentLoaded?: boolean
+    studioId?: string | null
 }
 
 interface DailySession {
@@ -93,7 +90,6 @@ interface Goal {
     slug?: string
     category: PathfinderCategory
     level: PathfinderLevel
-    studioId: string | null
     isPublic?: boolean
 }
 
@@ -114,10 +110,6 @@ interface DailyPracticeViewProps {
     initialSession: DailySession | null
     allSessions?: DailySessionWithSubGoals[]
 }
-
-// ================================================================================
-// HEADER COMPONENT
-// ================================================================================
 
 function PracticeHeader({ goal, onOpenEarnings, onOpenNotes }: { goal: Goal; onOpenEarnings?: () => void; onOpenNotes?: () => void }) {
     return (
@@ -179,12 +171,6 @@ function PracticeHeader({ goal, onOpenEarnings, onOpenNotes }: { goal: Goal; onO
     )
 }
 
-// SubGoalInput removed - replaced by CreateSubGoalSheet
-
-// ================================================================================
-// SUB-GOAL ITEM COMPONENT
-// ================================================================================
-
 function SubGoalItem({
     subGoal,
     isSelected,
@@ -202,8 +188,8 @@ function SubGoalItem({
 }) {
     const [isDeleting, setIsDeleting] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
-    const hasAiContent = subGoal.aiQuizQuestions !== null
-    const needsContentGeneration = subGoal.isAIGenerated && !subGoal.isContentLoaded && !hasAiContent
+    const hasContent = (subGoal as { studioId?: string | null }).studioId != null || subGoal.hasCoding
+    const needsContentGeneration = subGoal.isAIGenerated && !subGoal.isContentLoaded && !hasContent
 
     const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -275,7 +261,7 @@ function SubGoalItem({
                         )
                     }
                     {
-                        subGoal.isAIGenerated && !needsContentGeneration && !hasAiContent && (
+                        subGoal.isAIGenerated && !needsContentGeneration && !hasContent && (
                             <Badge variant="secondary" className="text-[10px] h-4 px-1">
                                 <Loader2 className="w-2 h-2 mr-1 animate-spin" />
                                 Generating...
@@ -283,7 +269,7 @@ function SubGoalItem({
                         )
                     }
                     {
-                        !subGoal.isAIGenerated && !hasAiContent && (
+                        !subGoal.isAIGenerated && !hasContent && (
                             <Badge variant="secondary" className="text-[10px] h-4 px-1">
                                 <Loader2 className="w-2 h-2 mr-1 animate-spin" />
                                 Generating...
@@ -291,7 +277,7 @@ function SubGoalItem({
                         )
                     }
                     {
-                        hasAiContent && subGoal.quizCompleted && (
+                        hasContent && subGoal.quizCompleted && (
                             <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-green-100 text-green-700">
                                 <Brain className="w-2 h-2 mr-1" />
                                 Quiz: {subGoal.quizScore}%
@@ -299,7 +285,7 @@ function SubGoalItem({
                         )
                     }
                     {
-                        hasAiContent && subGoal.hasCoding && subGoal.codingCompleted && (
+                        hasContent && subGoal.hasCoding && subGoal.codingCompleted && (
                             <Badge variant="secondary" className={cn(
                                 "text-[10px] h-4 px-1",
                                 subGoal.codingPassed
@@ -341,10 +327,6 @@ function SubGoalItem({
     )
 }
 
-// ================================================================================
-// SESSION STATS COMPONENT
-// ================================================================================
-
 function SessionStats({ session }: { session: DailySession | null }) {
     if (!session) return null
 
@@ -370,13 +352,8 @@ function SessionStats({ session }: { session: DailySession | null }) {
     )
 }
 
-// ================================================================================
-// MAIN COMPONENT
-// ================================================================================
-
 export function DailyPracticeView({ goal, initialSession, allSessions: initialAllSessions = [] }: DailyPracticeViewProps) {
     const router = useRouter()
-    const setSubGoalResources = usePathfinderStore((s) => s.setSubGoalResources)
     const setGoalUsage = usePathfinderStore((s) => s.setGoalUsage)
     const [session, setSession] = useState(initialSession)
     const [allSessions, setAllSessions] = useState(initialAllSessions)
@@ -393,7 +370,7 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
     useEffect(() => {
         const checkForContent = async () => {
             if (!selectedSubGoal) return
-            if (selectedSubGoal.aiQuizQuestions !== null) return
+            if ((selectedSubGoal as { studioId?: string | null }).studioId != null) return
 
             setIsRefreshing(true)
             const result = await getSubGoalWithContent(selectedSubGoal.id)
@@ -418,13 +395,10 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
 
     const handleSubGoalAdded = (
         subGoal: SubGoal,
-        aiResources?: SubGoalResources,
+        _aiResources?: unknown,
         usageSummary?: import('@/app/store/pathfinderStore').GoalUsageSummary
     ) => {
-        const newSubGoal: SubGoal = {
-            ...subGoal,
-            aiResources: aiResources ?? (subGoal as { aiResources?: unknown }).aiResources,
-        }
+        const newSubGoal: SubGoal = { ...subGoal }
         if (session) {
             setSession({
                 ...session,
@@ -474,7 +448,6 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
             ]
         })
         setSelectedSubGoal(newSubGoal)
-        if (aiResources) setSubGoalResources(subGoal.id, aiResources)
         if (usageSummary) setGoalUsage(goal.id, usageSummary)
     }
 
@@ -526,18 +499,7 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
             <PracticeHeader
                 goal={goal}
                 onOpenEarnings={goal.isPublic ? () => setEarningsSheetOpen(true) : undefined}
-                onOpenNotes={async () => {
-                    try {
-                        const result = await createOrGetStudioForGoal(goal.id)
-                        if (result.error) {
-                            toast.error(result.error)
-                        } else if (result.studioSlug) {
-                            router.push(`/studio/${result.studioSlug}`)
-                        }
-                    } catch {
-                        toast.error('Failed to open notes')
-                    }
-                }}
+                onOpenNotes={() => router.push('/studio?tab=pathfinder')}
             />
             <CreatorEarningsSheet
                 open={earningsSheetOpen}
@@ -548,7 +510,7 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
             />
 
             <div className="flex-1 flex overflow-hidden h-screen">
-                <div className="w-[350px] border-r border-neutral-200 dark:border-neutral-800 flex flex-col bg-white dark:bg-neutral-950 h-full">
+                <div className="w-[350px] border-r border-neutral-200 dark:border-neutral-800 flex flex-col bg-neutral-50/80 dark:bg-neutral-950 h-full">
                     <div className="p-3 border-b border-neutral-200 dark:border-neutral-800">
                         <Button
                             variant="outline"
@@ -570,11 +532,15 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
                     <SessionStats session={session} />
 
                     <ScrollArea className="flex-1 min-h-0">
-                        <div className="p-2">
+                        <div className="p-3 space-y-2">
                             {
                                 (() => {
-                                    const sessionsToShow =
+                                    const rawSessions =
                                         allSessions.length > 0 ? allSessions : session ? [session] : []
+                                    // Only show dates where tasks have been created
+                                    const sessionsToShow = rawSessions.filter(
+                                        (s) => s.totalSubGoals > 0
+                                    )
                                     if (sessionsToShow.length === 0) {
                                         return (
                                             <div className="text-center py-12 text-neutral-400">
@@ -594,7 +560,7 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
                                             type="single"
                                             collapsible
                                             defaultValue={`session-${defaultOpen?.id ?? 'new-${Date.now()}'}`}
-                                            className="w-full"
+                                            className="w-full space-y-1"
                                         >
                                             {
                                                 sessionsToShow.map((sess) => {
@@ -610,26 +576,28 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
                                                         <AccordionItem
                                                             key={sess.id}
                                                             value={`session-${sess.id}`}
-                                                            className="border-none"
+                                                            className="border border-neutral-200/60 dark:border-neutral-800 rounded-lg overflow-hidden bg-neutral-50/50 dark:bg-neutral-900/30"
                                                         >
-                                                            <AccordionTrigger className="py-2 px-3 hover:no-underline hover:bg-neutral-50 dark:hover:bg-neutral-900/50 rounded-lg">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Calendar className="w-4 h-4 text-violet-500" />
-                                                                    <span className="text-sm font-medium">
-                                                                        {dateStr}
-                                                                        {
-                                                                            isToday && (
-                                                                                <span className="ml-1 text-xs text-neutral-500">(Today)</span>
-                                                                            )
-                                                                        }
-                                                                    </span>
-                                                                    <span className="text-xs text-neutral-500">
+                                                            <AccordionTrigger className="py-3 px-4 hover:no-underline hover:bg-neutral-100/80 dark:hover:bg-neutral-800/50 rounded-lg [&[data-state=open]]:rounded-b-none">
+                                                                <div className="flex items-center justify-between w-full gap-3">
+                                                                    <div className="flex items-center gap-2.5">
+                                                                        <Calendar className="w-4 h-4 text-violet-500 shrink-0" />
+                                                                        <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                                                                            {dateStr}
+                                                                            {
+                                                                                isToday && (
+                                                                                    <span className="ml-1.5 text-xs font-normal text-violet-600 dark:text-violet-400">(Today)</span>
+                                                                                )
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-200/60 dark:bg-neutral-700/50 px-2 py-0.5 rounded">
                                                                         {sess.completedSubGoals}/{sess.totalSubGoals}
                                                                     </span>
                                                                 </div>
                                                             </AccordionTrigger>
-                                                            <AccordionContent className="pt-0 pb-2">
-                                                                <div className="space-y-1">
+                                                            <AccordionContent className="px-2 pt-1 pb-3">
+                                                                <div className="space-y-1.5">
                                                                     <AnimatePresence>
                                                                         {
                                                                             sess.subGoals.map((subGoal) => (
@@ -671,44 +639,24 @@ export function DailyPracticeView({ goal, initialSession, allSessions: initialAl
                 <ScrollArea className="flex-1 h-screen min-h-0">
                     {
                         selectedSubGoal ? (
-                            <>
-                                {
-                                    selectedSubGoal.aiQuizQuestions ? (
-                                        <SubGoalContentTabs
-                                            subGoalId={selectedSubGoal.id}
-                                            subGoalTitle={selectedSubGoal.title}
-                                            goalId={goal.id}
-                                            aiResources={selectedSubGoal.aiResources as SubGoalResources | undefined}
-                                            aiQuizQuestions={selectedSubGoal.aiQuizQuestions}
-                                            hasCoding={selectedSubGoal.hasCoding}
-                                            aiCodingProblem={selectedSubGoal.aiCodingProblem}
-                                            quizCompleted={selectedSubGoal.quizCompleted}
-                                            quizScore={selectedSubGoal.quizScore}
-                                            codingCompleted={selectedSubGoal.codingCompleted}
-                                            codingPassed={selectedSubGoal.codingPassed}
-                                            onQuizComplete={() => router.refresh()}
-                                            onCodingComplete={() => router.refresh()}
-                                            SubGoalQuizComponent={SubGoalQuiz}
-                                            SubGoalCodingComponent={SubGoalCoding}
-                                            subGoal={selectedSubGoal}
-                                        />
-                                    ) : (
-                                        <div className="flex-1 flex items-center justify-center">
-                                            <div className="text-center">
-                                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                                                    <Sparkles className="w-8 h-8 text-violet-500 animate-pulse" />
-                                                </div>
-                                                <h3 className="font-semibold text-neutral-900 dark:text-white mb-1">
-                                                    Generating Content
-                                                </h3>
-                                                <p className="text-sm text-neutral-500">
-                                                    AI is creating quiz questions and coding problems...
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                            </>
+                            <SubGoalContentTabs
+                                subGoalId={selectedSubGoal.id}
+                                subGoalTitle={selectedSubGoal.title}
+                                goalId={goal.id}
+                                hasCoding={selectedSubGoal.hasCoding}
+                                codingCompleted={selectedSubGoal.codingCompleted}
+                                codingPassed={selectedSubGoal.codingPassed}
+                                studioId={(selectedSubGoal as { studioId?: string | null }).studioId ?? null}
+                                onCodingComplete={() => router.refresh()}
+                                SubGoalCodingComponent={SubGoalCoding}
+                                subGoal={{
+                                    id: selectedSubGoal.id,
+                                    title: selectedSubGoal.title,
+                                    aiCodingProblem: selectedSubGoal.aiCodingProblem,
+                                    codingCompleted: selectedSubGoal.codingCompleted,
+                                    codingPassed: selectedSubGoal.codingPassed,
+                                }}
+                            />
                         ) : (
                             <div className="flex-1 flex items-center justify-center">
                                 <div className="text-center">

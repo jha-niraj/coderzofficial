@@ -80,7 +80,7 @@ export function PathfinderMockSheet({
         try {
             const subGoals = sessions.flatMap((s) => s.subGoals).filter((sg) => selectedIds.has(sg.id))
             const knowledgeParts = subGoals.map((sg) => {
-                const content = (sg.aiResources as { content?: string } | null)?.content ?? sg.title
+                const content = (sg as { aiResources?: { content?: string } }).aiResources?.content ?? sg.title
                 return `${sg.title}: ${content.slice(0, 300)}${content.length > 300 ? '...' : ''}`
             })
             const knowledgeBase = knowledgeParts.join('\n\n')

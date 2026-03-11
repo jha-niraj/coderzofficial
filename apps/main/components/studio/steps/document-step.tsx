@@ -10,10 +10,17 @@ interface DocumentStepProps {
 }
 
 export function DocumentStep({ step }: DocumentStepProps) {
-  const metadata = (step.metadata || {}) as Partial<DocumentMetadata>;
+  const metadata = (step.metadata || {}) as Partial<DocumentMetadata> & { docs?: Array<{ url: string; title?: string; type?: string; description?: string }> };
 
-  const getDocTypeIcon = () => {
-    switch (metadata.docType) {
+  // Support both single doc (metadata.url) and multiple docs (metadata.docs from Exa)
+  const docs = metadata.docs?.length
+    ? metadata.docs
+    : metadata.url
+      ? [{ url: metadata.url, title: metadata.title, type: metadata.docType, description: metadata.description }]
+      : [];
+
+  const getDocTypeIcon = (type?: string) => {
+    switch (type || metadata.docType) {
       case "documentation":
         return <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />;
       case "tutorial":
@@ -24,8 +31,8 @@ export function DocumentStep({ step }: DocumentStepProps) {
     }
   };
 
-  const getDocTypeLabel = () => {
-    switch (metadata.docType) {
+  const getDocTypeLabel = (type?: string) => {
+    switch (type || metadata.docType) {
       case "documentation":
         return "Official Documentation";
       case "tutorial":
@@ -45,56 +52,71 @@ export function DocumentStep({ step }: DocumentStepProps) {
     }
   };
 
+  if (docs.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="py-8"
+      >
+        <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+          <FileText className="h-12 w-12 text-neutral-400 mb-4" />
+          <p className="text-neutral-600 dark:text-neutral-400">No documents available</p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="py-8"
+      className="py-8 space-y-4"
     >
-      <div className="rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 shadow-sm border border-neutral-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-700 transition-colors group">
-        <div className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-xl bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center shrink-0">
-              {getDocTypeIcon()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-neutral-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {metadata.title || "Document"}
-              </h3>
-              {metadata.description && (
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 line-clamp-2">
-                  {metadata.description}
-                </p>
-              )}
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
-                  {getDocTypeLabel()}
-                </span>
-                {metadata.url && (
-                  <span className="inline-flex items-center gap-1 text-xs text-neutral-500">
-                    <Globe className="h-3 w-3" />
-                    {getDomain(metadata.url)}
-                  </span>
-                )}
-                {metadata.source && (
-                  <span className="text-xs text-neutral-400 capitalize">
-                    Added by {metadata.source === "xai" ? "AI" : "you"}
-                  </span>
-                )}
+      {docs.map((doc, i) => (
+        <div
+          key={i}
+          className="rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 shadow-sm border border-neutral-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-700 transition-colors group"
+        >
+          <div className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-xl bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center shrink-0">
+                {getDocTypeIcon(doc.type)}
               </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-neutral-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {doc.title || "Document"}
+                </h3>
+                {doc.description && (
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3 line-clamp-2">
+                    {doc.description}
+                  </p>
+                )}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
+                    {getDocTypeLabel(doc.type)}
+                  </span>
+                  {doc.url && (
+                    <span className="inline-flex items-center gap-1 text-xs text-neutral-500">
+                      <Globe className="h-3 w-3" />
+                      {getDomain(doc.url)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 shrink-0"
+                onClick={() => doc.url && window.open(doc.url, "_blank")}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 shrink-0"
-              onClick={() => metadata.url && window.open(metadata.url, "_blank")}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open
-            </Button>
           </div>
         </div>
-      </div>
+      ))}
     </motion.div>
   );
 }

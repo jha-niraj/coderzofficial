@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
-import { ExplanationStep } from "../steps/explanation-step";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { QuizStep } from "../steps/quiz-step";
 import { NoteStep } from "../steps/note-step";
 import { CodeStep } from "../steps/code-step";
@@ -228,7 +228,27 @@ export function StudioViewer({
 		if (!studioForRender) return null;
 		switch (step.type) {
 			case "EXPLANATION":
-				return <ExplanationStep key={step.id} step={step} />;
+				return (
+					<motion.div
+						key={step.id}
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						className="py-8"
+					>
+						<div className="prose prose-neutral dark:prose-invert max-w-none">
+							<MarkdownRenderer content={step.content || ""} />
+						</div>
+						{
+							step.source === "AI" && (step.metadata as { prompt?: string })?.prompt && (
+								<div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+									<p className="text-xs text-neutral-500 dark:text-neutral-400">
+										Generated from: &quot;{(step.metadata as { prompt?: string }).prompt}&quot;
+									</p>
+								</div>
+							)
+						}
+					</motion.div>
+				);
 
 			case "QUIZ": {
 				const metadata = step.metadata as unknown as QuizMetadata;

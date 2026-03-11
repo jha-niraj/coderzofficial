@@ -11,9 +11,6 @@ import { Label } from "@repo/ui/components/ui/label";
 import { Progress } from "@repo/ui/components/ui/progress";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
-    Sheet, SheetContent, SheetTrigger
-} from "@repo/ui/components/ui/sheet";
-import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
     DialogTitle
 } from "@repo/ui/components/ui/dialog";
@@ -21,7 +18,7 @@ import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@repo/ui/components/ui/tooltip";
 import {
-    Timer, ChevronLeft, ChevronRight, Menu, AlertCircle, Flag, AlertTriangle,
+    Timer, ChevronLeft, ChevronRight, AlertCircle, Flag, AlertTriangle, Loader2,
     Clock, Lightbulb, CheckCircle, XCircle, SkipForward, RotateCcw
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
@@ -143,7 +140,6 @@ export default function Quiz({
     const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set());
     const [usedHints, setUsedHints] = useState<Set<string>>(new Set());
     const [showHint, setShowHint] = useState(false);
-    const [showSidebar, setShowSidebar] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
     const [showResult, setShowResult] = useState(false);
@@ -274,12 +270,36 @@ export default function Quiz({
         return `${minutes}:${secs.toString().padStart(2, "0")}`;
     };
 
-    // Handle single choice change
-    const handleSingleChoiceChange = (value: string) => {
-        setAnswers(prev => ({
-            ...prev,
-            [currentQuestion?.id || ""]: value,
-        }));
+    // Handle single choice change - auto-submit and advance on answer selection
+    const handleSingleChoiceChange = async (value: string) => {
+        const qId = currentQuestion?.id || "";
+        setAnswers(prev => ({ ...prev, [qId]: value }));
+
+        if (showResult) return;
+
+        if (onAnswerSubmit && !isSubmitting) {
+            setIsSubmitting(true);
+            const timeTaken = Math.floor((Date.now() - questionStartTime) / 1000);
+            try {
+                const result = await onAnswerSubmit(qId, value, timeTaken);
+                setAnsweredQuestions(prev => new Set(prev).add(qId));
+                if (result && immediateResults) {
+                    setLastResult(result);
+                    setQuestionResults(prev => ({ ...prev, [qId]: result.isCorrect }));
+                    setShowResult(true);
+                } else {
+                    handleNext();
+                }
+            } catch (err) {
+                console.error("Error submitting answer:", err);
+            } finally {
+                setIsSubmitting(false);
+            }
+        } else {
+            // No API callback: just advance to next question (answer already stored)
+            setAnsweredQuestions(prev => new Set(prev).add(qId));
+            handleNext();
+        }
     };
 
     // Handle multiple choice change
@@ -386,7 +406,6 @@ export default function Quiz({
     const handleQuestionSelect = (index: number) => {
         if (allowQuestionNavigation || mode === "practice") {
             setCurrentIndex(index);
-            setShowSidebar(false);
         }
     };
 
@@ -744,61 +763,7 @@ export default function Quiz({
                 </AnimatePresence>
             </div>
             <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        {
-                            showQuestionNavigator && (
-                                <Sheet open={showSidebar} onOpenChange={setShowSidebar}>
-                                    <SheetTrigger asChild>
-                                        <Button variant="outline" size="sm">
-                                            <Menu className="h-4 w-4 mr-2" />
-                                            Questions
-                                        </Button>
-                                    </SheetTrigger>
-                                    <SheetContent side="left" className="w-80">
-                                        <div className="space-y-4">
-                                            <h3 className="text-lg font-semibold">Question Navigator</h3>
-                                            <div className="grid grid-cols-5 gap-2">
-                                                {
-                                                    questions.map((question, index) => (
-                                                        <Button
-                                                            key={question.id}
-                                                            variant={index === currentIndex ? "default" : "outline"}
-                                                            size="sm"
-                                                            className={cn(
-                                                                "relative",
-                                                                isQuestionAnswered(question.id) && "bg-green-100 border-green-300 text-green-800",
-                                                                flaggedQuestions.has(question.id) && "ring-2 ring-orange-300"
-                                                            )}
-                                                            onClick={() => handleQuestionSelect(index)}
-                                                        >
-                                                            {index + 1}
-                                                            {
-                                                                flaggedQuestions.has(question.id) && (
-                                                                    <Flag className="h-3 w-3 absolute -top-1 -right-1 text-orange-500" />
-                                                                )
-                                                            }
-                                                        </Button>
-                                                    ))
-                                                }
-                                            </div>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
-                                                    <span>Answered</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 border-2 border-orange-300 rounded"></div>
-                                                    <span>Flagged</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </SheetContent>
-                                </Sheet>
-                            )
-                        }
-                    </div>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center justify-end gap-2">
                         <Button
                             variant="outline"
                             onClick={handlePrevious}
@@ -828,13 +793,18 @@ export default function Quiz({
                                             (Array.isArray(getCurrentAnswer()) && (getCurrentAnswer() as string[]).length === 0)
                                         }
                                         onClick={async () => {
-                                            // First save the answer
                                             await handleSubmitAnswer();
-                                            // Then show confirmation dialog
                                             setShowConfirmDialog(true);
                                         }}
                                     >
-                                        {isSubmitting ? "Submitting..." : "Submit Quiz"}
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            "Submit Quiz"
+                                        )}
                                     </Button>
                                 ) : (
                                     // Not last question: normal "Submit Answer" button
@@ -846,7 +816,14 @@ export default function Quiz({
                                             (Array.isArray(getCurrentAnswer()) && (getCurrentAnswer() as string[]).length === 0)
                                         }
                                     >
-                                        {isSubmitting ? "Submitting..." : "Submit Answer"}
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            "Submit Answer"
+                                        )}
                                     </Button>
                                 )
                             ) : (
@@ -864,7 +841,6 @@ export default function Quiz({
                                 </Button>
                             )
                         }
-                    </div>
                 </div>
             </div>
 

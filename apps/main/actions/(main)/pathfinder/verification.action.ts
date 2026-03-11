@@ -272,18 +272,18 @@ export async function generateVerificationContent(goalId: string) {
         await prisma.pathfinderGoal.update({
             where: { id: goalId },
             data: {
-                aiGeneratedPlan: aiPlan as object,
                 overview: aiPlan.overview ?? goal.overview,
                 learningObjectives: aiPlan.learningObjectives ?? goal.learningObjectives,
                 prerequisites: aiPlan.prerequisites ?? goal.prerequisites,
-                mockInterviewId: mockId,
             },
         })
 
-        // Unlock all sections when content is generated (no sequential lock)
+        // Store plan and mock in verification
         await prisma.pathfinderVerification.update({
             where: { goalId },
             data: {
+                generatedPlan: aiPlan as object,
+                mockInterviewId: mockId,
                 codingStatus: 'PENDING',
                 mockStatus: 'PENDING',
             },
@@ -415,8 +415,8 @@ export async function submitVerificationCoding(submission: VerificationCodingSub
             allSubmissions.filter((s: { passed: boolean }) => s.passed).map((s: { problemId: string }) => s.problemId)
         )
 
-        // Get total problems from AI plan
-        const aiPlan = goal.aiGeneratedPlan as { codingQuestions?: unknown[] } | null
+        // Get total problems from verification generated plan
+        const aiPlan = (goal.verification as { generatedPlan?: { codingQuestions?: unknown[] } } | null)?.generatedPlan as { codingQuestions?: unknown[] } | null
         const totalProblems = aiPlan?.codingQuestions?.length || 5
 
         const score = Math.round((passedProblems.size / totalProblems) * 100)
@@ -477,8 +477,8 @@ export async function completeMockInterview(
         const passed = score >= 70
         const newStatus: VerificationSectionStatus = passed ? 'COMPLETED' : 'FAILED'
 
-        // Get AI plan to check if project is required
-        const aiPlan = goal.aiGeneratedPlan as { minorProject?: unknown; majorProject?: unknown } | null
+        // Get generated plan to check if project is required
+        const aiPlan = (goal.verification as { generatedPlan?: { minorProject?: unknown; majorProject?: unknown } } | null)?.generatedPlan as { minorProject?: unknown; majorProject?: unknown } | null
         const hasProject = !!(aiPlan?.minorProject || aiPlan?.majorProject)
 
         await prisma.pathfinderVerification.update({
@@ -605,7 +605,7 @@ async function checkVerificationCompletion(verificationId: string) {
     if (!verification) return
 
     // Check which sections are required
-    const aiPlan = verification.goal.aiGeneratedPlan as {
+    const aiPlan = verification.generatedPlan as {
         minorProject?: unknown
         majorProject?: unknown
     } | null

@@ -1,7 +1,5 @@
 import {
-    getPathfinderGoal,
-    getOrCreateDailySession,
-    getGoalSessions,
+    getPathfinderGoal, getOrCreateDailySession, getGoalSessions
 } from '@/actions/(main)/pathfinder'
 import { DailyPracticeView } from './_components/daily-practice-view'
 import { notFound } from 'next/navigation'

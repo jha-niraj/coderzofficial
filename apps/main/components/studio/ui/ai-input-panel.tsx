@@ -3,26 +3,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-	FileText,
-	FileQuestion,
-	Code,
-	Image as ImageIcon,
-	Video,
-	FileCode,
-	Rocket,
-	Mic,
-	StickyNote,
-	Layers,
-	Send,
-	Sparkles,
-	Loader2,
-	ChevronDown,
+	FileText, FileQuestion, Code, Image as ImageIcon, Video, FileCode, 
+	Rocket, Mic, StickyNote, Layers, Send, Sparkles, Loader2, ChevronDown, 
 	ChevronUp,
 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { cn } from "@repo/ui/lib/utils";
-import { generateExplanation, generateQuiz, generateFlashcards } from "@/actions/(main)/studios/ai-generation.actions";
+import { 
+	generateExplanation, generateQuiz, generateFlashcards,
+	generateVideos, generateDocuments
+} from "@/actions/(main)/studios/ai-generation.actions";
 import { saveStep } from "@/actions/(main)/studios/studio.actions";
 import toast from "@repo/ui/components/ui/sonner";
 import type { StudioStepType, StudioStep } from "@/types/studios";
@@ -218,6 +209,16 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 					break;
 				}
 
+				case "VIDEO": {
+					result = await generateVideos(studioId, prompt.trim());
+					break;
+				}
+
+				case "DOCUMENT": {
+					result = await generateDocuments(studioId, prompt.trim());
+					break;
+				}
+
 				default:
 					toast.info("This content type is not yet implemented");
 					removePendingStep(pendingId);
@@ -346,7 +347,11 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 												? "e.g., Name your code block or describe the problem"
 												: selectedType === "FLASHCARD"
 													? "e.g., Generate flashcards on JavaScript array methods"
-													: `Ask AI to generate ${selectedOption?.label.toLowerCase()}...`
+													: selectedType === "VIDEO"
+														? "e.g., React hooks tutorial videos"
+														: selectedType === "DOCUMENT"
+															? "e.g., TypeScript official documentation"
+															: `Ask AI to generate ${selectedOption?.label.toLowerCase()}...`
 							}
 							className="min-h-[60px] max-h-[120px] pr-12 resize-none rounded-xl border-neutral-200 dark:border-neutral-800 focus:border-purple-500 dark:focus:border-purple-500"
 							disabled={isGenerating}

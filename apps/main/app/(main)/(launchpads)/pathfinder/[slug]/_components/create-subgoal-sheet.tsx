@@ -10,7 +10,7 @@ import {
     Loader2, Sparkles, Target
 } from 'lucide-react'
 import { createSubGoal } from '@/actions/(main)/pathfinder/subgoals.action'
-import type { SubGoalResources, GoalUsageSummary } from '@/app/store/pathfinderStore'
+import type { GoalUsageSummary } from '@/app/store/pathfinderStore'
 import { usePathfinderStore } from '@/app/store/pathfinderStore'
 import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
@@ -24,7 +24,6 @@ interface CreateSubGoalSheetProps {
         description: string | null
         status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED'
         source: string
-        aiQuizQuestions: unknown
         aiCodingProblem: unknown
         hasCoding: boolean
         quizCompleted: boolean
@@ -32,8 +31,8 @@ interface CreateSubGoalSheetProps {
         codingCompleted: boolean
         codingPassed: boolean
         order: number
-        aiResources?: unknown
-    }, aiResources?: SubGoalResources, usageSummary?: GoalUsageSummary) => void
+        studioId?: string | null
+    }, _aiResources?: unknown, usageSummary?: GoalUsageSummary) => void
 }
 
 export function CreateSubGoalSheet({
@@ -80,7 +79,7 @@ export function CreateSubGoalSheet({
                 }
                 onSuccess(
                     result.subGoal as Parameters<typeof onSuccess>[0],
-                    result.aiResources,
+                    undefined,
                     result.usageSummary
                 )
                 setTitle('')
@@ -115,7 +114,6 @@ export function CreateSubGoalSheet({
                         Cost is ~1-2 credits per sub-goal (Exa + OpenAI). Usage shown in top-right.
                     </SheetDescription>
                 </SheetHeader>
-
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                     <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">

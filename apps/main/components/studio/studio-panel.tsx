@@ -38,6 +38,10 @@ interface StudioPanelProps {
     className?: string;
     /** Hide the close button */
     hideClose?: boolean;
+    /** Pre-existing studio ID - when provided, fetch and initialize instead of showing create */
+    initialStudioId?: string;
+    /** Custom create action - when provided, use instead of default createStudio (e.g. for pathfinder sub-goals) */
+    createStudioAction?: (ctx: { title: string; description?: string; source: string; sourceId?: string }) => Promise<{ studioId: string } | { error: string }>;
 }
 
 /**
@@ -75,6 +79,8 @@ export function StudioPanel({
     width = 420,
     className,
     hideClose = false,
+    initialStudioId,
+    createStudioAction,
 }: StudioPanelProps) {
     const studioId = useStudioStore((s) => s.studioId);
     const isCreatingStudio = useStudioStore((s) => s.isCreatingStudio);
@@ -85,6 +91,32 @@ export function StudioPanel({
 
     const [studioData, setStudioData] = useState<StudioWithSteps | null>(null);
 
+    const reset = useStudioStore((s) => s.reset);
+
+    // When initialStudioId is provided, fetch and initialize. When it changes, reset and fetch new.
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        if (!initialStudioId) {
+            // No pre-existing studio - reset store so we don't show another sub-goal's studio
+            reset();
+            setStudioData(null);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            try {
+                const result = await getStudioWithSteps(initialStudioId);
+                if (!cancelled && result.success && result.studio) {
+                    initialize(result.studio);
+                    setStudioData(result.studio);
+                }
+            } catch (err) {
+                console.error("Failed to load studio:", err);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [initialStudioId, isLoggedIn, initialize, reset]);
+
     const handleCreateStudio = useCallback(async () => {
         if (!isLoggedIn) {
             toast.error("Please login to create a studio");
@@ -92,29 +124,33 @@ export function StudioPanel({
         }
         setIsCreatingStudio(true);
         try {
-            const result = await createStudio({
-                title: context.title,
-                description: context.description,
-                source: context.source,
-                sourceId: context.sourceId,
-            });
-            if (result.success && result.studio) {
-                // Fetch the full studio with steps
-                const studioResult = await getStudioWithSteps(result.studio.id);
+            const result = createStudioAction
+                ? await createStudioAction(context)
+                : await createStudio({
+                    title: context.title,
+                    description: context.description,
+                    source: context.source,
+                    sourceId: context.sourceId,
+                });
+            const sid = "studioId" in result ? result.studioId : (result as { success?: boolean; studio?: { id: string } }).studio?.id;
+            if ("error" in result && result.error) {
+                toast.error(result.error);
+            } else if (sid) {
+                const studioResult = await getStudioWithSteps(sid);
                 if (studioResult.success && studioResult.studio) {
                     initialize(studioResult.studio);
                     setStudioData(studioResult.studio);
                 }
                 toast.success("Studio created! You can now take notes and ask AI questions.");
-            } else {
-                toast.error(result.error || "Failed to create studio");
+            } else if (!("error" in result && result.error)) {
+                toast.error("Failed to create studio");
             }
         } catch {
             toast.error("Failed to create studio");
         } finally {
             setIsCreatingStudio(false);
         }
-    }, [context, isLoggedIn, initialize, setIsCreatingStudio]);
+    }, [context, isLoggedIn, initialize, setIsCreatingStudio, createStudioAction]);
 
     // If the user triggers the panel with an external prompt and no studio exists,
     // auto-create the studio first

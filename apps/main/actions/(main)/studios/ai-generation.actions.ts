@@ -3,6 +3,7 @@
 import { auth } from "@repo/auth";
 import { prisma } from "@repo/prisma";
 import OpenAI from "openai";
+import Exa from "exa-js";
 import type { StudioStep, ExplanationMetadata } from "@/types/studios";
 
 const openai = new OpenAI({
@@ -404,6 +405,208 @@ Return ONLY the enhanced HTML content. Do not add any prefix or explanation.`,
 	} catch (error) {
 		console.error("Error enhancing note:", error);
 		return { success: false, error: "Failed to enhance note" };
+	}
+}
+
+// Generate videos using Exa (2 videos)
+export async function generateVideos(
+	studioId: string,
+	topic: string
+): Promise<{
+	success: boolean;
+	step?: StudioStep;
+	error?: string;
+}> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) {
+			return { success: false, error: "Unauthorized" };
+		}
+
+		const studio = await prisma.studio.findUnique({
+			where: { id: studioId, userId: session.user.id },
+		});
+
+		if (!studio) {
+			return { success: false, error: "Studio not found" };
+		}
+
+		const apiKey = process.env.EXA_API_KEY;
+		if (!apiKey) {
+			return { success: false, error: "Exa API key not configured" };
+		}
+
+		const exa = new Exa(apiKey);
+		const query = `Find the best 2 YouTube tutorial videos for learning "${topic}". High-quality, educational, up-to-date.`;
+
+		const { answer } = await exa.answer(query, {
+			outputSchema: {
+				description: "YouTube video resources",
+				type: "object",
+				required: ["videos"],
+				additionalProperties: false,
+				properties: {
+					videos: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["url"],
+							properties: {
+								url: { type: "string", description: "YouTube video URL" },
+								title: { type: "string", description: "Video title" },
+								duration: { type: "string", description: "Video duration" },
+								description: { type: "string", description: "Brief description" },
+							},
+							additionalProperties: false,
+						},
+					},
+				},
+			},
+		});
+
+		const parsed = (typeof answer === "object" ? answer : {}) as { videos?: Array<{ url: string; title?: string; duration?: string; description?: string }> };
+		const videos = (parsed.videos || []).slice(0, 2);
+
+		if (videos.length === 0) {
+			return { success: false, error: "No videos found" };
+		}
+
+		const maxOrder = await prisma.studioStep.findFirst({
+			where: { studioId },
+			orderBy: { orderNumber: "desc" },
+			select: { orderNumber: true },
+		});
+
+		const nextOrder = (maxOrder?.orderNumber ?? 0) + 1;
+
+		const step = await prisma.studioStep.create({
+			data: {
+				studioId,
+				type: "VIDEO",
+				content: null,
+				metadata: {
+					topic,
+					videos,
+				} as any,
+				source: "AI",
+				orderNumber: nextOrder,
+				status: "COMPLETED",
+			},
+		});
+
+		await prisma.studio.update({
+			where: { id: studioId },
+			data: {
+				stepCount: { increment: 1 },
+				lastEditedAt: new Date(),
+			},
+		});
+
+		return { success: true, step: step as unknown as StudioStep };
+	} catch (error) {
+		console.error("Error generating videos:", error);
+		return { success: false, error: "Failed to generate videos" };
+	}
+}
+
+// Generate documents using Exa (up to 5 docs)
+export async function generateDocuments(
+	studioId: string,
+	topic: string
+): Promise<{
+	success: boolean;
+	step?: StudioStep;
+	error?: string;
+}> {
+	try {
+		const session = await auth();
+		if (!session?.user?.id) {
+			return { success: false, error: "Unauthorized" };
+		}
+
+		const studio = await prisma.studio.findUnique({
+			where: { id: studioId, userId: session.user.id },
+		});
+
+		if (!studio) {
+			return { success: false, error: "Studio not found" };
+		}
+
+		const apiKey = process.env.EXA_API_KEY;
+		if (!apiKey) {
+			return { success: false, error: "Exa API key not configured" };
+		}
+
+		const exa = new Exa(apiKey);
+		const query = `Find the best 5 documentation and article resources for learning "${topic}". Official docs, tutorials, high-quality articles.`;
+
+		const { answer } = await exa.answer(query, {
+			outputSchema: {
+				description: "Documentation resources",
+				type: "object",
+				required: ["docs"],
+				additionalProperties: false,
+				properties: {
+					docs: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["url"],
+							properties: {
+								url: { type: "string", description: "Documentation URL" },
+								title: { type: "string", description: "Document title" },
+								type: { type: "string", description: "Type (Official Docs, Article, Tutorial)" },
+								description: { type: "string", description: "Brief description" },
+							},
+							additionalProperties: false,
+						},
+					},
+				},
+			},
+		});
+
+		const parsed = (typeof answer === "object" ? answer : {}) as { docs?: Array<{ url: string; title?: string; type?: string; description?: string }> };
+		const docs = (parsed.docs || []).slice(0, 5);
+
+		if (docs.length === 0) {
+			return { success: false, error: "No documents found" };
+		}
+
+		const maxOrder = await prisma.studioStep.findFirst({
+			where: { studioId },
+			orderBy: { orderNumber: "desc" },
+			select: { orderNumber: true },
+		});
+
+		const nextOrder = (maxOrder?.orderNumber ?? 0) + 1;
+
+		const step = await prisma.studioStep.create({
+			data: {
+				studioId,
+				type: "DOCUMENT",
+				content: null,
+				metadata: {
+					topic,
+					docs,
+				} as any,
+				source: "AI",
+				orderNumber: nextOrder,
+				status: "COMPLETED",
+			},
+		});
+
+		await prisma.studio.update({
+			where: { id: studioId },
+			data: {
+				stepCount: { increment: 1 },
+				lastEditedAt: new Date(),
+			},
+		});
+
+		return { success: true, step: step as unknown as StudioStep };
+	} catch (error) {
+		console.error("Error generating documents:", error);
+		return { success: false, error: "Failed to generate documents" };
 	}
 }
 
