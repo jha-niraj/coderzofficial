@@ -1,24 +1,16 @@
 'use client'
 
-import { useState } from 'react'
 import {
     Tabs, TabsList, TabsTrigger, TabsContent
 } from '@repo/ui/components/ui/tabs'
 import {
-    Brain, Code2, CheckCircle2, Mic, Loader2, StickyNote
+    Brain, Code2, CheckCircle2, StickyNote, ListVideo, Layers
 } from 'lucide-react'
-import { Button } from '@repo/ui/components/ui/button'
-import { useRouter } from 'next/navigation'
-import {
-    type SubGoalResources
-} from '@/app/store/pathfinderStore'
-import {
-    createPathfinderPracticeMockAndSession
-} from '@/actions/(main)/pathfinder/practice-mock.action'
-import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'
-import { Play } from 'lucide-react'
+import type { SubGoalResources } from '@/app/store/pathfinderStore'
 import { PathfinderNotesTab } from './pathfinder-notes-tab'
+import { PathfinderVideosTab } from './pathfinder-videos-tab'
+import { PathfinderFlashcardsTab } from './pathfinder-flashcards-tab'
 
 /** SubGoal shape expected by Quiz and Coding components */
 interface SubGoalForTabs {
@@ -69,62 +61,42 @@ export function SubGoalContentTabs({
     SubGoalCodingComponent,
     subGoal,
 }: SubGoalContentTabsProps) {
-    const router = useRouter()
-    const [mockLoading, setMockLoading] = useState(false)
-
-    const handleStartMock = async () => {
-        setMockLoading(true)
-        try {
-            const result = await createPathfinderPracticeMockAndSession(subGoalId)
-            if (result.success && result.sessionId) {
-                router.push(`/mock/voice/interview/${result.sessionId}`)
-            } else {
-                toast.error(result.error ?? 'Failed to start mock')
-            }
-        } catch {
-            toast.error('Failed to start mock')
-        } finally {
-            setMockLoading(false)
-        }
-    }
-
     return (
-        <Tabs defaultValue="notes" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="notes" className="flex-1 flex flex-col overflow-hidden h-full">
             <TabsList className="flex-shrink-0 mx-4 mt-4 h-auto flex-wrap gap-1">
                 <TabsTrigger value="notes" className="text-xs gap-1">
                     <StickyNote className="w-3 h-3" />
                     Notes
+                </TabsTrigger>
+                <TabsTrigger value="videos" className="text-xs gap-1">
+                    <ListVideo className="w-3 h-3" />
+                    Videos
+                </TabsTrigger>
+                <TabsTrigger value="flashcards" className="text-xs gap-1">
+                    <Layers className="w-3 h-3" />
+                    Flashcards
                 </TabsTrigger>
                 <TabsTrigger value="quiz" className="text-xs gap-1">
                     <Brain className="w-3 h-3" />
                     Quiz
                     {quizCompleted && <CheckCircle2 className="w-3 h-3 text-green-500" />}
                 </TabsTrigger>
-                {
-                    hasCoding && (
-                        <TabsTrigger value="coding" className="text-xs gap-1">
-                            <Code2 className="w-3 h-3" />
-                            Coding
-                            {
-                                codingCompleted && (
-                                    <CheckCircle2
-                                        className={cn(
-                                            'w-3 h-3',
-                                            codingPassed ? 'text-green-500' : 'text-red-500'
-                                        )}
-                                    />
-                                )
-                            }
-                        </TabsTrigger>
-                    )
-                }
-                <TabsTrigger value="mock" className="text-xs gap-1">
-                    <Mic className="w-3 h-3" />
-                    Mock
-                </TabsTrigger>
+                {hasCoding && (
+                    <TabsTrigger value="coding" className="text-xs gap-1">
+                        <Code2 className="w-3 h-3" />
+                        Coding
+                        {codingCompleted && (
+                            <CheckCircle2
+                                className={cn(
+                                    'w-3 h-3',
+                                    codingPassed ? 'text-green-500' : 'text-red-500'
+                                )}
+                            />
+                        )}
+                    </TabsTrigger>
+                )}
             </TabsList>
 
-            {/* NOTES TAB - Unified view merging Resources, Videos, Docs, Flashcards */}
             <TabsContent value="notes" className="flex-1 overflow-hidden m-0">
                 <PathfinderNotesTab
                     subGoalId={subGoalId}
@@ -134,49 +106,27 @@ export function SubGoalContentTabs({
                 />
             </TabsContent>
 
-            {/* QUIZ TAB */}
+            <TabsContent value="videos" className="flex-1 overflow-hidden m-0">
+                <PathfinderVideosTab aiResources={aiResources} />
+            </TabsContent>
+
+            <TabsContent value="flashcards" className="flex-1 overflow-hidden m-0">
+                <PathfinderFlashcardsTab
+                    subGoalId={subGoalId}
+                    subGoalTitle={subGoalTitle}
+                    aiResources={aiResources}
+                />
+            </TabsContent>
+
             <TabsContent value="quiz" className="flex-1 overflow-hidden m-0 p-4">
                 <SubGoalQuizComponent subGoal={subGoal} onComplete={onQuizComplete} />
             </TabsContent>
 
-            {/* CODING TAB */}
-            {
-                hasCoding && (
-                    <TabsContent value="coding" className="flex-1 overflow-hidden m-0 p-4">
-                        <SubGoalCodingComponent subGoal={subGoal} onComplete={onCodingComplete} />
-                    </TabsContent>
-                )
-            }
-
-            {/* MOCK PRACTICE TAB */}
-            <TabsContent value="mock" className="flex-1 overflow-hidden m-0 p-4">
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-24 h-24 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-6">
-                        <Mic className="w-12 h-12 text-violet-500" />
-                    </div>
-                    <h3 className="font-semibold text-lg text-neutral-900 dark:text-white mb-2">
-                        Mock Interview Practice
-                    </h3>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center max-w-sm mb-6">
-                        Practice your knowledge on &quot;{subGoalTitle}&quot; with an AI voice interview.
-                        You&apos;ll be redirected to the interview page.
-                    </p>
-                    <Button
-                        onClick={handleStartMock}
-                        disabled={mockLoading}
-                        className="bg-violet-600 hover:bg-violet-700 gap-2"
-                    >
-                        {
-                            mockLoading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Play className="w-4 h-4" />
-                            )
-                        }
-                        Start Mock Interview
-                    </Button>
-                </div>
-            </TabsContent>
+            {hasCoding && (
+                <TabsContent value="coding" className="flex-1 overflow-hidden m-0 p-4">
+                    <SubGoalCodingComponent subGoal={subGoal} onComplete={onCodingComplete} />
+                </TabsContent>
+            )}
         </Tabs>
     )
 }

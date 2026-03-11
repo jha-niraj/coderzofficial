@@ -326,16 +326,18 @@ export function CodingVerification({ goalId, questions, status, score }: CodingV
                                             <Play className="w-4 h-4 mr-1" />
                                             Run
                                         </Button>
-                                        <Button size="sm" onClick={handleSubmit} disabled={isRunning} className="bg-green-600 hover:bg-green-700">
+                                        <Button size="sm" onClick={handleSubmit} disabled={isRunning} className="bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900">
                                             Submit
                                         </Button>
                                     </div>
                                 </div>
-                                <div className="flex-1 overflow-hidden">
+                                <div className="flex-1 overflow-hidden min-h-[300px]">
                                     <CodeEditor
                                         code={currentCode}
                                         onChange={handleCodeChange}
                                         language={language}
+                                        height="300px"
+                                        className="min-h-[300px]"
                                     />
                                 </div>
                             </div>
@@ -353,15 +355,29 @@ export function CodingVerification({ goalId, questions, status, score }: CodingV
                                     </div>
                                     <div>
                                         <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">JavaScript Solution</h4>
-                                        <pre className="p-4 rounded-lg bg-neutral-900 text-neutral-100 text-sm overflow-x-auto">
-                                            <code>{problem.solution.javascript}</code>
-                                        </pre>
+                                        <div className="min-h-[150px] rounded-lg overflow-hidden">
+                                            <CodeEditor
+                                                code={problem.solution.javascript}
+                                                language="javascript"
+                                                readOnly
+                                                showLanguageSelector={false}
+                                                showCopyButton
+                                                height="150px"
+                                            />
+                                        </div>
                                     </div>
                                     <div>
                                         <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">Python Solution</h4>
-                                        <pre className="p-4 rounded-lg bg-neutral-900 text-neutral-100 text-sm overflow-x-auto">
-                                            <code>{problem.solution.python}</code>
-                                        </pre>
+                                        <div className="min-h-[150px] rounded-lg overflow-hidden">
+                                            <CodeEditor
+                                                code={problem.solution.python}
+                                                language="python"
+                                                readOnly
+                                                showLanguageSelector={false}
+                                                showCopyButton
+                                                height="150px"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </ScrollArea>

@@ -244,6 +244,31 @@ export async function generateVerificationContent(goalId: string) {
 
         const aiPlan = JSON.parse(content.text.value) as VerificationAIPlan
 
+        // Create mock interview for verification (included in verification fee)
+        const mockConfig = aiPlan.mockInterview
+        let mockId: string | null = null
+        if (mockConfig) {
+            const mock = await prisma.mockInterviewVoice.create({
+                data: {
+                    title: mockConfig.title || `Verification: ${goal.title}`,
+                    description: mockConfig.description || `Mock interview for ${goal.title} verification`,
+                    category: 'TECHNICAL',
+                    level: (goal.level as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED') ?? 'INTERMEDIATE',
+                    duration: mockConfig.duration || 15,
+                    questionsCount: mockConfig.questionsCount || 5,
+                    knowledgeBase: mockConfig.knowledgeBase || `Verification interview for: ${goal.title}. Category: ${goal.category}. Level: ${goal.level}.`,
+                    isPublic: false,
+                    isPredefined: false,
+                    createdById: session.user.id,
+                    includesResume: false,
+                    baseCredits: 0,
+                    creditsRequired: 0,
+                    tags: ['pathfinder', 'verification'],
+                },
+            })
+            mockId = mock.id
+        }
+
         await prisma.pathfinderGoal.update({
             where: { id: goalId },
             data: {
@@ -251,6 +276,16 @@ export async function generateVerificationContent(goalId: string) {
                 overview: aiPlan.overview ?? goal.overview,
                 learningObjectives: aiPlan.learningObjectives ?? goal.learningObjectives,
                 prerequisites: aiPlan.prerequisites ?? goal.prerequisites,
+                mockInterviewId: mockId,
+            },
+        })
+
+        // Unlock all sections when content is generated (no sequential lock)
+        await prisma.pathfinderVerification.update({
+            where: { goalId },
+            data: {
+                codingStatus: 'PENDING',
+                mockStatus: 'PENDING',
             },
         })
 

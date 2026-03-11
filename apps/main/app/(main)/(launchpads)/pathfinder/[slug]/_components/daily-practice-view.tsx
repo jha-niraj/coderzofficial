@@ -8,11 +8,14 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Target, Plus, CheckCircle2, Circle, Loader2, ArrowLeft, Code2,
     Brain, Trophy, Trash2, ChevronRight, Calendar, Sparkles, Coins,
-    NotebookPen
+    NotebookPen, Mic
 } from 'lucide-react'
 import Link from 'next/link'
 import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
 import { cn } from '@repo/ui/lib/utils'
+import {
+    Accordion, AccordionContent, AccordionItem, AccordionTrigger
+} from '@repo/ui/components/ui/accordion'
 import {
     updateSubGoalStatus, deleteSubGoal, getSubGoalWithContent
 } from '@/actions/(main)/pathfinder/subgoals.action'
@@ -28,7 +31,30 @@ import { CreateSubGoalSheet } from './create-subgoal-sheet'
 import { SubGoalContentTabs } from './subgoal-content-tabs'
 import { PathfinderUsageWidget } from './pathfinder-usage-widget'
 import { CreatorEarningsSheet } from './creator-earnings-sheet'
+import { PathfinderMockSheet } from './pathfinder-mock-sheet'
 import toast from '@repo/ui/components/ui/sonner'
+
+function PathfinderMockButton({ goalId, goalTitle }: { goalId: string; goalTitle: string }) {
+    const [sheetOpen, setSheetOpen] = useState(false)
+    return (
+        <>
+            <Button
+                variant="outline"
+                className="w-full gap-2 bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900 border-neutral-700"
+                onClick={() => setSheetOpen(true)}
+            >
+                <Mic className="w-4 h-4" />
+                Start Mock Interview
+            </Button>
+            <PathfinderMockSheet
+                open={sheetOpen}
+                onOpenChange={setSheetOpen}
+                goalId={goalId}
+                goalTitle={goalTitle}
+            />
+        </>
+    )
+}
 
 interface SubGoal {
     id: string
@@ -71,9 +97,22 @@ interface Goal {
     isPublic?: boolean
 }
 
+interface DailySessionWithSubGoals {
+    id: string
+    date: Date
+    totalSubGoals: number
+    completedSubGoals: number
+    totalQuizQuestions: number
+    correctQuizAnswers: number
+    totalCodingProblems: number
+    solvedCodingProblems: number
+    subGoals: SubGoal[]
+}
+
 interface DailyPracticeViewProps {
     goal: Goal
     initialSession: DailySession | null
+    allSessions?: DailySessionWithSubGoals[]
 }
 
 // ================================================================================
@@ -335,11 +374,16 @@ function SessionStats({ session }: { session: DailySession | null }) {
 // MAIN COMPONENT
 // ================================================================================
 
-export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewProps) {
+export function DailyPracticeView({ goal, initialSession, allSessions: initialAllSessions = [] }: DailyPracticeViewProps) {
     const router = useRouter()
     const setSubGoalResources = usePathfinderStore((s) => s.setSubGoalResources)
     const setGoalUsage = usePathfinderStore((s) => s.setGoalUsage)
     const [session, setSession] = useState(initialSession)
+    const [allSessions, setAllSessions] = useState(initialAllSessions)
+
+    useEffect(() => {
+        if (initialAllSessions.length > 0) setAllSessions(initialAllSessions)
+    }, [initialAllSessions])
     const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoal | null>(null)
     const [createSheetOpen, setCreateSheetOpen] = useState(false)
     const [earningsSheetOpen, setEarningsSheetOpen] = useState(false)
@@ -377,7 +421,6 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
         aiResources?: SubGoalResources,
         usageSummary?: import('@/app/store/pathfinderStore').GoalUsageSummary
     ) => {
-        // Add to session instantly (no reload)
         const newSubGoal: SubGoal = {
             ...subGoal,
             aiResources: aiResources ?? (subGoal as { aiResources?: unknown }).aiResources,
@@ -389,7 +432,6 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
                 totalSubGoals: session.totalSubGoals + 1,
             })
         } else {
-            // First subgoal - create minimal session state
             setSession({
                 id: '',
                 date: new Date(),
@@ -402,13 +444,38 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
                 subGoals: [newSubGoal],
             })
         }
+        const todayStr = new Date().toISOString().slice(0, 10)
+        setAllSessions((prev) => {
+            const idx = prev.findIndex(
+                (s) => new Date(s.date).toISOString().slice(0, 10) === todayStr
+            )
+            if (idx >= 0) {
+                const updated = [...prev]
+                updated[idx] = {
+                    ...updated[idx]!,
+                    subGoals: [newSubGoal, ...updated[idx]!.subGoals],
+                    totalSubGoals: updated[idx]!.totalSubGoals + 1,
+                }
+                return updated
+            }
+            return [
+                {
+                    id: session?.id ?? `new-${Date.now()}`,
+                    date: new Date(),
+                    totalSubGoals: 1,
+                    completedSubGoals: 0,
+                    totalQuizQuestions: 0,
+                    correctQuizAnswers: 0,
+                    totalCodingProblems: 0,
+                    solvedCodingProblems: 0,
+                    subGoals: [newSubGoal],
+                },
+                ...prev,
+            ]
+        })
         setSelectedSubGoal(newSubGoal)
-        if (aiResources) {
-            setSubGoalResources(subGoal.id, aiResources)
-        }
-        if (usageSummary) {
-            setGoalUsage(goal.id, usageSummary)
-        }
+        if (aiResources) setSubGoalResources(subGoal.id, aiResources)
+        if (usageSummary) setGoalUsage(goal.id, usageSummary)
     }
 
     const handleStatusChange = async (subGoalId: string, status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED') => {
@@ -454,12 +521,6 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
         }
     }
 
-    const today = new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'short',
-        day: 'numeric'
-    })
-
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
             <PracticeHeader
@@ -486,15 +547,8 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
                 isPublic={goal.isPublic ?? false}
             />
 
-            <div className="flex-1 flex overflow-hidden">
-                <div className="w-[350px] border-r border-neutral-200 dark:border-neutral-800 flex flex-col bg-white dark:bg-neutral-950">
-                    <div className="flex items-center gap-2 px-3 py-2 border-b border-neutral-100 dark:border-neutral-900">
-                        <Calendar className="w-4 h-4 text-violet-500" />
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{today}</span>
-                    </div>
-
-                    <SessionStats session={session} />
-
+            <div className="flex-1 flex overflow-hidden h-screen">
+                <div className="w-[350px] border-r border-neutral-200 dark:border-neutral-800 flex flex-col bg-white dark:bg-neutral-950 h-full">
                     <div className="p-3 border-b border-neutral-200 dark:border-neutral-800">
                         <Button
                             variant="outline"
@@ -513,42 +567,108 @@ export function DailyPracticeView({ goal, initialSession }: DailyPracticeViewPro
                         onSuccess={handleSubGoalAdded}
                     />
 
-                    <ScrollArea className="flex-1">
-                        <div className="p-2 space-y-1">
-                            <AnimatePresence>
-                                {
-                                    session?.subGoals.map((subGoal) => (
-                                        <SubGoalItem
-                                            key={subGoal.id}
-                                            subGoal={subGoal}
-                                            isSelected={selectedSubGoal?.id === subGoal.id}
-                                            onSelect={() => setSelectedSubGoal(subGoal)}
-                                            onStatusChange={(status) => handleStatusChange(subGoal.id, status)}
-                                            onDelete={() => handleDelete(subGoal.id)}
-                                            onGenerateContent={
-                                                subGoal.isAIGenerated && !subGoal.isContentLoaded
-                                                    ? () => handleGenerateContent(subGoal.id)
-                                                    : undefined
-                                            }
-                                        />
-                                    ))
-                                }
-                            </AnimatePresence>
+                    <SessionStats session={session} />
 
+                    <ScrollArea className="flex-1 min-h-0">
+                        <div className="p-2">
                             {
-                                (!session || session.subGoals.length === 0) && (
-                                    <div className="text-center py-12 text-neutral-400">
-                                        <Target className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                                        <p className="text-sm">No tasks for today</p>
-                                        <p className="text-xs mt-1">Add your first learning task above</p>
-                                    </div>
-                                )
+                                (() => {
+                                    const sessionsToShow =
+                                        allSessions.length > 0 ? allSessions : session ? [session] : []
+                                    if (sessionsToShow.length === 0) {
+                                        return (
+                                            <div className="text-center py-12 text-neutral-400">
+                                                <Target className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                                                <p className="text-sm">No tasks yet</p>
+                                                <p className="text-xs mt-1">Add your first learning task above</p>
+                                            </div>
+                                        )
+                                    }
+                                    const todayStr = new Date().toISOString().slice(0, 10)
+                                    const defaultOpen =
+                                        sessionsToShow.find(
+                                            (s) => new Date(s.date).toISOString().slice(0, 10) === todayStr
+                                        ) ?? sessionsToShow[0]
+                                    return (
+                                        <Accordion
+                                            type="single"
+                                            collapsible
+                                            defaultValue={`session-${defaultOpen?.id ?? 'new-${Date.now()}'}`}
+                                            className="w-full"
+                                        >
+                                            {
+                                                sessionsToShow.map((sess) => {
+                                                    const d = new Date(sess.date)
+                                                    const dateStr = d.toLocaleDateString('en-US', {
+                                                        weekday: 'short',
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                    })
+                                                    const isToday =
+                                                        d.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10)
+                                                    return (
+                                                        <AccordionItem
+                                                            key={sess.id}
+                                                            value={`session-${sess.id}`}
+                                                            className="border-none"
+                                                        >
+                                                            <AccordionTrigger className="py-2 px-3 hover:no-underline hover:bg-neutral-50 dark:hover:bg-neutral-900/50 rounded-lg">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Calendar className="w-4 h-4 text-violet-500" />
+                                                                    <span className="text-sm font-medium">
+                                                                        {dateStr}
+                                                                        {
+                                                                            isToday && (
+                                                                                <span className="ml-1 text-xs text-neutral-500">(Today)</span>
+                                                                            )
+                                                                        }
+                                                                    </span>
+                                                                    <span className="text-xs text-neutral-500">
+                                                                        {sess.completedSubGoals}/{sess.totalSubGoals}
+                                                                    </span>
+                                                                </div>
+                                                            </AccordionTrigger>
+                                                            <AccordionContent className="pt-0 pb-2">
+                                                                <div className="space-y-1">
+                                                                    <AnimatePresence>
+                                                                        {
+                                                                            sess.subGoals.map((subGoal) => (
+                                                                                <SubGoalItem
+                                                                                    key={subGoal.id}
+                                                                                    subGoal={subGoal}
+                                                                                    isSelected={selectedSubGoal?.id === subGoal.id}
+                                                                                    onSelect={() => setSelectedSubGoal(subGoal)}
+                                                                                    onStatusChange={(status) =>
+                                                                                        handleStatusChange(subGoal.id, status)
+                                                                                    }
+                                                                                    onDelete={() => handleDelete(subGoal.id)}
+                                                                                    onGenerateContent={
+                                                                                        subGoal.isAIGenerated && !subGoal.isContentLoaded
+                                                                                            ? () => handleGenerateContent(subGoal.id)
+                                                                                            : undefined
+                                                                                    }
+                                                                                />
+                                                                            ))
+                                                                        }
+                                                                    </AnimatePresence>
+                                                                </div>
+                                                            </AccordionContent>
+                                                        </AccordionItem>
+                                                    )
+                                                })
+                                            }
+                                        </Accordion>
+                                    )
+                                })()
                             }
                         </div>
                     </ScrollArea>
+
+                    <div className="flex-shrink-0 p-3 border-t border-neutral-200 dark:border-neutral-800">
+                        <PathfinderMockButton goalId={goal.id} goalTitle={goal.title} />
+                    </div>
                 </div>
-                {/* <div className="flex-1 flex flex-col overflow-hidden bg-neutral-50 dark:bg-neutral-900/50"> */}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 h-screen min-h-0">
                     {
                         selectedSubGoal ? (
                             <>

@@ -603,37 +603,33 @@ async function generateQuizAndCoding(
     level: string
 ) {
     try {
+        const codingCount = level === 'BEGINNER' ? 2 : level === 'INTERMEDIATE' ? 2 : 3
         const prompt = `You are an expert educator creating learning content.
 
 A user is learning about "${title}" as part of their ${category} studies at ${level} level.
 
 Generate:
 1. 3-5 quiz questions to test understanding of this topic
-2. Optionally, ONE coding problem if this topic involves practical coding skills
+2. ${codingCount} coding problems if this topic involves practical coding skills. Pick appropriate difficulty (EASY, MEDIUM, HARD) for each - vary them. For theory-only topics, use [].
 
 Return JSON in this exact format:
 {
-  "quizQuestions": [
+  "quizQuestions": [...],
+  "codingProblems": [
     {
-      "id": "q1",
-      "question": "The question text",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": 0,
-      "explanation": "Why this is correct"
+      "id": "cp1",
+      "title": "Problem title",
+      "description": "Detailed problem description",
+      "difficulty": "EASY" | "MEDIUM" | "HARD",
+      "starterCode": "function solve() {\\n  // Your code here\\n}",
+      "hints": ["Hint 1", "Hint 2"],
+      "sampleInput": "Example input",
+      "sampleOutput": "Expected output"
     }
-  ],
-  "codingProblem": null OR {
-    "title": "Problem title",
-    "description": "Detailed problem description",
-    "difficulty": "EASY" | "MEDIUM" | "HARD",
-    "starterCode": "function solve() {\\n  // Your code here\\n}",
-    "hints": ["Hint 1", "Hint 2"],
-    "sampleInput": "Example input",
-    "sampleOutput": "Expected output"
-  }
+  ]
 }
 
-Return ONLY valid JSON, no markdown.`
+Rules: Vary difficulty. Return ONLY valid JSON, no markdown.`
 
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
@@ -654,13 +650,19 @@ Return ONLY valid JSON, no markdown.`
         }
 
         const aiContent = JSON.parse(content)
+        const codingProblems = Array.isArray(aiContent.codingProblems)
+            ? aiContent.codingProblems
+            : aiContent.codingProblem
+                ? [aiContent.codingProblem]
+                : []
+        const hasCoding = codingProblems.length > 0
 
         await prisma.pathfinderSubGoal.update({
             where: { id: subGoalId },
             data: {
                 aiQuizQuestions: aiContent.quizQuestions || [],
-                aiCodingProblem: aiContent.codingProblem || null,
-                hasCoding: !!aiContent.codingProblem,
+                aiCodingProblem: hasCoding ? codingProblems : null,
+                hasCoding,
             },
         })
 
@@ -671,7 +673,7 @@ Return ONLY valid JSON, no markdown.`
 
         if (subGoal) {
             const quizCount = aiContent.quizQuestions?.length || 0
-            const codingCount = aiContent.codingProblem ? 1 : 0
+            const codingCount = codingProblems.length
             await prisma.pathfinderDailySession.update({
                 where: { id: subGoal.sessionId },
                 data: {

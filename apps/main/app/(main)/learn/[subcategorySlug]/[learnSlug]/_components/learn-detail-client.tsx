@@ -408,15 +408,19 @@ export default function LearnDetailClient({
                                                                     )
                                                                 }
                                                             </div>
-                                                            <span className={`text-[13px] truncate leading-tight ${isActive ? "font-medium" : ""}`}>
-                                                                {step.title}
+                                                            <span className={`min-w-0 flex-1 text-[13px] leading-tight truncate ${isActive ? "font-medium" : ""}`}>
+                                                                {
+                                                                    step.title.length > 20
+                                                                        ? `${step.title.slice(0, 20)}...`
+                                                                        : step.title
+                                                                }
                                                             </span>
                                                         </button>
                                                     </TooltipTrigger>
                                                     <TooltipContent
                                                         side="right"
                                                         sideOffset={8}
-                                                        className="max-w-72 text-sm z-[9999]"
+                                                        className="max-w-72 text-sm"
                                                     >
                                                         <p className="font-medium">{step.title}</p>
                                                         <p className="text-xs text-neutral-400 mt-0.5">Step {index + 1} of {totalSteps}</p>
@@ -520,7 +524,7 @@ export default function LearnDetailClient({
 
                             {
                                 (previousLearn || nextLearn || isAllStepsCompleted) && (
-                                    <div className="mt-10 pt-8">
+                                    <div className="pt-8">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                                             {
                                                 previousLearn && (

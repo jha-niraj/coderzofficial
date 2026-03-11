@@ -4,18 +4,19 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@repo/ui/components/ui/button'
 import {
-    Sheet, SheetContent, SheetHeader, SheetTitle
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription
 } from '@repo/ui/components/ui/sheet'
 import {
     Target, ArrowLeft, Brain, Code, Mic, Wrench, Trophy,
-    Sparkles, Loader2
+    Sparkles, Loader2, Coins, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
 import { VerificationContent } from './verification-content'
 import { generateVerificationContent } from '@/actions/(main)/pathfinder'
 import { usePathfinderStore } from '@/app/store/pathfinderStore'
-import { 
-    PathfinderCategory, PathfinderLevel, VerificationSectionStatus 
+import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
+import {
+    PathfinderCategory, PathfinderLevel, VerificationSectionStatus
 } from '@repo/prisma/client'
 import type { VerificationAIPlan } from '@/types/pathfinder'
 import toast from '@repo/ui/components/ui/sonner'
@@ -61,8 +62,9 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
     const aiPlan = (storedPlan ?? initialGoal.aiGeneratedPlan) as VerificationAIPlan | null
     const hasQuestions = Boolean(aiPlan?.quizQuestions?.length ?? 0)
 
+    const handleOpenSheet = () => setGenerateSheetOpen(true)
+
     const handleGenerate = async () => {
-        setGenerateSheetOpen(true)
         setIsGenerating(true)
         try {
             const result = await generateVerificationContent(initialGoal.id)
@@ -70,9 +72,12 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
                 setVerificationAIPlan(initialGoal.id, result.plan)
                 toast.success('Verification questions ready!')
                 setGenerateSheetOpen(false)
-                // Instant display via store - no router.refresh needed
             } else {
-                toast.error(result.error ?? 'Failed to generate questions')
+                if ((result as { code?: string }).code === 'INSUFFICIENT_CREDITS') {
+                    toast.error(`Insufficient credits. Need ${PATHFINDER_CREDITS.verificationFee} credits.`)
+                } else {
+                    toast.error(result.error ?? 'Failed to generate questions')
+                }
             }
         } catch {
             toast.error('Failed to generate questions')
@@ -149,8 +154,8 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
                         </div>
                         <Button
                             size="lg"
-                            className="gap-2 bg-violet-600 hover:bg-violet-700"
-                            onClick={handleGenerate}
+                            className="gap-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900"
+                            onClick={handleOpenSheet}
                         >
                             <Sparkles className="w-4 h-4" />
                             Generate Verification Questions
@@ -162,24 +167,101 @@ export function VerificationPageClient({ goal: initialGoal, verification }: Veri
                 open={generateSheetOpen}
                 onOpenChange={(open) => !isGenerating && setGenerateSheetOpen(open)}
             >
-                <SheetContent side="bottom" className="h-[40vh]">
-                    <SheetHeader>
-                        <SheetTitle className="flex items-center gap-2">
-                            <Loader2 className="w-5 h-5 animate-spin text-violet-500" />
-                            Generating Verification Questions
-                        </SheetTitle>
-                    </SheetHeader>
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                            className="w-16 h-16 rounded-full border-2 border-neutral-200 dark:border-neutral-700 border-t-violet-500 mb-4"
-                        />
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center max-w-sm">
-                            Creating personalized quiz and coding questions based on your learning progress.
-                            This usually takes 30-60 seconds.
-                        </p>
-                    </div>
+                <SheetContent side="right" className="w-full sm:max-w-2xl md:max-w-5xl overflow-y-auto">
+                    {isGenerating ? (
+                        <>
+                            <SheetHeader>
+                                <SheetTitle className="flex items-center gap-2">
+                                    <Loader2 className="w-5 h-5 animate-spin text-neutral-600" />
+                                    Generating Verification Questions
+                                </SheetTitle>
+                            </SheetHeader>
+                            <div className="flex flex-col items-center justify-center py-16">
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                                    className="w-16 h-16 rounded-full border-2 border-neutral-200 dark:border-neutral-700 border-t-neutral-600 mb-4"
+                                />
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center max-w-sm">
+                                    Creating personalized quiz and coding questions based on your learning progress.
+                                    This usually takes 30-60 seconds.
+                                </p>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <SheetHeader>
+                                <SheetTitle className="flex items-center gap-2">
+                                    <Trophy className="w-5 h-5 text-neutral-600" />
+                                    Verification Setup
+                                </SheetTitle>
+                                <SheetDescription>
+                                    Review the cost and rewards before generating your verification content.
+                                </SheetDescription>
+                            </SheetHeader>
+                            <div className="mt-6 space-y-6">
+                                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
+                                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <Coins className="w-4 h-4" />
+                                        Cost
+                                    </h4>
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        <span className="font-semibold text-neutral-900 dark:text-white">
+                                            {PATHFINDER_CREDITS.verificationFee} credits
+                                        </span>{' '}
+                                        will be charged when you generate. This covers AI-generated quiz questions,
+                                        coding challenges, and mock interview setup.
+                                    </p>
+                                </div>
+                                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
+                                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <ArrowRight className="w-4 h-4" />
+                                        Refund on Score
+                                    </h4>
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        When you complete verification, you get credits back based on your score:
+                                    </p>
+                                    <ul className="mt-2 space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
+                                        <li>• 100% score → Full refund ({PATHFINDER_CREDITS.verificationFee} credits)</li>
+                                        <li>• 70% score → 70% refund (14 credits)</li>
+                                        <li>• 50% score → 50% refund (10 credits)</li>
+                                    </ul>
+                                </div>
+                                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">What you&apos;ll get</h4>
+                                    <ul className="space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                        <li className="flex items-center gap-2">
+                                            <Brain className="w-4 h-4 text-neutral-500" />
+                                            20-25 personalized quiz questions
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Code className="w-4 h-4 text-neutral-500" />
+                                            3-8 coding challenges
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Mic className="w-4 h-4 text-neutral-500" />
+                                            Mock interview setup
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Wrench className="w-4 h-4 text-neutral-500" />
+                                            Project verification (if applicable)
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                                <Button
+                                    size="lg"
+                                    className="w-full bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900"
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating}
+                                >
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    Generate ({PATHFINDER_CREDITS.verificationFee} credits)
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </SheetContent>
             </Sheet>
         </>

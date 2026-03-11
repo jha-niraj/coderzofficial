@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useId } from "react";
+import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
 import mermaid from "mermaid";
+
+const CodeEditor = dynamic(() => import("@/components/main/code-editor"), { ssr: false });
 
 // Initialize mermaid once
 mermaid.initialize({
@@ -89,14 +90,19 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
                                 {children}
                             </code>
                         ) : (
-                            <SyntaxHighlighter
-                                style={oneDark}
-                                language={match![1]}
-                                PreTag="div"
-                                className="rounded-lg !mt-3 !mb-3 text-sm"
-                            >
-                                {String(children).replace(/\n$/, "")}
-                            </SyntaxHighlighter>
+                            <div className="my-3 min-h-[120px] rounded-lg overflow-hidden">
+                                <CodeEditor
+                                    code={String(children).replace(/\n$/, "")}
+                                    language={match![1]}
+                                    readOnly
+                                    showLanguageSelector={false}
+                                    showCopyButton
+                                    showRunButton={false}
+                                    showSubmitButton={false}
+                                    height="200px"
+                                    className="border border-neutral-200 dark:border-neutral-700"
+                                />
+                            </div>
                         );
                     },
                     h1: ({ children }) => (

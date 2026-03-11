@@ -235,6 +235,7 @@ model PathfinderSubGoal {
     quizScore       Int?
     codingCompleted Boolean         @default(false)
     codingPassed    Boolean         @default(false)
+    codingProgress  Json?           // { [problemId]: boolean } - per-problem passed status
 
     // Mock interview for practice (created from Mock Practice tab)
     practiceMock   MockInterviewVoice? @relation("PathfinderSubGoalMock")

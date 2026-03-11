@@ -301,13 +301,14 @@ async function generateAIContentForSubGoal(
     level: string
 ) {
     try {
+        const codingCount = level === 'BEGINNER' ? 2 : level === 'INTERMEDIATE' ? 2 : 3
         const prompt = `You are an expert educator creating learning content.
 
 A user is learning about "${title}" as part of their ${category} studies at ${level} level.
 
 Generate:
 1. 3-5 quiz questions to test understanding of this topic
-2. Optionally, ONE coding problem if this topic involves practical coding skills
+2. ${codingCount} coding problems if this topic involves practical coding skills. Pick appropriate difficulty for each (EASY, MEDIUM, or HARD) - vary them based on complexity. For theory-only topics, use empty array.
 
 Return JSON in this exact format:
 {
@@ -320,22 +321,25 @@ Return JSON in this exact format:
       "explanation": "Why this is correct"
     }
   ],
-  "codingProblem": null OR {
-    "title": "Problem title",
-    "description": "Detailed problem description",
-    "difficulty": "EASY" | "MEDIUM" | "HARD",
-    "starterCode": "function solve() {\\n  // Your code here\\n}",
-    "hints": ["Hint 1", "Hint 2"],
-    "sampleInput": "Example input",
-    "sampleOutput": "Expected output"
-  }
+  "codingProblems": [
+    {
+      "id": "cp1",
+      "title": "Problem title",
+      "description": "Detailed problem description",
+      "difficulty": "EASY" | "MEDIUM" | "HARD",
+      "starterCode": "function solve() {\\n  // Your code here\\n}",
+      "hints": ["Hint 1", "Hint 2"],
+      "sampleInput": "Example input",
+      "sampleOutput": "Expected output"
+    }
+  ]
 }
 
 Rules:
-- Quiz questions should be varied (Learns, code output, best practices)
-- For topics like "Learn about X API" or "Understand Y Learn", codingProblem can be null
-- For topics like "Practice X", "Implement Y", "Build Z", include a coding problem
-- Coding problem should be MEDIUM difficulty and practical/interview-style
+- Quiz questions should be varied (concepts, code output, best practices)
+- For topics like "Learn about X API" or "Understand Y Learn", codingProblems can be []
+- For topics like "Practice X", "Implement Y", "Build Z", include ${codingCount} coding problems
+- Vary difficulty: include at least one EASY, one MEDIUM, and optionally HARD for advanced
 - All content should match the ${level} level
 
 Return ONLY valid JSON, no markdown or code blocks.`
@@ -370,14 +374,20 @@ Return ONLY valid JSON, no markdown or code blocks.`
         }
 
         const aiContent = JSON.parse(content)
+        const codingProblems = Array.isArray(aiContent.codingProblems)
+            ? aiContent.codingProblems
+            : aiContent.codingProblem
+                ? [aiContent.codingProblem]
+                : []
+        const hasCoding = codingProblems.length > 0
 
         // Update sub-goal with AI content
         await prisma.pathfinderSubGoal.update({
             where: { id: subGoalId },
             data: {
                 aiQuizQuestions: aiContent.quizQuestions || [],
-                aiCodingProblem: aiContent.codingProblem || null,
-                hasCoding: !!aiContent.codingProblem,
+                aiCodingProblem: codingProblems.length > 0 ? codingProblems : null,
+                hasCoding,
             },
         })
 
@@ -389,7 +399,7 @@ Return ONLY valid JSON, no markdown or code blocks.`
 
         if (subGoal) {
             const quizCount = aiContent.quizQuestions?.length || 0
-            const codingCount = aiContent.codingProblem ? 1 : 0
+            const codingCount = codingProblems.length
 
             await prisma.pathfinderDailySession.update({
                 where: { id: subGoal.sessionId },
@@ -586,7 +596,8 @@ export async function submitSubGoalQuiz(
 export async function submitSubGoalCoding(
     subGoalId: string,
     code: string,
-    language: string
+    language: string,
+    problemId?: string
 ) {
     try {
         const session = await auth()
@@ -607,7 +618,15 @@ export async function submitSubGoalCoding(
             return { success: false, error: 'Sub-goal not found' }
         }
 
-        const codingProblem = subGoal.aiCodingProblem as CodingProblem | null
+        const rawCoding = subGoal.aiCodingProblem
+        const problems: Array<Record<string, unknown> | undefined> = Array.isArray(rawCoding)
+            ? rawCoding.map((p, i) => ({ ...(p as Record<string, unknown>), id: (p as Record<string, unknown>).id ?? `cp${i}` }))
+            : rawCoding
+                ? [{ ...(rawCoding as Record<string, unknown>), id: 'cp0' }]
+                : []
+        const codingProblem = problemId
+            ? problems.find((p) => p?.id === problemId)
+            : problems[0]
         if (!codingProblem) {
             return { success: false, error: 'No coding problem for this sub-goal' }
         }
@@ -654,13 +673,20 @@ Return ONLY valid JSON.`
         }
 
         const evaluation = JSON.parse(content)
+        const pid = codingProblem.id ?? 'cp0'
 
-        // Update sub-goal
+        // Update coding progress for multiple problems
+        const currentProgress = (subGoal.codingProgress as Record<string, boolean>) ?? {}
+        const newProgress = { ...currentProgress, [pid as string]: evaluation.passed }
+        const allPassed = problems.every((p) => newProgress[(p?.id ?? 'cp0') as string] === true)
+        const allAttempted = problems.every((p) => (p?.id ?? 'cp0') as string in newProgress)
+
         await prisma.pathfinderSubGoal.update({
             where: { id: subGoalId },
             data: {
-                codingCompleted: true,
-                codingPassed: evaluation.passed,
+                codingProgress: newProgress,
+                codingCompleted: allAttempted,
+                codingPassed: allPassed,
             },
         })
 
@@ -688,6 +714,7 @@ Return ONLY valid JSON.`
             feedback: evaluation.feedback,
             suggestions: evaluation.suggestions,
             score: evaluation.score,
+            allPassed,
         }
     } catch (error) {
         console.error('Error submitting coding:', error)
@@ -860,33 +887,32 @@ async function pushSubgoalContentToStudio(
         })
         let nextOrder = (maxOrder?.orderNumber ?? 0) + 1
 
-        // Build markdown from resources
+        // Build markdown: explanation, code examples, best practices (for Notes/Studio tab)
         let markdownContent = `# ${subgoalTitle}\n\n`
 
-        if (resources?.explanation) {
-            markdownContent += resources.explanation + '\n\n'
+        if (resources?.content) {
+            markdownContent += resources.content + '\n\n'
         }
 
-        if (resources?.videos?.length > 0) {
-            markdownContent += '## 📹 Recommended Videos\n\n'
-            for (const video of resources.videos) {
-                markdownContent += `- [${video.title}](${video.url})\n`
+        if (resources?.codeExamples?.length > 0) {
+            markdownContent += '## Code Examples\n\n'
+            for (const ex of resources.codeExamples) {
+                markdownContent += `### ${ex.title}\n\n`
+                if (ex.explanation) markdownContent += ex.explanation + '\n\n'
+                markdownContent += `\`\`\`${ex.language}\n${ex.code}\n\`\`\`\n\n`
             }
-            markdownContent += '\n'
         }
 
-        if (resources?.docs?.length > 0) {
-            markdownContent += '## 📄 Resources\n\n'
-            for (const doc of resources.docs) {
-                markdownContent += `- [${doc.title}](${doc.url})${doc.description ? ` — ${doc.description}` : ''}\n`
+        if (resources?.dosDonts && (resources.dosDonts.dos?.length > 0 || resources.dosDonts.donts?.length > 0)) {
+            markdownContent += '## Best Practices\n\n'
+            if (resources.dosDonts.dos?.length) {
+                markdownContent += '**Do:**\n'
+                for (const d of resources.dosDonts.dos) markdownContent += `- ${d}\n`
+                markdownContent += '\n'
             }
-            markdownContent += '\n'
-        }
-
-        if (resources?.flashcards?.length > 0) {
-            markdownContent += '## 🃏 Key Concepts\n\n'
-            for (const card of resources.flashcards) {
-                markdownContent += `**${card.front}**\n> ${card.back}\n\n`
+            if (resources.dosDonts.donts?.length) {
+                markdownContent += '**Don\'t:**\n'
+                for (const d of resources.dosDonts.donts) markdownContent += `- ${d}\n`
             }
         }
 

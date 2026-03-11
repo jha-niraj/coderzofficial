@@ -1,5 +1,7 @@
-import { 
-    getPathfinderGoal, getOrCreateDailySession 
+import {
+    getPathfinderGoal,
+    getOrCreateDailySession,
+    getGoalSessions,
 } from '@/actions/(main)/pathfinder'
 import { DailyPracticeView } from './_components/daily-practice-view'
 import { notFound } from 'next/navigation'
@@ -18,12 +20,16 @@ export default async function GoalDetailsPage({ params }: PageProps) {
         notFound()
     }
 
-    const { session } = await getOrCreateDailySession(goal.id)
+    const [{ session }, { sessions: allSessions }] = await Promise.all([
+        getOrCreateDailySession(goal.id),
+        getGoalSessions(goal.id),
+    ])
 
     return (
         <DailyPracticeView
             goal={goal}
             initialSession={session ?? null}
+            allSessions={allSessions ?? []}
         />
     )
 }

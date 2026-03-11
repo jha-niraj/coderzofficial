@@ -209,12 +209,11 @@ export function VerificationContent({ goal, verification }: VerificationContentP
 
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="border-b border-neutral-200 dark:border-neutral-800 px-6">
-                        <TabsList className="bg-transparent border-0 p-0 h-auto gap-4">
+                    <div className="border-b border-neutral-200 dark:border-neutral-800 px-4">
+                        <TabsList className="bg-transparent border-0 p-0 h-auto gap-2">
                             <TabsTrigger
                                 value="quiz"
-                                disabled={verification?.quizStatus === 'LOCKED'}
-                                className="pb-3 px-0 rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:bg-transparent bg-transparent"
+                                className="pb-2 px-2 rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-white data-[state=active]:bg-transparent bg-transparent text-sm"
                             >
                                 <SectionTab
                                     icon={<Brain className="w-4 h-4" />}
@@ -225,8 +224,7 @@ export function VerificationContent({ goal, verification }: VerificationContentP
                             </TabsTrigger>
                             <TabsTrigger
                                 value="coding"
-                                disabled={verification?.codingStatus === 'LOCKED'}
-                                className="pb-3 px-0 rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:bg-transparent bg-transparent"
+                                className="pb-2 px-2 rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-white data-[state=active]:bg-transparent bg-transparent text-sm"
                             >
                                 <SectionTab
                                     icon={<Code className="w-4 h-4" />}
@@ -237,8 +235,7 @@ export function VerificationContent({ goal, verification }: VerificationContentP
                             </TabsTrigger>
                             <TabsTrigger
                                 value="mock"
-                                disabled={verification?.mockStatus === 'LOCKED'}
-                                className="pb-3 px-0 rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:bg-transparent bg-transparent"
+                                className="pb-2 px-2 rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-white data-[state=active]:bg-transparent bg-transparent text-sm"
                             >
                                 <SectionTab
                                     icon={<Mic className="w-4 h-4" />}
@@ -251,8 +248,7 @@ export function VerificationContent({ goal, verification }: VerificationContentP
                                 hasProject && (
                                     <TabsTrigger
                                         value="project"
-                                        disabled={verification?.projectStatus === 'LOCKED'}
-                                        className="pb-3 px-0 rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:bg-transparent bg-transparent"
+                                        className="pb-2 px-2 rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-white data-[state=active]:bg-transparent bg-transparent text-sm"
                                     >
                                         <SectionTab
                                             icon={<Wrench className="w-4 h-4" />}
@@ -330,8 +326,8 @@ function VerificationHeader({ goal, verification }: { goal: Goal; verification: 
             </Link>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                        <Target className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-xl bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center">
+                        <Target className="w-6 h-6 text-white dark:text-neutral-900" />
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-neutral-900 dark:text-white">

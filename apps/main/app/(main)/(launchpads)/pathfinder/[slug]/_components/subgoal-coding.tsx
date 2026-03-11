@@ -6,6 +6,9 @@ import { Button } from '@repo/ui/components/ui/button'
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
+    Tabs, TabsList, TabsTrigger, TabsContent
+} from '@repo/ui/components/ui/tabs'
+import {
     Code2, Play, CheckCircle2, XCircle, Lightbulb, ChevronDown,
     ChevronUp, Loader2, RefreshCcw
 } from 'lucide-react'
@@ -17,6 +20,7 @@ import {
 } from '@repo/ui/components/ui/collapsible'
 
 interface CodingProblem {
+    id?: string
     title: string
     description: string
     difficulty: 'EASY' | 'MEDIUM' | 'HARD'
@@ -47,16 +51,23 @@ interface Feedback {
 }
 
 export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
-    const problem = subGoal.aiCodingProblem as CodingProblem | null
+    const raw = subGoal.aiCodingProblem
+    const problems: CodingProblem[] = Array.isArray(raw)
+        ? raw.map((p, i) => ({ ...p, id: (p as CodingProblem).id ?? `cp${i}` }))
+        : raw ? [{ ...(raw as CodingProblem), id: 'cp0' }] : []
+    const problem = problems[0] ?? null
 
-    const [code, setCode] = useState(problem?.starterCode || '')
+    const [currentProblemIndex, setCurrentProblemIndex] = useState(0)
+    const currentProblem = problems[currentProblemIndex] ?? problem
+    const [code, setCode] = useState<Record<string, string>>({})
+    const getCode = (p: CodingProblem) => code[p.id ?? 'cp0'] ?? p.starterCode ?? ''
     const [language] = useState('javascript')
     const [hintsOpen, setHintsOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [feedback, setFeedback] = useState<Feedback | null>(null)
     const [showResult, setShowResult] = useState(false)
 
-    if (!problem) {
+    if (!currentProblem && problems.length === 0) {
         return (
             <div className="h-full flex items-center justify-center text-neutral-500">
                 No coding problem available for this task.
@@ -95,7 +106,7 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
                 <Button
                     variant="outline"
                     onClick={() => {
-                        setCode(problem.starterCode || '')
+                        setCode({})
                         setFeedback(null)
                         setShowResult(false)
                     }}
@@ -108,9 +119,16 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
     }
 
     const handleSubmit = async () => {
+        if (!currentProblem) return
         setIsSubmitting(true)
         try {
-            const response = await submitSubGoalCoding(subGoal.id, code, language)
+            const codeToSubmit = getCode(currentProblem)
+            const response = await submitSubGoalCoding(
+                subGoal.id,
+                codeToSubmit,
+                language,
+                currentProblem.id
+            )
             if (response.success) {
                 setFeedback({
                     passed: response.passed!,
@@ -119,7 +137,7 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
                     score: response.score!,
                 })
                 setShowResult(true)
-                onComplete()
+                if (response.allPassed) onComplete()
             }
         } catch (error) {
             console.error('Error submitting code:', error)
@@ -208,14 +226,29 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
                     </div>
                 </ScrollArea>
 
-                <div className="flex-shrink-0 pt-4 border-t border-neutral-200 dark:border-neutral-800 mt-4">
+                <div className="flex-shrink-0 pt-4 border-t border-neutral-200 dark:border-neutral-800 mt-4 flex gap-2">
+                    {
+                        problems.length > 1 && currentProblemIndex < problems.length - 1 && feedback.passed && (
+                            <Button
+                                variant="default"
+                                onClick={() => {
+                                    setFeedback(null)
+                                    setShowResult(false)
+                                    setCurrentProblemIndex(prev => prev + 1)
+                                }}
+                                className="flex-1 bg-neutral-900 hover:bg-neutral-800"
+                            >
+                                Next Challenge
+                            </Button>
+                        )
+                    }
                     <Button
                         variant="outline"
                         onClick={() => {
                             setFeedback(null)
                             setShowResult(false)
                         }}
-                        className="w-full"
+                        className={problems.length > 1 && currentProblemIndex < problems.length - 1 && feedback.passed ? '' : 'w-full'}
                     >
                         <RefreshCcw className="w-4 h-4 mr-2" />
                         Try Again
@@ -225,41 +258,41 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
         )
     }
 
-    return (
-        <div className="h-full flex flex-col">
+    const renderProblemContent = (p: CodingProblem) => (
+        <>
             <div className="flex-shrink-0 mb-4">
                 <div className="p-4 rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
                     <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                             <Code2 className="w-5 h-5 text-violet-500" />
                             <h3 className="font-semibold text-neutral-900 dark:text-white">
-                                {problem.title}
+                                {p.title}
                             </h3>
                         </div>
-                        <Badge className={difficultyColors[problem.difficulty]}>
-                            {problem.difficulty}
+                        <Badge className={difficultyColors[p.difficulty]}>
+                            {p.difficulty}
                         </Badge>
                     </div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                        {problem.description}
+                        {p.description}
                     </p>
 
                     {
-                        (problem.sampleInput || problem.sampleOutput) && (
+                        (p.sampleInput || p.sampleOutput) && (
                             <div className="grid grid-cols-2 gap-3 mb-3">
                                 {
-                                    problem.sampleInput && (
+                                    p.sampleInput && (
                                         <div className="p-2 rounded bg-neutral-100 dark:bg-neutral-900">
                                             <div className="text-[10px] text-neutral-500 mb-1">Sample Input</div>
-                                            <code className="text-xs text-neutral-700 dark:text-neutral-300">{problem.sampleInput}</code>
+                                            <code className="text-xs text-neutral-700 dark:text-neutral-300">{p.sampleInput}</code>
                                         </div>
                                     )
                                 }
                                 {
-                                    problem.sampleOutput && (
+                                    p.sampleOutput && (
                                         <div className="p-2 rounded bg-neutral-100 dark:bg-neutral-900">
                                             <div className="text-[10px] text-neutral-500 mb-1">Expected Output</div>
-                                            <code className="text-xs text-neutral-700 dark:text-neutral-300">{problem.sampleOutput}</code>
+                                            <code className="text-xs text-neutral-700 dark:text-neutral-300">{p.sampleOutput}</code>
                                         </div>
                                     )
                                 }
@@ -268,17 +301,17 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
                     }
 
                     {
-                        problem.hints.length > 0 && (
+                        p.hints.length > 0 && (
                             <Collapsible open={hintsOpen} onOpenChange={setHintsOpen}>
                                 <CollapsibleTrigger className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-700 transition-colors">
                                     <Lightbulb className="w-4 h-4" />
-                                    <span>Hints ({problem.hints.length})</span>
+                                    <span>Hints ({p.hints.length})</span>
                                     {hintsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="mt-2">
                                     <div className="p-3 rounded bg-violet-50 dark:bg-violet-950/30 space-y-1">
                                         {
-                                            problem.hints.map((hint, i) => (
+                                            p.hints.map((hint, i) => (
                                                 <p key={i} className="text-xs text-violet-700 dark:text-violet-400 flex items-start gap-2">
                                                     <span className="text-violet-400">{i + 1}.</span>
                                                     {hint}
@@ -293,27 +326,27 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800">
+            <div className="flex-1 min-h-[280px] rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800">
                 <CodeEditor
-                    code={code}
-                    onChange={(newCode: string) => setCode(newCode)}
+                    code={getCode(p)}
+                    onChange={(newCode: string) => setCode(prev => ({ ...prev, [p.id ?? 'cp0']: newCode }))}
                     language={language}
-                    height="100%"
+                    height="280px"
                     showLanguageSelector={false}
-                    className="h-full"
+                    className="h-full min-h-[280px]"
                 />
             </div>
             <div className="flex-shrink-0 flex items-center justify-end gap-2 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
                 <Button
                     variant="outline"
-                    onClick={() => setCode(problem.starterCode || '')}
+                    onClick={() => setCode(prev => ({ ...prev, [p.id ?? 'cp0']: p.starterCode || '' }))}
                 >
                     Reset Code
                 </Button>
                 <Button
                     onClick={handleSubmit}
-                    disabled={isSubmitting || !code.trim()}
-                    className="bg-violet-600 hover:bg-violet-700"
+                    disabled={isSubmitting || !getCode(p).trim()}
+                    className="bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900"
                 >
                     {
                         isSubmitting ? (
@@ -330,6 +363,37 @@ export function SubGoalCoding({ subGoal, onComplete }: SubGoalCodingProps) {
                     }
                 </Button>
             </div>
+        </>
+    )
+
+    if (problems.length > 1) {
+        return (
+            <div className="h-full flex flex-col">
+                <Tabs value={String(currentProblemIndex)} onValueChange={(v) => setCurrentProblemIndex(Number(v))}>
+                    <TabsList className="flex-shrink-0 w-full justify-start rounded-none border-b border-neutral-200 dark:border-neutral-800 bg-transparent px-4 gap-1">
+                        {problems.map((p, i) => (
+                            <TabsTrigger
+                                key={p.id ?? i}
+                                value={String(i)}
+                                className="text-xs data-[state=active]:border-b-2 data-[state=active]:border-neutral-900 dark:data-[state=active]:border-white rounded-none"
+                            >
+                                {p.title.length > 25 ? `${p.title.slice(0, 25)}...` : p.title}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                    {problems.map((p, i) => (
+                        <TabsContent key={p.id ?? i} value={String(i)} className="flex-1 m-0 flex flex-col overflow-hidden">
+                            {renderProblemContent(p)}
+                        </TabsContent>
+                    ))}
+                </Tabs>
+            </div>
+        )
+    }
+
+    return (
+        <div className="h-full flex flex-col">
+            {currentProblem && renderProblemContent(currentProblem)}
         </div>
     )
 }
