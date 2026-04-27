@@ -14,7 +14,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { cn } from '@repo/ui/lib/utils';
 import { AIChat } from '@/components/main/aichat';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 
 interface LayoutProps {
     children: React.ReactNode
@@ -34,10 +33,8 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
                     isCollapsed ? "lg:ml-[70px]" : "lg:ml-[240px]",
                     isAISidebarOpen ? "lg:mr-[400px]" : "lg:mr-0"
                 )}>
-                    <div className="h-full w-full bg-white dark:bg-neutral-950 lg:rounded-l-4xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl relative">
-                        <ScrollArea className="h-full w-full">
-                            {children}
-                        </ScrollArea>
+                    <div className="h-full w-full bg-white dark:bg-neutral-950 lg:rounded-l-4xl lg:border-l border-neutral-200 dark:border-neutral-800 shadow-xl relative overflow-y-auto overflow-x-hidden">
+                        {children}
                     </div>
                 </main>
             </div>
