@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useCallback, useTransition } from 'react'
 import {
-    LayoutGrid, List, Search, Loader2, FolderOpen, Brain, Plus,
+    LayoutGrid, List, Search, Loader2, FolderOpen, Brain,
     Target, Users
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
@@ -18,7 +18,6 @@ import {
 import { useUserStore } from '@/app/store/useUserStore'
 import { MockInterviewCard } from '../../_components/mock-interview-card'
 import { SessionCard } from '../../_components/session-card'
-import { CreateMockSheet } from '../../_components/create-mock-sheet'
 import { PurchaseMockSheet } from '../../_components/purchase-mock-sheet'
 import { createMockVoiceSession } from '@/actions/(main)/mockvoice/session.action'
 import { MOCK_LEVELS } from '../_constants/mock-categories'
@@ -93,7 +92,6 @@ export function VoiceMainContent({
     // UI State
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
     const [isPending, startTransition] = useTransition()
-    const [createSheetOpen, setCreateSheetOpen] = useState(false)
     const [purchaseSheetOpen, setPurchaseSheetOpen] = useState(false)
     const [selectedMock, setSelectedMock] = useState<MockData | null>(null)
     const [retakingId, setRetakingId] = useState<string | null>(null)
@@ -221,20 +219,13 @@ export function VoiceMainContent({
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 self-end md:self-auto">
-                    {
-                        view === 'my-sessions' ? (
-                            <Button onClick={() => router.push('/mock/voice')}>
-                                Browse Mocks
-                            </Button>
-                        ) : (
-                            <Button onClick={() => setCreateSheetOpen(true)}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create New Mock
-                            </Button>
-                        )
-                    }
-                </div>
+                {view === 'my-sessions' && (
+                    <div className="flex-shrink-0">
+                        <Button variant="outline" onClick={() => router.push('/mock/voice')}>
+                            Browse Mocks
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {
@@ -352,8 +343,8 @@ export function VoiceMainContent({
                                 <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-6">
                                     We couldn&apos;t find any mocks matching your criteria. Try adjusting your filters or create a new one.
                                 </p>
-                                <Button onClick={() => setCreateSheetOpen(true)}>
-                                    Create Custom Mock
+                                <Button onClick={() => router.push('/mock/voice?view=all-mocks')}>
+                                    Browse All Mocks
                                 </Button>
                             </div>
                         )
@@ -387,11 +378,6 @@ export function VoiceMainContent({
                 )
             }
 
-            <CreateMockSheet
-                open={createSheetOpen}
-                onOpenChange={setCreateSheetOpen}
-                userCredits={credits}
-            />
             <PurchaseMockSheet
                 isOpen={purchaseSheetOpen}
                 onClose={() => setPurchaseSheetOpen(false)}
