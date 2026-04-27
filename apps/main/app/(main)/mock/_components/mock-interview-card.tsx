@@ -14,7 +14,6 @@ import {
 interface MockInterviewCardProps {
     mock: MockData
     onStart?: (mockId: string) => void
-    onSchedule?: (mockId: string) => void
     variant?: 'default' | 'compact' | 'featured'
     showAdminBadge?: boolean
 }
@@ -62,7 +61,7 @@ const categoryIcons: Record<string, string> = {
     'GENERAL': '📋',
 }
 
-export function MockInterviewCard({ mock, onStart, onSchedule, variant = 'default', showAdminBadge }: MockInterviewCardProps) {
+export function MockInterviewCard({ mock, onStart, variant = 'default', showAdminBadge }: MockInterviewCardProps) {
     const [, setIsHovered] = useState(false)
 
     const hasCategory = !!mock.category
@@ -220,27 +219,15 @@ export function MockInterviewCard({ mock, onStart, onSchedule, variant = 'defaul
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex gap-3 mt-auto px-6 pb-6">
+                    <CardFooter className="px-6 pb-6 mt-auto">
                         <Button
                             onClick={() => onStart?.(mock.id)}
-                            className="flex-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:via-orange-600 hover:to-amber-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                            className="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:via-orange-600 hover:to-amber-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
                             size="lg"
                         >
                             <Sparkles className="w-4 h-4 mr-2" />
                             Start Interview
                         </Button>
-                        {
-                            onSchedule && (
-                                <Button
-                                    onClick={() => onSchedule(mock.id)}
-                                    variant="outline"
-                                    className="flex-1 border-2 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50 font-semibold text-amber-700 dark:text-amber-400"
-                                    size="lg"
-                                >
-                                    Schedule
-                                </Button>
-                            )
-                        }
                     </CardFooter>
                 </Card>
             </motion.div>
@@ -359,25 +346,12 @@ export function MockInterviewCard({ mock, onStart, onSchedule, variant = 'defaul
                     }
                 </CardContent>
                 <CardFooter className="p-5 pt-0 mt-auto">
-                    <div className="w-full flex gap-2">
-                        <Button
-                            onClick={() => onStart?.(mock.id)}
-                            className="flex-1 bg-neutral-900 text-white dark:bg-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-100 h-9"
-                        >
-                            Start Now
-                        </Button>
-                        {
-                            onSchedule && (
-                                <Button
-                                    onClick={() => onSchedule(mock.id)}
-                                    variant="outline"
-                                    className="flex-1 border-neutral-300 dark:border-neutral-700 h-9"
-                                >
-                                    Schedule
-                                </Button>
-                            )
-                        }
-                    </div>
+                    <Button
+                        onClick={() => onStart?.(mock.id)}
+                        className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-100 h-9"
+                    >
+                        Start Now
+                    </Button>
                 </CardFooter>
             </Card>
         </motion.div>

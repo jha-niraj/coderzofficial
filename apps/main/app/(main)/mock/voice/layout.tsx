@@ -1,5 +1,5 @@
 import { VoiceSidebar } from './_components/voice-sidebar'
-import { Suspense } from 'react';
+import { Suspense } from 'react'
 
 export default function VoiceLayout({
     children,
@@ -7,16 +7,15 @@ export default function VoiceLayout({
     children: React.ReactNode
 }) {
     return (
-        <div className="flex h-screen bg-white dark:bg-neutral-950 overflow-hidden">
-            <div className="w-[320px] max-w-[320px] flex-shrink-0 h-full border-r border-neutral-200 dark:border-neutral-800 hidden lg:block">
-                <Suspense fallback={<div className="p-6">Loading sidebar...</div>}>
+        <div className="flex flex-col lg:flex-row min-h-screen bg-white dark:bg-neutral-950">
+            {/* Mobile: horizontal top bar — Desktop: sticky left sidebar */}
+            <div className="w-full lg:w-[280px] lg:min-w-[280px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen border-b border-neutral-200 dark:border-neutral-800 lg:border-b-0 lg:border-r">
+                <Suspense fallback={<div className="p-4 text-sm text-neutral-400">Loading...</div>}>
                     <VoiceSidebar />
                 </Suspense>
             </div>
-            <main className="flex-1 h-full overflow-y-auto">
-                <div className="h-full w-full">
-                    {children}
-                </div>
+            <main className="flex-1 overflow-y-auto">
+                {children}
             </main>
         </div>
     )

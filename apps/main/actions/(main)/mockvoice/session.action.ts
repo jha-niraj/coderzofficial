@@ -315,13 +315,15 @@ export async function getMockSessionInfo(mockId: string) {
     }
 }
 
-export async function getElevenLabsToken(agentId?: string | null) {
+export async function getElevenLabsToken(agentId?: string) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
+        // Resolve agent ID: use provided value, or fall back to server-side env var.
+        // Server actions always have access to env vars at runtime regardless of build-time embedding.
         const resolvedAgentId = agentId || process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT
         if (!resolvedAgentId) {
             return { success: false, error: 'Voice interview agent is not configured. Please contact support.' }

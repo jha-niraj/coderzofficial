@@ -189,13 +189,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
 
     const startInterview = async () => {
         if (!sessionData || !sessionData.variables) {
-            toast.error('Session data is missing. Please go back and try again.')
-            return
-        }
-
-        const agentId = sessionData.agentId || process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT
-        if (!agentId) {
-            toast.error('Voice interview service is not configured. Please contact support.')
+            toast.error('Session data missing. Please go back and try again.')
             return
         }
 
@@ -203,8 +197,8 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             setHasStarted(true)
             setAgentState('thinking')
 
-            // Fetch Token — passes agentId but server action will also fall back to env var
-            const tokenResult = await getElevenLabsToken(agentId)
+            // Server action reads agentId from env — no client-side secret needed
+            const tokenResult = await getElevenLabsToken()
             if (!tokenResult.success || !tokenResult.token) {
                 toast.error('Failed to authenticate with voice agent')
                 setAgentState(null)

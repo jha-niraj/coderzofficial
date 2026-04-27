@@ -335,7 +335,6 @@ export function VoiceMainContent({
                                             key={mock.id}
                                             mock={mock}
                                             onStart={handleStartMock}
-                                            onSchedule={handleStartMock}
                                             showAdminBadge={mock.byAdmin}
                                             variant={viewMode === 'list' ? 'compact' : 'default'}
                                         />
