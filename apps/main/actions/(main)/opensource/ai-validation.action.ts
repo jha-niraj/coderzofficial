@@ -1,11 +1,9 @@
 'use server'
 
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { auth } from '@repo/auth'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 export interface ValidationResult {
     isCorrect: boolean

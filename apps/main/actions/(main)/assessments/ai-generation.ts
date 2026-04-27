@@ -1,6 +1,7 @@
 'use server'
 
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import {
     AssessmentMode, QuestionDifficulty, AssessmentQuestionType,
 } from '@repo/prisma/client'
@@ -32,9 +33,6 @@ interface RawQuestionData {
 }
 
 // Initialize OpenAI client
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 // ==================== SYSTEM PROMPTS ====================
 

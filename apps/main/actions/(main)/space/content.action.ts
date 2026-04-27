@@ -7,11 +7,9 @@ import {
     SpaceStepContentType, SpaceStepStatus, SpaceActivityType
 } from '@repo/prisma/client';
 import type { Prisma } from '@repo/prisma/client';
-import OpenAI from 'openai';
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
 
 async function checkAuth() {
     const session = await auth();

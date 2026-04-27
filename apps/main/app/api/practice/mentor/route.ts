@@ -3,8 +3,6 @@ import OpenAI from "openai";
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -14,6 +12,8 @@ export async function POST(req: NextRequest) {
     if (!process.env.OPENAI_API_KEY) {
         return new Response("OpenAI API key not configured", { status: 500 });
     }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const body = await req.json();
     const {

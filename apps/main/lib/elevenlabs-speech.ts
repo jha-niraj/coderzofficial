@@ -7,9 +7,19 @@
 
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
-// Initialize ElevenLabs client
-const client = new ElevenLabsClient({
-	apiKey: process.env.ELEVENLABS_AI_KEY!
+let _client: ElevenLabsClient | null = null;
+
+function getClient(): ElevenLabsClient {
+    if (!_client) {
+        _client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_AI_KEY });
+    }
+    return _client;
+}
+
+const client = new Proxy({} as ElevenLabsClient, {
+    get(_, prop) {
+        return Reflect.get(getClient(), prop);
+    }
 });
 
 export interface ElevenLabsTranscriptionResult {

@@ -28,6 +28,11 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
             return { success: false, error: 'Unauthorized' }
         }
 
+        const agentId = process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT
+        if (!agentId) {
+            return { success: false, error: 'Voice interview service is not configured. Please contact support.' }
+        }
+
         const userId = session.user.id
 
         // Get user and mock details
@@ -102,7 +107,7 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
                     mockId: input.mockId,
                     userId: userId,
                     status: 'SCHEDULED',
-                    agentId: process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT!,
+                    agentId: agentId,
                     variables: variables as any,
                     creditsUsed: creditsToCharge,
                     scheduledFor: new Date()
@@ -310,15 +315,20 @@ export async function getMockSessionInfo(mockId: string) {
     }
 }
 
-export async function getElevenLabsToken(agentId: string) {
+export async function getElevenLabsToken(agentId?: string | null) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
+        const resolvedAgentId = agentId || process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT
+        if (!resolvedAgentId) {
+            return { success: false, error: 'Voice interview agent is not configured. Please contact support.' }
+        }
+
         const response = await fetch(
-            `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}`,
+            `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${resolvedAgentId}`,
             {
                 method: 'GET',
                 headers: {

@@ -188,8 +188,14 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
     }, [])
 
     const startInterview = async () => {
-        if (!sessionData || !sessionData.agentId || !sessionData.variables) {
-            toast.error('Session data is incomplete')
+        if (!sessionData || !sessionData.variables) {
+            toast.error('Session data is missing. Please go back and try again.')
+            return
+        }
+
+        const agentId = sessionData.agentId || process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT
+        if (!agentId) {
+            toast.error('Voice interview service is not configured. Please contact support.')
             return
         }
 
@@ -197,8 +203,8 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             setHasStarted(true)
             setAgentState('thinking')
 
-            // Fetch Token
-            const tokenResult = await getElevenLabsToken(sessionData.agentId)
+            // Fetch Token — passes agentId but server action will also fall back to env var
+            const tokenResult = await getElevenLabsToken(agentId)
             if (!tokenResult.success || !tokenResult.token) {
                 toast.error('Failed to authenticate with voice agent')
                 setAgentState(null)
@@ -209,7 +215,7 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
             // Update session status
             await updateSessionStatus(resolvedParams.sessionId, 'IN_PROGRESS')
 
-            // Start ElevenLabs conversation
+            // Start ElevenLabs conversation — pass ALL variables including knowledge_base
             const variables = sessionData.variables
 
             const conversationId = await conversation.startSession({
@@ -221,6 +227,8 @@ export default function MockInterviewPage({ params }: { params: Promise<{ sessio
                     position: variables.position,
                     level: variables.level,
                     description: variables.description,
+                    knowledge_base: variables.knowledge_base,
+                    resume_content: variables.resume_content || '',
                 }
             })
 

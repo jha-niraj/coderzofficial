@@ -1,6 +1,7 @@
 "use server";
 
-import OpenAI from "openai";
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 
 interface Message {
     role: "user" | "assistant" | "system";
@@ -16,9 +17,6 @@ interface ChatResponse {
     error?: string;
 }
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
 
 const SYSTEM_PROMPT = `You are CoderzHQ AI Assistant - an intelligent guide for TheCoderz learning platform. You help students navigate and learn effectively on the platform.
 

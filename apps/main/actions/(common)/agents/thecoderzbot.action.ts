@@ -1,10 +1,8 @@
 'use server'
 
-import OpenAI from 'openai';
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
 
 export async function getOpenAIResponse(message: string) {
     try {

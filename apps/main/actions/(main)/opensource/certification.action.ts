@@ -3,11 +3,9 @@
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 // Credit cost for certification exam
 const EXAM_CREDIT_COST = 25

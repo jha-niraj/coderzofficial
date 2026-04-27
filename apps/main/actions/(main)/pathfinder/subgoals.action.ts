@@ -3,16 +3,14 @@
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 import { revalidatePath } from 'next/cache'
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { StudioVisibility } from '@repo/prisma/client'
 import { 
     generateExplanation, generateVideos, generateDocuments 
 } from '@/actions/(main)/studios/ai-generation.actions'
 import { canRunPathfinderAI, getGoalUsageSummary } from './usage.action'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 // ================================================================================
 // TYPES

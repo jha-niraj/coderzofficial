@@ -1,11 +1,9 @@
 "use server"
 
-import OpenAI from "openai"
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { transcribeWithElevenLabs } from "@/lib/elevenlabs-speech"
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 const BULLET_SYSTEM = `You are a professional resume writer. Your task is to convert the given text into professional resume bullet points.
 Rules:

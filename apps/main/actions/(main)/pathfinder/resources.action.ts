@@ -1,11 +1,11 @@
 'use server'
 
 import Exa from 'exa-js'
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { prisma } from '@repo/prisma'
 import { logPathfinderUsage } from './usage.action'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // ================================================================================
 // TYPES (from Exa schema)

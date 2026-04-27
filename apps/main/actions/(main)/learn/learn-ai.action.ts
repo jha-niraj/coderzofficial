@@ -2,13 +2,11 @@
 
 import { auth } from '@repo/auth';
 import { prisma } from "@repo/prisma";
-import OpenAI from "openai";
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import Exa from 'exa-js';
 
 // Initialize OpenAI
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
 
 // ==========================================
 // TYPES

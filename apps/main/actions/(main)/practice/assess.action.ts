@@ -1,13 +1,13 @@
 "use server";
 
-import OpenAI from "openai";
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
 import type { 
     PracticeAssessPayload, PracticeAssessResult, PracticeProblemDetail 
 } from "@/types/practice";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ─────────────────────────────────────────────
 // SYSTEM PROMPTS PER MODULE

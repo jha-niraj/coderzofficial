@@ -2,12 +2,10 @@
 
 import { auth } from "@repo/auth";
 import prisma from "@repo/prisma";
-import OpenAI from "openai"
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { QuizV2Difficulty, CreditType, Currency } from "@repo/prisma/client"
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 const QUIZ_CREDIT_COST = 25
 

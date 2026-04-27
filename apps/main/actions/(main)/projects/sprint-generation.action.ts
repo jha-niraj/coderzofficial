@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import prisma from '@repo/prisma'
 import { auth } from '@repo/auth'
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 
 // ============================================================================
 // Helper Functions
@@ -56,9 +57,6 @@ interface GeneratedSprint {
 // Sprint Generation Actions
 // ============================================================================
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-})
 
 /**
  * Generate a sprint with tasks using AI

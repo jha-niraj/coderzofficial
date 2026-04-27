@@ -3,17 +3,20 @@
 import { auth } from "@repo/auth";
 import { prisma } from "@repo/prisma";
 import Exa from "exa-js";
-import OpenAI from "openai";
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { CoverLetterGenerationData } from "@/types/aitools/cover-letter";
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
 
-// Configure exa
-const exa = new Exa("97e9842c-986c-4eb6-b23c-e065c3886445"); // As provided by user
+let _exa: Exa | null = null
+const exa = new Proxy({} as Exa, {
+    get(_, prop) {
+        if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
+        return Reflect.get(_exa, prop)
+    }
+})
 
 export async function currentUser() {
     const session = await auth();

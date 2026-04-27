@@ -2,11 +2,9 @@
 
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
-import OpenAI from 'openai';
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
 
 interface ConversationDetails {
     agent_id: string

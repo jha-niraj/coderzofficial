@@ -2,13 +2,11 @@
 
 import { auth } from "@repo/auth";
 import { prisma } from "@repo/prisma";
-import OpenAI from "openai";
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import Exa from "exa-js";
 import type { StudioStep, ExplanationMetadata } from "@/types/studios";
 
-const openai = new OpenAI({
-	apiKey: process.env.OPENAI_API_KEY,
-});
 
 // Build context from previous steps
 async function buildContext(studioId: string): Promise<string> {

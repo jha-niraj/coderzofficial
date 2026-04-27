@@ -24,8 +24,13 @@ import {
 	type AnswerGenerationParams, type UserResponseEvaluationParams
 } from '@/lib/prompts/jobinterviewprompts';
 
-// Initialize Exa client
-const exa = new Exa(process.env.EXA_API_KEY || '');
+let _exa: Exa | null = null
+const exa = new Proxy({} as Exa, {
+    get(_, prop) {
+        if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
+        return Reflect.get(_exa, prop)
+    }
+})
 
 // Helper function to generate search hash
 function generateSearchHash(position: string, jobDescription: string, companyUrl: string): string {

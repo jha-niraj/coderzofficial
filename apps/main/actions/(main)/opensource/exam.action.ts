@@ -1,12 +1,10 @@
 'use server'
 
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { auth } from '@repo/auth'
 import { prisma } from '@repo/prisma'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
 
 // Types for exam questions
 export interface QuizQuestion {

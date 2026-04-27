@@ -400,9 +400,7 @@ export async function deletePathfinderGoal(goalId: string) {
 // AI STUDY PLAN GENERATION
 // ================================================================================
 
-import OpenAI from 'openai'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+import { openai } from '@/lib/openai-client'
 
 interface StudyPlanTopic {
     title: string

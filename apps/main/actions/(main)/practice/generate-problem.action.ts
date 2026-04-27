@@ -1,13 +1,19 @@
 "use server";
 
 import Exa from "exa-js";
-import OpenAI from "openai";
+import type OpenAI from 'openai'
+import { openai } from '@/lib/openai-client'
 import { prisma } from "@repo/prisma";
 import { auth } from "@repo/auth";
 import { PracticeModule, PracticeDifficulty } from "@repo/prisma/client";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const exa = new Exa(process.env.EXA_API_KEY);
+let _exa: Exa | null = null
+const exa = new Proxy({} as Exa, {
+    get(_, prop) {
+        if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
+        return Reflect.get(_exa, prop)
+    }
+})
 
 // ─────────────────────────────────────────────
 // VALID CATEGORIES PER MODULE
