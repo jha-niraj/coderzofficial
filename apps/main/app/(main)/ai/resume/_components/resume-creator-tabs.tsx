@@ -35,8 +35,14 @@ import { normalizeToResumeProfile } from "@/types/resume"
 
 type TabId = "basic" | "experience" | "projects" | "socials" | "education" | "skills"
 
-export function ResumeCreatorTabs() {
-    const [activeTab, setActiveTab] = useState<TabId>("experience")
+interface ResumeCreatorTabsProps {
+    defaultTab?: string
+    onSaved?: () => void
+    compact?: boolean
+}
+
+export function ResumeCreatorTabs({ defaultTab = "experience", onSaved, compact = false }: ResumeCreatorTabsProps) {
+    const [activeTab, setActiveTab] = useState<TabId>((defaultTab as TabId) ?? "experience")
     const [copied, setCopied] = useState(false)
     const [editProfileOpen, setEditProfileOpen] = useState(false)
 

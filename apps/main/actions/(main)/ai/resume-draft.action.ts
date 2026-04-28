@@ -183,7 +183,18 @@ export async function createDraftFromProfile(name: string, templateSlug = 'clean
         certifications: [],
     }
 
-    return createResumeDraft({ name, templateSlug, content, importedFrom: 'profile' })
+    // Collect missing fields so the caller can show toasts
+    const missingFields: string[] = []
+    if (!user.experiences.length) missingFields.push('Work Experience')
+    if (!user.portfolioProjects.length) missingFields.push('Projects')
+    if (!user.skills.length) missingFields.push('Skills')
+    if (!user.educations.length) missingFields.push('Education')
+    if (!user.name) missingFields.push('Full Name')
+    if (!user.occupation) missingFields.push('Job Title')
+
+    const result = await createResumeDraft({ name, templateSlug, content, importedFrom: 'profile' })
+    if (!result.success) return result
+    return { ...result, missingFields }
 }
 
 function buildSkillGroups(skills: { name: string; category: string }[]) {
@@ -312,32 +323,46 @@ export async function tailorResumeForJD(draftId: string, jobDescription: string,
         messages: [
             {
                 role: 'system',
-                content: `You are an expert resume coach. Rewrite the experience bullet points in the provided resume to better match the job description. Keep the facts accurate — only rephrase/reframe. Return the full updated content JSON only.`,
+                content: `You are an expert resume coach. Given a resume and a job description, do two things:
+1. Rewrite the experience bullet points to better match the JD language and keywords. Keep all facts accurate — only rephrase and reframe.
+2. Identify what important skills or experiences mentioned in the JD are MISSING from this resume and list them as suggestions.
+
+Return JSON in this exact format:
+{
+  "updatedContent": { ...full updated resume content matching the original structure... },
+  "suggestions": ["Missing: Kubernetes experience", "Add: mention of CI/CD pipelines", ...],
+  "keywordsAdded": ["React", "TypeScript", ...],
+  "summary": "Tailored 3 bullet points and updated skills order to match the JD."
+}`,
             },
             {
                 role: 'user',
-                content: `Job Title: ${jobTitle}\n\nJob Description:\n${jobDescription}\n\nCurrent Resume Content:\n${JSON.stringify(content, null, 2)}\n\nReturn the full updated content JSON with tailored bullets.`,
+                content: `Job Title: ${jobTitle}\n\nJob Description:\n${jobDescription}\n\nCurrent Resume:\n${JSON.stringify(content, null, 2)}`,
             },
         ],
         response_format: { type: 'json_object' },
     })
 
-    const updated = JSON.parse(res.choices[0]?.message?.content ?? '{}') as ResumeDraftContent
+    const result = JSON.parse(res.choices[0]?.message?.content ?? '{}')
+    const updated = result.updatedContent as ResumeDraftContent
 
-    // Save as new draft (don't overwrite original)
-    const newDraft = await prisma.resumeDraft.create({
+    // Update THIS draft in place — do not create a new one
+    await prisma.resumeDraft.update({
+        where: { id: draftId },
         data: {
-            userId: session.user.id,
-            name: `${(draft as any).name} — ${jobTitle}`,
-            templateSlug: (draft as any).templateSlug,
             content: updated as any,
             tailoredFor: jobTitle,
             jdSnapshot: jobDescription,
-            importedFrom: 'profile',
         },
     })
     revalidatePath('/ai/resume')
-    return { success: true, draft: newDraft }
+    return {
+        success: true,
+        updatedContent: updated,
+        suggestions: (result.suggestions ?? []) as string[],
+        keywordsAdded: (result.keywordsAdded ?? []) as string[],
+        summary: (result.summary ?? '') as string,
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

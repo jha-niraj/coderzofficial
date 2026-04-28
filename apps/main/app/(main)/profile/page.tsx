@@ -10,10 +10,12 @@ import {
 } from "lucide-react";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, AtAGlanceTab, ProjectsTab,
-    SkillsTab, WorkExperienceTab, EducationTab, ShareProfileModal, 
+    SkillsTab, WorkExperienceTab, EducationTab, ShareProfileModal,
     EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
+import { ProfileDataEditSheet } from "./_components/profile-data-edit-sheet";
+import type { ProfileEditSection } from "./_components/profile-data-edit-sheet";
 import toast from "@repo/ui/components/ui/sonner";
 import {
     getOwnProfile, getUserProfileStats, endorseSkill
@@ -168,6 +170,10 @@ export default function ProfilePage() {
     // Modal states
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [profileEditSheet, setProfileEditSheet] = useState<{ open: boolean; section: ProfileEditSection | null }>({ open: false, section: null });
+
+    const openProfileEditSheet = (section: ProfileEditSection) => setProfileEditSheet({ open: true, section });
+    const closeProfileEditSheet = () => setProfileEditSheet({ open: false, section: null });
 
     // Load profile data
     const loadProfile = useCallback(async () => {
@@ -379,7 +385,7 @@ export default function ProfilePage() {
                         {...commonProps}
                         currentUserId={(displayProfile ?? profileData)?.id}
                         onEndorseSkill={handleEndorseSkill}
-                        onAddSkill={() => router.push("/ai/resume/create")}
+                        onAddSkill={() => openProfileEditSheet('skills')}
                     />
                 );
             case "work_experience":
@@ -454,6 +460,12 @@ export default function ProfilePage() {
                 onClose={() => setEditModalOpen(false)}
                 user={displayProfile ?? profileData}
                 onUpdate={refreshProfileData}
+            />
+            <ProfileDataEditSheet
+                open={profileEditSheet.open}
+                section={profileEditSheet.section}
+                onClose={closeProfileEditSheet}
+                onSaved={() => { loadProfile(); }}
             />
         </div>
     );

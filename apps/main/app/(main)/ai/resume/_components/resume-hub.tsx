@@ -92,21 +92,27 @@ function NewResumeSheet({ templates, open, onClose }: {
         if (!name.trim()) return toast.error('Please enter a resume name')
         setLoading(true)
         try {
-            let result
-            if (source === 'profile') {
-                result = await createDraftFromProfile(name, selectedTemplate)
-            } else if (source === 'import') {
+            let result: { success: boolean; error?: string; draft?: { id: string }; missingFields?: string[] } | null = null
+            if (source === 'import') {
                 if (!linkedinUrl && !githubUrl && !pastedText.trim()) {
                     setLoading(false)
                     return toast.error('Provide at least one import source')
                 }
                 result = await importAndCreateDraft({ name, templateSlug: selectedTemplate, linkedinUrl, githubUrl, pastedText })
             } else {
-                // blank - just use profile source with empty content override
+                // profile or blank — both start from profile data
                 result = await createDraftFromProfile(name, selectedTemplate)
             }
             if (!result.success) return toast.error(result.error)
-            toast.success('Resume created!')
+
+            // Show toasts for missing profile data
+            if (result.missingFields?.length) {
+                result.missingFields.forEach(field => {
+                    toast.warning(`${field} not found on your profile — fill it in the editor`)
+                })
+            }
+
+            toast.success('Resume created from your profile!')
             onClose()
             router.push(`/ai/resume/draft/${result.draft?.id}`)
         } catch {
@@ -334,8 +340,15 @@ function ResumeCard({ draft, onDelete, onTogglePublic, onDuplicate }: {
                     size="sm"
                     variant="outline"
                     className="h-7 w-7 p-0"
-                    title="Duplicate"
-                    onClick={() => onDuplicate(draft.id)}
+                    title="Copy share link"
+                    onClick={() => {
+                        const url = `${window.location.origin}/r/${draft.shareSlug}`
+                        navigator.clipboard.writeText(url)
+                        toast.success('Share link copied!')
+                        if (!draft.isPublic) {
+                            toast.info('Make resume public so the link works')
+                        }
+                    }}
                 >
                     <Copy className="w-3 h-3" />
                 </Button>
@@ -353,7 +366,16 @@ function ResumeCard({ draft, onDelete, onTogglePublic, onDuplicate }: {
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-7 w-7 p-0 text-neutral-400 hover:text-red-500 ml-auto"
+                    className="h-7 px-2 text-[10px] text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
+                    title="Duplicate resume"
+                    onClick={() => onDuplicate(draft.id)}
+                >
+                    Duplicate
+                </Button>
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 text-neutral-400 hover:text-red-500"
                     onClick={() => onDelete(draft.id)}
                 >
                     <Trash2 className="w-3 h-3" />

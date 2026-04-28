@@ -209,14 +209,15 @@ function SkillsSection({ items, onChange }: { items: ResumeSkillGroup[]; onChang
 }
 
 // ─── AI Tools Sheet ───────────────────────────────────────────────────────────
-function AIToolsSheet({ draftId, open, onClose }: {
+function AIToolsSheet({ draftId, open, onClose, onContentUpdated }: {
     draftId: string; open: boolean; onClose: () => void
+    onContentUpdated: (content: ResumeDraftContent) => void
 }) {
-    const router = useRouter()
     const [jd, setJd] = useState('')
     const [jobTitle, setJobTitle] = useState('')
     const [loading, setLoading] = useState<'score' | 'tailor' | null>(null)
     const [scoreResult, setScoreResult] = useState<{ score: number; missing_keywords: string[]; matched_keywords: string[]; suggestions: string[] } | null>(null)
+    const [tailorResult, setTailorResult] = useState<{ suggestions: string[]; keywordsAdded: string[]; summary: string } | null>(null)
 
     const handleScore = async () => {
         if (!jd.trim()) return toast.error('Paste a job description first')
@@ -225,6 +226,7 @@ function AIToolsSheet({ draftId, open, onClose }: {
         setLoading(null)
         if (!res.success) return toast.error(res.error ?? 'Failed to score')
         setScoreResult(res as unknown as { score: number; missing_keywords: string[]; matched_keywords: string[]; suggestions: string[] })
+        setTailorResult(null)
     }
 
     const handleTailor = async () => {
@@ -233,9 +235,11 @@ function AIToolsSheet({ draftId, open, onClose }: {
         const res = await tailorResumeForJD(draftId, jd, jobTitle)
         setLoading(null)
         if (!res.success) return toast.error(res.error ?? 'Failed to tailor')
-        toast.success('Tailored resume created!')
-        onClose()
-        router.push(`/ai/resume/draft/${res.draft?.id}`)
+        // Update the editor live with the new content
+        if (res.updatedContent) onContentUpdated(res.updatedContent as ResumeDraftContent)
+        setTailorResult({ suggestions: res.suggestions ?? [], keywordsAdded: res.keywordsAdded ?? [], summary: res.summary ?? '' })
+        setScoreResult(null)
+        toast.success('Resume updated in place!')
     }
 
     return (
@@ -257,7 +261,7 @@ function AIToolsSheet({ draftId, open, onClose }: {
                     {loading ? (
                         <div className="flex flex-col items-center gap-3 py-6">
                             <DotmSquare11 size={40} dotSize={5} speed={1.4} />
-                            <p className="text-xs text-neutral-500">{loading === 'score' ? 'Scoring your resume…' : 'Tailoring bullets…'}</p>
+                            <p className="text-xs text-neutral-500">{loading === 'score' ? 'Scoring your resume…' : 'Tailoring bullets in place…'}</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 gap-2">
@@ -265,8 +269,40 @@ function AIToolsSheet({ draftId, open, onClose }: {
                                 <BarChart3 className="w-4 h-4 mr-2" /> ATS Score
                             </Button>
                             <Button className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90" onClick={handleTailor}>
-                                <Wand2 className="w-4 h-4 mr-2" /> Tailor Resume
+                                <Wand2 className="w-4 h-4 mr-2" /> Tailor This Resume
                             </Button>
+                        </div>
+                    )}
+
+                    {/* Tailor result */}
+                    {tailorResult && (
+                        <div className="space-y-3 border-t border-neutral-200 dark:border-neutral-800 pt-4">
+                            {tailorResult.summary && (
+                                <p className="text-xs text-neutral-600 dark:text-neutral-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 border border-emerald-200 dark:border-emerald-900/40">
+                                    ✓ {tailorResult.summary}
+                                </p>
+                            )}
+                            {tailorResult.keywordsAdded.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-medium text-emerald-600 mb-1.5">Keywords added/emphasised</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {tailorResult.keywordsAdded.map(k => <Badge key={k} className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">{k}</Badge>)}
+                                    </div>
+                                </div>
+                            )}
+                            {tailorResult.suggestions.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-medium text-amber-600 mb-1.5">What you should add to this resume</p>
+                                    <ul className="space-y-1">
+                                        {tailorResult.suggestions.map((s, i) => (
+                                            <li key={i} className="text-xs text-neutral-600 dark:text-neutral-400 flex gap-1.5">
+                                                <span className="text-amber-500 flex-shrink-0">→</span>{s}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            <p className="text-[10px] text-neutral-400">Changes are saved to this resume. Press Save in the editor to persist.</p>
                         </div>
                     )}
 
@@ -478,7 +514,12 @@ export function ResumeEditor({ draft, content: initialContent, templates }: Prop
                 </div>
             </div>
 
-            <AIToolsSheet draftId={draft.id} open={aiSheetOpen} onClose={() => setAiSheetOpen(false)} />
+            <AIToolsSheet
+                draftId={draft.id}
+                open={aiSheetOpen}
+                onClose={() => setAiSheetOpen(false)}
+                onContentUpdated={(updatedContent) => setContent(updatedContent)}
+            />
         </div>
     )
 }

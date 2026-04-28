@@ -1,7 +1,7 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import { ResumeCreatorTabs } from "@/app/(main)/ai/resume/_components/resume-creator-tabs"
-
+// The old resume creator page is now replaced by /ai/resume
+// Users create resumes from the hub which auto-populates from their profile
 export default function ResumeCreatePage() {
-    return <ResumeCreatorTabs />
+    redirect("/ai/resume")
 }
