@@ -14,29 +14,77 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group"
+import { Badge } from "@repo/ui/components/ui/badge"
 import {
-    RadioGroup, RadioGroupItem
-} from "@repo/ui/components/ui/radio-group"
-import {
-    Loader2, Download, Copy, Mic, Square, Trash2,
-    ArrowLeft
+    Download, Copy, Mic, Square, Trash2, ArrowLeft, Sparkles,
+    FileText, Wand2, CheckCircle2, ChevronRight, Clock
 } from "lucide-react"
 import toast from "@repo/ui/components/ui/sonner"
 import { transcribeAndPolishWorkExperience } from "@/actions/(main)/ai/resume-ai.action"
 import { usePDF } from "react-to-pdf"
 import { MarkdownRenderer } from "@/components/common/markdown-renderer"
-import {
-    Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@repo/ui/components/ui/card"
+import { Card, CardContent } from "@repo/ui/components/ui/card"
 import { CoverLetterHistoryItem, CoverLetterQuestion } from "@/types/aitools/cover-letter"
+import { DotmSquare11 } from "@repo/ui/components/ui/dotm-square-11"
 
-export function CoverLetterClient({ initialCoverLetters, selectedId }: { initialCoverLetters: CoverLetterHistoryItem[], selectedId: string | undefined }) {
+// ── Loading overlay ──────────────────────────────────────────────────────────
+function LoadingOverlay({ message, sub }: { message: string; sub?: string }) {
+    return (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 dark:bg-neutral-950/90 backdrop-blur-sm rounded-2xl gap-4">
+            <DotmSquare11 size={48} dotSize={6} speed={1.4} />
+            <div className="text-center space-y-1">
+                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">{message}</p>
+                {sub && <p className="text-xs text-neutral-500">{sub}</p>}
+            </div>
+        </div>
+    )
+}
+
+// ── Step indicator ───────────────────────────────────────────────────────────
+function StepIndicator({ current }: { current: number }) {
+    const steps = [
+        { n: 1, label: "Job Details", icon: FileText },
+        { n: 2, label: "Tailor",      icon: Wand2 },
+        { n: 3, label: "Your Letter", icon: CheckCircle2 },
+    ]
+    return (
+        <div className="flex items-center gap-0 mb-6">
+            {steps.map((s, i) => {
+                const Icon = s.icon
+                const done = current > s.n
+                const active = current === s.n
+                return (
+                    <div key={s.n} className="flex items-center">
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            active   ? "bg-neutral-900 text-white dark:bg-white dark:text-black" :
+                            done     ? "text-neutral-500 dark:text-neutral-400" :
+                                       "text-neutral-400 dark:text-neutral-600"
+                        }`}>
+                            <Icon className="w-3.5 h-3.5" />
+                            <span>{s.label}</span>
+                        </div>
+                        {i < steps.length - 1 && (
+                            <ChevronRight className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-700 mx-1" />
+                        )}
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
+// ── Main component ───────────────────────────────────────────────────────────
+export function CoverLetterClient({
+    initialCoverLetters, selectedId
+}: {
+    initialCoverLetters: CoverLetterHistoryItem[]
+    selectedId: string | undefined
+}) {
     const router = useRouter()
-
-    // Steps: 1: Enter link, 2: Answer Questions, 3: View Letter
     const [step, setStep] = useState(selectedId ? 3 : 1)
 
-    // Step 1 state
+    // Step 1
     const [jobUrl, setJobUrl] = useState("")
     const [jobDescription, setJobDescription] = useState("")
     const [jobTitle, setJobTitle] = useState("")
@@ -45,16 +93,16 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
     const [isExtracting, setIsExtracting] = useState(false)
     const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
 
-    // Step 2 state
+    // Step 2
     const [questions, setQuestions] = useState<CoverLetterQuestion[]>([])
     const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
     const [isGeneratingLetter, setIsGeneratingLetter] = useState(false)
 
-    // Step 3 state
+    // Step 3
     const [generatedContent, setGeneratedContent] = useState("")
-    const { toPDF, targetRef } = usePDF({ filename: 'cover_letter.pdf' })
+    const { toPDF, targetRef } = usePDF({ filename: "cover_letter.pdf" })
 
-    // History state
+    // History
     const [history, setHistory] = useState<CoverLetterHistoryItem[]>(initialCoverLetters)
 
     const fetchLetter = useCallback(async (id: string) => {
@@ -69,19 +117,15 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
     }, [router])
 
     useEffect(() => {
-        if (selectedId) {
-            fetchLetter(selectedId)
-        }
+        if (selectedId) fetchLetter(selectedId)
     }, [selectedId, fetchLetter])
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        const res = await deleteCoverLetter(id);
+        e.stopPropagation()
+        const res = await deleteCoverLetter(id)
         if (res.success) {
             setHistory(h => h.filter(x => x.id !== id))
-            if (selectedId === id) {
-                resetFlow()
-            }
+            if (selectedId === id) resetFlow()
             toast.success("Deleted")
         } else {
             toast.error("Failed to delete")
@@ -105,11 +149,7 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
         setIsExtracting(true)
         const res = await extractJobDescription(jobUrl)
         setIsExtracting(false)
-
-        if (!res.success) {
-            return toast.error(res.error)
-        }
-
+        if (!res.success) return toast.error(res.error)
         setJobDescription(res.description || "")
         setJobTitle(res.title || "")
         handleGenerateQuestions(res.description || "")
@@ -119,11 +159,7 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
         setIsGeneratingQuestions(true)
         const res = await generateCoverLetterQuestions(jd)
         setIsGeneratingQuestions(false)
-
-        if (!res.success) {
-            return toast.error(res.error)
-        }
-
+        if (!res.success) return toast.error(res.error)
         setQuestions(res.questions as CoverLetterQuestion[])
         setStep(2)
     }
@@ -137,157 +173,203 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
             jobDescription,
             tone,
             questions,
-            answers
+            answers,
         })
         setIsGeneratingLetter(false)
-
-        if (!res.success) {
-            return toast.error(res.error)
-        }
-
+        if (!res.success) return toast.error(res.error)
         setGeneratedContent(res.content || "")
         setStep(3)
-
-        // Refresh history
         setHistory(prev => [{
             id: res.coverLetterId!,
             companyName: companyName || "The Company",
             jobTitle: jobTitle || "The Position",
-            createdAt: new Date()
+            createdAt: new Date(),
         }, ...prev])
-
-        router.push(`/resume/cover-letter?id=${res.coverLetterId}`)
+        router.push(`/ai/resume/cover-letter?id=${res.coverLetterId}`)
     }
 
+    const isLoading = isExtracting || isGeneratingQuestions || isGeneratingLetter
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative">
+            {/* ── Main area ── */}
+            <div className="lg:col-span-3 space-y-0">
+                <StepIndicator current={step} />
 
+                {/* ── Step 1: Job Details ── */}
                 {step === 1 && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>1. Job Details</CardTitle>
-                            <CardDescription>Paste the job link to automatically extract what the employer is looking for.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Job Link</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="https://company.com/careers/..."
-                                        value={jobUrl}
-                                        onChange={e => setJobUrl(e.target.value)}
-                                        disabled={isExtracting || isGeneratingQuestions}
-                                    />
-                                    <Button onClick={handleExtract} disabled={isExtracting || isGeneratingQuestions || !jobUrl}>
-                                        {(isExtracting || isGeneratingQuestions) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                        Start Magic
-                                    </Button>
-                                </div>
-                            </div>
+                    <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 space-y-5">
+                        {(isExtracting || isGeneratingQuestions) && (
+                            <LoadingOverlay
+                                message={isExtracting ? "Extracting job details…" : "Generating tailored questions…"}
+                                sub="This takes 10–20 seconds"
+                            />
+                        )}
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Company Name (Optional)</Label>
-                                    <Input
-                                        placeholder="E.g. Apple"
-                                        value={companyName}
-                                        onChange={e => setCompanyName(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Job Title Override (Optional)</Label>
-                                    <Input
-                                        placeholder="E.g. Senior Frontend Engineer"
-                                        value={jobTitle}
-                                        onChange={e => setJobTitle(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Cover Letter Tone</Label>
-                                <Select value={tone} onValueChange={setTone}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Professional">Professional & Direct</SelectItem>
-                                        <SelectItem value="Enthusiastic">Highly Enthusiastic</SelectItem>
-                                        <SelectItem value="Creative">Creative & Bold</SelectItem>
-                                        <SelectItem value="Academic">Academic & Methodical</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="pt-4 border-t border-dashed">
-                                <p className="text-sm text-muted-foreground mb-2">Fallback: If extraction fails, paste JD manually.</p>
-                                <Textarea
-                                    className="text-xs h-32"
-                                    placeholder="Paste job description here..."
-                                    value={jobDescription}
-                                    onChange={e => setJobDescription(e.target.value)}
+                        {/* Job Link */}
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                Job Link
+                            </Label>
+                            <p className="text-xs text-neutral-500">Paste the job posting URL and we'll auto-extract the role details.</p>
+                            <div className="flex gap-2 mt-1">
+                                <Input
+                                    placeholder="https://company.com/careers/..."
+                                    value={jobUrl}
+                                    onChange={e => setJobUrl(e.target.value)}
+                                    disabled={isLoading}
+                                    className="flex-1"
                                 />
-                                <div className="mt-2 flex justify-end">
-                                    <Button variant="outline" onClick={() => handleGenerateQuestions(jobDescription)} disabled={!jobDescription || isGeneratingQuestions}>
-                                        {isGeneratingQuestions ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Use Manual JD"}
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {step === 2 && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>2. Tailoring Your Letter</CardTitle>
-                            <CardDescription>Answer a few questions about your experience specific to this role.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            {questions.map((q, idx) => (
-                                <QuestionRenderer
-                                    key={q.id}
-                                    question={q}
-                                    index={idx}
-                                    value={answers[q.id]}
-                                    onChange={(val: string | string[]) => setAnswers(prev => ({ ...prev, [q.id]: val }))}
-                                />
-                            ))}
-
-                            <div className="flex gap-4 justify-between pt-4 border-t">
-                                <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                                <Button onClick={handleGenerateLetter} disabled={isGeneratingLetter}>
-                                    {isGeneratingLetter && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                    Generate Cover Letter
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {step === 3 && (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <Button variant="outline" size="sm" onClick={resetFlow}>
-                                <ArrowLeft className="w-4 h-4 mr-2" /> Start New Letter
-                            </Button>
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => {
-                                    navigator.clipboard.writeText(generatedContent)
-                                    toast.success("Copied to clipboard")
-                                }}>
-                                    <Copy className="w-4 h-4 mr-2" /> Copy
-                                </Button>
-                                <Button size="sm" onClick={() => toPDF()}>
-                                    <Download className="w-4 h-4 mr-2" /> Download PDF
+                                <Button
+                                    onClick={handleExtract}
+                                    disabled={isLoading || !jobUrl}
+                                    className="shrink-0"
+                                >
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    Start Magic
                                 </Button>
                             </div>
                         </div>
 
-                        <Card className="print:shadow-none print:border-none">
-                            <CardContent className="pt-6" id="cover-letter-content">
-                                <div ref={targetRef} className="prose prose-sm dark:prose-invert max-w-none p-4 bg-background">
+                        {/* Company + Title */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                    Company Name <span className="text-neutral-400 font-normal">(optional)</span>
+                                </Label>
+                                <Input
+                                    placeholder="E.g. Apple"
+                                    value={companyName}
+                                    onChange={e => setCompanyName(e.target.value)}
+                                    disabled={isLoading}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                    Job Title Override <span className="text-neutral-400 font-normal">(optional)</span>
+                                </Label>
+                                <Input
+                                    placeholder="E.g. Senior Frontend Engineer"
+                                    value={jobTitle}
+                                    onChange={e => setJobTitle(e.target.value)}
+                                    disabled={isLoading}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Tone */}
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                Cover Letter Tone
+                            </Label>
+                            <Select value={tone} onValueChange={setTone} disabled={isLoading}>
+                                <SelectTrigger className="w-full sm:w-64">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Professional">Professional & Direct</SelectItem>
+                                    <SelectItem value="Enthusiastic">Highly Enthusiastic</SelectItem>
+                                    <SelectItem value="Creative">Creative & Bold</SelectItem>
+                                    <SelectItem value="Academic">Academic & Methodical</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Manual JD fallback */}
+                        <div className="pt-4 border-t border-dashed border-neutral-200 dark:border-neutral-800 space-y-1.5">
+                            <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                Paste Job Description manually
+                            </Label>
+                            <p className="text-xs text-neutral-500">Use this if the URL extraction fails.</p>
+                            <Textarea
+                                className="text-sm h-32 mt-1"
+                                placeholder="Paste the full job description here…"
+                                value={jobDescription}
+                                onChange={e => setJobDescription(e.target.value)}
+                                disabled={isLoading}
+                            />
+                            <div className="flex justify-end pt-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleGenerateQuestions(jobDescription)}
+                                    disabled={!jobDescription || isLoading}
+                                >
+                                    Use Manual JD
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Step 2: Tailor ── */}
+                {step === 2 && (
+                    <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 space-y-6">
+                        {isGeneratingLetter && (
+                            <LoadingOverlay
+                                message="Crafting your cover letter…"
+                                sub="Personalising with your answers — takes ~20 seconds"
+                            />
+                        )}
+
+                        <div>
+                            <h2 className="text-base font-semibold text-neutral-900 dark:text-white">Tailor Your Letter</h2>
+                            <p className="text-sm text-neutral-500 mt-0.5">Answer a few questions about your experience specific to this role.</p>
+                        </div>
+
+                        {questions.map((q, idx) => (
+                            <QuestionRenderer
+                                key={q.id}
+                                question={q}
+                                index={idx}
+                                value={answers[q.id]}
+                                onChange={(val: string | string[]) => setAnswers(prev => ({ ...prev, [q.id]: val }))}
+                            />
+                        ))}
+
+                        <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                            <Button variant="outline" size="sm" onClick={() => setStep(1)}>
+                                <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+                                Back
+                            </Button>
+                            <Button onClick={handleGenerateLetter} disabled={isGeneratingLetter}>
+                                <Wand2 className="w-4 h-4 mr-2" />
+                                Generate Cover Letter
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Step 3: Generated Letter ── */}
+                {step === 3 && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <Button variant="outline" size="sm" onClick={resetFlow}>
+                                <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+                                New Letter
+                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(generatedContent)
+                                        toast.success("Copied to clipboard")
+                                    }}
+                                >
+                                    <Copy className="w-3.5 h-3.5 mr-1.5" />
+                                    Copy
+                                </Button>
+                                <Button size="sm" onClick={() => toPDF()}>
+                                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                                    Download PDF
+                                </Button>
+                            </div>
+                        </div>
+
+                        <Card className="rounded-2xl border-neutral-200 dark:border-neutral-800">
+                            <CardContent className="pt-6">
+                                <div ref={targetRef} className="prose prose-sm dark:prose-invert max-w-none p-2">
                                     <MarkdownRenderer content={generatedContent} />
                                 </div>
                             </CardContent>
@@ -296,30 +378,52 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
                 )}
             </div>
 
-            {/* History Sidebar */}
-            <div className="md:col-span-1 space-y-4">
-                <div className="font-semibold text-lg flex items-center justify-between">
-                    <span>Recent Letters</span>
+            {/* ── History sidebar ── */}
+            <div className="lg:col-span-1 space-y-3">
+                <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-neutral-500" />
+                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Recent Letters</span>
+                    {history.length > 0 && (
+                        <Badge variant="secondary" className="text-xs ml-auto">{history.length}</Badge>
+                    )}
                 </div>
+
                 {history.length === 0 ? (
-                    <div className="text-sm text-muted-foreground p-4 text-center border rounded-lg border-dashed">
-                        No cover letters generated yet.
+                    <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 p-6 text-center">
+                        <FileText className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
+                        <p className="text-xs text-neutral-500">No letters generated yet.</p>
+                        <p className="text-xs text-neutral-400 mt-0.5">Complete Step 1 to get started.</p>
                     </div>
                 ) : (
                     <div className="space-y-2">
                         {history.map((h: CoverLetterHistoryItem) => (
                             <div
                                 key={h.id}
-                                onClick={() => router.push(`/resume/cover-letter?id=${h.id}`)}
-                                className={`p-3 border rounded-lg cursor-pointer transition flex justify-between items-start ${selectedId === h.id ? 'bg-primary/5 border-primary' : 'hover:bg-accent'}`}
+                                onClick={() => router.push(`/ai/resume/cover-letter?id=${h.id}`)}
+                                className={`group p-3 rounded-xl border cursor-pointer transition-colors ${
+                                    selectedId === h.id
+                                        ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white"
+                                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                                }`}
                             >
-                                <div className="space-y-1 overflow-hidden">
-                                    <p className="font-medium text-sm truncate">{h.jobTitle}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{h.companyName}</p>
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="overflow-hidden flex-1">
+                                        <p className={`text-xs font-semibold truncate ${selectedId === h.id ? "text-white dark:text-black" : "text-neutral-800 dark:text-neutral-200"}`}>
+                                            {h.jobTitle}
+                                        </p>
+                                        <p className={`text-[10px] truncate mt-0.5 ${selectedId === h.id ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500"}`}>
+                                            {h.companyName}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={`h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${selectedId === h.id ? "hover:bg-white/20 text-neutral-300" : "text-neutral-400 hover:text-red-500"}`}
+                                        onClick={(e) => handleDelete(h.id, e)}
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </Button>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive shrink-0" onClick={(e) => handleDelete(h.id, e)}>
-                                    <Trash2 className="w-3 h-3" />
-                                </Button>
                             </div>
                         ))}
                     </div>
@@ -329,8 +433,15 @@ export function CoverLetterClient({ initialCoverLetters, selectedId }: { initial
     )
 }
 
-function QuestionRenderer({ question, index, value, onChange }: { question: CoverLetterQuestion, index: number, value: string | string[] | undefined, onChange: (val: string | string[]) => void }) {
-
+// ── Question renderer ────────────────────────────────────────────────────────
+function QuestionRenderer({
+    question, index, value, onChange
+}: {
+    question: CoverLetterQuestion
+    index: number
+    value: string | string[] | undefined
+    onChange: (val: string | string[]) => void
+}) {
     const [voiceRecording, setVoiceRecording] = useState(false)
     const [voiceLoading, setVoiceLoading] = useState(false)
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -347,25 +458,17 @@ function QuestionRenderer({ question, index, value, onChange }: { question: Cove
             const chunks: Blob[] = []
             recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
             recorder.onstop = async () => {
-                stream.getTracks().forEach((t) => t.stop())
-                if (chunks.length === 0) {
-                    setVoiceLoading(false)
-                    toast.error("No audio recorded")
-                    return
-                }
+                stream.getTracks().forEach(t => t.stop())
+                if (!chunks.length) { setVoiceLoading(false); return toast.error("No audio recorded") }
                 const blob = new Blob(chunks, { type: "audio/webm" })
                 const reader = new FileReader()
                 reader.onloadend = async () => {
                     const base64 = (reader.result as string).split(",")[1]
-                    if (!base64) {
-                        setVoiceLoading(false)
-                        toast.error("Failed to encode audio")
-                        return
-                    }
+                    if (!base64) { setVoiceLoading(false); return toast.error("Failed to encode audio") }
                     const res = await transcribeAndPolishWorkExperience(base64, "audio/webm")
                     setVoiceLoading(false)
                     if (res.success && res.bullets) {
-                        onChange((value || "") + "\\n" + res.bullets)
+                        onChange((value || "") + "\n" + res.bullets)
                         toast.success("Added voice response")
                     } else {
                         toast.error(res.error || "Voice processing failed")
@@ -386,12 +489,16 @@ function QuestionRenderer({ question, index, value, onChange }: { question: Cove
     if (question.type === "SINGLE") {
         return (
             <div className="space-y-3">
-                <Label className="text-base font-medium">{index + 1}. {question.text}</Label>
-                <RadioGroup value={value as string | undefined} onValueChange={onChange}>
+                <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200 block">
+                    {index + 1}. {question.text}
+                </Label>
+                <RadioGroup value={value as string | undefined} onValueChange={onChange} className="space-y-2">
                     {question.options?.map((opt: string) => (
-                        <div key={opt} className="flex items-center space-x-2">
+                        <div key={opt} className="flex items-center gap-2">
                             <RadioGroupItem value={opt} id={`${question.id}-${opt}`} />
-                            <Label htmlFor={`${question.id}-${opt}`}>{opt}</Label>
+                            <Label htmlFor={`${question.id}-${opt}`} className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                                {opt}
+                            </Label>
                         </div>
                     ))}
                 </RadioGroup>
@@ -402,54 +509,60 @@ function QuestionRenderer({ question, index, value, onChange }: { question: Cove
     if (question.type === "MULTIPLE") {
         const toggleMulti = (opt: string, checked: boolean) => {
             const current = (value as string[]) || []
-            if (checked) {
-                onChange([...current, opt])
-            } else {
-                onChange(current.filter((x: string) => x !== opt))
-            }
+            onChange(checked ? [...current, opt] : current.filter(x => x !== opt))
         }
-
         return (
             <div className="space-y-3">
-                <Label className="text-base font-medium">{index + 1}. {question.text}</Label>
+                <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200 block">
+                    {index + 1}. {question.text}
+                </Label>
                 <div className="space-y-2">
                     {question.options?.map((opt: string) => (
-                        <div key={opt} className="flex items-center space-x-2">
+                        <div key={opt} className="flex items-center gap-2">
                             <Checkbox
                                 id={`${question.id}-${opt}`}
-                                checked={(value || []).includes(opt)}
-                                onCheckedChange={(checked) => toggleMulti(opt, checked as boolean)}
+                                checked={(value as string[] || []).includes(opt)}
+                                onCheckedChange={checked => toggleMulti(opt, checked as boolean)}
                             />
-                            <Label htmlFor={`${question.id}-${opt}`}>{opt}</Label>
+                            <Label htmlFor={`${question.id}-${opt}`} className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                                {opt}
+                            </Label>
                         </div>
                     ))}
                 </div>
-            </div >
+            </div>
         )
     }
 
-    // Default TEXTAREA
     return (
-        <div className="space-y-3">
-            <div className="flex items-start justify-between">
-                <Label className="text-base font-medium">{index + 1}. {question.text}</Label>
+        <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+                <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                    {index + 1}. {question.text}
+                </Label>
                 <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-7 gap-1 text-xs shrink-0 ml-2"
+                    className="h-7 gap-1.5 text-xs shrink-0"
                     disabled={voiceLoading}
                     onClick={handleVoiceToggle}
                 >
-                    {voiceRecording ? <Square className="w-3 h-3" /> : voiceLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mic className="w-3 h-3" />}
-                    {voiceRecording ? "Stop" : "Voice Answer"}
+                    {voiceRecording ? (
+                        <Square className="w-3 h-3 text-red-500" />
+                    ) : voiceLoading ? (
+                        <DotmSquare11 size={14} dotSize={2} speed={1.4} />
+                    ) : (
+                        <Mic className="w-3 h-3" />
+                    )}
+                    {voiceRecording ? "Stop" : "Voice"}
                 </Button>
             </div>
             <Textarea
-                value={value || ""}
-                onChange={(e) => onChange(e.target.value)}
-                rows={4}
-                placeholder="Type or record your answer here..."
+                value={(value as string) || ""}
+                onChange={e => onChange(e.target.value)}
+                rows={3}
+                placeholder="Type or record your answer…"
             />
         </div>
     )

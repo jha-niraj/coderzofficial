@@ -19,7 +19,7 @@ export default async function CoverLetterPage(props: {
     const selectedId = sp?.id as string | undefined
 
     return (
-        <div className="flex flex-col h-full mx-auto max-w-7xl px-4 py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
             <CoverLetterClient
                 initialCoverLetters={coverLetters}
                 selectedId={selectedId}

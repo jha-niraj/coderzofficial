@@ -130,8 +130,8 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
 
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    const boxSize = "w-5 h-5";
-    const boxMinSize = "min-w-[20px]";
+    const boxSize = "w-3 h-3";
+    const boxMinSize = "min-w-[12px]";
 
     return (
         <>
