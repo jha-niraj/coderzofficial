@@ -208,7 +208,7 @@ export function ResumeTab({
                                 {
                                     isOwnProfile && (
                                         <Button variant="outline" size="sm" className="gap-2" asChild>
-                                            <Link href="/ai/resume/create">
+                                            <Link href="/ai/resume">
                                                 <Pencil className="w-4 h-4" />
                                                 Edit in Resume Creator
                                             </Link>
@@ -271,7 +271,7 @@ export function ResumeTab({
                             {
                                 isOwnProfile && (
                                     <Button variant="ghost" size="sm" asChild>
-                                        <Link href="/ai/resume/create">
+                                        <Link href="/ai/resume">
                                             Add Experience
                                         </Link>
                                     </Button>
@@ -390,7 +390,7 @@ export function ResumeTab({
                                     {
                                         isOwnProfile && (
                                             <Button variant="outline" size="sm" className="mt-3" asChild>
-                                                <Link href="/ai/resume/create">Add your first experience</Link>
+                                                <Link href="/ai/resume">Add your first experience</Link>
                                             </Button>
                                         )
                                     }
@@ -415,7 +415,7 @@ export function ResumeTab({
                             {
                                 isOwnProfile && (
                                     <Button variant="ghost" size="sm" asChild>
-                                        <Link href="/ai/resume/create">Edit</Link>
+                                        <Link href="/ai/resume">Edit</Link>
                                     </Button>
                                 )
                             }
@@ -460,7 +460,7 @@ export function ResumeTab({
                                     {
                                         isOwnProfile && (
                                             <Button variant="outline" size="sm" className="mt-3" asChild>
-                                                <Link href="/ai/resume/create">Add education</Link>
+                                                <Link href="/ai/resume">Add education</Link>
                                             </Button>
                                         )
                                     }

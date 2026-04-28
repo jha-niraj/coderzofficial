@@ -117,20 +117,12 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col w-full max-w-none">
+            <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0 flex flex-col">
                 <div className="w-full max-w-5xl mx-auto flex flex-col h-full">
                     <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                         <SheetTitle>Add Project</SheetTitle>
                         <p className="text-sm text-muted-foreground mt-1 font-normal">
-                            You can also add projects in the{" "}
-                            <Link
-                                href="/ai/resume/create"
-                                className="text-primary hover:underline"
-                                onClick={() => onOpenChange(false)}
-                            >
-                                Resume Creator
-                            </Link>
-                            , where you can polish project descriptions using AI.
+                            Projects you add here will appear on your profile and auto-populate your resumes.
                         </p>
                     </SheetHeader>
                     <div className="flex-1 overflow-y-auto px-6 py-4 w-full">

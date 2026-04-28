@@ -4,14 +4,27 @@ import { useRef, useState } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@repo/ui/components/ui/card"
 import { Button } from "@repo/ui/components/ui/button"
+import { Badge } from "@repo/ui/components/ui/badge"
 import {
-    FileText, Eye, Loader2, Pencil
+    FileText, Eye, Loader2, Plus, Pencil, Building2, CalendarDays
 } from "lucide-react"
 import Link from "next/link"
 import toast from "@repo/ui/components/ui/sonner"
 import { uploadResume } from "@/actions/(main)/user/resume.action"
 import { getResumeSignedUrl } from "@/actions/(main)/user/resume.action"
-import { ResumePublicView } from "@/components/resume/resume-public-view"
+import { AddWorkExperienceSheet } from "@/components/profile/sheets/add-work-experience-sheet"
+
+interface Experience {
+    id: string
+    companyName: string
+    roleTitle: string
+    description?: string | null
+    bulletPoints?: string[]
+    startDate: Date
+    endDate?: Date | null
+    isCurrentlyWorking?: boolean
+    companyWebsite?: string | null
+}
 
 interface WorkExperienceTabProps {
     user: {
@@ -23,16 +36,7 @@ interface WorkExperienceTabProps {
         occupation?: string | null
         resume?: string | null
         hasResume?: boolean
-        experiences?: Array<{
-            id: string
-            companyName: string
-            roleTitle: string
-            description?: string | null
-            bulletPoints?: string[]
-            startDate: Date
-            endDate?: Date | null
-            isCurrentlyWorking?: boolean
-        }>
+        experiences?: Experience[]
         portfolioProjects?: Array<{
             id: string
             projectName: string
@@ -46,7 +50,7 @@ interface WorkExperienceTabProps {
             id: string
             degree?: string | null
             institution: string
-            startDate: Date
+            startDate: Date | null
             endDate?: Date | null
         }>
         certifications?: Array<{
@@ -61,16 +65,19 @@ interface WorkExperienceTabProps {
     }
     isOwnProfile: boolean
     onUploadResume?: () => void | Promise<void>
+    onRefresh?: () => void | Promise<void>
 }
 
-export function WorkExperienceTab({
-    user,
-    isOwnProfile,
-    onUploadResume,
-}: WorkExperienceTabProps) {
+function formatDate(d: Date) {
+    return new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+}
+
+export function WorkExperienceTab({ user, isOwnProfile, onUploadResume, onRefresh }: WorkExperienceTabProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)
     const [resumeViewUrl, setResumeViewUrl] = useState<string | null>(null)
+    const [sheetOpen, setSheetOpen] = useState(false)
+    const [editingExp, setEditingExp] = useState<Experience | null>(null)
 
     const handleUploadClick = () => fileInputRef.current?.click()
 
@@ -100,34 +107,23 @@ export function WorkExperienceTab({
     }
 
     const handleViewResume = async () => {
-        if (resumeViewUrl) {
-            window.open(resumeViewUrl, "_blank")
-            return
-        }
+        if (resumeViewUrl) { window.open(resumeViewUrl, "_blank"); return }
         const res = await getResumeSignedUrl()
-        if (res?.url) {
-            setResumeViewUrl(res.url)
-            window.open(res.url, "_blank")
-        } else {
-            toast.error("Could not load resume")
-        }
+        if (res?.url) { setResumeViewUrl(res.url); window.open(res.url, "_blank") }
+        else toast.error("Could not load resume")
     }
 
-    const resumeData = {
-        name: user.name,
-        occupation: user.occupation,
-        location: user.location,
-        image: user.image,
-        experiences: user.experiences ?? [],
-        portfolioProjects: user.portfolioProjects ?? [],
-        skills: user.skills ?? [],
-        educations: user.educations ?? [],
-        certifications: user.certifications ?? [],
-        socialLinks: user.socialLinks ?? [],
+    const openAdd = () => { setEditingExp(null); setSheetOpen(true) }
+    const openEdit = (exp: Experience) => { setEditingExp(exp); setSheetOpen(true) }
+
+    const handleSaved = async () => {
+        await onRefresh?.()
+        await onUploadResume?.()
     }
 
     return (
         <div className="space-y-6">
+            {/* Uploaded resume card */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <Card className="overflow-hidden">
                     <div className="bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-orange-500/10 p-6">
@@ -139,86 +135,131 @@ export function WorkExperienceTab({
                                 <div>
                                     <h3 className="font-semibold text-lg">Uploaded Resume</h3>
                                     <p className="text-sm text-muted-foreground">
-                                        {user.hasResume && user.resume
-                                            ? "PDF document available"
-                                            : "No resume uploaded yet"}
+                                        {user.hasResume && user.resume ? "PDF document available" : "No resume uploaded yet"}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex flex-wrap gap-2 shrink-0">
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept=".pdf,.doc,.docx"
-                                    className="hidden"
-                                    onChange={handleFileChange}
-                                />
-                                {
-                                    isOwnProfile && (
-                                        <Button variant="outline" size="sm" className="gap-2" asChild>
-                                            <Link href="/ai/resume/create">
-                                                <Pencil className="w-4 h-4" />
-                                                Edit in Resume Creator
-                                            </Link>
-                                        </Button>
-                                    )
-                                }
-                                {
-                                    user.hasResume && user.resume ? (
-                                        <>
-                                            <Button variant="outline" size="sm" className="gap-2" onClick={handleViewResume}>
-                                                <Eye className="w-4 h-4" />
-                                                View
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
-                                                onClick={handleViewResume}
-                                            >
-                                                Download
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        isOwnProfile && (
-                                            <Button
-                                                onClick={handleUploadClick}
-                                                disabled={uploading}
-                                                className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
-                                            >
-                                                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                                                {uploading ? "Uploading..." : "Upload Resume"}
-                                            </Button>
-                                        )
-                                    )
-                                }
+                                <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
+                                {user.hasResume && user.resume ? (
+                                    <Button variant="outline" size="sm" className="gap-2" onClick={handleViewResume}>
+                                        <Eye className="w-4 h-4" /> View / Download
+                                    </Button>
+                                ) : isOwnProfile && (
+                                    <Button
+                                        onClick={handleUploadClick}
+                                        disabled={uploading}
+                                        className="gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600"
+                                    >
+                                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                                        {uploading ? "Uploading..." : "Upload Resume"}
+                                    </Button>
+                                )}
+                                {isOwnProfile && (
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href="/ai/resume">
+                                            <FileText className="w-4 h-4 mr-1.5" />
+                                            Resume Builder
+                                        </Link>
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
                 </Card>
             </motion.div>
+
+            {/* Work Experiences */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold">Platform Resume</h3>
-                    {
-                        isOwnProfile && user.username && (
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/resume/${user.username}`} target="_blank" rel="noopener noreferrer">
-                                        View public resume
-                                    </Link>
-                                </Button>
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href="/ai/resume/create">
-                                        <Pencil className="w-4 h-4 mr-1" />
-                                        Edit
-                                    </Link>
-                                </Button>
-                            </div>
-                        )
-                    }
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-base">Work Experience</h3>
+                    {isOwnProfile && (
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={openAdd}>
+                            <Plus className="w-3.5 h-3.5" /> Add Experience
+                        </Button>
+                    )}
                 </div>
-                <ResumePublicView user={resumeData} embedded />
+
+                {(!user.experiences || user.experiences.length === 0) ? (
+                    <Card className="p-8 text-center">
+                        <Building2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-30" />
+                        <p className="text-sm text-muted-foreground mb-3">No work experience added yet</p>
+                        {isOwnProfile && (
+                            <Button size="sm" onClick={openAdd}>
+                                <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Your First Experience
+                            </Button>
+                        )}
+                    </Card>
+                ) : (
+                    <div className="space-y-3">
+                        {user.experiences.map((exp, idx) => (
+                            <motion.div
+                                key={exp.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                            >
+                                <Card className="p-5">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                                            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <Building2 className="w-5 h-5 text-blue-500" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h4 className="font-semibold">{exp.roleTitle}</h4>
+                                                    {exp.isCurrentlyWorking && (
+                                                        <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                            Current
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">{exp.companyName}</p>
+                                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                                    <CalendarDays className="w-3 h-3" />
+                                                    {formatDate(exp.startDate)} — {exp.isCurrentlyWorking ? 'Present' : exp.endDate ? formatDate(exp.endDate) : '—'}
+                                                </div>
+                                                {exp.bulletPoints && exp.bulletPoints.length > 0 && (
+                                                    <ul className="mt-2 space-y-1">
+                                                        {exp.bulletPoints.map((b, i) => (
+                                                            <li key={i} className="text-sm text-muted-foreground flex gap-2">
+                                                                <span className="text-primary flex-shrink-0 mt-0.5">•</span>
+                                                                <span>{b}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {isOwnProfile && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 flex-shrink-0 text-muted-foreground"
+                                                onClick={() => openEdit(exp)}
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                        {isOwnProfile && (
+                            <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={openAdd}>
+                                <Plus className="w-3.5 h-3.5" /> Add Another Experience
+                            </Button>
+                        )}
+                    </div>
+                )}
             </motion.div>
+
+            <AddWorkExperienceSheet
+                open={sheetOpen}
+                onOpenChange={setSheetOpen}
+                onSuccess={handleSaved}
+                editExperience={editingExp}
+            />
         </div>
     )
 }

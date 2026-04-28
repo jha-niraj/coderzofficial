@@ -37,7 +37,7 @@ const tools = [
         features: ["Profile Sync", "Live Preview", "ATS Optimization"],
         status: "Live",
         credits: 0,
-        href: "/ai/resume/create"
+        href: "/ai/resume"
     },
     {
         id: "coverletter",

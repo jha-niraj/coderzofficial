@@ -271,7 +271,7 @@ export async function updatePortfolioProject(id: string, data: {
         });
 
         revalidatePath("/profile");
-        revalidatePath("/ai/resume/create");
+        revalidatePath("/ai/resume");
         return { success: true, message: "Project updated successfully", data: project };
     } catch (error) {
         console.error("Error updating portfolio project:", error);
@@ -459,7 +459,7 @@ export async function addUserEducation(data: {
         });
 
         revalidatePath("/profile");
-        revalidatePath("/ai/resume/create");
+        revalidatePath("/ai/resume");
         return { success: true, message: "Education added successfully", data: education };
     } catch (error) {
         console.error("Error adding education:", error);
@@ -496,7 +496,7 @@ export async function updateUserEducation(id: string, data: {
         });
 
         revalidatePath("/profile");
-        revalidatePath("/ai/resume/create");
+        revalidatePath("/ai/resume");
         return { success: true, message: "Education updated successfully", data: education };
     } catch (error) {
         console.error("Error updating education:", error);
@@ -523,7 +523,7 @@ export async function deleteUserEducation(id: string) {
         await prisma.userEducation.delete({ where: { id } });
 
         revalidatePath("/profile");
-        revalidatePath("/ai/resume/create");
+        revalidatePath("/ai/resume");
         return { success: true, message: "Education deleted successfully" };
     } catch (error) {
         console.error("Error deleting education:", error);

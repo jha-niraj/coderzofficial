@@ -49,6 +49,7 @@ interface ProfileSidebarProps {
 		portfolioProjects?: Array<unknown>;
 		university?: string | null;
 		certifications?: Array<unknown>;
+		educations?: Array<unknown>;
 		careerGoals?: string[];
 		targetCompanies?: string[];
 		expectedSalary?: string | null;

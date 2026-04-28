@@ -140,7 +140,7 @@ export function AtAGlanceTab({
 						<CardHeader className="pb-2">
 							<CardTitle className="text-lg">Personal Information</CardTitle>
 						</CardHeader>
-						<CardContent className="space-y-3">
+						<CardContent className="space-y-3 text-left">
 							{
 								user.name && (
 									<div className="flex items-center gap-3 py-1.5">
@@ -229,9 +229,30 @@ export function AtAGlanceTab({
 				>
 					<Card className="h-full">
 						<CardHeader className="pb-2">
-							<CardTitle className="text-lg">Professional Information</CardTitle>
+							<div className="flex items-center justify-between">
+								<CardTitle className="text-lg">Professional Information</CardTitle>
+								{isOwnProfile && onEditProfile && !(user.occupation || user.company || user.university || user.workExperience || user.website || user.expectedSalary || user.noticePeriod) && (
+									<Button variant="ghost" size="sm" onClick={onEditProfile}>
+										<Edit2 className="w-4 h-4 mr-1" />
+										Add
+									</Button>
+								)}
+							</div>
 						</CardHeader>
-						<CardContent className="space-y-3">
+						<CardContent className="space-y-3 text-left">
+							{
+								!(user.occupation || user.company || user.university || user.workExperience || user.website || (isOwnProfile && (user.expectedSalary || user.noticePeriod))) && (
+									<div className="py-6 text-center">
+										<Briefcase className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
+										<p className="text-sm text-muted-foreground">No professional details yet</p>
+										{isOwnProfile && onEditProfile && (
+											<Button variant="link" size="sm" className="mt-2 text-primary" onClick={onEditProfile}>
+												Add occupation, company & more
+											</Button>
+										)}
+									</div>
+								)
+							}
 							{
 								user.occupation && (
 									<div className="flex items-center gap-3 py-1.5">

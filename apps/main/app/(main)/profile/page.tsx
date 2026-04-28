@@ -14,8 +14,7 @@ import {
     EditProfileModal
 } from "@/components/profile";
 import type { ProfileTab } from "@/components/profile";
-import { ProfileDataEditSheet } from "./_components/profile-data-edit-sheet";
-import type { ProfileEditSection } from "./_components/profile-data-edit-sheet";
+import { AddSkillsSheet } from "@/components/profile/sheets/add-skills-sheet";
 import toast from "@repo/ui/components/ui/sonner";
 import {
     getOwnProfile, getUserProfileStats, endorseSkill
@@ -136,6 +135,14 @@ interface ProfileData {
         issuedDate: Date;
         link: string;
     }>;
+    educations?: Array<{
+        id: string;
+        institution: string;
+        degree: string | null;
+        startDate: Date | null;
+        endDate: Date | null;
+        bulletPoints?: string[];
+    }>;
     socialLinks?: Array<{
         id: string;
         platform: string;
@@ -170,10 +177,7 @@ export default function ProfilePage() {
     // Modal states
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [profileEditSheet, setProfileEditSheet] = useState<{ open: boolean; section: ProfileEditSection | null }>({ open: false, section: null });
-
-    const openProfileEditSheet = (section: ProfileEditSection) => setProfileEditSheet({ open: true, section });
-    const closeProfileEditSheet = () => setProfileEditSheet({ open: false, section: null });
+    const [skillsSheetOpen, setSkillsSheetOpen] = useState(false);
 
     // Load profile data
     const loadProfile = useCallback(async () => {
@@ -385,7 +389,7 @@ export default function ProfilePage() {
                         {...commonProps}
                         currentUserId={(displayProfile ?? profileData)?.id}
                         onEndorseSkill={handleEndorseSkill}
-                        onAddSkill={() => openProfileEditSheet('skills')}
+                        onAddSkill={() => setSkillsSheetOpen(true)}
                     />
                 );
             case "work_experience":
@@ -393,10 +397,16 @@ export default function ProfilePage() {
                     <WorkExperienceTab
                         {...commonProps}
                         onUploadResume={handleUploadResume}
+                        onRefresh={loadProfile}
                     />
                 );
             case "education":
-                return <EducationTab {...commonProps} />;
+                return (
+                    <EducationTab
+                        {...commonProps}
+                        onRefresh={loadProfile}
+                    />
+                );
             default:
                 return null;
         }
@@ -461,11 +471,11 @@ export default function ProfilePage() {
                 user={displayProfile ?? profileData}
                 onUpdate={refreshProfileData}
             />
-            <ProfileDataEditSheet
-                open={profileEditSheet.open}
-                section={profileEditSheet.section}
-                onClose={closeProfileEditSheet}
-                onSaved={() => { loadProfile(); }}
+            <AddSkillsSheet
+                open={skillsSheetOpen}
+                onOpenChange={setSkillsSheetOpen}
+                onSuccess={loadProfile}
+                existingSkills={profileData?.skills ?? []}
             />
         </div>
     );

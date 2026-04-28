@@ -59,7 +59,7 @@ const features: Feature[] = [
         title: "Resume Creator",
         description: "Create ATS-friendly resumes",
         icon: FileText,
-        href: "/ai/resume/create",
+        href: "/ai/resume",
         color: "text-pink-500",
         bgColor: "bg-pink-500/10",
         status: "available",

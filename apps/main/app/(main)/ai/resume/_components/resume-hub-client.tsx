@@ -54,7 +54,7 @@ const activeTools = [
         description: "Build ATS-friendly resumes with AI. Sync your profile data directly.",
         features: ["Profile Sync", "Live Preview", "ATS Optimization"],
         status: "Live",
-        href: "/ai/resume/create",
+        href: "/ai/resume",
     },
     {
         id: "cover-letter",
@@ -177,13 +177,13 @@ export function ResumeHubClient({
             toast.info("Fill your resume data first!", {
                 description: "Go to Resume Creator to add your experience, education, skills and projects. Then come back to pick a template.",
             })
-            router.push("/ai/resume/create")
+            router.push("/ai/resume")
             return
         }
 
         if (template.isPurchased) {
             // Already purchased — go to resume creator with template
-            router.push(`/ai/resume/create?template=${template.slug}`)
+            router.push(`/ai/resume?template=${template.slug}`)
             return
         }
 
@@ -194,12 +194,12 @@ export function ResumeHubClient({
 
         if (res.success) {
             if (res.alreadyOwned) {
-                router.push(`/ai/resume/create?template=${template.slug}`)
+                router.push(`/ai/resume?template=${template.slug}`)
             } else {
                 toast.success(`Template "${template.name}" unlocked!`, {
                     description: "Fill your resume data in the Resume Creator, then apply this template.",
                 })
-                router.push("/ai/resume/create")
+                router.push("/ai/resume")
             }
         } else {
             toast.error(res.error || "Failed to unlock template")
@@ -475,7 +475,7 @@ export function ResumeHubClient({
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                         <Button
                             size="lg"
-                            onClick={() => router.push("/ai/resume/create")}
+                            onClick={() => router.push("/ai/resume")}
                             className="h-11 px-7 bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 rounded-full font-semibold text-sm"
                         >
                             Build Your Resume

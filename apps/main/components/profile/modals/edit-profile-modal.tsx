@@ -209,8 +209,8 @@ export function EditProfileModal({
 
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
-            <SheetContent side="bottom" className="h-[90vh] w-full rounded-t-2xl p-0 flex flex-col">
-                <div className="w-full max-w-7xl mx-auto flex flex-col h-full">
+            <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0 flex flex-col">
+                <div className="w-full flex flex-col h-full">
                 <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                     <SheetTitle className="text-xl font-semibold flex items-center gap-2">
                         <User className="w-5 h-5" />
@@ -336,7 +336,7 @@ export function EditProfileModal({
                             <div className="p-4 rounded-lg bg-muted/50 border border-dashed">
                                 <p className="text-sm text-muted-foreground">
                                     To add work experience, education, skills, or social links, use the{" "}
-                                    <Link href="/ai/resume/create" className="text-primary hover:underline font-medium">
+                                    <Link href="/ai/resume" className="text-primary hover:underline font-medium">
                                         Resume Creator
                                     </Link>
                                     .
