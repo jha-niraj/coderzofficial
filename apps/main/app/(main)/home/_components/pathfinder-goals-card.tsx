@@ -33,114 +33,102 @@ export default function PathfinderGoalsCard({ goals }: PathfinderGoalsCardProps)
 
     return (
         <>
-            <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
+            <div className="h-full rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 flex flex-col">
                 <div className="pb-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                                <Target className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                                <Target className="h-4 w-4 text-violet-500" />
                             </div>
-                            <h3 className="text-lg">Learning Goals</h3>
+                            <span className="font-semibold text-sm">Learning Goals</span>
                         </div>
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
+                            className="h-7 text-xs"
                             onClick={() => router.push("/pathfinder")}
                         >
-                            <Plus className="h-4 w-4 mr-1" />
+                            <Plus className="h-3 w-3 mr-1" />
                             New Goal
                         </Button>
                     </div>
                     {
                         goals.length > 0 && (
-                            <div className="mt-4 space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Progress</span>
-                                    <span className="font-medium">
-                                        {completedCount}/{total} completed
+                            <div className="mt-4 space-y-1.5">
+                                <div className="flex justify-between text-xs text-neutral-500">
+                                    <span>Overall progress</span>
+                                    <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                                        {completedCount}/{total} done
                                     </span>
                                 </div>
-                                <Progress value={progressPercent} className="h-2" />
+                                <Progress value={progressPercent} className="h-1.5" />
                             </div>
                         )
                     }
                 </div>
-                <div className="space-y-3">
+                <div className="flex-1 flex flex-col justify-center space-y-2">
                     {
                         activeGoals.length === 0 ? (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-center py-8 space-y-3"
+                                className="text-center py-6 space-y-3"
                             >
-                                <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                                    <Target className="h-6 w-6 text-muted-foreground" />
+                                <div className="mx-auto w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center">
+                                    <Target className="h-5 w-5 text-violet-400" />
                                 </div>
                                 <div>
-                                    <p className="font-medium">No active goals</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        Create a learning goal to track your progress
-                                    </p>
+                                    <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">No active goals</p>
+                                    <p className="text-xs text-neutral-500 mt-0.5">Set a learning goal to track progress</p>
                                 </div>
+                                <button
+                                    onClick={() => router.push("/pathfinder")}
+                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-500 hover:text-violet-600 transition-colors"
+                                >
+                                    <Plus className="h-3 w-3" />
+                                    Create your first goal
+                                </button>
                             </motion.div>
                         ) : (
                             <AnimatePresence>
                                 {
-                                    activeGoals.slice(0, 5).map((goal, index) => {
+                                    activeGoals.slice(0, 4).map((goal, index) => {
                                         const category = PATHFINDER_CATEGORIES[goal.category as keyof typeof PATHFINDER_CATEGORIES]
                                         return (
                                             <motion.div
                                                 key={goal.id}
-                                                initial={{ opacity: 0, x: -20 }}
+                                                initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                exit={{ opacity: 0, x: 20 }}
-                                                transition={{ delay: index * 0.1 }}
-                                                className="p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors bg-muted/30 border-border"
+                                                exit={{ opacity: 0, x: 10 }}
+                                                transition={{ delay: index * 0.06 }}
+                                                className="px-3 py-2.5 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                                                 onClick={() => router.push("/pathfinder")}
                                             >
-                                                <div className="flex items-start gap-3">
-                                                    <span className="text-lg">{category?.emoji ?? "🎯"}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-base flex-shrink-0">{category?.emoji ?? "🎯"}</span>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-medium truncate">{goal.title}</p>
+                                                        <p className="text-sm font-medium truncate text-neutral-800 dark:text-neutral-200">{goal.title}</p>
                                                         <div className="flex items-center gap-2 mt-1">
-                                                            <Progress
-                                                                value={goal.progressPercent}
-                                                                className="h-1.5 flex-1 max-w-[120px]"
-                                                            />
-                                                            <span className="text-xs text-muted-foreground">
+                                                            <Progress value={goal.progressPercent} className="h-1 flex-1" />
+                                                            <span className="text-[10px] text-neutral-400 flex-shrink-0 w-6 text-right">
                                                                 {goal.progressPercent}%
                                                             </span>
                                                         </div>
-                                                        {
-                                                            (goal.duration || goal.estimatedDays) && (
-                                                                <p className="text-xs text-muted-foreground mt-0.5">
-                                                                    {
-                                                                        goal.duration
-                                                                            ? DURATION_LABELS[goal.duration] ?? goal.duration
-                                                                            : goal.estimatedDays
-                                                                                ? `${goal.estimatedDays} days`
-                                                                                : null
-                                                                    }
-                                                                </p>
-                                                            )
-                                                        }
                                                     </div>
-                                                    <CheckCircle2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                                    <CheckCircle2 className="h-4 w-4 text-neutral-300 flex-shrink-0" />
                                                 </div>
                                             </motion.div>
                                         )
                                     })
                                 }
                                 {
-                                    activeGoals.length > 5 && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full"
+                                    activeGoals.length > 4 && (
+                                        <button
+                                            className="w-full text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 py-1.5 transition-colors"
                                             onClick={() => router.push("/pathfinder")}
                                         >
-                                            View all {activeGoals.length} goals
-                                        </Button>
+                                            +{activeGoals.length - 4} more goals
+                                        </button>
                                     )
                                 }
                             </AnimatePresence>

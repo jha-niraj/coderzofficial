@@ -39,7 +39,7 @@ interface ShareCreditsProps {
 
 export default function ShareCredits({ transfers, currentCredits }: ShareCreditsProps) {
     return (
-        <Card className="border-primary/10">
+        <Card className="h-full rounded-2xl border-neutral-200 dark:border-neutral-800">
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

@@ -88,30 +88,32 @@ export default function ContinueLearning({ projects, studios }: ContinueLearning
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-4"
+            className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5"
         >
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Continue Learning</h2>
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="font-semibold text-sm">Continue Learning</span>
                 </div>
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
                     <Link href="/projects">
-                        View all <ArrowRight className="ml-1 h-4 w-4" />
+                        View all <ArrowRight className="ml-1 h-3 w-3" />
                     </Link>
                 </Button>
             </div>
             <div className="relative">
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+                <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
                     {
                         projects.map((progress) => (
                             <motion.div
                                 key={progress.id}
                                 variants={itemVariants}
-                                className="flex-shrink-0 w-[300px]"
+                                className="flex-shrink-0 w-[260px]"
                             >
                                 <Link href={`/projects/${progress.project.slug}`}>
-                                    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-primary/10 hover:border-primary/30">
+                                    <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-neutral-200 dark:border-neutral-700 hover:border-primary/30 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
                                         <CardHeader className="pb-2">
                                             <div className="flex items-start justify-between">
                                                 <div className="p-2 rounded-lg bg-primary/10">
@@ -155,10 +157,10 @@ export default function ContinueLearning({ projects, studios }: ContinueLearning
                             <motion.div
                                 key={studio.id}
                                 variants={itemVariants}
-                                className="flex-shrink-0 w-[300px]"
+                                className="flex-shrink-0 w-[260px]"
                             >
                                 <Link href={`/studio/${studio.slug || studio.id}`}>
-                                    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-purple-500/10 hover:border-purple-500/30">
+                                    <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-neutral-200 dark:border-neutral-700 hover:border-purple-500/30 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
                                         <CardHeader className="pb-2">
                                             <div className="flex items-start justify-between">
                                                 <div className="p-2 rounded-lg bg-purple-500/10 text-lg">
@@ -193,7 +195,6 @@ export default function ContinueLearning({ projects, studios }: ContinueLearning
                         ))
                     }
                 </div>
-                <div className="absolute right-0 top-0 bottom-4 w-20 bg-gradient-to-l from-background to-transparent pointer-events-none" />
             </div>
         </motion.div>
     );

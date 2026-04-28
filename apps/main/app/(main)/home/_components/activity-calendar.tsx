@@ -135,18 +135,18 @@ export default function ActivityCalendar({ data }: ActivityCalendarProps) {
 
     return (
         <>
-            <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2.5 rounded-lg bg-green-500/10">
-                            <CalendarDays className="h-5 w-5 text-green-500" />
+            <div className="h-full rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
+                <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <CalendarDays className="h-4 w-4 text-emerald-500" />
                         </div>
-                        <h3 className="font-semibold text-xl">Activity</h3>
+                        <span className="font-semibold text-sm">Activity</span>
                     </div>
-                    <div className="flex items-center gap-2 text-base">
-                        <Flame className="h-5 w-5 text-orange-500" />
-                        <span className="font-bold text-lg">{currentStreak}</span>
-                        <span className="text-muted-foreground">day streak</span>
+                    <div className="flex items-center gap-1.5">
+                        <Flame className="h-4 w-4 text-orange-500" />
+                        <span className="font-bold text-sm">{currentStreak}</span>
+                        <span className="text-xs text-neutral-500">day streak</span>
                     </div>
                 </div>
                 <div className="p-4">

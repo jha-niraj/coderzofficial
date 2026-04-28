@@ -56,7 +56,7 @@ export default function Referrals({ stats }: ReferralsProps) {
     };
 
     return (
-        <Card className="border-primary/10">
+        <Card className="h-full rounded-2xl border-neutral-200 dark:border-neutral-800">
             <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-purple-500/10">

@@ -1,9 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-    FolderKanban, ChevronRight
-} from "lucide-react";
+import { FolderKanban, ArrowRight, Layers } from "lucide-react";
+import { Badge } from "@repo/ui/components/ui/badge";
 import Link from "next/link";
 
 interface Project {
@@ -21,66 +20,74 @@ interface ProjectsPreviewProps {
     projects: Project[];
 }
 
+const difficultyConfig: Record<string, { color: string; dot: string }> = {
+    easy:   { color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20", dot: "bg-emerald-500" },
+    medium: { color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",         dot: "bg-amber-500"   },
+    hard:   { color: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",                 dot: "bg-red-500"     },
+};
+
 export default function ProjectsPreview({ projects }: ProjectsPreviewProps) {
-    const displayProjects = projects.slice(0, 4);
+    const display = projects.slice(0, 4);
 
     return (
-        <div className="rounded-xl border border-primary/10 bg-card/50 p-4">
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-blue-500/10">
+        <div className="h-full rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                         <FolderKanban className="h-4 w-4 text-blue-500" />
                     </div>
-                    <h3 className="font-semibold text-base">My Projects</h3>
+                    <span className="font-semibold text-sm">My Projects</span>
                 </div>
-                <Link
-                    href="/projects"
-                    className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
-                >
-                    View all
-                    <ChevronRight className="h-3 w-3" />
+                <Link href="/projects" className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                    View all <ArrowRight className="h-3 w-3" />
                 </Link>
             </div>
-            {
-                displayProjects.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                        {
-                            displayProjects.map((progress) => (
-                                <Link
-                                    key={progress.id}
-                                    href={`/projects/${progress.project.slug}`}
+
+            {/* List */}
+            <div className="flex-1 flex flex-col justify-center">
+                {display.length > 0 ? (
+                    <div className="space-y-2">
+                        {display.map((p, i) => {
+                            const cfg = difficultyConfig[p.project.difficulty?.toLowerCase()] ?? difficultyConfig.medium!;
+                            return (
+                                <motion.div
+                                    key={p.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.06 }}
                                 >
-                                    <motion.div
-                                        whileHover={{ scale: 1.02 }}
-                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium transition-colors"
-                                    >
-                                        <span className="truncate max-w-[160px]">
-                                            {progress.project.title}
-                                        </span>
-                                        <ChevronRight className="h-3 w-3 shrink-0 opacity-70" />
-                                    </motion.div>
-                                </Link>
-                            ))
-                        }
+                                    <Link href={`/projects/${p.project.slug}`}>
+                                        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors group">
+                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                                            <span className="flex-1 text-sm font-medium truncate text-neutral-800 dark:text-neutral-200">
+                                                {p.project.title}
+                                            </span>
+                                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 border ${cfg.color} capitalize flex-shrink-0`}>
+                                                {p.project.difficulty}
+                                            </Badge>
+                                            <ArrowRight className="h-3 w-3 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                        </div>
+                                    </Link>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 ) : (
-                    <div className="py-4 text-center">
-                        <p className="text-sm text-muted-foreground mb-3">
-                            No projects in progress
-                        </p>
-                        <Link href="/projects">
-                            <motion.span
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-sm font-medium cursor-pointer"
-                            >
-                                Show My Projects
-                                <ChevronRight className="h-3 w-3" />
-                            </motion.span>
+                    <div className="text-center py-6 space-y-3">
+                        <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
+                            <Layers className="h-5 w-5 text-blue-400" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">No active projects</p>
+                            <p className="text-xs text-neutral-500 mt-0.5">Pick a project to start building</p>
+                        </div>
+                        <Link href="/projects" className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors">
+                            Browse projects <ArrowRight className="h-3 w-3" />
                         </Link>
                     </div>
-                )
-            }
+                )}
+            </div>
         </div>
     );
 }
