@@ -1,17 +1,25 @@
 'use server'
 
 import { auth } from '@repo/auth'
-import { tavily } from '@tavily/core'
+import Exa from 'exa-js'
 import { openai } from '@/lib/openai-client'
 import { ResumeDraftContent } from '@/types/resume-draft'
 import { createResumeDraft } from './resume-draft.action'
 import { z } from 'zod'
 import { zodResponseFormat } from 'openai/helpers/zod'
 
-let _tavily: ReturnType<typeof tavily> | null = null
-function getTavily() {
-    if (!_tavily) _tavily = tavily({ apiKey: process.env.TAVILY_API_KEY! })
-    return _tavily
+// ── Exa client (lazy singleton) ──────────────────────────────────────────────
+let _exa: Exa | null = null
+const exa = new Proxy({} as Exa, {
+    get(_, prop) {
+        if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
+        return Reflect.get(_exa, prop)
+    }
+})
+
+async function fetchPageText(url: string): Promise<string> {
+    const result = await exa.getContents([url], { text: true, livecrawlTimeout: 10000 })
+    return result?.results?.[0]?.text?.trim() ?? ''
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,16 +114,10 @@ export async function importFromLinkedIn(url: string) {
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     try {
-        const client = getTavily()
-        const result = await client.extract([url])
+        const raw = await fetchPageText(url)
+        if (!raw) return { success: false, error: 'Could not extract LinkedIn profile. Make sure the profile is public.' }
 
-        if (!result?.results?.[0]?.rawContent?.trim()) {
-            return { success: false, error: 'Could not extract LinkedIn profile. Make sure the profile is public.' }
-        }
-
-        const raw = result.results[0].rawContent
         const content = await extractStructuredContent(raw, 'a LinkedIn profile page')
-
         return { success: true, content, rawPreview: raw.slice(0, 500) }
     } catch (e) {
         return { success: false, error: e instanceof Error ? e.message : 'Import failed' }
@@ -130,23 +132,16 @@ export async function importFromGitHub(url: string) {
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     try {
-        const client = getTavily()
-
-        // Fetch profile + repositories in parallel
         const username = url.replace(/https?:\/\/(www\.)?github\.com\/?/, '').split('/')[0]
-        const [profileRes, reposRes] = await Promise.all([
-            client.extract([`https://github.com/${username}`]),
-            client.extract([`https://github.com/${username}?tab=repositories`]),
+
+        const [profileRaw, reposRaw] = await Promise.all([
+            fetchPageText(`https://github.com/${username}`),
+            fetchPageText(`https://github.com/${username}?tab=repositories`),
         ])
 
-        const profileRaw = profileRes?.results?.[0]?.rawContent ?? ''
-        const reposRaw = reposRes?.results?.[0]?.rawContent ?? ''
+        if (!profileRaw) return { success: false, error: 'Could not extract GitHub profile. Make sure the profile is public.' }
+
         const combined = `=== GitHub Profile ===\n${profileRaw}\n\n=== Repositories ===\n${reposRaw}`
-
-        if (!profileRaw.trim()) {
-            return { success: false, error: 'Could not extract GitHub profile. Make sure the profile is public.' }
-        }
-
         const content = await extractStructuredContent(combined, 'a GitHub developer profile and repositories')
 
         return { success: true, content, username }
@@ -180,11 +175,8 @@ export async function importFromUrl(url: string) {
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     try {
-        const client = getTavily()
-        const result = await client.extract([url])
-        const raw = result?.results?.[0]?.rawContent ?? ''
-
-        if (!raw.trim()) return { success: false, error: 'Could not extract content from this URL.' }
+        const raw = await fetchPageText(url)
+        if (!raw) return { success: false, error: 'Could not extract content from this URL.' }
 
         const content = await extractStructuredContent(raw, 'a professional profile or portfolio page')
         return { success: true, content }
@@ -206,25 +198,19 @@ export async function importAndCreateDraft(input: {
     const session = await auth()
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const sources: string[] = []
-    const client = getTavily()
-
     try {
-        // Collect all raw content
         const parts: string[] = []
         const usedSources: string[] = []
 
         if (input.linkedinUrl) {
-            const r = await client.extract([input.linkedinUrl])
-            const raw = r?.results?.[0]?.rawContent ?? ''
-            if (raw.trim()) { parts.push(`=== LinkedIn Profile ===\n${raw}`); usedSources.push('linkedin') }
+            const raw = await fetchPageText(input.linkedinUrl)
+            if (raw) { parts.push(`=== LinkedIn Profile ===\n${raw}`); usedSources.push('linkedin') }
         }
 
         if (input.githubUrl) {
             const username = input.githubUrl.replace(/https?:\/\/(www\.)?github\.com\/?/, '').split('/')[0]
-            const r = await client.extract([`https://github.com/${username}`])
-            const raw = r?.results?.[0]?.rawContent ?? ''
-            if (raw.trim()) { parts.push(`=== GitHub Profile ===\n${raw}`); usedSources.push('github') }
+            const raw = await fetchPageText(`https://github.com/${username}`)
+            if (raw) { parts.push(`=== GitHub Profile ===\n${raw}`); usedSources.push('github') }
         }
 
         if (input.pastedText?.trim()) {
