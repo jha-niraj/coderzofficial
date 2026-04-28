@@ -6,7 +6,6 @@ import {
 } from '@repo/ui/components/ui/sheet'
 import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
-import { Label } from '@repo/ui/components/ui/label'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -14,6 +13,7 @@ import {
 import { Loader2, Plus, Trash2, Code2, X } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import { updateUserSkills, deleteSkill } from '@/actions/(main)/user/user.action'
+import type { UserSkill } from '@/types/user'
 
 const CATEGORIES = [
     'LANGUAGES', 'FRAMEWORKS_LIBRARIES', 'TOOLS_DATABASES',
@@ -61,7 +61,7 @@ export function AddSkillsSheet({ open, onOpenChange, onSuccess, existingSkills =
         if (!pending.length) return toast.error('Add at least one skill')
         setSaving(true)
         try {
-            await updateUserSkills(pending as any)
+            await updateUserSkills(pending as UserSkill[])
             toast.success(`${pending.length} skill${pending.length > 1 ? 's' : ''} added!`)
             setPending([])
             onSuccess()

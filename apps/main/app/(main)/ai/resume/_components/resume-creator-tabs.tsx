@@ -41,7 +41,7 @@ interface ResumeCreatorTabsProps {
     compact?: boolean
 }
 
-export function ResumeCreatorTabs({ defaultTab = "experience", onSaved, compact = false }: ResumeCreatorTabsProps) {
+export function ResumeCreatorTabs({ defaultTab = "experience", onSaved: _onSaved, compact: _compact = false }: ResumeCreatorTabsProps) {
     const [activeTab, setActiveTab] = useState<TabId>((defaultTab as TabId) ?? "experience")
     const [copied, setCopied] = useState(false)
     const [editProfileOpen, setEditProfileOpen] = useState(false)

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle
 } from "@repo/ui/components/ui/sheet"

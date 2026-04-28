@@ -42,7 +42,7 @@ const RESUME_CREATOR_LINK = "/ai/resume";
 export function ProfileStrengthSheet({
 	open,
 	onOpenChange,
-	completionScore,
+	completionScore: _completionScore,
 	user,
 }: ProfileStrengthSheetProps) {
 	const hasBasicInfo = !!(user.name && user.bio && user.image && user.image !== defaultImage);
