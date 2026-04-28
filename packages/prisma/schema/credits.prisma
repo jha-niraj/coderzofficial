@@ -5,8 +5,9 @@
 // -----------------------------------------------------------------------------
 enum Module {
     PATHFINDER
-    LEARN      @map("CONCEPTS")
-    // Add more as needed: MOCK_INTERVIEW, JOB_ASSISTANT, etc.
+    LEARN           @map("CONCEPTS")
+    RESUME_TEMPLATE
+    RESUME_DRAFT
 }
 
 // -----------------------------------------------------------------------------

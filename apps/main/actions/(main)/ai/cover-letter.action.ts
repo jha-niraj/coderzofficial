@@ -2,21 +2,29 @@
 
 import { auth } from "@repo/auth";
 import { prisma } from "@repo/prisma";
-import Exa from "exa-js";
+// import Exa from "exa-js"; // Commented out — replaced by Tavily
+import { tavily } from "@tavily/core";
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { CoverLetterGenerationData } from "@/types/aitools/cover-letter";
 
+// ── Tavily client (lazy singleton) ───────────────────────────────────────────
+let _tavily: ReturnType<typeof tavily> | null = null
+function getTavilyClient() {
+    if (!_tavily) _tavily = tavily({ apiKey: process.env.TAVILY_API_KEY! })
+    return _tavily
+}
 
-let _exa: Exa | null = null
-const exa = new Proxy({} as Exa, {
-    get(_, prop) {
-        if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
-        return Reflect.get(_exa, prop)
-    }
-})
+// ── Exa client — kept commented out for reference ────────────────────────────
+// let _exa: Exa | null = null
+// const exa = new Proxy({} as Exa, {
+//     get(_, prop) {
+//         if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
+//         return Reflect.get(_exa, prop)
+//     }
+// })
 
 export async function currentUser() {
     const session = await auth();
@@ -30,34 +38,47 @@ export async function extractJobDescription(url: string) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const result = await exa.getContents([url], {
-            highlights: true,
-            livecrawlTimeout: 5000,
-        });
+        const client = getTavilyClient()
+        const result = await client.extract([url])
 
-        if (!result || !result.results || result.results.length === 0) {
-            return { success: false, error: "Failed to extract job description. Try pasting it manually." };
+        if (!result?.results?.length) {
+            return { success: false, error: "Could not extract the page. Try pasting the job description manually." };
         }
 
-        const results = result.results || [];
-        const firstResult = results[0];
+        const raw = result.results[0]?.rawContent || ""
+        if (!raw.trim()) {
+            return { success: false, error: "Extracted content was empty. Try pasting the job description manually." };
+        }
 
-        const highlights = firstResult?.highlights;
-        const jd = typeof highlights === 'object' && highlights ? highlights.join("\n") : "";
-        const title = firstResult?.title || "";
+        // Best-effort: use GPT to pull just the job title from the raw content
+        let title = ""
+        try {
+            const titleRes = await openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [{
+                    role: "user",
+                    content: `Extract ONLY the job title from this job posting (e.g. "Senior Frontend Engineer"). Return just the title, nothing else:\n\n${raw.slice(0, 3000)}`
+                }],
+                max_tokens: 30,
+            })
+            title = titleRes.choices[0]?.message?.content?.trim() || ""
+        } catch {
+            // Title extraction is best-effort — not critical
+        }
 
-        return { success: true, description: jd, title: title };
+        return { success: true, description: raw, title }
     } catch (e: unknown) {
         return { success: false, error: e instanceof Error ? e.message : "Failed to extract job description." };
     }
 }
 
+// NOTE: OpenAI structured outputs do not support .optional() — use .nullable() instead.
 const QuestionsSchema = z.object({
     questions: z.array(z.object({
         id: z.string(),
         text: z.string(),
         type: z.enum(["TEXTAREA", "SINGLE", "MULTIPLE"]),
-        options: z.array(z.string()).optional(), // Only for SINGLE/MULTIPLE
+        options: z.array(z.string()).nullable(), // null for TEXTAREA, array for SINGLE/MULTIPLE
     }))
 });
 
@@ -73,7 +94,9 @@ export async function generateCoverLetterQuestions(jobDescription: string) {
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert technical recruiter and career coach. Review the provided Job Description and generate 3 to 5 targeted questions for the applicant. These questions should help customize their cover letter based on specific job requirements. The questions should ask for specific metrics, examples of experience with required tools, or how their past work aligns with core responsibilities. Output ONLY valid JSON matching the schema.`
+                    content: `You are an expert technical recruiter and career coach. Review the provided Job Description and generate 3 to 5 targeted questions for the applicant. These questions should help customize their cover letter based on specific job requirements. The questions should ask for specific metrics, examples of experience with required tools, or how their past work aligns with core responsibilities.
+
+IMPORTANT: Always include the "options" field in every question. Set it to null for TEXTAREA questions and to an array of 3-4 choices for SINGLE or MULTIPLE questions. Never omit the field.`
                 },
                 {
                     role: "user",

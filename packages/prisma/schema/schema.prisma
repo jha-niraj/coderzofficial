@@ -689,6 +689,9 @@ model User {
     // RESUME TEMPLATE RELATIONS
     // ===============================================
     resumeTemplateGenerations ResumeTemplateGeneration[] @relation("UserResumeTemplateGenerations")
+    resumeDrafts              ResumeDraft[]               @relation("UserResumeDrafts")
+    createdTemplates          ResumeTemplate[]            @relation("UserCreatedTemplates")
+    templatePurchasesBuyer    TemplatePurchase[]          @relation("TemplatePurchasesBuyer")
 
     @@index([username])
     @@index([email])

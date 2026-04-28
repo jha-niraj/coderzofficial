@@ -12,7 +12,7 @@ import {
     DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu'
 import {
-    Mic, Users, Target, Plus, ChevronDown, History, LayoutGrid
+    Mic, Target, Plus, ChevronDown, History, LayoutGrid
 } from 'lucide-react'
 import { cn } from '@repo/ui/lib/utils'
 import { MOCK_CATEGORIES } from '../_constants/mock-categories'

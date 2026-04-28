@@ -14,15 +14,6 @@ interface PathfinderGoalsCardProps {
     goals: PathfinderGoalSummary[]
 }
 
-const DURATION_LABELS: Record<string, string> = {
-    ONE_WEEK: "1 Week",
-    FORTNIGHT: "Fortnight",
-    ONE_MONTH: "1 Month",
-    TWO_MONTHS: "2 Months",
-    THREE_MONTHS: "3 Months",
-    SIX_MONTHS: "6 Months",
-    CUSTOM: "Custom",
-}
 
 export default function PathfinderGoalsCard({ goals }: PathfinderGoalsCardProps) {
     const router = useRouter()

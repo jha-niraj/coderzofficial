@@ -180,4 +180,7 @@ export {
     PracticeSessionStatus,
     PracticeMode,
 
+    // Credits Module:
+    Module,
+
 } from "@prisma/client";

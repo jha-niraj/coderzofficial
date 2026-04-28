@@ -147,25 +147,43 @@ model CoverLetter {
 // ===============================================
 
 model ResumeTemplate {
-    id              String   @id @default(cuid())
-    slug            String   @unique
+    id              String  @id @default(cuid())
+    slug            String  @unique
     name            String
-    description     String   @db.Text
-    previewImageUrl String // Demo/preview image URL
-    sectionOrder    Json // Ordered array of sections e.g. ["header","experience","education","skills","projects"]
-    isDefault       Boolean  @default(false)
-    creditsCost     Int      @default(10)
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+    description     String  @db.Text
+    previewImageUrl String
+    sectionOrder    Json
+    isDefault       Boolean @default(false)
+    creditsCost     Int     @default(10)
+
+    // Platform vs user-created
+    isPlatform  Boolean @default(false)
+    createdById String?
+    createdBy   User?   @relation("UserCreatedTemplates", fields: [createdById], references: [id], onDelete: SetNull)
+
+    // Forge marketplace
+    isMarketplace    Boolean @default(false)
+    isFeatured       Boolean @default(false)
+    marketplacePrice Int     @default(0)
+    config           Json? // custom styling { primaryColor, font, layout }
+
+    // Stats
+    totalSales   Int      @default(0)
+    totalRevenue Int      @default(0)
+    tags         String[] @default([])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     generations ResumeTemplateGeneration[]
+    purchases   TemplatePurchase[]          @relation("TemplatePurchases")
 }
 
 model ResumeTemplateGeneration {
     id               String   @id @default(cuid())
     userId           String
     templateId       String
-    generatedContent Json? // The generated resume content with the template applied
+    generatedContent Json?
     createdAt        DateTime @default(now())
 
     user     User           @relation("UserResumeTemplateGenerations", fields: [userId], references: [id], onDelete: Cascade)
@@ -174,4 +192,62 @@ model ResumeTemplateGeneration {
     @@index([userId])
     @@index([templateId])
     @@index([userId, templateId])
+}
+// ===============================================
+// RESUME DRAFT SYSTEM
+// ===============================================
+
+model ResumeDraft {
+    id           String  @id @default(cuid())
+    userId       String
+    name         String  // "Google SWE Resume"
+    templateSlug String  @default("clean-minimal")
+
+    // Full content snapshot (independent from live profile)
+    content Json // { header, experience, projects, education, skills, certifications }
+
+    // Job targeting
+    tailoredFor String?
+    jdSnapshot  String?  @db.Text
+    atsScore    Int?
+
+    // Sharing
+    isPublic  Boolean @default(false)
+    shareSlug String  @unique @default(cuid())
+    viewCount Int     @default(0)
+
+    // Import metadata
+    importedFrom String? // "linkedin" | "github" | "pdf" | "manual" | "profile"
+    importedUrl  String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user User @relation("UserResumeDrafts", fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([shareSlug])
+    @@index([isPublic])
+}
+
+// ===============================================
+// TEMPLATE MARKETPLACE
+// ===============================================
+
+model TemplatePurchase {
+    id              String @id @default(cuid())
+    buyerId         String
+    templateId      String
+    pricePaid       Int // credits paid
+    creatorEarning  Int // 90%
+    platformFee     Int // 10%
+
+    createdAt DateTime @default(now())
+
+    buyer    User           @relation("TemplatePurchasesBuyer", fields: [buyerId], references: [id])
+    template ResumeTemplate @relation("TemplatePurchases", fields: [templateId], references: [id])
+
+    @@unique([buyerId, templateId])
+    @@index([buyerId])
+    @@index([templateId])
 }

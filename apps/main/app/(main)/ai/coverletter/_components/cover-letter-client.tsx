@@ -45,31 +45,34 @@ function LoadingOverlay({ message, sub }: { message: string; sub?: string }) {
 function StepIndicator({ current }: { current: number }) {
     const steps = [
         { n: 1, label: "Job Details", icon: FileText },
-        { n: 2, label: "Tailor",      icon: Wand2 },
+        { n: 2, label: "Tailor", icon: Wand2 },
         { n: 3, label: "Your Letter", icon: CheckCircle2 },
     ]
     return (
         <div className="flex items-center gap-0 mb-6">
-            {steps.map((s, i) => {
-                const Icon = s.icon
-                const done = current > s.n
-                const active = current === s.n
-                return (
-                    <div key={s.n} className="flex items-center">
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            active   ? "bg-neutral-900 text-white dark:bg-white dark:text-black" :
-                            done     ? "text-neutral-500 dark:text-neutral-400" :
-                                       "text-neutral-400 dark:text-neutral-600"
-                        }`}>
-                            <Icon className="w-3.5 h-3.5" />
-                            <span>{s.label}</span>
+            {
+                steps.map((s, i) => {
+                    const Icon = s.icon
+                    const done = current > s.n
+                    const active = current === s.n
+                    return (
+                        <div key={s.n} className="flex items-center">
+                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${active ? "bg-neutral-900 text-white dark:bg-white dark:text-black" :
+                                done ? "text-neutral-500 dark:text-neutral-400" :
+                                    "text-neutral-400 dark:text-neutral-600"
+                                }`}>
+                                <Icon className="w-3.5 h-3.5" />
+                                <span>{s.label}</span>
+                            </div>
+                            {
+                                i < steps.length - 1 && (
+                                    <ChevronRight className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-700 mx-1" />
+                                )
+                            }
                         </div>
-                        {i < steps.length - 1 && (
-                            <ChevronRight className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-700 mx-1" />
-                        )}
-                    </div>
-                )
-            })}
+                    )
+                })
+            }
         </div>
     )
 }
@@ -211,7 +214,7 @@ export function CoverLetterClient({
                             <Label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                                 Job Link
                             </Label>
-                            <p className="text-xs text-neutral-500">Paste the job posting URL and we'll auto-extract the role details.</p>
+                            <p className="text-xs text-neutral-500">Paste the job posting URL and we&apos;ll auto-extract the role details.</p>
                             <div className="flex gap-2 mt-1">
                                 <Input
                                     placeholder="https://company.com/careers/..."
@@ -400,11 +403,10 @@ export function CoverLetterClient({
                             <div
                                 key={h.id}
                                 onClick={() => router.push(`/ai/resume/cover-letter?id=${h.id}`)}
-                                className={`group p-3 rounded-xl border cursor-pointer transition-colors ${
-                                    selectedId === h.id
-                                        ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white"
-                                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                                }`}
+                                className={`group p-3 rounded-xl border cursor-pointer transition-colors ${selectedId === h.id
+                                    ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white"
+                                    : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                                    }`}
                             >
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="overflow-hidden flex-1">
