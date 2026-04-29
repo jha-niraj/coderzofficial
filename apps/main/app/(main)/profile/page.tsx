@@ -8,6 +8,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import {
     AlertCircle, User as UserIcon, RefreshCw
 } from "lucide-react";
+import { DotmSquare11 } from "@repo/ui/components/ui/dotm-square-11";
 import {
     ProfileHeader, ProfileTabs, ProfileSidebar, AtAGlanceTab, ProjectsTab,
     SkillsTab, WorkExperienceTab, EducationTab, ShareProfileModal,
@@ -272,13 +273,10 @@ export default function ProfilePage() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-center"
+                    className="flex flex-col items-center gap-4"
                 >
-                    <div className="relative">
-                        <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin mx-auto" />
-                        <UserIcon className="w-6 h-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" />
-                    </div>
-                    <p className="mt-4 text-muted-foreground font-medium">Loading your profile...</p>
+                    <DotmSquare11 size={48} dotSize={6} speed={1.4} />
+                    <p className="text-sm text-muted-foreground font-medium">Loading profile...</p>
                 </motion.div>
             </div>
         );

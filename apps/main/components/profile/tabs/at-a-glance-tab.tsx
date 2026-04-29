@@ -123,7 +123,7 @@ export function AtAGlanceTab({
 								</div>
 							</CardHeader>
 							<CardContent>
-								<p className="text-muted-foreground whitespace-pre-line">{user.bio}</p>
+								<p className="text-muted-foreground whitespace-pre-line text-left">{user.bio}</p>
 							</CardContent>
 						</Card>
 					</motion.div>
@@ -140,7 +140,7 @@ export function AtAGlanceTab({
 						<CardHeader className="pb-2">
 							<CardTitle className="text-lg">Personal Information</CardTitle>
 						</CardHeader>
-						<CardContent className="space-y-3 text-left">
+						<CardContent className="space-y-0 text-left pb-3">
 							{
 								user.name && (
 									<div className="flex items-center gap-3 py-1.5">
@@ -231,7 +231,7 @@ export function AtAGlanceTab({
 						<CardHeader className="pb-2">
 							<div className="flex items-center justify-between">
 								<CardTitle className="text-lg">Professional Information</CardTitle>
-								{isOwnProfile && onEditProfile && !(user.occupation || user.company || user.university || user.workExperience || user.website || user.expectedSalary || user.noticePeriod) && (
+								{isOwnProfile && onEditProfile && !(user.occupation || user.company || user.university || user.website || user.expectedSalary || user.noticePeriod) && (
 									<Button variant="ghost" size="sm" onClick={onEditProfile}>
 										<Edit2 className="w-4 h-4 mr-1" />
 										Add
@@ -239,9 +239,9 @@ export function AtAGlanceTab({
 								)}
 							</div>
 						</CardHeader>
-						<CardContent className="space-y-3 text-left">
+						<CardContent className="space-y-0 text-left pb-3">
 							{
-								!(user.occupation || user.company || user.university || user.workExperience || user.website || (isOwnProfile && (user.expectedSalary || user.noticePeriod))) && (
+								!(user.occupation || user.company || user.university || user.website || (isOwnProfile && (user.expectedSalary || user.noticePeriod))) && (
 									<div className="py-6 text-center">
 										<Briefcase className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
 										<p className="text-sm text-muted-foreground">No professional details yet</p>
@@ -289,19 +289,6 @@ export function AtAGlanceTab({
 											<p className="text-xs text-muted-foreground">University</p>
 											<p className="font-medium">{user.university}</p>
 											{user.semester && <p className="text-xs text-muted-foreground">Semester {user.semester}</p>}
-										</div>
-									</div>
-								)
-							}
-							{
-								user.workExperience && (
-									<div className="flex items-center gap-3 py-1.5">
-										<div className="w-9 h-9 rounded-lg bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
-											<Calendar className="w-4 h-4 text-yellow-500" />
-										</div>
-										<div className="min-w-0 flex-1">
-											<p className="text-xs text-muted-foreground">Experience</p>
-											<p className="font-medium">{user.workExperience}</p>
 										</div>
 									</div>
 								)
@@ -385,28 +372,38 @@ export function AtAGlanceTab({
 				(user.careerGoals?.length ?? 0) + (isOwnProfile ? (user.targetCompanies?.length ?? 0) : 0) > 0 && (
 					<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
 						<Card>
-							<CardHeader className="pb-2">
-								<CardTitle className="text-lg flex items-center gap-2">
-									<Target className="w-5 h-5 text-green-500" />
+							<CardHeader className="pb-3">
+								<CardTitle className="text-base flex items-center gap-2">
+									<Target className="w-4 h-4 text-muted-foreground" />
 									Career Goals & Target Companies
 								</CardTitle>
 							</CardHeader>
-							<CardContent>
-								<div className="flex flex-wrap gap-2">
-									{
-										user.careerGoals?.map((goal, index) => (
-											<Badge key={`goal-${index}`} variant="outline" className="bg-green-500/10 text-green-700 border-green-500/30">
-												{goal}
-											</Badge>
-										))
-									}
-									{
-										isOwnProfile && user.targetCompanies?.map((company, index) => (
-											<Badge key={`company-${index}`} variant="outline" className="bg-blue-500/10 text-blue-700 border-blue-500/30">
-												{company}
-											</Badge>
-										))
-									}
+							<CardContent className="pt-0">
+								<div className="space-y-3">
+									{(user.careerGoals?.length ?? 0) > 0 && (
+										<div>
+											<p className="text-xs font-medium text-muted-foreground mb-2">Career Goals</p>
+											<div className="flex flex-wrap gap-1.5">
+												{user.careerGoals?.map((goal, index) => (
+													<Badge key={`goal-${index}`} variant="secondary" className="text-xs font-normal">
+														{goal}
+													</Badge>
+												))}
+											</div>
+										</div>
+									)}
+									{isOwnProfile && (user.targetCompanies?.length ?? 0) > 0 && (
+										<div>
+											<p className="text-xs font-medium text-muted-foreground mb-2">Target Companies</p>
+											<div className="flex flex-wrap gap-1.5">
+												{user.targetCompanies?.map((company, index) => (
+													<Badge key={`company-${index}`} variant="outline" className="text-xs font-normal">
+														{company}
+													</Badge>
+												))}
+											</div>
+										</div>
+									)}
 								</div>
 							</CardContent>
 						</Card>
@@ -417,14 +414,14 @@ export function AtAGlanceTab({
 				user.socialLinks && user.socialLinks.length > 0 && (
 					<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
 						<Card>
-							<CardHeader className="pb-2">
-								<CardTitle className="text-lg flex items-center gap-2">
-									<Globe className="w-5 h-5 text-indigo-500" />
+							<CardHeader className="pb-3">
+								<CardTitle className="text-base flex items-center gap-2">
+									<Globe className="w-4 h-4 text-muted-foreground" />
 									Social Links
 								</CardTitle>
 							</CardHeader>
-							<CardContent>
-								<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+							<CardContent className="pt-0">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 									{
 										user.socialLinks.map((link) => {
 											const Icon = socialIcons[link.platform.toLowerCase()] || Globe;
@@ -434,16 +431,16 @@ export function AtAGlanceTab({
 													href={link.url}
 													target="_blank"
 													rel="noopener noreferrer"
-													className="flex items-center gap-3 p-3 rounded-lg border hover:shadow-sm transition-shadow group"
+													className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group"
 												>
-													<div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-														<Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+													<div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+														<Icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
 													</div>
-													<div className="flex-1 min-w-0">
-														<p className="font-medium capitalize">{link.platform}</p>
-														<p className="text-xs text-muted-foreground truncate">{link.url.replace(/^https?:\/\//, "")}</p>
+													<div className="flex-1 min-w-0 text-left">
+														<p className="text-sm font-medium capitalize leading-none">{link.platform}</p>
+														<p className="text-xs text-muted-foreground truncate mt-0.5">{link.url.replace(/^https?:\/\//, "")}</p>
 													</div>
-													<ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+													<ExternalLink className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" />
 												</Link>
 											);
 										})

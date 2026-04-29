@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
                 yearofbirth: true,
                 university: true,
                 location: true,
-                socials: true,
                 website: true,
                 interests: true,
                 skills: true,

@@ -9,7 +9,7 @@ import { Input } from '@repo/ui/components/ui/input'
 import { Label } from '@repo/ui/components/ui/label'
 import { Textarea } from '@repo/ui/components/ui/textarea'
 import { Separator } from '@repo/ui/components/ui/separator'
-import { Loader2, Plus, Trash2, Briefcase } from 'lucide-react'
+import { Plus, Trash2, Briefcase } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import {
     addWorkExperience, updateWorkExperience, deleteWorkExperience
@@ -46,8 +46,6 @@ const EMPTY_FORM = {
 }
 
 export function AddWorkExperienceSheet({ open, onOpenChange, onSuccess, editExperience }: Props) {
-    const [saving, setSaving] = useState(false)
-    const [deleting, setDeleting] = useState(false)
     const [form, setForm] = useState(EMPTY_FORM)
 
     const isEditing = !!editExperience?.id
@@ -97,36 +95,39 @@ export function AddWorkExperienceSheet({ open, onOpenChange, onSuccess, editExpe
             isCurrentlyWorking: form.isCurrentlyWorking,
         }
 
-        setSaving(true)
+        // Optimistic: close sheet immediately, sync in background
+        onOpenChange(false)
+        const toastId = toast.loading(isEditing ? 'Updating experience…' : 'Adding experience…')
         try {
             const res = isEditing && editExperience?.id
                 ? await updateWorkExperience(editExperience.id, data)
                 : await addWorkExperience(data)
 
-            if (!res.success) return toast.error(res.message || 'Failed to save')
-            toast.success(isEditing ? 'Experience updated!' : 'Experience added!')
+            if (!res.success) {
+                toast.error(res.message || 'Failed to save', { id: toastId })
+                return
+            }
+            toast.success(isEditing ? 'Experience updated!' : 'Experience added!', { id: toastId })
             onSuccess()
-            onOpenChange(false)
         } catch {
-            toast.error('Something went wrong')
-        } finally {
-            setSaving(false)
+            toast.error('Something went wrong', { id: toastId })
         }
     }
 
     const handleDelete = async () => {
         if (!editExperience?.id) return
-        setDeleting(true)
+        onOpenChange(false)
+        const toastId = toast.loading('Deleting…')
         try {
             const res = await deleteWorkExperience(editExperience.id)
-            if (!res.success) return toast.error(res.message || 'Failed to delete')
-            toast.success('Experience deleted')
+            if (!res.success) {
+                toast.error(res.message || 'Failed to delete', { id: toastId })
+                return
+            }
+            toast.success('Experience deleted', { id: toastId })
             onSuccess()
-            onOpenChange(false)
         } catch {
-            toast.error('Something went wrong')
-        } finally {
-            setDeleting(false)
+            toast.error('Something went wrong', { id: toastId })
         }
     }
 
@@ -210,9 +211,8 @@ export function AddWorkExperienceSheet({ open, onOpenChange, onSuccess, editExpe
                     <Button
                         className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 h-10"
                         onClick={handleSubmit}
-                        disabled={saving}
                     >
-                        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                        <Plus className="w-4 h-4 mr-2" />
                         {isEditing ? 'Save Changes' : 'Add Experience'}
                     </Button>
                     {isEditing && (
@@ -220,9 +220,8 @@ export function AddWorkExperienceSheet({ open, onOpenChange, onSuccess, editExpe
                             variant="outline"
                             className="w-full h-9 text-red-500 hover:text-red-600 hover:border-red-300"
                             onClick={handleDelete}
-                            disabled={deleting}
                         >
-                            {deleting ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-2" />}
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
                             Delete Experience
                         </Button>
                     )}

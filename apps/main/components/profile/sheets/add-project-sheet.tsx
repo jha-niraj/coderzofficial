@@ -9,7 +9,7 @@ import { Input } from "@repo/ui/components/ui/input"
 import { Label } from "@repo/ui/components/ui/label"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import {
-    Plus, Trash2, Loader2, CalendarIcon, Link2, Image
+    Plus, Trash2, CalendarIcon, Link2, Image
 } from "lucide-react"
 import { format } from "date-fns"
 import { Calendar } from "@repo/ui/components/ui/calendar"
@@ -44,7 +44,6 @@ interface AddProjectSheetProps {
 }
 
 export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectSheetProps) {
-    const [saving, setSaving] = useState(false)
     const [startDateOpen, setStartDateOpen] = useState(false)
     const [endDateOpen, setEndDateOpen] = useState(false)
     const [form, setForm] = useState({
@@ -80,9 +79,9 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
             toast.error("Project name is required")
             return
         }
-        setSaving(true)
+
         const lines = form.description.split("\n").filter(Boolean)
-        const res = await addPortfolioProject({
+        const data = {
             projectName: form.projectName.trim(),
             projectType: form.projectType ?? "PERSONAL",
             status: form.status ?? "IN_PROGRESS",
@@ -93,15 +92,18 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
             endDate: form.endDate,
             links: form.links.filter((l) => l.url.trim()),
             media: form.media.filter((m) => m.mediaUrl.trim()),
-        })
-        setSaving(false)
+        }
+
+        // Optimistic: close and reset immediately
+        resetForm()
+        onOpenChange(false)
+        const toastId = toast.loading("Adding project…")
+        const res = await addPortfolioProject(data)
         if (res.success) {
-            toast.success("Project added")
-            resetForm()
-            onOpenChange(false)
+            toast.success("Project added!", { id: toastId })
             onSuccess()
         } else {
-            toast.error(res.message || "Failed to add project")
+            toast.error(res.message || "Failed to add project", { id: toastId })
         }
     }
 
@@ -304,8 +306,8 @@ export function AddProjectSheet({ open, onOpenChange, onSuccess }: AddProjectShe
                         </div>
                     </div>
                     <div className="px-6 py-4 border-t shrink-0">
-                        <Button onClick={handleSubmit} disabled={saving}>
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Project"}
+                        <Button onClick={handleSubmit}>
+                            Add Project
                         </Button>
                     </div>
                 </div>

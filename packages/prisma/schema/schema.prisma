@@ -382,7 +382,6 @@ model User {
     occupation          String?
     location            String?
     website             String?
-    socials             Json?
     interests           String[]
     learningPreferences String[]
     careerGoals         String[]

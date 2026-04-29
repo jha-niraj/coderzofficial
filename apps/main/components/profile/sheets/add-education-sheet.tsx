@@ -8,7 +8,7 @@ import { Button } from '@repo/ui/components/ui/button'
 import { Input } from '@repo/ui/components/ui/input'
 import { Label } from '@repo/ui/components/ui/label'
 import { Textarea } from '@repo/ui/components/ui/textarea'
-import { Loader2, Plus, Trash2, GraduationCap } from 'lucide-react'
+import { Plus, Trash2, GraduationCap } from 'lucide-react'
 import toast from '@repo/ui/components/ui/sonner'
 import {
     addUserEducation, updateUserEducation, deleteUserEducation
@@ -40,8 +40,6 @@ const EMPTY = {
 }
 
 export function AddEducationSheet({ open, onOpenChange, onSuccess, editEducation }: Props) {
-    const [saving, setSaving] = useState(false)
-    const [deleting, setDeleting] = useState(false)
     const [form, setForm] = useState(EMPTY)
 
     const isEditing = !!editEducation?.id
@@ -72,7 +70,6 @@ export function AddEducationSheet({ open, onOpenChange, onSuccess, editEducation
         if (!form.startDate) return toast.error('Start date is required')
 
         const bullets = form.bulletPoints.split('\n').map(b => b.trim()).filter(Boolean)
-
         const data = {
             institution: form.institution.trim(),
             degree: form.degree?.trim() || undefined,
@@ -81,36 +78,38 @@ export function AddEducationSheet({ open, onOpenChange, onSuccess, editEducation
             bulletPoints: bullets,
         }
 
-        setSaving(true)
+        onOpenChange(false)
+        const toastId = toast.loading(isEditing ? 'Updating education…' : 'Adding education…')
         try {
             const res = isEditing && editEducation?.id
                 ? await updateUserEducation(editEducation.id, data)
                 : await addUserEducation(data)
 
-            if (!res.success) return toast.error(res.message || 'Failed to save')
-            toast.success(isEditing ? 'Education updated!' : 'Education added!')
+            if (!res.success) {
+                toast.error(res.message || 'Failed to save', { id: toastId })
+                return
+            }
+            toast.success(isEditing ? 'Education updated!' : 'Education added!', { id: toastId })
             onSuccess()
-            onOpenChange(false)
         } catch {
-            toast.error('Something went wrong')
-        } finally {
-            setSaving(false)
+            toast.error('Something went wrong', { id: toastId })
         }
     }
 
     const handleDelete = async () => {
         if (!editEducation?.id) return
-        setDeleting(true)
+        onOpenChange(false)
+        const toastId = toast.loading('Deleting…')
         try {
             const res = await deleteUserEducation(editEducation.id)
-            if (!res.success) return toast.error(res.message || 'Failed to delete')
-            toast.success('Education deleted')
+            if (!res.success) {
+                toast.error(res.message || 'Failed to delete', { id: toastId })
+                return
+            }
+            toast.success('Education deleted', { id: toastId })
             onSuccess()
-            onOpenChange(false)
         } catch {
-            toast.error('Something went wrong')
-        } finally {
-            setDeleting(false)
+            toast.error('Something went wrong', { id: toastId })
         }
     }
 
@@ -178,9 +177,8 @@ export function AddEducationSheet({ open, onOpenChange, onSuccess, editEducation
                     <Button
                         className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 h-10"
                         onClick={handleSubmit}
-                        disabled={saving}
                     >
-                        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                        <Plus className="w-4 h-4 mr-2" />
                         {isEditing ? 'Save Changes' : 'Add Education'}
                     </Button>
                     {isEditing && (
@@ -188,9 +186,8 @@ export function AddEducationSheet({ open, onOpenChange, onSuccess, editEducation
                             variant="outline"
                             className="w-full h-9 text-red-500 hover:text-red-600 hover:border-red-300"
                             onClick={handleDelete}
-                            disabled={deleting}
                         >
-                            {deleting ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-2" />}
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
                             Delete
                         </Button>
                     )}

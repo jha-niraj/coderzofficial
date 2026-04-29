@@ -92,12 +92,12 @@ const defaultStatusConfig = {
 
 const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2; label: string }> = {
     COMPLETED: {
-        color: "text-green-600 bg-green-100",
+        color: "text-foreground bg-muted",
         icon: CheckCircle2,
         label: "Completed",
     },
     IN_PROGRESS: {
-        color: "text-blue-600 bg-blue-100",
+        color: "text-foreground bg-muted",
         icon: Clock3,
         label: "In Progress",
     },
@@ -437,98 +437,74 @@ export function ProjectsTab({
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: index * 0.02 }}
                                     >
-                                        <Card className="h-full hover:shadow-md transition-shadow group">
-                                            {
-                                                project.thumbnailUrl && (
-                                                    <div className="w-full h-36 overflow-hidden rounded-t-lg bg-muted">
-                                                        <Image
-                                                            src={project.thumbnailUrl}
-                                                            alt={project.projectName}
-                                                            width={400}
-                                                            height={144}
-                                                            className="object-cover w-full h-full group-hover:scale-105 transition-transform"
-                                                        />
-                                                    </div>
-                                                )
-                                            }
+                                        <Card className="h-full hover:shadow-md transition-shadow group overflow-hidden">
+                                            {project.thumbnailUrl && (
+                                                <div className="w-full h-36 overflow-hidden bg-muted">
+                                                    <Image
+                                                        src={project.thumbnailUrl}
+                                                        alt={project.projectName}
+                                                        width={400}
+                                                        height={144}
+                                                        className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                                                    />
+                                                </div>
+                                            )}
 
-                                            <CardContent className="p-4 flex flex-col h-full">
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div
-                                                        className={cn(
-                                                            "p-2 rounded-lg",
-                                                            config?.color.split(" ")[1]
-                                                        )}
-                                                    >
-                                                        <StatusIcon
-                                                            className={cn("w-5 h-5", config?.color.split(" ")[0])}
-                                                        />
+                                            <CardContent className="p-4 flex flex-col">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <StatusIcon className="w-4 h-4 text-muted-foreground" />
+                                                        <span className="text-xs text-muted-foreground">{config?.label}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1">
-                                                        {
-                                                            isOwnProfile && (
-                                                                <VisibilityIcon className={cn("w-4 h-4", visibilityConf?.color)} />
-                                                            )
-                                                        }
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {project.projectType}
+                                                        {isOwnProfile && (
+                                                            <VisibilityIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                                                        )}
+                                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">
+                                                            {project.projectType.replace(/_/g, " ")}
                                                         </Badge>
                                                     </div>
                                                 </div>
-                                                <span className="font-medium mb-1 group-hover:text-primary transition-colors">
+                                                <p className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
                                                     {project.projectName}
-                                                </span>
-                                                <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
+                                                </p>
+                                                <p className="text-xs text-muted-foreground line-clamp-2 flex-1">
                                                     {project.description || "No description"}
                                                 </p>
-                                                <div className="flex flex-wrap gap-1 mt-3 mb-3">
-                                                    {
-                                                        project.technologies.slice(0, 3).map((tech) => (
-                                                            <Badge key={tech} variant="secondary" className="text-xs">
+                                                {project.technologies.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-3">
+                                                        {project.technologies.slice(0, 3).map((tech) => (
+                                                            <Badge key={tech} variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
                                                                 {tech}
                                                             </Badge>
-                                                        ))
-                                                    }
-                                                    {
-                                                        project.technologies.length > 3 && (
-                                                            <Badge variant="secondary" className="text-xs">
+                                                        ))}
+                                                        {project.technologies.length > 3 && (
+                                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
                                                                 +{project.technologies.length - 3}
                                                             </Badge>
-                                                        )
-                                                    }
-                                                </div>
-                                                <div className="flex items-center justify-between pt-3 border-t">
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between pt-3 mt-3 border-t">
                                                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                         <Calendar className="w-3 h-3" />
                                                         {formatDate(project.startDate)}
                                                     </span>
                                                     <div className="flex items-center gap-1">
-                                                        {
-                                                            githubUrl && (
-                                                                <Link
-                                                                    href={githubUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                >
-                                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                                        <Github className="w-4 h-4" />
-                                                                    </Button>
-                                                                </Link>
-                                                            )
-                                                        }
-                                                        {
-                                                            liveUrl && (
-                                                                <Link
-                                                                    href={liveUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                >
-                                                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                                        <ExternalLink className="w-4 h-4" />
-                                                                    </Button>
-                                                                </Link>
-                                                            )
-                                                        }
+                                                        {githubUrl && (
+                                                            <Link href={githubUrl} target="_blank" rel="noopener noreferrer">
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                                    <Github className="w-3.5 h-3.5" />
+                                                                </Button>
+                                                            </Link>
+                                                        )}
+                                                        {liveUrl && (
+                                                            <Link href={liveUrl} target="_blank" rel="noopener noreferrer">
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                                    <ExternalLink className="w-3.5 h-3.5" />
+                                                                </Button>
+                                                            </Link>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </CardContent>

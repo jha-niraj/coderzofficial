@@ -52,7 +52,6 @@ export async function getUserProfile() {
         expectedSalary: user?.expectedSalary || null,
         noticePeriod: user?.noticePeriod || null,
         workExperience: user?.workExperience || null,
-        socials: user.socials as any || {},
         skills: user.skills.map(skill => ({
             id: skill.id,
             name: skill.name,
@@ -103,7 +102,6 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
         expectedSalary: data.expectedSalary,
         noticePeriod: data.noticePeriod,
         workExperience: data.workExperience,
-        socials: data.socials as any,
     };
 
     const updatedUser = await prisma.user.update({
@@ -135,8 +133,7 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
         location: updatedUser.location || "",
         xp: updatedUser.currentXp,
         credits: updatedUser.credits,
-        socials: updatedUser.socials as any || {},
-        socialLinks: updatedUser.socials as any || {},
+        socialLinks: {},
         website: "",
         occupation: "",
         createdAt: updatedUser.createdAt,
@@ -471,7 +468,6 @@ export async function getUserByEmail(email: string) {
                 occupation: true,
                 location: true,
                 website: true,
-                socials: true,
                 interests: true,
                 currentXp: true,
                 totalXp: true,

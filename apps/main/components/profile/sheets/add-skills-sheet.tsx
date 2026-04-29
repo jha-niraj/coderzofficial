@@ -37,7 +37,6 @@ interface Props {
 }
 
 export function AddSkillsSheet({ open, onOpenChange, onSuccess, existingSkills = [] }: Props) {
-    const [saving, setSaving] = useState(false)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [newSkill, setNewSkill] = useState('')
     const [category, setCategory] = useState('LANGUAGES')
@@ -59,16 +58,16 @@ export function AddSkillsSheet({ open, onOpenChange, onSuccess, existingSkills =
 
     const handleSave = async () => {
         if (!pending.length) return toast.error('Add at least one skill')
-        setSaving(true)
+        const toSave = [...pending]
+        setPending([])
+        onOpenChange(false)
+        const toastId = toast.loading(`Saving ${toSave.length} skill${toSave.length > 1 ? 's' : ''}…`)
         try {
-            await updateUserSkills(pending as UserSkill[])
-            toast.success(`${pending.length} skill${pending.length > 1 ? 's' : ''} added!`)
-            setPending([])
+            await updateUserSkills(toSave as UserSkill[])
+            toast.success(`${toSave.length} skill${toSave.length > 1 ? 's' : ''} added!`, { id: toastId })
             onSuccess()
         } catch {
-            toast.error('Failed to save skills')
-        } finally {
-            setSaving(false)
+            toast.error('Failed to save skills', { id: toastId })
         }
     }
 
@@ -196,9 +195,9 @@ export function AddSkillsSheet({ open, onOpenChange, onSuccess, existingSkills =
                     <Button
                         className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 h-10"
                         onClick={handleSave}
-                        disabled={saving || !pending.length}
+                        disabled={!pending.length}
                     >
-                        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                        <Plus className="w-4 h-4 mr-2" />
                         {pending.length ? `Save ${pending.length} Skill${pending.length > 1 ? 's' : ''}` : 'Add Skills to Queue First'}
                     </Button>
                 </div>
