@@ -233,7 +233,6 @@ export async function getModuleUsageStats(dateRange?: DateRange): Promise<AdminR
             projectsCount,
             mocksCount,
             assessmentsCount,
-            challengesCount,
             communitiesCount,
             LearnsCount,
         ] = await Promise.all([
@@ -246,14 +245,11 @@ export async function getModuleUsageStats(dateRange?: DateRange): Promise<AdminR
             prisma.practiceAttempt.count({
                 where: { startedAt: { gte: from, lte: to } },
             }),
-            prisma.forgeEnrollment.count({
-                where: { enrolledAt: { gte: from, lte: to } },
-            }),
             prisma.communityMember.count({
                 where: { joinedAt: { gte: from, lte: to } },
             }),
-            prisma.LearnProgress.count({
-                where: { startedAt: { gte: from, lte: to } },
+            prisma.learnProgress.count({
+                where: { lastAccessedAt: { gte: from, lte: to } },
             }),
         ])
 
@@ -264,7 +260,6 @@ export async function getModuleUsageStats(dateRange?: DateRange): Promise<AdminR
                     { name: "Projects", count: projectsCount },
                     { name: "Mock Interviews", count: mocksCount },
                     { name: "Assessments", count: assessmentsCount },
-                    { name: "Challenges", count: challengesCount },
                     { name: "Communities", count: communitiesCount },
                     { name: "Learns", count: LearnsCount },
                 ],

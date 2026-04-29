@@ -14,9 +14,8 @@ interface LearnsVerificationClientProps {
     Learns: Learn[]; // or any[]
 }
 
-export default function LearnsVerificationClient({
-    Learns: _initialLearns,
-}: LearnsVerificationClientProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function LearnsVerificationClient(_props: LearnsVerificationClientProps) {
     // Verification system has been removed
     return (
         <Card className="border-neutral-200 dark:border-neutral-800">

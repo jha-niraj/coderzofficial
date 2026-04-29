@@ -60,7 +60,7 @@ export async function getAllLearnsAdmin(filters: {
         }
 
         const [Learns, total] = await Promise.all([
-            prisma.Learn.findMany({
+            prisma.learn.findMany({
                 where,
                 orderBy: { updatedAt: "desc" },
                 skip: (page - 1) * limit,
@@ -79,13 +79,12 @@ export async function getAllLearnsAdmin(filters: {
                         select: {
                             steps: true,
                             likes: true,
-                            purchases: true,
                             progress: true,
                         },
                     },
                 },
             }),
-            prisma.Learn.count({ where }),
+            prisma.learn.count({ where }),
         ]);
 
         return {

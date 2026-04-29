@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { getPendingVerificationLearns } from "@/actions/main/Learn.action";
-import LearnsVerificationClient from "./_components/Learns-verification-client";
+import { getPendingVerificationLearns } from "@/actions/main/concept.action";
+import LearnsVerificationClient from "./_components/concepts-verification-client";
 
 export default async function LearnsAdminPage() {
     const result = await getPendingVerificationLearns();

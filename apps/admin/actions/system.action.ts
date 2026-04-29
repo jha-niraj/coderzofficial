@@ -139,8 +139,8 @@ export async function getDatabaseStats(): Promise<Response> {
             prisma.feedback.count(),
             prisma.creditTransaction.count(),
             prisma.assessmentQuestion.count(),
-            prisma.forgeTrack.count(),
-            prisma.crucibleEvent.count(),
+            Promise.resolve(0), // forgeTrack — model not yet implemented
+            Promise.resolve(0), // crucibleEvent — model not yet implemented
         ])
 
         return {
