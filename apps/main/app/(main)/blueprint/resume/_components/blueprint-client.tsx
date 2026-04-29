@@ -101,7 +101,7 @@ function TemplateDetailSheet({ template, userId, onClose, onPurchased }: {
                 <div className="h-40 flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${accent}15, ${accent}30)`, borderBottom: `1px solid ${accent}30` }}>
                     <div className="text-center space-y-1">
                         <p className="text-3xl font-black" style={{ color: accent }}>{template.name}</p>
-                        {template.isPlatform && <Badge className="bg-violet-100 text-violet-700 text-xs">BuildrHQ Official</Badge>}
+                        {template.isPlatform && <Badge className="bg-violet-100 text-violet-700 text-xs">Coderz Official</Badge>}
                     </div>
                 </div>
 
@@ -133,7 +133,7 @@ function TemplateDetailSheet({ template, userId, onClose, onPurchased }: {
                     {template.isPlatform && (
                         <div className="flex items-center gap-2 text-sm text-violet-600">
                             <Star className="w-4 h-4 fill-current" />
-                            <span>Official BuildrHQ Template</span>
+                            <span>Official Coderz Template</span>
                         </div>
                     )}
 
@@ -275,7 +275,7 @@ function UploadTemplateForm({ onSuccess }: { onSuccess: () => void }) {
 }
 
 // ─── Main Forge Client ────────────────────────────────────────────────────────
-export function ForgeClient({ templates: initialTemplates, myStats, userId, activeTab }: Props) {
+export function BlueprintClient({ templates: initialTemplates, myStats, userId, activeTab }: Props) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [templates, setTemplates] = useState<Template[]>(initialTemplates)
@@ -306,10 +306,10 @@ export function ForgeClient({ templates: initialTemplates, myStats, userId, acti
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Store className="w-6 h-6 text-violet-600" />
-                                <h1 className="text-2xl font-bold">Forge</h1>
+                                <h1 className="text-2xl font-bold">Blueprint</h1>
                                 <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 text-xs">Resume Templates</Badge>
                             </div>
-                            <p className="text-sm text-neutral-500">Discover beautiful templates. Earn credits by selling yours.</p>
+                            <p className="text-sm text-neutral-500">Discover beautiful resume templates. Earn credits by selling yours.</p>
                         </div>
                     </div>
 
@@ -361,7 +361,7 @@ export function ForgeClient({ templates: initialTemplates, myStats, userId, acti
                         {/* Platform templates */}
                         <section>
                             <div className="flex items-center gap-2 mb-4">
-                                <h2 className="text-sm font-semibold">BuildrHQ Official</h2>
+                                <h2 className="text-sm font-semibold">Coderz Official</h2>
                                 <Badge className="bg-violet-100 text-violet-700 text-[10px]">Free</Badge>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -399,7 +399,7 @@ export function ForgeClient({ templates: initialTemplates, myStats, userId, acti
                                     <h3 className="font-semibold text-sm mb-3">How earnings work</h3>
                                     <ul className="space-y-2 text-xs text-neutral-600 dark:text-neutral-400">
                                         <li className="flex items-start gap-2"><span className="text-violet-600 font-bold">90%</span> goes to you on every sale</li>
-                                        <li className="flex items-start gap-2"><span className="text-violet-600 font-bold">10%</span> platform fee to keep Forge running</li>
+                                        <li className="flex items-start gap-2"><span className="text-violet-600 font-bold">10%</span> platform fee to keep Blueprint running</li>
                                         <li className="flex items-start gap-2"><span className="text-violet-600 font-bold">Instant</span> credits credited to your account</li>
                                         <li className="flex items-start gap-2"><span className="text-violet-600 font-bold">Convert</span> credits to cash via the credits page</li>
                                     </ul>

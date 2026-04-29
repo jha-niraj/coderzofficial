@@ -12,6 +12,7 @@ export interface CoverLetterHistoryItem {
     companyName: string | null;
     jobTitle: string | null;
     createdAt: Date;
+    isDraft: boolean;
 }
 
 export interface CoverLetterGenerationData {
@@ -22,6 +23,7 @@ export interface CoverLetterGenerationData {
     tone: string;
     questions: CoverLetterQuestion[];
     answers: Record<string, string | string[]>;
+    draftId?: string;
 }
 
 export interface CoverLetterRecord {

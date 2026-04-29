@@ -437,10 +437,10 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => router.push('/forge/resume')}
+                                onClick={() => router.push('/blueprint/resume')}
                             >
                                 <Store className="w-3.5 h-3.5 mr-1.5" />
-                                Forge
+                                Blueprint
                             </Button>
                             <Button
                                 size="sm"
@@ -526,7 +526,7 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                             {/* Platform templates */}
                             <div>
                                 <div className="flex items-center gap-2 mb-4">
-                                    <h2 className="text-base font-semibold">BuildrHQ Templates</h2>
+                                    <h2 className="text-base font-semibold">Coderz Templates</h2>
                                     <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 text-xs">Official</Badge>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -567,8 +567,8 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
                                         <h2 className="text-base font-semibold">Community Templates</h2>
-                                        <Button variant="ghost" size="sm" onClick={() => router.push('/forge/resume')}>
-                                            Browse Forge <ExternalLink className="w-3 h-3 ml-1" />
+                                        <Button variant="ghost" size="sm" onClick={() => router.push('/blueprint/resume')}>
+                                            Browse Blueprint <ExternalLink className="w-3 h-3 ml-1" />
                                         </Button>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -578,8 +578,8 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                                                 <p className="text-xs text-neutral-500 mt-1 line-clamp-2">{t.description}</p>
                                                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
                                                     <span className="text-xs font-semibold text-violet-600">{t.marketplacePrice} credits</span>
-                                                    <Button size="sm" className="h-7 text-xs" onClick={() => router.push('/forge/resume')}>
-                                                        View in Forge
+                                                    <Button size="sm" className="h-7 text-xs" onClick={() => router.push('/blueprint/resume')}>
+                                                        View in Blueprint
                                                     </Button>
                                                 </div>
                                             </div>
@@ -595,10 +595,10 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                                 </div>
                                 <div>
                                     <p className="font-semibold text-sm">Create & Sell Your Template</p>
-                                    <p className="text-xs text-neutral-500 mt-0.5">Upload your own resume template to Forge and earn credits</p>
+                                    <p className="text-xs text-neutral-500 mt-0.5">Upload your own resume template to Blueprint marketplace and earn credits</p>
                                 </div>
-                                <Button variant="outline" size="sm" onClick={() => router.push('/forge/resume?tab=sell')}>
-                                    <Store className="w-3.5 h-3.5 mr-1.5" /> Open Forge
+                                <Button variant="outline" size="sm" onClick={() => router.push('/blueprint/resume?tab=sell')}>
+                                    <Store className="w-3.5 h-3.5 mr-1.5" /> Open Blueprint
                                 </Button>
                             </div>
                         </div>

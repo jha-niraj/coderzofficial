@@ -104,6 +104,37 @@ IMPORTANT: Always include the "options" field in every question. Set it to null 
     }
 }
 
+export async function saveCoverLetterDraft(data: {
+    jobUrl: string;
+    companyName: string;
+    jobTitle: string;
+    jobDescription: string;
+    tone: string;
+    questions: unknown[];
+}) {
+    try {
+        const user = await currentUser();
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        const draft = await prisma.coverLetter.create({
+            data: {
+                userId: user.id,
+                jobUrl: data.jobUrl,
+                companyName: data.companyName || null,
+                jobTitle: data.jobTitle || null,
+                jobDescription: data.jobDescription,
+                tone: data.tone,
+                questions: data.questions as never,
+                answers: {} as never,
+            }
+        });
+
+        return { success: true, draftId: draft.id };
+    } catch (e: unknown) {
+        return { success: false, error: e instanceof Error ? e.message : "Failed to save draft" };
+    }
+}
+
 export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData) {
     try {
         const user = await currentUser();
@@ -213,20 +244,31 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
 
         const generatedContent = completion?.choices?.[0]?.message?.content || "";
 
-        // Save to DB
-        const letter = await prisma.coverLetter.create({
-            data: {
-                userId: user.id,
-                jobUrl: data.jobUrl,
-                companyName: data.companyName,
-                jobTitle: data.jobTitle,
-                jobDescription: data.jobDescription,
-                tone: data.tone,
-                questions: data.questions as any,
-                answers: data.answers as any,
-                generatedContent,
-            }
-        });
+        // Save to DB — update draft if draftId provided, otherwise create new
+        let letter;
+        if (data.draftId) {
+            letter = await prisma.coverLetter.update({
+                where: { id: data.draftId, userId: user.id },
+                data: {
+                    answers: data.answers as never,
+                    generatedContent,
+                }
+            });
+        } else {
+            letter = await prisma.coverLetter.create({
+                data: {
+                    userId: user.id,
+                    jobUrl: data.jobUrl,
+                    companyName: data.companyName,
+                    jobTitle: data.jobTitle,
+                    jobDescription: data.jobDescription,
+                    tone: data.tone,
+                    questions: data.questions as never,
+                    answers: data.answers as never,
+                    generatedContent,
+                }
+            });
+        }
 
         return { success: true, coverLetterId: letter.id, content: generatedContent };
 
@@ -248,10 +290,20 @@ export async function getCoverLetters() {
                 companyName: true,
                 jobTitle: true,
                 createdAt: true,
+                generatedContent: true,
             }
         });
 
-        return { success: true, coverLetters: letters };
+        return {
+            success: true,
+            coverLetters: letters.map(l => ({
+                id: l.id,
+                companyName: l.companyName,
+                jobTitle: l.jobTitle,
+                createdAt: l.createdAt,
+                isDraft: !l.generatedContent,
+            }))
+        };
     } catch (e: unknown) {
         return { success: false, error: e instanceof Error ? e.message : "Failed to get cover letters" };
     }

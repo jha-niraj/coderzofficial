@@ -1,16 +1,16 @@
 import { auth } from '@repo/auth'
 import { getForgeTemplates, getMyTemplateStats } from '@/actions/(main)/ai/resume-marketplace.action'
-import { ForgeClient } from './_components/forge-client'
+import { BlueprintClient } from './_components/blueprint-client'
 
 export const metadata = {
-    title: 'Forge — Resume Templates | TheCoderz',
+    title: 'Blueprint — Resume Templates | Coderz',
     description: 'Buy, sell, and discover professional resume templates. Earn credits as a creator.',
 }
 
 type SortOption = 'popular' | 'newest' | 'price_asc' | 'price_desc'
 const VALID_SORTS: SortOption[] = ['popular', 'newest', 'price_asc', 'price_desc']
 
-export default async function ForgePage({
+export default async function BlueprintPage({
     searchParams,
 }: {
     searchParams: Promise<{ tab?: string; search?: string; tag?: string; sort?: string }>
@@ -19,7 +19,7 @@ export default async function ForgePage({
     const sp = await searchParams
     const sort = VALID_SORTS.includes(sp.sort as SortOption) ? (sp.sort as SortOption) : undefined
 
-    const [forgeRes, statsRes] = await Promise.all([
+    const [blueprintRes, statsRes] = await Promise.all([
         getForgeTemplates({ search: sp.search, tag: sp.tag, sort }),
         session?.user?.id ? getMyTemplateStats() : Promise.resolve(null),
     ])
@@ -33,8 +33,8 @@ export default async function ForgePage({
         : null
 
     return (
-        <ForgeClient
-            templates={forgeRes.templates ?? []}
+        <BlueprintClient
+            templates={blueprintRes.templates ?? []}
             myStats={myStats}
             userId={session?.user?.id}
             activeTab={sp.tab ?? 'browse'}

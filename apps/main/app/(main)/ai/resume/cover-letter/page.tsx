@@ -1,7 +1,12 @@
 import { auth } from "@repo/auth"
 import { redirect } from "next/navigation"
 import { getCoverLetters } from "@/actions/(main)/ai/cover-letter.action"
-import { CoverLetterClient } from "@/app/(main)/ai/coverletter/_components/cover-letter-client"
+import { CoverLetterClient } from "@/app/(main)/ai/resume/_components/cover-letter-client"
+
+export const metadata = {
+    title: "Cover Letter Generator | Coderz",
+    description: "Generate tailored cover letters for any job posting using AI.",
+}
 
 export default async function CoverLetterPage(props: {
     searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
@@ -13,13 +18,18 @@ export default async function CoverLetterPage(props: {
         redirect("/login")
     }
 
-    const { coverLetters = [] } = await getCoverLetters()
+    const result = await getCoverLetters()
+    const coverLetters = result.success ? (result.coverLetters ?? []) : []
 
     const sp = await props.searchParams
     const selectedId = sp?.id as string | undefined
 
     return (
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Cover Letter Generator</h1>
+                <p className="text-sm text-neutral-500 mt-1">Paste a job URL and we&apos;ll craft a tailored cover letter using your profile data.</p>
+            </div>
             <CoverLetterClient
                 initialCoverLetters={coverLetters}
                 selectedId={selectedId}

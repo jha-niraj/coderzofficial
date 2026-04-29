@@ -397,6 +397,6 @@ export async function uploadUserTemplate(input: {
         },
     })
     revalidatePath('/ai/resume')
-    revalidatePath('/forge/resume')
+    revalidatePath('/blueprint/resume')
     return { success: true, template }
 }

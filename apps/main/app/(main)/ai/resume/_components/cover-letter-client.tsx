@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
     extractJobDescription, generateCoverLetterQuestions, generateAndSaveCoverLetter,
-    getCoverLetter, deleteCoverLetter
+    getCoverLetter, deleteCoverLetter, saveCoverLetterDraft
 } from "@/actions/(main)/ai/cover-letter.action"
 import { Button } from "@repo/ui/components/ui/button"
 import { Input } from "@repo/ui/components/ui/input"
@@ -18,7 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@repo/ui/components/ui/radio-group"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
     Download, Copy, Mic, Square, Trash2, ArrowLeft, Sparkles,
-    FileText, Wand2, CheckCircle2, ChevronRight, Clock
+    FileText, Wand2, CheckCircle2, ChevronRight, Clock, PenLine
 } from "lucide-react"
 import toast from "@repo/ui/components/ui/sonner"
 import { transcribeAndPolishWorkExperience } from "@/actions/(main)/ai/resume-ai.action"
@@ -100,6 +100,7 @@ export function CoverLetterClient({
     const [questions, setQuestions] = useState<CoverLetterQuestion[]>([])
     const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
     const [isGeneratingLetter, setIsGeneratingLetter] = useState(false)
+    const [draftId, setDraftId] = useState<string | null>(null)
 
     // Step 3
     const [generatedContent, setGeneratedContent] = useState("")
@@ -111,8 +112,23 @@ export function CoverLetterClient({
     const fetchLetter = useCallback(async (id: string) => {
         const res = await getCoverLetter(id)
         if (res.success && res.coverLetter) {
-            setGeneratedContent(res.coverLetter.generatedContent || "")
-            setStep(3)
+            const letter = res.coverLetter
+            if (!letter.generatedContent) {
+                // Draft: restore state to step 2
+                setJobUrl(letter.jobUrl || "")
+                setJobDescription(letter.jobDescription || "")
+                setJobTitle(letter.jobTitle || "")
+                setCompanyName(letter.companyName || "")
+                setTone(letter.tone || "Professional")
+                const qs = Array.isArray(letter.questions) ? (letter.questions as unknown as CoverLetterQuestion[]) : []
+                setQuestions(qs)
+                setAnswers({})
+                setDraftId(letter.id)
+                setStep(2)
+            } else {
+                setGeneratedContent(letter.generatedContent)
+                setStep(3)
+            }
         } else {
             toast.error("Cover letter not found")
             router.push("/ai/resume/cover-letter")
@@ -145,6 +161,7 @@ export function CoverLetterClient({
         setQuestions([])
         setAnswers({})
         setGeneratedContent("")
+        setDraftId(null)
     }
 
     const handleExtract = async () => {
@@ -163,8 +180,29 @@ export function CoverLetterClient({
         const res = await generateCoverLetterQuestions(jd)
         setIsGeneratingQuestions(false)
         if (!res.success) return toast.error(res.error)
-        setQuestions(res.questions as CoverLetterQuestion[])
+        const qs = res.questions as CoverLetterQuestion[]
+        setQuestions(qs)
         setStep(2)
+
+        // Save as draft so user can resume later
+        const draftRes = await saveCoverLetterDraft({
+            jobUrl,
+            companyName: companyName || "",
+            jobTitle: jobTitle || "",
+            jobDescription: jd,
+            tone,
+            questions: qs,
+        })
+        if (draftRes.success && draftRes.draftId) {
+            setDraftId(draftRes.draftId)
+            setHistory(prev => [{
+                id: draftRes.draftId!,
+                companyName: companyName || null,
+                jobTitle: jobTitle || null,
+                createdAt: new Date(),
+                isDraft: true,
+            }, ...prev])
+        }
     }
 
     const handleGenerateLetter = async () => {
@@ -177,17 +215,20 @@ export function CoverLetterClient({
             tone,
             questions,
             answers,
+            draftId: draftId ?? undefined,
         })
         setIsGeneratingLetter(false)
         if (!res.success) return toast.error(res.error)
         setGeneratedContent(res.content || "")
         setStep(3)
+        // Update history: replace draft entry with completed letter
         setHistory(prev => [{
             id: res.coverLetterId!,
             companyName: companyName || "The Company",
             jobTitle: jobTitle || "The Position",
             createdAt: new Date(),
-        }, ...prev])
+            isDraft: false,
+        }, ...prev.filter(h => h.id !== (draftId ?? res.coverLetterId))])
         router.push(`/ai/resume/cover-letter?id=${res.coverLetterId}`)
     }
 
@@ -385,7 +426,7 @@ export function CoverLetterClient({
             <div className="lg:col-span-1 space-y-3">
                 <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-neutral-500" />
-                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Recent Letters</span>
+                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Letters</span>
                     {history.length > 0 && (
                         <Badge variant="secondary" className="text-xs ml-auto">{history.length}</Badge>
                     )}
@@ -402,7 +443,13 @@ export function CoverLetterClient({
                         {history.map((h: CoverLetterHistoryItem) => (
                             <div
                                 key={h.id}
-                                onClick={() => router.push(`/ai/resume/cover-letter?id=${h.id}`)}
+                                onClick={() => {
+                                    if (h.isDraft) {
+                                        router.push(`/ai/resume/cover-letter?id=${h.id}`)
+                                    } else {
+                                        router.push(`/ai/resume/cover-letter?id=${h.id}`)
+                                    }
+                                }}
                                 className={`group p-3 rounded-xl border cursor-pointer transition-colors ${selectedId === h.id
                                     ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white"
                                     : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
@@ -410,11 +457,19 @@ export function CoverLetterClient({
                             >
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="overflow-hidden flex-1">
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                            {h.isDraft && (
+                                                <Badge className="text-[9px] px-1 h-3.5 bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/40">
+                                                    <PenLine className="w-2.5 h-2.5 mr-0.5" />
+                                                    Draft
+                                                </Badge>
+                                            )}
+                                        </div>
                                         <p className={`text-xs font-semibold truncate ${selectedId === h.id ? "text-white dark:text-black" : "text-neutral-800 dark:text-neutral-200"}`}>
-                                            {h.jobTitle}
+                                            {h.jobTitle || "Untitled Role"}
                                         </p>
                                         <p className={`text-[10px] truncate mt-0.5 ${selectedId === h.id ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500"}`}>
-                                            {h.companyName}
+                                            {h.isDraft ? "Continue from step 2 →" : (h.companyName || "Unknown Company")}
                                         </p>
                                     </div>
                                     <Button

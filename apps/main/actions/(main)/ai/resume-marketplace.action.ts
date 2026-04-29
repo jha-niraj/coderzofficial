@@ -142,7 +142,7 @@ export async function purchaseTemplate(templateId: string) {
         })
     })
 
-    revalidatePath('/forge/resume')
+    revalidatePath('/blueprint/resume')
     revalidatePath('/ai/resume')
     return { success: true }
 }
@@ -159,7 +159,7 @@ export async function listTemplateOnMarketplace(templateId: string, price: numbe
         where: { id: templateId, createdById: session.user.id },
         data: { isMarketplace: true, marketplacePrice: price },
     })
-    revalidatePath('/forge/resume')
+    revalidatePath('/blueprint/resume')
     return { success: true }
 }
 
@@ -174,7 +174,7 @@ export async function delistTemplate(templateId: string) {
         where: { id: templateId, createdById: session.user.id },
         data: { isMarketplace: false },
     })
-    revalidatePath('/forge/resume')
+    revalidatePath('/blueprint/resume')
     return { success: true }
 }
 
